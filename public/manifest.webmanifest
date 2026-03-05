@@ -1,6 +1,6 @@
 {
-    "name": "Focus App",
-    "short_name": "Focus",
+    "name": "Exam App",
+    "short_name": "Exam App",
     "description": "Professional Examination Platform",
     "start_url": ".",
     "display": "standalone",

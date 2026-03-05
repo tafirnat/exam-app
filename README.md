@@ -1,4 +1,4 @@
-# Focus App | Advanced Learning Platform
+# 🎓 Exam App - Minimalist Learning Platform
 
 [![Live Demo](https://img.shields.io/badge/demo-live-green?style=for-the-badge&logo=github)](https://tafirnat.github.io/exam-app/)
 

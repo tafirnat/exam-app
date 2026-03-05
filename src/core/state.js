@@ -16,7 +16,7 @@ export const AppState = {
     })(),
     totalStats: JSON.parse(localStorage.getItem('focus_app_stats_global') || '{}'),
     currentSourceKey: localStorage.getItem('focus_app_current_source') || null,
-    examTitle: 'Focus App',
+    examTitle: 'Exam App',
     language: detectLanguage(),
     translationTarget: detectTranslationTarget()
 };

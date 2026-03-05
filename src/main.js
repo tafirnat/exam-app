@@ -237,7 +237,7 @@ function switchView(view) {
     document.getElementById('testOnlyMenuItems').style.display = view === 'test' ? 'block' : 'none';
 
     if (view === 'home') {
-        document.getElementById('headerTitle').innerText = 'Focus App';
+        document.getElementById('headerTitle').innerText = 'Exam App';
         updateHomeStats();
     }
 }
