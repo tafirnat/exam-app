@@ -61,6 +61,28 @@ body {
     -webkit-tap-highlight-color: transparent;
 }
 
+/* Global cursor & selection reset for UI elements */
+.btn,
+.icon-btn,
+.nav-btn,
+.check-btn,
+.option-card,
+.indicator-icon,
+.dropdown-item,
+.lang-btn,
+.source-item {
+    user-select: none;
+    -webkit-user-select: none;
+}
+
+.question-text,
+.option-content,
+.translation-text,
+.header-title {
+    cursor: default;
+}
+
+
 body {
     font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
     line-height: 1.5;

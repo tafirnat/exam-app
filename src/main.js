@@ -311,7 +311,7 @@ function toggleFlag() {
 function toggleNoteArea() {
     const a = document.getElementById('noteArea');
     a.classList.toggle('visible');
-    if (a.classList.contains('visible')) document.getElementById('noteInput').focus();
+    // Note: Auto-focus removed to prevent distracting blinking (caret)
     toggleMenu();
 }
 
