@@ -1,8 +1,8 @@
 {
     "exam_metadata": {
-        "title": "Standard Sınav Şablonu",
+        "title": "Standard Exam Template",
         "id": "std_101",
-        "category": "Genel Bilgi",
+        "category": "General Knowledge",
         "total_questions": 4,
         "date": "2026-03-26",
         "source": "https://github.com/tafirnat/exam-app"
@@ -14,16 +14,16 @@
             "type": "single_choice",
             "difficulty": 1,
             "tags": [
-                "örnek"
+                "example"
             ],
             "content": {
-                "text": "Dünya'nın uydusu hangisidir?",
+                "text": "What is the natural satellite of Earth?",
                 "media": []
             },
             "options": [
                 {
                     "id": 1,
-                    "text": "Ay",
+                    "text": "Moon",
                     "media": []
                 },
                 {
@@ -33,7 +33,7 @@
                 },
                 {
                     "id": 3,
-                    "text": "Jüpiter",
+                    "text": "Jupiter",
                     "media": []
                 }
             ],
@@ -41,7 +41,7 @@
                 "correct_ids": [
                     1
                 ],
-                "explanation": "Dünya'nın tek doğal uydusu Ay'dır."
+                "explanation": "The Moon is the only natural satellite of Earth."
             },
             "user_state": {
                 "is_flagged": false,
@@ -54,10 +54,10 @@
             "type": "multiple_choice",
             "difficulty": 2,
             "tags": [
-                "bilim"
+                "science"
             ],
             "content": {
-                "text": "Hangileri asal sayıdır?",
+                "text": "Which of these are prime numbers?",
                 "media": []
             },
             "options": [
@@ -87,7 +87,7 @@
                     1,
                     3
                 ],
-                "explanation": "2 ve 7 sadece kendilerine ve 1'e bölünebilirler."
+                "explanation": "2 and 7 are only divisible by themselves and 1."
             },
             "user_state": {
                 "is_flagged": false,
@@ -100,21 +100,21 @@
             "type": "true_false",
             "difficulty": 1,
             "tags": [
-                "mantık"
+                "logic"
             ],
             "content": {
-                "text": "Su 100 derecede kaynar.",
+                "text": "Water boils at 100 degrees Celsius.",
                 "media": []
             },
             "options": [
                 {
                     "id": 1,
-                    "text": "Doğru",
+                    "text": "True",
                     "media": []
                 },
                 {
                     "id": 2,
-                    "text": "Yanlış",
+                    "text": "False",
                     "media": []
                 }
             ],
@@ -122,7 +122,7 @@
                 "correct_ids": [
                     1
                 ],
-                "explanation": "Standart basınç altında su 100°C'de kaynar."
+                "explanation": "Under standard pressure, water boils at 100°C."
             },
             "user_state": {
                 "is_flagged": false,
@@ -138,7 +138,7 @@
                 "linux"
             ],
             "content": {
-                "text": "Linux'ta dosya listeleme komutu nedir?",
+                "text": "What is the command to list files in Linux?",
                 "media": []
             },
             "options": [],
@@ -147,7 +147,7 @@
                     "ls",
                     "ls -l"
                 ],
-                "explanation": "ls komutu 'list' kelimesinden gelir ve dizin içeriğini gösterir."
+                "explanation": "The 'ls' command comes from 'list' and shows directory contents."
             },
             "user_state": {
                 "is_flagged": false,
