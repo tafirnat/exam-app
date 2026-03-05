@@ -4,7 +4,11 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <meta name="theme-color" content="#0f172a">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
     <title>Focus App | Lernplattform</title>
+    <link rel="manifest" href="./manifest.webmanifest">
   <script type="module" crossorigin>(function(){const t=document.createElement("link").relList;if(t&&t.supports&&t.supports("modulepreload"))return;for(const a of document.querySelectorAll('link[rel="modulepreload"]'))r(a);new MutationObserver(a=>{for(const o of a)if(o.type==="childList")for(const c of o.addedNodes)c.tagName==="LINK"&&c.rel==="modulepreload"&&r(c)}).observe(document,{childList:!0,subtree:!0});function n(a){const o={};return a.integrity&&(o.integrity=a.integrity),a.referrerPolicy&&(o.referrerPolicy=a.referrerPolicy),a.crossOrigin==="use-credentials"?o.credentials="include":a.crossOrigin==="anonymous"?o.credentials="omit":o.credentials="same-origin",o}function r(a){if(a.ep)return;a.ep=!0;const o=n(a);fetch(a.href,o)}})();const ee=[{code:"ar",name:"العربية"},{code:"de",name:"Deutsch"},{code:"en",name:"English"},{code:"es",name:"Español"},{code:"fr",name:"Français"},{code:"it",name:"Italiano"},{code:"pt",name:"Português"},{code:"ru",name:"Pусский"},{code:"tr",name:"Türkçe"},{code:"zh",name:"中文"}],q={tr:{theme_change:"Görünümü Değiştir",star:"Yıldızla",unstar:"Yıldızı Kaldır",flag:"Bayrakla",unflag:"Bayrağı Kaldır",note_label:"Notunuz:",note_placeholder:"Notunuzu buraya yazın...",translate_all:"Tümünü Çevir",copy_ai:"Yapay Zeka Komutunu Kopyala",exit:"Çıkış",total_questions:"Toplam Soru",avg_coeff:"Ort. Katsayı",progress:"Öğrenme İlerlemesi",solved_count:"Çözülen: {solved} / {total}",question_count_label:"Soru Sayısı",start_test:"Testi Başlat",show_stats:"İstatistikleri Göster",export:"Dışa Aktar",import:"İçe Aktar",saved_sources:"Kayıtlı Kaynaklar",add_source:"Yeni Kaynak Ekle",load_url:"URL ile Yükle",load:"Yükle",load_file:"Dosyadan Yükle (.json)",question_label:"Soru",coeff_label:"Katsayı:",prev:"Önceki",next:"Sonraki",check:"Kontrol Et",checked:"Kontrol Edildi",stats_title:"Soru İstatistikleri",filter_all:"Tümü",filter_starred:"Yıldızlı",filter_flagged:"Bayraklı",filter_noted:"Notlu",back_to_stats:"İstatistiklere Dön",correct:"Doğru",wrong:"Yanlış",success_percent:"Başarı: %{percent}",total:"Toplam",lang_tr:"Türkçe",lang_en:"English",lang_de:"Deutsch",lang_select:"Dil Seçin",confirm_remove_source:"Kaynağı silmek istediğinize emin misiniz?",no_questions_available:"Kullanılabilir soru bulunamadı",test_completed:"Test tamamlandı!",confirm_exit:"Testten çıkmak istediğinize emin misiniz?",copy_ai_success:"Yapay Zeka komutu kopyalandı",q_count_10:"10 Soru (Akıllı)",q_count_15:"15 Soru (Akıllı)",q_count_20:"20 Soru (Akıllı)",q_count_40:"40 Soru (Sınav)",target_lang_label:"Çeviri Hedef Dili",correct_answer_was:"Doğru cevap:",ai_prompt_template:`Soru: {question}
 Seçenekler: {options}
 
@@ -358,6 +362,17 @@ Bitte erklären Sie diese Frage und die richtige Lösung im Detail.`}};function 
 
     <div class="toast" id="toast"></div>
 
+    <script>
+        if ('serviceWorker' in navigator) {
+            window.addEventListener('load', () => {
+                navigator.serviceWorker.register('/sw.js').then(reg => {
+                    console.log('SW Registered:', reg.scope);
+                }).catch(err => {
+                    console.log('SW Registration failed:', err);
+                });
+            });
+        }
+    </script>
 </body>
 
 </html>
