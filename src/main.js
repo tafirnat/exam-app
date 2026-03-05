@@ -68,6 +68,7 @@ window.onSourcesUpdated = () => {
 };
 
 window.onPreviewQuestion = (q) => {
+    AppState.previewQuestion = q;
     AppState.previewQuestionId = q.id;
     switchView('statsPreview');
     document.getElementById('previewQuestionText').innerText = q.content?.text || q.text || '';
@@ -353,7 +354,9 @@ function switchView(view) {
     document.getElementById('headerBackBtn').style.display = (view === 'stats' || view === 'statsPreview') ? 'flex' : 'none';
 
     // In preview mode, the inline icons are visible, so we don't need them in the burger menu.
-    document.getElementById('testOnlyMenuItems').style.display = view === 'test' ? 'block' : 'none';
+    // Also hide when in home to keep it clean, but mainly for test and statsPreview redundancy.
+    const isTestOrPreview = view === 'test' || view === 'statsPreview';
+    document.getElementById('testOnlyMenuItems').style.display = isTestOrPreview ? 'none' : (view === 'home' ? 'none' : 'block');
 
     if (view === 'home' || view === 'stats') {
         finishTest();
@@ -366,7 +369,8 @@ function switchView(view) {
 }
 
 function goBack() {
-    if (document.getElementById('statsPreviewView').style.display === 'block') switchView('stats');
+    const isPreview = document.getElementById('statsPreviewView').offsetParent !== null;
+    if (isPreview) switchView('stats');
     else switchView('home');
 }
 
@@ -415,12 +419,13 @@ function nextQuestion() {
 }
 
 function toggleStar() {
-    const isPreview = document.getElementById('statsPreviewView').style.display === 'flex';
-    const q = isPreview ? AppState.rawQuestions.find(rq => String(rq.id) === String(AppState.previewQuestionId))
+    const isPreview = document.getElementById('statsPreviewView').offsetParent !== null;
+    const q = isPreview ? AppState.previewQuestion
         : AppState.rawQuestions[AppState.currentTest[AppState.currentIndex]];
     if (!q) return;
-    if (!AppState.stats[q.id]) AppState.stats[q.id] = { coeff: 1.0, correct: 0, wrong: 0 };
-    AppState.stats[q.id].starred = !AppState.stats[q.id].starred;
+    const qid = String(q.id);
+    if (!AppState.stats[qid]) AppState.stats[qid] = { coeff: 1.0, correct: 0, wrong: 0 };
+    AppState.stats[qid].starred = !AppState.stats[qid].starred;
     saveStats();
     if (isPreview) {
         updateIndicatorsPreview();
@@ -432,12 +437,13 @@ function toggleStar() {
 }
 
 function toggleFlag() {
-    const isPreview = document.getElementById('statsPreviewView').style.display === 'flex';
-    const q = isPreview ? AppState.rawQuestions.find(rq => String(rq.id) === String(AppState.previewQuestionId))
+    const isPreview = document.getElementById('statsPreviewView').offsetParent !== null;
+    const q = isPreview ? AppState.previewQuestion
         : AppState.rawQuestions[AppState.currentTest[AppState.currentIndex]];
     if (!q) return;
-    if (!AppState.stats[q.id]) AppState.stats[q.id] = { coeff: 1.0, correct: 0, wrong: 0 };
-    AppState.stats[q.id].flagged = !AppState.stats[q.id].flagged;
+    const qid = String(q.id);
+    if (!AppState.stats[qid]) AppState.stats[qid] = { coeff: 1.0, correct: 0, wrong: 0 };
+    AppState.stats[qid].flagged = !AppState.stats[qid].flagged;
     saveStats();
     if (isPreview) {
         updateIndicatorsPreview();
@@ -471,7 +477,7 @@ function confirmExit() {
 }
 
 async function translateAll() {
-    const isPreview = document.getElementById('statsPreviewView').style.display === 'flex';
+    const isPreview = document.getElementById('statsPreviewView').offsetParent !== null;
     if (isPreview) {
         const previewView = document.getElementById('statsPreviewView');
         const btns = previewView.querySelectorAll('.corner-translate-btn');
@@ -489,14 +495,23 @@ async function translateAll() {
 }
 
 function copyAIPrompt() {
-    const isPreview = document.getElementById('statsPreviewView').style.display === 'flex';
-    const q = isPreview ? AppState.rawQuestions.find(rq => String(rq.id) === String(AppState.previewQuestionId))
-        : AppState.rawQuestions[AppState.currentTest[AppState.currentIndex]];
-    if (!q) return;
+    const isPreview = document.getElementById('statsPreviewView').offsetParent !== null;
+    let q;
+    if (isPreview) {
+        q = AppState.previewQuestion;
+    } else {
+        q = AppState.rawQuestions[AppState.currentTest[AppState.currentIndex]];
+    }
+
+    if (!q) {
+        console.error("copyAIPrompt: No question found", { isPreview, previewId: AppState.previewQuestionId });
+        return;
+    }
+
     const optionsText = q.options?.map(o => o.text).join(', ') || 'Textantwort';
+    const questionText = q.content?.text || q.text || '';
 
     // Determine prompt language based on translation target
-    // Default to 'en' if the target language is not one of the main 3 for which we have templates
     let promptLang = AppState.translationTarget;
     if (!['tr', 'en', 'de'].includes(promptLang)) {
         promptLang = 'en';
@@ -504,7 +519,7 @@ function copyAIPrompt() {
 
     const template = translations[promptLang]?.ai_prompt_template || translations['en'].ai_prompt_template;
     const prompt = template
-        .replace('{question}', q.content.text)
+        .replace('{question}', questionText)
         .replace('{options}', optionsText);
 
     navigator.clipboard.writeText(prompt).then(() => {
@@ -518,6 +533,6 @@ function copyAIPrompt() {
             setTimeout(() => btn.classList.remove('copy-flash'), 500);
         }
 
-        toggleMenu();
+        if (menuActive) toggleMenu();
     });
 }

@@ -20,7 +20,8 @@ export const AppState = {
     language: detectLanguage(),
     translationTarget: detectTranslationTarget(),
     recentTests: JSON.parse(localStorage.getItem('focus_app_recent_tests') || '[]'),
-    testTracking: null
+    testTracking: null,
+    previewQuestion: null
 };
 
 export function saveStats() {
