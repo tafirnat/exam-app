@@ -182,6 +182,7 @@ export function updateHomeStats() {
         if (el) el.style[prop] = val;
     };
 
+    const pct = total > 0 ? Math.round((solved / total) * 100) : 0;
     const pctText = `${pct}%`;
     const progressText = t('solved_count', { solved: solved, total: total });
 
