@@ -1,7 +1,9 @@
-const CACHE_NAME = 'focus-app-v1';
+const CACHE_NAME = 'focus-app-v2';
 const ASSETS_TO_CACHE = [
     './',
     './index.html',
+    './src/main.js',
+    './src/style.css',
     './manifest.webmanifest',
     './icon-192.png',
     './icon-512.png',
