@@ -111,13 +111,6 @@ function renderHistoricalTests(list, filter) {
             const isVisible = details.style.display !== 'none';
             details.style.display = isVisible ? 'none' : 'block';
             testEl.classList.toggle('expanded', !isVisible);
-
-            // Toggle title truncation
-            if (!isVisible) {
-                titleEl.innerText = fullTitle;
-            } else {
-                titleEl.innerText = displayTitle;
-            }
         };
 
         // Add click handlers for questions in history
