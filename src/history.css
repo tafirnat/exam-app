@@ -26,6 +26,15 @@
     font-weight: 700;
     font-size: 0.95rem;
     color: var(--text-primary);
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    max-width: 100%;
+}
+
+.history-test-item.expanded .history-test-title {
+    white-space: normal;
+    overflow: visible;
 }
 
 .history-test-meta {
@@ -48,15 +57,6 @@
 .history-test-details {
     border-top: 1px solid var(--border-color);
     background-color: var(--bg-color);
-}
-
-.history-full-title {
-    padding: 0.75rem 1rem;
-    font-size: 0.85rem;
-    font-weight: 600;
-    color: var(--text-secondary);
-    background-color: var(--surface-hover);
-    border-bottom: 1px solid var(--border-color);
 }
 
 .history-question-item {
