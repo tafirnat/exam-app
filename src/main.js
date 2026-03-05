@@ -38,14 +38,18 @@ document.addEventListener('DOMContentLoaded', () => {
 
         console.log('App initialized v1.2.3');
 
-        // Auto-load logic: If no source is active, try to load something
-        if (AppState.sources.length === 0) {
-            console.log('New user detected, loading default template...');
-            loadFromUrl('./examples/standard-exam.json').then(source => {
-                if (source) renderSourcesList();
-            });
+        // One-time auto-load logic for new users
+        const isInitialized = localStorage.getItem('focus_app_initialized');
+        if (!isInitialized) {
+            console.log('New user detected, performing initial setup...');
+            if (AppState.sources.length === 0) {
+                loadFromUrl('./examples/standard-exam.json').then(source => {
+                    if (source) renderSourcesList();
+                });
+            }
+            localStorage.setItem('focus_app_initialized', 'true');
         } else if (AppState.rawQuestions.length === 0) {
-            // Find first active source or just first source
+            // Respect existing sources if questions aren't loaded
             const sourceToLoad = AppState.sources.find(s => s.active) || AppState.sources[0];
             if (sourceToLoad && sourceToLoad.url) {
                 loadFromUrl(sourceToLoad.url);
