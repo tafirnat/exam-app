@@ -1017,3 +1017,32 @@ textarea {
     border-color: var(--primary-color);
     background: var(--selected-bg);
 }
+
+/* Stats Preview UI Refinements */
+#previewBackBtn {
+    width: 100%;
+    padding: 1.25rem;
+    font-size: 1.1rem;
+    font-weight: 700;
+    letter-spacing: 0.5px;
+    border-radius: var(--radius-lg);
+    background: var(--surface-hover);
+    color: var(--text-primary);
+    border: 2px solid var(--border-color);
+    box-shadow: var(--shadow-md);
+    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+#previewBackBtn:hover {
+    background: var(--surface-color);
+    border-color: var(--primary-color);
+    transform: translateY(-2px);
+    box-shadow: 0 10px 15px -3px rgba(var(--primary-rgb), 0.2);
+}
+
+#previewBackBtn:active {
+    transform: translateY(0);
+}

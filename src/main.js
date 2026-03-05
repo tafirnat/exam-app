@@ -350,7 +350,7 @@ function switchView(view) {
     }
     document.getElementById('bottomNav').style.display = view === 'test' ? 'flex' : 'none';
 
-    document.getElementById('menuToggleBtn').style.display = (view === 'home' || view === 'test' || view === 'statsPreview') ? 'flex' : 'none';
+    document.getElementById('menuToggleBtn').style.display = (view === 'home' || view === 'test') ? 'flex' : 'none';
     document.getElementById('headerBackBtn').style.display = (view === 'stats' || view === 'statsPreview') ? 'flex' : 'none';
 
     // In preview mode, the inline icons are visible, so we don't need them in the burger menu.
@@ -455,7 +455,7 @@ function toggleFlag() {
 }
 
 function toggleNoteArea() {
-    const isPreview = document.getElementById('statsPreviewView').style.display === 'flex';
+    const isPreview = document.getElementById('statsPreviewView').offsetParent !== null;
     const a = document.getElementById(isPreview ? 'previewNoteArea' : 'noteArea');
     if (a) a.classList.toggle('visible');
     // Note: Auto-focus removed to prevent distracting blinking
