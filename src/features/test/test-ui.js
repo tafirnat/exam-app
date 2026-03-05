@@ -85,11 +85,7 @@ export function renderQuestion() {
                 const isOptionCorrect = q.correctOptionIds.map(String).includes(String(opt.id));
                 if (isOptionCorrect) {
                     if (isSelected) card.classList.add('correct');
-                    else {
-                        // Refined feedback: red border for missed correct in MC
-                        if (q.type === 'multiple_choice') card.classList.add('missed-correct');
-                        else card.classList.add('wrong');
-                    }
+                    else card.classList.add('missed-correct');
                 } else if (isSelected) {
                     card.classList.add('wrong'); // Wrongly selected option
                 }
