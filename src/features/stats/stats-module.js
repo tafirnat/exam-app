@@ -205,18 +205,15 @@ export function updateHomeStats() {
     const statsCard = document.getElementById('homeStatsCard');
     const statsBtn = document.getElementById('homeStatsBtn');
 
+    if (startPanel) {
+        startPanel.style.opacity = '1';
+        startPanel.style.pointerEvents = 'all';
+    }
+
     if (total > 0) {
-        if (startPanel) {
-            startPanel.style.opacity = '1';
-            startPanel.style.pointerEvents = 'all';
-        }
         if (statsCard) statsCard.style.display = 'block';
         if (statsBtn) statsBtn.disabled = false;
     } else {
-        if (startPanel) {
-            startPanel.style.opacity = '0.5';
-            startPanel.style.pointerEvents = 'none';
-        }
         if (statsCard) statsCard.style.display = 'none';
         if (statsBtn) statsBtn.disabled = true;
     }

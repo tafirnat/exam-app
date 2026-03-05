@@ -26,7 +26,7 @@
                 <polyline points="15 18 9 12 15 6"></polyline>
             </svg>
         </button>
-        <div class="header-title" id="headerTitle">Exam App [v1.5:06.03 00:31]</div>
+        <div class="header-title" id="headerTitle">Exam App [v1.5:00:47]</div>
         <div style="width: 40px;"></div>
     </header>
 
@@ -146,31 +146,37 @@
                 </div>
 
                 <div style="margin-top: 1.5rem; padding-top: 1rem; border-top: 1px solid var(--border-color);">
-                    <div style="display: flex; gap: 0.5rem; margin-bottom: 0.5rem;">
-                        <button class="btn btn-subtle" id="homeExportBtn"
-                            style="flex: 1; font-size: 0.85rem; padding: 0.5rem;"
-                            data-i18n="export">Exportieren</button>
-                        <button class="btn btn-subtle" id="homeImportBtn"
-                            style="flex: 1; font-size: 0.85rem; padding: 0.5rem;"
-                            data-i18n="import">Importieren</button>
+                    <div class="input-group">
+                        <label data-i18n="question_count_label">Anzahl der Fragen</label>
+                        <select id="questionCount">
+                            <option value="10" data-i18n="q_count_10">10 Fragen (Smart)</option>
+                            <option value="15" data-i18n="q_count_15">15 Fragen (Smart)</option>
+                            <option value="20" data-i18n="q_count_20">20 Fragen (Smart)</option>
+                            <option value="40" data-i18n="q_count_40">40 Fragen (Prüfung)</option>
+                        </select>
                     </div>
+                    <button class="btn" id="startBtn" style="width: 100%;" data-i18n="start_test">Test starten</button>
                 </div>
-
-                <button class="btn btn-subtle" id="homeStatsBtn" style="width: 100%; margin-top: 0.5rem;"
-                    data-i18n="show_stats">Statistik anzeigen</button>
             </div>
 
             <div class="card" id="startPanel" style="opacity: 0.5; pointer-events: none;">
-                <div class="input-group">
-                    <label data-i18n="question_count_label">Anzahl der Fragen</label>
-                    <select id="questionCount">
-                        <option value="10" data-i18n="q_count_10">10 Fragen (Smart)</option>
-                        <option value="15" data-i18n="q_count_15">15 Fragen (Smart)</option>
-                        <option value="20" data-i18n="q_count_20">20 Fragen (Smart)</option>
-                        <option value="40" data-i18n="q_count_40">40 Fragen (Prüfung)</option>
-                    </select>
+                <button class="btn btn-subtle" id="homeStatsBtn"
+                    style="width: 100%; display: flex; align-items: center; justify-content: center; gap: 0.75rem; padding: 0.8rem;"
+                    data-i18n="show_stats">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"
+                        stroke-linejoin="round" style="width: 20px; height: 20px;">
+                        <path d="M21.21 15.89A10 10 0 1 1 8 2.83"></path>
+                        <path d="M22 12A10 10 0 0 0 12 2v10z"></path>
+                    </svg>
+                    <span data-i18n="show_stats">Statistik anzeigen</span>
+                </button>
+
+                <div style="display: flex; gap: 0.5rem; margin-top: 0.5rem;">
+                    <button class="btn btn-subtle" id="homeExportBtn"
+                        style="flex: 1; font-size: 0.85rem; padding: 0.5rem;" data-i18n="export">Export</button>
+                    <button class="btn btn-subtle" id="homeImportBtn"
+                        style="flex: 1; font-size: 0.85rem; padding: 0.5rem;" data-i18n="import">Import</button>
                 </div>
-                <button class="btn" id="startBtn" style="width: 100%;" data-i18n="start_test">Test starten</button>
             </div>
 
             <div class="card" id="sourcesCard">
@@ -460,6 +466,7 @@
 
     <div class="toast" id="toast"></div>
 
+    <input type="file" id="importFileInput" style="display: none;" accept=".json">
     <script type="module" src="src/main.js"></script>
     <script>
         if ('serviceWorker' in navigator) {
