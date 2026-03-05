@@ -36,18 +36,20 @@ document.addEventListener('DOMContentLoaded', () => {
         console.log('Setting up event listeners...');
         setupEventListeners();
 
-        console.log('App initialized v1.2.2');
+        console.log('App initialized v1.2.3');
 
-        // Auto-load logic: If no questions are loaded, try to load the first available source
-        if (AppState.rawQuestions.length === 0 && AppState.sources.length > 0) {
-            const firstSource = AppState.sources[0];
-            console.log('Auto-loading default source:', firstSource.name);
-            loadFromUrl(firstSource.url).then(source => {
-                if (source) {
-                    renderSourcesList();
-                    updateHomeStats();
-                }
+        // Auto-load logic: If no source is active, try to load something
+        if (AppState.sources.length === 0) {
+            console.log('New user detected, loading default template...');
+            loadFromUrl('./examples/standard-exam.json').then(source => {
+                if (source) renderSourcesList();
             });
+        } else if (AppState.rawQuestions.length === 0) {
+            // Find first active source or just first source
+            const sourceToLoad = AppState.sources.find(s => s.active) || AppState.sources[0];
+            if (sourceToLoad && sourceToLoad.url) {
+                loadFromUrl(sourceToLoad.url);
+            }
         }
     } catch (err) {
         console.error('CRITICAL INITIALIZATION ERROR:', err);

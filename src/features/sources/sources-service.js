@@ -58,10 +58,11 @@ export function processJSON(data, name) {
 
 export async function loadFromUrl(url) {
     try {
-        const res = await fetch(url);
+        const fullUrl = new URL(url, window.location.href);
+        const res = await fetch(fullUrl);
         if (!res.ok) throw new Error('Network response was not ok');
         const data = await res.json();
-        return processJSON(data, new URL(url).hostname);
+        return processJSON(data, fullUrl.hostname || 'local');
     } catch (e) {
         showToast('Laden fehlgeschlagen');
         console.error(e);
