@@ -236,6 +236,10 @@ function switchView(view) {
     document.getElementById('headerBackBtn').style.display = (view === 'stats' || view === 'statsPreview') ? 'flex' : 'none';
     document.getElementById('testOnlyMenuItems').style.display = view === 'test' ? 'block' : 'none';
 
+    if (view === 'home' || view === 'stats') {
+        finishTest();
+    }
+
     if (view === 'home') {
         document.getElementById('headerTitle').innerText = 'Exam App';
         updateHomeStats();

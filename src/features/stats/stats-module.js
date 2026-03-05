@@ -58,11 +58,13 @@ function renderHistoricalTests(list, filter) {
     }
 
     AppState.recentTests.forEach(test => {
+        if (!test || !Array.isArray(test.questions)) return;
+
         const questionsToShow = filter === 'incorrect'
             ? test.questions.filter(q => !q.isCorrect)
             : test.questions;
 
-        if (filter === 'incorrect' && questionsToShow.length === 0) return;
+        if (questionsToShow.length === 0) return;
 
         const testEl = document.createElement('div');
         testEl.className = 'history-test-item';

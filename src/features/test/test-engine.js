@@ -77,33 +77,56 @@ function startTestTracking(count) {
 export function finishTest() {
     if (!AppState.testTracking) return;
 
-    AppState.testTracking.endTime = new Date().toISOString();
+    // Check if we have any results to save
+    if (!AppState.testTracking.results || AppState.testTracking.results.length === 0) {
+        AppState.testTracking = null;
+        return;
+    }
 
-    // Convert current results into a list of questions for historical view
-    const historyEntry = {
-        id: Date.now(),
-        sourceTitle: AppState.testTracking.sourceTitle,
-        startTime: AppState.testTracking.startTime,
-        endTime: AppState.testTracking.endTime,
-        questionCount: AppState.testTracking.results.length,
-        questions: AppState.testTracking.results.map(r => {
-            const q = AppState.rawQuestions.find(q => q.id === r.questionId);
+    try {
+        AppState.testTracking.endTime = new Date().toISOString();
+
+        // Convert current results into a list of questions for historical view
+        const questions = AppState.testTracking.results.map(r => {
+            const q = AppState.rawQuestions.find(q => String(q.id) === String(r.questionId));
+            if (!q) return null;
             return {
-                ...q,
+                ...JSON.parse(JSON.stringify(q)), // Deep clone to avoid proxy issues if any
                 userAnswer: r.userAnswer,
                 isCorrect: r.isCorrect
             };
-        })
-    };
+        }).filter(q => q !== null);
 
-    // Add to recentTests, keep only last 5
-    AppState.recentTests.unshift(historyEntry);
-    if (AppState.recentTests.length > 5) {
-        AppState.recentTests = AppState.recentTests.slice(0, 5);
+        if (questions.length === 0) {
+            AppState.testTracking = null;
+            return;
+        }
+
+        const historyEntry = {
+            id: Date.now(),
+            sourceTitle: AppState.testTracking.sourceTitle || "Mixed Sources",
+            startTime: AppState.testTracking.startTime,
+            endTime: AppState.testTracking.endTime,
+            questionCount: questions.length,
+            questions: questions
+        };
+
+        // Add to recentTests, keep only last 5
+        if (!Array.isArray(AppState.recentTests)) {
+            AppState.recentTests = [];
+        }
+
+        AppState.recentTests.unshift(historyEntry);
+        if (AppState.recentTests.length > 5) {
+            AppState.recentTests = AppState.recentTests.slice(0, 5);
+        }
+
+        saveRecentTests();
+    } catch (err) {
+        console.error("Critical error in finishTest:", err);
+    } finally {
+        AppState.testTracking = null;
     }
-
-    saveRecentTests();
-    AppState.testTracking = null;
 }
 
 export function evaluateAnswer(questionIndex, userAnswer) {
