@@ -509,6 +509,15 @@ function copyAIPrompt() {
 
     navigator.clipboard.writeText(prompt).then(() => {
         showToast(t('copy_ai_success'));
+
+        // Add copy-flash animation
+        const btnId = isPreview ? 'previewMenuCopyAIInline' : 'menuCopyAIInline';
+        const btn = document.getElementById(btnId);
+        if (btn) {
+            btn.classList.add('copy-flash');
+            setTimeout(() => btn.classList.remove('copy-flash'), 500);
+        }
+
         toggleMenu();
     });
 }

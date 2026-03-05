@@ -286,7 +286,7 @@ textarea {
 /* Active Indicators */
 .indicators-bar {
     display: flex;
-    gap: 0.75rem;
+    gap: 1.25rem;
     margin-bottom: 1rem;
     justify-content: flex-end;
 }
@@ -320,6 +320,38 @@ textarea {
     color: var(--note-color);
     border-color: var(--note-color);
     background-color: rgba(139, 92, 246, 0.1);
+}
+
+.indicator-icon.copy-flash {
+    animation: aiCopyFlash 0.5s ease-out;
+}
+
+@keyframes aiCopyFlash {
+    0% {
+        background-color: var(--primary-color);
+        color: #fff;
+        transform: scale(0.9);
+    }
+
+    50% {
+        background-color: var(--primary-color);
+        color: #fff;
+        transform: scale(1.1);
+        box-shadow: 0 0 10px var(--primary-color);
+    }
+
+    100% {
+        background-color: var(--surface-hover);
+        color: var(--text-secondary);
+        transform: scale(1);
+        box-shadow: none;
+    }
+}
+
+.indicator-icon.active-star svg,
+.indicator-icon.active-flag svg,
+.indicator-icon.active-note svg {
+    fill: currentColor;
 }
 
 .indicator-icon svg {
