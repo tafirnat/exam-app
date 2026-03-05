@@ -142,22 +142,8 @@
                     </select>
                 </div>
                 <button class="btn" id="startBtn" style="width: 100%;" data-i18n="start_test">Test starten</button>
-                <button class="btn" id="homeStatsBtn"
-                    style="width: 100%; margin-top: 0.5rem; background: var(--surface-hover); color: var(--text-primary); border: 1px solid var(--border-color);"
+                <button class="btn btn-subtle" id="homeStatsBtn" style="width: 100%; margin-top: 0.5rem;"
                     data-i18n="show_stats" disabled>Statistik anzeigen</button>
-                <div style="margin-top: 1rem; padding-top: 1rem; border-top: 1px solid var(--border-color);">
-                    <div style="font-size: 0.85rem; font-weight: 600; margin-bottom: 0.5rem; color: var(--text-secondary);"
-                        data-i18n="export">
-                        Exportieren</div>
-                    <div style="display: flex; gap: 0.5rem;">
-                        <button class="btn" id="exportBtn" style="flex: 1; font-size: 0.85rem; padding: 0.5rem;"
-                            data-i18n="export">Exportieren</button>
-                        <button class="btn" id="importBtn"
-                            style="flex: 1; font-size: 0.85rem; padding: 0.5rem; background: var(--surface-hover); color: var(--text-primary); border: 1px solid var(--border-color);"
-                            data-i18n="import">Importieren</button>
-                    </div>
-                    <input type="file" id="importFileInput" accept=".json" style="display: none;">
-                </div>
             </div>
 
             <div class="card" id="sourcesCard">
@@ -272,8 +258,19 @@
             <div class="question-stats-info" id="questionStatsInfo"></div>
         </div>
         <div id="statsView">
-            <div class="card">
-                <h2 style="margin-bottom: 1rem; font-size: 1.1rem;" data-i18n="stats_title">Fragenstatistik</h2>
+            <div class="card" style="margin-bottom: 1rem;">
+                <div class="stats-card-header">
+                    <div class="stats-header-icon">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"
+                            stroke-linecap="round" stroke-linejoin="round">
+                            <path d="M18 20V10"></path>
+                            <path d="M12 20V4"></path>
+                            <path d="M6 20v-6"></path>
+                        </svg>
+                    </div>
+                    <h2 style="margin: 0; font-size: 1.1rem;" data-i18n="stats_title">Fragenstatistik</h2>
+                </div>
+
                 <div class="progress-section" id="statsProgressSection">
                     <div style="display: flex; justify-content: space-between; margin-bottom: 0.5rem;">
                         <span style="font-size: 0.85rem; color: var(--text-secondary);"
@@ -287,7 +284,24 @@
                         id="progressDetail">Gelöst: 0 / 0</div>
                 </div>
                 <div class="stats-summary-bar" id="statsSummaryBar"></div>
-                <div class="stats-filter-bar" id="statsFilterBar">
+
+                <div style="margin-top: 1.5rem; padding-top: 1rem; border-top: 1px solid var(--border-color);">
+                    <div style="font-size: 0.85rem; font-weight: 600; margin-bottom: 1rem; color: var(--text-secondary);"
+                        data-i18n="export">Exportieren</div>
+                    <div style="display: flex; gap: 0.5rem;">
+                        <button class="btn btn-subtle" id="exportBtn"
+                            style="flex: 1; font-size: 0.85rem; padding: 0.5rem;"
+                            data-i18n="export">Exportieren</button>
+                        <button class="btn btn-subtle" id="importBtn"
+                            style="flex: 1; font-size: 0.85rem; padding: 0.5rem;"
+                            data-i18n="import">Importieren</button>
+                    </div>
+                    <input type="file" id="importFileInput" accept=".json" style="display: none;">
+                </div>
+            </div>
+
+            <div class="card" style="padding-top: 1.5rem;">
+                <div class="stats-filter-bar" id="statsFilterBar" style="margin-bottom: 1.5rem;">
                     <button class="filter-btn active" data-filter="all" data-i18n="filter_all">Alle</button>
                     <button class="filter-btn" data-filter="recent" data-i18n="filter_recent">Son Cevaplananlar</button>
                     <button class="filter-btn" data-filter="incorrect" data-i18n="filter_incorrect">Yanlış
