@@ -91,7 +91,7 @@ The application reads exam data through a standard JSON structure. You can follo
   ]
 }
 ```
-*Full template available in [examples/standard-exam.json](./examples/standard-exam.json).*
+*Full template available in [public/examples/standard-exam.json](./public/examples/standard-exam.json).*
 
 ## 📄 License
 

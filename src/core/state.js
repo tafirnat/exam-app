@@ -19,7 +19,7 @@ export const AppState = {
             sources.unshift({
                 id: templateId,
                 name: 'Standard Exam Example',
-                url: 'https://raw.githubusercontent.com/tafirnat/exam-app/main/examples/standard-exam.json',
+                url: './examples/standard-exam.json',
                 timestamp: Date.now()
             });
             localStorage.setItem('focus_app_sources', JSON.stringify(sources));
