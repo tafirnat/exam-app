@@ -131,3 +131,19 @@
 .history-question-item.wrong .history-question-status {
     color: var(--error-color);
 }
+
+.history-test-stats-summary {
+    padding: 1rem;
+    background: var(--surface-hover);
+    border-bottom: 1px solid var(--border-color);
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 0.75rem;
+    font-size: 0.9rem;
+    color: var(--text-secondary);
+}
+
+.history-test-stats-summary div b {
+    color: var(--text-primary);
+    font-weight: 700;
+}

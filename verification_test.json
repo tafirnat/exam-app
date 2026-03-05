@@ -1,0 +1,30 @@
+{
+    "exam_metadata": {
+        "title": "Bug Fix Verification Test"
+    },
+    "questions": [
+        {
+            "id": "q_text_1",
+            "type": "text_input",
+            "text": "What is the capital of France?",
+            "answer": "Paris"
+        },
+        {
+            "id": "q_text_2",
+            "type": "fill_in_the_blank",
+            "text": "The earth is ____.",
+            "answer": {
+                "accepted_texts": [
+                    "round",
+                    "spherical"
+                ]
+            }
+        },
+        {
+            "id": "q_text_3",
+            "type": "text",
+            "text": "Capital of Germany?",
+            "correct_answer": "Berlin"
+        }
+    ]
+}

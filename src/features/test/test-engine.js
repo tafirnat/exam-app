@@ -101,12 +101,28 @@ export function finishTest() {
             return;
         }
 
+        const correctCount = questions.filter(q => q.isCorrect).length;
+        const wrongCount = questions.length - correctCount;
+        const successRate = questions.length > 0 ? Math.round((correctCount / questions.length) * 100) : 0;
+
+        // Average coefficient of the test session
+        let totalCoeff = 0;
+        questions.forEach(q => {
+            const s = AppState.stats[q.id] || { coeff: 1.0 };
+            totalCoeff += s.coeff;
+        });
+        const avgCoeff = questions.length > 0 ? totalCoeff / questions.length : 1.0;
+
         const historyEntry = {
             id: Date.now(),
             sourceNames: AppState.testTracking.sourceNames,
             startTime: AppState.testTracking.startTime,
             endTime: AppState.testTracking.endTime,
             questionCount: questions.length,
+            correctCount,
+            wrongCount,
+            successRate,
+            avgCoeff,
             questions: questions
         };
 

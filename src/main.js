@@ -284,6 +284,12 @@ function setupEventListeners() {
     document.getElementById('previewIndNote').onclick = toggleNoteArea;
     document.getElementById('previewMenuTranslateAllInline').onclick = translateAll;
     document.getElementById('previewMenuCopyAIInline').onclick = copyAIPrompt;
+    document.getElementById('menuExitInline').onclick = confirmExit;
+
+    window.addEventListener('test-finished', () => {
+        switchView('home');
+        updateHomeStats();
+    });
 
     // Navigation
     document.getElementById('headerBackBtn').onclick = goBack;

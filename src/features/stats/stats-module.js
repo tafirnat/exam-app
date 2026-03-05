@@ -99,6 +99,14 @@ function renderHistoricalTests(list, filter) {
                 </div>
             </div>
             <div class="history-test-details" style="display: none;">
+                ${filter === 'recent' ? `
+                    <div class="history-test-stats-summary">
+                        <div>${t('correct_count')}: <b>${test.correctCount || 0}</b></div>
+                        <div>${t('wrong_count')}: <b>${test.wrongCount || 0}</b></div>
+                        <div>${t('success_rate')}: <b>${test.successRate || 0}%</b></div>
+                        <div>${t('avg_coeff_short')}: <b>${(test.avgCoeff || 1.0).toFixed(1)}</b></div>
+                    </div>
+                ` : ''}
                 ${questionsToShow.map((q, idx) => `
                     <div class="history-question-item ${q.isCorrect ? 'correct' : 'wrong'}">
                         <div class="history-question-text">#${idx + 1} ${q.content?.text || q.text}</div>

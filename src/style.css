@@ -809,10 +809,50 @@ textarea {
     box-shadow: var(--shadow-md);
 }
 
-.toast.show {
+.toast.visible {
     transform: translateX(-50%) translateY(0);
     opacity: 1;
     visibility: visible;
+}
+
+/* Unanswered List Styles */
+.unanswered-list {
+    display: flex;
+    flex-direction: column;
+    gap: 0.75rem;
+}
+
+.unanswered-item {
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+    padding: 1rem;
+    background: var(--surface-hover);
+    border: 1px solid var(--border-color);
+    border-radius: var(--radius-md);
+    cursor: pointer;
+    transition: all 0.2s ease;
+}
+
+.unanswered-item:hover {
+    border-color: var(--primary-color);
+    background: var(--surface-color);
+    transform: translateX(4px);
+}
+
+.unanswered-item-text {
+    flex: 1;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    font-size: 0.95rem;
+    color: var(--text-primary);
+}
+
+.unanswered-item-num {
+    font-weight: 700;
+    color: var(--primary-color);
+    min-width: 28px;
 }
 
 @media (min-width: 601px) {

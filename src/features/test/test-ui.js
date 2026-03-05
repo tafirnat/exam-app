@@ -136,6 +136,12 @@ export function renderQuestion() {
 
     // Navigation updates
     document.getElementById('prevBtn').disabled = qIndex === 0;
+
+    const isLastQuestion = qIndex === AppState.currentTest.length - 1;
+    const nextBtn = document.getElementById('nextBtn');
+    nextBtn.disabled = isLastQuestion;
+    nextBtn.style.opacity = isLastQuestion ? '0.3' : '1';
+
     const checkBtn = document.getElementById('checkBtn');
     const checkText = document.getElementById('checkBtnText');
     const checkIcon = document.getElementById('checkIcon');
@@ -145,7 +151,77 @@ export function renderQuestion() {
 
     checkBtn.disabled = isChecked;
     checkBtn.style.opacity = isChecked ? '0.5' : '1';
+
+    if (isLastQuestion) {
+        renderSummarySection();
+    } else {
+        const summaryEl = document.getElementById('testSummarySection');
+        if (summaryEl) summaryEl.remove();
+    }
 }
+
+function renderSummarySection() {
+    let summaryEl = document.getElementById('testSummarySection');
+    if (!summaryEl) {
+        summaryEl = document.createElement('div');
+        summaryEl.id = 'testSummarySection';
+        summaryEl.style.marginTop = '1.5rem';
+        summaryEl.style.paddingTop = '1.5rem';
+        summaryEl.style.borderTop = '2px solid var(--border-color)';
+        document.getElementById('testView').insertBefore(summaryEl, document.querySelector('.flex-spacer'));
+    }
+
+    const unansweredIndices = [];
+    AppState.currentTest.forEach((qId, idx) => {
+        if (!AppState.isAnswerChecked[idx]) {
+            unansweredIndices.push(idx);
+        }
+    });
+
+    let unansweredHtml = '';
+    if (unansweredIndices.length > 0) {
+        unansweredHtml = `
+            <div style="margin-bottom: 1.5rem;">
+                <h3 style="font-size: 1rem; margin-bottom: 0.75rem; color: var(--text-secondary);">${t('unanswered_questions')}</h3>
+                <div class="unanswered-list">
+                    ${unansweredIndices.map(idx => {
+            const q = AppState.rawQuestions[AppState.currentTest[idx]];
+            const text = q.content?.text || q.text || '';
+            return `
+                            <div class="unanswered-item" onclick="window.goToQuestion(${idx})">
+                                <span class="unanswered-item-num">#${idx + 1}</span>
+                                <span class="unanswered-item-text">${text}</span>
+                                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width: 16px; height: 16px; color: var(--text-secondary);"><polyline points="9 18 15 12 9 6"></polyline></svg>
+                            </div>
+                        `;
+        }).join('')}
+                </div>
+            </div>
+        `;
+    }
+
+    summaryEl.innerHTML = `
+        ${unansweredHtml}
+        <button class="btn" id="finishTestBtn" style="width: 100%; background-color: var(--success-color); color: white; display: flex; align-items: center; justify-content: center; gap: 0.5rem;">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" style="width: 20px; height: 20px;"><polyline points="20 6 9 17 4 12"></polyline></svg>
+            ${t('finish_test')}
+        </button>
+    `;
+
+    document.getElementById('finishTestBtn').onclick = () => {
+        showToast(t('test_completed'));
+        import('./test-engine.js').then(m => m.finishTest());
+        // Since we can't easily call switchView from here without circular deps or passing it, 
+        // we'll rely on the main.js logic or event dispatch.
+        // Actually finishing test should trigger navigation.
+        window.dispatchEvent(new CustomEvent('test-finished'));
+    };
+}
+
+window.goToQuestion = (idx) => {
+    AppState.currentIndex = idx;
+    renderQuestion();
+};
 
 export function selectOption(id, type) {
     const qIndex = AppState.currentIndex;

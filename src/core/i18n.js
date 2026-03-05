@@ -78,6 +78,14 @@ export const translations = {
         end_time: "Bitiş",
         no_recent_tests: "Henüz çözülmüş bir test bulunmuyor.",
         confirm_delete_history: "Bu testi bu listeden kaldırmak istediğinize emin misiniz?",
+        finish_test: "Testi Bitir",
+        unanswered_questions: "Boş Bırakılan Sorular",
+        test_results: "Test Sonuçları",
+        success_rate: "Başarı Oranı",
+        avg_coeff_short: "Ort. Katsayı",
+        completed_at: "Tamamlanma",
+        correct_count: "Doğru Sayısı",
+        wrong_count: "Yanlış Sayısı",
         ai_prompt_template: "Soru: {question}\nSeçenekler: {options}\n\nLütfen bu soruyu ve doğru çözümü ayrıntılı olarak açıklayın."
     },
     en: {
@@ -143,6 +151,14 @@ export const translations = {
         end_time: "End",
         no_recent_tests: "No tests solved yet.",
         confirm_delete_history: "Are you sure you want to remove this test from this list?",
+        finish_test: "Finish Test",
+        unanswered_questions: "Unanswered Questions",
+        test_results: "Test Results",
+        success_rate: "Success Rate",
+        avg_coeff_short: "Avg. Coeff.",
+        completed_at: "Completed",
+        correct_count: "Correct Count",
+        wrong_count: "Wrong Count",
         ai_prompt_template: "Question: {question}\nOptions: {options}\n\nPlease explain this question and the correct solution in detail."
     },
     de: {
@@ -208,6 +224,14 @@ export const translations = {
         end_time: "Ende",
         no_recent_tests: "Keine kürzlichen Tests vorhanden",
         confirm_delete_history: "Diesen Test aus dieser Liste entfernen?",
+        finish_test: "Test beenden",
+        unanswered_questions: "Unbeantwortete Fragen",
+        test_results: "Testergebnisse",
+        success_rate: "Erfolgsquote",
+        avg_coeff_short: "Ø Koeff.",
+        completed_at: "Abgeschlossen am",
+        correct_count: "Anzahl Richtig",
+        wrong_count: "Anzahl Falsch",
         ai_prompt_template: "Frage: {question}\nOptionen: {options}\n\nBitte erklären Sie diese Frage und die richtige Lösung im Detail."
     }
 };
