@@ -10,16 +10,18 @@
 
 .history-test-header {
     padding: 1rem;
-    display: flex;
-    justify-content: space-between;
+    display: grid;
+    grid-template-columns: auto 1fr auto;
     align-items: center;
+    gap: 1rem;
     cursor: pointer;
     background-color: var(--surface-color);
     transition: background-color 0.2s;
 }
 
-.history-test-header:hover {
-    background-color: var(--surface-hover);
+.history-test-info {
+    min-width: 0;
+    /* Ensures inner flex/grid items can truncate */
 }
 
 .history-test-title {
@@ -29,12 +31,12 @@
     white-space: nowrap;
     overflow: hidden;
     text-overflow: ellipsis;
-    max-width: 100%;
+    display: block;
 }
 
 .history-test-item.expanded .history-test-title {
     white-space: normal;
-    overflow: visible;
+    word-break: break-word;
 }
 
 .history-test-meta {
@@ -46,30 +48,30 @@
 .history-test-actions {
     display: flex;
     align-items: center;
-    gap: 0.75rem;
 }
 
 .history-delete-btn {
     background: transparent;
     border: none;
-    color: var(--text-secondary);
+    color: #ff3b30;
+    /* Saturated red for risk signal */
     cursor: pointer;
-    padding: 0.5rem;
+    padding: 0.6rem;
     display: flex;
     align-items: center;
     justify-content: center;
-    border-radius: 50%;
+    border-radius: var(--radius-sm);
     transition: all 0.2s;
 }
 
 .history-delete-btn:hover {
-    background-color: var(--error-color-light, rgba(255, 0, 0, 0.1));
-    color: var(--error-color);
+    background-color: rgba(255, 59, 48, 0.1);
+    transform: scale(1.1);
 }
 
 .history-delete-btn svg {
-    width: 18px;
-    height: 18px;
+    width: 20px;
+    height: 20px;
 }
 
 .history-test-icon svg {
