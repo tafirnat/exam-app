@@ -12,6 +12,7 @@ Experience the application live: **[https://tafirnat.github.io/exam-app/](https:
 
 ## 🚀 Features
 
+- **PWA Support**: Installable on mobile and desktop for a full-screen, app-like experience with offline support.
 - **Modular Architecture**: Clean, separate logic for state management, UI rendering, and test engines.
 - **Dynamic Internationalization**: Native support for **Turkish**, **English**, and **German** with automatic system language detection.
 - **Smart Test Engine**: Question selection based on coefficients (weights) to prioritize areas that need improvement.
