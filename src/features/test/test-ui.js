@@ -1,6 +1,6 @@
 
 import { AppState, saveStats } from '../../core/state.js';
-import { translateText, showToast } from '../../core/utils.js';
+import { translateText, showToast, getCorrectAnswers } from '../../core/utils.js';
 import { t } from '../../core/i18n.js';
 import { evaluateAnswer, updateStats } from './test-engine.js';
 
@@ -50,7 +50,7 @@ export function renderQuestion() {
                     <div class="feedback-container" style="margin-top: 0.75rem; display: flex; align-items: start; gap: 0.5rem;">
                         <div style="flex: 1;">
                             <div id="correctAnswerText" class="correct-answer-feedback" style="color: var(--success-color); font-weight: 600; font-size: 0.9rem;">
-                                ${t('correct_answer_was')} ${(q.correctOptionIds || q.answer?.accepted_texts)?.[0] || ''}
+                                ${t('correct_answer_was')} ${getCorrectAnswers(q)[0] || ''}
                             </div>
                             <div id="trans_correctAnswerText" class="translation-text" style="display: none; margin-top: 0.25rem; font-size: 0.85rem; color: var(--text-secondary);"></div>
                         </div>
@@ -82,7 +82,7 @@ export function renderQuestion() {
             card.className = `option-card ${isSelected ? 'selected' : ''}`;
 
             if (isChecked) {
-                const isOptionCorrect = q.correctOptionIds.map(String).includes(String(opt.id));
+                const isOptionCorrect = getCorrectAnswers(q).map(String).includes(String(opt.id));
                 if (isOptionCorrect) {
                     if (isSelected) card.classList.add('correct');
                     else card.classList.add('missed-correct');

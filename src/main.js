@@ -1,9 +1,9 @@
 import { AppState, saveStats, saveSources, saveCurrentSource } from './core/state.js';
 import { initTheme, toggleTheme } from './core/theme.js';
 import { updateStaticTranslations, t, targetLanguages, translations } from './core/i18n.js';
-import { showToast } from './core/utils.js';
+import { showToast, getCorrectAnswers } from './core/utils.js';
 import { migrateOldData } from './core/migration.js';
-import { processJSON, loadFromUrl, loadFromFile } from './features/sources/sources-service.js';
+import { processJSON, loadFromUrl, loadFromFile, normalizeQuestions } from './features/sources/sources-service.js';
 import { renderSourcesList } from './features/sources/sources-ui.js';
 import { prepareTest, finishTest } from './features/test/test-engine.js';
 import { renderQuestion, handleCheckAnswer, updateIndicators, handleTranslation } from './features/test/test-ui.js';
@@ -26,6 +26,12 @@ document.addEventListener('DOMContentLoaded', () => {
 
         console.log('Rendering sources list...');
         renderSourcesList();
+
+        // Robust fix: Normalize all questions from existing sources on startup
+        console.log('Normalizing existing sources...');
+        AppState.sources.forEach(s => {
+            if (s.questions) s.questions = normalizeQuestions(s.questions);
+        });
 
         console.log('Rendering stats list...');
         renderStatsList();
@@ -86,10 +92,13 @@ window.onPreviewQuestion = (q) => {
 
     const container = document.getElementById('previewOptionsContainer');
     container.innerHTML = '';
-    if (q.options && q.options.length > 0) {
+
+    const isTextQuestion = ['text', 'text_input', 'open_ended', 'fill_in_the_blank'].includes(q.type);
+
+    if (q.options && q.options.length > 0 && !isTextQuestion) {
         q.options.forEach(opt => {
             const card = document.createElement('div');
-            const isCorrect = q.correctOptionIds && q.correctOptionIds.map(String).includes(String(opt.id));
+            const isCorrect = getCorrectAnswers(q).map(String).includes(String(opt.id));
             card.className = `option-card ${isCorrect ? 'correct' : ''}`;
 
             const contentWrapper = document.createElement('div');
@@ -127,44 +136,75 @@ window.onPreviewQuestion = (q) => {
             container.appendChild(card);
         });
     } else {
-        const correctAnswers = q.correctOptionIds || q.answer?.accepted_texts || [];
-        if (correctAnswers.length > 0) {
-            const card = document.createElement('div');
-            card.className = 'option-card correct';
+        const correctAnswers = getCorrectAnswers(q);
+        const answerToShow = correctAnswers.length > 0 ? (isTextQuestion ? correctAnswers[0] : `${t('correct')}: ${correctAnswers[0]}`) : '';
 
-            const contentWrapper = document.createElement('div');
-            contentWrapper.className = 'option-content-wrapper';
-            contentWrapper.style.flex = '1';
-            contentWrapper.style.display = 'flex';
-            contentWrapper.style.flexDirection = 'column';
+        if (answerToShow) {
+            if (isTextQuestion) {
+                // Render as text input wrapper matching test UI
+                const wrapper = document.createElement('div');
+                wrapper.className = 'text-input-wrapper';
+                wrapper.style.width = '100%';
 
-            const content = document.createElement('div');
-            content.className = 'option-content';
-            content.id = `previewOptText_correct`;
-            content.innerText = `${t('correct')}: ${correctAnswers[0]}`;
+                wrapper.innerHTML = `
+                    <input type="text" id="previewTextAnswerInput" value="${answerToShow}" class="correct" disabled>
+                    <div class="feedback-container" style="margin-top: 0.75rem; display: flex; align-items: start; gap: 0.5rem;">
+                        <div style="flex: 1;">
+                            <div id="previewCorrectAnswerText" class="correct-answer-feedback" style="color: var(--success-color); font-weight: 600; font-size: 0.9rem;">
+                                ${t('correct_answer_was')} ${answerToShow}
+                            </div>
+                            <div id="trans_previewCorrectAnswerText" class="translation-text" style="display: none; margin-top: 0.25rem; font-size: 0.85rem; color: var(--text-secondary);"></div>
+                        </div>
+                        <button id="previewFeedbackTranslateBtn" class="corner-translate-btn" style="padding: 2px;">
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" style="width: 14px; height: 14px;"><path d="M5 8l6 6"></path><path d="M4 14l6-6 2-3"></path><path d="M2 5h12"></path><path d="M7 2h1"></path><path d="M22 22l-5-10-5 10"></path><path d="M14 18h6"></path></svg>
+                        </button>
+                    </div>
+                `;
+                container.appendChild(wrapper);
 
-            const trans = document.createElement('div');
-            trans.className = 'translation-text';
-            trans.id = `trans_previewOptText_correct`;
-            trans.style.marginTop = '0.5rem';
-            trans.style.paddingTop = '0.5rem';
-            trans.style.borderTop = '1px dashed var(--border-color)';
-            trans.style.display = 'none';
+                const fBtn = document.getElementById('previewFeedbackTranslateBtn');
+                if (fBtn) {
+                    fBtn.onclick = () => handleTranslation(fBtn, 'previewCorrectAnswerText', 'trans_previewCorrectAnswerText');
+                }
+            } else {
+                // Fallback for non-text questions without options (rare but handled)
+                const card = document.createElement('div');
+                card.className = 'option-card correct';
 
-            contentWrapper.appendChild(content);
-            contentWrapper.appendChild(trans);
+                const contentWrapper = document.createElement('div');
+                contentWrapper.className = 'option-content-wrapper';
+                contentWrapper.style.flex = '1';
+                contentWrapper.style.display = 'flex';
+                contentWrapper.style.flexDirection = 'column';
 
-            const tBtn = document.createElement('button');
-            tBtn.className = 'corner-translate-btn';
-            tBtn.innerHTML = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M5 8l6 6"></path><path d="M4 14l6-6 2-3"></path><path d="M2 5h12"></path><path d="M7 2h1"></path><path d="M22 22l-5-10-5 10"></path><path d="M14 18h6"></path></svg>';
-            tBtn.onclick = (e) => {
-                e.stopPropagation();
-                handleTranslation(tBtn, `previewOptText_correct`, `trans_previewOptText_correct`);
-            };
+                const content = document.createElement('div');
+                content.className = 'option-content';
+                content.id = `previewOptText_correct`;
+                content.innerText = answerToShow;
 
-            card.appendChild(contentWrapper);
-            card.appendChild(tBtn);
-            container.appendChild(card);
+                const trans = document.createElement('div');
+                trans.className = 'translation-text';
+                trans.id = `trans_previewOptText_correct`;
+                trans.style.marginTop = '0.5rem';
+                trans.style.paddingTop = '0.5rem';
+                trans.style.borderTop = '1px dashed var(--border-color)';
+                trans.style.display = 'none';
+
+                contentWrapper.appendChild(content);
+                contentWrapper.appendChild(trans);
+
+                const tBtn = document.createElement('button');
+                tBtn.className = 'corner-translate-btn';
+                tBtn.innerHTML = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M5 8l6 6"></path><path d="M4 14l6-6 2-3"></path><path d="M2 5h12"></path><path d="M7 2h1"></path><path d="M22 22l-5-10-5 10"></path><path d="M14 18h6"></path></svg>';
+                tBtn.onclick = (e) => {
+                    e.stopPropagation();
+                    handleTranslation(tBtn, `previewOptText_correct`, `trans_previewOptText_correct`);
+                };
+
+                card.appendChild(contentWrapper);
+                card.appendChild(tBtn);
+                container.appendChild(card);
+            }
         }
     }
     const s = AppState.stats[q.id] || { correct: 0, wrong: 0, coeff: 1.0, note: '' };

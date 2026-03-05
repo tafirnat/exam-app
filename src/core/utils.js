@@ -32,3 +32,35 @@ export async function translateText(text, targetLang = null) {
 export function generateId(prefix = '') {
     return prefix + Math.random().toString(36).substr(2, 9);
 }
+
+/**
+ * Robustly extracts correct answers from a question object, handling multiple formats.
+ * @param {Object} q The question object.
+ * @returns {Array<string|number>} List of correct answers or option IDs.
+ */
+export function getCorrectAnswers(q) {
+    if (!q) return [];
+
+    // Explicit list of correct IDs/Texts
+    if (Array.isArray(q.correctOptionIds) && q.correctOptionIds.length > 0) {
+        return q.correctOptionIds;
+    }
+
+    // Check 'answer' object patterns
+    if (q.answer) {
+        if (Array.isArray(q.answer.correct_ids)) return q.answer.correct_ids;
+        if (Array.isArray(q.answer.correctIds)) return q.answer.correctIds;
+        if (Array.isArray(q.answer.accepted_texts)) return q.answer.accepted_texts;
+        if (typeof q.answer === 'string' && q.answer.trim()) return [q.answer];
+    }
+
+    // Check direct properties
+    if (q.correct_answer) {
+        return Array.isArray(q.correct_answer) ? q.correct_answer : [q.correct_answer];
+    }
+    if (q.correctAnswer) {
+        return Array.isArray(q.correctAnswer) ? q.correctAnswer : [q.correctAnswer];
+    }
+
+    return [];
+}

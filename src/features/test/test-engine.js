@@ -1,6 +1,5 @@
-
 import { AppState, saveRecentTests } from '../../core/state.js';
-import { shuffleArray } from '../../core/utils.js';
+import { shuffleArray, getCorrectAnswers } from '../../core/utils.js';
 
 export function prepareTest(count) {
     const rawQuestions = [];
@@ -135,11 +134,11 @@ export function evaluateAnswer(questionIndex, userAnswer) {
 
     if (q.type === 'text' || q.type === 'text_input' || q.type === 'open_ended' || q.type === 'fill_in_the_blank') {
         const val = (userAnswer[0] || '').toString().trim().toLowerCase();
-        const correctAnswers = q.correctOptionIds || q.answer?.accepted_texts || [];
+        const correctAnswers = getCorrectAnswers(q);
         isCorrect = correctAnswers.some(c => String(c).trim().toLowerCase() === val);
     } else {
         const sel = userAnswer || [];
-        const correctIds = q.correctOptionIds || [];
+        const correctIds = getCorrectAnswers(q);
         const cSet = new Set(correctIds.map(String));
         const sSet = new Set(sel.map(String));
         isCorrect = cSet.size === sSet.size && [...sSet].every(id => cSet.has(id));

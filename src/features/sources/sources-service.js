@@ -1,14 +1,12 @@
-
 import { AppState, saveSources } from '../../core/state.js';
-import { showToast } from '../../core/utils.js';
+import { showToast, getCorrectAnswers } from '../../core/utils.js';
 
 export function normalizeQuestions(questions) {
     return questions.map(q => {
-        // Handle different formats for correct IDs
-        if (!q.correctOptionIds) {
-            if (q.answer && q.answer.correct_ids) q.correctOptionIds = q.answer.correct_ids;
-            else if (q.answer && q.answer.correctIds) q.correctOptionIds = q.answer.correctIds;
-            else if (q.answer && q.answer.accepted_texts) q.correctOptionIds = q.answer.accepted_texts;
+        // Ensure correctOptionIds is consistently populated
+        const answers = getCorrectAnswers(q);
+        if (answers.length > 0) {
+            q.correctOptionIds = answers;
         }
         return q;
     });
