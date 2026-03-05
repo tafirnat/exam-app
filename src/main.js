@@ -36,7 +36,19 @@ document.addEventListener('DOMContentLoaded', () => {
         console.log('Setting up event listeners...');
         setupEventListeners();
 
-        console.log('App initialized v1.2.1-debug');
+        console.log('App initialized v1.2.2');
+
+        // Auto-load logic: If no questions are loaded, try to load the first available source
+        if (AppState.rawQuestions.length === 0 && AppState.sources.length > 0) {
+            const firstSource = AppState.sources[0];
+            console.log('Auto-loading default source:', firstSource.name);
+            loadFromUrl(firstSource.url).then(source => {
+                if (source) {
+                    renderSourcesList();
+                    updateHomeStats();
+                }
+            });
+        }
     } catch (err) {
         console.error('CRITICAL INITIALIZATION ERROR:', err);
         // Fallback to setup at least basic listeners if possible

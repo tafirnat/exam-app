@@ -10,14 +10,19 @@ export const AppState = {
     stats: JSON.parse(localStorage.getItem('focus_app_stats_local') || '{}'),
     sources: (() => {
         const stored = localStorage.getItem('focus_app_sources');
-        const sources = JSON.parse(stored || '[]');
-        if (sources.length === 0) {
-            sources.push({
-                id: 'template-default',
-                name: 'Standard Exam Template',
+        let sources = JSON.parse(stored || '[]');
+
+        const templateId = 'template-default';
+        const templateExists = sources.some(s => s.id === templateId);
+
+        if (!templateExists) {
+            sources.unshift({
+                id: templateId,
+                name: 'Standard Exam Example',
                 url: 'https://raw.githubusercontent.com/tafirnat/exam-app/main/examples/standard-exam.json',
                 timestamp: Date.now()
             });
+            localStorage.setItem('focus_app_sources', JSON.stringify(sources));
         }
         return sources;
     })(),
