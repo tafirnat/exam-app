@@ -68,8 +68,9 @@ window.onSourcesUpdated = () => {
 };
 
 window.onPreviewQuestion = (q) => {
+    AppState.previewQuestionId = q.id;
     switchView('statsPreview');
-    document.getElementById('previewQuestionText').innerText = q.content.text;
+    document.getElementById('previewQuestionText').innerText = q.content?.text || q.text || '';
     const container = document.getElementById('previewOptionsContainer');
     container.innerHTML = '';
     if (q.options && q.options.length > 0) {
@@ -89,9 +90,22 @@ window.onPreviewQuestion = (q) => {
             container.appendChild(card);
         }
     }
-    const s = AppState.stats[q.id] || { correct: 0, wrong: 0, coeff: 1.0 };
+    const s = AppState.stats[q.id] || { correct: 0, wrong: 0, coeff: 1.0, note: '' };
     document.getElementById('previewStatsInfo').innerHTML = `Richtig: ${s.correct} | Falsch: ${s.wrong} | Gesamt: ${s.correct + s.wrong} | Koe: ${s.coeff.toFixed(1)}`;
+    document.getElementById('previewNoteInput').value = s.note || '';
+    const previewNoteArea = document.getElementById('previewNoteArea');
+    if (previewNoteArea) previewNoteArea.classList.remove('visible');
+    updateIndicatorsPreview();
 };
+
+function updateIndicatorsPreview() {
+    const qid = AppState.previewQuestionId;
+    if (!qid) return;
+    const s = AppState.stats[qid] || {};
+    document.getElementById('previewIndStar').classList.toggle('active-star', !!s.starred);
+    document.getElementById('previewIndFlag').classList.toggle('active-flag', !!s.flagged);
+    document.getElementById('previewIndNote').classList.toggle('active-note', !!(s.note && s.note.trim() !== ''));
+}
 
 function setupEventListeners() {
     // Menu
@@ -147,6 +161,10 @@ function setupEventListeners() {
     document.getElementById('indFlag').onclick = toggleFlag;
     document.getElementById('indNote').onclick = toggleNoteArea;
 
+    document.getElementById('previewIndStar').onclick = toggleStar;
+    document.getElementById('previewIndFlag').onclick = toggleFlag;
+    document.getElementById('previewIndNote').onclick = toggleNoteArea;
+
     // Navigation
     document.getElementById('headerBackBtn').onclick = goBack;
     document.getElementById('startBtn').onclick = startTest;
@@ -157,7 +175,10 @@ function setupEventListeners() {
         switchView('stats');
         renderStatsList();
     };
-    document.getElementById('previewBackBtn').onclick = () => switchView('stats');
+    document.getElementById('previewBackBtn').onclick = () => {
+        switchView('stats');
+        renderStatsList(document.querySelector('.filter-btn.active')?.dataset.filter || 'all');
+    };
 
     // Sources
     document.getElementById('toggleAddSourceBtn').onclick = toggleAddSourcePanel;
@@ -222,6 +243,19 @@ function setupEventListeners() {
             updateIndicators();
         }, 500);
     };
+
+    let previewNoteTimeout;
+    document.getElementById('previewNoteInput').oninput = (e) => {
+        clearTimeout(previewNoteTimeout);
+        previewNoteTimeout = setTimeout(() => {
+            const qid = AppState.previewQuestionId;
+            if (!qid) return;
+            if (!AppState.stats[qid]) AppState.stats[qid] = { coeff: 1.0, correct: 0, wrong: 0 };
+            AppState.stats[qid].note = e.target.value.trim();
+            saveStats();
+            updateIndicatorsPreview();
+        }, 500);
+    };
 }
 
 // --- View Management ---
@@ -229,12 +263,16 @@ function switchView(view) {
     document.getElementById('homeView').style.display = view === 'home' ? 'block' : 'none';
     document.getElementById('testView').style.display = view === 'test' ? 'flex' : 'none';
     document.getElementById('statsView').style.display = view === 'stats' ? 'block' : 'none';
-    document.getElementById('statsPreviewView').style.display = view === 'statsPreview' ? 'block' : 'none';
+    document.getElementById('statsPreviewView').style.display = view === 'statsPreview' ? 'flex' : 'none';
+    if (view === 'statsPreview') {
+        document.getElementById('statsPreviewView').style.flexDirection = 'column';
+        document.getElementById('statsPreviewView').style.flex = '1';
+    }
     document.getElementById('bottomNav').style.display = view === 'test' ? 'flex' : 'none';
 
-    document.getElementById('menuToggleBtn').style.display = (view === 'home' || view === 'test') ? 'flex' : 'none';
+    document.getElementById('menuToggleBtn').style.display = (view === 'home' || view === 'test' || view === 'statsPreview') ? 'flex' : 'none';
     document.getElementById('headerBackBtn').style.display = (view === 'stats' || view === 'statsPreview') ? 'flex' : 'none';
-    document.getElementById('testOnlyMenuItems').style.display = view === 'test' ? 'block' : 'none';
+    document.getElementById('testOnlyMenuItems').style.display = (view === 'test' || view === 'statsPreview') ? 'block' : 'none';
 
     if (view === 'home' || view === 'stats') {
         finishTest();
@@ -296,28 +334,37 @@ function nextQuestion() {
 }
 
 function toggleStar() {
-    const q = AppState.rawQuestions[AppState.currentTest[AppState.currentIndex]];
+    const isPreview = document.getElementById('statsPreviewView').style.display === 'flex';
+    const q = isPreview ? AppState.rawQuestions.find(rq => rq.id === AppState.previewQuestionId)
+        : AppState.rawQuestions[AppState.currentTest[AppState.currentIndex]];
+    if (!q) return;
     if (!AppState.stats[q.id]) AppState.stats[q.id] = { coeff: 1.0, correct: 0, wrong: 0 };
     AppState.stats[q.id].starred = !AppState.stats[q.id].starred;
     saveStats();
-    updateIndicators();
-    toggleMenu();
+    if (isPreview) updateIndicatorsPreview();
+    else updateIndicators();
+    if (menuActive) toggleMenu();
 }
 
 function toggleFlag() {
-    const q = AppState.rawQuestions[AppState.currentTest[AppState.currentIndex]];
+    const isPreview = document.getElementById('statsPreviewView').style.display === 'flex';
+    const q = isPreview ? AppState.rawQuestions.find(rq => rq.id === AppState.previewQuestionId)
+        : AppState.rawQuestions[AppState.currentTest[AppState.currentIndex]];
+    if (!q) return;
     if (!AppState.stats[q.id]) AppState.stats[q.id] = { coeff: 1.0, correct: 0, wrong: 0 };
     AppState.stats[q.id].flagged = !AppState.stats[q.id].flagged;
     saveStats();
-    updateIndicators();
-    toggleMenu();
+    if (isPreview) updateIndicatorsPreview();
+    else updateIndicators();
+    if (menuActive) toggleMenu();
 }
 
 function toggleNoteArea() {
-    const a = document.getElementById('noteArea');
-    a.classList.toggle('visible');
-    // Note: Auto-focus removed to prevent distracting blinking (caret)
-    toggleMenu();
+    const isPreview = document.getElementById('statsPreviewView').style.display === 'flex';
+    const a = document.getElementById(isPreview ? 'previewNoteArea' : 'noteArea');
+    if (a) a.classList.toggle('visible');
+    // Note: Auto-focus removed to prevent distracting blinking
+    if (menuActive) toggleMenu();
 }
 
 function toggleAddSourcePanel() {
@@ -343,7 +390,10 @@ async function translateAll() {
 }
 
 function copyAIPrompt() {
-    const q = AppState.rawQuestions[AppState.currentTest[AppState.currentIndex]];
+    const isPreview = document.getElementById('statsPreviewView').style.display === 'flex';
+    const q = isPreview ? AppState.rawQuestions.find(rq => rq.id === AppState.previewQuestionId)
+        : AppState.rawQuestions[AppState.currentTest[AppState.currentIndex]];
+    if (!q) return;
     const optionsText = q.options?.map(o => o.text).join(', ') || 'Textantwort';
 
     // Determine prompt language based on translation target

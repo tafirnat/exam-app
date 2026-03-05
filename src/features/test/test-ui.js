@@ -35,7 +35,7 @@ export function renderQuestion() {
     container.innerHTML = '';
 
     document.getElementById('noteInput').value = stat.note || '';
-    document.getElementById('noteArea').classList.toggle('visible', !!stat.note);
+    document.getElementById('noteArea').classList.remove('visible');
     updateIndicators();
     updateQuestionStatsInfo(q.id);
 
@@ -206,9 +206,9 @@ export function updateIndicators() {
     const qIndex = AppState.currentIndex;
     const q = AppState.rawQuestions[AppState.currentTest[qIndex]];
     const s = AppState.stats[q.id] || {};
-    document.getElementById('indStar').style.display = s.starred ? 'flex' : 'none';
-    document.getElementById('indFlag').style.display = s.flagged ? 'flex' : 'none';
-    document.getElementById('indNote').style.display = s.note ? 'flex' : 'none';
+    document.getElementById('indStar').classList.toggle('active-star', !!s.starred);
+    document.getElementById('indFlag').classList.toggle('active-flag', !!s.flagged);
+    document.getElementById('indNote').classList.toggle('active-note', !!(s.note && s.note.trim() !== ''));
 }
 
 export function updateQuestionStatsInfo(qid) {

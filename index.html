@@ -199,20 +199,20 @@
             </div>
 
             <div class="indicators-bar" id="indicatorsBar">
-                <div class="indicator-icon active-star" id="indStar" style="display:none;" data-i18n-title="unstar">
+                <div class="indicator-icon" id="indStar" data-i18n-title="star">
                     <svg viewBox="0 0 24 24" fill="currentColor" stroke="currentColor">
                         <polygon
                             points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2">
                         </polygon>
                     </svg>
                 </div>
-                <div class="indicator-icon active-flag" id="indFlag" style="display:none;" data-i18n-title="unflag">
+                <div class="indicator-icon" id="indFlag" data-i18n-title="flag">
                     <svg viewBox="0 0 24 24" fill="currentColor" stroke="currentColor">
                         <path d="M4 15s1-1 4-1 5 2 8 2 4-1 4-1V3s-1 1-4 1-5-2-8-2-4 1-4 1z"></path>
                         <line x1="4" y1="22" x2="4" y2="15"></line>
                     </svg>
                 </div>
-                <div class="indicator-icon active-note" id="indNote" style="display:none;" data-i18n-title="note">
+                <div class="indicator-icon" id="indNote" data-i18n-title="note">
                     <svg viewBox="0 0 24 24" fill="currentColor" stroke="currentColor">
                         <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"></path>
                     </svg>
@@ -278,17 +278,50 @@
         </div>
 
         <div id="statsPreviewView">
-            <div style="margin-bottom: 1rem;">
-                <button class="btn" id="previewBackBtn"
-                    style="background: var(--surface-hover); color: var(--text-primary); border: 1px solid var(--border-color);"
-                    data-i18n="back_to_stats">←
-                    Zurück zur Statistik</button>
+            <div class="test-header" style="margin-bottom: 1rem;">
+                <span data-i18n="stats_preview">Soru Önizleme</span>
             </div>
+
+            <div class="indicators-bar" id="previewIndicatorsBar">
+                <div class="indicator-icon" id="previewIndStar" data-i18n-title="star">
+                    <svg viewBox="0 0 24 24" fill="currentColor" stroke="currentColor">
+                        <polygon
+                            points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2">
+                        </polygon>
+                    </svg>
+                </div>
+                <div class="indicator-icon" id="previewIndFlag" data-i18n-title="flag">
+                    <svg viewBox="0 0 24 24" fill="currentColor" stroke="currentColor">
+                        <path d="M4 15s1-1 4-1 5 2 8 2 4-1 4-1V3s-1 1-4 1-5-2-8-2-4 1-4 1z"></path>
+                        <line x1="4" y1="22" x2="4" y2="15"></line>
+                    </svg>
+                </div>
+                <div class="indicator-icon" id="previewIndNote" data-i18n-title="note">
+                    <svg viewBox="0 0 24 24" fill="currentColor" stroke="currentColor">
+                        <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"></path>
+                    </svg>
+                </div>
+            </div>
+
             <div class="question-card">
                 <div class="question-text" id="previewQuestionText"></div>
             </div>
             <div class="options-container" id="previewOptionsContainer"></div>
+
+            <div class="note-area" id="previewNoteArea">
+                <label style="font-size: 0.85rem; color: var(--text-secondary); margin-bottom:0.5rem; display:block;"
+                    data-i18n="note_label">Ihre Notiz:</label>
+                <textarea id="previewNoteInput" data-i18n-placeholder="note_placeholder"
+                    placeholder="Ihre Notiz hier eingeben..."></textarea>
+            </div>
+
             <div class="question-stats-info visible" id="previewStatsInfo" style="margin-top: 1rem;"></div>
+
+            <div style="margin-top: auto; padding-top: 2rem; padding-bottom: 1rem; align-self: stretch;">
+                <button class="btn" id="previewBackBtn"
+                    style="width: 100%; background: var(--surface-hover); color: var(--text-primary); border: 1px solid var(--border-color);"
+                    data-i18n="back_to_stats">← Zurück zur Statistik</button>
+            </div>
         </div>
     </main>
 
