@@ -173,18 +173,35 @@ export function updateHomeStats() {
     });
 
     const avgCoeff = total > 0 ? (totalCoeff / total).toFixed(1) : "0.0";
-    const statAvgEl = document.getElementById('statAvg');
-    if (statAvgEl) statAvgEl.innerText = avgCoeff;
+    const updateEl = (id, text) => {
+        const el = document.getElementById(id);
+        if (el) el.innerText = text;
+    };
+    const updateStyle = (id, prop, val) => {
+        const el = document.getElementById(id);
+        if (el) el.style[prop] = val;
+    };
 
-    const pct = total > 0 ? Math.round((solved / total) * 100) : 0;
-    const homePctEl = document.getElementById('homeProgressPercent');
-    if (homePctEl) homePctEl.innerText = `${pct}%`;
-    const homeBarEl = document.getElementById('homeProgressBarFill');
-    if (homeBarEl) homeBarEl.style.width = `${pct}%`;
-    const homeDetailEl = document.getElementById('homeProgressDetail');
-    if (homeDetailEl) homeDetailEl.innerText = t('solved_count', { solved: solved, total: total });
+    const pctText = `${pct}%`;
+    const progressText = t('solved_count', { solved: solved, total: total });
+
+    updateEl('homeStatTotal', total);
+    updateEl('homeStatAvg', avgCoeff);
+    updateEl('statsStatTotal', total);
+    updateEl('statsStatAvg', avgCoeff);
+
+    // Home
+    updateEl('homeProgressPercent', pctText);
+    updateStyle('homeProgressBarFill', 'width', pctText);
+    updateEl('homeProgressDetail', progressText);
+
+    // Stats Page
+    updateEl('progressPercent', pctText);
+    updateStyle('progressBarFill', 'width', pctText);
+    updateEl('progressDetail', progressText);
 
     const startPanel = document.getElementById('startPanel');
+    const statsCard = document.getElementById('homeStatsCard');
     const statsBtn = document.getElementById('homeStatsBtn');
 
     if (total > 0) {
@@ -192,12 +209,14 @@ export function updateHomeStats() {
             startPanel.style.opacity = '1';
             startPanel.style.pointerEvents = 'all';
         }
+        if (statsCard) statsCard.style.display = 'block';
         if (statsBtn) statsBtn.disabled = false;
     } else {
         if (startPanel) {
             startPanel.style.opacity = '0.5';
             startPanel.style.pointerEvents = 'none';
         }
+        if (statsCard) statsCard.style.display = 'none';
         if (statsBtn) statsBtn.disabled = true;
     }
 }

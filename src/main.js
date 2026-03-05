@@ -327,18 +327,83 @@ function setupEventListeners() {
         }
     };
 
-    // Duplicate import buttons handlers
-    const importBtn = document.getElementById('importBtn');
-    const importFileInput = document.getElementById('importFileInput');
-    if (importBtn && importFileInput) {
-        importBtn.onclick = () => importFileInput.click();
-        importFileInput.onchange = async (e) => {
-            const source = await loadFromFile(e.target.files[0]);
-            if (source) {
-                e.target.value = '';
-                renderSourcesList();
+    // Generic Data Export/Import
+    const handleExport = () => {
+        const data = {
+            version: "1.5",
+            sources: AppState.sources,
+            stats: AppState.stats,
+            recentTests: AppState.recentTests,
+            settings: {
+                language: AppState.language,
+                translationTarget: AppState.translationTarget,
+                theme: localStorage.getItem('focus_app_theme') || 'light'
             }
         };
+        const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' });
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = `exam-app-backup-${new Date().toISOString().split('T')[0]}.json`;
+        a.click();
+        showToast(t('export_success') || 'Export erfolgreich');
+    };
+
+    const handleImport = async (file) => {
+        if (!file) return;
+        const reader = new FileReader();
+        reader.onload = async (e) => {
+            try {
+                const data = JSON.parse(e.target.result);
+                if (data.questions) {
+                    // Single source import
+                    await processJSON(data, file.name);
+                } else if (data.sources || data.stats) {
+                    // Full backup import
+                    if (confirm(t('confirm_import_backup') || 'Möchten Sie dieses Backup laden? Bestehende Daten werden überschrieben.')) {
+                        if (data.sources) AppState.sources = data.sources;
+                        if (data.stats) AppState.stats = data.stats;
+                        if (data.recentTests) AppState.recentTests = data.recentTests;
+                        saveStats();
+                        saveSources();
+                        import('./core/state.js').then(m => m.saveRecentTests());
+                        location.reload(); // Simplest way to re-init everything safely
+                    }
+                } else {
+                    showToast(t('invalid_format') || 'Ungültiges Format');
+                }
+            } catch (err) {
+                console.error(err);
+                showToast(t('import_failed') || 'Import fehlgeschlagen');
+            }
+        };
+        reader.readAsText(file);
+    };
+
+    // Export Buttons
+    const exportBtns = ['exportBtn', 'homeExportBtn'];
+    exportBtns.forEach(id => {
+        const btn = document.getElementById(id);
+        if (btn) btn.onclick = handleExport;
+    });
+
+    // Import Buttons
+    const importConfigs = [
+        { btn: 'importBtn', input: 'importFileInput' },
+        { btn: 'homeImportBtn', input: 'importFileInput' } // Reuse same hidden input
+    ];
+
+    importConfigs.forEach(cfg => {
+        const btn = document.getElementById(cfg.btn);
+        const input = document.getElementById(cfg.input);
+        if (btn && input) {
+            btn.onclick = () => input.click();
+        }
+    });
+
+    const mainImportInput = document.getElementById('importFileInput');
+    if (mainImportInput) {
+        mainImportInput.onchange = (e) => handleImport(e.target.files[0]);
     }
 
     // Stats Filters

@@ -109,14 +109,26 @@
 
     <main>
         <div id="homeView">
-            <div class="card" id="startPanel" style="opacity: 0.5; pointer-events: none;">
+            <div class="card" id="homeStatsCard" style="display: none; margin-bottom: 1rem;">
+                <div class="stats-card-header">
+                    <div class="stats-header-icon">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"
+                            stroke-linecap="round" stroke-linejoin="round">
+                            <path d="M18 20V10"></path>
+                            <path d="M12 20V4"></path>
+                            <path d="M6 20v-6"></path>
+                        </svg>
+                    </div>
+                    <h2 style="margin: 0; font-size: 1.1rem;" data-i18n="stats_title">Fragenstatistik</h2>
+                </div>
+
                 <div class="stats-grid">
                     <div class="stat-box">
-                        <div class="stat-value" id="statTotal">0</div>
+                        <div class="stat-value" id="homeStatTotal">0</div>
                         <div class="stat-label" data-i18n="total_questions">Fragen gesamt</div>
                     </div>
                     <div class="stat-box">
-                        <div class="stat-value" id="statAvg">0.0</div>
+                        <div class="stat-value" id="homeStatAvg">0.0</div>
                         <div class="stat-label" data-i18n="avg_coeff">Ø Koeffizient</div>
                     </div>
                 </div>
@@ -132,6 +144,23 @@
                     <div style="font-size: 0.75rem; color: var(--text-secondary); margin-top: 0.25rem;"
                         id="homeProgressDetail">Gelöst: 0 / 0</div>
                 </div>
+
+                <div style="margin-top: 1.5rem; padding-top: 1rem; border-top: 1px solid var(--border-color);">
+                    <div style="display: flex; gap: 0.5rem; margin-bottom: 0.5rem;">
+                        <button class="btn btn-subtle" id="homeExportBtn"
+                            style="flex: 1; font-size: 0.85rem; padding: 0.5rem;"
+                            data-i18n="export">Exportieren</button>
+                        <button class="btn btn-subtle" id="homeImportBtn"
+                            style="flex: 1; font-size: 0.85rem; padding: 0.5rem;"
+                            data-i18n="import">Importieren</button>
+                    </div>
+                </div>
+
+                <button class="btn btn-subtle" id="homeStatsBtn" style="width: 100%; margin-top: 0.5rem;"
+                    data-i18n="show_stats">Statistik anzeigen</button>
+            </div>
+
+            <div class="card" id="startPanel" style="opacity: 0.5; pointer-events: none;">
                 <div class="input-group">
                     <label data-i18n="question_count_label">Anzahl der Fragen</label>
                     <select id="questionCount">
@@ -142,8 +171,6 @@
                     </select>
                 </div>
                 <button class="btn" id="startBtn" style="width: 100%;" data-i18n="start_test">Test starten</button>
-                <button class="btn btn-subtle" id="homeStatsBtn" style="width: 100%; margin-top: 0.5rem;"
-                    data-i18n="show_stats" disabled>Statistik anzeigen</button>
             </div>
 
             <div class="card" id="sourcesCard">
@@ -283,11 +310,31 @@
                     <div style="font-size: 0.75rem; color: var(--text-secondary); margin-top: 0.25rem;"
                         id="progressDetail">Gelöst: 0 / 0</div>
                 </div>
-                <div class="stats-summary-bar" id="statsSummaryBar"></div>
+                <div class="stats-grid" id="statsDetailGrid" style="margin-bottom: 1.5rem;">
+                    <div class="stat-box">
+                        <div class="stat-value" id="statsStatTotal">0</div>
+                        <div class="stat-label" data-i18n="total_questions">Fragen gesamt</div>
+                    </div>
+                    <div class="stat-box">
+                        <div class="stat-value" id="statsStatAvg">0.0</div>
+                        <div class="stat-label" data-i18n="avg_coeff">Ø Koeffizient</div>
+                    </div>
+                </div>
+
+                <div class="progress-section" id="statsProgressSection">
+                    <div style="display: flex; justify-content: space-between; margin-bottom: 0.5rem;">
+                        <span style="font-size: 0.85rem; color: var(--text-secondary);"
+                            data-i18n="progress">Lernfortschritt</span>
+                        <span style="font-size: 0.85rem; font-weight: 600;" id="progressPercent">0%</span>
+                    </div>
+                    <div class="progress-bar-track">
+                        <div class="progress-bar-fill" id="progressBarFill" style="width: 0%;"></div>
+                    </div>
+                    <div style="font-size: 0.75rem; color: var(--text-secondary); margin-top: 0.25rem;"
+                        id="progressDetail">Gelöst: 0 / 0</div>
+                </div>
 
                 <div style="margin-top: 1.5rem; padding-top: 1rem; border-top: 1px solid var(--border-color);">
-                    <div style="font-size: 0.85rem; font-weight: 600; margin-bottom: 1rem; color: var(--text-secondary);"
-                        data-i18n="export">Exportieren</div>
                     <div style="display: flex; gap: 0.5rem;">
                         <button class="btn btn-subtle" id="exportBtn"
                             style="flex: 1; font-size: 0.85rem; padding: 0.5rem;"
@@ -296,7 +343,6 @@
                             style="flex: 1; font-size: 0.85rem; padding: 0.5rem;"
                             data-i18n="import">Importieren</button>
                     </div>
-                    <input type="file" id="importFileInput" accept=".json" style="display: none;">
                 </div>
             </div>
 
@@ -417,9 +463,30 @@
     <script type="module" src="src/main.js"></script>
     <script>
         if ('serviceWorker' in navigator) {
+            let refreshing = false;
+
+            // Handle controller change (new SW takes over)
+            navigator.serviceWorker.addEventListener('controllerchange', () => {
+                if (!refreshing) {
+                    refreshing = true;
+                    window.location.reload();
+                }
+            });
+
             window.addEventListener('load', () => {
                 navigator.serviceWorker.register('./sw.js').then(reg => {
                     console.log('SW Registered:', reg.scope);
+
+                    // Check for updates periodically or on registration
+                    reg.addEventListener('updatefound', () => {
+                        const newWorker = reg.installing;
+                        newWorker.addEventListener('statechange', () => {
+                            if (newWorker.state === 'installed' && navigator.serviceWorker.controller) {
+                                // New version available, inform user or auto-update
+                                console.log('New version available. Refreshing...');
+                            }
+                        });
+                    });
                 }).catch(err => {
                     console.log('SW Registration failed:', err);
                 });
