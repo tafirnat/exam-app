@@ -8,7 +8,12 @@ export const AppState = {
     isAnswerChecked: {},
     shuffledOptionsMap: {},
     stats: JSON.parse(localStorage.getItem('focus_app_stats_local') || '{}'),
-    sources: JSON.parse(localStorage.getItem('focus_app_sources') || '[]'),
+    sources: (() => {
+        const stored = localStorage.getItem('focus_app_sources');
+        const sources = JSON.parse(stored || '[]');
+        // Cleanup: remove any sources without questions (leftovers from previous broken logic)
+        return sources.filter(s => s && s.questions && Array.isArray(s.questions));
+    })(),
     totalStats: JSON.parse(localStorage.getItem('focus_app_stats_global') || '{}'),
     currentSourceKey: localStorage.getItem('focus_app_current_source') || null,
     examTitle: 'Focus App',

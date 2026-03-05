@@ -75,7 +75,7 @@ export function renderSourcesList() {
         info.innerHTML = `
             <div style="font-weight:600; font-size:0.9rem; margin-bottom: 2px;">${qText}</div>
             <div style="font-size:0.75rem; color:var(--text-secondary); margin-bottom: 4px; display: flex; align-items: center; gap: 8px;">
-                <span>${s.questions.length} ${t('total')}</span>
+                <span>${(s.questions || []).length} ${t('total')}</span>
                 ${s.importDate ? `<span style="opacity:0.6;">• ${s.importDate}</span>` : ''}
             </div>
             <div class="origin-tag" style="font-size:0.7rem; color:var(--primary-color); opacity:0.8;">
