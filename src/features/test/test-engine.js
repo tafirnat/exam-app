@@ -63,12 +63,12 @@ export function prepareTest(count) {
 
 function startTestTracking(count) {
     const activeSources = AppState.sources.filter(s => s.active);
-    const sourceTitle = activeSources.length === 1 ? activeSources[0].title : activeSources.length + " Sources";
+    const names = activeSources.map(s => s.name || s.id);
 
     AppState.testTracking = {
         startTime: new Date().toISOString(),
         endTime: null,
-        sourceTitle: sourceTitle,
+        sourceNames: names,
         questionCount: count,
         results: [] // Will store { questionId, isCorrect, userAnswer }
     };
@@ -104,7 +104,7 @@ export function finishTest() {
 
         const historyEntry = {
             id: Date.now(),
-            sourceTitle: AppState.testTracking.sourceTitle || "Mixed Sources",
+            sourceNames: AppState.testTracking.sourceNames,
             startTime: AppState.testTracking.startTime,
             endTime: AppState.testTracking.endTime,
             questionCount: questions.length,

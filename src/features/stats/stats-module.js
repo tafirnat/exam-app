@@ -66,6 +66,13 @@ function renderHistoricalTests(list, filter) {
 
         if (questionsToShow.length === 0) return;
 
+        const sourceNames = test.sourceNames || [test.sourceTitle || "Mixed Sources"];
+        const isMixed = sourceNames.length > 1;
+        const fullTitle = isMixed ? `Mix Test: ${sourceNames.join(', ')}` : sourceNames[0];
+
+        // Truncate for header (adaptive length approx 25 chars)
+        const displayTitle = fullTitle.length > 25 ? fullTitle.substring(0, 22) + '...' : fullTitle;
+
         const testEl = document.createElement('div');
         testEl.className = 'history-test-item';
 
@@ -75,7 +82,7 @@ function renderHistoricalTests(list, filter) {
         testEl.innerHTML = `
             <div class="history-test-header">
                 <div class="history-test-info">
-                    <div class="history-test-title">${test.sourceTitle}</div>
+                    <div class="history-test-title" id="title_${test.id}">${displayTitle}</div>
                     <div class="history-test-meta">
                         <span>${test.questionCount} Questions</span> • 
                         <span>${startTime} - ${endTime}</span>
@@ -86,6 +93,7 @@ function renderHistoricalTests(list, filter) {
                 </div>
             </div>
             <div class="history-test-details" style="display: none;">
+                <div class="history-full-title">${fullTitle}</div>
                 ${questionsToShow.map((q, idx) => `
                     <div class="history-question-item ${q.isCorrect ? 'correct' : 'wrong'}">
                         <div class="history-question-text">#${idx + 1} ${q.content?.text || q.text}</div>
@@ -97,10 +105,19 @@ function renderHistoricalTests(list, filter) {
 
         const header = testEl.querySelector('.history-test-header');
         const details = testEl.querySelector('.history-test-details');
+        const titleEl = testEl.querySelector(`#title_${test.id}`);
+
         header.onclick = () => {
             const isVisible = details.style.display !== 'none';
             details.style.display = isVisible ? 'none' : 'block';
             testEl.classList.toggle('expanded', !isVisible);
+
+            // Toggle title truncation
+            if (!isVisible) {
+                titleEl.innerText = fullTitle;
+            } else {
+                titleEl.innerText = displayTitle;
+            }
         };
 
         // Add click handlers for questions in history
