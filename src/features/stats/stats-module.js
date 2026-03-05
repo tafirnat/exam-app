@@ -57,8 +57,12 @@ function renderHistoricalTests(list, filter) {
         return;
     }
 
-    AppState.recentTests.forEach(test => {
+    AppState.recentTests.forEach((test, testIdx) => {
         if (!test || !Array.isArray(test.questions)) return;
+
+        // Independent deletion check
+        if (filter === 'recent' && test.hiddenInRecent) return;
+        if (filter === 'incorrect' && test.hiddenInIncorrect) return;
 
         const questionsToShow = filter === 'incorrect'
             ? test.questions.filter(q => !q.isCorrect)
@@ -70,9 +74,6 @@ function renderHistoricalTests(list, filter) {
         const isMixed = sourceNames.length > 1;
         const fullTitle = isMixed ? `Mix Test: ${sourceNames.join(', ')}` : sourceNames[0];
 
-        // Truncate for header (adaptive length approx 25 chars)
-        const displayTitle = fullTitle.length > 25 ? fullTitle.substring(0, 22) + '...' : fullTitle;
-
         const testEl = document.createElement('div');
         testEl.className = 'history-test-item';
 
@@ -82,18 +83,22 @@ function renderHistoricalTests(list, filter) {
         testEl.innerHTML = `
             <div class="history-test-header">
                 <div class="history-test-info">
-                    <div class="history-test-title" id="title_${test.id}">${displayTitle}</div>
+                    <div class="history-test-title">${fullTitle}</div>
                     <div class="history-test-meta">
                         <span>${test.questionCount} Questions</span> • 
                         <span>${startTime} - ${endTime}</span>
                     </div>
                 </div>
-                <div class="history-test-icon">
-                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"></polyline></svg>
+                <div class="history-test-actions">
+                    <button class="history-delete-btn" title="Delete from this list">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 6 5 6 21 6"></polyline><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path><line x1="10" y1="11" x2="10" y2="17"></line><line x1="14" y1="11" x2="14" y2="17"></line></svg>
+                    </button>
+                    <div class="history-test-icon">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"></polyline></svg>
+                    </div>
                 </div>
             </div>
             <div class="history-test-details" style="display: none;">
-                <div class="history-full-title">${fullTitle}</div>
                 ${questionsToShow.map((q, idx) => `
                     <div class="history-question-item ${q.isCorrect ? 'correct' : 'wrong'}">
                         <div class="history-question-text">#${idx + 1} ${q.content?.text || q.text}</div>
@@ -105,12 +110,23 @@ function renderHistoricalTests(list, filter) {
 
         const header = testEl.querySelector('.history-test-header');
         const details = testEl.querySelector('.history-test-details');
-        const titleEl = testEl.querySelector(`#title_${test.id}`);
+        const deleteBtn = testEl.querySelector('.history-delete-btn');
 
         header.onclick = () => {
             const isVisible = details.style.display !== 'none';
             details.style.display = isVisible ? 'none' : 'block';
             testEl.classList.toggle('expanded', !isVisible);
+        };
+
+        deleteBtn.onclick = (e) => {
+            e.stopPropagation();
+            if (confirm(t('confirm_delete_history'))) {
+                if (filter === 'recent') test.hiddenInRecent = true;
+                if (filter === 'incorrect') test.hiddenInIncorrect = true;
+
+                import('../../core/state.js').then(m => m.saveRecentTests());
+                renderStatsList(filter); // Refresh
+            }
         };
 
         // Add click handlers for questions in history

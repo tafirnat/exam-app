@@ -77,6 +77,7 @@ export const translations = {
         start_time: "Başlangıç",
         end_time: "Bitiş",
         no_recent_tests: "Henüz çözülmüş bir test bulunmuyor.",
+        confirm_delete_history: "Bu testi bu listeden kaldırmak istediğinize emin misiniz?",
         ai_prompt_template: "Soru: {question}\nSeçenekler: {options}\n\nLütfen bu soruyu ve doğru çözümü ayrıntılı olarak açıklayın."
     },
     en: {
@@ -141,6 +142,7 @@ export const translations = {
         start_time: "Start",
         end_time: "End",
         no_recent_tests: "No tests solved yet.",
+        confirm_delete_history: "Are you sure you want to remove this test from this list?",
         ai_prompt_template: "Question: {question}\nOptions: {options}\n\nPlease explain this question and the correct solution in detail."
     },
     de: {
@@ -204,7 +206,8 @@ export const translations = {
         test_source: "Quelle",
         start_time: "Start",
         end_time: "Ende",
-        no_recent_tests: "Noch keine Tests gelöst.",
+        no_recent_tests: "Keine kürzlichen Tests vorhanden",
+        confirm_delete_history: "Diesen Test aus dieser Liste entfernen?",
         ai_prompt_template: "Frage: {question}\nOptionen: {options}\n\nBitte erklären Sie diese Frage und die richtige Lösung im Detail."
     }
 };
