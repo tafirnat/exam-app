@@ -1,0 +1,158 @@
+{
+    "exam_metadata": {
+        "title": "Standard Sınav Şablonu",
+        "id": "std_101",
+        "category": "Genel Bilgi",
+        "total_questions": 4,
+        "date": "2026-03-26",
+        "source": "https://github.com/tafirnat/exam-app"
+    },
+    "questions": [
+        {
+            "id": 101,
+            "order": 1,
+            "type": "single_choice",
+            "difficulty": 1,
+            "tags": [
+                "örnek"
+            ],
+            "content": {
+                "text": "Dünya'nın uydusu hangisidir?",
+                "media": []
+            },
+            "options": [
+                {
+                    "id": 1,
+                    "text": "Ay",
+                    "media": []
+                },
+                {
+                    "id": 2,
+                    "text": "Mars",
+                    "media": []
+                },
+                {
+                    "id": 3,
+                    "text": "Jüpiter",
+                    "media": []
+                }
+            ],
+            "answer": {
+                "correct_ids": [
+                    1
+                ],
+                "explanation": "Dünya'nın tek doğal uydusu Ay'dır."
+            },
+            "user_state": {
+                "is_flagged": false,
+                "is_marked": false
+            }
+        },
+        {
+            "id": 102,
+            "order": 2,
+            "type": "multiple_choice",
+            "difficulty": 2,
+            "tags": [
+                "bilim"
+            ],
+            "content": {
+                "text": "Hangileri asal sayıdır?",
+                "media": []
+            },
+            "options": [
+                {
+                    "id": 1,
+                    "text": "2",
+                    "media": []
+                },
+                {
+                    "id": 2,
+                    "text": "4",
+                    "media": []
+                },
+                {
+                    "id": 3,
+                    "text": "7",
+                    "media": []
+                },
+                {
+                    "id": 4,
+                    "text": "9",
+                    "media": []
+                }
+            ],
+            "answer": {
+                "correct_ids": [
+                    1,
+                    3
+                ],
+                "explanation": "2 ve 7 sadece kendilerine ve 1'e bölünebilirler."
+            },
+            "user_state": {
+                "is_flagged": false,
+                "is_marked": false
+            }
+        },
+        {
+            "id": 103,
+            "order": 3,
+            "type": "true_false",
+            "difficulty": 1,
+            "tags": [
+                "mantık"
+            ],
+            "content": {
+                "text": "Su 100 derecede kaynar.",
+                "media": []
+            },
+            "options": [
+                {
+                    "id": 1,
+                    "text": "Doğru",
+                    "media": []
+                },
+                {
+                    "id": 2,
+                    "text": "Yanlış",
+                    "media": []
+                }
+            ],
+            "answer": {
+                "correct_ids": [
+                    1
+                ],
+                "explanation": "Standart basınç altında su 100°C'de kaynar."
+            },
+            "user_state": {
+                "is_flagged": false,
+                "is_marked": false
+            }
+        },
+        {
+            "id": 104,
+            "order": 4,
+            "type": "text_input",
+            "difficulty": 3,
+            "tags": [
+                "linux"
+            ],
+            "content": {
+                "text": "Linux'ta dosya listeleme komutu nedir?",
+                "media": []
+            },
+            "options": [],
+            "answer": {
+                "accepted_texts": [
+                    "ls",
+                    "ls -l"
+                ],
+                "explanation": "ls komutu 'list' kelimesinden gelir ve dizin içeriğini gösterir."
+            },
+            "user_state": {
+                "is_flagged": false,
+                "is_marked": false
+            }
+        }
+    ]
+}

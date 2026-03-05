@@ -1,0 +1,316 @@
+<!DOCTYPE html>
+<html lang="de">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Focus App | Lernplattform</title>
+    <link rel="stylesheet" href="/src/style.css">
+</head>
+
+<body data-theme="dark">
+
+    <header>
+        <button class="icon-btn" id="menuToggleBtn" data-i18n-title="menu">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round">
+                <path d="M3 12h18M3 6h18M3 18h18"></path>
+            </svg>
+        </button>
+        <button class="icon-btn" id="headerBackBtn" style="display: none;" data-i18n-title="back">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round">
+                <polyline points="15 18 9 12 15 6"></polyline>
+            </svg>
+        </button>
+        <div class="header-title" id="headerTitle">Focus App</div>
+        <div style="width: 40px;"></div>
+    </header>
+
+    <div class="dropdown-menu" id="actionMenu">
+        <button class="dropdown-item" id="menuTheme">
+            <svg id="menuThemeIcon" viewBox="0 0 24 24" fill="none" stroke="currentColor"></svg>
+            <span id="menuThemeText" data-i18n="theme_change">Design ändern</span>
+        </button>
+
+        <div class="dropdown-divider"></div>
+
+        <div class="dropdown-header" data-i18n="lang_select">Sprache wählen</div>
+        <div class="lang-selector">
+            <button class="lang-btn" data-lang="tr">TR</button>
+            <button class="lang-btn" data-lang="en">EN</button>
+            <button class="lang-btn" data-lang="de">DE</button>
+        </div>
+
+        <div class="dropdown-divider"></div>
+
+        <div class="dropdown-header" data-i18n="target_lang_label">Çeviri Hedef Dili</div>
+        <div style="padding: 0 1rem 1rem 1.5rem;">
+            <select id="translationTargetSelect" class="menu-select">
+                <!-- Populated by JS -->
+            </select>
+        </div>
+
+        <div class="dropdown-divider"></div>
+
+        <div id="testOnlyMenuItems" style="display: none;">
+            <button class="dropdown-item" id="menuStar">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor">
+                    <polygon
+                        points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2">
+                    </polygon>
+                </svg>
+                <span id="menuStarText" data-i18n="star">Markieren</span>
+            </button>
+            <button class="dropdown-item" id="menuFlag">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor">
+                    <path d="M4 15s1-1 4-1 5 2 8 2 4-1 4-1V3s-1 1-4 1-5-2-8-2-4 1-4 1z"></path>
+                    <line x1="4" y1="22" x2="4" y2="15"></line>
+                </svg>
+                <span id="menuFlagText" data-i18n="flag">Flaggen</span>
+            </button>
+            <button class="dropdown-item" id="menuNote">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor">
+                    <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"></path>
+                </svg>
+                <span data-i18n="note">Notiz</span>
+            </button>
+            <div class="dropdown-divider"></div>
+            <button class="dropdown-item" id="menuTranslateAll">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor">
+                    <path d="M5 8l6 6"></path>
+                    <path d="M4 14l6-6 2-3"></path>
+                    <path d="M2 5h12"></path>
+                    <path d="M7 2h1"></path>
+                    <path d="M22 22l-5-10-5 10"></path>
+                    <path d="M14 18h6"></path>
+                </svg>
+                <span data-i18n="translate_all">Alles übersetzen</span>
+            </button>
+            <button class="dropdown-item" id="menuCopyAI">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor">
+                    <path d="M12 2l3 6 6 3-6 3-3 6-3-6-6-3 6-3z"></path>
+                </svg>
+                <span data-i18n="copy_ai">KI Prompt kopieren</span>
+            </button>
+            <div class="dropdown-divider"></div>
+            <button class="dropdown-item" id="menuExit" style="color: var(--error-color);">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" style="color: inherit;">
+                    <line x1="18" y1="6" x2="6" y2="18"></line>
+                    <line x1="6" y1="6" x2="18" y2="18"></line>
+                </svg>
+                <span data-i18n="exit">Beenden</span>
+            </button>
+        </div>
+    </div>
+
+    <main>
+        <div id="homeView">
+            <div class="card" id="startPanel" style="opacity: 0.5; pointer-events: none;">
+                <div class="stats-grid">
+                    <div class="stat-box">
+                        <div class="stat-value" id="statTotal">0</div>
+                        <div class="stat-label" data-i18n="total_questions">Fragen gesamt</div>
+                    </div>
+                    <div class="stat-box">
+                        <div class="stat-value" id="statAvg">0.0</div>
+                        <div class="stat-label" data-i18n="avg_coeff">Ø Koeffizient</div>
+                    </div>
+                </div>
+                <div class="progress-section" id="homeProgressSection" style="margin-top: 0.75rem;">
+                    <div style="display: flex; justify-content: space-between; margin-bottom: 0.5rem;">
+                        <span style="font-size: 0.85rem; color: var(--text-secondary);"
+                            data-i18n="progress">Lernfortschritt</span>
+                        <span style="font-size: 0.85rem; font-weight: 600;" id="homeProgressPercent">0%</span>
+                    </div>
+                    <div class="progress-bar-track">
+                        <div class="progress-bar-fill" id="homeProgressBarFill" style="width: 0%;"></div>
+                    </div>
+                    <div style="font-size: 0.75rem; color: var(--text-secondary); margin-top: 0.25rem;"
+                        id="homeProgressDetail">Gelöst: 0 / 0</div>
+                </div>
+                <div class="input-group">
+                    <label data-i18n="question_count_label">Anzahl der Fragen</label>
+                    <select id="questionCount">
+                        <option value="10" data-i18n="q_count_10">10 Fragen (Smart)</option>
+                        <option value="15" data-i18n="q_count_15">15 Fragen (Smart)</option>
+                        <option value="20" data-i18n="q_count_20">20 Fragen (Smart)</option>
+                        <option value="40" data-i18n="q_count_40">40 Fragen (Prüfung)</option>
+                    </select>
+                </div>
+                <button class="btn" id="startBtn" style="width: 100%;" data-i18n="start_test">Test starten</button>
+                <button class="btn" id="homeStatsBtn"
+                    style="width: 100%; margin-top: 0.5rem; background: var(--surface-hover); color: var(--text-primary); border: 1px solid var(--border-color);"
+                    data-i18n="show_stats" disabled>Statistik anzeigen</button>
+                <div style="margin-top: 1rem; padding-top: 1rem; border-top: 1px solid var(--border-color);">
+                    <div style="font-size: 0.85rem; font-weight: 600; margin-bottom: 0.5rem; color: var(--text-secondary);"
+                        data-i18n="export">
+                        Exportieren</div>
+                    <div style="display: flex; gap: 0.5rem;">
+                        <button class="btn" id="exportBtn" style="flex: 1; font-size: 0.85rem; padding: 0.5rem;"
+                            data-i18n="export">Exportieren</button>
+                        <button class="btn" id="importBtn"
+                            style="flex: 1; font-size: 0.85rem; padding: 0.5rem; background: var(--surface-hover); color: var(--text-primary); border: 1px solid var(--border-color);"
+                            data-i18n="import">Importieren</button>
+                    </div>
+                    <input type="file" id="importFileInput" accept=".json" style="display: none;">
+                </div>
+            </div>
+
+            <div class="card" id="sourcesCard">
+                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1rem;">
+                    <h2 style="font-size: 1.1rem;" data-i18n="saved_sources">Gespeicherte Quellen</h2>
+                    <button class="icon-btn" id="toggleAddSourceBtn" data-i18n-title="add_source">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round"
+                            stroke-width="2.5">
+                            <line x1="12" y1="5" x2="12" y2="19"></line>
+                            <line x1="5" y1="12" x2="19" y2="12"></line>
+                        </svg>
+                    </button>
+                </div>
+                <div id="addSourcePanel"
+                    style="display: none; margin-bottom: 1rem; padding-bottom: 1rem; border-bottom: 1px solid var(--border-color);">
+                    <div class="input-group">
+                        <label data-i18n="load_url">Über URL laden</label>
+                        <div style="display: flex; gap: 0.5rem;">
+                            <input type="text" id="urlInput" placeholder="https://.../fragen.json">
+                            <button class="btn" id="loadUrlBtn" data-i18n="load">Laden</button>
+                        </div>
+                    </div>
+                    <div
+                        style="text-align: center; margin: 0.75rem 0; color: var(--text-secondary); font-size: 0.85rem;">
+                        -</div>
+                    <div class="input-group" style="margin-bottom: 0;">
+                        <label data-i18n="load_file">Aus Datei laden (.json)</label>
+                        <input type="file" id="fileInput" accept=".json">
+                    </div>
+                </div>
+                <div id="sourcesList"></div>
+            </div>
+        </div>
+
+        <div id="testView">
+            <div class="test-header">
+                <span id="progressText">Frage 1 / 20</span>
+                <span id="coeffBadge" class="badge">Koeff.: 1.0</span>
+            </div>
+
+            <div class="indicators-bar" id="indicatorsBar">
+                <div class="indicator-icon active-star" id="indStar" style="display:none;" data-i18n-title="unstar">
+                    <svg viewBox="0 0 24 24" fill="currentColor" stroke="currentColor">
+                        <polygon
+                            points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2">
+                        </polygon>
+                    </svg>
+                </div>
+                <div class="indicator-icon active-flag" id="indFlag" style="display:none;" data-i18n-title="unflag">
+                    <svg viewBox="0 0 24 24" fill="currentColor" stroke="currentColor">
+                        <path d="M4 15s1-1 4-1 5 2 8 2 4-1 4-1V3s-1 1-4 1-5-2-8-2-4 1-4 1z"></path>
+                        <line x1="4" y1="22" x2="4" y2="15"></line>
+                    </svg>
+                </div>
+                <div class="indicator-icon active-note" id="indNote" style="display:none;" data-i18n-title="note">
+                    <svg viewBox="0 0 24 24" fill="currentColor" stroke="currentColor">
+                        <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"></path>
+                    </svg>
+                </div>
+            </div>
+
+            <div class="question-card">
+                <div class="question-text" id="questionText"></div>
+                <div class="translation-text" id="trans_questionText"></div>
+
+                <button class="corner-translate-btn" id="questionTranslateBtn">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor">
+                        <path d="M5 8l6 6"></path>
+                        <path d="M4 14l6-6 2-3"></path>
+                        <path d="M2 5h12"></path>
+                        <path d="M7 2h1"></path>
+                        <path d="M22 22l-5-10-5 10"></path>
+                        <path d="M14 18h6"></path>
+                    </svg>
+                </button>
+            </div>
+
+            <div class="options-container" id="optionsContainer"></div>
+
+            <div class="note-area" id="noteArea">
+                <label style="font-size: 0.85rem; color: var(--text-secondary); margin-bottom:0.5rem; display:block;"
+                    data-i18n="note_label">Ihre
+                    Notiz:</label>
+                <textarea id="noteInput" data-i18n-placeholder="note_placeholder"
+                    placeholder="Ihre Notiz hier eingeben..."></textarea>
+            </div>
+
+            <div class="flex-spacer" style="flex: 1; pointer-events: none;"></div>
+            <div class="question-stats-info" id="questionStatsInfo"></div>
+        </div>
+        <div id="statsView">
+            <div class="card">
+                <h2 style="margin-bottom: 1rem; font-size: 1.1rem;" data-i18n="stats_title">Fragenstatistik</h2>
+                <div class="progress-section" id="statsProgressSection">
+                    <div style="display: flex; justify-content: space-between; margin-bottom: 0.5rem;">
+                        <span style="font-size: 0.85rem; color: var(--text-secondary);"
+                            data-i18n="progress">Lernfortschritt</span>
+                        <span style="font-size: 0.85rem; font-weight: 600;" id="progressPercent">0%</span>
+                    </div>
+                    <div class="progress-bar-track">
+                        <div class="progress-bar-fill" id="progressBarFill" style="width: 0%;"></div>
+                    </div>
+                    <div style="font-size: 0.75rem; color: var(--text-secondary); margin-top: 0.25rem;"
+                        id="progressDetail">Gelöst: 0 / 0</div>
+                </div>
+                <div class="stats-summary-bar" id="statsSummaryBar"></div>
+                <div class="stats-filter-bar" id="statsFilterBar">
+                    <button class="filter-btn active" data-filter="all" data-i18n="filter_all">Alle</button>
+                    <button class="filter-btn" data-filter="starred" data-i18n="filter_starred">Markiert</button>
+                    <button class="filter-btn" data-filter="flagged" data-i18n="filter_flagged">Geflaggt</button>
+                    <button class="filter-btn" data-filter="noted" data-i18n="filter_noted">Mit Notiz</button>
+                </div>
+                <div class="stats-list" id="statsList"></div>
+            </div>
+        </div>
+
+        <div id="statsPreviewView">
+            <div style="margin-bottom: 1rem;">
+                <button class="btn" id="previewBackBtn"
+                    style="background: var(--surface-hover); color: var(--text-primary); border: 1px solid var(--border-color);"
+                    data-i18n="back_to_stats">←
+                    Zurück zur Statistik</button>
+            </div>
+            <div class="question-card">
+                <div class="question-text" id="previewQuestionText"></div>
+            </div>
+            <div class="options-container" id="previewOptionsContainer"></div>
+            <div class="question-stats-info visible" id="previewStatsInfo" style="margin-top: 1rem;"></div>
+        </div>
+    </main>
+
+    <div class="bottom-nav" id="bottomNav" style="display: none;">
+        <div class="nav-container">
+            <button class="nav-btn" id="prevBtn">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor">
+                    <polyline points="15 18 9 12 15 6"></polyline>
+                </svg>
+                <span class="nav-btn-text" data-i18n="prev">Vorherige</span>
+            </button>
+            <button class="check-btn" id="checkBtn">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                    style="width: 20px; height: 20px; margin-right: 4px; display: none;" id="checkIcon">
+                    <polyline points="20 6 9 17 4 12"></polyline>
+                </svg>
+                <span id="checkBtnText" data-i18n="check">Prüfen</span>
+            </button>
+            <button class="nav-btn" id="nextBtn">
+                <span class="nav-btn-text" data-i18n="next">Nächste</span>
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor">
+                    <polyline points="9 18 15 12 9 6"></polyline>
+                </svg>
+            </button>
+        </div>
+    </div>
+
+    <div class="toast" id="toast"></div>
+
+    <script type="module" src="/src/main.js"></script>
+</body>
+
+</html>

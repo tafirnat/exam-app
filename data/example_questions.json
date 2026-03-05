@@ -1,0 +1,77 @@
+{
+    "exam_metadata": {
+        "title": "Beispiel Test"
+    },
+    "questions": [
+        {
+            "id": "q1",
+            "type": "single_choice",
+            "category": "Allgemein",
+            "content": {
+                "text": "Was ist die Hauptstadt von Deutschland?"
+            },
+            "options": [
+                {
+                    "id": 1,
+                    "text": "Berlin"
+                },
+                {
+                    "id": 2,
+                    "text": "München"
+                },
+                {
+                    "id": 3,
+                    "text": "Hamburg"
+                },
+                {
+                    "id": 4,
+                    "text": "Frankfurt"
+                }
+            ],
+            "correctOptionIds": [
+                1
+            ]
+        },
+        {
+            "id": "q2",
+            "type": "multiple_choice",
+            "category": "Geographie",
+            "content": {
+                "text": "Welche dieser Länder liegen in Europa?"
+            },
+            "options": [
+                {
+                    "id": 1,
+                    "text": "Frankreich"
+                },
+                {
+                    "id": 2,
+                    "text": "Japan"
+                },
+                {
+                    "id": 3,
+                    "text": "Spanien"
+                },
+                {
+                    "id": 4,
+                    "text": "Brasilien"
+                }
+            ],
+            "correctOptionIds": [
+                1,
+                3
+            ]
+        },
+        {
+            "id": "q3",
+            "type": "text",
+            "category": "Mathe",
+            "content": {
+                "text": "Wieviel ist 5 + 5?"
+            },
+            "correctOptionIds": [
+                "10"
+            ]
+        }
+    ]
+}
