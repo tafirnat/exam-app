@@ -139,7 +139,7 @@ Bitte erklären Sie diese Frage und die richtige Lösung im Detail.`}};function 
                 <polyline points="15 18 9 12 15 6"></polyline>
             </svg>
         </button>
-        <div class="header-title" id="headerTitle">Exam App</div>
+        <div class="header-title" id="headerTitle">Exam App [v1.5:7a3b]</div>
         <div style="width: 40px;"></div>
     </header>
 
@@ -530,7 +530,7 @@ Bitte erklären Sie diese Frage und die richtige Lösung im Detail.`}};function 
     <script>
         if ('serviceWorker' in navigator) {
             window.addEventListener('load', () => {
-                navigator.serviceWorker.register('/sw.js').then(reg => {
+                navigator.serviceWorker.register('./sw.js').then(reg => {
                     console.log('SW Registered:', reg.scope);
                 }).catch(err => {
                     console.log('SW Registration failed:', err);
