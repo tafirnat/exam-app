@@ -425,7 +425,7 @@ textarea {
 }
 
 .option-card.missed-correct {
-    border: 2px solid var(--success-color) !important;
+    border: 2px dashed var(--error-color) !important;
     background-color: transparent !important;
 }
 
