@@ -206,16 +206,14 @@ export function detectLanguage() {
     const saved = localStorage.getItem('focus_app_lang');
     if (saved && ['tr', 'en', 'de'].includes(saved)) return saved;
 
-    const navLang = navigator.language.split('-')[0];
-    if (['tr', 'en', 'de'].includes(navLang)) return navLang;
-
+    // Default to English as per user request
     return 'en';
 }
 
 export function detectTranslationTarget() {
     const saved = localStorage.getItem('focus_app_target_lang');
     if (saved) return saved;
-    return detectLanguage(); // Default to UI language
+    return 'de'; // Default to German as per user request
 }
 
 export function updateStaticTranslations() {
