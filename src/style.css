@@ -691,6 +691,35 @@ textarea {
     background-color: var(--border-color) !important;
 }
 
+.btn-amber {
+    background-color: #fbbf24 !important;
+    /* Amber 400 */
+    color: #451a03 !important;
+    /* Amber 950/Blackish */
+    border: 1px solid #d97706 !important;
+    font-weight: 700 !important;
+}
+
+.btn-amber:hover {
+    background-color: #f59e0b !important;
+    /* Amber 500 */
+    transform: translateY(-1px);
+    box-shadow: 0 4px 6px -1px rgba(251, 191, 36, 0.3);
+}
+
+[data-theme="dark"] .btn-amber {
+    background-color: #d97706 !important;
+    /* Amber 600 */
+    color: #fff !important;
+    border: 1px solid #b45309 !important;
+}
+
+[data-theme="dark"] .btn-amber:hover {
+    background-color: #b45309 !important;
+    /* Amber 700 */
+    box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.4);
+}
+
 /* --- Dropdown Menu (Hamburger) --- */
 .dropdown-menu {
     position: fixed;

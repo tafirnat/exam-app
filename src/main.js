@@ -474,7 +474,7 @@ function switchView(view) {
     }
 
     if (view === 'home') {
-        document.getElementById('headerTitle').innerText = 'Exam App [v1.5:00:47]';
+        document.getElementById('headerTitle').innerText = 'Exam App [v1.6:00:55]';
         updateHomeStats();
     }
 }
