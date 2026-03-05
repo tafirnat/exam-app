@@ -414,11 +414,11 @@
 
     <div class="toast" id="toast"></div>
 
-    <script type="module" src="/src/main.js"></script>
+    <script type="module" src="src/main.js"></script>
     <script>
         if ('serviceWorker' in navigator) {
             window.addEventListener('load', () => {
-                navigator.serviceWorker.register('/sw.js').then(reg => {
+                navigator.serviceWorker.register('./sw.js').then(reg => {
                     console.log('SW Registered:', reg.scope);
                 }).catch(err => {
                     console.log('SW Registration failed:', err);
