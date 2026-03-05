@@ -156,14 +156,17 @@ function setupEventListeners() {
         };
     }
 
-    // Indicators Bar
     document.getElementById('indStar').onclick = toggleStar;
     document.getElementById('indFlag').onclick = toggleFlag;
     document.getElementById('indNote').onclick = toggleNoteArea;
+    document.getElementById('menuTranslateAllInline').onclick = translateAll;
+    document.getElementById('menuCopyAIInline').onclick = copyAIPrompt;
 
     document.getElementById('previewIndStar').onclick = toggleStar;
     document.getElementById('previewIndFlag').onclick = toggleFlag;
     document.getElementById('previewIndNote').onclick = toggleNoteArea;
+    document.getElementById('previewMenuTranslateAllInline').onclick = translateAll;
+    document.getElementById('previewMenuCopyAIInline').onclick = copyAIPrompt;
 
     // Navigation
     document.getElementById('headerBackBtn').onclick = goBack;
@@ -272,7 +275,9 @@ function switchView(view) {
 
     document.getElementById('menuToggleBtn').style.display = (view === 'home' || view === 'test' || view === 'statsPreview') ? 'flex' : 'none';
     document.getElementById('headerBackBtn').style.display = (view === 'stats' || view === 'statsPreview') ? 'flex' : 'none';
-    document.getElementById('testOnlyMenuItems').style.display = (view === 'test' || view === 'statsPreview') ? 'block' : 'none';
+
+    // In preview mode, the inline icons are visible, so we don't need them in the burger menu.
+    document.getElementById('testOnlyMenuItems').style.display = view === 'test' ? 'block' : 'none';
 
     if (view === 'home' || view === 'stats') {
         finishTest();
@@ -341,8 +346,12 @@ function toggleStar() {
     if (!AppState.stats[q.id]) AppState.stats[q.id] = { coeff: 1.0, correct: 0, wrong: 0 };
     AppState.stats[q.id].starred = !AppState.stats[q.id].starred;
     saveStats();
-    if (isPreview) updateIndicatorsPreview();
+    if (isPreview) {
+        updateIndicatorsPreview();
+        renderStatsList(document.querySelector('.filter-btn.active')?.dataset.filter || 'all');
+    }
     else updateIndicators();
+
     if (menuActive) toggleMenu();
 }
 
@@ -354,8 +363,12 @@ function toggleFlag() {
     if (!AppState.stats[q.id]) AppState.stats[q.id] = { coeff: 1.0, correct: 0, wrong: 0 };
     AppState.stats[q.id].flagged = !AppState.stats[q.id].flagged;
     saveStats();
-    if (isPreview) updateIndicatorsPreview();
+    if (isPreview) {
+        updateIndicatorsPreview();
+        renderStatsList(document.querySelector('.filter-btn.active')?.dataset.filter || 'all');
+    }
     else updateIndicators();
+
     if (menuActive) toggleMenu();
 }
 
@@ -386,7 +399,7 @@ async function translateAll() {
     for (const btn of btns) {
         if (!btn.classList.contains('active')) btn.click();
     }
-    toggleMenu();
+    if (menuActive) toggleMenu();
 }
 
 function copyAIPrompt() {
