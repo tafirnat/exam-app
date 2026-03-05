@@ -8,7 +8,19 @@ export const AppState = {
     isAnswerChecked: {},
     shuffledOptionsMap: {},
     stats: JSON.parse(localStorage.getItem('focus_app_stats_local') || '{}'),
-    sources: JSON.parse(localStorage.getItem('focus_app_sources') || '[]'),
+    sources: (() => {
+        const stored = localStorage.getItem('focus_app_sources');
+        const sources = JSON.parse(stored || '[]');
+        if (sources.length === 0) {
+            sources.push({
+                id: 'template-default',
+                name: 'Standard Exam Template',
+                url: 'https://raw.githubusercontent.com/tafirnat/exam-app/main/examples/standard-exam.json',
+                timestamp: Date.now()
+            });
+        }
+        return sources;
+    })(),
     totalStats: JSON.parse(localStorage.getItem('focus_app_stats_global') || '{}'),
     currentSourceKey: localStorage.getItem('focus_app_current_source') || null,
     examTitle: 'Focus App',

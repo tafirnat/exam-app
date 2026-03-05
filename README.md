@@ -4,7 +4,11 @@
 
 A professional, modular, and high-performance examination application designed for seamless learning. Built with modern web technologies and a focus on visual excellence.
 
-![Focus App Splash](https://raw.githubusercontent.com/tafirnat/exam-app/main/src/assets/logo.png) (Replace with your actual logo link or local path)
+## 🌐 Live Demo
+
+Experience the application live: **[https://tafirnat.github.io/exam-app/](https://tafirnat.github.io/exam-app/)**
+
+---
 
 ## 🚀 Features
 
