@@ -71,6 +71,18 @@ window.onPreviewQuestion = (q) => {
     AppState.previewQuestionId = q.id;
     switchView('statsPreview');
     document.getElementById('previewQuestionText').innerText = q.content?.text || q.text || '';
+    // Reset translation state for new question
+    const qTransEl = document.getElementById('trans_previewQuestionText');
+    if (qTransEl) {
+        qTransEl.innerText = '';
+        qTransEl.style.display = 'none';
+    }
+    const qTransBtn = document.getElementById('previewQuestionTranslateBtn');
+    if (qTransBtn) {
+        qTransBtn.onclick = () => handleTranslation(qTransBtn, 'previewQuestionText', 'trans_previewQuestionText');
+        qTransBtn.classList.remove('active');
+    }
+
     const container = document.getElementById('previewOptionsContainer');
     container.innerHTML = '';
     if (q.options && q.options.length > 0) {
@@ -78,7 +90,39 @@ window.onPreviewQuestion = (q) => {
             const card = document.createElement('div');
             const isCorrect = q.correctOptionIds && q.correctOptionIds.map(String).includes(String(opt.id));
             card.className = `option-card ${isCorrect ? 'correct' : ''}`;
-            card.innerText = opt.text;
+
+            const contentWrapper = document.createElement('div');
+            contentWrapper.className = 'option-content-wrapper';
+            contentWrapper.style.flex = '1';
+            contentWrapper.style.display = 'flex';
+            contentWrapper.style.flexDirection = 'column';
+
+            const content = document.createElement('div');
+            content.className = 'option-content';
+            content.id = `previewOptText_${opt.id}`;
+            content.innerText = opt.text;
+
+            const trans = document.createElement('div');
+            trans.className = 'translation-text';
+            trans.id = `trans_previewOptText_${opt.id}`;
+            trans.style.marginTop = '0.5rem';
+            trans.style.paddingTop = '0.5rem';
+            trans.style.borderTop = '1px dashed var(--border-color)';
+            trans.style.display = 'none';
+
+            contentWrapper.appendChild(content);
+            contentWrapper.appendChild(trans);
+
+            const tBtn = document.createElement('button');
+            tBtn.className = 'corner-translate-btn';
+            tBtn.innerHTML = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M5 8l6 6"></path><path d="M4 14l6-6 2-3"></path><path d="M2 5h12"></path><path d="M7 2h1"></path><path d="M22 22l-5-10-5 10"></path><path d="M14 18h6"></path></svg>';
+            tBtn.onclick = (e) => {
+                e.stopPropagation();
+                handleTranslation(tBtn, `previewOptText_${opt.id}`, `trans_previewOptText_${opt.id}`);
+            };
+
+            card.appendChild(contentWrapper);
+            card.appendChild(tBtn);
             container.appendChild(card);
         });
     } else {
@@ -86,7 +130,39 @@ window.onPreviewQuestion = (q) => {
         if (correctAnswers.length > 0) {
             const card = document.createElement('div');
             card.className = 'option-card correct';
-            card.innerText = `${t('correct')}: ${correctAnswers[0]}`;
+
+            const contentWrapper = document.createElement('div');
+            contentWrapper.className = 'option-content-wrapper';
+            contentWrapper.style.flex = '1';
+            contentWrapper.style.display = 'flex';
+            contentWrapper.style.flexDirection = 'column';
+
+            const content = document.createElement('div');
+            content.className = 'option-content';
+            content.id = `previewOptText_correct`;
+            content.innerText = `${t('correct')}: ${correctAnswers[0]}`;
+
+            const trans = document.createElement('div');
+            trans.className = 'translation-text';
+            trans.id = `trans_previewOptText_correct`;
+            trans.style.marginTop = '0.5rem';
+            trans.style.paddingTop = '0.5rem';
+            trans.style.borderTop = '1px dashed var(--border-color)';
+            trans.style.display = 'none';
+
+            contentWrapper.appendChild(content);
+            contentWrapper.appendChild(trans);
+
+            const tBtn = document.createElement('button');
+            tBtn.className = 'corner-translate-btn';
+            tBtn.innerHTML = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M5 8l6 6"></path><path d="M4 14l6-6 2-3"></path><path d="M2 5h12"></path><path d="M7 2h1"></path><path d="M22 22l-5-10-5 10"></path><path d="M14 18h6"></path></svg>';
+            tBtn.onclick = (e) => {
+                e.stopPropagation();
+                handleTranslation(tBtn, `previewOptText_correct`, `trans_previewOptText_correct`);
+            };
+
+            card.appendChild(contentWrapper);
+            card.appendChild(tBtn);
             container.appendChild(card);
         }
     }
@@ -340,7 +416,7 @@ function nextQuestion() {
 
 function toggleStar() {
     const isPreview = document.getElementById('statsPreviewView').style.display === 'flex';
-    const q = isPreview ? AppState.rawQuestions.find(rq => rq.id === AppState.previewQuestionId)
+    const q = isPreview ? AppState.rawQuestions.find(rq => String(rq.id) === String(AppState.previewQuestionId))
         : AppState.rawQuestions[AppState.currentTest[AppState.currentIndex]];
     if (!q) return;
     if (!AppState.stats[q.id]) AppState.stats[q.id] = { coeff: 1.0, correct: 0, wrong: 0 };
@@ -357,7 +433,7 @@ function toggleStar() {
 
 function toggleFlag() {
     const isPreview = document.getElementById('statsPreviewView').style.display === 'flex';
-    const q = isPreview ? AppState.rawQuestions.find(rq => rq.id === AppState.previewQuestionId)
+    const q = isPreview ? AppState.rawQuestions.find(rq => String(rq.id) === String(AppState.previewQuestionId))
         : AppState.rawQuestions[AppState.currentTest[AppState.currentIndex]];
     if (!q) return;
     if (!AppState.stats[q.id]) AppState.stats[q.id] = { coeff: 1.0, correct: 0, wrong: 0 };
@@ -395,16 +471,26 @@ function confirmExit() {
 }
 
 async function translateAll() {
-    const btns = document.querySelectorAll('.corner-translate-btn');
-    for (const btn of btns) {
-        if (!btn.classList.contains('active')) btn.click();
+    const isPreview = document.getElementById('statsPreviewView').style.display === 'flex';
+    if (isPreview) {
+        const previewView = document.getElementById('statsPreviewView');
+        const btns = previewView.querySelectorAll('.corner-translate-btn');
+        for (const btn of btns) {
+            if (!btn.classList.contains('active')) btn.click();
+        }
+    } else {
+        const testView = document.getElementById('testView');
+        const btns = testView.querySelectorAll('.corner-translate-btn');
+        for (const btn of btns) {
+            if (!btn.classList.contains('active')) btn.click();
+        }
     }
     if (menuActive) toggleMenu();
 }
 
 function copyAIPrompt() {
     const isPreview = document.getElementById('statsPreviewView').style.display === 'flex';
-    const q = isPreview ? AppState.rawQuestions.find(rq => rq.id === AppState.previewQuestionId)
+    const q = isPreview ? AppState.rawQuestions.find(rq => String(rq.id) === String(AppState.previewQuestionId))
         : AppState.rawQuestions[AppState.currentTest[AppState.currentIndex]];
     if (!q) return;
     const optionsText = q.options?.map(o => o.text).join(', ') || 'Textantwort';
