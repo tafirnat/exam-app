@@ -1,5 +1,5 @@
 
-import { AppState } from '../../core/state.js';
+import { AppState, saveRecentTests } from '../../core/state.js';
 import { shuffleArray } from '../../core/utils.js';
 
 export function prepareTest(count) {
@@ -56,7 +56,54 @@ export function prepareTest(count) {
         if (q.options) AppState.shuffledOptionsMap[q.id] = shuffleArray([...q.options]);
     });
 
+    startTestTracking(count);
+
     return AppState.currentTest;
+}
+
+function startTestTracking(count) {
+    const activeSources = AppState.sources.filter(s => s.active);
+    const sourceTitle = activeSources.length === 1 ? activeSources[0].title : activeSources.length + " Sources";
+
+    AppState.testTracking = {
+        startTime: new Date().toISOString(),
+        endTime: null,
+        sourceTitle: sourceTitle,
+        questionCount: count,
+        results: [] // Will store { questionId, isCorrect, userAnswer }
+    };
+}
+
+export function finishTest() {
+    if (!AppState.testTracking) return;
+
+    AppState.testTracking.endTime = new Date().toISOString();
+
+    // Convert current results into a list of questions for historical view
+    const historyEntry = {
+        id: Date.now(),
+        sourceTitle: AppState.testTracking.sourceTitle,
+        startTime: AppState.testTracking.startTime,
+        endTime: AppState.testTracking.endTime,
+        questionCount: AppState.testTracking.results.length,
+        questions: AppState.testTracking.results.map(r => {
+            const q = AppState.rawQuestions.find(q => q.id === r.questionId);
+            return {
+                ...q,
+                userAnswer: r.userAnswer,
+                isCorrect: r.isCorrect
+            };
+        })
+    };
+
+    // Add to recentTests, keep only last 5
+    AppState.recentTests.unshift(historyEntry);
+    if (AppState.recentTests.length > 5) {
+        AppState.recentTests = AppState.recentTests.slice(0, 5);
+    }
+
+    saveRecentTests();
+    AppState.testTracking = null;
 }
 
 export function evaluateAnswer(questionIndex, userAnswer) {
@@ -78,11 +125,20 @@ export function evaluateAnswer(questionIndex, userAnswer) {
     return isCorrect;
 }
 
-export function updateStats(questionId, isCorrect) {
+export function updateStats(questionId, isCorrect, userAnswer) {
     if (!AppState.stats[questionId]) {
         AppState.stats[questionId] = { coeff: 1.0, correct: 0, wrong: 0 };
     }
     const stat = AppState.stats[questionId];
     stat.coeff = isCorrect ? Math.max(0.1, stat.coeff - 0.2) : Math.min(5.0, stat.coeff + 0.4);
     if (isCorrect) stat.correct++; else stat.wrong++;
+
+    // Update current test tracking
+    if (AppState.testTracking) {
+        AppState.testTracking.results.push({
+            questionId,
+            isCorrect,
+            userAnswer
+        });
+    }
 }

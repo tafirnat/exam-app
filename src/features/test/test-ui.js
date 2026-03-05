@@ -180,7 +180,7 @@ export function handleCheckAnswer() {
 
     const isCorrect = evaluateAnswer(qIndex, userAnswer);
     AppState.isAnswerChecked[qIndex] = true;
-    updateStats(q.id, isCorrect);
+    updateStats(q.id, isCorrect, userAnswer);
     saveStats();
     renderQuestion();
 }

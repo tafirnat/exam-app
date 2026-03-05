@@ -18,7 +18,9 @@ export const AppState = {
     currentSourceKey: localStorage.getItem('focus_app_current_source') || null,
     examTitle: 'Exam App',
     language: detectLanguage(),
-    translationTarget: detectTranslationTarget()
+    translationTarget: detectTranslationTarget(),
+    recentTests: JSON.parse(localStorage.getItem('focus_app_recent_tests') || '[]'),
+    testTracking: null
 };
 
 export function saveStats() {
@@ -32,4 +34,8 @@ export function saveSources() {
 export function saveCurrentSource(key) {
     AppState.currentSourceKey = key;
     localStorage.setItem('focus_app_current_source', key || '');
+}
+
+export function saveRecentTests() {
+    localStorage.setItem('focus_app_recent_tests', JSON.stringify(AppState.recentTests));
 }

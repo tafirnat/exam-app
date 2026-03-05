@@ -7,6 +7,11 @@ export function renderStatsList(filter = 'all') {
     if (!list) return;
     list.innerHTML = '';
 
+    if (filter === 'recent' || filter === 'incorrect') {
+        renderHistoricalTests(list, filter);
+        return;
+    }
+
     // Use the pool of questions from currently active sources
     const activeQuestions = [];
     AppState.sources.forEach(s => {
@@ -43,6 +48,68 @@ export function renderStatsList(filter = 'all') {
             if (window.onPreviewQuestion) window.onPreviewQuestion(q);
         };
         list.appendChild(item);
+    });
+}
+
+function renderHistoricalTests(list, filter) {
+    if (!AppState.recentTests || AppState.recentTests.length === 0) {
+        list.innerHTML = `<div style="text-align:center; padding: 2rem; color: var(--text-secondary);">${t('no_recent_tests')}</div>`;
+        return;
+    }
+
+    AppState.recentTests.forEach(test => {
+        const questionsToShow = filter === 'incorrect'
+            ? test.questions.filter(q => !q.isCorrect)
+            : test.questions;
+
+        if (filter === 'incorrect' && questionsToShow.length === 0) return;
+
+        const testEl = document.createElement('div');
+        testEl.className = 'history-test-item';
+
+        const startTime = new Date(test.startTime).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+        const endTime = new Date(test.endTime).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+
+        testEl.innerHTML = `
+            <div class="history-test-header">
+                <div class="history-test-info">
+                    <div class="history-test-title">${test.sourceTitle}</div>
+                    <div class="history-test-meta">
+                        <span>${test.questionCount} Questions</span> • 
+                        <span>${startTime} - ${endTime}</span>
+                    </div>
+                </div>
+                <div class="history-test-icon">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"></polyline></svg>
+                </div>
+            </div>
+            <div class="history-test-details" style="display: none;">
+                ${questionsToShow.map((q, idx) => `
+                    <div class="history-question-item ${q.isCorrect ? 'correct' : 'wrong'}">
+                        <div class="history-question-text">#${idx + 1} ${q.content?.text || q.text}</div>
+                        <div class="history-question-status">${q.isCorrect ? '✓' : '✗'}</div>
+                    </div>
+                `).join('')}
+            </div>
+        `;
+
+        const header = testEl.querySelector('.history-test-header');
+        const details = testEl.querySelector('.history-test-details');
+        header.onclick = () => {
+            const isVisible = details.style.display !== 'none';
+            details.style.display = isVisible ? 'none' : 'block';
+            testEl.classList.toggle('expanded', !isVisible);
+        };
+
+        // Add click handlers for questions in history
+        testEl.querySelectorAll('.history-question-item').forEach((qDiv, idx) => {
+            qDiv.onclick = (e) => {
+                e.stopPropagation();
+                if (window.onPreviewQuestion) window.onPreviewQuestion(questionsToShow[idx]);
+            };
+        });
+
+        list.appendChild(testEl);
     });
 }
 

@@ -5,7 +5,7 @@ import { showToast } from './core/utils.js';
 import { migrateOldData } from './core/migration.js';
 import { processJSON, loadFromUrl, loadFromFile } from './features/sources/sources-service.js';
 import { renderSourcesList } from './features/sources/sources-ui.js';
-import { prepareTest } from './features/test/test-engine.js';
+import { prepareTest, finishTest } from './features/test/test-engine.js';
 import { renderQuestion, handleCheckAnswer, updateIndicators, handleTranslation } from './features/test/test-ui.js';
 import { renderStatsList, updateHomeStats } from './features/stats/stats-module.js';
 
@@ -286,6 +286,7 @@ function nextQuestion() {
         renderQuestion();
     } else {
         showToast(t('test_completed'));
+        finishTest();
         switchView('home');
     }
 }

@@ -1,0 +1,93 @@
+/* --- History Stats --- */
+.history-test-item {
+    background-color: var(--surface-color);
+    border: 1px solid var(--border-color);
+    border-radius: var(--radius-md);
+    margin-bottom: 0.75rem;
+    overflow: hidden;
+    transition: all 0.2s ease;
+}
+
+.history-test-header {
+    padding: 1rem;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    cursor: pointer;
+    background-color: var(--surface-color);
+    transition: background-color 0.2s;
+}
+
+.history-test-header:hover {
+    background-color: var(--surface-hover);
+}
+
+.history-test-title {
+    font-weight: 700;
+    font-size: 0.95rem;
+    color: var(--text-primary);
+}
+
+.history-test-meta {
+    font-size: 0.8rem;
+    color: var(--text-secondary);
+    margin-top: 0.2rem;
+}
+
+.history-test-icon svg {
+    width: 20px;
+    height: 20px;
+    color: var(--text-secondary);
+    transition: transform 0.3s ease;
+}
+
+.history-test-item.expanded .history-test-icon svg {
+    transform: rotate(180deg);
+}
+
+.history-test-details {
+    border-top: 1px solid var(--border-color);
+    background-color: var(--bg-color);
+}
+
+.history-question-item {
+    padding: 0.75rem 1rem;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    font-size: 0.85rem;
+    border-bottom: 1px solid var(--border-color);
+    cursor: pointer;
+    transition: background-color 0.2s;
+}
+
+.history-question-item:last-child {
+    border-bottom: none;
+}
+
+.history-question-item:hover {
+    background-color: var(--surface-hover);
+}
+
+.history-question-text {
+    flex: 1;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    padding-right: 1rem;
+    color: var(--text-primary);
+}
+
+.history-question-status {
+    font-weight: 700;
+    width: 24px;
+    text-align: center;
+}
+
+.history-question-item.correct .history-question-status {
+    color: var(--success-color);
+}
+
+.history-question-item.wrong .history-question-status {
+    color: var(--error-color);
+}

@@ -71,6 +71,12 @@ export const translations = {
         q_count_40: "40 Soru (Sınav)",
         target_lang_label: "Çeviri Hedef Dili",
         correct_answer_was: "Doğru cevap:",
+        filter_recent: "Son Cevaplananlar",
+        filter_incorrect: "Yanlış Yapılanlar",
+        test_source: "Kaynak",
+        start_time: "Başlangıç",
+        end_time: "Bitiş",
+        no_recent_tests: "Henüz çözülmüş bir test bulunmuyor.",
         ai_prompt_template: "Soru: {question}\nSeçenekler: {options}\n\nLütfen bu soruyu ve doğru çözümü ayrıntılı olarak açıklayın."
     },
     en: {
@@ -129,6 +135,12 @@ export const translations = {
         q_count_40: "40 Questions (Exam)",
         target_lang_label: "Translation Target Language",
         correct_answer_was: "Correct answer:",
+        filter_recent: "Recently Answered",
+        filter_incorrect: "Incorrectly Answered",
+        test_source: "Source",
+        start_time: "Start",
+        end_time: "End",
+        no_recent_tests: "No tests solved yet.",
         ai_prompt_template: "Question: {question}\nOptions: {options}\n\nPlease explain this question and the correct solution in detail."
     },
     de: {
@@ -187,6 +199,12 @@ export const translations = {
         q_count_40: "40 Fragen (Prüfung)",
         target_lang_label: "Übersetzungs-Ziellsprache",
         correct_answer_was: "Richtige Antwort:",
+        filter_recent: "Zuletzt beantwortet",
+        filter_incorrect: "Falsch beantwortet",
+        test_source: "Quelle",
+        start_time: "Start",
+        end_time: "Ende",
+        no_recent_tests: "Noch keine Tests gelöst.",
         ai_prompt_template: "Frage: {question}\nOptionen: {options}\n\nBitte erklären Sie diese Frage und die richtige Lösung im Detail."
     }
 };
