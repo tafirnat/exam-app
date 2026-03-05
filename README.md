@@ -1,5 +1,7 @@
 # Focus App | Advanced Learning Platform
 
+[![Live Demo](https://img.shields.io/badge/demo-live-green?style=for-the-badge&logo=github)](https://tafirnat.github.io/exam-app/)
+
 A professional, modular, and high-performance examination application designed for seamless learning. Built with modern web technologies and a focus on visual excellence.
 
 ![Focus App Splash](https://raw.githubusercontent.com/tafirnat/exam-app/main/src/assets/logo.png) (Replace with your actual logo link or local path)
