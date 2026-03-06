@@ -26,7 +26,7 @@
                 <polyline points="15 18 9 12 15 6"></polyline>
             </svg>
         </button>
-        <div class="header-title" id="headerTitle">Exam App [v2.14:02:52]</div>
+        <div class="header-title" id="headerTitle">Exam App</div>
         <div style="width: 40px;"></div>
     </header>
 
@@ -47,8 +47,14 @@
 
         <div class="dropdown-divider"></div>
 
-        <div class="dropdown-header" data-i18n="target_lang_label">Çeviri Hedef Dili</div>
-        <div style="padding: 0 1rem 1rem 1.5rem;">
+        <div class="dropdown-header" style="display: flex; justify-content: space-between; align-items: center;">
+            <span data-i18n="target_lang_label">Çeviri Hedef Dili</span>
+            <label class="switch">
+                <input type="checkbox" id="translationToggle">
+                <span class="slider"></span>
+            </label>
+        </div>
+        <div id="translationSelectContainer" style="padding: 0 1rem 1rem 1.5rem;">
             <select id="translationTargetSelect" class="menu-select">
                 <!-- Populated by JS -->
             </select>
@@ -173,9 +179,25 @@
 
                 <div style="display: flex; gap: 0.5rem; margin-top: 0.5rem;">
                     <button class="btn btn-subtle" id="homeExportBtn"
-                        style="flex: 1; font-size: 0.85rem; padding: 0.5rem;" data-i18n="export">Export</button>
+                        style="flex: 1; font-size: 0.85rem; padding: 0.5rem; display: flex; align-items: center; justify-content: center; gap: 0.4rem;">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"
+                            stroke-linecap="round" stroke-linejoin="round" style="width: 16px; height: 16px;">
+                            <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
+                            <polyline points="17 8 12 3 7 8"></polyline>
+                            <line x1="12" y1="3" x2="12" y2="15"></line>
+                        </svg>
+                        <span data-i18n="export">Export</span>
+                    </button>
                     <button class="btn btn-subtle" id="homeImportBtn"
-                        style="flex: 1; font-size: 0.85rem; padding: 0.5rem;" data-i18n="import">Import</button>
+                        style="flex: 1; font-size: 0.85rem; padding: 0.5rem; display: flex; align-items: center; justify-content: center; gap: 0.4rem;">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"
+                            stroke-linecap="round" stroke-linejoin="round" style="width: 16px; height: 16px;">
+                            <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
+                            <polyline points="7 10 12 15 17 10"></polyline>
+                            <line x1="12" y1="15" x2="12" y2="3"></line>
+                        </svg>
+                        <span data-i18n="import">Import</span>
+                    </button>
                 </div>
             </div>
 
@@ -291,51 +313,149 @@
             <div class="question-stats-info" id="questionStatsInfo"></div>
         </div>
         <div id="statsView">
-            <div class="card" style="padding-top: 1rem;">
-                <div class="stats-card-header"
-                    style="display: flex; align-items: center; gap: 0.75rem; margin-bottom: 1.25rem;">
-                    <button class="icon-btn-subtle" id="statsCardBackBtn" data-i18n-title="back">
-                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"
-                            stroke-linecap="round" stroke-linejoin="round">
-                            <polyline points="15 18 9 12 15 6"></polyline>
-                        </svg>
-                    </button>
-                    <div style="display: flex; align-items: center; gap: 0.5rem; flex: 1;">
-                        <div class="stats-header-icon">
+            <div class="card">
+                <div class="stats-sticky-controls">
+                    <div class="stats-card-header" style="margin-bottom: 1rem; min-height: auto;">
+                        <button class="back-btn" id="statsBackBtn" data-i18n-title="back_to_stats">
                             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"
                                 stroke-linecap="round" stroke-linejoin="round">
-                                <line x1="18" y1="20" x2="18" y2="10"></line>
-                                <line x1="12" y1="20" x2="12" y2="4"></line>
-                                <line x1="6" y1="20" x2="6" y2="14"></line>
-                                <path d="M2 20h20"></path>
+                                <polyline points="15 18 9 12 15 6"></polyline>
                             </svg>
+                        </button>
+
+                        <div class="stats-header-main">
+                            <div class="stats-header-icon">
+                                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"
+                                    stroke-linecap="round" stroke-linejoin="round">
+                                    <line x1="18" y1="20" x2="18" y2="10"></line>
+                                    <line x1="12" y1="20" x2="12" y2="4"></line>
+                                    <line x1="6" y1="20" x2="6" y2="14"></line>
+                                    <path d="M2 20h20"></path>
+                                </svg>
+                            </div>
+                            <h2 class="stats-title-text" data-i18n="show_stats">İstatistikler</h2>
                         </div>
-                        <h2 style="margin: 0; font-size: 1.1rem;" data-i18n="show_stats">İstatistikler</h2>
                     </div>
-                </div>
-
-                <div class="stats-search-container" style="margin-bottom: 1.25rem;">
-                    <div class="search-input-wrapper">
-                        <svg class="search-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor"
-                            stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
-                            <circle cx="11" cy="11" r="8"></circle>
-                            <line x1="21" y1="21" x2="16.65" y2="16.65"></line>
-                        </svg>
-                        <input type="text" id="statsSearchInput" data-i18n-placeholder="search_placeholder"
-                            placeholder="Search questions, options or answers...">
+                    <div class="stats-filter-container" id="statsFilterBar">
+                        <button class="filter-btn active" data-filter="all">
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"
+                                stroke-linecap="round" stroke-linejoin="round">
+                                <rect x="3" y="3" width="7" height="7"></rect>
+                                <rect x="14" y="3" width="7" height="7"></rect>
+                                <rect x="14" y="14" width="7" height="7"></rect>
+                                <rect x="3" y="14" width="7" height="7"></rect>
+                            </svg>
+                            <span class="filter-btn-text" data-i18n="filter_all">Alle</span>
+                        </button>
+                        <button class="filter-btn" data-filter="recent">
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"
+                                stroke-linecap="round" stroke-linejoin="round">
+                                <path d="M12 2 A 10 10 0 0 0 12 22"></path>
+                                <line x1="12" y1="7" x2="12" y2="17"></line>
+                                <line x1="7" y1="12" x2="17" y2="12"></line>
+                            </svg>
+                            <span class="filter-btn-text" data-i18n="filter_recent">Son Cevaplananlar</span>
+                        </button>
+                        <button class="filter-btn" data-filter="incorrect">
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"
+                                stroke-linecap="round" stroke-linejoin="round">
+                                <path d="M12 2 A 10 10 0 0 1 12 22"></path>
+                                <line x1="8" y1="8" x2="16" y2="16"></line>
+                                <line x1="16" y1="8" x2="8" y2="16"></line>
+                            </svg>
+                            <span class="filter-btn-text" data-i18n="filter_incorrect">Yanlış Yapılanlar</span>
+                        </button>
+                        <button class="filter-btn" data-filter="starred">
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"
+                                stroke-linecap="round" stroke-linejoin="round">
+                                <polygon
+                                    points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2">
+                                </polygon>
+                            </svg>
+                            <span class="filter-btn-text" data-i18n="filter_starred">Markiert</span>
+                        </button>
+                        <button class="filter-btn" data-filter="flagged">
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"
+                                stroke-linecap="round" stroke-linejoin="round">
+                                <path d="M4 15s1-1 4-1 5 2 8 2 4-1 4-1V3s-1 1-4 1-5-2-8-2-4 1-4 1z"></path>
+                                <line x1="4" y1="22" x2="4" y2="15"></line>
+                            </svg>
+                            <span class="filter-btn-text" data-i18n="filter_flagged">Geflaggt</span>
+                        </button>
+                        <button class="filter-btn" data-filter="noted">
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"
+                                stroke-linecap="round" stroke-linejoin="round">
+                                <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"></path>
+                            </svg>
+                            <span class="filter-btn-text" data-i18n="filter_noted">Mit Notiz</span>
+                        </button>
                     </div>
-                </div>
 
-                <div class="stats-filter-bar" id="statsFilterBar" style="margin-bottom: 1.5rem;">
-                    <button class="filter-btn active" data-filter="all" data-i18n="filter_all">Alle</button>
-                    <button class="filter-btn" data-filter="recent" data-i18n="filter_recent">Son Cevaplananlar</button>
-                    <button class="filter-btn" data-filter="incorrect" data-i18n="filter_incorrect">Yanlış
-                        Yapılanlar</button>
-                    <button class="filter-btn" data-filter="starred" data-i18n="filter_starred">Markiert</button>
-                    <button class="filter-btn" data-filter="flagged" data-i18n="filter_flagged">Geflaggt</button>
-                    <button class="filter-btn" data-filter="noted" data-i18n="filter_noted">Mit Notiz</button>
+                    <div class="stats-sort-bar" id="statsSortBar">
+                        <button class="sort-btn active" data-sort="original">
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
+                                stroke-linecap="round" stroke-linejoin="round" style="width:16px; height:16px;">
+                                <line x1="10" y1="6" x2="21" y2="6"></line>
+                                <line x1="10" y1="12" x2="21" y2="12"></line>
+                                <line x1="10" y1="18" x2="21" y2="18"></line>
+                                <polyline points="3 6 6 9 9 6"></polyline>
+                                <line x1="6" y1="18" x2="6" y2="9"></line>
+                            </svg>
+                            <span class="sort-dir"></span>
+                        </button>
+                        <button class="sort-btn" data-sort="coeff">
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
+                                stroke-linecap="round" stroke-linejoin="round" style="width:16px; height:16px;">
+                                <path d="M12 2v20M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"></path>
+                            </svg>
+                            <span class="sort-btn-text" data-i18n="sort_coeff">Katsayı</span>
+                            <span class="sort-dir"></span>
+                        </button>
+                        <button class="sort-btn" data-sort="success">
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
+                                stroke-linecap="round" stroke-linejoin="round" style="width:16px; height:16px;">
+                                <path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"></path>
+                                <polyline points="22 4 12 14.01 9 11.01"></polyline>
+                            </svg>
+                            <span class="sort-btn-text" data-i18n="sort_success">Başarı %</span>
+                            <span class="sort-dir"></span>
+                        </button>
+                        <button class="sort-btn" data-sort="wrong">
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
+                                stroke-linecap="round" stroke-linejoin="round" style="width:16px; height:16px;">
+                                <circle cx="12" cy="12" r="10"></circle>
+                                <line x1="15" y1="9" x2="9" y2="15"></line>
+                                <line x1="9" y1="9" x2="15" y2="15"></line>
+                            </svg>
+                            <span class="sort-btn-text" data-i18n="sort_wrong">Hata Sayısı</span>
+                            <span class="sort-dir"></span>
+                        </button>
+
+                        <div class="search-input-wrapper" id="statsSearchWrapper" style="margin-left: auto;">
+                            <input type="text" id="statsSearchInput" data-i18n-placeholder="search_label"
+                                placeholder="Ara...">
+                            <button class="search-expand-btn" id="statsSearchExpand"
+                                data-i18n-title="search_placeholder">
+                                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"
+                                    stroke-linecap="round" stroke-linejoin="round" style="width: 20px; height: 20px;">
+                                    <circle cx="11" cy="11" r="8"></circle>
+                                    <line x1="21" y1="21" x2="16.65" y2="16.65"></line>
+                                </svg>
+                            </button>
+                            <button class="search-clear-btn" id="statsSearchClear" style="display: none;">
+                                <svg viewBox="0 0 24 24" fill="none" stroke="#ef4444" stroke-width="3"
+                                    stroke-linecap="round" stroke-linejoin="round" style="width: 16px; height: 16px;">
+                                    <line x1="18" y1="6" x2="6" y2="18"></line>
+                                    <line x1="6" y1="6" x2="18" y2="18"></line>
+                                </svg>
+                            </button>
+                        </div>
+                    </div>
                 </div>
                 <div class="stats-list" id="statsList"></div>
+                <div class="stats-footer-mask">
+                    <div class="stats-footer" id="statsFooter"></div>
+                </div>
             </div>
         </div>
 

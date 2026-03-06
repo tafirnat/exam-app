@@ -202,18 +202,20 @@ function renderSummarySection() {
 
     summaryEl.innerHTML = `
         ${unansweredHtml}
-        <button class="btn" id="finishTestBtn" style="width: 100%; background-color: var(--success-color); color: white; display: flex; align-items: center; justify-content: center; gap: 0.5rem;">
+        <button class="btn" id="finishTestBtn" style="width: 100%; background-color: var(--error-color); color: white; display: flex; align-items: center; justify-content: center; gap: 0.5rem; border: none; box-shadow: 0 4px 12px rgba(239, 68, 68, 0.2);">
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" style="width: 20px; height: 20px;"><polyline points="20 6 9 17 4 12"></polyline></svg>
             ${t('finish_test')}
         </button>
     `;
 
     document.getElementById('finishTestBtn').onclick = () => {
+        if (unansweredIndices.length > 0) {
+            if (!confirm(t('confirm_finish_test_unanswered'))) {
+                return;
+            }
+        }
         showToast(t('test_completed'));
         import('./test-engine.js').then(m => m.finishTest());
-        // Since we can't easily call switchView from here without circular deps or passing it, 
-        // we'll rely on the main.js logic or event dispatch.
-        // Actually finishing test should trigger navigation.
         window.dispatchEvent(new CustomEvent('test-finished'));
     };
 }

@@ -50,11 +50,10 @@
     align-items: center;
 }
 
-.history-delete-btn {
+.history-delete-btn,
+.history-retake-btn {
     background: transparent;
     border: none;
-    color: #ff3b30;
-    /* Saturated red for risk signal */
     cursor: pointer;
     padding: 0.6rem;
     display: flex;
@@ -64,12 +63,19 @@
     transition: all 0.2s;
 }
 
-.history-delete-btn:hover {
-    background-color: rgba(255, 59, 48, 0.1);
+.history-delete-btn:hover,
+.history-retake-btn:hover {
+    background-color: rgba(0, 0, 0, 0.05);
     transform: scale(1.1);
 }
 
-.history-delete-btn svg {
+[data-theme="dark"] .history-delete-btn:hover,
+[data-theme="dark"] .history-retake-btn:hover {
+    background-color: rgba(255, 255, 255, 0.05);
+}
+
+.history-delete-btn svg,
+.history-retake-btn svg {
     width: 20px;
     height: 20px;
 }
@@ -130,6 +136,49 @@
 
 .history-question-item.wrong .history-question-status {
     color: var(--error-color);
+}
+
+.history-question-item.unanswered .history-question-status {
+    color: var(--text-secondary);
+    opacity: 0.7;
+}
+
+/* --- Focused Retake Pie Icon --- */
+.retake-pie-icon {
+    width: 26px;
+    height: 26px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: transform 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+}
+
+.retake-pie-icon svg {
+    width: 16px;
+    height: 16px;
+    filter: drop-shadow(0 1px 1px rgba(0, 0, 0, 0.2));
+}
+
+/* Red=Wrong (#ef4444), Yellow=Unanswered (#f59e0b), Green=Correct (#10b981) */
+
+/* All items (Recent filter): Green dominant */
+.retake-pie-icon.all {
+    background: conic-gradient(#10b981 0deg 240deg,
+            #ef4444 240deg 300deg,
+            #f59e0b 300deg 360deg);
+}
+
+/* Focused (Incorrect filter): Red/Yellow dominant */
+.retake-pie-icon.focused {
+    background: conic-gradient(#ef4444 0deg 160deg,
+            #f59e0b 160deg 300deg,
+            #10b981 300deg 360deg);
+}
+
+.history-retake-btn:hover .retake-pie-icon {
+    transform: rotate(360deg) scale(1.1);
 }
 
 .history-test-stats-summary {

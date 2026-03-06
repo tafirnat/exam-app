@@ -73,67 +73,155 @@ function startTestTracking(count) {
     };
 }
 
+export function prepareRetake(historyEntry, onlyIncorrect = false) {
+    if (!historyEntry || !Array.isArray(historyEntry.questions)) return null;
+
+    let retakeQuestions = historyEntry.questions;
+    if (onlyIncorrect) {
+        retakeQuestions = retakeQuestions.filter(q => !q.isCorrect);
+    }
+
+    if (retakeQuestions.length === 0) return null;
+
+    // Use rawQuestions but filter and shuffle based on retake selection
+    // We need to find the correct index in rawQuestions for each retake item
+    const rawQuestions = AppState.rawQuestions.length > 0 ? AppState.rawQuestions : [];
+
+    // Fallback: If rawQuestions is empty, we must ensure it's populated from active sources
+    if (rawQuestions.length === 0) {
+        AppState.sources.forEach(s => {
+            if (s.active) rawQuestions.push(...s.questions);
+        });
+        AppState.rawQuestions = rawQuestions;
+    }
+
+    const selectedIndices = [];
+    retakeQuestions.forEach(rq => {
+        const idx = rawQuestions.findIndex(q => String(q.id) === String(rq.id));
+        if (idx !== -1) selectedIndices.push(idx);
+    });
+
+    if (selectedIndices.length === 0) return null;
+
+    // Shuffle the order of questions for the retake
+    const shuffledIndices = shuffleArray([...selectedIndices]);
+
+    AppState.currentTest = shuffledIndices;
+    AppState.currentIndex = 0;
+    AppState.userAnswers = {};
+    AppState.isAnswerChecked = {};
+    AppState.shuffledOptionsMap = {};
+
+    shuffledIndices.forEach(idx => {
+        const q = rawQuestions[idx];
+        if (q.options) AppState.shuffledOptionsMap[q.id] = shuffleArray([...q.options]);
+    });
+
+    // Tracking metadata
+    AppState.testTracking = {
+        startTime: new Date().toISOString(),
+        endTime: null,
+        sourceNames: historyEntry.sourceNames,
+        questionCount: shuffledIndices.length,
+        retakeOfId: historyEntry.id, // Reference to original
+        results: []
+    };
+
+    return AppState.currentTest;
+}
+
 export function finishTest() {
     if (!AppState.testTracking) return;
 
-    // Check if we have any results to save
-    if (!AppState.testTracking.results || AppState.testTracking.results.length === 0) {
+    // We consider it a "valid session" if either some answers were checked 
+    // OR it was a retake session (even if the user just exited, we want it documented if it's a retake)
+    if ((!AppState.testTracking.results || AppState.testTracking.results.length === 0) && !AppState.testTracking.retakeOfId) {
         AppState.testTracking = null;
         return;
     }
 
     try {
         AppState.testTracking.endTime = new Date().toISOString();
+        const retakeOfId = AppState.testTracking.retakeOfId;
 
-        // Convert current results into a list of questions for historical view
-        const questions = AppState.testTracking.results.map(r => {
-            const q = AppState.rawQuestions.find(q => String(q.id) === String(r.questionId));
-            if (!q) return null;
-            return {
-                ...JSON.parse(JSON.stringify(q)), // Deep clone to avoid proxy issues if any
-                userAnswer: r.userAnswer,
-                isCorrect: r.isCorrect
-            };
-        }).filter(q => q !== null);
+        // Process all questions that were part of this test session
+        const sessionQuestions = AppState.currentTest.map(idx => {
+            const q = AppState.rawQuestions[idx];
+            const result = AppState.testTracking.results.find(r => String(r.questionId) === String(q.id));
 
-        if (questions.length === 0) {
-            AppState.testTracking = null;
-            return;
-        }
-
-        const correctCount = questions.filter(q => q.isCorrect).length;
-        const wrongCount = questions.length - correctCount;
-        const successRate = questions.length > 0 ? Math.round((correctCount / questions.length) * 100) : 0;
-
-        // Average coefficient of the test session
-        let totalCoeff = 0;
-        questions.forEach(q => {
-            const s = AppState.stats[q.id] || { coeff: 1.0 };
-            totalCoeff += s.coeff;
+            if (result) {
+                return {
+                    ...JSON.parse(JSON.stringify(q)),
+                    userAnswer: result.userAnswer,
+                    isCorrect: result.isCorrect,
+                    isUnanswered: false
+                };
+            } else {
+                return {
+                    ...JSON.parse(JSON.stringify(q)),
+                    userAnswer: null,
+                    isCorrect: false,
+                    isUnanswered: true
+                };
+            }
         });
-        const avgCoeff = questions.length > 0 ? totalCoeff / questions.length : 1.0;
 
-        const historyEntry = {
-            id: Date.now(),
-            sourceNames: AppState.testTracking.sourceNames,
-            startTime: AppState.testTracking.startTime,
-            endTime: AppState.testTracking.endTime,
-            questionCount: questions.length,
-            correctCount,
-            wrongCount,
-            successRate,
-            avgCoeff,
-            questions: questions
-        };
+        const correctCount = sessionQuestions.filter(q => q.isCorrect).length;
+        const unansweredCount = sessionQuestions.filter(q => q.isUnanswered).length;
+        const wrongCount = sessionQuestions.length - correctCount - unansweredCount;
 
-        // Add to recentTests, keep only last 5
-        if (!Array.isArray(AppState.recentTests)) {
-            AppState.recentTests = [];
-        }
+        if (retakeOfId) {
+            // RETAKE MODE: Update existing history entry
+            const historyIdx = AppState.recentTests.findIndex(t => t.id === retakeOfId);
+            if (historyIdx !== -1) {
+                const history = AppState.recentTests[historyIdx];
 
-        AppState.recentTests.unshift(historyEntry);
-        if (AppState.recentTests.length > 5) {
-            AppState.recentTests = AppState.recentTests.slice(0, 5);
+                // Update individual question results in the original history
+                sessionQuestions.forEach(sq => {
+                    const originalQ = history.questions.find(q => String(q.id) === String(sq.id));
+                    if (originalQ) {
+                        originalQ.userAnswer = sq.userAnswer;
+                        originalQ.isCorrect = sq.isCorrect;
+                        originalQ.isUnanswered = sq.isUnanswered;
+                    }
+                });
+
+                // Recalculate summary stats
+                const newCorrect = history.questions.filter(q => q.isCorrect).length;
+                const newUnanswered = history.questions.filter(q => q.isUnanswered).length;
+
+                history.correctCount = newCorrect;
+                history.unansweredCount = newUnanswered;
+                history.wrongCount = history.questions.length - newCorrect - newUnanswered;
+                history.successRate = Math.round((newCorrect / history.questions.length) * 100);
+                history.endTime = AppState.testTracking.endTime;
+
+                let totalCoeff = 0;
+                history.questions.forEach(q => {
+                    const s = AppState.stats[q.id] || { coeff: 1.0 };
+                    totalCoeff += s.coeff;
+                });
+                history.avgCoeff = totalCoeff / history.questions.length;
+            }
+        } else {
+            // NORMAL MODE: Create new history entry
+            const historyEntry = {
+                id: Date.now(),
+                sourceNames: AppState.testTracking.sourceNames,
+                startTime: AppState.testTracking.startTime,
+                endTime: AppState.testTracking.endTime,
+                questionCount: sessionQuestions.length,
+                correctCount,
+                wrongCount,
+                unansweredCount,
+                successRate: Math.round((correctCount / sessionQuestions.length) * 100),
+                avgCoeff: sessionQuestions.reduce((acc, q) => acc + (AppState.stats[q.id]?.coeff || 1.0), 0) / sessionQuestions.length,
+                questions: sessionQuestions
+            };
+
+            if (!Array.isArray(AppState.recentTests)) AppState.recentTests = [];
+            AppState.recentTests.unshift(historyEntry);
+            if (AppState.recentTests.length > 5) AppState.recentTests = AppState.recentTests.slice(0, 5);
         }
 
         saveRecentTests();

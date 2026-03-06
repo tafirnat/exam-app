@@ -19,11 +19,15 @@ export const AppState = {
     examTitle: 'Exam App',
     language: detectLanguage(),
     translationTarget: detectTranslationTarget(),
+    translationEnabled: JSON.parse(localStorage.getItem('focus_app_translation_enabled') ?? 'true'),
     recentTests: JSON.parse(localStorage.getItem('focus_app_recent_tests') || '[]'),
     testTracking: null,
     previewQuestion: null,
     searchKeyword: '',
-    lastStatsScrollPos: 0
+    lastStatsScrollPos: 0,
+    activeStatsFilter: 'all',
+    activeStatsSortField: 'original', // 'original', 'coeff', 'success', 'wrong'
+    activeStatsSortDir: 'asc' // 'asc', 'desc'
 };
 
 export function saveStats() {

@@ -5,11 +5,21 @@ import { showToast, getCorrectAnswers, highlightText } from './core/utils.js';
 import { migrateOldData } from './core/migration.js';
 import { processJSON, loadFromUrl, loadFromFile, normalizeQuestions } from './features/sources/sources-service.js';
 import { renderSourcesList } from './features/sources/sources-ui.js';
-import { prepareTest, finishTest } from './features/test/test-engine.js';
+import { prepareTest, finishTest, prepareRetake } from './features/test/test-engine.js';
 import { renderQuestion, handleCheckAnswer, updateIndicators, handleTranslation } from './features/test/test-ui.js';
-import { renderStatsList, updateHomeStats } from './features/stats/stats-module.js';
+import { renderStatsList, updateHomeStats, setupStatsEventListeners } from './features/stats/stats-module.js';
 
 let menuActive = false;
+
+window.onRetake = (historyEntry, onlyIncorrect) => {
+    if (prepareRetake(historyEntry, onlyIncorrect)) {
+        switchView('test');
+        renderQuestion();
+        if (menuActive) toggleMenu();
+    } else {
+        showToast(t('no_questions_available'));
+    }
+};
 
 // --- Initialize ---
 document.addEventListener('DOMContentLoaded', () => {
@@ -41,6 +51,9 @@ document.addEventListener('DOMContentLoaded', () => {
 
         console.log('Setting up event listeners...');
         setupEventListeners();
+
+        console.log('Updating translation UI...');
+        updateTranslationUI();
 
         console.log('App initialized v1.2.3');
 
@@ -277,6 +290,21 @@ function setupEventListeners() {
         };
     }
 
+    // Translation Toggle
+    const transToggle = document.getElementById('translationToggle');
+    if (transToggle) {
+        transToggle.checked = AppState.translationEnabled;
+        updateTranslationUI();
+
+        transToggle.onchange = (e) => {
+            AppState.translationEnabled = e.target.checked;
+            localStorage.setItem('focus_app_translation_enabled', e.target.checked);
+            updateTranslationUI();
+        };
+    }
+
+    setupStatsEventListeners();
+
     document.getElementById('indStar').onclick = toggleStar;
     document.getElementById('indFlag').onclick = toggleFlag;
     document.getElementById('indNote').onclick = toggleNoteArea;
@@ -303,15 +331,15 @@ function setupEventListeners() {
     document.getElementById('checkBtn').onclick = handleCheckAnswer;
     document.getElementById('homeStatsBtn').onclick = () => {
         switchView('stats');
-        renderStatsList();
+        renderStatsList(AppState.activeStatsFilter || 'all');
     };
     document.getElementById('previewBackBtn').onclick = () => {
         switchView('stats');
         renderStatsList(document.querySelector('.filter-btn.active')?.dataset.filter || 'all', document.getElementById('statsSearchInput')?.value || '');
     };
-    const scBackBtn = document.getElementById('statsCardBackBtn');
+    const scBackBtn = document.getElementById('statsBackBtn');
     if (scBackBtn) {
-        scBackBtn.onclick = () => switchView('home');
+        scBackBtn.onclick = goBack;
     }
 
     // Sources
@@ -417,20 +445,123 @@ function setupEventListeners() {
     // Stats Filters & Search
     const getStatsSearchKeyword = () => document.getElementById('statsSearchInput')?.value || '';
 
+    const statsSearchInput = document.getElementById('statsSearchInput');
+    const statsSearchExpand = document.getElementById('statsSearchExpand');
+    const statsSearchClear = document.getElementById('statsSearchClear');
+    const statsSearchWrapper = document.getElementById('statsSearchWrapper');
+
     document.querySelectorAll('.filter-btn').forEach(btn => {
         btn.onclick = () => {
             document.querySelectorAll('.filter-btn').forEach(b => b.classList.remove('active'));
             btn.classList.add('active');
-            renderStatsList(btn.dataset.filter, getStatsSearchKeyword());
+            AppState.activeStatsFilter = btn.dataset.filter;
+
+            if (btn.dataset.filter !== 'all') {
+                if (statsSearchInput) statsSearchInput.value = '';
+                if (statsSearchClear) statsSearchClear.style.display = 'none';
+                if (statsSearchWrapper) {
+                    statsSearchWrapper.classList.remove('expanded');
+                    statsSearchWrapper.classList.add('icon-only');
+                }
+            } else {
+                if (statsSearchWrapper) statsSearchWrapper.classList.remove('icon-only');
+            }
+
+            renderStatsList(btn.dataset.filter, btn.dataset.filter === 'all' ? getStatsSearchKeyword() : '');
         };
     });
+    const statsCardHeader = document.querySelector('#statsView .stats-card-header');
 
-    const statsSearchInput = document.getElementById('statsSearchInput');
     if (statsSearchInput) {
-        statsSearchInput.onkeyup = () => {
+        // Unified function to sync search UI state
+        const syncSearchState = () => {
+            const input = document.getElementById('statsSearchInput');
+            const wrapper = document.getElementById('statsSearchWrapper');
+            if (!input || !wrapper) return;
+
+            const hasText = input.value.trim().length > 0;
+            const hasFocus = document.activeElement === input;
+            const shouldExpand = hasText || hasFocus;
+
+            const sortBar = document.getElementById('statsSortBar');
+
+            if (shouldExpand) {
+                wrapper.classList.add('expanded');
+                if (sortBar) sortBar.classList.add('search-expanded');
+            } else {
+                wrapper.classList.remove('expanded');
+                if (sortBar) sortBar.classList.remove('search-expanded');
+            }
+
+            // Ensure logic matches selected filter
+            if (AppState.activeStatsFilter === 'all') {
+                wrapper.classList.remove('icon-only');
+            } else {
+                wrapper.classList.add('icon-only');
+            }
+
+            if (statsSearchClear) {
+                statsSearchClear.style.display = input.value.length > 0 ? 'flex' : 'none';
+            }
+        };
+
+        statsSearchInput.oninput = () => {
+            syncSearchState();
             const activeFilter = document.querySelector('.filter-btn.active')?.dataset.filter || 'all';
             renderStatsList(activeFilter, statsSearchInput.value);
         };
+
+        statsSearchInput.onfocus = () => {
+            if (AppState.activeStatsFilter !== 'all') {
+                const allBtn = document.querySelector('.filter-btn[data-filter="all"]');
+                if (allBtn) allBtn.click();
+            }
+            syncSearchState();
+        };
+
+        if (statsSearchExpand) {
+            statsSearchExpand.onclick = (e) => {
+                e.stopPropagation();
+                // If not on 'all' filter, switch to it first
+                if (AppState.activeStatsFilter !== 'all') {
+                    const allBtn = document.querySelector('.filter-btn[data-filter="all"]');
+                    if (allBtn) {
+                        allBtn.click();
+                    }
+                }
+                setTimeout(() => {
+                    statsSearchInput.focus();
+                    syncSearchState();
+                }, 10);
+            };
+        }
+
+        statsSearchInput.onblur = () => {
+            // Small delay to let click handlers (like clear) execute first
+            setTimeout(syncSearchState, 10);
+        };
+
+        if (statsSearchClear) {
+            statsSearchClear.onclick = () => {
+                statsSearchInput.value = '';
+                const activeFilter = document.querySelector('.filter-btn.active')?.dataset.filter || 'all';
+                renderStatsList(activeFilter, '');
+
+                if (window.innerWidth <= 850) {
+                    // On mobile, collapse everything
+                    const wrapper = document.getElementById('statsSearchWrapper');
+                    const header = document.querySelector('#statsView .stats-card-header');
+                    const sortBar = document.getElementById('statsSortBar');
+                    wrapper?.classList.remove('expanded');
+                    header?.classList.remove('search-active');
+                    sortBar?.classList.remove('search-expanded');
+                    if (statsSearchClear) statsSearchClear.style.display = 'none';
+                } else {
+                    statsSearchInput.focus();
+                    syncSearchState();
+                }
+            };
+        }
     }
 
     // Global Click Close
@@ -506,7 +637,7 @@ function switchView(view) {
     }
 
     if (view === 'home') {
-        document.getElementById('headerTitle').innerText = 'Exam App [v2.14:02:52]';
+        document.getElementById('headerTitle').innerText = 'Exam App';
         updateHomeStats();
     }
 }
@@ -680,4 +811,12 @@ function copyAIPrompt() {
 
         if (menuActive) toggleMenu();
     });
+}
+
+function updateTranslationUI() {
+    if (AppState.translationEnabled) {
+        document.body.classList.remove('translation-disabled');
+    } else {
+        document.body.classList.add('translation-disabled');
+    }
 }
