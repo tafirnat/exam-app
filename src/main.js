@@ -74,6 +74,9 @@ window.onSourcesUpdated = () => {
 };
 
 window.onPreviewQuestion = (q) => {
+    // Capture scroll position before switching
+    AppState.lastStatsScrollPos = window.scrollY;
+
     AppState.previewQuestion = q;
     AppState.previewQuestionId = q.id;
     switchView('statsPreview');
@@ -468,7 +471,15 @@ function setupEventListeners() {
 function switchView(view) {
     document.getElementById('homeView').style.display = view === 'home' ? 'block' : 'none';
     document.getElementById('testView').style.display = view === 'test' ? 'flex' : 'none';
-    document.getElementById('statsView').style.display = view === 'stats' ? 'block' : 'none';
+    if (view === 'stats') {
+        document.getElementById('statsView').style.display = 'block';
+        // Restore scroll position after a short delay to ensure rendering
+        setTimeout(() => {
+            window.scrollTo({ top: AppState.lastStatsScrollPos, behavior: 'instant' });
+        }, 50);
+    } else {
+        document.getElementById('statsView').style.display = 'none';
+    }
     document.getElementById('statsPreviewView').style.display = view === 'statsPreview' ? 'flex' : 'none';
     if (view === 'statsPreview') {
         document.getElementById('statsPreviewView').style.flexDirection = 'column';
@@ -495,7 +506,7 @@ function switchView(view) {
     }
 
     if (view === 'home') {
-        document.getElementById('headerTitle').innerText = 'Exam App [v2.6:02:07]';
+        document.getElementById('headerTitle').innerText = 'Exam App [v2.7:02:17]';
         updateHomeStats();
     }
 }

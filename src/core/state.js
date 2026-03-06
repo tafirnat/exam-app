@@ -22,7 +22,8 @@ export const AppState = {
     recentTests: JSON.parse(localStorage.getItem('focus_app_recent_tests') || '[]'),
     testTracking: null,
     previewQuestion: null,
-    searchKeyword: ''
+    searchKeyword: '',
+    lastStatsScrollPos: 0
 };
 
 export function saveStats() {
