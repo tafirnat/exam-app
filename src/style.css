@@ -691,32 +691,27 @@ textarea {
     background-color: var(--border-color) !important;
 }
 
-.btn-amber {
-    background-color: #fbbf24 !important;
-    /* Amber 400 */
-    color: #451a03 !important;
-    /* Amber 950/Blackish */
-    border: 1px solid #d97706 !important;
+.btn-stats {
+    background-color: #ede9fe !important;
+    color: #5b21b6 !important;
+    border: 1px solid #ddd6fe !important;
     font-weight: 700 !important;
 }
 
-.btn-amber:hover {
-    background-color: #f59e0b !important;
-    /* Amber 500 */
+.btn-stats:hover {
+    background-color: #ddd6fe !important;
     transform: translateY(-1px);
-    box-shadow: 0 4px 6px -1px rgba(251, 191, 36, 0.3);
+    box-shadow: 0 4px 6px -1px rgba(139, 92, 246, 0.2);
 }
 
-[data-theme="dark"] .btn-amber {
-    background-color: #d97706 !important;
-    /* Amber 600 */
-    color: #fff !important;
-    border: 1px solid #b45309 !important;
+[data-theme="dark"] .btn-stats {
+    background-color: #40345d !important;
+    color: #ede9fe !important;
+    border: 1px solid #5b4a85 !important;
 }
 
-[data-theme="dark"] .btn-amber:hover {
-    background-color: #b45309 !important;
-    /* Amber 700 */
+[data-theme="dark"] .btn-stats:hover {
+    background-color: #4c3e6f !important;
     box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.4);
 }
 
