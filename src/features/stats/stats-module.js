@@ -2,7 +2,7 @@
 import { AppState } from '../../core/state.js';
 import { t } from '../../core/i18n.js';
 
-export function renderStatsList(filter = 'all') {
+export function renderStatsList(filter = 'all', searchKeyword = '') {
     const list = document.getElementById('statsList');
     if (!list) return;
     list.innerHTML = '';
@@ -14,13 +14,18 @@ export function renderStatsList(filter = 'all') {
 
     // Use the pool of questions from currently active sources
     const activeQuestions = [];
-    AppState.sources.forEach(s => {
-        if (s.active) activeQuestions.push(...s.questions);
+    const activeSources = AppState.sources.filter(s => s.active);
+    activeSources.forEach(s => {
+        s.questions.forEach(q => {
+            activeQuestions.push({ ...q, sourceName: s.name });
+        });
     });
 
     let filteredQuestions = activeQuestions;
+
+    // Apply Tab Filter
     if (filter !== 'all') {
-        filteredQuestions = activeQuestions.filter(q => {
+        filteredQuestions = filteredQuestions.filter(q => {
             const s = AppState.stats[q.id] || {};
             if (filter === 'starred') return s.starred;
             if (filter === 'flagged') return s.flagged;
@@ -29,6 +34,19 @@ export function renderStatsList(filter = 'all') {
         });
     }
 
+    // Apply Search Filter
+    if (searchKeyword.trim() !== '') {
+        const kw = searchKeyword.toLowerCase();
+        filteredQuestions = filteredQuestions.filter(q => {
+            const text = (q.content?.text || q.text || '').toLowerCase();
+            const options = (q.content?.options || []).join(' ').toLowerCase();
+            const answer = String(q.content?.answer || q.answer || '').toLowerCase();
+            return text.includes(kw) || options.includes(kw) || answer.includes(kw);
+        });
+    }
+
+    const showSource = activeSources.length > 1;
+
     filteredQuestions.forEach((q, i) => {
         const s = AppState.stats[q.id] || { correct: 0, wrong: 0, coeff: 1.0 };
         const total = s.correct + s.wrong;
@@ -36,9 +54,13 @@ export function renderStatsList(filter = 'all') {
         const item = document.createElement('div');
         item.className = 'stats-list-item';
         const qText = q.content?.text || q.text || 'Untitled Question';
+
         item.innerHTML = `
             <div class="stats-item-num">#${i + 1}</div>
-            <div class="stats-item-text">${qText}</div>
+            <div style="flex: 1; min-width: 0;">
+                <div class="stats-item-text">${qText}</div>
+                ${showSource ? `<div class="stats-item-source">${q.sourceName}</div>` : ''}
+            </div>
             <div class="stats-item-meta">
                 <span>✓${s.correct} ✗${s.wrong} (${percent}%)</span>
                 <span>${t('coeff_label')} ${s.coeff.toFixed(1)}</span>

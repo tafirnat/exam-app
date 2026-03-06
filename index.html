@@ -26,7 +26,7 @@
                 <polyline points="15 18 9 12 15 6"></polyline>
             </svg>
         </button>
-        <div class="header-title" id="headerTitle">Exam App [v2.0:01:22]</div>
+        <div class="header-title" id="headerTitle">Exam App [v2.1:01:33]</div>
         <div style="width: 40px;"></div>
     </header>
 
@@ -291,7 +291,7 @@
             <div class="question-stats-info" id="questionStatsInfo"></div>
         </div>
         <div id="statsView">
-            <div class="card" style="margin-bottom: 1rem;">
+            <div class="card" style="padding-top: 1.5rem;">
                 <div class="stats-card-header">
                     <div class="stats-header-icon">
                         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"
@@ -304,10 +304,19 @@
                     </div>
                     <h2 style="margin: 0; font-size: 1.1rem;" data-i18n="stats_title">Soru İstatistikleri</h2>
                 </div>
-            </div>
 
+                <div class="stats-search-container" style="margin-bottom: 1.25rem;">
+                    <div class="search-input-wrapper">
+                        <svg class="search-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                            stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+                            <circle cx="11" cy="11" r="8"></circle>
+                            <line x1="21" y1="21" x2="16.65" y2="16.65"></line>
+                        </svg>
+                        <input type="text" id="statsSearchInput" data-i18n-placeholder="search_placeholder"
+                            placeholder="Search questions, options or answers...">
+                    </div>
+                </div>
 
-            <div class="card" style="padding-top: 1.5rem;">
                 <div class="stats-filter-bar" id="statsFilterBar" style="margin-bottom: 1.5rem;">
                     <button class="filter-btn active" data-filter="all" data-i18n="filter_all">Alle</button>
                     <button class="filter-btn" data-filter="recent" data-i18n="filter_recent">Son Cevaplananlar</button>

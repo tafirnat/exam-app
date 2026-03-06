@@ -406,14 +406,24 @@ function setupEventListeners() {
         mainImportInput.onchange = (e) => handleImport(e.target.files[0]);
     }
 
-    // Stats Filters
+    // Stats Filters & Search
+    const getStatsSearchKeyword = () => document.getElementById('statsSearchInput')?.value || '';
+
     document.querySelectorAll('.filter-btn').forEach(btn => {
         btn.onclick = () => {
             document.querySelectorAll('.filter-btn').forEach(b => b.classList.remove('active'));
             btn.classList.add('active');
-            renderStatsList(btn.dataset.filter);
+            renderStatsList(btn.dataset.filter, getStatsSearchKeyword());
         };
     });
+
+    const statsSearchInput = document.getElementById('statsSearchInput');
+    if (statsSearchInput) {
+        statsSearchInput.onkeyup = () => {
+            const activeFilter = document.querySelector('.filter-btn.active')?.dataset.filter || 'all';
+            renderStatsList(activeFilter, statsSearchInput.value);
+        };
+    }
 
     // Global Click Close
     document.addEventListener('click', (e) => {
@@ -474,7 +484,7 @@ function switchView(view) {
     }
 
     if (view === 'home') {
-        document.getElementById('headerTitle').innerText = 'Exam App [v2.0:01:22]';
+        document.getElementById('headerTitle').innerText = 'Exam App [v2.1:01:33]';
         updateHomeStats();
     }
 }
@@ -540,7 +550,8 @@ function toggleStar() {
     saveStats();
     if (isPreview) {
         updateIndicatorsPreview();
-        renderStatsList(document.querySelector('.filter-btn.active')?.dataset.filter || 'all');
+        const kw = document.getElementById('statsSearchInput')?.value || '';
+        renderStatsList(document.querySelector('.filter-btn.active')?.dataset.filter || 'all', kw);
     }
     else updateIndicators();
 
@@ -558,7 +569,8 @@ function toggleFlag() {
     saveStats();
     if (isPreview) {
         updateIndicatorsPreview();
-        renderStatsList(document.querySelector('.filter-btn.active')?.dataset.filter || 'all');
+        const kw = document.getElementById('statsSearchInput')?.value || '';
+        renderStatsList(document.querySelector('.filter-btn.active')?.dataset.filter || 'all', kw);
     }
     else updateIndicators();
 
