@@ -304,8 +304,12 @@ function setupEventListeners() {
     };
     document.getElementById('previewBackBtn').onclick = () => {
         switchView('stats');
-        renderStatsList(document.querySelector('.filter-btn.active')?.dataset.filter || 'all');
+        renderStatsList(document.querySelector('.filter-btn.active')?.dataset.filter || 'all', document.getElementById('statsSearchInput')?.value || '');
     };
+    const scBackBtn = document.getElementById('statsCardBackBtn');
+    if (scBackBtn) {
+        scBackBtn.onclick = () => switchView('home');
+    }
 
     // Sources
     document.getElementById('toggleAddSourceBtn').onclick = toggleAddSourcePanel;
@@ -491,7 +495,7 @@ function switchView(view) {
     }
 
     if (view === 'home') {
-        document.getElementById('headerTitle').innerText = 'Exam App [v2.5:02:00]';
+        document.getElementById('headerTitle').innerText = 'Exam App [v2.6:02:07]';
         updateHomeStats();
     }
 }

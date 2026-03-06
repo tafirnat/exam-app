@@ -661,7 +661,30 @@ textarea {
     display: flex;
     align-items: center;
     gap: 0.75rem;
-    margin-bottom: 1.5rem;
+    margin-bottom: 1rem;
+}
+
+.icon-btn-subtle {
+    background: var(--surface-hover);
+    border: 1px solid var(--border-color);
+    border-radius: 8px;
+    padding: 0.4rem;
+    color: var(--text-primary);
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: all 0.2s ease;
+}
+
+.icon-btn-subtle:hover {
+    background: var(--border-color);
+    transform: translateX(-2px);
+}
+
+.icon-btn-subtle svg {
+    width: 1.2rem;
+    height: 1.2rem;
 }
 
 .stats-header-icon {
