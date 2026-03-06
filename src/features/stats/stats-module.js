@@ -188,18 +188,13 @@ export function updateHomeStats() {
 
     updateEl('homeStatTotal', total);
     updateEl('homeStatAvg', avgCoeff);
-    updateEl('statsStatTotal', total);
-    updateEl('statsStatAvg', avgCoeff);
+    updateEl('homeStatTotal', total);
+    updateEl('homeStatAvg', avgCoeff);
 
     // Home
     updateEl('homeProgressPercent', pctText);
     updateStyle('homeProgressBarFill', 'width', pctText);
     updateEl('homeProgressDetail', progressText);
-
-    // Stats Page
-    updateEl('progressPercent', pctText);
-    updateStyle('progressBarFill', 'width', pctText);
-    updateEl('progressDetail', progressText);
 
     const startPanel = document.getElementById('startPanel');
     const statsCard = document.getElementById('homeStatsCard');

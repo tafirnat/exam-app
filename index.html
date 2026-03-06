@@ -26,7 +26,7 @@
                 <polyline points="15 18 9 12 15 6"></polyline>
             </svg>
         </button>
-        <div class="header-title" id="headerTitle">Exam App [v1.8:01:04]</div>
+        <div class="header-title" id="headerTitle">Exam App [v1.9:01:16]</div>
         <div style="width: 40px;"></div>
     </header>
 
@@ -114,12 +114,11 @@
                     <div class="stats-header-icon">
                         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"
                             stroke-linecap="round" stroke-linejoin="round">
-                            <path d="M18 20V10"></path>
-                            <path d="M12 20V4"></path>
-                            <path d="M6 20v-6"></path>
+                            <path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"></path>
+                            <path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"></path>
                         </svg>
                     </div>
-                    <h2 style="margin: 0; font-size: 1.1rem;" data-i18n="stats_title">Fragenstatistik</h2>
+                    <h2 style="margin: 0; font-size: 1.1rem;" data-i18n="home_test_title">Eğitim Merkezi</h2>
                 </div>
 
                 <div class="stats-grid">
@@ -292,66 +291,7 @@
             <div class="question-stats-info" id="questionStatsInfo"></div>
         </div>
         <div id="statsView">
-            <div class="card" style="margin-bottom: 1rem;">
-                <div class="stats-card-header">
-                    <div class="stats-header-icon">
-                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"
-                            stroke-linecap="round" stroke-linejoin="round">
-                            <path d="M18 20V10"></path>
-                            <path d="M12 20V4"></path>
-                            <path d="M6 20v-6"></path>
-                        </svg>
-                    </div>
-                    <h2 style="margin: 0; font-size: 1.1rem;" data-i18n="stats_title">Fragenstatistik</h2>
-                </div>
 
-                <div class="progress-section" id="statsProgressSection">
-                    <div style="display: flex; justify-content: space-between; margin-bottom: 0.5rem;">
-                        <span style="font-size: 0.85rem; color: var(--text-secondary);"
-                            data-i18n="progress">Lernfortschritt</span>
-                        <span style="font-size: 0.85rem; font-weight: 600;" id="progressPercent">0%</span>
-                    </div>
-                    <div class="progress-bar-track">
-                        <div class="progress-bar-fill" id="progressBarFill" style="width: 0%;"></div>
-                    </div>
-                    <div style="font-size: 0.75rem; color: var(--text-secondary); margin-top: 0.25rem;"
-                        id="progressDetail">Gelöst: 0 / 0</div>
-                </div>
-                <div class="stats-grid" id="statsDetailGrid" style="margin-bottom: 1.5rem;">
-                    <div class="stat-box">
-                        <div class="stat-value" id="statsStatTotal">0</div>
-                        <div class="stat-label" data-i18n="total_questions">Fragen gesamt</div>
-                    </div>
-                    <div class="stat-box">
-                        <div class="stat-value" id="statsStatAvg">0.0</div>
-                        <div class="stat-label" data-i18n="avg_coeff">Ø Koeffizient</div>
-                    </div>
-                </div>
-
-                <div class="progress-section" id="statsProgressSection">
-                    <div style="display: flex; justify-content: space-between; margin-bottom: 0.5rem;">
-                        <span style="font-size: 0.85rem; color: var(--text-secondary);"
-                            data-i18n="progress">Lernfortschritt</span>
-                        <span style="font-size: 0.85rem; font-weight: 600;" id="progressPercent">0%</span>
-                    </div>
-                    <div class="progress-bar-track">
-                        <div class="progress-bar-fill" id="progressBarFill" style="width: 0%;"></div>
-                    </div>
-                    <div style="font-size: 0.75rem; color: var(--text-secondary); margin-top: 0.25rem;"
-                        id="progressDetail">Gelöst: 0 / 0</div>
-                </div>
-
-                <div style="margin-top: 1.5rem; padding-top: 1rem; border-top: 1px solid var(--border-color);">
-                    <div style="display: flex; gap: 0.5rem;">
-                        <button class="btn btn-subtle" id="exportBtn"
-                            style="flex: 1; font-size: 0.85rem; padding: 0.5rem;"
-                            data-i18n="export">Exportieren</button>
-                        <button class="btn btn-subtle" id="importBtn"
-                            style="flex: 1; font-size: 0.85rem; padding: 0.5rem;"
-                            data-i18n="import">Importieren</button>
-                    </div>
-                </div>
-            </div>
 
             <div class="card" style="padding-top: 1.5rem;">
                 <div class="stats-filter-bar" id="statsFilterBar" style="margin-bottom: 1.5rem;">
