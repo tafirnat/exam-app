@@ -39,13 +39,18 @@ export function renderStatsList(filter = 'all', searchKeyword = '') {
         const kw = searchKeyword.toLowerCase();
         filteredQuestions = filteredQuestions.filter(q => {
             const text = (q.content?.text || q.text || '').toLowerCase();
-            const options = (q.content?.options || []).join(' ').toLowerCase();
-            const answer = String(q.content?.answer || q.answer || '').toLowerCase();
-            return text.includes(kw) || options.includes(kw) || answer.includes(kw);
+
+            // Extract text from options objects
+            const optionsArr = q.content?.options || q.options || [];
+            const optionsText = optionsArr.map(o => o.text || '').join(' ').toLowerCase();
+
+            // Handle answers (can be string, number, or array)
+            const ans = q.content?.answer || q.answer || '';
+            const answerText = Array.isArray(ans) ? ans.join(' ').toLowerCase() : String(ans).toLowerCase();
+
+            return text.includes(kw) || optionsText.includes(kw) || answerText.includes(kw);
         });
     }
-
-    const showSource = activeSources.length > 1;
 
     filteredQuestions.forEach((q, i) => {
         const s = AppState.stats[q.id] || { correct: 0, wrong: 0, coeff: 1.0 };
@@ -59,7 +64,7 @@ export function renderStatsList(filter = 'all', searchKeyword = '') {
             <div class="stats-item-num">#${i + 1}</div>
             <div style="flex: 1; min-width: 0;">
                 <div class="stats-item-text">${qText}</div>
-                ${showSource ? `<div class="stats-item-source">${q.sourceName}</div>` : ''}
+                ${q.sourceName ? `<div class="stats-item-source">${q.sourceName}</div>` : ''}
             </div>
             <div class="stats-item-meta">
                 <span>✓${s.correct} ✗${s.wrong} (${percent}%)</span>
