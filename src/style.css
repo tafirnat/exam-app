@@ -1036,17 +1036,19 @@ textarea {
 
 .stats-item-source {
     font-size: 0.65rem;
-    padding: 2px 6px;
-    background: var(--surface-hover) !important;
-    border: 1px solid var(--border-color) !important;
-    border-radius: 4px;
+    font-weight: 500;
+    padding: 1px 4px;
+    background: rgba(var(--primary-rgb), 0.05) !important;
+    border: 1px solid rgba(var(--primary-rgb), 0.1) !important;
+    border-radius: 3px;
     color: var(--text-secondary) !important;
-    margin-top: 4px;
+    margin-top: 2px;
     display: inline-block;
-    max-width: 150px;
+    max-width: 100%;
     overflow: hidden;
     text-overflow: ellipsis;
     white-space: nowrap;
+    vertical-align: middle;
 }
 
 
@@ -1089,6 +1091,7 @@ textarea {
     text-overflow: ellipsis;
     white-space: nowrap;
     min-width: 0;
+    display: block;
 }
 
 .stats-item-meta {
