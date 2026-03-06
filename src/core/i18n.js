@@ -39,6 +39,8 @@ export const translations = {
         import: "İçe Aktar",
         saved_sources: "Kayıtlı Kaynaklar",
         add_source: "Yeni Kaynak Ekle",
+        no_sources_msg: "JSON kaynağı yoksa JSON dosyası içeri aktarmak için + butonuna basın",
+        select_source_msg: "Testte başlamak için bir JSON seçin",
         load_url: "URL ile Yükle",
         load: "Yükle",
         load_file: "Dosyadan Yükle (.json)",

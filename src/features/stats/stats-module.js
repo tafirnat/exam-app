@@ -227,17 +227,32 @@ export function updateHomeStats() {
     const startPanel = document.getElementById('startPanel');
     const statsCard = document.getElementById('homeStatsCard');
     const statsBtn = document.getElementById('homeStatsBtn');
+    const onboarding = document.getElementById('homeOnboardingBar');
 
-    if (startPanel) {
-        startPanel.style.opacity = '1';
-        startPanel.style.pointerEvents = 'all';
+    const totalSources = AppState.sources.length;
+    const hasActiveSource = AppState.sources.some(s => s.active);
+
+    if (onboarding) {
+        if (totalSources === 0) {
+            onboarding.innerText = t('no_sources_msg');
+            onboarding.style.display = 'block';
+            if (statsCard) statsCard.style.display = 'none';
+            if (startPanel) startPanel.style.display = 'none';
+        } else if (!hasActiveSource) {
+            onboarding.innerText = t('select_source_msg');
+            onboarding.style.display = 'block';
+            if (statsCard) statsCard.style.display = 'none';
+            if (startPanel) startPanel.style.display = 'none';
+        } else {
+            onboarding.style.display = 'none';
+            if (statsCard) statsCard.style.display = total > 0 ? 'block' : 'none';
+            if (startPanel) {
+                startPanel.style.display = 'block';
+                startPanel.style.opacity = '1';
+                startPanel.style.pointerEvents = 'all';
+            }
+        }
     }
 
-    if (total > 0) {
-        if (statsCard) statsCard.style.display = 'block';
-        if (statsBtn) statsBtn.disabled = false;
-    } else {
-        if (statsCard) statsCard.style.display = 'none';
-        if (statsBtn) statsBtn.disabled = true;
-    }
+    if (statsBtn) statsBtn.disabled = total === 0;
 }

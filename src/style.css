@@ -1074,6 +1074,62 @@ textarea {
     vertical-align: middle;
 }
 
+.onboarding-bar {
+    background: rgba(59, 130, 246, 0.15);
+    border: 1px dashed var(--primary-color);
+    color: var(--text-primary);
+    padding: 1rem;
+    border-radius: var(--radius-md);
+    margin-bottom: 1rem;
+    text-align: center;
+    font-size: 0.9rem;
+    line-height: 1.4;
+    animation: fadeIn 0.5s ease;
+}
+
+.status-dot {
+    width: 10px;
+    height: 10px;
+    border-radius: 50%;
+    margin-right: 2px;
+    display: inline-block;
+}
+
+.status-dot.active {
+    background-color: #10b981;
+    box-shadow: 0 0 8px #10b981;
+    animation: pulse-led 2s infinite;
+}
+
+@keyframes pulse-led {
+    0% {
+        opacity: 1;
+        transform: scale(1);
+    }
+
+    50% {
+        opacity: 0.6;
+        transform: scale(0.9);
+    }
+
+    100% {
+        opacity: 1;
+        transform: scale(1);
+    }
+}
+
+@keyframes fadeIn {
+    from {
+        opacity: 0;
+        transform: translateY(-5px);
+    }
+
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
 .search-highlight {
     background: rgba(255, 193, 7, 0.45);
     color: inherit;

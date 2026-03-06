@@ -91,13 +91,23 @@ export function renderSourcesList() {
         const viewBtn = document.createElement('button');
         viewBtn.className = 'icon-btn';
         viewBtn.style.color = 'var(--text-secondary)';
-        viewBtn.style.fontSize = '0.7rem';
+        viewBtn.style.fontSize = '1rem';
         viewBtn.style.fontWeight = '700';
-        viewBtn.style.padding = '4px 6px';
-        viewBtn.style.border = '1px solid var(--border-color)';
-        viewBtn.style.borderRadius = '4px';
+        viewBtn.style.padding = '4px 10px';
+        viewBtn.style.borderTop = '1px solid var(--border-color)';
+        viewBtn.style.borderBottom = '1px solid var(--border-color)';
+        viewBtn.style.borderLeft = 'none';
+        viewBtn.style.borderRight = 'none';
+        viewBtn.style.borderRadius = '6px';
+        viewBtn.style.background = 'transparent';
         viewBtn.title = 'JSON View';
-        viewBtn.innerHTML = 'JSON'; // Clearer than an icon
+
+        viewBtn.innerHTML = `
+            <div style="display: flex; align-items: center; gap: 8px;">
+                <span class="status-dot ${s.active ? 'active' : ''}"></span>
+                <span>JSON</span>
+            </div>
+        `;
         viewBtn.onclick = (e) => {
             e.stopPropagation();
             viewSourceJSON(s);
