@@ -10,6 +10,7 @@ export function toggleSource(id) {
     });
     saveSources();
     renderSourcesList();
+    if (window.onSourcesUpdated) window.onSourcesUpdated();
 }
 
 export function removeSource(id) {
@@ -17,6 +18,7 @@ export function removeSource(id) {
     AppState.sources = AppState.sources.filter(s => s.id !== id);
     saveSources();
     renderSourcesList();
+    if (window.onSourcesUpdated) window.onSourcesUpdated();
 }
 
 export function viewSourceJSON(source) {
