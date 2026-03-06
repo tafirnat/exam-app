@@ -64,3 +64,20 @@ export function getCorrectAnswers(q) {
 
     return [];
 }
+
+/**
+ * Highlights a keyword within a string by wrapping it in a span.
+ * @param {string} text The source text.
+ * @param {string} keyword The keyword to highlight.
+ * @returns {string} The HTML string with highlights.
+ */
+export function highlightText(text, keyword) {
+    if (!text || !keyword || keyword.trim() === '') return text;
+    try {
+        const escapedKeyword = keyword.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+        const regex = new RegExp(`(${escapedKeyword})`, 'gi');
+        return text.replace(regex, '<span class="search-highlight">$1</span>');
+    } catch (e) {
+        return text;
+    }
+}

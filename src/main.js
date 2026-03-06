@@ -1,7 +1,7 @@
 import { AppState, saveStats, saveSources, saveCurrentSource } from './core/state.js';
 import { initTheme, toggleTheme } from './core/theme.js';
 import { updateStaticTranslations, t, targetLanguages, translations } from './core/i18n.js';
-import { showToast, getCorrectAnswers } from './core/utils.js';
+import { showToast, getCorrectAnswers, highlightText } from './core/utils.js';
 import { migrateOldData } from './core/migration.js';
 import { processJSON, loadFromUrl, loadFromFile, normalizeQuestions } from './features/sources/sources-service.js';
 import { renderSourcesList } from './features/sources/sources-ui.js';
@@ -77,7 +77,8 @@ window.onPreviewQuestion = (q) => {
     AppState.previewQuestion = q;
     AppState.previewQuestionId = q.id;
     switchView('statsPreview');
-    document.getElementById('previewQuestionText').innerText = q.content?.text || q.text || '';
+    const kw = AppState.searchKeyword || '';
+    document.getElementById('previewQuestionText').innerHTML = highlightText(q.content?.text || q.text || '', kw);
     // Reset translation state for new question
     const qTransEl = document.getElementById('trans_previewQuestionText');
     if (qTransEl) {
@@ -110,7 +111,7 @@ window.onPreviewQuestion = (q) => {
             const content = document.createElement('div');
             content.className = 'option-content';
             content.id = `previewOptText_${opt.id}`;
-            content.innerText = opt.text;
+            content.innerHTML = highlightText(opt.text, kw);
 
             const trans = document.createElement('div');
             trans.className = 'translation-text';
@@ -151,7 +152,7 @@ window.onPreviewQuestion = (q) => {
                     <div class="feedback-container" style="margin-top: 0.75rem; display: flex; align-items: start; gap: 0.5rem;">
                         <div style="flex: 1;">
                             <div id="previewCorrectAnswerText" class="correct-answer-feedback" style="color: var(--success-color); font-weight: 600; font-size: 0.9rem;">
-                                ${t('correct_answer_was')} ${answerToShow}
+                                ${highlightText(t('correct_answer_was') + ' ' + answerToShow, kw)}
                             </div>
                             <div id="trans_previewCorrectAnswerText" class="translation-text" style="display: none; margin-top: 0.25rem; font-size: 0.85rem; color: var(--text-secondary);"></div>
                         </div>
@@ -484,7 +485,7 @@ function switchView(view) {
     }
 
     if (view === 'home') {
-        document.getElementById('headerTitle').innerText = 'Exam App [v2.3:01:52]';
+        document.getElementById('headerTitle').innerText = 'Exam App [v2.4:01:56]';
         updateHomeStats();
     }
 }

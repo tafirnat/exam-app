@@ -1051,6 +1051,19 @@ textarea {
     vertical-align: middle;
 }
 
+.search-highlight {
+    background: rgba(255, 193, 7, 0.45);
+    color: inherit;
+    border-radius: 2px;
+    padding: 0 2px;
+    box-shadow: 0 0 0 1px rgba(255, 193, 7, 0.2);
+}
+
+[data-theme="light"] .search-highlight {
+    background: rgba(255, 193, 7, 0.6);
+    box-shadow: 0 0 0 1px rgba(255, 193, 7, 0.3);
+}
+
 
 .stats-list {
     display: flex;

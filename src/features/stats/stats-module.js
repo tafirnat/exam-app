@@ -3,6 +3,7 @@ import { AppState } from '../../core/state.js';
 import { t } from '../../core/i18n.js';
 
 export function renderStatsList(filter = 'all', searchKeyword = '') {
+    AppState.searchKeyword = searchKeyword;
     const list = document.getElementById('statsList');
     if (!list) return;
     list.innerHTML = '';
