@@ -180,7 +180,7 @@ function renderHistoricalTests(list, filter) {
 export function updateHomeStats() {
     const activeQuestions = [];
     AppState.sources.forEach(s => {
-        if (s.active) activeQuestions.push(...s.questions);
+        if (s.active) activeQuestions.push(...(s.questions || []));
     });
 
     const total = activeQuestions.length;
@@ -191,7 +191,8 @@ export function updateHomeStats() {
     let totalCoeff = 0;
     activeQuestions.forEach(q => {
         if (!q) return;
-        const s = AppState.stats[q.id];
+        const qid = q.id;
+        const s = AppState.stats[qid];
         if (s) {
             if (s.correct > 0 || s.wrong > 0) solved++;
             totalCoeff += s.coeff || 1.0;
@@ -214,8 +215,6 @@ export function updateHomeStats() {
     const pctText = `${pct}%`;
     const progressText = t('solved_count', { solved: solved, total: total });
 
-    updateEl('homeStatTotal', total);
-    updateEl('homeStatAvg', avgCoeff);
     updateEl('homeStatTotal', total);
     updateEl('homeStatAvg', avgCoeff);
 
@@ -245,7 +244,8 @@ export function updateHomeStats() {
             if (startPanel) startPanel.style.display = 'none';
         } else {
             onboarding.style.display = 'none';
-            if (statsCard) statsCard.style.display = total > 0 ? 'block' : 'none';
+            // If active source exists, show panels immediately
+            if (statsCard) statsCard.style.display = 'block';
             if (startPanel) {
                 startPanel.style.display = 'block';
                 startPanel.style.opacity = '1';
@@ -254,5 +254,5 @@ export function updateHomeStats() {
         }
     }
 
-    if (statsBtn) statsBtn.disabled = total === 0;
+    if (statsBtn) statsBtn.disabled = !hasActiveSource;
 }
