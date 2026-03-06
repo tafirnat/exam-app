@@ -229,12 +229,9 @@ export function updateHomeStats() {
     const onboarding = document.getElementById('homeOnboardingBar');
 
     const totalSources = AppState.sources.length;
-    // console.log(`[DEBUG] updateHomeStats: total=${total}, totalSources=${totalSources}, hasActive=${hasActiveSource}`); // Original log removed
+    const hasActiveSource = AppState.sources.some(s => s.active);
 
     if (onboarding) {
-        const totalSources = AppState.sources.length;
-        const hasActiveSource = AppState.sources.some(s => s.active);
-
         console.log(`[DEBUG] updateHomeStats: totalQuestions=${total}, totalSources=${totalSources}, hasActive=${hasActiveSource}`);
 
         if (totalSources === 0) {
@@ -252,7 +249,6 @@ export function updateHomeStats() {
         } else {
             console.log('[DEBUG] Source active, showing panels');
             onboarding.style.display = 'none';
-            // Show panels
             if (statsCard) statsCard.style.display = 'block';
             if (startPanel) {
                 startPanel.style.display = 'block';
