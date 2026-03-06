@@ -231,20 +231,24 @@ export function updateHomeStats() {
     const totalSources = AppState.sources.length;
     const hasActiveSource = AppState.sources.some(s => s.active);
 
+    console.log(`[DEBUG] updateHomeStats: total=${total}, totalSources=${totalSources}, hasActive=${hasActiveSource}`);
+
     if (onboarding) {
         if (totalSources === 0) {
+            console.log('[DEBUG] No sources, showing guide');
             onboarding.innerText = t('no_sources_msg');
             onboarding.style.display = 'block';
             if (statsCard) statsCard.style.display = 'none';
             if (startPanel) startPanel.style.display = 'none';
         } else if (!hasActiveSource) {
+            console.log('[DEBUG] Sources exist but none active, showing selection guide');
             onboarding.innerText = t('select_source_msg');
             onboarding.style.display = 'block';
             if (statsCard) statsCard.style.display = 'none';
             if (startPanel) startPanel.style.display = 'none';
         } else {
+            console.log('[DEBUG] Source active, showing panels');
             onboarding.style.display = 'none';
-            // If active source exists, show panels immediately
             if (statsCard) statsCard.style.display = 'block';
             if (startPanel) {
                 startPanel.style.display = 'block';
