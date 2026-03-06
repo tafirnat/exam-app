@@ -472,6 +472,12 @@ function switchView(view) {
     }
     document.getElementById('bottomNav').style.display = view === 'test' ? 'flex' : 'none';
 
+    // Hide header entirely if not on home
+    const header = document.querySelector('header');
+    if (header) {
+        header.style.display = view === 'home' ? 'flex' : 'none';
+    }
+
     document.getElementById('menuToggleBtn').style.display = (view === 'home' || view === 'test') ? 'flex' : 'none';
     document.getElementById('headerBackBtn').style.display = (view === 'stats' || view === 'statsPreview') ? 'flex' : 'none';
 
@@ -485,7 +491,7 @@ function switchView(view) {
     }
 
     if (view === 'home') {
-        document.getElementById('headerTitle').innerText = 'Exam App [v2.4:01:56]';
+        document.getElementById('headerTitle').innerText = 'Exam App [v2.5:02:00]';
         updateHomeStats();
     }
 }
