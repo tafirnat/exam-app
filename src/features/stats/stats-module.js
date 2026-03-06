@@ -231,30 +231,34 @@ export function updateHomeStats() {
     const totalSources = AppState.sources.length;
     const hasActiveSource = AppState.sources.some(s => s.active);
 
-    if (onboarding) {
-        console.log(`[DEBUG] updateHomeStats: totalQuestions=${total}, totalSources=${totalSources}, hasActive=${hasActiveSource}`);
+    console.log(`[DEBUG] updateHomeStats: totalQuestions=${total}, totalSources=${totalSources}, hasActive=${hasActiveSource}`);
 
+    // Update onboarding if exists
+    if (onboarding) {
         if (totalSources === 0) {
             console.log('[DEBUG] No sources, showing guide');
             onboarding.innerText = t('no_sources_msg');
             onboarding.style.display = 'block';
-            if (statsCard) statsCard.style.display = 'none';
-            if (startPanel) startPanel.style.display = 'none';
         } else if (!hasActiveSource) {
             console.log('[DEBUG] Sources exist but none active, showing selection guide');
             onboarding.innerText = t('select_source_msg');
             onboarding.style.display = 'block';
-            if (statsCard) statsCard.style.display = 'none';
-            if (startPanel) startPanel.style.display = 'none';
         } else {
-            console.log('[DEBUG] Source active, showing panels');
+            console.log('[DEBUG] Source active, hiding guide');
             onboarding.style.display = 'none';
-            if (statsCard) statsCard.style.display = 'block';
-            if (startPanel) {
-                startPanel.style.display = 'block';
-                startPanel.style.opacity = '1';
-                startPanel.style.pointerEvents = 'all';
-            }
+        }
+    }
+
+    // ALWAYS update panel visibility regardless of onboarding element
+    if (totalSources === 0 || !hasActiveSource) {
+        if (statsCard) statsCard.style.display = 'none';
+        if (startPanel) startPanel.style.display = 'none';
+    } else {
+        if (statsCard) statsCard.style.display = 'block';
+        if (startPanel) {
+            startPanel.style.display = 'block';
+            startPanel.style.opacity = '1';
+            startPanel.style.pointerEvents = 'all';
         }
     }
 
