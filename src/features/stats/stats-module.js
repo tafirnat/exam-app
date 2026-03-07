@@ -124,7 +124,7 @@ export function renderStatsList(filter = 'all', searchKeyword = '') {
             </div>
         `;
         item.onclick = () => {
-            if (window.onPreviewQuestion) window.onPreviewQuestion(q);
+            if (window.onPreviewQuestion) window.onPreviewQuestion(q, null, 'stats');
         };
         list.appendChild(item);
     });
@@ -270,7 +270,7 @@ function renderHistoricalTests(list, filter) {
         testEl.querySelectorAll('.history-question-item').forEach((qDiv, idx) => {
             qDiv.onclick = (e) => {
                 e.stopPropagation();
-                if (window.onPreviewQuestion) window.onPreviewQuestion(questionsToShow[idx]);
+                if (window.onPreviewQuestion) window.onPreviewQuestion(questionsToShow[idx], null, 'stats');
             };
         });
 
@@ -329,7 +329,17 @@ export function updateHomeStats() {
 
     // Home
     updateEl('homeProgressPercent', pctText);
-    updateStyle('homeProgressBarFill', 'width', pctText);
+
+    // Dynamic coloring based on avgCoeff
+    const coeffVal = parseFloat(avgCoeff);
+    const color = getCoeffColor(coeffVal);
+
+    const fillEl = document.getElementById('homeProgressBarFill');
+    if (fillEl) {
+        fillEl.style.width = pctText;
+        fillEl.style.background = color;
+    }
+
     updateEl('homeProgressDetail', progressText);
 
     const startPanel = document.getElementById('startPanel');
@@ -406,4 +416,31 @@ export function setupStatsEventListeners() {
             renderStatsList(AppState.activeStatsFilter, AppState.searchKeyword);
         };
     });
+}
+
+/**
+ * Calculates a premium HSL color based on question coefficient.
+ * 5.0 (Very Hard) -> Red (0)
+ * 1.0 (Neutral)   -> Green (120)
+ * 0.1 (Minimum)   -> Blue/Cyan (210)
+ */
+function getCoeffColor(coeff) {
+    let hue;
+    if (coeff >= 1.0) {
+        // Interpolate Green (120) to Red (0) over range [1.0, 5.0]
+        const ratio = Math.min(1, (coeff - 1.0) / 4.0);
+        hue = 120 - (ratio * 120);
+    } else {
+        // Interpolate Green (120) to Sky Blue (210) over range [1.0, 0.1]
+        const ratio = Math.min(1, (1.0 - coeff) / 0.9);
+        hue = 120 + (ratio * 90);
+    }
+
+    // Saturation and Lightness for a premium look
+    // Slightly more saturated for harder questions
+    const saturation = 70 + (coeff >= 1.0 ? (coeff - 1.0) * 5 : 0);
+    const lightness = 50;
+
+    // Return a linear gradient for a more "wowed" effect
+    return `linear-gradient(90deg, hsl(${hue}, ${saturation}%, ${lightness}%), hsl(${hue}, ${saturation + 10}%, ${lightness - 10}%))`;
 }

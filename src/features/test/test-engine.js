@@ -49,6 +49,7 @@ export function prepareTest(count) {
     AppState.userAnswers = {};
     AppState.isAnswerChecked = {};
     AppState.shuffledOptionsMap = {};
+    AppState.hasReachedEnd = false;
 
     AppState.currentTest.forEach(idx => {
         const q = rawQuestions[idx];
@@ -111,6 +112,7 @@ export function prepareRetake(historyEntry, onlyIncorrect = false) {
     AppState.userAnswers = {};
     AppState.isAnswerChecked = {};
     AppState.shuffledOptionsMap = {};
+    AppState.hasReachedEnd = false;
 
     shuffledIndices.forEach(idx => {
         const q = rawQuestions[idx];
@@ -130,23 +132,36 @@ export function prepareRetake(historyEntry, onlyIncorrect = false) {
     return AppState.currentTest;
 }
 
-export function finishTest() {
-    if (!AppState.testTracking) return;
-
-    // We consider it a "valid session" if either some answers were checked 
-    // OR it was a retake session (even if the user just exited, we want it documented if it's a retake)
-    if ((!AppState.testTracking.results || AppState.testTracking.results.length === 0) && !AppState.testTracking.retakeOfId) {
-        AppState.testTracking = null;
+export async function finishTest() {
+    if (!AppState.testTracking) {
+        console.warn("finishTest: No active testTracking found.");
         return;
     }
 
     try {
         AppState.testTracking.endTime = new Date().toISOString();
-        const retakeOfId = AppState.testTracking.retakeOfId;
 
-        // Process all questions that were part of this test session
-        const sessionQuestions = AppState.currentTest.map(idx => {
+        // Safety check: ensure rawQuestions is populated from active sources if somehow lost
+        if (!AppState.rawQuestions || AppState.rawQuestions.length === 0) {
+            console.log("finishTest: Reconstructing rawQuestions from active sources...");
+            AppState.rawQuestions = [];
+            AppState.sources.forEach(s => {
+                if (s.active && s.questions) AppState.rawQuestions.push(...s.questions);
+            });
+        }
+
+        const currentTest = AppState.currentTest || [];
+        if (currentTest.length === 0) {
+            console.warn("finishTest: currentTest is empty.");
+        }
+
+        const sessionQuestions = currentTest.map(idx => {
             const q = AppState.rawQuestions[idx];
+            if (!q) {
+                console.error(`finishTest: Question at index ${idx} not found in rawQuestions`);
+                return null;
+            }
+
             const result = AppState.testTracking.results.find(r => String(r.questionId) === String(q.id));
 
             if (result) {
@@ -164,67 +179,38 @@ export function finishTest() {
                     isUnanswered: true
                 };
             }
-        });
+        }).filter(Boolean);
 
+        const total = sessionQuestions.length;
         const correctCount = sessionQuestions.filter(q => q.isCorrect).length;
         const unansweredCount = sessionQuestions.filter(q => q.isUnanswered).length;
-        const wrongCount = sessionQuestions.length - correctCount - unansweredCount;
+        const wrongCount = total - correctCount - unansweredCount;
 
-        if (retakeOfId) {
-            // RETAKE MODE: Update existing history entry
-            const historyIdx = AppState.recentTests.findIndex(t => t.id === retakeOfId);
-            if (historyIdx !== -1) {
-                const history = AppState.recentTests[historyIdx];
+        const historyEntry = {
+            id: Date.now(),
+            sourceNames: AppState.testTracking.sourceNames || ["Unknown Source"],
+            startTime: AppState.testTracking.startTime,
+            endTime: AppState.testTracking.endTime,
+            questionCount: total,
+            correctCount,
+            wrongCount,
+            unansweredCount,
+            successRate: total > 0 ? Math.round((correctCount / total) * 100) : 0,
+            avgCoeff: total > 0 ? sessionQuestions.reduce((acc, q) => acc + (AppState.stats[q.id]?.coeff || 1.0), 0) / total : 1.0,
+            questions: sessionQuestions
+        };
 
-                // Update individual question results in the original history
-                sessionQuestions.forEach(sq => {
-                    const originalQ = history.questions.find(q => String(q.id) === String(sq.id));
-                    if (originalQ) {
-                        originalQ.userAnswer = sq.userAnswer;
-                        originalQ.isCorrect = sq.isCorrect;
-                        originalQ.isUnanswered = sq.isUnanswered;
-                    }
-                });
-
-                // Recalculate summary stats
-                const newCorrect = history.questions.filter(q => q.isCorrect).length;
-                const newUnanswered = history.questions.filter(q => q.isUnanswered).length;
-
-                history.correctCount = newCorrect;
-                history.unansweredCount = newUnanswered;
-                history.wrongCount = history.questions.length - newCorrect - newUnanswered;
-                history.successRate = Math.round((newCorrect / history.questions.length) * 100);
-                history.endTime = AppState.testTracking.endTime;
-
-                let totalCoeff = 0;
-                history.questions.forEach(q => {
-                    const s = AppState.stats[q.id] || { coeff: 1.0 };
-                    totalCoeff += s.coeff;
-                });
-                history.avgCoeff = totalCoeff / history.questions.length;
-            }
-        } else {
-            // NORMAL MODE: Create new history entry
-            const historyEntry = {
-                id: Date.now(),
-                sourceNames: AppState.testTracking.sourceNames,
-                startTime: AppState.testTracking.startTime,
-                endTime: AppState.testTracking.endTime,
-                questionCount: sessionQuestions.length,
-                correctCount,
-                wrongCount,
-                unansweredCount,
-                successRate: Math.round((correctCount / sessionQuestions.length) * 100),
-                avgCoeff: sessionQuestions.reduce((acc, q) => acc + (AppState.stats[q.id]?.coeff || 1.0), 0) / sessionQuestions.length,
-                questions: sessionQuestions
-            };
-
-            if (!Array.isArray(AppState.recentTests)) AppState.recentTests = [];
-            AppState.recentTests.unshift(historyEntry);
-            if (AppState.recentTests.length > 5) AppState.recentTests = AppState.recentTests.slice(0, 5);
+        if (!Array.isArray(AppState.recentTests)) AppState.recentTests = [];
+        AppState.recentTests.unshift(historyEntry);
+        if (AppState.recentTests.length > 5) {
+            AppState.recentTests = AppState.recentTests.slice(0, 5);
         }
 
         saveRecentTests();
+
+        // Dispatch event AFTER state is updated and historyEntry is added
+        window.dispatchEvent(new CustomEvent('test-finished', { detail: historyEntry }));
+
     } catch (err) {
         console.error("Critical error in finishTest:", err);
     } finally {
@@ -251,20 +237,64 @@ export function evaluateAnswer(questionIndex, userAnswer) {
     return isCorrect;
 }
 
-export function updateStats(questionId, isCorrect, userAnswer) {
+export function updateStats(questionId, isCorrect, userAnswer, feedback = null) {
     if (!AppState.stats[questionId]) {
         AppState.stats[questionId] = { coeff: 1.0, correct: 0, wrong: 0 };
     }
     const stat = AppState.stats[questionId];
-    stat.coeff = isCorrect ? Math.max(0.1, stat.coeff - 0.2) : Math.min(5.0, stat.coeff + 0.4);
-    if (isCorrect) stat.correct++; else stat.wrong++;
 
-    // Update current test tracking
+    let existingResult = null;
     if (AppState.testTracking) {
-        AppState.testTracking.results.push({
-            questionId,
-            isCorrect,
-            userAnswer
-        });
+        existingResult = AppState.testTracking.results.find(r => String(r.questionId) === String(questionId));
+    }
+
+    if (feedback) {
+        // Feedback logic:
+        // Correct + Easy:   -0.3
+        // Correct + Hard:   -0.1  
+        // Wrong + Easy:  +0.2
+        // Wrong + Hard:    +0.5
+        let newDelta = 0;
+        if (isCorrect) {
+            newDelta = (feedback === 'easy') ? -0.3 : -0.1;
+        } else {
+            newDelta = (feedback === 'easy') ? 0.2 : 0.5;
+        }
+
+        // Revert previous delta if exists to avoid double-counting
+        const oldDelta = (existingResult && existingResult.appliedDelta !== undefined) ? existingResult.appliedDelta : 0;
+        stat.coeff = stat.coeff - oldDelta + newDelta;
+
+        // Clamp
+        stat.coeff = Math.max(0.1, Math.min(5.0, stat.coeff));
+
+        // Update tracking
+        if (existingResult) {
+            existingResult.appliedDelta = newDelta;
+            existingResult.feedback = feedback;
+        }
+    } else {
+        // Initial update (default logic)
+        const delta = isCorrect ? -0.2 : 0.4;
+        stat.coeff = isCorrect ? Math.max(0.1, stat.coeff + delta) : Math.min(5.0, stat.coeff + delta);
+
+        if (isCorrect) stat.correct++; else stat.wrong++;
+
+        // Update current test tracking
+        if (AppState.testTracking) {
+            if (!existingResult) {
+                AppState.testTracking.results.push({
+                    questionId,
+                    isCorrect,
+                    userAnswer,
+                    appliedDelta: delta
+                });
+            } else {
+                // Update existing
+                existingResult.isCorrect = isCorrect;
+                existingResult.userAnswer = userAnswer;
+                existingResult.appliedDelta = delta;
+            }
+        }
     }
 }

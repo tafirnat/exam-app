@@ -6,7 +6,7 @@ import { migrateOldData } from './core/migration.js';
 import { processJSON, loadFromUrl, loadFromFile, normalizeQuestions } from './features/sources/sources-service.js';
 import { renderSourcesList } from './features/sources/sources-ui.js';
 import { prepareTest, finishTest, prepareRetake } from './features/test/test-engine.js';
-import { renderQuestion, handleCheckAnswer, updateIndicators, handleTranslation } from './features/test/test-ui.js';
+import { renderQuestion, handleCheckAnswer, updateIndicators, handleTranslation, handleDifficultyRating, renderTestResults } from './features/test/test-ui.js';
 import { renderStatsList, updateHomeStats, setupStatsEventListeners } from './features/stats/stats-module.js';
 
 let menuActive = false;
@@ -86,15 +86,25 @@ window.onSourcesUpdated = () => {
     updateHomeStats();
 };
 
-window.onPreviewQuestion = (q) => {
+window.renderQuestionPreview = (q, stats = null, source = null) => {
     // Capture scroll position before switching
     AppState.lastStatsScrollPos = window.scrollY;
 
     AppState.previewQuestion = q;
     AppState.previewQuestionId = q.id;
+
+    // Explicitly track the source (results vs stats)
+    // If not provided, try to infer it (fallback for safety)
+    if (source) {
+        AppState.currentPreviewSource = source;
+    } else {
+        AppState.currentPreviewSource = q.userAnswer !== undefined && q.userAnswer !== null ? 'results' : 'stats';
+    }
+
     switchView('statsPreview');
     const kw = AppState.searchKeyword || '';
     document.getElementById('previewQuestionText').innerHTML = highlightText(q.content?.text || q.text || '', kw);
+
     // Reset translation state for new question
     const qTransEl = document.getElementById('trans_previewQuestionText');
     if (qTransEl) {
@@ -111,12 +121,24 @@ window.onPreviewQuestion = (q) => {
     container.innerHTML = '';
 
     const isTextQuestion = ['text', 'text_input', 'open_ended', 'fill_in_the_blank'].includes(q.type);
+    const hasUserAnswer = q.userAnswer !== undefined && q.userAnswer !== null;
 
     if (q.options && q.options.length > 0 && !isTextQuestion) {
+        const userSelection = hasUserAnswer ? (Array.isArray(q.userAnswer) ? q.userAnswer.map(String) : [String(q.userAnswer)]) : [];
+        const correctAnswers = getCorrectAnswers(q).map(String);
+
         q.options.forEach(opt => {
             const card = document.createElement('div');
-            const isCorrect = getCorrectAnswers(q).map(String).includes(String(opt.id));
-            card.className = `option-card ${isCorrect ? 'correct' : ''}`;
+            const optId = String(opt.id);
+            const isCorrect = correctAnswers.includes(optId);
+            const isSelected = userSelection.includes(optId);
+
+            card.className = 'option-card';
+            if (isCorrect) card.classList.add('correct');
+            if (isSelected) {
+                card.classList.add('selected');
+                if (!isCorrect) card.classList.add('wrong');
+            }
 
             const contentWrapper = document.createElement('div');
             contentWrapper.className = 'option-content-wrapper';
@@ -155,15 +177,22 @@ window.onPreviewQuestion = (q) => {
     } else {
         const correctAnswers = getCorrectAnswers(q);
         const answerToShow = correctAnswers.length > 0 ? (isTextQuestion ? correctAnswers[0] : `${t('correct')}: ${correctAnswers[0]}`) : '';
+        const userVal = hasUserAnswer ? (Array.isArray(q.userAnswer) ? q.userAnswer[0] : q.userAnswer) : '';
 
-        if (answerToShow) {
+        if (answerToShow || userVal) {
             if (isTextQuestion) {
                 // Render as text input wrapper matching test UI
                 const wrapper = document.createElement('div');
                 wrapper.className = 'text-input-wrapper';
                 wrapper.style.width = '100%';
 
+                const isCorrect = q.isCorrect;
+
                 wrapper.innerHTML = `
+                    <div style="margin-bottom: 0.5rem; font-size: 0.8rem; color: var(--text-secondary);">Ihre Antwort:</div>
+                    <input type="text" id="previewUserTextAnswer" value="${userVal || 'Keine Antwort'}" class="${hasUserAnswer ? (isCorrect ? 'correct' : 'wrong') : ''}" disabled style="margin-bottom: 1rem;">
+                    
+                    <div style="margin-bottom: 0.5rem; font-size: 0.8rem; color: var(--text-secondary);">Richtige Antwort:</div>
                     <input type="text" id="previewTextAnswerInput" value="${answerToShow}" class="correct" disabled>
                     <div class="feedback-container" style="margin-top: 0.75rem; display: flex; align-items: start; gap: 0.5rem;">
                         <div style="flex: 1;">
@@ -224,13 +253,30 @@ window.onPreviewQuestion = (q) => {
             }
         }
     }
-    const s = AppState.stats[q.id] || { correct: 0, wrong: 0, coeff: 1.0, note: '' };
+    const s = stats || AppState.stats[q.id] || { correct: 0, wrong: 0, coeff: 1.0, note: '' };
     document.getElementById('previewStatsInfo').innerHTML = `Richtig: ${s.correct} | Falsch: ${s.wrong} | Gesamt: ${s.correct + s.wrong} | Koe: ${s.coeff.toFixed(1)}`;
     document.getElementById('previewNoteInput').value = s.note || '';
     const previewNoteArea = document.getElementById('previewNoteArea');
     if (previewNoteArea) previewNoteArea.classList.remove('visible');
     updateIndicatorsPreview();
+
+    // Update the back button to show the correct view
+    const backBtn = document.getElementById('previewBackBtn');
+    if (backBtn) {
+        const isFromResults = AppState.currentPreviewSource === 'results';
+        backBtn.innerText = isFromResults ? `← ${t('back_to_results')}` : `← ${t('back_to_stats')}`;
+        backBtn.onclick = () => {
+            if (isFromResults) {
+                switchView('results');
+            } else {
+                switchView('stats');
+                renderStatsList(document.querySelector('.filter-btn.active')?.dataset.filter || 'all', document.getElementById('statsSearchInput')?.value || '');
+            }
+        };
+    }
 };
+
+window.onPreviewQuestion = window.renderQuestionPreview;
 
 function updateIndicatorsPreview() {
     const qid = AppState.previewQuestionId;
@@ -310,17 +356,26 @@ function setupEventListeners() {
     document.getElementById('indNote').onclick = toggleNoteArea;
     document.getElementById('menuTranslateAllInline').onclick = translateAll;
     document.getElementById('menuCopyAIInline').onclick = copyAIPrompt;
+    document.getElementById('menuCopyTextInline').onclick = copyQuestionText;
 
     document.getElementById('previewIndStar').onclick = toggleStar;
     document.getElementById('previewIndFlag').onclick = toggleFlag;
     document.getElementById('previewIndNote').onclick = toggleNoteArea;
     document.getElementById('previewMenuTranslateAllInline').onclick = translateAll;
     document.getElementById('previewMenuCopyAIInline').onclick = copyAIPrompt;
-    document.getElementById('menuExitInline').onclick = confirmExit;
 
     window.addEventListener('test-finished', () => {
-        switchView('home');
+        switchView('results');
+        renderTestResults();
         updateHomeStats();
+    });
+
+    window.addEventListener('show-stats-preview', (e) => {
+        const { question, stats, source } = e.detail;
+        AppState.previewQuestionId = question.id;
+        AppState.previewQuestion = question;
+        switchView('statsPreview');
+        renderQuestionPreview(question, stats, source);
     });
 
     // Navigation
@@ -329,14 +384,16 @@ function setupEventListeners() {
     document.getElementById('prevBtn').onclick = prevQuestion;
     document.getElementById('nextBtn').onclick = nextQuestion;
     document.getElementById('checkBtn').onclick = handleCheckAnswer;
+    document.getElementById('diffHardBtn').onclick = () => handleDifficultyRating('hard');
+    document.getElementById('diffEasyBtn').onclick = () => handleDifficultyRating('easy');
     document.getElementById('homeStatsBtn').onclick = () => {
         switchView('stats');
         renderStatsList(AppState.activeStatsFilter || 'all');
     };
-    document.getElementById('previewBackBtn').onclick = () => {
-        switchView('stats');
-        renderStatsList(document.querySelector('.filter-btn.active')?.dataset.filter || 'all', document.getElementById('statsSearchInput')?.value || '');
-    };
+
+    // Results View
+    document.getElementById('resHomeBtn').onclick = goHome;
+    document.getElementById('resRetakeBtn').onclick = retakeSession;
     const scBackBtn = document.getElementById('statsBackBtn');
     if (scBackBtn) {
         scBackBtn.onclick = goBack;
@@ -596,7 +653,7 @@ function setupEventListeners() {
             updateIndicatorsPreview();
         }, 500);
     };
-}
+} // This closes the setupEventListeners function, assuming the content started within it.
 
 // --- View Management ---
 function switchView(view) {
@@ -616,6 +673,9 @@ function switchView(view) {
         document.getElementById('statsPreviewView').style.flexDirection = 'column';
         document.getElementById('statsPreviewView').style.flex = '1';
     }
+
+    document.getElementById('resultsView').style.display = view === 'results' ? 'flex' : 'none';
+
     document.getElementById('bottomNav').style.display = view === 'test' ? 'flex' : 'none';
 
     // Hide header entirely if not on home
@@ -644,7 +704,10 @@ function switchView(view) {
 
 function goBack() {
     const isPreview = document.getElementById('statsPreviewView').offsetParent !== null;
-    if (isPreview) switchView('stats');
+    if (isPreview) {
+        if (AppState.currentPreviewSource === 'results') switchView('results');
+        else switchView('stats');
+    }
     else switchView('home');
 }
 
@@ -688,7 +751,6 @@ function nextQuestion() {
     } else {
         showToast(t('test_completed'));
         finishTest();
-        switchView('home');
     }
 }
 
@@ -811,6 +873,44 @@ function copyAIPrompt() {
 
         if (menuActive) toggleMenu();
     });
+}
+
+
+function copyQuestionText() {
+    const qIndex = AppState.currentIndex;
+    const qId = AppState.currentTest[qIndex];
+    const q = AppState.rawQuestions[qId];
+
+    const text = q.content?.text || q.text || '';
+    if (!text) return;
+
+    navigator.clipboard.writeText(text).then(() => {
+        showToast(t('copy_success') || 'Soru metni kopyalandı.');
+    });
+
+    const btn = document.getElementById('menuCopyTextInline');
+    if (btn) {
+        btn.classList.add('copy-flash');
+        setTimeout(() => btn.classList.remove('copy-flash'), 500);
+    }
+}
+
+function goHome() {
+    switchView('home');
+    updateHomeStats();
+}
+
+async function retakeSession() {
+    const latestTest = AppState.recentTests[0];
+    if (!latestTest) return;
+
+    const { prepareRetake } = await import('./features/test/test-engine.js');
+    const qIds = prepareRetake(latestTest);
+
+    if (qIds) {
+        switchView('test');
+        renderQuestion();
+    }
 }
 
 function updateTranslationUI() {

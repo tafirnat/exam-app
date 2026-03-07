@@ -2,7 +2,7 @@
 import { AppState, saveStats } from '../../core/state.js';
 import { translateText, showToast, getCorrectAnswers } from '../../core/utils.js';
 import { t } from '../../core/i18n.js';
-import { evaluateAnswer, updateStats } from './test-engine.js';
+import { evaluateAnswer, updateStats, finishTest } from './test-engine.js';
 
 export function renderQuestion() {
     if (!AppState.currentTest || AppState.currentTest.length === 0) {
@@ -14,7 +14,7 @@ export function renderQuestion() {
     const isChecked = AppState.isAnswerChecked[qIndex];
 
     document.getElementById('progressText').innerText = `${t('question_label')} ${qIndex + 1} / ${AppState.currentTest.length}`;
-    document.getElementById('coeffBadge').innerText = `${t('coeff_label')} ${stat.coeff.toFixed(1)}`;
+    document.getElementById('progressText').innerText = `${t('question_label')} ${qIndex + 1} / ${AppState.currentTest.length}`;
     document.getElementById('questionText').innerText = q.content?.text || q.text || '';
 
     // Reset translation state for new question
@@ -143,21 +143,43 @@ export function renderQuestion() {
     nextBtn.style.opacity = isLastQuestion ? '0.3' : '1';
 
     const checkBtn = document.getElementById('checkBtn');
+    const difficultyPill = document.getElementById('difficultyPill');
     const checkText = document.getElementById('checkBtnText');
     const checkIcon = document.getElementById('checkIcon');
 
-    if (checkText) checkText.innerText = isChecked ? t('checked') : t('check');
-    if (checkIcon) checkIcon.style.display = isChecked ? 'inline' : 'none';
+    if (checkBtn && difficultyPill) {
+        if (isChecked) {
+            checkBtn.style.display = 'none';
+            difficultyPill.style.display = 'flex';
 
-    checkBtn.disabled = isChecked;
-    checkBtn.style.opacity = isChecked ? '0.5' : '1';
+            // Show current feedback if already given
+            const result = AppState.testTracking?.results.find(r => String(r.questionId) === String(q.id));
+            const hardBtn = document.getElementById('diffHardBtn');
+            const easyBtn = document.getElementById('diffEasyBtn');
+            if (hardBtn && easyBtn) {
+                hardBtn.classList.toggle('active', result?.feedback === 'hard');
+                easyBtn.classList.toggle('active', result?.feedback === 'easy');
+            }
+        } else {
+            checkBtn.style.display = 'flex';
+            difficultyPill.style.display = 'none';
+            if (checkText) checkText.innerText = t('check');
+            if (checkIcon) checkIcon.style.display = 'none';
+            checkBtn.disabled = false;
+            checkBtn.style.opacity = '1';
 
-    if (isLastQuestion) {
-        renderSummarySection();
-    } else {
-        const summaryEl = document.getElementById('testSummarySection');
-        if (summaryEl) summaryEl.remove();
+            // Reset buttons
+            const hardBtn = document.getElementById('diffHardBtn');
+            const easyBtn = document.getElementById('diffEasyBtn');
+            if (hardBtn && easyBtn) {
+                hardBtn.classList.remove('active');
+                easyBtn.classList.remove('active');
+            }
+        }
     }
+
+    // Always show the summary section (Finish Test and Unanswered list) at the bottom
+    renderSummarySection();
 }
 
 function renderSummarySection() {
@@ -165,10 +187,19 @@ function renderSummarySection() {
     if (!summaryEl) {
         summaryEl = document.createElement('div');
         summaryEl.id = 'testSummarySection';
-        summaryEl.style.marginTop = '1.5rem';
-        summaryEl.style.paddingTop = '1.5rem';
-        summaryEl.style.borderTop = '2px solid var(--border-color)';
-        document.getElementById('testView').insertBefore(summaryEl, document.querySelector('.flex-spacer'));
+        summaryEl.className = 'test-summary-section fade-in';
+    }
+    document.getElementById('testView').appendChild(summaryEl);
+
+    // Default visibility: hidden on non-last questions
+    const isLastQuestion = AppState.currentIndex === AppState.currentTest.length - 1;
+    if (isLastQuestion) {
+        summaryEl.style.display = 'block';
+    } else {
+        // Keep current state if it was manually toggled, or hide by default
+        if (!summaryEl.dataset.manuallyToggled) {
+            summaryEl.style.display = 'none';
+        }
     }
 
     const unansweredIndices = [];
@@ -184,17 +215,11 @@ function renderSummarySection() {
             <div style="margin-bottom: 1.5rem;">
                 <h3 style="font-size: 1rem; margin-bottom: 0.75rem; color: var(--text-secondary);">${t('unanswered_questions')}</h3>
                 <div class="unanswered-list">
-                    ${unansweredIndices.map(idx => {
-            const q = AppState.rawQuestions[AppState.currentTest[idx]];
-            const text = q.content?.text || q.text || '';
-            return `
-                            <div class="unanswered-item" onclick="window.goToQuestion(${idx})">
+                    ${unansweredIndices.map(idx => `
+                            <div class="unanswered-item" onclick="window.goToQuestion(${idx})" title="${AppState.rawQuestions[AppState.currentTest[idx]].text?.substring(0, 50)}...">
                                 <span class="unanswered-item-num">#${idx + 1}</span>
-                                <span class="unanswered-item-text">${text}</span>
-                                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width: 16px; height: 16px; color: var(--text-secondary);"><polyline points="9 18 15 12 9 6"></polyline></svg>
                             </div>
-                        `;
-        }).join('')}
+                        `).join('')}
                 </div>
             </div>
         `;
@@ -202,7 +227,7 @@ function renderSummarySection() {
 
     summaryEl.innerHTML = `
         ${unansweredHtml}
-        <button class="btn" id="finishTestBtn" style="width: 100%; background-color: var(--error-color); color: white; display: flex; align-items: center; justify-content: center; gap: 0.5rem; border: none; box-shadow: 0 4px 12px rgba(239, 68, 68, 0.2);">
+        <button class="btn" id="finishTestBtn" style="width: 100%; background-color: var(--error-color); color: white; display: flex; align-items: center; justify-content: center; gap: 0.5rem; border: none; box-shadow: 0 4px 12px rgba(239, 68, 68, 0.2); margin-top: 1rem;">
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" style="width: 20px; height: 20px;"><polyline points="20 6 9 17 4 12"></polyline></svg>
             ${t('finish_test')}
         </button>
@@ -215,8 +240,7 @@ function renderSummarySection() {
             }
         }
         showToast(t('test_completed'));
-        import('./test-engine.js').then(m => m.finishTest());
-        window.dispatchEvent(new CustomEvent('test-finished'));
+        finishTest();
     };
 }
 
@@ -291,7 +315,6 @@ export function updateIndicators() {
 
 export function updateQuestionStatsInfo(qid) {
     const s = AppState.stats[qid] || { correct: 0, wrong: 0, coeff: 1.0 };
-    const total = s.correct + s.wrong;
     const infoEl = document.getElementById('questionStatsInfo');
     if (infoEl) {
         const total = s.correct + s.wrong;
@@ -301,7 +324,142 @@ export function updateQuestionStatsInfo(qid) {
             <span>${t('wrong')}: <b>${s.wrong}</b></span>
             <span>${t('success_percent', { percent })}</span>
             <span>${t('coeff_label')} <b>${s.coeff.toFixed(1)}</b></span>
+            <span id="scrollSummaryBtn" style="
+                display: flex;
+                align-items: center;
+                justify-content: center;
+                width: 28px;
+                height: 28px;
+                color: #ef4444;
+                background: #ef444415;
+                border: 1.5px solid #ef444440;
+                border-radius: 8px;
+                cursor: pointer;
+                transition: all 0.2s ease;
+            ">
+                <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+                    <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"></path>
+                    <polyline points="16 17 21 12 16 7"></polyline>
+                    <line x1="21" y1="12" x2="9" y2="12"></line>
+                </svg>
+            </span>
         `;
         infoEl.classList.add('visible');
+
+        const scrollBtn = document.getElementById('scrollSummaryBtn');
+        if (scrollBtn) {
+            scrollBtn.onclick = () => {
+                const summarySection = document.getElementById('testSummarySection');
+                if (summarySection) {
+                    const isHidden = summarySection.style.display === 'none';
+                    summarySection.style.display = isHidden ? 'block' : 'none';
+                    summarySection.dataset.manuallyToggled = 'true';
+
+                    if (isHidden) {
+                        summarySection.scrollIntoView({ behavior: 'smooth', block: 'start' });
+                    }
+                }
+            };
+        }
     }
 }
+
+export function handleDifficultyRating(rating) {
+    const qIndex = AppState.currentIndex;
+    const qId = AppState.currentTest[qIndex];
+    const q = AppState.rawQuestions[qId];
+    const userAnswer = AppState.userAnswers[qIndex];
+    const isCorrect = evaluateAnswer(qIndex, userAnswer);
+
+    // Update stats with feedback
+    updateStats(q.id, isCorrect, userAnswer, rating);
+    saveStats();
+
+    // Visual feedback: highlight selected button
+    const hardBtn = document.getElementById('diffHardBtn');
+    const easyBtn = document.getElementById('diffEasyBtn');
+    if (hardBtn && easyBtn) {
+        hardBtn.classList.toggle('active', rating === 'hard');
+        easyBtn.classList.toggle('active', rating === 'easy');
+    }
+
+    // Refresh UI to show new coefficient
+    const stat = AppState.stats[q.id];
+    updateQuestionStatsInfo(q.id);
+
+    showToast(`${t('difficulty_' + rating)} ${t('feedback_received')}.`);
+}
+export function renderTestResults() {
+    let latestTest = AppState.recentTests && AppState.recentTests.length > 0 ? AppState.recentTests[0] : null;
+
+    if (!latestTest) {
+        console.warn("renderTestResults: No recent tests found.");
+        // Try to show something instead of just a blank screen if we are in results view
+        if (document.getElementById('resultsView').style.display !== 'none') {
+            document.getElementById('resCorrectCount').textContent = '-';
+            document.getElementById('resWrongCount').textContent = '-';
+            document.getElementById('resUnansweredCount').textContent = '-';
+            document.getElementById('resSuccessRate').textContent = '-%';
+        }
+        return;
+    }
+
+    // Update individual stat values with safety defaults
+    const correct = latestTest.correctCount ?? 0;
+    const wrong = latestTest.wrongCount ?? 0;
+    const unanswered = latestTest.unansweredCount ?? 0;
+    const rate = latestTest.successRate ?? 0;
+
+    document.getElementById('resCorrectCount').textContent = correct;
+    document.getElementById('resWrongCount').textContent = wrong;
+    document.getElementById('resUnansweredCount').textContent = unanswered;
+    document.getElementById('resSuccessRate').textContent = `${rate}%`;
+
+    const gauge = document.querySelector('.success-rate-gauge');
+    if (gauge) {
+        gauge.style.background = `conic-gradient(var(--primary-color) ${rate * 3.6}deg, var(--border-color) 0deg)`;
+    }
+
+    // Question List
+    const listEl = document.getElementById('resQuestionList');
+    if (listEl) {
+        listEl.innerHTML = '';
+        if (latestTest.questions && Array.isArray(latestTest.questions) && latestTest.questions.length > 0) {
+            latestTest.questions.forEach((q, idx) => {
+                if (!q) return;
+                const item = document.createElement('div');
+                item.className = 'result-item';
+                if (q.isCorrect) item.classList.add('correct');
+                else if (q.isUnanswered) item.classList.add('unanswered');
+                else item.classList.add('wrong');
+
+                item.innerHTML = `#${idx + 1}`;
+                item.onclick = () => window.showQuestionResult(latestTest.id, q.id);
+                listEl.appendChild(item);
+            });
+        } else {
+            listEl.innerHTML = '<div style="opacity: 0.5; font-size: 0.8rem; text-align: center; width: 100%;">Keine Details verfügbar</div>';
+        }
+    }
+
+    const dateEl = document.getElementById('resultsDate');
+    if (dateEl && latestTest.endTime) {
+        try {
+            dateEl.textContent = new Date(latestTest.endTime).toLocaleString();
+        } catch (e) {
+            dateEl.textContent = '';
+        }
+    }
+}
+
+window.showQuestionResult = (testId, questionId) => {
+    const test = AppState.recentTests.find(t => t.id === testId);
+    if (!test) return;
+    const q = test.questions.find(item => String(item.id) === String(questionId));
+    if (!q) return;
+
+    // Use stats preview logic from main.js (needs to be available)
+    window.dispatchEvent(new CustomEvent('show-stats-preview', {
+        detail: { question: q, stats: AppState.stats[q.id] || { coeff: 1.0, correct: 0, wrong: 0 }, source: 'results' }
+    }));
+};
