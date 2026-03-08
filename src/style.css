@@ -2252,17 +2252,19 @@ input:focus+.slider {
     background: transparent;
     border: none;
     box-shadow: none;
+    white-space: nowrap;
 }
 
 .stats-item-text pre code {
     display: inline;
-    white-space: normal;
+    white-space: nowrap;
     padding: 0;
     color: inherit;
     font-size: inherit;
 }
 
 .stats-item-text code {
+    white-space: nowrap;
     padding: 0 4px;
     background: rgba(var(--primary-rgb), 0.05);
     border: 1px solid rgba(var(--primary-rgb), 0.1);
