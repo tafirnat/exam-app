@@ -1,4 +1,4 @@
-import { AppState, saveStats, saveSources, saveCurrentSource } from './core/state.js';
+import { AppState, saveStats, saveSources, saveCurrentSource, saveCustomAIPrompt, saveAiIntegration } from './core/state.js';
 import { initTheme, toggleTheme } from './core/theme.js';
 import { updateStaticTranslations, t, targetLanguages, translations } from './core/i18n.js';
 import { showToast, getCorrectAnswers, highlightText } from './core/utils.js';
@@ -43,6 +43,21 @@ document.addEventListener('DOMContentLoaded', () => {
             if (s.questions) s.questions = normalizeQuestions(s.questions);
         });
 
+        // Migration fix: Update stale 1.0 coefficients to 2.0 for unanswered questions
+        console.log('Migrating stale coefficients...');
+        let migrationCount = 0;
+        Object.keys(AppState.stats).forEach(qid => {
+            const s = AppState.stats[qid];
+            if (s && s.correct === 0 && s.wrong === 0 && s.coeff === 1.0) {
+                s.coeff = 2.0;
+                migrationCount++;
+            }
+        });
+        if (migrationCount > 0) {
+            console.log(`Migrated ${migrationCount} stale coefficients to 2.0`);
+            saveStats();
+        }
+
         console.log('Rendering stats list...');
         renderStatsList();
 
@@ -57,21 +72,35 @@ document.addEventListener('DOMContentLoaded', () => {
 
         console.log('App initialized v1.2.3');
 
-        // One-time auto-load logic for new users
-        const isInitialized = localStorage.getItem('focus_app_initialized');
-        if (!isInitialized) {
-            console.log('New user detected, performing initial setup...');
-            if (AppState.sources.length === 0) {
-                loadFromUrl('./examples/standard-exam.json').then(source => {
-                    if (source) renderSourcesList();
-                });
-            }
-            localStorage.setItem('focus_app_initialized', 'true');
-        } else if (AppState.rawQuestions.length === 0) {
-            // Respect existing sources if questions aren't loaded
-            const sourceToLoad = AppState.sources.find(s => s.active) || AppState.sources[0];
-            if (sourceToLoad && sourceToLoad.url) {
-                loadFromUrl(sourceToLoad.url);
+        // One-time auto-load logic for new users: Add default template but don't force select it
+        const templateAdded = localStorage.getItem('focus_app_template_added');
+        if (!templateAdded) {
+            console.log('Adding default exam template...');
+            loadFromUrl('./examples/standard-exam.json', { active: false }).then(source => {
+                if (source) renderSourcesList();
+            });
+            localStorage.setItem('focus_app_template_added', 'true');
+        }
+
+        // Fix: If we have active sources but no questions loaded (e.g. after refresh), load them
+        if (AppState.rawQuestions.length === 0) {
+            const activeSources = AppState.sources.filter(s => s.active);
+            activeSources.forEach(s => {
+                if (!s.questions || s.questions.length === 0) {
+                    if (s.origin?.type === 'url' && s.origin.display) {
+                        loadFromUrl(s.origin.display);
+                    }
+                }
+            });
+
+            // If still no questions in AppState.rawQuestions, but we have active sources with questions
+            // (they should be normalized/processed by now in the DOMContentLoaded logic above)
+            const questions = [];
+            AppState.sources.forEach(s => {
+                if (s.active && s.questions) questions.push(...s.questions);
+            });
+            if (questions.length > 0) {
+                AppState.rawQuestions = questions;
             }
         }
     } catch (err) {
@@ -103,7 +132,31 @@ window.renderQuestionPreview = (q, stats = null, source = null) => {
 
     switchView('statsPreview');
     const kw = AppState.searchKeyword || '';
-    document.getElementById('previewQuestionText').innerHTML = highlightText(q.content?.text || q.text || '', kw);
+    const qTextEl = document.getElementById('previewQuestionText');
+    qTextEl.innerHTML = highlightText(q.content?.text || q.text || '', kw);
+
+    // Handle Media (Images)
+    const card = qTextEl.closest('.question-card');
+    // Remove existing media
+    card.querySelectorAll('.question-media').forEach(m => m.remove());
+
+    const media = q.content?.media || [];
+    const imageMedia = media.find(m => m.type === 'image');
+
+    if (imageMedia) {
+        const img = document.createElement('img');
+        img.src = imageMedia.url;
+        img.className = 'question-media';
+        if (imageMedia.position === 'below') {
+            img.classList.add('position-below');
+            // Insert after translation text (to be above options)
+            const transEl = document.getElementById('trans_previewQuestionText');
+            transEl.parentNode.insertBefore(img, transEl.nextSibling);
+        } else {
+            // Default: above
+            card.insertBefore(img, qTextEl);
+        }
+    }
 
     // Reset translation state for new question
     const qTransEl = document.getElementById('trans_previewQuestionText');
@@ -253,7 +306,7 @@ window.renderQuestionPreview = (q, stats = null, source = null) => {
             }
         }
     }
-    const s = stats || AppState.stats[q.id] || { correct: 0, wrong: 0, coeff: 1.0, note: '' };
+    const s = stats || AppState.stats[q.id] || { correct: 0, wrong: 0, coeff: 2.0, note: '' };
     document.getElementById('previewStatsInfo').innerHTML = `Richtig: ${s.correct} | Falsch: ${s.wrong} | Gesamt: ${s.correct + s.wrong} | Koe: ${s.coeff.toFixed(1)}`;
     document.getElementById('previewNoteInput').value = s.note || '';
     const previewNoteArea = document.getElementById('previewNoteArea');
@@ -336,6 +389,16 @@ function setupEventListeners() {
         };
     }
 
+    // AI Integration selection
+    const aiSelect = document.getElementById('aiIntegrationSelect');
+    if (aiSelect) {
+        aiSelect.value = AppState.aiIntegration;
+        aiSelect.onchange = (e) => {
+            AppState.aiIntegration = e.target.value;
+            saveAiIntegration();
+        };
+    }
+
     // Translation Toggle
     const transToggle = document.getElementById('translationToggle');
     if (transToggle) {
@@ -357,6 +420,7 @@ function setupEventListeners() {
     document.getElementById('menuTranslateAllInline').onclick = translateAll;
     document.getElementById('menuCopyAIInline').onclick = copyAIPrompt;
     document.getElementById('menuCopyTextInline').onclick = copyQuestionText;
+    document.getElementById('menuEditPrompt').onclick = openPromptEditor;
 
     document.getElementById('previewIndStar').onclick = toggleStar;
     document.getElementById('previewIndFlag').onclick = toggleFlag;
@@ -499,6 +563,14 @@ function setupEventListeners() {
         mainImportInput.onchange = (e) => handleImport(e.target.files[0]);
     }
 
+    // AI Prompt Editor Listeners
+    document.getElementById('promptCancelBtn').onclick = closePromptEditor;
+    document.getElementById('promptSaveBtn').onclick = saveCustomPrompt;
+    document.getElementById('promptResetBtn').onclick = resetCustomPrompt;
+    document.getElementById('promptEditorOverlay').onclick = (e) => {
+        if (e.target.id === 'promptEditorOverlay') closePromptEditor();
+    };
+
     // Stats Filters & Search
     const getStatsSearchKeyword = () => document.getElementById('statsSearchInput')?.value || '';
 
@@ -634,7 +706,7 @@ function setupEventListeners() {
         clearTimeout(noteTimeout);
         noteTimeout = setTimeout(() => {
             const q = AppState.rawQuestions[AppState.currentTest[AppState.currentIndex]];
-            if (!AppState.stats[q.id]) AppState.stats[q.id] = { coeff: 1.0, correct: 0, wrong: 0 };
+            if (!AppState.stats[q.id]) AppState.stats[q.id] = { coeff: 2.0, correct: 0, wrong: 0 };
             AppState.stats[q.id].note = e.target.value.trim();
             saveStats();
             updateIndicators();
@@ -647,7 +719,7 @@ function setupEventListeners() {
         previewNoteTimeout = setTimeout(() => {
             const qid = AppState.previewQuestionId;
             if (!qid) return;
-            if (!AppState.stats[qid]) AppState.stats[qid] = { coeff: 1.0, correct: 0, wrong: 0 };
+            if (!AppState.stats[qid]) AppState.stats[qid] = { coeff: 2.0, correct: 0, wrong: 0 };
             AppState.stats[qid].note = e.target.value.trim();
             saveStats();
             updateIndicatorsPreview();
@@ -694,6 +766,10 @@ function switchView(view) {
 
     if (view === 'home' || view === 'stats') {
         finishTest();
+        const qn = document.getElementById('quickNavContainer');
+        if (qn) qn.classList.remove('visible');
+        const qo = document.getElementById('quickNavOverlay');
+        if (qo) qo.classList.remove('visible');
     }
 
     if (view === 'home') {
@@ -760,7 +836,7 @@ function toggleStar() {
         : AppState.rawQuestions[AppState.currentTest[AppState.currentIndex]];
     if (!q) return;
     const qid = String(q.id);
-    if (!AppState.stats[qid]) AppState.stats[qid] = { coeff: 1.0, correct: 0, wrong: 0 };
+    if (!AppState.stats[qid]) AppState.stats[qid] = { coeff: 2.0, correct: 0, wrong: 0 };
     AppState.stats[qid].starred = !AppState.stats[qid].starred;
     saveStats();
     if (isPreview) {
@@ -779,7 +855,7 @@ function toggleFlag() {
         : AppState.rawQuestions[AppState.currentTest[AppState.currentIndex]];
     if (!q) return;
     const qid = String(q.id);
-    if (!AppState.stats[qid]) AppState.stats[qid] = { coeff: 1.0, correct: 0, wrong: 0 };
+    if (!AppState.stats[qid]) AppState.stats[qid] = { coeff: 2.0, correct: 0, wrong: 0 };
     AppState.stats[qid].flagged = !AppState.stats[qid].flagged;
     saveStats();
     if (isPreview) {
@@ -849,32 +925,47 @@ function copyAIPrompt() {
     const optionsText = q.options?.map(o => o.text).join(', ') || 'Textantwort';
     const questionText = q.content?.text || q.text || '';
 
-    // Determine prompt language based on translation target
     let promptLang = AppState.translationTarget;
     if (!['tr', 'en', 'de'].includes(promptLang)) {
         promptLang = 'en';
     }
 
-    const template = translations[promptLang]?.ai_prompt_template || translations['en'].ai_prompt_template;
+    const template = AppState.customAIPrompt || translations[promptLang]?.ai_prompt_template || translations['en'].ai_prompt_template;
     const prompt = template
         .replace('{question}', questionText)
         .replace('{options}', optionsText);
 
+    // Always copy to clipboard as a fallback
     navigator.clipboard.writeText(prompt).then(() => {
-        showToast(t('copy_ai_success'));
+        if (AppState.aiIntegration === 'clipboard') {
+            showToast(t('copy_ai_success'));
 
-        // Add copy-flash animation
-        const btnId = isPreview ? 'previewMenuCopyAIInline' : 'menuCopyAIInline';
-        const btn = document.getElementById(btnId);
-        if (btn) {
-            btn.classList.add('copy-flash');
-            setTimeout(() => btn.classList.remove('copy-flash'), 500);
+            // Add copy-flash animation
+            const btnId = isPreview ? 'previewMenuCopyAIInline' : 'menuCopyAIInline';
+            const btn = document.getElementById(btnId);
+            if (btn) {
+                btn.classList.add('copy-flash');
+                setTimeout(() => btn.classList.remove('copy-flash'), 500);
+            }
         }
+    }).catch(err => console.error('Clipboard error:', err));
 
-        if (menuActive) toggleMenu();
-    });
+    // AI Integration Logic
+    if (AppState.aiIntegration !== 'clipboard') {
+        const aiUrls = {
+            gemini: 'https://gemini.google.com/app?prompt=',
+            chatgpt: 'https://chatgpt.com/?q=',
+            perplexity: 'https://www.perplexity.ai/search?q=',
+            copilot: 'https://copilot.microsoft.com/?q=',
+            deepseek: 'https://chat.deepseek.com/?q='
+        };
+        const baseUrl = aiUrls[AppState.aiIntegration];
+        if (baseUrl) {
+            window.open(baseUrl + encodeURIComponent(prompt), '_blank');
+            if (menuActive) toggleMenu();
+        }
+    }
 }
-
 
 function copyQuestionText() {
     const qIndex = AppState.currentIndex;
@@ -920,3 +1011,45 @@ function updateTranslationUI() {
         document.body.classList.add('translation-disabled');
     }
 }
+
+// AI Prompt Editor Logic
+function openPromptEditor() {
+    const overlay = document.getElementById('promptEditorOverlay');
+    const input = document.getElementById('customPromptInput');
+
+    let promptLang = AppState.translationTarget || 'en';
+    if (!['tr', 'en', 'de'].includes(promptLang)) promptLang = 'en';
+
+    const defaultPrompt = translations[promptLang]?.ai_prompt_template || translations['en']?.ai_prompt_template;
+
+    input.value = AppState.customAIPrompt || defaultPrompt;
+    overlay.classList.add('active');
+    if (menuActive) toggleMenu();
+}
+
+function closePromptEditor() {
+    const overlay = document.getElementById('promptEditorOverlay');
+    overlay.classList.remove('active');
+}
+
+function saveCustomPrompt() {
+    const input = document.getElementById('customPromptInput');
+    AppState.customAIPrompt = input.value.trim();
+    saveCustomAIPrompt();
+    showToast(t('save_success') || 'Kaydedildi');
+    closePromptEditor();
+}
+
+function resetCustomPrompt() {
+    if (confirm(t('confirm_reset') || 'Varsayılan prompta dönmek istediğinize emin misiniz?')) {
+        let promptLang = AppState.translationTarget || 'en';
+        if (!['tr', 'en', 'de'].includes(promptLang)) promptLang = 'en';
+        const defaultPrompt = translations[promptLang]?.ai_prompt_template || translations['en']?.ai_prompt_template;
+
+        document.getElementById('customPromptInput').value = defaultPrompt;
+        AppState.customAIPrompt = '';
+        saveCustomAIPrompt();
+        showToast(t('reset_success') || 'Sıfırlandı');
+    }
+}
+

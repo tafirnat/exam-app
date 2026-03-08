@@ -12,7 +12,7 @@ export function normalizeQuestions(questions) {
     });
 }
 
-export function processJSON(data, name) {
+export function processJSON(data, name, options = {}) {
     if (!data.questions || !Array.isArray(data.questions)) {
         showToast('Ungültiges JSON Format');
         return null;
@@ -27,11 +27,18 @@ export function processJSON(data, name) {
     const existingIdx = AppState.sources.findIndex(s => s.id === id);
 
     const sourceName = name || 'Unknown Source';
+
+    // Determine active state: options.active takes precedence, then default logic
+    let isActive = AppState.sources.length === 0;
+    if (options.active !== undefined) {
+        isActive = options.active;
+    }
+
     const source = {
         id,
         name: title,
         questions: normalizedQuestions,
-        active: AppState.sources.length === 0,
+        active: isActive,
         lastUsed: Date.now(),
         importDate: new Date().toLocaleDateString(),
         origin: {
@@ -54,13 +61,13 @@ export function processJSON(data, name) {
     return source;
 }
 
-export async function loadFromUrl(url) {
+export async function loadFromUrl(url, options = {}) {
     try {
         const fullUrl = new URL(url, window.location.href);
         const res = await fetch(fullUrl);
         if (!res.ok) throw new Error('Network response was not ok');
         const data = await res.json();
-        return processJSON(data, fullUrl.hostname || 'local');
+        return processJSON(data, fullUrl.hostname || 'local', options);
     } catch (e) {
         showToast('Laden fehlgeschlagen');
         console.error(e);

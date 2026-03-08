@@ -10,12 +10,36 @@ export function renderQuestion() {
     }
     const qIndex = AppState.currentIndex;
     const q = AppState.rawQuestions[AppState.currentTest[qIndex]];
-    const stat = AppState.stats[q.id] || { coeff: 1.0, note: '' };
+    const stat = AppState.stats[q.id] || { coeff: 2.0, note: '' };
     const isChecked = AppState.isAnswerChecked[qIndex];
 
     document.getElementById('progressText').innerText = `${t('question_label')} ${qIndex + 1} / ${AppState.currentTest.length}`;
     document.getElementById('progressText').innerText = `${t('question_label')} ${qIndex + 1} / ${AppState.currentTest.length}`;
-    document.getElementById('questionText').innerText = q.content?.text || q.text || '';
+    const qTextEl = document.getElementById('questionText');
+    qTextEl.innerHTML = q.content?.text || q.text || '';
+
+    // Handle Media (Images)
+    const card = qTextEl.closest('.question-card');
+    // Remove existing media
+    card.querySelectorAll('.question-media').forEach(m => m.remove());
+
+    const media = q.content?.media || [];
+    const imageMedia = media.find(m => m.type === 'image');
+
+    if (imageMedia) {
+        const img = document.createElement('img');
+        img.src = imageMedia.url;
+        img.className = 'question-media';
+        if (imageMedia.position === 'below') {
+            img.classList.add('position-below');
+            // Insert after translation text (to be above options)
+            const transEl = document.getElementById('trans_questionText');
+            transEl.parentNode.insertBefore(img, transEl.nextSibling);
+        } else {
+            // Default: above
+            card.insertBefore(img, qTextEl);
+        }
+    }
 
     // Reset translation state for new question
     const qTransEl = document.getElementById('trans_questionText');
@@ -45,7 +69,7 @@ export function renderQuestion() {
 
         container.innerHTML = `
             <div class="text-input-wrapper">
-                <input type="text" id="textAnswerInput" value="${val}" placeholder="Ihre Antwort..." ${isChecked ? 'disabled' : ''}>
+                <input type="text" id="textAnswerInput" value="${val}" placeholder="Ihre Antwort..." ${isChecked ? 'disabled' : ''} oninput="window.syncTextInput(this.value)">
                 ${isChecked && !isCorrect ? `
                     <div class="feedback-container" style="margin-top: 0.75rem; display: flex; align-items: start; gap: 0.5rem;">
                         <div style="flex: 1;">
@@ -106,7 +130,7 @@ export function renderQuestion() {
             const content = document.createElement('div');
             content.className = 'option-content';
             content.id = `optText_${opt.id}`;
-            content.innerText = opt.text;
+            content.innerHTML = opt.text;
 
             const trans = document.createElement('div');
             trans.className = 'translation-text';
@@ -193,19 +217,48 @@ function renderSummarySection() {
 
     // Default visibility: hidden on non-last questions
     const isLastQuestion = AppState.currentIndex === AppState.currentTest.length - 1;
-    if (isLastQuestion) {
-        summaryEl.style.display = 'block';
-    } else {
+    let isVisible = isLastQuestion;
+    if (!isLastQuestion) {
         // Keep current state if it was manually toggled, or hide by default
-        if (!summaryEl.dataset.manuallyToggled) {
-            summaryEl.style.display = 'none';
+        if (summaryEl.dataset.manuallyToggled === 'true') {
+            isVisible = summaryEl.style.display !== 'none';
         }
+    }
+    summaryEl.style.display = isVisible ? 'block' : 'none';
+
+    // Quick Navigation & Overlay setup
+    let quickNavEl = document.getElementById('quickNavContainer');
+    if (!quickNavEl) {
+        quickNavEl = document.createElement('div');
+        quickNavEl.id = 'quickNavContainer';
+        quickNavEl.className = 'quick-nav-container';
+        document.body.appendChild(quickNavEl);
+    }
+
+    let overlayEl = document.getElementById('quickNavOverlay');
+    if (!overlayEl) {
+        overlayEl = document.createElement('div');
+        overlayEl.id = 'quickNavOverlay';
+        overlayEl.className = 'quick-nav-overlay';
+        document.body.appendChild(overlayEl);
+        overlayEl.onclick = () => window.toggleQuickNav(false);
+    }
+
+    // Set up click trigger on progress text
+    const progressText = document.getElementById('progressText');
+    if (progressText) {
+        progressText.style.cursor = 'pointer';
+        progressText.onclick = () => window.toggleQuickNav(true);
     }
 
     const unansweredIndices = [];
     AppState.currentTest.forEach((qId, idx) => {
         if (!AppState.isAnswerChecked[idx]) {
-            unansweredIndices.push(idx);
+            const userAnswer = AppState.userAnswers[idx];
+            const hasAnswer = userAnswer && Array.isArray(userAnswer) && userAnswer.length > 0 && userAnswer.some(v => v !== null && v !== undefined && String(v).trim() !== '');
+            if (!hasAnswer) {
+                unansweredIndices.push(idx);
+            }
         }
     });
 
@@ -233,8 +286,57 @@ function renderSummarySection() {
         </button>
     `;
 
+    // Render Quick Nav content
+    if (AppState.currentTest.length > 1) {
+        quickNavEl.innerHTML = `
+            <div class="quick-nav-number" id="quickNavNumberDisplay">
+                ${t('go_to_question', { number: AppState.currentIndex + 1 })}
+            </div>
+            <input type="range" class="quick-nav-slider" id="quickNavSlider" 
+                   min="0" max="${AppState.currentTest.length - 1}" 
+                   value="${AppState.currentIndex}" step="1">
+        `;
+
+        const slider = document.getElementById('quickNavSlider');
+        const display = document.getElementById('quickNavNumberDisplay');
+
+        slider.oninput = (e) => {
+            const val = parseInt(e.target.value);
+            display.innerText = t('go_to_question', { number: val + 1 });
+        };
+
+        // Auto-navigate on release
+        slider.onchange = (e) => {
+            const val = parseInt(e.target.value);
+            window.goToQuestion(val);
+        };
+    }
+
     document.getElementById('finishTestBtn').onclick = () => {
-        if (unansweredIndices.length > 0) {
+        // Auto-evaluate unchecked but answered questions
+        AppState.currentTest.forEach((qId, idx) => {
+            if (!AppState.isAnswerChecked[idx]) {
+                const userAnswer = AppState.userAnswers[idx];
+                const hasAnswer = userAnswer && Array.isArray(userAnswer) && userAnswer.length > 0 && userAnswer.some(v => v !== null && v !== undefined && String(v).trim() !== '');
+                if (hasAnswer) {
+                    const q = AppState.rawQuestions[qId];
+                    const isCorrect = evaluateAnswer(idx, userAnswer);
+                    AppState.isAnswerChecked[idx] = true;
+                    updateStats(q.id, isCorrect, userAnswer);
+                }
+            }
+        });
+        saveStats();
+
+        // Recalculate truly unanswered questions for confirmation
+        const trulyUnanswered = [];
+        AppState.currentTest.forEach((qId, idx) => {
+            if (!AppState.isAnswerChecked[idx]) {
+                trulyUnanswered.push(idx);
+            }
+        });
+
+        if (trulyUnanswered.length > 0) {
             if (!confirm(t('confirm_finish_test_unanswered'))) {
                 return;
             }
@@ -244,9 +346,56 @@ function renderSummarySection() {
     };
 }
 
+window.syncTextInput = (val) => {
+    AppState.userAnswers[AppState.currentIndex] = [val];
+    // We don't call renderQuestion here to avoid losing focus/cursor pos,
+    // but we should update the unanswered list if it's visible.
+    // However, the summary section is usually at the bottom, so full re-render is overkill.
+    // Let's at least update the unanswered list if needed.
+    const unansweredIndices = [];
+    AppState.currentTest.forEach((qId, idx) => {
+        if (!AppState.isAnswerChecked[idx]) {
+            const userAnswer = AppState.userAnswers[idx];
+            const hasAnswer = userAnswer && Array.isArray(userAnswer) && userAnswer.length > 0 && userAnswer.some(v => v !== null && v !== undefined && String(v).trim() !== '');
+            if (!hasAnswer) unansweredIndices.push(idx);
+        }
+    });
+    // Tiny optimization: just update the unanswered list if it exists
+    const unansweredList = document.querySelector('.unanswered-list');
+    if (unansweredList) {
+        unansweredList.innerHTML = unansweredIndices.map(idx => `
+            <div class="unanswered-item" onclick="window.goToQuestion(${idx})" title="${AppState.rawQuestions[AppState.currentTest[idx]].text?.substring(0, 50)}...">
+                <span class="unanswered-item-num">#${idx + 1}</span>
+            </div>
+        `).join('');
+        // Also update the heading if needed, but let's keep it simple
+    }
+};
+
 window.goToQuestion = (idx) => {
     AppState.currentIndex = idx;
+    window.toggleQuickNav(false);
     renderQuestion();
+};
+
+window.toggleQuickNav = (show) => {
+    const nav = document.getElementById('quickNavContainer');
+    const overlay = document.getElementById('quickNavOverlay');
+    if (nav && overlay) {
+        if (show === undefined) show = !nav.classList.contains('visible');
+        nav.classList.toggle('visible', show);
+        overlay.classList.toggle('visible', show);
+
+        if (show) {
+            // Update slider value to current index when opening
+            const slider = document.getElementById('quickNavSlider');
+            const display = document.getElementById('quickNavNumberDisplay');
+            if (slider && display) {
+                slider.value = AppState.currentIndex;
+                display.innerText = t('go_to_question', { number: AppState.currentIndex + 1 });
+            }
+        }
+    }
 };
 
 export function selectOption(id, type) {
@@ -291,11 +440,16 @@ export async function handleTranslation(btn, sid, tid) {
     const srcEl = document.getElementById(sid);
     const targetEl = document.getElementById(tid);
     if (!targetEl.innerText) {
-        const translated = await translateText(srcEl.innerText);
-        if (translated) {
-            targetEl.innerText = translated;
-            targetEl.style.display = 'block';
-            btn.classList.add('active');
+        btn.classList.add('loading');
+        try {
+            const translated = await translateText(srcEl.innerText);
+            if (translated) {
+                targetEl.innerText = translated;
+                targetEl.style.display = 'block';
+                btn.classList.add('active');
+            }
+        } finally {
+            btn.classList.remove('loading');
         }
     } else {
         const isVisible = targetEl.style.display !== 'none';
@@ -314,7 +468,7 @@ export function updateIndicators() {
 }
 
 export function updateQuestionStatsInfo(qid) {
-    const s = AppState.stats[qid] || { correct: 0, wrong: 0, coeff: 1.0 };
+    const s = AppState.stats[qid] || { correct: 0, wrong: 0, coeff: 2.0 };
     const infoEl = document.getElementById('questionStatsInfo');
     if (infoEl) {
         const total = s.correct + s.wrong;
@@ -370,24 +524,41 @@ export function handleDifficultyRating(rating) {
     const q = AppState.rawQuestions[qId];
     const userAnswer = AppState.userAnswers[qIndex];
     const isCorrect = evaluateAnswer(qIndex, userAnswer);
+    const existingResult = AppState.testTracking?.results.find(r => String(r.questionId) === String(q.id));
+
+    let targetRating = rating;
+    let isTogglingOff = false;
+
+    if (existingResult && existingResult.feedback === rating) {
+        targetRating = null; // Toggle off
+        isTogglingOff = true;
+    } else if (existingResult && existingResult.feedback === 'hard' && rating === 'easy') {
+        // Special requirement: Switching from Hard to Easy stars the question
+        if (!AppState.stats[q.id]) AppState.stats[q.id] = { coeff: 2.0, correct: 0, wrong: 0 };
+        AppState.stats[q.id].starred = true;
+        updateIndicators();
+    }
 
     // Update stats with feedback
-    updateStats(q.id, isCorrect, userAnswer, rating);
+    updateStats(q.id, isCorrect, userAnswer, targetRating);
     saveStats();
 
     // Visual feedback: highlight selected button
     const hardBtn = document.getElementById('diffHardBtn');
     const easyBtn = document.getElementById('diffEasyBtn');
     if (hardBtn && easyBtn) {
-        hardBtn.classList.toggle('active', rating === 'hard');
-        easyBtn.classList.toggle('active', rating === 'easy');
+        hardBtn.classList.toggle('active', targetRating === 'hard');
+        easyBtn.classList.toggle('active', targetRating === 'easy');
     }
 
     // Refresh UI to show new coefficient
-    const stat = AppState.stats[q.id];
     updateQuestionStatsInfo(q.id);
 
-    showToast(`${t('difficulty_' + rating)} ${t('feedback_received')}.`);
+    if (isTogglingOff) {
+        showToast(t('feedback_removed'));
+    } else {
+        showToast(`${t('difficulty_' + rating)} ${t('feedback_received')}.`);
+    }
 }
 export function renderTestResults() {
     let latestTest = AppState.recentTests && AppState.recentTests.length > 0 ? AppState.recentTests[0] : null;
@@ -460,6 +631,6 @@ window.showQuestionResult = (testId, questionId) => {
 
     // Use stats preview logic from main.js (needs to be available)
     window.dispatchEvent(new CustomEvent('show-stats-preview', {
-        detail: { question: q, stats: AppState.stats[q.id] || { coeff: 1.0, correct: 0, wrong: 0 }, source: 'results' }
+        detail: { question: q, stats: AppState.stats[q.id] || { coeff: 2.0, correct: 0, wrong: 0 }, source: 'results' }
     }));
 };

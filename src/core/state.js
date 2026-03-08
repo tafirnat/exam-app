@@ -27,11 +27,21 @@ export const AppState = {
     lastStatsScrollPos: 0,
     activeStatsFilter: 'all',
     activeStatsSortField: 'original', // 'original', 'coeff', 'success', 'wrong'
-    activeStatsSortDir: 'asc' // 'asc', 'desc'
+    activeStatsSortDir: 'asc', // 'asc', 'desc'
+    customAIPrompt: localStorage.getItem('focus_app_custom_ai_prompt') || '',
+    aiIntegration: localStorage.getItem('focus_app_ai_integration') || 'clipboard'
 };
 
 export function saveStats() {
     localStorage.setItem('focus_app_stats_local', JSON.stringify(AppState.stats));
+}
+
+export function saveCustomAIPrompt() {
+    localStorage.setItem('focus_app_custom_ai_prompt', AppState.customAIPrompt);
+}
+
+export function saveAiIntegration() {
+    localStorage.setItem('focus_app_ai_integration', AppState.aiIntegration);
 }
 
 export function saveSources() {

@@ -107,7 +107,7 @@ export function renderSourcesList() {
             if (st && (st.correct > 0 || st.wrong > 0)) {
                 totalCorrect += st.correct || 0;
                 totalWrong += st.wrong || 0;
-                totalCoeffSum += (st.coeff !== undefined ? st.coeff : 1.0);
+                totalCoeffSum += (st.coeff !== undefined ? st.coeff : 2.0);
                 answeredAny++;
             }
         });

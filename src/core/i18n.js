@@ -105,6 +105,7 @@ export const translations = {
         difficulty_hard: "Zor",
         difficulty_easy: "Kolay",
         feedback_received: "seçildi",
+        feedback_removed: "Geri bildirim kaldırıldı",
         copy_question: "Soru Metnini Kopyala",
         go_home: "Ana Sayfaya Dön",
         eval_excellent: "Mükemmel! Harika bir sonuç.",
@@ -116,7 +117,20 @@ export const translations = {
         stats_count_filtered: "Filtered: {count} questions",
         confirm_reset_source: "Bu kaynağa ait tüm ilerlemenizi (istatistikler, katsayılar, işaretlemeler) sıfırlamak istediğinize emin misiniz?",
         reset_source: "İlerlemeyi Sıfırla",
-        ai_prompt_template: "Soru: {question}\nSeçenekler: {options}\n\nLütfen bu soruyu ve doğru çözümü ayrıntılı olarak açıklayın."
+        go_to_question: "{number}. soruya git",
+        ai_prompt_template: "Soru: {question}\nSeçenekler: {options}\n\nLütfen sadece doğru çözümü açıklayın.",
+        edit_prompt: "AI Promptu Düzenle",
+        reset: "Sıfırla",
+        save: "Kaydet",
+        ai_prompt_editor_title: "AI Prompt Düzenleyici",
+        cancel: "Vazgeç",
+        confirm_reset: "Varsayılan prompta dönmek istediğinize emin misiniz?",
+        reset_success: "Prompt sıfırlandı",
+        save_success: "Prompt kaydedildi",
+        ai_integration_title: "AI Entegrasyonu",
+        ai_direct_open: "Doğrudan AI'da Aç",
+        ai_clipboard_only: "Sadece Panoya Kopyala (Varsayılan)",
+        ai_integration_hint: "Seçili AI, prompt butonuna basıldığında otomatik açılır."
     },
     en: {
         theme_change: "Change Theme",
@@ -206,6 +220,7 @@ export const translations = {
         difficulty_hard: "Hard",
         difficulty_easy: "Easy",
         feedback_received: "selected",
+        feedback_removed: "Feedback removed",
         copy_question: "Copy Question Text",
         go_home: "Return to Home",
         eval_excellent: "Excellent! A great result.",
@@ -217,7 +232,20 @@ export const translations = {
         stats_count_filtered: "Filtered: {count} questions",
         confirm_reset_source: "Are you sure you want to reset all your progress (stats, coefficients, markers) for this source?",
         reset_source: "Reset Progress",
-        ai_prompt_template: "Question: {question}\nOptions: {options}\n\nPlease explain this question and the correct solution in detail."
+        go_to_question: "Go to question {number}",
+        ai_prompt_template: "Question: {question}\nOptions: {options}\n\nPlease explain only the correct solution.",
+        edit_prompt: "Edit AI Prompt",
+        reset: "Reset",
+        save: "Save",
+        ai_prompt_editor_title: "AI Prompt Editor",
+        cancel: "Cancel",
+        confirm_reset: "Are you sure you want to revert to the default prompt?",
+        reset_success: "Prompt reset successful",
+        save_success: "Prompt saved successfully",
+        ai_integration_title: "AI Integration",
+        ai_direct_open: "Open Directly in AI",
+        ai_clipboard_only: "Copy to Clipboard Only (Default)",
+        ai_integration_hint: "Selected AI will open automatically when prompt button is clicked."
     },
     de: {
         theme_change: "Design ändern",
@@ -307,6 +335,7 @@ export const translations = {
         difficulty_hard: "Schwer",
         difficulty_easy: "Einfach",
         feedback_received: "ausgewählt",
+        feedback_removed: "Feedback entfernt",
         copy_question: "Fragetext kopieren",
         go_home: "Zur Startseite",
         eval_excellent: "Exzellent! Ein tolles Ergebnis.",
@@ -318,8 +347,21 @@ export const translations = {
         stats_count_filtered: "Gefiltert: {count} Fragen",
         confirm_reset_source: "Sind Sie sicher, dass Sie den gesamten Fortschritt (Statistiken, Koeffizienten, Markierungen) für diese Quelle zurücksetzen möchten?",
         reset_source: "Fortschritt zurücksetzen",
-        ai_prompt_template: "Frage: {question}\nOptionen: {options}\n\nBitte erklären Sie diese Frage und die richtige Lösung im Detail."
-    }
+        go_to_question: "Zu Frage {number} gehen",
+        ai_prompt_template: "Frage: {question}\nOptionen: {options}\n\nBitte erklären Sie nur die richtige Lösung.",
+        edit_prompt: "KI-Prompt bearbeiten",
+        reset: "Zurücksetzen",
+        save: "Speichern",
+        ai_prompt_editor_title: "KI-Prompt-Editor",
+        cancel: "Abbrechen",
+        confirm_reset: "Möchten Sie wirklich zum Standard-Prompt zurückkehren?",
+        reset_success: "Prompt zurückgesetzt",
+        save_success: "Prompt gespeichert",
+        ai_integration_title: "KI-Integration",
+        ai_direct_open: "Direkt in KI öffnen",
+        ai_clipboard_only: "Nur in Zwischenablage kopieren (Standard)",
+        ai_integration_hint: "Die gewählte KI wird automatisch geöffnet, wenn der Prompt-Button geklickt wird."
+    },
 };
 
 export function t(key, params = {}) {

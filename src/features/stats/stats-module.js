@@ -63,8 +63,8 @@ export function renderStatsList(filter = 'all', searchKeyword = '') {
     const dir = AppState.activeStatsSortDir === 'asc' ? 1 : -1;
 
     filteredQuestions.sort((a, b) => {
-        const sa = AppState.stats[a.id] || { correct: 0, wrong: 0, coeff: 1.0 };
-        const sb = AppState.stats[b.id] || { correct: 0, wrong: 0, coeff: 1.0 };
+        const sa = AppState.stats[a.id] || { correct: 0, wrong: 0, coeff: 2.0 };
+        const sb = AppState.stats[b.id] || { correct: 0, wrong: 0, coeff: 2.0 };
 
         let result = 0;
         if (field === 'original') {
@@ -100,7 +100,7 @@ export function renderStatsList(filter = 'all', searchKeyword = '') {
     }
 
     filteredQuestions.forEach((q, i) => {
-        const s = AppState.stats[q.id] || { correct: 0, wrong: 0, coeff: 1.0 };
+        const s = AppState.stats[q.id] || { correct: 0, wrong: 0, coeff: 2.0 };
         const total = s.correct + s.wrong;
         const percent = total > 0 ? Math.round((s.correct / total) * 100) : 0;
         const item = document.createElement('div');
@@ -304,9 +304,9 @@ export function updateHomeStats() {
         const s = AppState.stats[qid];
         if (s) {
             if (s.correct > 0 || s.wrong > 0) solved++;
-            totalCoeff += s.coeff || 1.0;
+            totalCoeff += s.coeff || 2.0;
         } else {
-            totalCoeff += 1.0;
+            totalCoeff += 2.0;
         }
     });
 
@@ -426,10 +426,14 @@ export function setupStatsEventListeners() {
  */
 function getCoeffColor(coeff) {
     let hue;
-    if (coeff >= 1.0) {
-        // Interpolate Green (120) to Red (0) over range [1.0, 5.0]
-        const ratio = Math.min(1, (coeff - 1.0) / 4.0);
-        hue = 120 - (ratio * 120);
+    if (coeff >= 2.0) {
+        // Interpolate Amber/Orange (45) to Red (0) over range [2.0, 3.0]
+        const ratio = Math.min(1, (coeff - 2.0) / 1.0);
+        hue = 45 - (ratio * 45);
+    } else if (coeff >= 1.0) {
+        // Interpolate Green (120) to Amber (45) over range [1.0, 2.0]
+        const ratio = Math.min(1, (2.0 - coeff) / 1.0);
+        hue = 45 + (ratio * 75);
     } else {
         // Interpolate Green (120) to Sky Blue (210) over range [1.0, 0.1]
         const ratio = Math.min(1, (1.0 - coeff) / 0.9);

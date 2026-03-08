@@ -12,7 +12,7 @@ export function prepareTest(count) {
     // Smart Selection logic: 60% hard, 30% medium, 10% easy
     // Based on coefficient (higher = harder)
     const qs = rawQuestions.map((q, idx) => {
-        const stat = AppState.stats[q.id] || { coeff: 1.0 };
+        const stat = AppState.stats[q.id] || { coeff: 2.0 };
         return { idx, q, coeff: stat.coeff };
     }).sort((a, b) => b.coeff - a.coeff);
 
@@ -196,7 +196,7 @@ export async function finishTest() {
             wrongCount,
             unansweredCount,
             successRate: total > 0 ? Math.round((correctCount / total) * 100) : 0,
-            avgCoeff: total > 0 ? sessionQuestions.reduce((acc, q) => acc + (AppState.stats[q.id]?.coeff || 1.0), 0) / total : 1.0,
+            avgCoeff: total > 0 ? sessionQuestions.reduce((acc, q) => acc + (AppState.stats[q.id]?.coeff || 2.0), 0) / total : 2.0,
             questions: sessionQuestions
         };
 
@@ -237,9 +237,9 @@ export function evaluateAnswer(questionIndex, userAnswer) {
     return isCorrect;
 }
 
-export function updateStats(questionId, isCorrect, userAnswer, feedback = null) {
+export function updateStats(questionId, isCorrect, userAnswer, feedback = undefined) {
     if (!AppState.stats[questionId]) {
-        AppState.stats[questionId] = { coeff: 1.0, correct: 0, wrong: 0 };
+        AppState.stats[questionId] = { coeff: 2.0, correct: 0, wrong: 0, starred: false, flagged: false };
     }
     const stat = AppState.stats[questionId];
 
@@ -248,39 +248,37 @@ export function updateStats(questionId, isCorrect, userAnswer, feedback = null) 
         existingResult = AppState.testTracking.results.find(r => String(r.questionId) === String(questionId));
     }
 
-    if (feedback) {
-        // Feedback logic:
-        // Correct + Easy:   -0.3
-        // Correct + Hard:   -0.1  
-        // Wrong + Easy:  +0.2
-        // Wrong + Hard:    +0.5
+    if (feedback !== undefined) {
+        // Rating update (setting 'hard'/'easy' OR toggling off with null)
+        const oldDelta = (existingResult && existingResult.appliedDelta !== undefined) ? existingResult.appliedDelta : 0;
+
         let newDelta = 0;
-        if (isCorrect) {
-            newDelta = (feedback === 'easy') ? -0.3 : -0.1;
+        if (feedback === 'easy') {
+            newDelta = isCorrect ? -0.3 : 0.2;
+        } else if (feedback === 'hard') {
+            newDelta = isCorrect ? -0.1 : 0.5;
         } else {
-            newDelta = (feedback === 'easy') ? 0.2 : 0.5;
+            // feedback is null -> toggle off, revert to default session delta
+            newDelta = isCorrect ? -0.2 : 0.4;
         }
 
-        // Revert previous delta if exists to avoid double-counting
-        const oldDelta = (existingResult && existingResult.appliedDelta !== undefined) ? existingResult.appliedDelta : 0;
         stat.coeff = stat.coeff - oldDelta + newDelta;
+        stat.coeff = Math.max(0.1, Math.min(3.0, stat.coeff));
 
-        // Clamp
-        stat.coeff = Math.max(0.1, Math.min(5.0, stat.coeff));
-
-        // Update tracking
         if (existingResult) {
             existingResult.appliedDelta = newDelta;
             existingResult.feedback = feedback;
         }
     } else {
-        // Initial update (default logic)
+        // Initial session update (from handleCheckAnswer)
         const delta = isCorrect ? -0.2 : 0.4;
-        stat.coeff = isCorrect ? Math.max(0.1, stat.coeff + delta) : Math.min(5.0, stat.coeff + delta);
+        stat.coeff = isCorrect ? Math.max(0.1, stat.coeff + delta) : Math.min(3.0, stat.coeff + delta);
 
-        if (isCorrect) stat.correct++; else stat.wrong++;
+        // Only increment counters on initial check
+        if (!existingResult) {
+            if (isCorrect) stat.correct++; else stat.wrong++;
+        }
 
-        // Update current test tracking
         if (AppState.testTracking) {
             if (!existingResult) {
                 AppState.testTracking.results.push({
@@ -290,7 +288,7 @@ export function updateStats(questionId, isCorrect, userAnswer, feedback = null) 
                     appliedDelta: delta
                 });
             } else {
-                // Update existing
+                // Update existing if somehow called again without feedback
                 existingResult.isCorrect = isCorrect;
                 existingResult.userAnswer = userAnswer;
                 existingResult.appliedDelta = delta;

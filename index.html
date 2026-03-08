@@ -62,6 +62,33 @@
 
         <div class="dropdown-divider"></div>
 
+        <button class="dropdown-item" id="menuEditPrompt">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor">
+                <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"></path>
+                <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"></path>
+            </svg>
+            <span data-i18n="edit_prompt">Promptu Düzenle</span>
+        </button>
+
+        <div class="dropdown-divider"></div>
+        <div class="dropdown-header" data-i18n="ai_integration_title">AI Entegrasyonu</div>
+        <div style="padding: 0 1rem 1rem 1.5rem;">
+            <select id="aiIntegrationSelect" class="menu-select" style="margin-bottom: 0.5rem;">
+                <option value="clipboard" data-i18n="ai_clipboard_only">Sadece Panoya Kopyala</option>
+                <option value="gemini">Google Gemini</option>
+                <option value="chatgpt">ChatGPT</option>
+                <option value="perplexity">Perplexity</option>
+                <option value="copilot">Microsoft Copilot</option>
+                <option value="deepseek">DeepSeek</option>
+            </select>
+            <div style="font-size: 0.7rem; color: var(--text-secondary); line-height: 1.2;"
+                data-i18n="ai_integration_hint">
+                Seçili AI, prompt butonuna basıldığında otomatik açılır.
+            </div>
+        </div>
+
+        <div class="dropdown-divider"></div>
+
         <div id="testOnlyMenuItems" style="display: none;">
             <button class="dropdown-item" id="menuStar">
                 <svg viewBox="0 0 24 24" fill="none" stroke="currentColor">
@@ -292,9 +319,7 @@
 
         <div id="testView" class="view-container">
             <div class="indicators-bar" id="indicatorsBar">
-                <span id="progressText"
-                    style="font-size: 0.9rem; color: var(--text-secondary); margin-right: 0.5rem; font-weight: 600;">Frage
-                    1 / 20</span>
+                <span id="progressText">Frage 1 / 20</span>
 
                 <div style="flex: 1;"></div>
 
@@ -623,6 +648,24 @@
     </div>
 
     <div class="toast" id="toast"></div>
+
+    <!-- AI Prompt Editor Modal -->
+    <div id="promptEditorOverlay" class="modal-overlay">
+        <div class="modal-card">
+            <h3 data-i18n="ai_prompt_editor_title">AI Prompt Düzenleyici</h3>
+            <p style="font-size: 0.8rem; color: var(--text-secondary); margin-bottom: 1rem;">
+                Variables: <code style="color: var(--primary-color);">{question}</code>, <code
+                    style="color: var(--primary-color);">{options}</code>
+            </p>
+            <textarea id="customPromptInput" style="min-height: 200px; margin-bottom: 1.5rem;"></textarea>
+            <div style="display: flex; gap: 0.75rem;">
+                <button class="btn btn-subtle" id="promptResetBtn" style="flex: 1;" data-i18n="reset">Sıfırla</button>
+                <button class="btn btn-secondary" id="promptCancelBtn" style="flex: 1;"
+                    data-i18n="cancel">Vazgeç</button>
+                <button class="btn btn-primary" id="promptSaveBtn" style="flex: 1;" data-i18n="save">Kaydet</button>
+            </div>
+        </div>
+    </div>
 
     <input type="file" id="importFileInput" style="display: none;" accept=".json">
     <script type="module" src="src/main.js"></script>
