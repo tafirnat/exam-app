@@ -1,29 +1,31 @@
 {
     "exam_metadata": {
-        "title": "Standard Exam Template",
-        "id": "std_101",
-        "category": "General Knowledge",
-        "total_questions": 4,
-        "date": "2026-03-26",
-        "source": "https://github.com/tafirnat/exam-app"
+        "title": "AI Learning Template (Golden Reference)",
+        "id": "ref_template_001",
+        "category": "Exam App Documentation",
+        "total_questions": 7,
+        "date": "2026-03-08",
+        "source": "https://github.com/tafirnat/exam-app",
+        "description": "This file serves as a reference for AI to generate compatible test JSON files. It demonstrates all supported features of the Exam App."
     },
     "questions": [
         {
-            "id": 101,
+            "id": "q1_single",
             "order": 1,
             "type": "single_choice",
             "difficulty": 1,
             "tags": [
-                "example"
+                "single-choice",
+                "basic"
             ],
             "content": {
-                "text": "What is the natural satellite of Earth?",
+                "text": "Which planet is known as the 'Red Planet'?",
                 "media": []
             },
             "options": [
                 {
                     "id": 1,
-                    "text": "Moon",
+                    "text": "Venus",
                     "media": []
                 },
                 {
@@ -39,9 +41,9 @@
             ],
             "answer": {
                 "correct_ids": [
-                    1
+                    2
                 ],
-                "explanation": "The Moon is the only natural satellite of Earth."
+                "explanation": "Mars is often called the Red Planet because of iron oxide on its surface."
             },
             "user_state": {
                 "is_flagged": false,
@@ -49,36 +51,37 @@
             }
         },
         {
-            "id": 102,
+            "id": "q2_multi",
             "order": 2,
             "type": "multiple_choice",
             "difficulty": 2,
             "tags": [
+                "multiple-choice",
                 "science"
             ],
             "content": {
-                "text": "Which of these are prime numbers?",
+                "text": "Which of the following are Gas Giants in our solar system? (Select all that apply)",
                 "media": []
             },
             "options": [
                 {
                     "id": 1,
-                    "text": "2",
+                    "text": "Jupiter",
                     "media": []
                 },
                 {
                     "id": 2,
-                    "text": "4",
+                    "text": "Earth",
                     "media": []
                 },
                 {
                     "id": 3,
-                    "text": "7",
+                    "text": "Saturn",
                     "media": []
                 },
                 {
                     "id": 4,
-                    "text": "9",
+                    "text": "Mars",
                     "media": []
                 }
             ],
@@ -87,7 +90,7 @@
                     1,
                     3
                 ],
-                "explanation": "2 and 7 are only divisible by themselves and 1."
+                "explanation": "Jupiter and Saturn are gaseous planets, unlike Earth and Mars which are rocky (terrestrial)."
             },
             "user_state": {
                 "is_flagged": false,
@@ -95,15 +98,15 @@
             }
         },
         {
-            "id": 103,
+            "id": "q3_tf",
             "order": 3,
             "type": "true_false",
             "difficulty": 1,
             "tags": [
-                "logic"
+                "true-false"
             ],
             "content": {
-                "text": "Water boils at 100 degrees Celsius.",
+                "text": "The Sun is actually a star.",
                 "media": []
             },
             "options": [
@@ -122,7 +125,7 @@
                 "correct_ids": [
                     1
                 ],
-                "explanation": "Under standard pressure, water boils at 100°C."
+                "explanation": "The Sun is classified as a yellow dwarf star."
             },
             "user_state": {
                 "is_flagged": false,
@@ -130,24 +133,150 @@
             }
         },
         {
-            "id": 104,
+            "id": "q4_text",
             "order": 4,
             "type": "text_input",
-            "difficulty": 3,
+            "difficulty": 2,
             "tags": [
-                "linux"
+                "text-input",
+                "open-ended"
             ],
             "content": {
-                "text": "What is the command to list files in Linux?",
+                "text": "What is the name of the largest moon of Saturn?",
                 "media": []
             },
             "options": [],
             "answer": {
                 "accepted_texts": [
-                    "ls",
-                    "ls -l"
+                    "Titan",
+                    "titan"
                 ],
-                "explanation": "The 'ls' command comes from 'list' and shows directory contents."
+                "explanation": "Titan is the largest moon of Saturn and the second-largest natural satellite in the Solar System."
+            },
+            "user_state": {
+                "is_flagged": false,
+                "is_marked": false
+            }
+        },
+        {
+            "id": "q5_media_above",
+            "order": 5,
+            "type": "single_choice",
+            "difficulty": 1,
+            "tags": [
+                "media-above",
+                "visual"
+            ],
+            "content": {
+                "text": "Identify the vehicle shown in the image below.",
+                "media": [
+                    {
+                        "type": "image",
+                        "url": "https://img.freepik.com/free-photo/launch-rocket-icon-isolated_53876-71265.jpg?t=st=1772935806~exp=1772939406~hmac=eb4fc48b0c92a2f55fb75ecde7839fa28f5a725363c7ab4be8a01db466f3d4e6&w=360",
+                        "position": "above"
+                    }
+                ]
+            },
+            "options": [
+                {
+                    "id": 1,
+                    "text": "A Space Rocket",
+                    "media": []
+                },
+                {
+                    "id": 2,
+                    "text": "A Submarine",
+                    "media": []
+                }
+            ],
+            "answer": {
+                "correct_ids": [
+                    1
+                ],
+                "explanation": "The image clearly shows a rocket launch."
+            },
+            "user_state": {
+                "is_flagged": false,
+                "is_marked": false
+            }
+        },
+        {
+            "id": "q6_media_below",
+            "order": 6,
+            "type": "single_choice",
+            "difficulty": 1,
+            "tags": [
+                "media-below",
+                "visual"
+            ],
+            "content": {
+                "text": "The rocket image is positioned below this text. (Visual Positioning Example)",
+                "media": [
+                    {
+                        "type": "image",
+                        "url": "https://img.freepik.com/free-photo/launch-rocket-icon-isolated_53876-71265.jpg?t=st=1772935806~exp=1772939406~hmac=eb4fc48b0c92a2f55fb75ecde7839fa28f5a725363c7ab4be8a01db466f3d4e6&w=360",
+                        "position": "below"
+                    }
+                ]
+            },
+            "options": [
+                {
+                    "id": 1,
+                    "text": "Correct",
+                    "media": []
+                },
+                {
+                    "id": 2,
+                    "text": "Incorrect",
+                    "media": []
+                }
+            ],
+            "answer": {
+                "correct_ids": [
+                    1
+                ],
+                "explanation": "This demonstrates how to place media below the question text."
+            },
+            "user_state": {
+                "is_flagged": false,
+                "is_marked": false
+            }
+        },
+        {
+            "id": "q7_code",
+            "order": 7,
+            "type": "single_choice",
+            "difficulty": 3,
+            "tags": [
+                "code-formatting",
+                "technical"
+            ],
+            "content": {
+                "text": "Examine the following Python <code>list</code> operation. What will be the final value of <code>my_list</code>?\n\n<pre><code>my_list = [10, 20, 30]\nmy_list.pop()\nmy_list.append(40)</code></pre>",
+                "media": []
+            },
+            "options": [
+                {
+                    "id": 1,
+                    "text": "<code>[10, 20, 40]</code>",
+                    "media": []
+                },
+                {
+                    "id": 2,
+                    "text": "<code>[10, 20, 30, 40]</code>",
+                    "media": []
+                },
+                {
+                    "id": 3,
+                    "text": "<code>[10, 20]</code>",
+                    "media": []
+                }
+            ],
+            "answer": {
+                "correct_ids": [
+                    1
+                ],
+                "explanation": "The <code>pop()</code> method removes the last element (30), and <code>append(40)</code> adds 40 at the end."
             },
             "user_state": {
                 "is_flagged": false,
