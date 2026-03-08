@@ -66,7 +66,6 @@
 .history-delete-btn:hover,
 .history-retake-btn:hover {
     background-color: rgba(0, 0, 0, 0.05);
-    transform: scale(1.1);
 }
 
 [data-theme="dark"] .history-delete-btn:hover,
@@ -78,6 +77,12 @@
 .history-retake-btn svg {
     width: 20px;
     height: 20px;
+    transition: transform 0.2s ease;
+}
+
+.history-retake-btn.icon-only svg {
+    width: 22px;
+    height: 22px;
 }
 
 .history-test-icon svg {
@@ -122,6 +127,20 @@
     text-overflow: ellipsis;
     padding-right: 1rem;
     color: var(--text-primary);
+    display: block;
+    /* Ensure text-overflow works on block/inline-block */
+}
+
+/* Force everything inside to be inline and clean for the list view */
+.history-question-text * {
+    display: inline !important;
+    white-space: nowrap !important;
+    background: none !important;
+    border: none !important;
+    padding: 0 !important;
+    margin: 0 !important;
+    box-shadow: none !important;
+    font-size: inherit !important;
 }
 
 .history-question-status {
@@ -143,42 +162,24 @@
     opacity: 0.7;
 }
 
-/* --- Focused Retake Pie Icon --- */
-.retake-pie-icon {
-    width: 26px;
-    height: 26px;
-    border-radius: 50%;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    transition: transform 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
-    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+.history-retake-btn[data-retake-mode="all"] svg {
+    color: #959cb4;
 }
 
-.retake-pie-icon svg {
-    width: 16px;
-    height: 16px;
-    filter: drop-shadow(0 1px 1px rgba(0, 0, 0, 0.2));
+.history-retake-btn[data-retake-mode="incorrect"] svg {
+    color: #f59e0b;
+    /* Amber */
 }
 
-/* Red=Wrong (#ef4444), Yellow=Unanswered (#f59e0b), Green=Correct (#10b981) */
-
-/* All items (Recent filter): Green dominant */
-.retake-pie-icon.all {
-    background: conic-gradient(#10b981 0deg 240deg,
-            #ef4444 240deg 300deg,
-            #f59e0b 300deg 360deg);
+/* --- Hover Effects for Clean Icons --- */
+.history-retake-btn[data-retake-mode="all"]:hover svg {
+    color: #959cb4;
+    filter: brightness(1.2);
 }
 
-/* Focused (Incorrect filter): Red/Yellow dominant */
-.retake-pie-icon.focused {
-    background: conic-gradient(#ef4444 0deg 160deg,
-            #f59e0b 160deg 300deg,
-            #10b981 300deg 360deg);
-}
-
-.history-retake-btn:hover .retake-pie-icon {
-    transform: rotate(360deg) scale(1.1);
+.history-retake-btn[data-retake-mode="incorrect"]:hover svg {
+    color: #fbbf24;
+    /* Lighter Amber */
 }
 
 .history-test-stats-summary {

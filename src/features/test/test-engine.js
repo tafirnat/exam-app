@@ -11,10 +11,19 @@ export function prepareTest(count) {
 
     // Smart Selection logic: 60% hard, 30% medium, 10% easy
     // Based on coefficient (higher = harder)
-    const qs = rawQuestions.map((q, idx) => {
-        const stat = AppState.stats[q.id] || { coeff: 2.0 };
-        return { idx, q, coeff: stat.coeff };
-    }).sort((a, b) => b.coeff - a.coeff);
+    // Filter out learned questions
+    let qs = rawQuestions.map((q, idx) => {
+        const stat = AppState.stats[q.id] || { coeff: 1.5, learned: false };
+        return { idx, q, coeff: stat.coeff, learned: !!stat.learned };
+    });
+
+    const nonLearned = qs.filter(item => !item.learned);
+    if (nonLearned.length > 0) {
+        qs = nonLearned.sort((a, b) => b.coeff - a.coeff);
+    } else {
+        // Fallback: if all active questions are learned, use all of them for review
+        qs = qs.sort((a, b) => b.coeff - a.coeff);
+    }
 
     let selectedObjects = [];
     const actualCount = Math.min(count, qs.length);
@@ -196,14 +205,20 @@ export async function finishTest() {
             wrongCount,
             unansweredCount,
             successRate: total > 0 ? Math.round((correctCount / total) * 100) : 0,
-            avgCoeff: total > 0 ? sessionQuestions.reduce((acc, q) => acc + (AppState.stats[q.id]?.coeff || 2.0), 0) / total : 2.0,
+            avgCoeff: total > 0 ? sessionQuestions.reduce((acc, q) => acc + (AppState.stats[q.id]?.coeff || 1.5), 0) / total : 2.0,
             questions: sessionQuestions
         };
 
+        // If no questions were answered at all, don't save to history
+        if (correctCount === 0 && wrongCount === 0) {
+            console.log("finishTest: No questions answered, skipping history save.");
+            return null;
+        }
+
         if (!Array.isArray(AppState.recentTests)) AppState.recentTests = [];
         AppState.recentTests.unshift(historyEntry);
-        if (AppState.recentTests.length > 5) {
-            AppState.recentTests = AppState.recentTests.slice(0, 5);
+        if (AppState.recentTests.length > 15) {
+            AppState.recentTests = AppState.recentTests.slice(0, 15);
         }
 
         saveRecentTests();
@@ -239,9 +254,10 @@ export function evaluateAnswer(questionIndex, userAnswer) {
 
 export function updateStats(questionId, isCorrect, userAnswer, feedback = undefined) {
     if (!AppState.stats[questionId]) {
-        AppState.stats[questionId] = { coeff: 2.0, correct: 0, wrong: 0, starred: false, flagged: false };
+        AppState.stats[questionId] = { coeff: 1.5, correct: 0, wrong: 0, starred: false, flagged: false, streak: 0 };
     }
     const stat = AppState.stats[questionId];
+    if (stat.streak === undefined) stat.streak = 0;
 
     let existingResult = null;
     if (AppState.testTracking) {
@@ -252,14 +268,23 @@ export function updateStats(questionId, isCorrect, userAnswer, feedback = undefi
         // Rating update (setting 'hard'/'easy' OR toggling off with null)
         const oldDelta = (existingResult && existingResult.appliedDelta !== undefined) ? existingResult.appliedDelta : 0;
 
-        let newDelta = 0;
+        // Calculate the underlying algorithmic delta again to base our modifiers on it
+        const streakFactor = Math.max(1, Math.abs(stat.streak || 1));
+        const algorithmicDelta = (isCorrect ? -0.25 : 0.25) * (1 + (streakFactor - 1) * 0.5);
+
+        let newDelta = algorithmicDelta;
+
         if (feedback === 'easy') {
-            newDelta = isCorrect ? -0.3 : 0.2;
+            // Bias downwards: make it easier (subtracts 0.3 from whatever the delta was)
+            newDelta = algorithmicDelta - 0.3;
         } else if (feedback === 'hard') {
-            newDelta = isCorrect ? -0.1 : 0.5;
+            // Bias upwards: make it harder, and unlearn if it was previously learned
+            newDelta = algorithmicDelta + 0.3;
+            stat.learned = false;
         } else {
-            // feedback is null -> toggle off, revert to default session delta
-            newDelta = isCorrect ? -0.2 : 0.4;
+            // feedback is null -> toggle off, revert purely to algorithmic delta
+            newDelta = algorithmicDelta;
+            if (stat.streak < 5) stat.learned = false;
         }
 
         stat.coeff = stat.coeff - oldDelta + newDelta;
@@ -271,8 +296,32 @@ export function updateStats(questionId, isCorrect, userAnswer, feedback = undefi
         }
     } else {
         // Initial session update (from handleCheckAnswer)
-        const delta = isCorrect ? -0.2 : 0.4;
-        stat.coeff = isCorrect ? Math.max(0.1, stat.coeff + delta) : Math.min(3.0, stat.coeff + delta);
+        // Update Streak
+        if (isCorrect) {
+            if (stat.streak < 0) stat.streak = 1;
+            else stat.streak++;
+        } else {
+            if (stat.streak > 0) stat.streak = -1;
+            else stat.streak--;
+        }
+
+        // Adaptive Delta based on streak
+        // Every consecutive correct answer increases the reduction by 50% of the base
+        // Every consecutive wrong answer increases the penalty by 50% of the base
+        const streakFactor = Math.abs(stat.streak);
+        const baseDelta = isCorrect ? -0.25 : 0.25;
+        const multiplier = 1 + (streakFactor - 1) * 0.5;
+        const delta = baseDelta * multiplier;
+
+        stat.coeff = Math.max(0.1, Math.min(3.0, stat.coeff + delta));
+
+        // Mark as learned if streak reaches 5
+        if (stat.streak >= 5) {
+            stat.learned = true;
+            stat.coeff = 0.1; // Ensure it's at minimum
+        } else if (!isCorrect) {
+            stat.learned = false; // Reset learned if wrong
+        }
 
         // Only increment counters on initial check
         if (!existingResult) {
@@ -285,13 +334,14 @@ export function updateStats(questionId, isCorrect, userAnswer, feedback = undefi
                     questionId,
                     isCorrect,
                     userAnswer,
-                    appliedDelta: delta
+                    appliedDelta: delta,
+                    streak: stat.streak
                 });
             } else {
-                // Update existing if somehow called again without feedback
                 existingResult.isCorrect = isCorrect;
                 existingResult.userAnswer = userAnswer;
                 existingResult.appliedDelta = delta;
+                existingResult.streak = stat.streak;
             }
         }
     }

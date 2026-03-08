@@ -43,18 +43,30 @@ document.addEventListener('DOMContentLoaded', () => {
             if (s.questions) s.questions = normalizeQuestions(s.questions);
         });
 
-        // Migration fix: Update stale 1.0 coefficients to 2.0 for unanswered questions
-        console.log('Migrating stale coefficients...');
+        // Migration fix: Update stale 1.0 coefficients to 2.0 and init new fields
+        console.log('Migrating stats records (streaks and learned status)...');
         let migrationCount = 0;
         Object.keys(AppState.stats).forEach(qid => {
             const s = AppState.stats[qid];
-            if (s && s.correct === 0 && s.wrong === 0 && s.coeff === 1.0) {
-                s.coeff = 2.0;
-                migrationCount++;
+            if (!s) return;
+
+            let changed = false;
+            if (s.correct === 0 && s.wrong === 0 && s.coeff === 1.0) {
+                s.coeff = 1.5;
+                changed = true;
             }
+            if (s.streak === undefined) {
+                s.streak = 0;
+                changed = true;
+            }
+            if (s.learned === undefined) {
+                s.learned = false;
+                changed = true;
+            }
+            if (changed) migrationCount++;
         });
         if (migrationCount > 0) {
-            console.log(`Migrated ${migrationCount} stale coefficients to 2.0`);
+            console.log(`Migrated ${migrationCount} stats records`);
             saveStats();
         }
 
@@ -131,6 +143,16 @@ window.renderQuestionPreview = (q, stats = null, source = null) => {
     }
 
     switchView('statsPreview');
+
+    // Update the header title based on source
+    const isFromResults = AppState.currentPreviewSource === 'results';
+    const titleEl = document.querySelector('#previewIndicatorsBar .preview-title');
+    if (titleEl) {
+        const titleKey = isFromResults ? 'result_preview' : 'stats_preview';
+        titleEl.setAttribute('data-i18n', titleKey);
+        titleEl.innerText = t(titleKey);
+    }
+
     const kw = AppState.searchKeyword || '';
     const qTextEl = document.getElementById('previewQuestionText');
     qTextEl.innerHTML = highlightText(q.content?.text || q.text || '', kw);
@@ -306,18 +328,31 @@ window.renderQuestionPreview = (q, stats = null, source = null) => {
             }
         }
     }
-    const s = stats || AppState.stats[q.id] || { correct: 0, wrong: 0, coeff: 2.0, note: '' };
-    document.getElementById('previewStatsInfo').innerHTML = `Richtig: ${s.correct} | Falsch: ${s.wrong} | Gesamt: ${s.correct + s.wrong} | Koe: ${s.coeff.toFixed(1)}`;
+    const s = stats || AppState.stats[q.id] || { correct: 0, wrong: 0, coeff: 1.5, note: '' };
+    const total = s.correct + s.wrong;
+    const percent = total > 0 ? Math.round((s.correct / total) * 100) : 0;
+    document.getElementById('previewStatsInfo').innerHTML = `
+        <span>${t('correct')}: <b>${s.correct}</b></span>
+        <span>${t('wrong')}: <b>${s.wrong}</b></span>
+        <span>${t('success_percent', { percent })}</span>
+        <span>${t('coeff_label')} <b>${s.coeff.toFixed(1)}</b></span>
+    `;
     document.getElementById('previewNoteInput').value = s.note || '';
     const previewNoteArea = document.getElementById('previewNoteArea');
     if (previewNoteArea) previewNoteArea.classList.remove('visible');
     updateIndicatorsPreview();
 
     // Update the back button to show the correct view
+    const backBtnText = document.getElementById('previewBackBtnText');
+    if (backBtnText) {
+        const isFromResults = AppState.currentPreviewSource === 'results';
+        const key = isFromResults ? 'back_to_results' : 'back_to_stats';
+        backBtnText.setAttribute('data-i18n', key);
+        backBtnText.innerText = t(key);
+    }
     const backBtn = document.getElementById('previewBackBtn');
     if (backBtn) {
         const isFromResults = AppState.currentPreviewSource === 'results';
-        backBtn.innerText = isFromResults ? `← ${t('back_to_results')}` : `← ${t('back_to_stats')}`;
         backBtn.onclick = () => {
             if (isFromResults) {
                 switchView('results');
@@ -427,6 +462,7 @@ function setupEventListeners() {
     document.getElementById('previewIndNote').onclick = toggleNoteArea;
     document.getElementById('previewMenuTranslateAllInline').onclick = translateAll;
     document.getElementById('previewMenuCopyAIInline').onclick = copyAIPrompt;
+    document.getElementById('previewMenuCopyTextInline').onclick = copyQuestionText;
 
     window.addEventListener('test-finished', () => {
         switchView('results');
@@ -706,7 +742,7 @@ function setupEventListeners() {
         clearTimeout(noteTimeout);
         noteTimeout = setTimeout(() => {
             const q = AppState.rawQuestions[AppState.currentTest[AppState.currentIndex]];
-            if (!AppState.stats[q.id]) AppState.stats[q.id] = { coeff: 2.0, correct: 0, wrong: 0 };
+            if (!AppState.stats[q.id]) AppState.stats[q.id] = { coeff: 1.5, correct: 0, wrong: 0 };
             AppState.stats[q.id].note = e.target.value.trim();
             saveStats();
             updateIndicators();
@@ -719,7 +755,7 @@ function setupEventListeners() {
         previewNoteTimeout = setTimeout(() => {
             const qid = AppState.previewQuestionId;
             if (!qid) return;
-            if (!AppState.stats[qid]) AppState.stats[qid] = { coeff: 2.0, correct: 0, wrong: 0 };
+            if (!AppState.stats[qid]) AppState.stats[qid] = { coeff: 1.5, correct: 0, wrong: 0 };
             AppState.stats[qid].note = e.target.value.trim();
             saveStats();
             updateIndicatorsPreview();
@@ -836,7 +872,7 @@ function toggleStar() {
         : AppState.rawQuestions[AppState.currentTest[AppState.currentIndex]];
     if (!q) return;
     const qid = String(q.id);
-    if (!AppState.stats[qid]) AppState.stats[qid] = { coeff: 2.0, correct: 0, wrong: 0 };
+    if (!AppState.stats[qid]) AppState.stats[qid] = { coeff: 1.5, correct: 0, wrong: 0 };
     AppState.stats[qid].starred = !AppState.stats[qid].starred;
     saveStats();
     if (isPreview) {
@@ -855,7 +891,7 @@ function toggleFlag() {
         : AppState.rawQuestions[AppState.currentTest[AppState.currentIndex]];
     if (!q) return;
     const qid = String(q.id);
-    if (!AppState.stats[qid]) AppState.stats[qid] = { coeff: 2.0, correct: 0, wrong: 0 };
+    if (!AppState.stats[qid]) AppState.stats[qid] = { coeff: 1.5, correct: 0, wrong: 0 };
     AppState.stats[qid].flagged = !AppState.stats[qid].flagged;
     saveStats();
     if (isPreview) {
@@ -968,18 +1004,25 @@ function copyAIPrompt() {
 }
 
 function copyQuestionText() {
-    const qIndex = AppState.currentIndex;
-    const qId = AppState.currentTest[qIndex];
-    const q = AppState.rawQuestions[qId];
+    const isPreview = document.getElementById('statsPreviewView').offsetParent !== null;
+    let q;
+    if (isPreview) {
+        q = AppState.previewQuestion;
+    } else {
+        const qIndex = AppState.currentIndex;
+        const qId = AppState.currentTest[qIndex];
+        q = AppState.rawQuestions[qId];
+    }
 
-    const text = q.content?.text || q.text || '';
+    const text = q?.content?.text || q?.text || '';
     if (!text) return;
 
     navigator.clipboard.writeText(text).then(() => {
         showToast(t('copy_success') || 'Soru metni kopyalandı.');
     });
 
-    const btn = document.getElementById('menuCopyTextInline');
+    const btnId = isPreview ? 'previewMenuCopyTextInline' : 'menuCopyTextInline';
+    const btn = document.getElementById(btnId);
     if (btn) {
         btn.classList.add('copy-flash');
         setTimeout(() => btn.classList.remove('copy-flash'), 500);

@@ -13,6 +13,11 @@ export function renderStatsList(filter = 'all', searchKeyword = '') {
         sortBar.style.display = filter === 'all' ? 'flex' : 'none';
     }
 
+    const filterBar = document.getElementById('statsFilterBar');
+    if (filterBar) {
+        filterBar.classList.toggle('has-border', filter === 'all');
+    }
+
     if (filter === 'recent' || filter === 'incorrect') {
         renderHistoricalTests(list, filter);
         return;
@@ -63,8 +68,8 @@ export function renderStatsList(filter = 'all', searchKeyword = '') {
     const dir = AppState.activeStatsSortDir === 'asc' ? 1 : -1;
 
     filteredQuestions.sort((a, b) => {
-        const sa = AppState.stats[a.id] || { correct: 0, wrong: 0, coeff: 2.0 };
-        const sb = AppState.stats[b.id] || { correct: 0, wrong: 0, coeff: 2.0 };
+        const sa = AppState.stats[a.id] || { correct: 0, wrong: 0, coeff: 1.5 };
+        const sb = AppState.stats[b.id] || { correct: 0, wrong: 0, coeff: 1.5 };
 
         let result = 0;
         if (field === 'original') {
@@ -100,19 +105,25 @@ export function renderStatsList(filter = 'all', searchKeyword = '') {
     }
 
     filteredQuestions.forEach((q, i) => {
-        const s = AppState.stats[q.id] || { correct: 0, wrong: 0, coeff: 2.0 };
+        const s = AppState.stats[q.id] || { correct: 0, wrong: 0, coeff: 1.5 };
         const total = s.correct + s.wrong;
         const percent = total > 0 ? Math.round((s.correct / total) * 100) : 0;
         const item = document.createElement('div');
         item.className = 'stats-list-item';
         const qText = q.content?.text || q.text || 'Untitled Question';
 
+        const isLearned = !!s.learned;
+        const streak = s.streak || 0;
+        const streakIcon = streak > 0 ? '🔥' : (streak < 0 ? '❄️' : '');
+        const streakAbs = Math.abs(streak);
+
         item.innerHTML = `
             <div style="flex: 1; min-width: 0;">
-                <div class="stats-item-text">${qText}</div>
+                <div class="stats-item-text">${isLearned ? `<span class="learned-badge" title="${t('learned_msg') || 'Gelernt'}">🎓</span> ` : ''}${qText}</div>
                 <div style="display: flex; align-items: center; gap: 4px;">
                     ${q.sourceName ? `<div class="stats-item-source">${q.sourceName}</div>` : ''}
                     <div class="stats-item-ref">#${q.originalIndex}</div>
+                    ${streakAbs > 1 ? `<span class="stats-item-streak" title="Streak: ${streak}">${streakIcon}${streakAbs}</span>` : ''}
                     ${s.starred ? `<span class="stats-indicator starred"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"></polygon></svg></span>` : ''}
                     ${s.flagged ? `<span class="stats-indicator flagged"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"><path d="M4 15s1-1 4-1 5 2 8 2 4-1 4-1V3s-1 1-4 1-5-2-8-2-4 1-4 1z"></path><line x1="4" y1="22" x2="4" y2="15"></line></svg></span>` : ''}
                     ${(s.note && s.note.trim() !== '') ? `<span class="stats-indicator noted"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"></path></svg></span>` : ''}
@@ -120,7 +131,7 @@ export function renderStatsList(filter = 'all', searchKeyword = '') {
             </div>
             <div class="stats-item-meta">
                 <span>✓${s.correct} ✗${s.wrong} (${percent}%)</span>
-                <span>${t('coeff_label')} ${s.coeff.toFixed(1)}</span>
+                <span class="${isLearned ? 'learned-coeff' : ''}">${t('coeff_label')} ${s.coeff.toFixed(1)}</span>
             </div>
         `;
         item.onclick = () => {
@@ -159,10 +170,11 @@ function renderHistoricalTests(list, filter) {
         if (filter === 'incorrect' && test.hiddenInIncorrect) return;
 
         const questionsToShow = filter === 'incorrect'
-            ? test.questions.filter(q => !q.isCorrect)
+            ? test.questions.filter(q => !q.isCorrect && !q.isUnanswered)
             : test.questions;
 
-        if (questionsToShow.length === 0) return;
+        if (questionsToShow.length === 0 && filter === 'incorrect') return;
+        if (test.questions.length === 0) return;
 
         const sourceNames = test.sourceNames || [test.sourceTitle || "Mixed Sources"];
         const isMixed = sourceNames.length > 1;
@@ -188,24 +200,26 @@ function renderHistoricalTests(list, filter) {
                 </div>
                 <div class="history-test-actions">
                     ${filter === 'recent' ? `
-                        <button class="history-retake-btn icon-btn" title="${t('retake_all')}" data-retake-mode="all">
-                            <div class="retake-pie-icon all">
-                                <svg viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="3" stroke-linecap="round" stroke-linejoin="round">
-                                    <polyline points="23 4 23 10 17 10"></polyline>
-                                    <path d="M20.49 15a9 9 0 1 1-2.12-9.36L23 10"></path>
-                                </svg>
-                            </div>
+                        <button class="history-retake-btn icon-btn icon-only" title="${t('retake_all')}" data-retake-mode="all">
+                            <svg viewBox="0 0 284 248" fill="currentColor">
+                                <g transform="translate(0.000000,248.000000) scale(0.100000,-0.100000)" stroke="none">
+                                    <path d="M1228 2280 c-237 -50 -416 -144 -592 -310 -197 -187 -309 -394 -357 -659 -44 -243 -5 -494 113 -724 59 -114 131 -217 153 -217 32 0 25 32 -25 119 -109 189 -144 315 -143 526 0 252 57 427 200 620 178 240 424 380 729 416 232 27 492 -51 696 -209 l56 -44 54 44 c30 24 80 61 111 83 31 22 57 45 57 50 0 6 -26 31 -58 56 -164 132 -351 217 -559 254 -121 21 -324 19 -435 -5z"/>
+                                    <path d="M2359 1917 c-19 -13 -133 -95 -254 -184 -121 -88 -350 -255 -510 -372 -159 -116 -307 -225 -327 -241 -108 -88 -45 -261 94 -260 59 1 22 -32 661 594 354 347 417 413 417 437 0 18 -7 32 -19 39 -25 13 -23 14 -62 -13z"/>
+                                    <path d="M2361 1668 c-54 -51 -99 -99 -100 -106 -1 -7 8 -30 18 -51 51 -98 91 -275 91 -396 0 -103 -43 -318 -69 -347 -3 -4 -47 27 -96 68 -49 42 -91 72 -93 66 -2 -8 7 -81 54 -427 8 -60 19 -141 24 -178 4 -38 10 -70 12 -72 4 -4 556 320 571 334 4 4 -40 22 -99 39 -59 17 -109 33 -111 35 -2 2 8 34 22 72 55 146 69 227 69 410 0 187 -15 270 -74 423 -32 83 -95 208 -110 217 -5 3 -54 -36 -109 -87z"/>
+                                </g>
+                            </svg>
                         </button>
                     ` : ''}
                     
                     ${filter === 'incorrect' && (test.wrongCount > 0 || test.unansweredCount > 0) ? `
                         <button class="history-retake-btn icon-btn" title="${t('retake_incorrect')}" data-retake-mode="incorrect">
-                            <div class="retake-pie-icon focused">
-                                <svg viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="3" stroke-linecap="round" stroke-linejoin="round">
-                                    <polyline points="23 4 23 10 17 10"></polyline>
-                                    <path d="M20.49 15a9 9 0 1 1-2.12-9.36L23 10"></path>
-                                </svg>
-                            </div>
+                            <svg viewBox="0 0 279 247" fill="currentColor">
+                                <g transform="translate(0.000000,247.000000) scale(0.100000,-0.100000)" stroke="none">
+                                    <path d="M1153 2249 c-333 -70 -619 -270 -797 -559 -25 -41 -46 -79 -46 -85 0 -8 37 -25 131 -60 10 -4 26 11 52 48 48 70 185 202 266 257 83 56 205 111 311 141 75 21 105 24 255 23 156 0 177 -2 260 -28 96 -29 217 -86 287 -134 68 -47 228 -219 289 -312 63 -95 90 -160 113 -273 18 -87 21 -277 6 -358 -15 -79 -51 -190 -59 -184 -5 2 -48 38 -97 79 -48 41 -89 74 -90 73 -1 -1 8 -67 18 -147 11 -80 32 -234 46 -343 15 -109 32 -198 37 -198 6 0 137 76 293 168 l283 168 -108 34 c-59 18 -110 35 -111 36 -2 2 10 43 26 92 51 150 65 234 65 393 0 382 -168 719 -473 949 -265 200 -642 286 -957 220z"/>
+                                    <path d="M120 1530 c-19 -36 -2 -57 93 -111 51 -29 160 -92 242 -139 83 -48 258 -149 390 -225 132 -76 272 -157 312 -181 94 -56 129 -62 187 -34 59 28 91 89 81 152 -14 81 -38 94 -465 258 -212 81 -474 182 -582 224 -108 42 -208 76 -222 76 -15 0 -30 -8 -36 -20z"/>
+                                    <path d="M205 1301 c-3 -9 -9 -62 -14 -117 -25 -264 47 -538 206 -777 50 -75 67 -87 90 -64 13 13 11 21 -21 71 -91 142 -140 278 -163 449 -16 123 -16 110 19 371 2 14 -12 28 -54 52 -51 29 -58 30 -63 15z"/>
+                                </g>
+                            </svg>
                         </button>
                     ` : ''}
                     
@@ -297,6 +311,7 @@ export function updateHomeStats() {
     if (statTotalEl) statTotalEl.innerText = total;
 
     let solved = 0;
+    let learnedCount = 0;
     let totalCoeff = 0;
     activeQuestions.forEach(q => {
         if (!q) return;
@@ -304,9 +319,10 @@ export function updateHomeStats() {
         const s = AppState.stats[qid];
         if (s) {
             if (s.correct > 0 || s.wrong > 0) solved++;
-            totalCoeff += s.coeff || 2.0;
+            if (s.learned) learnedCount++;
+            totalCoeff += s.coeff || 1.5;
         } else {
-            totalCoeff += 2.0;
+            totalCoeff += 1.5;
         }
     });
 
@@ -323,6 +339,7 @@ export function updateHomeStats() {
     const pct = total > 0 ? Math.round((solved / total) * 100) : 0;
     const pctText = `${pct}%`;
     const progressText = t('solved_count', { solved: solved, total: total });
+    const learnedLabelText = learnedCount > 0 ? ` • ${learnedCount} ${t('learned_label') || 'Öğrenildi'}` : '';
 
     updateEl('homeStatTotal', total);
     updateEl('homeStatAvg', avgCoeff);
@@ -340,7 +357,7 @@ export function updateHomeStats() {
         fillEl.style.background = color;
     }
 
-    updateEl('homeProgressDetail', progressText);
+    updateEl('homeProgressDetail', progressText + learnedLabelText);
 
     const startPanel = document.getElementById('startPanel');
     const statsCard = document.getElementById('homeStatsCard');
@@ -426,17 +443,13 @@ export function setupStatsEventListeners() {
  */
 function getCoeffColor(coeff) {
     let hue;
-    if (coeff >= 2.0) {
-        // Interpolate Amber/Orange (45) to Red (0) over range [2.0, 3.0]
-        const ratio = Math.min(1, (coeff - 2.0) / 1.0);
-        hue = 45 - (ratio * 45);
-    } else if (coeff >= 1.0) {
-        // Interpolate Green (120) to Amber (45) over range [1.0, 2.0]
-        const ratio = Math.min(1, (2.0 - coeff) / 1.0);
-        hue = 45 + (ratio * 75);
+    if (coeff >= 1.5) {
+        // Interpolate Green (120) to Red (0) over range [1.5, 3.0]
+        const ratio = Math.min(1, (coeff - 1.5) / 1.5);
+        hue = 120 - (ratio * 120);
     } else {
-        // Interpolate Green (120) to Sky Blue (210) over range [1.0, 0.1]
-        const ratio = Math.min(1, (1.0 - coeff) / 0.9);
+        // Interpolate Green (120) to Sky Blue (210) over range [1.5, 0.1]
+        const ratio = Math.min(1, (1.5 - coeff) / 1.4);
         hue = 120 + (ratio * 90);
     }
 

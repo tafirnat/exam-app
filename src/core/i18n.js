@@ -130,7 +130,9 @@ export const translations = {
         ai_integration_title: "AI Entegrasyonu",
         ai_direct_open: "Doğrudan AI'da Aç",
         ai_clipboard_only: "Sadece Panoya Kopyala (Varsayılan)",
-        ai_integration_hint: "Seçili AI, prompt butonuna basıldığında otomatik açılır."
+        ai_integration_hint: "Seçili AI, prompt butonuna basıldığında otomatik açılır.",
+        stats_preview: "Soru Önizleme",
+        result_preview: "Sonuç Önizleme"
     },
     en: {
         theme_change: "Change Theme",
@@ -245,7 +247,9 @@ export const translations = {
         ai_integration_title: "AI Integration",
         ai_direct_open: "Open Directly in AI",
         ai_clipboard_only: "Copy to Clipboard Only (Default)",
-        ai_integration_hint: "Selected AI will open automatically when prompt button is clicked."
+        ai_integration_hint: "Selected AI will open automatically when prompt button is clicked.",
+        stats_preview: "Question Preview",
+        result_preview: "Result Preview"
     },
     de: {
         theme_change: "Design ändern",
@@ -360,7 +364,9 @@ export const translations = {
         ai_integration_title: "KI-Integration",
         ai_direct_open: "Direkt in KI öffnen",
         ai_clipboard_only: "Nur in Zwischenablage kopieren (Standard)",
-        ai_integration_hint: "Die gewählte KI wird automatisch geöffnet, wenn der Prompt-Button geklickt wird."
+        ai_integration_hint: "Die gewählte KI wird automatisch geöffnet, wenn der Prompt-Button geklickt wird.",
+        stats_preview: "Fragenvorschau",
+        result_preview: "Ergebnisvorschau"
     },
 };
 

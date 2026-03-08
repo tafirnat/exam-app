@@ -10,7 +10,7 @@ export function renderQuestion() {
     }
     const qIndex = AppState.currentIndex;
     const q = AppState.rawQuestions[AppState.currentTest[qIndex]];
-    const stat = AppState.stats[q.id] || { coeff: 2.0, note: '' };
+    const stat = AppState.stats[q.id] || { coeff: 1.5, note: '' };
     const isChecked = AppState.isAnswerChecked[qIndex];
 
     document.getElementById('progressText').innerText = `${t('question_label')} ${qIndex + 1} / ${AppState.currentTest.length}`;
@@ -314,19 +314,32 @@ function renderSummarySection() {
 
     document.getElementById('finishTestBtn').onclick = () => {
         // Auto-evaluate unchecked but answered questions
+        let interactionCount = 0;
         AppState.currentTest.forEach((qId, idx) => {
-            if (!AppState.isAnswerChecked[idx]) {
-                const userAnswer = AppState.userAnswers[idx];
-                const hasAnswer = userAnswer && Array.isArray(userAnswer) && userAnswer.length > 0 && userAnswer.some(v => v !== null && v !== undefined && String(v).trim() !== '');
-                if (hasAnswer) {
-                    const q = AppState.rawQuestions[qId];
-                    const isCorrect = evaluateAnswer(idx, userAnswer);
-                    AppState.isAnswerChecked[idx] = true;
-                    updateStats(q.id, isCorrect, userAnswer);
-                }
+            const userAnswer = AppState.userAnswers[idx];
+            const hasAnswer = userAnswer && Array.isArray(userAnswer) && userAnswer.length > 0 && userAnswer.some(v => v !== null && v !== undefined && String(v).trim() !== '');
+
+            if (hasAnswer || AppState.isAnswerChecked[idx]) {
+                interactionCount++;
+            }
+
+            if (!AppState.isAnswerChecked[idx] && hasAnswer) {
+                const q = AppState.rawQuestions[qId];
+                const isCorrect = evaluateAnswer(idx, userAnswer);
+                AppState.isAnswerChecked[idx] = true;
+                updateStats(q.id, isCorrect, userAnswer);
             }
         });
         saveStats();
+
+        // If absolutely nothing was answered, just go home silently
+        if (interactionCount === 0) {
+            // Custom event or direct call to view switch is tricky without export
+            // But we can dispatch a custom 'exit-test' or just trigger home button
+            const homeBtn = document.getElementById('resHomeBtn');
+            if (homeBtn) homeBtn.click();
+            return;
+        }
 
         // Recalculate truly unanswered questions for confirmation
         const trulyUnanswered = [];
@@ -468,7 +481,7 @@ export function updateIndicators() {
 }
 
 export function updateQuestionStatsInfo(qid) {
-    const s = AppState.stats[qid] || { correct: 0, wrong: 0, coeff: 2.0 };
+    const s = AppState.stats[qid] || { correct: 0, wrong: 0, coeff: 1.5 };
     const infoEl = document.getElementById('questionStatsInfo');
     if (infoEl) {
         const total = s.correct + s.wrong;
@@ -503,6 +516,21 @@ export function updateQuestionStatsInfo(qid) {
         const scrollBtn = document.getElementById('scrollSummaryBtn');
         if (scrollBtn) {
             scrollBtn.onclick = () => {
+                // Efficiency check: If totally empty, just exit to home
+                let hasInteraction = false;
+                AppState.currentTest.forEach((_, idx) => {
+                    if (AppState.isAnswerChecked[idx]) hasInteraction = true;
+                    const ua = AppState.userAnswers[idx];
+                    if (ua && ua.length > 0 && ua.some(v => v !== null && v !== undefined && String(v).trim() !== '')) hasInteraction = true;
+                });
+
+                if (!hasInteraction) {
+                    // Navigate home directly (triggering the finish button logic for consistency)
+                    const finishBtn = document.getElementById('finishTestBtn');
+                    if (finishBtn) finishBtn.click();
+                    return;
+                }
+
                 const summarySection = document.getElementById('testSummarySection');
                 if (summarySection) {
                     const isHidden = summarySection.style.display === 'none';
@@ -534,7 +562,7 @@ export function handleDifficultyRating(rating) {
         isTogglingOff = true;
     } else if (existingResult && existingResult.feedback === 'hard' && rating === 'easy') {
         // Special requirement: Switching from Hard to Easy stars the question
-        if (!AppState.stats[q.id]) AppState.stats[q.id] = { coeff: 2.0, correct: 0, wrong: 0 };
+        if (!AppState.stats[q.id]) AppState.stats[q.id] = { coeff: 1.5, correct: 0, wrong: 0 };
         AppState.stats[q.id].starred = true;
         updateIndicators();
     }
@@ -631,6 +659,6 @@ window.showQuestionResult = (testId, questionId) => {
 
     // Use stats preview logic from main.js (needs to be available)
     window.dispatchEvent(new CustomEvent('show-stats-preview', {
-        detail: { question: q, stats: AppState.stats[q.id] || { coeff: 2.0, correct: 0, wrong: 0 }, source: 'results' }
+        detail: { question: q, stats: AppState.stats[q.id] || { coeff: 1.5, correct: 0, wrong: 0 }, source: 'results' }
     }));
 };

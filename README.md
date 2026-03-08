@@ -15,7 +15,11 @@ Experience the application live: **[https://tafirnat.github.io/exam-app/](https:
 - **PWA Support**: Installable on mobile and desktop for a full-screen, app-like experience with offline support.
 - **Modular Architecture**: Clean, separate logic for state management, UI rendering, and test engines.
 - **Dynamic Internationalization**: Native support for **Turkish**, **English**, and **German** with automatic system language detection.
-- **Smart Test Engine**: Question selection based on coefficients (weights) to prioritize areas that need improvement.
+- **Smart Adaptive Engine**: 
+  - Coefficient-based question selection prioritizing areas needing improvement.
+  - **Streak System:** Calculates coefficient changes exponentially based on consecutive correct/wrong answers from a symmetric baseline of 1.5.
+  - **Learned Threshold:** Autonomously marks questions as "Learned" (🎓) after 4 consecutive correct answers, filtering them out of reviews.
+  - **Harmonized Feedback:** Manual "Hard" / "Easy" ratings intuitively scale the algorithmic progression instead of blind overwrites.
 - **Multilingual Translations**: Integrated Google Translate API supporting over 10 target languages for questions and options.
 - **AI-Ready**: Built-in prompts to easily copy questions to your favorite AI (ChatGPT, Claude, etc.) for detailed explanations.
 - **Premium UI/UX**: Modern dark mode, glassmorphism elements, and smooth micro-animations.
