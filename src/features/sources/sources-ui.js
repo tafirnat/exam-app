@@ -38,15 +38,34 @@ export async function resetSourceStats(id) {
     if (window.onSourcesUpdated) window.onSourcesUpdated();
 }
 
-export function viewSourceJSON(source) {
-    const data = {
+export function exportOriginalJSON(source) {
+    const cleanData = {
         exam_metadata: source.metadata || { title: source.name },
-        questions: source.questions
+        questions: source.questions.map(q => {
+            // Ensure we only export necessary fields
+            const cleanQ = {
+                id: q.id,
+                type: q.type,
+                text: q.text || q.content?.text,
+                options: q.options || q.content?.options,
+                answer: q.answer || q.content?.answer
+            };
+            if (q.content?.media) cleanQ.media = q.content.media;
+            return cleanQ;
+        })
     };
-    const jsonStr = JSON.stringify(data, null, 2);
+    const jsonStr = JSON.stringify(cleanData, null, 2);
     const blob = new Blob([jsonStr], { type: 'application/json' });
     const url = URL.createObjectURL(blob);
-    window.open(url, '_blank');
+
+    // Create temporary link to trigger download
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `${source.name.replace(/\s+/g, '_')}_original.json`;
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    URL.revokeObjectURL(url);
 }
 
 export function renderSourcesList() {
@@ -131,8 +150,13 @@ export function renderSourcesList() {
             </div>
             <div class="origin-tag" style="font-size:0.7rem; color:var(--primary-color); opacity:0.8; margin-top:4px; display: flex; align-items: center; gap: 8px;">
                 ${originContent}
-                <button class="reset-source-btn" style="background: none; border: none; padding: 0; cursor: pointer; color: var(--text-secondary); opacity: 0.5; display: flex; align-items: center;" title="${t('reset_source')}">
-                    <svg viewBox="0 0 24 24" width="12" height="12" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M23 4v6h-6"></path><path d="M20.49 15a9 9 0 1 1-2.12-9.36L23 10"></path></svg>
+                <button class="reset-source-btn" style="background: var(--surface-hover); border: 1px solid var(--border-color); padding: 4px 10px; border-radius: 6px; cursor: pointer; color: var(--text-secondary); display: flex; align-items: center; gap: 6px; transition: all 0.2s;" title="${t('reset_source')}">
+                    <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M23 4v6h-6"></path><path d="M20.49 15a9 9 0 1 1-2.12-9.36L23 10"></path></svg>
+                    <span style="font-size: 0.75rem; font-weight: 500;">${t('reset')}</span>
+                </button>
+                <button class="share-source-btn" style="background: var(--primary-color); border: none; padding: 4px 10px; border-radius: 6px; cursor: pointer; color: white; display: flex; align-items: center; gap: 6px; transition: all 0.2s; box-shadow: 0 2px 4px rgba(0,0,0,0.1);" title="${t('share_source')}">
+                    <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M4 12v8a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-8"></path><polyline points="16 6 12 2 8 6"></polyline><line x1="12" y1="2" x2="12" y2="15"></line></svg>
+                    <span style="font-size: 0.75rem; font-weight: 500;">${t('share_source')}</span>
                 </button>
             </div>
         `;
@@ -142,6 +166,14 @@ export function renderSourcesList() {
             resetBtn.onclick = (e) => {
                 e.stopPropagation();
                 resetSourceStats(s.id);
+            };
+        }
+
+        const shareBtn = info.querySelector('.share-source-btn');
+        if (shareBtn) {
+            shareBtn.onclick = (e) => {
+                e.stopPropagation();
+                exportOriginalJSON(s);
             };
         }
 
@@ -172,7 +204,7 @@ export function renderSourcesList() {
         `;
         viewBtn.onclick = (e) => {
             e.stopPropagation();
-            viewSourceJSON(s);
+            exportOriginalJSON(s);
         };
 
         const delBtn = document.createElement('button');

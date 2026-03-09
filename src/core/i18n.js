@@ -134,7 +134,8 @@ export const translations = {
         stats_preview: "Soru Önizleme",
         result_preview: "Sonuç Önizleme",
         resume_test: "Teste Devam Et",
-        new_test: "Yeni Test"
+        new_test: "Yeni Test",
+        share_source: "Paylaş"
     },
     en: {
         theme_change: "Change Theme",
@@ -253,7 +254,8 @@ export const translations = {
         stats_preview: "Question Preview",
         result_preview: "Result Preview",
         resume_test: "Resume Test",
-        new_test: "New Test"
+        new_test: "New Test",
+        share_source: "Share"
     },
     de: {
         theme_change: "Design ändern",
@@ -372,7 +374,8 @@ export const translations = {
         stats_preview: "Fragenvorschau",
         result_preview: "Ergebnisvorschau",
         resume_test: "Test fortsetzen",
-        new_test: "Neuer Test"
+        new_test: "Neuer Test",
+        share_source: "Teilen"
     },
 };
 

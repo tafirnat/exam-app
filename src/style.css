@@ -2611,6 +2611,22 @@ input:focus+.slider {
     transform: translateX(-50%) translateY(0);
 }
 
+.reset-source-btn:hover {
+    background-color: var(--border-color) !important;
+    transform: translateY(-1px);
+}
+
+.share-source-btn:hover {
+    filter: brightness(1.1);
+    transform: translateY(-1px);
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.15) !important;
+}
+
+.reset-source-btn:active,
+.share-source-btn:active {
+    transform: translateY(0);
+}
+
 .quick-nav-slider {
     -webkit-appearance: none;
     appearance: none;
