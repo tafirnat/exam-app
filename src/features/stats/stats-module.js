@@ -391,9 +391,11 @@ export function updateHomeStats() {
     }
 
     // ALWAYS update panel visibility regardless of onboarding element
+    const homeView = document.getElementById('homeView');
     if (totalSources === 0 || !hasActiveSource) {
         if (statsCard) statsCard.style.display = 'none';
         if (startPanel) startPanel.style.display = 'none';
+        if (homeView) homeView.classList.add('empty-state');
     } else {
         if (statsCard) statsCard.style.display = 'block';
         if (startPanel) {
@@ -401,6 +403,7 @@ export function updateHomeStats() {
             startPanel.style.opacity = '1';
             startPanel.style.pointerEvents = 'all';
         }
+        if (homeView) homeView.classList.remove('empty-state');
     }
 
     if (statsBtn) statsBtn.disabled = !hasActiveSource;
