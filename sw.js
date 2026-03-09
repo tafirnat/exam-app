@@ -44,12 +44,13 @@ self.addEventListener('fetch', (event) => {
         fetch(event.request)
             .then((response) => {
                 // If network works, update cache and return response
-                if (response && response.status === 200) {
+                if (response && response.status === 200 && event.request.method === 'GET') {
                     const responseClone = response.clone();
                     caches.open(CACHE_NAME).then((cache) => {
                         cache.put(event.request, responseClone);
                     });
                 }
+
                 return response;
             })
             .catch(() => {
