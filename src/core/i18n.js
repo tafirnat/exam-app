@@ -135,7 +135,9 @@ export const translations = {
         result_preview: "Sonuç Önizleme",
         resume_test: "Teste Devam Et",
         new_test: "Yeni Test",
-        share_source: "Paylaş"
+        share_source: "Paylaş",
+        download: "İndir",
+        share_copy_success: "JSON içeriği panoya kopyalandı."
     },
     en: {
         theme_change: "Change Theme",
@@ -255,7 +257,9 @@ export const translations = {
         result_preview: "Result Preview",
         resume_test: "Resume Test",
         new_test: "New Test",
-        share_source: "Share"
+        share_source: "Share",
+        download: "Download",
+        share_copy_success: "JSON content copied to clipboard."
     },
     de: {
         theme_change: "Design ändern",
@@ -375,7 +379,9 @@ export const translations = {
         result_preview: "Ergebnisvorschau",
         resume_test: "Test fortsetzen",
         new_test: "Neuer Test",
-        share_source: "Teilen"
+        share_source: "Teilen",
+        download: "Herunterladen",
+        share_copy_success: "JSON-Inhalt in die Zwischenablage kopiert."
     },
 };
 

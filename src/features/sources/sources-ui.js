@@ -38,11 +38,10 @@ export async function resetSourceStats(id) {
     if (window.onSourcesUpdated) window.onSourcesUpdated();
 }
 
-export async function exportOriginalJSON(source) {
-    const cleanData = {
+export function getCleanSourceData(source) {
+    return {
         exam_metadata: source.metadata || { title: source.name },
-        questions: source.questions.map(q => {
-            // Ensure we only export necessary fields
+        questions: (source.questions || []).map(q => {
             const cleanQ = {
                 id: q.id,
                 type: q.type,
@@ -54,29 +53,14 @@ export async function exportOriginalJSON(source) {
             return cleanQ;
         })
     };
+}
+
+export async function downloadSourceJSON(source) {
+    const cleanData = getCleanSourceData(source);
     const jsonStr = JSON.stringify(cleanData, null, 2);
     const fileName = `${source.name.replace(/\s+/g, '_')}_original.json`;
     const blob = new Blob([jsonStr], { type: 'application/json' });
 
-    // Try Web Share API for mobile sharing (WhatsApp, Telegram, etc.)
-    if (navigator.share && navigator.canShare) {
-        try {
-            const file = new File([blob], fileName, { type: 'application/json' });
-            if (navigator.canShare({ files: [file] })) {
-                await navigator.share({
-                    files: [file],
-                    title: source.name,
-                    text: t('share_source_text') || 'Soru kaynağını paylaş'
-                });
-                return; // Shared via native menu
-            }
-        } catch (err) {
-            console.error('Share failed:', err);
-            // Fall back to download if share cancels or fails
-        }
-    }
-
-    // Fallback: Traditional download method for desktop or unsupported browsers
     const url = URL.createObjectURL(blob);
     const a = document.createElement('a');
     a.href = url;
@@ -85,6 +69,34 @@ export async function exportOriginalJSON(source) {
     a.click();
     document.body.removeChild(a);
     URL.revokeObjectURL(url);
+}
+
+export async function shareSourceJSON(source) {
+    const cleanData = getCleanSourceData(source);
+    const jsonStr = JSON.stringify(cleanData, null, 2);
+
+    // Always copy to clipboard as fallback/primary action
+    try {
+        await navigator.clipboard.writeText(jsonStr);
+        if (window.showToast) window.showToast(t('share_copy_success'));
+        else alert(t('share_copy_success'));
+    } catch (err) {
+        console.error('Clipboard copy failed:', err);
+    }
+
+    // Attempt Web Share API (Level 1 - Text)
+    if (navigator.share) {
+        try {
+            await navigator.share({
+                title: source.name,
+                text: jsonStr
+            });
+        } catch (err) {
+            if (err.name !== 'AbortError') {
+                console.error('Share failed:', err);
+            }
+        }
+    }
 }
 
 export function renderSourcesList() {
@@ -167,16 +179,22 @@ export function renderSourcesList() {
                 ${s.importDate ? `<span style="opacity:0.6;">• ${s.importDate}</span>` : ''}
                 ${rateChip}${coeffChip}
             </div>
-            <div class="origin-tag" style="font-size:0.7rem; color:var(--primary-color); opacity:0.8; margin-top:4px; display: flex; align-items: center; gap: 8px;">
+            <div class="origin-tag" style="font-size:0.7rem; color:var(--primary-color); opacity:0.8; margin-top:4px; display: flex; align-items: center; gap: 6px; flex-wrap: wrap;">
                 ${originContent}
-                <button class="reset-source-btn" style="background: var(--surface-hover); border: 1px solid var(--border-color); padding: 4px 10px; border-radius: 6px; cursor: pointer; color: var(--text-secondary); display: flex; align-items: center; gap: 6px; transition: all 0.2s;" title="${t('reset_source')}">
-                    <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M23 4v6h-6"></path><path d="M20.49 15a9 9 0 1 1-2.12-9.36L23 10"></path></svg>
-                    <span style="font-size: 0.75rem; font-weight: 500;">${t('reset')}</span>
-                </button>
-                <button class="share-source-btn" style="background: var(--primary-color); border: none; padding: 4px 10px; border-radius: 6px; cursor: pointer; color: white; display: flex; align-items: center; gap: 6px; transition: all 0.2s; box-shadow: 0 2px 4px rgba(0,0,0,0.1);" title="${t('share_source')}">
-                    <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M4 12v8a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-8"></path><polyline points="16 6 12 2 8 6"></polyline><line x1="12" y1="2" x2="12" y2="15"></line></svg>
-                    <span style="font-size: 0.75rem; font-weight: 500;">${t('share_source')}</span>
-                </button>
+                <div style="display:flex; gap: 4px; margin-left: auto;">
+                    <button class="reset-source-btn" style="background: var(--surface-hover); border: 1px solid var(--border-color); padding: 4px 8px; border-radius: 6px; cursor: pointer; color: var(--text-secondary); display: flex; align-items: center; gap: 4px; transition: all 0.2s;" title="${t('reset_source')}">
+                        <svg viewBox="0 0 24 24" width="12" height="12" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M23 4v6h-6"></path><path d="M20.49 15a9 9 0 1 1-2.12-9.36L23 10"></path></svg>
+                        <span style="font-size: 0.7rem; font-weight: 500;">${t('reset')}</span>
+                    </button>
+                    <button class="download-source-btn" style="background: var(--surface-hover); border: 1px solid var(--border-color); padding: 4px 8px; border-radius: 6px; cursor: pointer; color: var(--text-secondary); display: flex; align-items: center; gap: 4px; transition: all 0.2s;" title="${t('download')}">
+                        <svg viewBox="0 0 24 24" width="12" height="12" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path><polyline points="7 10 12 15 17 10"></polyline><line x1="12" y1="15" x2="12" y2="3"></line></svg>
+                        <span style="font-size: 0.7rem; font-weight: 500;">${t('download')}</span>
+                    </button>
+                    <button class="share-source-btn" style="background: var(--primary-color); border: none; padding: 4px 8px; border-radius: 6px; cursor: pointer; color: white; display: flex; align-items: center; gap: 4px; transition: all 0.2s; box-shadow: 0 2px 4px rgba(0,0,0,0.1);" title="${t('share_source')}">
+                        <svg viewBox="0 0 24 24" width="12" height="12" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="18" cy="5" r="3"></circle><circle cx="6" cy="12" r="3"></circle><circle cx="18" cy="19" r="3"></circle><line x1="8.59" y1="13.51" x2="15.42" y2="17.49"></line><line x1="15.41" y1="6.51" x2="8.59" y2="10.49"></line></svg>
+                        <span style="font-size: 0.7rem; font-weight: 500;">${t('share_source')}</span>
+                    </button>
+                </div>
             </div>
         `;
 
@@ -188,11 +206,19 @@ export function renderSourcesList() {
             };
         }
 
+        const downloadBtn = info.querySelector('.download-source-btn');
+        if (downloadBtn) {
+            downloadBtn.onclick = (e) => {
+                e.stopPropagation();
+                downloadSourceJSON(s);
+            };
+        }
+
         const shareBtn = info.querySelector('.share-source-btn');
         if (shareBtn) {
             shareBtn.onclick = (e) => {
                 e.stopPropagation();
-                exportOriginalJSON(s);
+                shareSourceJSON(s);
             };
         }
 
