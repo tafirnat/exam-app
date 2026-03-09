@@ -1,6 +1,7 @@
 
 import { AppState } from '../../core/state.js';
 import { t } from '../../core/i18n.js';
+import { showConfirm } from '../../core/utils.js';
 
 export function renderStatsList(filter = 'all', searchKeyword = '') {
     AppState.searchKeyword = searchKeyword;
@@ -259,9 +260,9 @@ function renderHistoricalTests(list, filter) {
             testEl.classList.toggle('expanded', !isVisible);
         };
 
-        deleteBtn.onclick = (e) => {
+        deleteBtn.onclick = async (e) => {
             e.stopPropagation();
-            if (confirm(t('confirm_delete_history'))) {
+            if (await showConfirm(t('confirm_delete_history'))) {
                 if (filter === 'recent') test.hiddenInRecent = true;
                 if (filter === 'incorrect') test.hiddenInIncorrect = true;
 

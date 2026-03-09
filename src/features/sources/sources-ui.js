@@ -1,5 +1,6 @@
 import { AppState, saveSources, saveStats } from '../../core/state.js';
 import { t } from '../../core/i18n.js';
+import { showConfirm } from '../../core/utils.js';
 
 export function toggleSource(id) {
     AppState.sources.forEach(s => {
@@ -13,16 +14,16 @@ export function toggleSource(id) {
     if (window.onSourcesUpdated) window.onSourcesUpdated();
 }
 
-export function removeSource(id) {
-    if (!confirm(t('confirm_remove_source', { name: '' }))) return;
+export async function removeSource(id) {
+    if (!await showConfirm(t('confirm_remove_source', { name: '' }))) return;
     AppState.sources = AppState.sources.filter(s => s.id !== id);
     saveSources();
     renderSourcesList();
     if (window.onSourcesUpdated) window.onSourcesUpdated();
 }
 
-export function resetSourceStats(id) {
-    if (!confirm(t('confirm_reset_source'))) return;
+export async function resetSourceStats(id) {
+    if (!await showConfirm(t('confirm_reset_source'))) return;
     const source = AppState.sources.find(s => s.id === id);
     if (!source) return;
 

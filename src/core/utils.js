@@ -81,3 +81,97 @@ export function highlightText(text, keyword) {
         return text;
     }
 }
+/**
+ * Shows a custom professional confirmation dialog.
+ * @param {string} message The message to show.
+ * @param {string} title Optional title.
+ * @returns {Promise<boolean>} Resolves to true if confirmed, false otherwise.
+ */
+export function showConfirm(message, title = '') {
+    return new Promise((resolve) => {
+        const overlay = document.getElementById('customModalOverlay');
+        const titleEl = document.getElementById('modalTitle');
+        const headerEl = document.getElementById('modalHeader');
+        const messageEl = document.getElementById('modalMessage');
+        const confirmBtn = document.getElementById('modalConfirmBtn');
+        const cancelBtn = document.getElementById('modalCancelBtn');
+
+        if (!overlay || !messageEl || !confirmBtn || !cancelBtn) {
+            // Fallback to native if DOM elements are missing
+            resolve(window.confirm(message));
+            return;
+        }
+
+        messageEl.innerText = message;
+        if (title) {
+            titleEl.innerText = title;
+            headerEl.style.display = 'block';
+        } else {
+            headerEl.style.display = 'none';
+        }
+
+        cancelBtn.style.display = 'inline-flex';
+        overlay.classList.add('active');
+
+        const handleConfirm = () => {
+            cleanup();
+            resolve(true);
+        };
+
+        const handleCancel = () => {
+            cleanup();
+            resolve(false);
+        };
+
+        const cleanup = () => {
+            confirmBtn.removeEventListener('click', handleConfirm);
+            cancelBtn.removeEventListener('click', handleCancel);
+            overlay.classList.remove('active');
+        };
+
+        confirmBtn.addEventListener('click', handleConfirm);
+        cancelBtn.addEventListener('click', handleCancel);
+    });
+}
+
+/**
+ * Shows a custom professional alert dialog.
+ * @param {string} message The message to show.
+ * @param {string} title Optional title.
+ * @returns {Promise<void>} Resolves when the user clicks OK.
+ */
+export function showAlert(message, title = '') {
+    return new Promise((resolve) => {
+        const overlay = document.getElementById('customModalOverlay');
+        const titleEl = document.getElementById('modalTitle');
+        const headerEl = document.getElementById('modalHeader');
+        const messageEl = document.getElementById('modalMessage');
+        const confirmBtn = document.getElementById('modalConfirmBtn');
+        const cancelBtn = document.getElementById('modalCancelBtn');
+
+        if (!overlay || !messageEl || !confirmBtn || !cancelBtn) {
+            window.alert(message);
+            resolve();
+            return;
+        }
+
+        messageEl.innerText = message;
+        if (title) {
+            titleEl.innerText = title;
+            headerEl.style.display = 'block';
+        } else {
+            headerEl.style.display = 'none';
+        }
+
+        cancelBtn.style.display = 'none'; // Hide cancel button for alerts
+        overlay.classList.add('active');
+
+        const handleConfirm = () => {
+            confirmBtn.removeEventListener('click', handleConfirm);
+            overlay.classList.remove('active');
+            resolve();
+        };
+
+        confirmBtn.addEventListener('click', handleConfirm);
+    });
+}

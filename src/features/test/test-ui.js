@@ -1,6 +1,6 @@
 
 import { AppState, saveStats } from '../../core/state.js';
-import { translateText, showToast, getCorrectAnswers } from '../../core/utils.js';
+import { translateText, showToast, showConfirm, getCorrectAnswers } from '../../core/utils.js';
 import { t } from '../../core/i18n.js';
 import { evaluateAnswer, updateStats, finishTest } from './test-engine.js';
 
@@ -312,7 +312,7 @@ function renderSummarySection() {
         };
     }
 
-    document.getElementById('finishTestBtn').onclick = () => {
+    document.getElementById('finishTestBtn').onclick = async () => {
         // Auto-evaluate unchecked but answered questions
         let interactionCount = 0;
         AppState.currentTest.forEach((qId, idx) => {
@@ -350,7 +350,7 @@ function renderSummarySection() {
         });
 
         if (trulyUnanswered.length > 0) {
-            if (!confirm(t('confirm_finish_test_unanswered'))) {
+            if (!await showConfirm(t('confirm_finish_test_unanswered'))) {
                 return;
             }
         }

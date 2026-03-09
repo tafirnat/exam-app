@@ -1,7 +1,7 @@
 import { AppState, saveStats, saveSources, saveCurrentSource, saveCustomAIPrompt, saveAiIntegration, saveActiveTest, clearActiveTest } from './core/state.js';
 import { initTheme, toggleTheme } from './core/theme.js';
 import { updateStaticTranslations, t, targetLanguages, translations } from './core/i18n.js';
-import { showToast, getCorrectAnswers, highlightText } from './core/utils.js';
+import { showToast, showConfirm, getCorrectAnswers, highlightText } from './core/utils.js';
 import { migrateOldData } from './core/migration.js';
 import { processJSON, loadFromUrl, loadFromFile, normalizeQuestions } from './features/sources/sources-service.js';
 import { renderSourcesList } from './features/sources/sources-ui.js';
@@ -556,7 +556,7 @@ function setupEventListeners() {
                     await processJSON(data, file.name);
                 } else if (data.sources || data.stats) {
                     // Full backup import
-                    if (confirm(t('confirm_import_backup') || 'Möchten Sie dieses Backup laden? Bestehende Daten werden überschrieben.')) {
+                    if (await showConfirm(t('confirm_import_backup') || 'Möchten Sie dieses Backup laden? Bestehende Daten werden überschrieben.')) {
                         if (data.sources) AppState.sources = data.sources;
                         if (data.stats) AppState.stats = data.stats;
                         if (data.recentTests) AppState.recentTests = data.recentTests;
@@ -992,8 +992,10 @@ function toggleAddSourcePanel() {
     btn.style.transition = 'transform 0.2s';
 }
 
-function confirmExit() {
-    if (confirm(t('confirm_exit'))) switchView('home');
+async function confirmExit() {
+    if (await showConfirm(t('confirm_exit'))) {
+        switchView('home');
+    }
     toggleMenu();
 }
 
@@ -1154,8 +1156,8 @@ function saveCustomPrompt() {
     closePromptEditor();
 }
 
-function resetCustomPrompt() {
-    if (confirm(t('confirm_reset') || 'Varsayılan prompta dönmek istediğinize emin misiniz?')) {
+async function resetCustomPrompt() {
+    if (await showConfirm(t('confirm_reset') || 'Varsayılan prompta dönmek istediğinize emin misiniz?')) {
         let promptLang = AppState.translationTarget || 'en';
         if (!['tr', 'en', 'de'].includes(promptLang)) promptLang = 'en';
         const defaultPrompt = translations[promptLang]?.ai_prompt_template || translations['en']?.ai_prompt_template;

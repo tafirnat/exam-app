@@ -889,28 +889,60 @@ pre code {
     left: 0;
     right: 0;
     bottom: 0;
-    background-color: rgba(0, 0, 0, 0.5);
+    background-color: rgba(0, 0, 0, 0.4);
     display: none;
     align-items: center;
     justify-content: center;
-    z-index: 2000;
+    z-index: 9999;
     padding: 1.5rem;
-    backdrop-filter: blur(4px);
+    backdrop-filter: blur(8px);
+    -webkit-backdrop-filter: blur(8px);
+    transition: opacity 0.3s ease;
 }
 
 .modal-overlay.active {
     display: flex;
+    animation: fadeInOverlay 0.3s ease;
+}
+
+@keyframes fadeInOverlay {
+    from {
+        opacity: 0;
+    }
+
+    to {
+        opacity: 1;
+    }
 }
 
 .modal-card {
     background-color: var(--surface-color);
     border-radius: var(--radius-lg);
-    padding: 2rem;
+    padding: 1.75rem;
     width: 100%;
-    max-width: 500px;
-    box-shadow: var(--shadow-md);
+    max-width: 440px;
+    box-shadow: var(--shadow-md), 0 20px 25px -5px rgb(0 0 0 / 0.1), 0 8px 10px -6px rgb(0 0 0 / 0.1);
     border: 1px solid var(--border-color);
-    animation: modalFadeIn 0.3s ease-out;
+    animation: modalSlideUp 0.4s cubic-bezier(0.16, 1, 0.3, 1);
+    position: relative;
+    overflow: hidden;
+}
+
+[data-theme="dark"] .modal-card {
+    background-color: var(--surface-color);
+    box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.5);
+}
+
+@keyframes modalSlideUp {
+    from {
+        opacity: 0;
+        transform: translateY(20px) scale(0.98);
+    }
+
+    to {
+        opacity: 1;
+        transform: translateY(0) scale(1);
+    }
 }
 
 @keyframes modalFadeIn {
@@ -927,8 +959,28 @@ pre code {
 
 .modal-card h3 {
     margin-top: 0;
+    margin-bottom: 0.5rem;
+    font-size: 1.2rem;
+    font-weight: 700;
+    color: var(--text-primary);
+}
+
+.modal-body p {
+    color: var(--text-secondary);
+    font-size: 0.95rem;
+}
+
+.modal-header {
+    border-bottom: 1px solid var(--border-color);
+    padding-bottom: 0.75rem;
     margin-bottom: 1rem;
-    font-size: 1.25rem;
+}
+
+.modal-footer {
+    display: flex;
+    justify-content: flex-end;
+    gap: 0.75rem;
+    margin-top: 2rem;
 }
 
 .text-input-wrapper input.correct {
