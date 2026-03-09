@@ -292,8 +292,13 @@ function renderHistoricalTests(list, filter) {
 
     // Update footer for historical tests
     const visibleCount = AppState.recentTests.filter(test => {
+        if (!test || !Array.isArray(test.questions) || test.questions.length === 0) return false;
         if (filter === 'recent' && test.hiddenInRecent) return false;
-        if (filter === 'incorrect' && test.hiddenInIncorrect) return false;
+        if (filter === 'incorrect') {
+            if (test.hiddenInIncorrect) return false;
+            const hasIncorrect = test.questions.some(q => !q.isCorrect && !q.isUnanswered);
+            if (!hasIncorrect) return false;
+        }
         return true;
     }).length;
     updateStatsFooter(filter, '', visibleCount);
