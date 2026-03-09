@@ -860,15 +860,18 @@ function checkActiveTest() {
     const startBtnContainer = document.getElementById('startBtnContainer');
 
     if (activeData && activeData.currentTest && activeData.currentTest.length > 0) {
-        if (resumeBtn) resumeBtn.style.display = 'block';
+        if (resumeBtn) {
+            resumeBtn.style.display = 'block';
+            resumeBtn.style.flex = '1';
+        }
         if (startBtn) {
             startBtn.innerText = t('new_test');
             startBtn.setAttribute('data-i18n', 'new_test');
-            // Remove full width and primary style to make it "secondary"
             startBtn.style.width = 'auto';
-            startBtn.style.backgroundColor = 'var(--surface-hover)';
-            startBtn.style.color = 'var(--text-primary)';
-            startBtn.style.border = '1px solid var(--border-color)';
+            startBtn.style.flex = '1';
+            startBtn.style.backgroundColor = 'var(--primary-color)';
+            startBtn.style.color = '#ffffff';
+            startBtn.style.border = 'none';
         }
         if (startBtnContainer) {
             startBtnContainer.style.flexDirection = 'row';
