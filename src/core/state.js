@@ -56,3 +56,20 @@ export function saveCurrentSource(key) {
 export function saveRecentTests() {
     localStorage.setItem('focus_app_recent_tests', JSON.stringify(AppState.recentTests));
 }
+
+export function saveActiveTest() {
+    const activeData = {
+        currentTest: AppState.currentTest,
+        currentIndex: AppState.currentIndex,
+        userAnswers: AppState.userAnswers,
+        isAnswerChecked: AppState.isAnswerChecked,
+        shuffledOptionsMap: AppState.shuffledOptionsMap,
+        testTracking: AppState.testTracking,
+        // We don't save rawQuestions as they are reconstructed from sources on load
+    };
+    localStorage.setItem('focus_app_active_test', JSON.stringify(activeData));
+}
+
+export function clearActiveTest() {
+    localStorage.removeItem('focus_app_active_test');
+}

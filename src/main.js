@@ -1,4 +1,4 @@
-import { AppState, saveStats, saveSources, saveCurrentSource, saveCustomAIPrompt, saveAiIntegration } from './core/state.js';
+import { AppState, saveStats, saveSources, saveCurrentSource, saveCustomAIPrompt, saveAiIntegration, saveActiveTest, clearActiveTest } from './core/state.js';
 import { initTheme, toggleTheme } from './core/theme.js';
 import { updateStaticTranslations, t, targetLanguages, translations } from './core/i18n.js';
 import { showToast, getCorrectAnswers, highlightText } from './core/utils.js';
@@ -24,6 +24,7 @@ window.onRetake = (historyEntry, onlyIncorrect) => {
 // --- Initialize ---
 document.addEventListener('DOMContentLoaded', () => {
     console.log('DOMContentLoaded start');
+    checkActiveTest();
     try {
         console.log('Migrating old data...');
         migrateOldData();
@@ -115,6 +116,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 AppState.rawQuestions = questions;
             }
         }
+        checkActiveTest();
     } catch (err) {
         console.error('CRITICAL INITIALIZATION ERROR:', err);
         // Fallback to setup at least basic listeners if possible
@@ -481,6 +483,7 @@ function setupEventListeners() {
     // Navigation
     document.getElementById('headerBackBtn').onclick = goBack;
     document.getElementById('startBtn').onclick = startTest;
+    document.getElementById('resumeBtn').onclick = resumeActiveTest;
     document.getElementById('prevBtn').onclick = prevQuestion;
     document.getElementById('nextBtn').onclick = nextQuestion;
     document.getElementById('checkBtn').onclick = handleCheckAnswer;
@@ -840,6 +843,7 @@ function updateLangUI() {
 }
 
 function startTest() {
+    clearActiveTest();
     const count = parseInt(document.getElementById('questionCount').value);
     if (prepareTest(count)) {
         switchView('test');
@@ -849,9 +853,72 @@ function startTest() {
     }
 }
 
+function checkActiveTest() {
+    const activeData = JSON.parse(localStorage.getItem('focus_app_active_test') || 'null');
+    const resumeBtn = document.getElementById('resumeBtn');
+    const startBtn = document.getElementById('startBtn');
+    const startBtnContainer = document.getElementById('startBtnContainer');
+
+    if (activeData && activeData.currentTest && activeData.currentTest.length > 0) {
+        if (resumeBtn) resumeBtn.style.display = 'block';
+        if (startBtn) {
+            startBtn.innerText = t('new_test');
+            startBtn.setAttribute('data-i18n', 'new_test');
+            // Remove full width and primary style to make it "secondary"
+            startBtn.style.width = 'auto';
+            startBtn.style.backgroundColor = 'var(--surface-hover)';
+            startBtn.style.color = 'var(--text-primary)';
+            startBtn.style.border = '1px solid var(--border-color)';
+        }
+        if (startBtnContainer) {
+            startBtnContainer.style.flexDirection = 'row';
+            startBtnContainer.style.justifyContent = 'space-between';
+        }
+    } else {
+        if (resumeBtn) resumeBtn.style.display = 'none';
+        if (startBtn) {
+            startBtn.innerText = t('start_test');
+            startBtn.setAttribute('data-i18n', 'start_test');
+            startBtn.style.width = '100%';
+            startBtn.style.backgroundColor = 'var(--primary-color)';
+            startBtn.style.color = '#ffffff';
+            startBtn.style.border = 'none';
+        }
+        if (startBtnContainer) {
+            startBtnContainer.style.flexDirection = 'column';
+        }
+    }
+}
+
+function resumeActiveTest() {
+    const activeData = JSON.parse(localStorage.getItem('focus_app_active_test') || 'null');
+    if (!activeData) return;
+
+    // Restore AppState
+    AppState.currentTest = activeData.currentTest;
+    AppState.currentIndex = activeData.currentIndex;
+    AppState.userAnswers = activeData.userAnswers;
+    AppState.isAnswerChecked = activeData.isAnswerChecked;
+    AppState.shuffledOptionsMap = activeData.shuffledOptionsMap;
+    AppState.testTracking = activeData.testTracking;
+
+    // Ensure rawQuestions are loaded (already done in DOMContentLoaded)
+    if (AppState.rawQuestions.length === 0) {
+        const questions = [];
+        AppState.sources.forEach(s => {
+            if (s.active && s.questions) questions.push(...s.questions);
+        });
+        AppState.rawQuestions = questions;
+    }
+
+    switchView('test');
+    renderQuestion();
+}
+
 function prevQuestion() {
     if (AppState.currentIndex > 0) {
         AppState.currentIndex--;
+        saveActiveTest();
         renderQuestion();
     }
 }
@@ -859,6 +926,7 @@ function prevQuestion() {
 function nextQuestion() {
     if (AppState.currentIndex < AppState.currentTest.length - 1) {
         AppState.currentIndex++;
+        saveActiveTest();
         renderQuestion();
     } else {
         showToast(t('test_completed'));

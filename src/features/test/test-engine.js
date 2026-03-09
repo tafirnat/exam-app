@@ -1,4 +1,4 @@
-import { AppState, saveRecentTests } from '../../core/state.js';
+import { AppState, saveRecentTests, saveActiveTest, clearActiveTest } from '../../core/state.js';
 import { shuffleArray, getCorrectAnswers } from '../../core/utils.js';
 
 export function prepareTest(count) {
@@ -8,6 +8,8 @@ export function prepareTest(count) {
     });
 
     if (rawQuestions.length === 0) return null;
+
+    clearActiveTest();
 
     // Smart Selection logic: 60% hard, 30% medium, 10% easy
     // Based on coefficient (higher = harder)
@@ -230,6 +232,7 @@ export async function finishTest() {
         console.error("Critical error in finishTest:", err);
     } finally {
         AppState.testTracking = null;
+        clearActiveTest();
     }
 }
 
@@ -345,4 +348,5 @@ export function updateStats(questionId, isCorrect, userAnswer, feedback = undefi
             }
         }
     }
+    saveActiveTest();
 }
