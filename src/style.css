@@ -2756,3 +2756,72 @@ input:focus+.slider {
     color: var(--text-secondary);
     opacity: 0.5;
 }
+
+/* Cloud Sync UI */
+.cloud-status-row {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    font-size: 0.85rem;
+    color: var(--text-secondary);
+}
+
+.status-indicator {
+    width: 8px;
+    height: 8px;
+    border-radius: 50%;
+    background-color: var(--text-secondary);
+    transition: background-color 0.3s ease;
+}
+
+.status-indicator.connected {
+    background-color: #22c55e;
+    box-shadow: 0 0 8px rgba(34, 197, 94, 0.4);
+}
+
+.menu-btn-small {
+    display: flex;
+    align-items: center;
+    gap: 0.6rem;
+    width: 100%;
+    padding: 0.5rem 0.75rem;
+    background: var(--bg-secondary);
+    border: 1px solid var(--border-color);
+    border-radius: 8px;
+    color: var(--text-primary);
+    font-size: 0.8rem;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    margin-bottom: 0.25rem;
+}
+
+.menu-btn-small:hover {
+    background: var(--bg-hover);
+    border-color: var(--primary-color);
+}
+
+.menu-btn-small svg {
+    width: 14px;
+    height: 14px;
+}
+
+.logout-btn {
+    margin-top: 0.5rem;
+    color: var(--error-color);
+    border-color: rgba(239, 68, 68, 0.2);
+}
+
+.logout-btn:hover {
+    background: rgba(239, 68, 68, 0.1);
+    border-color: var(--error-color);
+}
+
+@keyframes spin {
+    to {
+        transform: rotate(360deg);
+    }
+}
+
+.syncing-icon {
+    animation: spin 1s linear infinite;
+}

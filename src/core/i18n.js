@@ -142,7 +142,15 @@ export const translations = {
         view_stats: "İstatistikler",
         view_test: "Test Ekranı",
         view_results: "Test Sonuçları",
-        view_statsPreview: "Soru Detayı"
+        view_statsPreview: "Soru Detayı",
+        cloud_sync: "Bulut Yedekleme",
+        backup: "Şimdi Yedekle",
+        restore: "Buluttan İndir",
+        google_login: "Google ile Bağlan",
+        google_logout: "Oturumu Kapat",
+        cloud_status_connected: "Bulut Bağlı",
+        cloud_status_disconnected: "Bağlı Değil",
+        syncing: "Eşitleniyor..."
     },
     en: {
         theme_change: "Change Theme",
@@ -269,7 +277,15 @@ export const translations = {
         view_stats: "Statistics",
         view_test: "Test Screen",
         view_results: "Test Results",
-        view_statsPreview: "Question Detail"
+        view_statsPreview: "Question Detail",
+        cloud_sync: "Cloud Backup",
+        backup: "Backup Now",
+        restore: "Download from Cloud",
+        google_login: "Sign in with Google",
+        google_logout: "Logout",
+        cloud_status_connected: "Cloud Connected",
+        cloud_status_disconnected: "Not Connected",
+        syncing: "Syncing..."
     },
     de: {
         theme_change: "Design ändern",
@@ -396,7 +412,15 @@ export const translations = {
         view_stats: "Statistiken",
         view_test: "Testbildschirm",
         view_results: "Testergebnisse",
-        view_statsPreview: "Fragedetails"
+        view_statsPreview: "Fragedetails",
+        cloud_sync: "Cloud-Backup",
+        backup: "Jetzt sichern",
+        restore: "Aus Cloud laden",
+        google_login: "Mit Google anmelden",
+        google_logout: "Abmelden",
+        cloud_status_connected: "Cloud verbunden",
+        cloud_status_disconnected: "Nicht verbunden",
+        syncing: "Synchronisierung..."
     },
 };
 
