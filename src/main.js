@@ -804,7 +804,6 @@ function switchView(view) {
     document.getElementById('testOnlyMenuItems').style.display = isTestOrPreview ? 'none' : (view === 'home' ? 'none' : 'block');
 
     if (view === 'home' || view === 'stats') {
-        finishTest();
         const qn = document.getElementById('quickNavContainer');
         if (qn) qn.classList.remove('visible');
         const qo = document.getElementById('quickNavOverlay');
@@ -814,6 +813,7 @@ function switchView(view) {
     if (view === 'home') {
         document.getElementById('headerTitle').innerText = 'Exam App';
         updateHomeStats();
+        checkActiveTest();
     }
 }
 
@@ -872,7 +872,7 @@ function checkActiveTest() {
         }
         if (startBtnContainer) {
             startBtnContainer.style.flexDirection = 'row';
-            startBtnContainer.style.justifyContent = 'space-between';
+            startBtnContainer.style.gap = '0.75rem';
         }
     } else {
         if (resumeBtn) resumeBtn.style.display = 'none';
