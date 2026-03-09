@@ -20,9 +20,27 @@ export const DriveState = {
 };
 
 /**
+ * Helper to wait for global scripts to load
+ */
+async function waitForScripts() {
+    return new Promise((resolve) => {
+        const check = () => {
+            if (typeof gapi !== 'undefined' && typeof google !== 'undefined' && google.accounts) {
+                resolve();
+            } else {
+                setTimeout(check, 100);
+            }
+        };
+        check();
+    });
+}
+
+/**
  * Initialize Google API and Identity Services
  */
 export async function initDriveApi() {
+    await waitForScripts();
+
     return new Promise((resolve) => {
         const checkInit = () => {
             if (gapiInited && gisInited) resolve(true);
@@ -48,6 +66,7 @@ export async function initDriveApi() {
         checkInit();
     });
 }
+
 
 /**
  * Sign in with Google
