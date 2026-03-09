@@ -2678,4 +2678,8 @@ input:focus+.slider {
     .quick-nav-slider {
         width: 220px;
     }
+
+    .hide-mobile {
+        display: none !important;
+    }
 }
