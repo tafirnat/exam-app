@@ -201,30 +201,11 @@ export function renderSourcesList() {
         actions.style.gap = '0.5rem';
         actions.style.alignItems = 'center';
 
-        const viewBtn = document.createElement('button');
-        viewBtn.className = 'icon-btn';
-        viewBtn.style.color = 'var(--text-secondary)';
-        viewBtn.style.fontSize = '1rem';
-        viewBtn.style.fontWeight = '700';
-        viewBtn.style.padding = '4px 10px';
-        viewBtn.style.borderTop = '1px solid var(--border-color)';
-        viewBtn.style.borderBottom = '1px solid var(--border-color)';
-        viewBtn.style.borderLeft = 'none';
-        viewBtn.style.borderRight = 'none';
-        viewBtn.style.borderRadius = '6px';
-        viewBtn.style.background = 'transparent';
-        viewBtn.title = 'JSON View';
-
-        viewBtn.innerHTML = `
-            <div style="display: flex; align-items: center; gap: 8px;">
-                <span class="status-dot ${s.active ? 'active' : ''}"></span>
-                <span>JSON</span>
-            </div>
-        `;
-        viewBtn.onclick = (e) => {
-            e.stopPropagation();
-            exportOriginalJSON(s);
-        };
+        const statusIndicator = document.createElement('div');
+        statusIndicator.style.display = 'flex';
+        statusIndicator.style.alignItems = 'center';
+        statusIndicator.style.padding = '0 4px';
+        statusIndicator.innerHTML = `<span class="status-dot ${s.active ? 'active' : ''}"></span>`;
 
         const delBtn = document.createElement('button');
         delBtn.className = 'icon-btn';
@@ -236,7 +217,7 @@ export function renderSourcesList() {
         };
 
         item.appendChild(info);
-        actions.appendChild(viewBtn);
+        actions.appendChild(statusIndicator);
         actions.appendChild(delBtn);
         item.appendChild(actions);
         container.appendChild(item);
