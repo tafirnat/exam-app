@@ -75,15 +75,6 @@ export async function shareSourceJSON(source) {
     const cleanData = getCleanSourceData(source);
     const jsonStr = JSON.stringify(cleanData, null, 2);
 
-    // Always copy to clipboard as fallback/primary action
-    try {
-        await navigator.clipboard.writeText(jsonStr);
-        if (window.showToast) window.showToast(t('share_copy_success'));
-        else alert(t('share_copy_success'));
-    } catch (err) {
-        console.error('Clipboard copy failed:', err);
-    }
-
     // Attempt Web Share API (Level 1 - Text)
     if (navigator.share) {
         try {
@@ -96,6 +87,10 @@ export async function shareSourceJSON(source) {
                 console.error('Share failed:', err);
             }
         }
+    } else {
+        // Fallback for browsers that don't support sharing at all (like some desktops)
+        // In this case, downloading is the best alternative
+        downloadSourceJSON(source);
     }
 }
 

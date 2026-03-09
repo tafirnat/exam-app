@@ -136,8 +136,7 @@ export const translations = {
         resume_test: "Teste Devam Et",
         new_test: "Yeni Test",
         share_source: "Paylaş",
-        download: "İndir",
-        share_copy_success: "JSON içeriği panoya kopyalandı."
+        download: "İndir"
     },
     en: {
         theme_change: "Change Theme",
@@ -258,8 +257,7 @@ export const translations = {
         resume_test: "Resume Test",
         new_test: "New Test",
         share_source: "Share",
-        download: "Download",
-        share_copy_success: "JSON content copied to clipboard."
+        download: "Download"
     },
     de: {
         theme_change: "Design ändern",
@@ -380,8 +378,7 @@ export const translations = {
         resume_test: "Test fortsetzen",
         new_test: "Neuer Test",
         share_source: "Teilen",
-        download: "Herunterladen",
-        share_copy_success: "JSON-Inhalt in die Zwischenablage kopiert."
+        download: "Herunterladen"
     },
 };
 
