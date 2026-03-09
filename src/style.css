@@ -2170,6 +2170,10 @@ input:focus+.slider {
 }
 
 @media (max-width: 600px) {
+    #homeStatsCard {
+        margin-top: 1rem;
+    }
+
     .stats-footer-mask {
         bottom: 0;
         margin: 0 -1.35rem -1rem -1.35rem;
@@ -2683,6 +2687,7 @@ input:focus+.slider {
         display: none !important;
     }
 }
+
 /* --- History List --- */
 .history-list-container {
     padding: 0 0.5rem 0.5rem 0.5rem;
