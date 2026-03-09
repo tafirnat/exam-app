@@ -29,7 +29,8 @@ export const AppState = {
     activeStatsSortField: 'original', // 'original', 'coeff', 'success', 'wrong'
     activeStatsSortDir: 'asc', // 'asc', 'desc'
     customAIPrompt: localStorage.getItem('focus_app_custom_ai_prompt') || '',
-    aiIntegration: localStorage.getItem('focus_app_ai_integration') || 'clipboard'
+    aiIntegration: localStorage.getItem('focus_app_ai_integration') || 'clipboard',
+    viewHistory: [] // Stack to track last 10 visited screens
 };
 
 export function saveStats() {

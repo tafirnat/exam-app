@@ -136,7 +136,13 @@ export const translations = {
         resume_test: "Teste Devam Et",
         new_test: "Yeni Test",
         share_source: "Paylaş",
-        download: "İndir"
+        download: "İndir",
+        recent_views: "Son Gezilenler",
+        view_home: "Ana Sayfa",
+        view_stats: "İstatistikler",
+        view_test: "Test Ekranı",
+        view_results: "Test Sonuçları",
+        view_statsPreview: "Soru Detayı"
     },
     en: {
         theme_change: "Change Theme",
@@ -257,7 +263,13 @@ export const translations = {
         resume_test: "Resume Test",
         new_test: "New Test",
         share_source: "Share",
-        download: "Download"
+        download: "Download",
+        recent_views: "Recent Views",
+        view_home: "Home",
+        view_stats: "Statistics",
+        view_test: "Test Screen",
+        view_results: "Test Results",
+        view_statsPreview: "Question Detail"
     },
     de: {
         theme_change: "Design ändern",
@@ -378,7 +390,13 @@ export const translations = {
         resume_test: "Test fortsetzen",
         new_test: "Neuer Test",
         share_source: "Teilen",
-        download: "Herunterladen"
+        download: "Herunterladen",
+        recent_views: "Zuletzt besucht",
+        view_home: "Startseite",
+        view_stats: "Statistiken",
+        view_test: "Testbildschirm",
+        view_results: "Testergebnisse",
+        view_statsPreview: "Fragedetails"
     },
 };
 
