@@ -38,7 +38,7 @@ export async function resetSourceStats(id) {
     if (window.onSourcesUpdated) window.onSourcesUpdated();
 }
 
-export function exportOriginalJSON(source) {
+export async function exportOriginalJSON(source) {
     const cleanData = {
         exam_metadata: source.metadata || { title: source.name },
         questions: source.questions.map(q => {
@@ -55,13 +55,32 @@ export function exportOriginalJSON(source) {
         })
     };
     const jsonStr = JSON.stringify(cleanData, null, 2);
+    const fileName = `${source.name.replace(/\s+/g, '_')}_original.json`;
     const blob = new Blob([jsonStr], { type: 'application/json' });
-    const url = URL.createObjectURL(blob);
 
-    // Create temporary link to trigger download
+    // Try Web Share API for mobile sharing (WhatsApp, Telegram, etc.)
+    if (navigator.share && navigator.canShare) {
+        try {
+            const file = new File([blob], fileName, { type: 'application/json' });
+            if (navigator.canShare({ files: [file] })) {
+                await navigator.share({
+                    files: [file],
+                    title: source.name,
+                    text: t('share_source_text') || 'Soru kaynağını paylaş'
+                });
+                return; // Shared via native menu
+            }
+        } catch (err) {
+            console.error('Share failed:', err);
+            // Fall back to download if share cancels or fails
+        }
+    }
+
+    // Fallback: Traditional download method for desktop or unsupported browsers
+    const url = URL.createObjectURL(blob);
     const a = document.createElement('a');
     a.href = url;
-    a.download = `${source.name.replace(/\s+/g, '_')}_original.json`;
+    a.download = fileName;
     document.body.appendChild(a);
     a.click();
     document.body.removeChild(a);
