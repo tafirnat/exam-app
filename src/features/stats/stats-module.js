@@ -92,6 +92,7 @@ export function renderStatsList(filter = 'all', searchKeyword = '') {
 
     updateSortUI();
 
+    updateStatsFooter(filter, searchKeyword, filteredQuestions.length);
     if (filteredQuestions.length === 0) {
         list.innerHTML = `<div style="text-align:center; padding: 3rem 1rem; color: var(--text-secondary);">
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="width: 48px; height: 48px; margin-bottom: 1rem; opacity: 0.5;">
@@ -139,8 +140,6 @@ export function renderStatsList(filter = 'all', searchKeyword = '') {
         };
         list.appendChild(item);
     });
-
-    updateStatsFooter(filter, searchKeyword, filteredQuestions.length);
 }
 
 function updateStatsFooter(filter, keyword, count) {
