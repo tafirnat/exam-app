@@ -105,6 +105,8 @@ export function renderQuestion() {
             const card = document.createElement('div');
             card.className = `option-card ${isSelected ? 'selected' : ''}`;
 
+            if (isChecked) {
+                const isOptionCorrect = getCorrectAnswers(q).map(String).includes(String(opt.id));
                 if (isOptionCorrect) {
                     if (isSelected) card.classList.add('correct');
                     else card.classList.add('missed-correct');
@@ -112,6 +114,7 @@ export function renderQuestion() {
                     card.classList.add('wrong'); // Wrongly selected option
                 }
                 card.classList.add('checked-state');
+            }
 
             const input = document.createElement('input');
             input.type = q.type === 'multiple_choice' ? 'checkbox' : 'radio';
