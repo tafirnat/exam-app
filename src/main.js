@@ -8,7 +8,7 @@ import { renderSourcesList } from './features/sources/sources-ui.js';
 import { prepareTest, finishTest, prepareRetake } from './features/test/test-engine.js';
 import { renderQuestion, handleCheckAnswer, updateIndicators, handleTranslation, handleDifficultyRating, renderTestResults } from './features/test/test-ui.js';
 import { renderStatsList, updateHomeStats, setupStatsEventListeners } from './features/stats/stats-module.js';
-import { initDriveApi, signIn, signOut, backupToDrive, restoreFromDrive, DriveState } from './core/google-drive-service.js';
+
 
 
 let menuActive = false;
@@ -97,15 +97,7 @@ document.addEventListener('DOMContentLoaded', () => {
         console.log('Updating translation UI...');
         updateTranslationUI();
 
-        console.log('Initializing Google Drive API...');
-        initDriveApi().then((success) => {
-            if (success) {
-                console.log('Google Drive API initialized successfully');
-                updateCloudSyncUI();
-            } else {
-                console.error('Google Drive API failed to initialize');
-            }
-        });
+
 
 
 
@@ -506,54 +498,7 @@ function setupEventListeners() {
     document.getElementById('previewMenuCopyAIInline').onclick = copyAIPrompt;
     document.getElementById('previewMenuCopyTextInline').onclick = copyQuestionText;
 
-    // Cloud Sync
-    const cloudLoginBtn = document.getElementById('cloudLoginBtn');
-    if (cloudLoginBtn) {
-        cloudLoginBtn.onclick = async () => {
-            try {
-                await signIn();
-                updateCloudSyncUI();
-            } catch (err) {
-                console.error('Sign in failed', err);
-            }
-        };
-    }
 
-    const cloudLogoutBtn = document.getElementById('cloudLogoutBtn');
-    if (cloudLogoutBtn) {
-        cloudLogoutBtn.onclick = () => {
-            signOut();
-            updateCloudSyncUI();
-        };
-    }
-
-    const cloudBackupBtn = document.getElementById('cloudBackupBtn');
-    if (cloudBackupBtn) {
-        cloudBackupBtn.onclick = async () => {
-            DriveState.isSyncing = true;
-            updateCloudSyncUI();
-            await backupToDrive();
-            DriveState.isSyncing = false;
-            updateCloudSyncUI();
-        };
-    }
-
-    const cloudRestoreBtn = document.getElementById('cloudRestoreBtn');
-    if (cloudRestoreBtn) {
-        cloudRestoreBtn.onclick = async () => {
-            if (await showConfirm(t('confirm_import_backup') || 'Möchten Sie dieses Backup laden? Bestehende Daten werden überschrieben.')) {
-                DriveState.isSyncing = true;
-                updateCloudSyncUI();
-                const success = await restoreFromDrive();
-                DriveState.isSyncing = false;
-                if (success) {
-                    location.reload();
-                } else {
-                    updateCloudSyncUI();
-                }
-            }
-        };
-    }
 
 
     window.addEventListener('test-finished', () => {
@@ -856,44 +801,7 @@ function setupEventListeners() {
     };
 }
 
-function updateCloudSyncUI() {
-    const loginBtn = document.getElementById('cloudLoginBtn');
-    const actionsArea = document.getElementById('cloudActions');
-    const statusText = document.getElementById('cloudStatusText');
-    const statusIcon = document.getElementById('cloudStatusIcon');
 
-    if (!loginBtn || !actionsArea || !statusText || !statusIcon) return;
-
-    if (DriveState.isAuthenticated) {
-        loginBtn.style.display = 'none';
-        actionsArea.style.display = 'flex';
-        statusText.innerText = t('cloud_status_connected');
-        statusText.setAttribute('data-i18n', 'cloud_status_connected');
-        statusIcon.classList.add('connected');
-    } else {
-        loginBtn.style.display = 'block';
-        actionsArea.style.display = 'none';
-        statusText.innerText = t('cloud_status_disconnected');
-        statusText.setAttribute('data-i18n', 'cloud_status_disconnected');
-        statusIcon.classList.remove('connected');
-    }
-
-    // Handle syncing state
-    const backupBtn = document.getElementById('cloudBackupBtn');
-    const restoreBtn = document.getElementById('cloudRestoreBtn');
-    if (backupBtn && restoreBtn) {
-        if (DriveState.isSyncing) {
-            backupBtn.disabled = true;
-            restoreBtn.disabled = true;
-            statusText.innerText = t('syncing');
-            statusIcon.classList.add('syncing-icon');
-        } else {
-            backupBtn.disabled = false;
-            restoreBtn.disabled = false;
-            statusIcon.classList.remove('syncing-icon');
-        }
-    }
-}
 // This closes the setupEventListeners function, assuming the content started within it.
 
 // --- View Management ---
