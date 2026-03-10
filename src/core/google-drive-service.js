@@ -3,7 +3,8 @@ import { showToast } from './utils.js';
 
 // Google API Configuration
 const CLIENT_ID = '710825958908-fs02s7ub523d6f8r61lcc5nse1u4si0f.apps.googleusercontent.com';
-const API_KEY = 'AIzaSyDKZRWu1Ni30OusQeSOzJkNgv79m49s0vs';
+const API_KEY = 'AIzaSyBPN8xYxda-B5jprDRdRnmsXAghiOtgTOA';
+
 
 
 const DISCOVERY_DOC = 'https://www.googleapis.com/discovery/v1/apis/drive/v3/rest';
