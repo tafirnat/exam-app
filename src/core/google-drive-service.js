@@ -48,13 +48,21 @@ export async function initDriveApi() {
 
         // Load GAPI
         gapi.load('client', async () => {
-            await gapi.client.init({
-                apiKey: API_KEY,
-                discoveryDocs: [DISCOVERY_DOC],
-            });
-            gapiInited = true;
-            checkInit();
+            try {
+                await gapi.client.init({
+                    apiKey: API_KEY,
+                    discoveryDocs: [DISCOVERY_DOC],
+                });
+                gapiInited = true;
+                checkInit();
+            } catch (err) {
+                console.error('GAPI Init Error:', err);
+                const msg = err?.result?.error?.message || 'Google API başlatılamadı';
+                showToast(`Hata: ${msg}`);
+                resolve(false);
+            }
         });
+
 
         // Load GIS
         tokenClient = google.accounts.oauth2.initTokenClient({
