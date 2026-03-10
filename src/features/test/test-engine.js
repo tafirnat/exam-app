@@ -1,4 +1,4 @@
-import { AppState, saveRecentTests, saveActiveTest, clearActiveTest } from '../../core/state.js';
+import { AppState, saveStats, saveRecentTests, saveActiveTest, clearActiveTest } from '../../core/state.js';
 import { shuffleArray, getCorrectAnswers } from '../../core/utils.js';
 
 // FSRS v4.5 Simplified Constants
