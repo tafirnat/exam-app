@@ -2,7 +2,7 @@
 import { AppState, saveStats } from '../../core/state.js';
 import { translateText, showToast, showConfirm, getCorrectAnswers } from '../../core/utils.js';
 import { t } from '../../core/i18n.js';
-import { evaluateAnswer, updateStats, finishTest } from './test-engine.js';
+import { evaluateAnswer, updateStats, finishTest, calculateRetrievability } from './test-engine.js';
 
 export function renderQuestion() {
     if (!AppState.currentTest || AppState.currentTest.length === 0) {
@@ -481,12 +481,17 @@ export function updateIndicators() {
 }
 
 export function updateQuestionStatsInfo(qid) {
-    const s = AppState.stats[qid] || { correct: 0, wrong: 0, coeff: 1.5 };
+    const s = AppState.stats[qid] || { correct: 0, wrong: 0, coeff: 1.5, stability: 0, lastReview: null };
     const infoEl = document.getElementById('questionStatsInfo');
     if (infoEl) {
         const total = s.correct + s.wrong;
         const percent = total > 0 ? Math.round((s.correct / total) * 100) : 0;
+        
+        const r = calculateRetrievability(s.stability, s.lastReview);
+        const rPercent = r > 0 ? Math.round(r * 100) : null;
+
         infoEl.innerHTML = `
+            ${rPercent !== null ? `<span class="stats-item-retrievability ${r <= 0.9 ? 'overdue' : ''}" title="Retrievability: ${rPercent}%" style="margin-right: 8px;">🧠 ${rPercent}%</span>` : ''}
             <span>${t('correct')}: <b>${s.correct}</b></span>
             <span>${t('wrong')}: <b>${s.wrong}</b></span>
             <span>${t('success_percent', { percent })}</span>

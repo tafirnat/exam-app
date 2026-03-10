@@ -1,6 +1,15 @@
 import { AppState, saveRecentTests, saveActiveTest, clearActiveTest } from '../../core/state.js';
 import { shuffleArray, getCorrectAnswers } from '../../core/utils.js';
 
+// FSRS v4.5 Simplified Constants
+export const FSRS_W = [0.4, 0.9, 2.3, 10.9, 4.93, 0.94, 0.86, 0.01, 1.49, 0.14, 0.94, 2.18, 0.05, 0.34, 1.26, 0.26, 2.05];
+
+export function calculateRetrievability(stability, lastReviewDate) {
+    if (!lastReviewDate || !stability) return 0;
+    const elapsedDays = (new Date() - new Date(lastReviewDate)) / (1000 * 60 * 60 * 24);
+    return Math.pow(0.9, elapsedDays / stability);
+}
+
 export function prepareTest(count) {
     const rawQuestions = [];
     AppState.sources.forEach(s => {
@@ -11,48 +20,66 @@ export function prepareTest(count) {
 
     clearActiveTest();
 
-    // Smart Selection logic: 60% hard, 30% medium, 10% easy
-    // Based on coefficient (higher = harder)
-    // Filter out learned questions
+    // FSRS Selection logic: Prioritize Overdue (R <= 0.9), then use Smart Selection
     let qs = rawQuestions.map((q, idx) => {
         const stat = AppState.stats[q.id] || { coeff: 1.5, learned: false };
-        return { idx, q, coeff: stat.coeff, learned: !!stat.learned };
+        const r = calculateRetrievability(stat.stability, stat.lastReview);
+        return { 
+            idx, 
+            q, 
+            coeff: stat.coeff || 1.5, 
+            learned: !!stat.learned,
+            retrievability: r,
+            isOverdue: r > 0 && r <= 0.9 
+        };
     });
 
     const nonLearned = qs.filter(item => !item.learned);
-    if (nonLearned.length > 0) {
-        qs = nonLearned.sort((a, b) => b.coeff - a.coeff);
-    } else {
-        // Fallback: if all active questions are learned, use all of them for review
-        qs = qs.sort((a, b) => b.coeff - a.coeff);
-    }
+    
+    // Primary Pool: Overdue questions
+    const overduePool = nonLearned.filter(item => item.isOverdue).sort((a, b) => a.retrievability - b.retrievability);
+    
+    // Secondary Pool: Rest of the questions sorted by hardness (coeff)
+    const remainingPool = nonLearned.filter(item => !item.isOverdue).sort((a, b) => b.coeff - a.coeff);
 
     let selectedObjects = [];
     const actualCount = Math.min(count, qs.length);
 
-    if (qs.length <= count) {
-        selectedObjects = shuffleArray(qs);
-    } else {
-        const p1 = qs.slice(0, Math.ceil(qs.length * 0.4)); // Hardest 40%
-        const p2 = qs.slice(p1.length, p1.length + Math.ceil(qs.length * 0.3)); // Middle 30%
-        const p3 = qs.slice(p1.length + p2.length); // Easiest 30%
+    // Take as many overdue as possible, up to the count
+    selectedObjects.push(...overduePool.slice(0, actualCount));
 
-        const take = (pool, n) => {
-            const shuffledPool = shuffleArray(pool);
-            const actual = Math.min(n, shuffledPool.length);
-            selectedObjects.push(...shuffledPool.slice(0, actual));
-            return n - actual;
-        };
+    // If we need more questions, take from remaining pool
+    if (selectedObjects.length < actualCount) {
+        const remainingNeeded = actualCount - selectedObjects.length;
+        // Apply existing distribution logic to the remaining pool
+        const pool = remainingPool.length > 0 ? remainingPool : qs.filter(item => !selectedObjects.includes(item));
+        
+        if (pool.length <= remainingNeeded) {
+            selectedObjects.push(...pool);
+        } else {
+            // Smart Distribution for the rest: 60% hard, 30% med, 10% easy
+            const p1 = pool.slice(0, Math.ceil(pool.length * 0.4));
+            const p2 = pool.slice(p1.length, p1.length + Math.ceil(pool.length * 0.3));
+            const p3 = pool.slice(p1.length + p2.length);
 
-        const n1 = Math.round(actualCount * 0.6);
-        const n2 = Math.round(actualCount * 0.3);
-        const n3 = actualCount - n1 - n2;
+            const take = (sourcePool, n) => {
+                const shuffled = shuffleArray(sourcePool);
+                const actual = Math.min(n, shuffled.length);
+                selectedObjects.push(...shuffled.slice(0, actual));
+                return n - actual;
+            };
 
-        let rem = take(p1, n1);
-        rem = take(p2, n2 + rem);
-        take(p3, n3 + rem);
-        selectedObjects = shuffleArray(selectedObjects);
+            const n1 = Math.round(remainingNeeded * 0.6);
+            const n2 = Math.round(remainingNeeded * 0.3);
+            const n3 = remainingNeeded - n1 - n2;
+
+            let rem = take(p1, n1);
+            rem = take(p2, n2 + rem);
+            take(p3, n3 + rem);
+        }
     }
+
+    selectedObjects = shuffleArray(selectedObjects);
 
     AppState.rawQuestions = rawQuestions; // Sync current active pool
     AppState.currentTest = selectedObjects.map(o => o.idx);
@@ -257,7 +284,17 @@ export function evaluateAnswer(questionIndex, userAnswer) {
 
 export function updateStats(questionId, isCorrect, userAnswer, feedback = undefined) {
     if (!AppState.stats[questionId]) {
-        AppState.stats[questionId] = { coeff: 1.5, correct: 0, wrong: 0, starred: false, flagged: false, streak: 0 };
+        AppState.stats[questionId] = { 
+            coeff: 1.5, 
+            correct: 0, 
+            wrong: 0, 
+            starred: false, 
+            flagged: false, 
+            streak: 0,
+            stability: 0,
+            difficulty: 0, // Will be initialized on first answer
+            lastReview: null
+        };
     }
     const stat = AppState.stats[questionId];
     if (stat.streak === undefined) stat.streak = 0;
@@ -267,86 +304,84 @@ export function updateStats(questionId, isCorrect, userAnswer, feedback = undefi
         existingResult = AppState.testTracking.results.find(r => String(r.questionId) === String(questionId));
     }
 
-    if (feedback !== undefined) {
-        // Rating update (setting 'hard'/'easy' OR toggling off with null)
-        const oldDelta = (existingResult && existingResult.appliedDelta !== undefined) ? existingResult.appliedDelta : 0;
+    // FSRS Rating Mapping
+    // 1: Again (Wrong), 2: Hard (Correct + Hard), 3: Good (Correct), 4: Easy (Correct + Easy)
+    let rating = isCorrect ? 3 : 1;
+    if (feedback === 'easy') rating = 4;
+    if (feedback === 'hard') rating = 2;
 
-        // Calculate the underlying algorithmic delta again to base our modifiers on it
-        const streakFactor = Math.max(1, Math.abs(stat.streak || 1));
-        const algorithmicDelta = (isCorrect ? -0.25 : 0.25) * (1 + (streakFactor - 1) * 0.5);
+    const now = new Date().toISOString();
 
-        let newDelta = algorithmicDelta;
+    // FSRS Logic Implementation
+    if (stat.lastReview === null || stat.stability === 0) {
+        // First review
+        stat.stability = FSRS_W[rating - 1];
+        stat.difficulty = Math.min(Math.max(FSRS_W[4] - FSRS_W[5] * (rating - 3), 1), 10);
+    } else {
+        const elapsedDays = (new Date() - new Date(stat.lastReview)) / (1000 * 60 * 60 * 24);
+        const retrievability = calculateRetrievability(stat.stability, stat.lastReview);
 
-        if (feedback === 'easy') {
-            // Bias downwards: make it easier (subtracts 0.3 from whatever the delta was)
-            newDelta = algorithmicDelta - 0.3;
-        } else if (feedback === 'hard') {
-            // Bias upwards: make it harder, and unlearn if it was previously learned
-            newDelta = algorithmicDelta + 0.3;
-            stat.learned = false;
+        // Update Difficulty
+        stat.difficulty = Math.min(Math.max(stat.difficulty - FSRS_W[6] * (rating - 3), 1), 10);
+
+        // Update Stability
+        if (rating === 1) {
+            // Again: S_new = w[7] * exp(w[8] * (rate-1)??) -> simplified: S_new = S * factor
+            stat.stability = Math.max(stat.stability * 0.2, 0.1);
         } else {
-            // feedback is null -> toggle off, revert purely to algorithmic delta
-            newDelta = algorithmicDelta;
-            if (stat.streak < 5) stat.learned = false;
+            // Correct answer
+            const hardFactor = rating === 2 ? FSRS_W[15] : 1;
+            const easyFactor = rating === 4 ? FSRS_W[16] : 1;
+            
+            // FSRS Stability boost formula (simplified)
+            // S = S * (1 + exp(w[8]) * (11 - D) * S^-w[9] * (exp(w[10] * (1 - R)) - 1))
+            const factor = 1 + Math.exp(FSRS_W[8]) * (11 - stat.difficulty) * Math.pow(stat.stability, -FSRS_W[9]) * 
+                           (Math.exp(FSRS_W[10] * (1 - retrievability)) - 1);
+            
+            stat.stability = stat.stability * factor * hardFactor * easyFactor;
         }
+    }
 
-        stat.coeff = stat.coeff - oldDelta + newDelta;
-        stat.coeff = Math.max(0.1, Math.min(3.0, stat.coeff));
+    stat.lastReview = now;
 
+    // Legacy Coeff update for UI continuity
+    // Map Difficulty 1-10 to Coeff 0.1-3.0
+    // Difficulty 5 (Neutral) -> Coeff 1.5
+    // Difficulty 1 (Easy) -> Coeff 0.1
+    // Difficulty 10 (Hard) -> Coeff 3.0
+    stat.coeff = 0.1 + (stat.difficulty - 1) * (2.9 / 9);
+
+    if (feedback !== undefined) {
+        // Direct feedback update
+        if (feedback === 'hard') stat.learned = false;
         if (existingResult) {
-            existingResult.appliedDelta = newDelta;
             existingResult.feedback = feedback;
         }
     } else {
-        // Initial session update (from handleCheckAnswer)
-        // Update Streak
+        // Initial session update
         if (isCorrect) {
-            if (stat.streak < 0) stat.streak = 1;
-            else stat.streak++;
+            if (stat.streak < 0) stat.streak = 1; else stat.streak++;
+            stat.correct++;
         } else {
-            if (stat.streak > 0) stat.streak = -1;
-            else stat.streak--;
+            if (stat.streak > 0) stat.streak = -1; else stat.streak--;
+            stat.wrong++;
+            stat.learned = false;
         }
 
-        // Adaptive Delta based on streak
-        // Every consecutive correct answer increases the reduction by 50% of the base
-        // Every consecutive wrong answer increases the penalty by 50% of the base
-        const streakFactor = Math.abs(stat.streak);
-        const baseDelta = isCorrect ? -0.25 : 0.25;
-        const multiplier = 1 + (streakFactor - 1) * 0.5;
-        const delta = baseDelta * multiplier;
-
-        stat.coeff = Math.max(0.1, Math.min(3.0, stat.coeff + delta));
-
-        // Mark as learned if streak reaches 5
-        if (stat.streak >= 5) {
+        // Streak-based "Learned" status
+        if (stat.streak >= 5 || (stat.stability > 30)) {
             stat.learned = true;
-            stat.coeff = 0.1; // Ensure it's at minimum
-        } else if (!isCorrect) {
-            stat.learned = false; // Reset learned if wrong
         }
 
-        // Only increment counters on initial check
-        if (!existingResult) {
-            if (isCorrect) stat.correct++; else stat.wrong++;
-        }
-
-        if (AppState.testTracking) {
-            if (!existingResult) {
-                AppState.testTracking.results.push({
-                    questionId,
-                    isCorrect,
-                    userAnswer,
-                    appliedDelta: delta,
-                    streak: stat.streak
-                });
-            } else {
-                existingResult.isCorrect = isCorrect;
-                existingResult.userAnswer = userAnswer;
-                existingResult.appliedDelta = delta;
-                existingResult.streak = stat.streak;
-            }
+        if (AppState.testTracking && !existingResult) {
+            AppState.testTracking.results.push({
+                questionId,
+                isCorrect,
+                userAnswer,
+                streak: stat.streak
+            });
         }
     }
     saveActiveTest();
+    saveStats();
 }
