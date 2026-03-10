@@ -2345,7 +2345,7 @@ input:focus+.slider {
     color: var(--text-secondary) !important;
     margin-top: 2px;
     display: inline-block;
-    max-width: 100%;
+    max-width: -webkit-fill-available;
     overflow: hidden;
     text-overflow: ellipsis;
     white-space: nowrap;
