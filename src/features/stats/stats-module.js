@@ -127,8 +127,8 @@ export function renderStatsList(filter = 'all', searchKeyword = '') {
                 <div style="display: flex; align-items: center; gap: 4px;">
                     ${q.sourceName ? `<div class="stats-item-source">${q.sourceName}</div>` : ''}
                     <div class="stats-item-ref">#${q.originalIndex}</div>
-                    ${streakAbs > 1 ? `<span class="stats-item-streak" title="Streak: ${streak}">${streakIcon}${streakAbs}</span>` : ''}
-                    ${rPercent !== null ? `<span class="stats-item-retrievability ${r <= 0.9 ? 'overdue' : ''}" title="Retrievability: ${rPercent}%">🧠 ${rPercent}%</span>` : ''}
+                    ${streakAbs > 1 ? `<span class="stats-item-streak" title="Streak: ${streak}" style="font-size: 0.72rem; line-height: 1;">${streakIcon}${streakAbs}</span>` : ''}
+                    ${rPercent !== null ? `<span class="stats-item-retrievability ${r <= 0.9 ? 'overdue' : ''}" title="Retrievability: ${rPercent}%" style="font-size: 0.72rem; line-height: 1;">🧠 ${rPercent}%</span>` : ''}
                     ${s.starred ? `<span class="stats-indicator starred"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"></polygon></svg></span>` : ''}
                     ${s.flagged ? `<span class="stats-indicator flagged"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"><path d="M4 15s1-1 4-1 5 2 8 2 4-1 4-1V3s-1 1-4 1-5-2-8-2-4 1-4 1z"></path><line x1="4" y1="22" x2="4" y2="15"></line></svg></span>` : ''}
                     ${(s.note && s.note.trim() !== '') ? `<span class="stats-indicator noted"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"></path></svg></span>` : ''}
