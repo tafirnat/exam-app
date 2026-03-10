@@ -1584,6 +1584,37 @@ input:focus+.slider {
     border: 1px solid rgba(245, 158, 11, 0.2);
 }
 
+/* Stats list item meta row — always single line */
+.stats-item-source {
+    font-size: 0.72rem;
+    color: var(--text-secondary);
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    max-width: 120px;
+    flex-shrink: 1;
+}
+
+.stats-item-ref {
+    font-size: 0.72rem;
+    color: var(--text-secondary);
+    white-space: nowrap;
+    flex-shrink: 0;
+}
+
+.stats-item-streak {
+    white-space: nowrap;
+    flex-shrink: 0;
+}
+
+/* Mobile: shrink source name further so badges never wrap */
+@media (max-width: 600px) {
+    .stats-item-source {
+        max-width: 72px;
+    }
+}
+
+
 /* Fix: Keep translation button clickable after check */
 .option-card.checked-state {
     cursor: default;
