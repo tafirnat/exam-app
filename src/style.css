@@ -1584,6 +1584,21 @@ input:focus+.slider {
     border: 1px solid rgba(245, 158, 11, 0.2);
 }
 
+/* Fix: Keep translation button clickable after check */
+.option-card.checked-state {
+    cursor: default;
+}
+
+.option-card.checked-state input,
+.option-card.checked-state .option-content-wrapper {
+    pointer-events: none;
+}
+
+.option-card.checked-state .corner-translate-btn {
+    pointer-events: auto !important;
+    cursor: pointer;
+}
+
 .toast.visible {
     transform: translateX(-50%) translateY(0);
     opacity: 1;
