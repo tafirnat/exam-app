@@ -117,6 +117,7 @@ export function renderStatsList(filter = 'all', searchKeyword = '') {
         const isLearned = !!s.learned;
         const streak = s.streak || 0;
         const streakIcon = streak > 0 ? '🔥' : (streak < 0 ? '❄️' : '');
+        const streakAbs = Math.abs(streak);
         const r = calculateRetrievability(s.stability, s.lastReview);
         const rPercent = r > 0 ? Math.round(r * 100) : null;
 
