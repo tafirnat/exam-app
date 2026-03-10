@@ -66,6 +66,18 @@ document.addEventListener('DOMContentLoaded', () => {
                 s.learned = false;
                 changed = true;
             }
+            if (s.stability === undefined || isNaN(s.stability)) {
+                s.stability = 0;
+                changed = true;
+            }
+            if (s.difficulty === undefined || isNaN(s.difficulty)) {
+                s.difficulty = 0;
+                changed = true;
+            }
+            if (s.lastReview === undefined) {
+                s.lastReview = null;
+                changed = true;
+            }
             if (changed) migrationCount++;
         });
         if (migrationCount > 0) {

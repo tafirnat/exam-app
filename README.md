@@ -14,12 +14,16 @@ Experience the application live: **[https://tafirnat.github.io/exam-app/](https:
 
 - **PWA Support**: Installable on mobile and desktop for a full-screen, app-like experience with offline support.
 - **Modular Architecture**: Clean, separate logic for state management, UI rendering, and test engines.
-- **Dynamic Internationalization**: Native support for **Turkish**, **English**, and **German** with automatic system language detection.
+- **FS-Algorithm (Spaced Repetition)**: 
+  - Implementation of the **FSRS v4.5** algorithm for scientifically optimized study intervals.
+  - Prioritizes questions based on **Retrievability (R)**, ensuring you review exactly when you are about to forget.
+  - **Memory Stability (S):** Tracks how well you know each question.
 - **Smart Adaptive Engine**: 
-  - Coefficient-based question selection prioritizing areas needing improvement.
-  - **Streak System:** Calculates coefficient changes exponentially based on consecutive correct/wrong answers from a symmetric baseline of 1.5.
-  - **Learned Threshold:** Autonomously marks questions as "Learned" (🎓) after 4 consecutive correct answers, filtering them out of reviews.
-  - **Harmonized Feedback:** Manual "Hard" / "Easy" ratings intuitively scale the algorithmic progression instead of blind overwrites.
+  - Intelligent question selection prioritizing "Overdue" items ($R < 0.9$).
+  - **Symmetric Progression:** Starts from a 1.5 baseline, moving toward 0.1 (Easy) or 3.0 (Hard).
+  - **Learned Threshold:** Autonomously marks questions as "Learned" (🎓) based on retention stability.
+  - **Intuitive Feedback:** Seamless "Hard" / "Easy" mapping that harmonizes with the algorithmic interval calculation.
+- **Dynamic Internationalization**: Native support for **Turkish**, **English**, and **German** with automatic detection.
 - **Multilingual Translations**: Integrated Google Translate API supporting over 10 target languages for questions and options.
 - **AI-Ready**: Built-in prompts to easily copy questions to your favorite AI (ChatGPT, Claude, etc.) for detailed explanations.
 - **Premium UI/UX**: Modern dark mode, glassmorphism elements, and smooth micro-animations.

@@ -313,8 +313,8 @@ export function updateStats(questionId, isCorrect, userAnswer, feedback = undefi
     const now = new Date().toISOString();
 
     // FSRS Logic Implementation
-    if (stat.lastReview === null || stat.stability === 0) {
-        // First review
+    if (!stat.lastReview || !stat.stability || isNaN(stat.stability)) {
+        // First review or recovery from corrupt/legacy data
         stat.stability = FSRS_W[rating - 1];
         stat.difficulty = Math.min(Math.max(FSRS_W[4] - FSRS_W[5] * (rating - 3), 1), 10);
     } else {
