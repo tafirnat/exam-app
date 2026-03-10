@@ -35,10 +35,11 @@ self.addEventListener('activate', (event) => {
 
 // Fetch: Network First Strategy
 self.addEventListener('fetch', (event) => {
-    // Skip non-http/https requests (e.g. chrome-extension, data, etc.)
-    if (!event.request.url.startsWith('http')) {
+    // Skip non-http/https requests and Google API requests
+    if (!event.request.url.startsWith('http') || event.request.url.includes('googleapis.com') || event.request.url.includes('google.com/gsi')) {
         return;
     }
+
 
     event.respondWith(
         fetch(event.request)
