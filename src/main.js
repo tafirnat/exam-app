@@ -86,10 +86,15 @@ document.addEventListener('DOMContentLoaded', () => {
         updateTranslationUI();
 
         console.log('Initializing Google Drive API...');
-        initDriveApi().then(() => {
-            console.log('Google Drive API initialized');
-            updateCloudSyncUI();
+        initDriveApi().then((success) => {
+            if (success) {
+                console.log('Google Drive API initialized successfully');
+                updateCloudSyncUI();
+            } else {
+                console.error('Google Drive API failed to initialize');
+            }
         });
+
 
 
         console.log('App initialized v1.2.3');

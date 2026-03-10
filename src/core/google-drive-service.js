@@ -59,11 +59,13 @@ export async function initDriveApi() {
                 checkInit();
             } catch (err) {
                 console.error('GAPI Init Error:', err);
-                const msg = err?.result?.error?.message || 'Google API başlatılamadı';
-                showToast(`Hata: ${msg}`);
+                const errorDetail = err?.result?.error?.message || 'Google API connection blocked (403)';
+                showToast(`Kritik Hata: ${errorDetail}`);
+                // Resolve with false to stop the initialization chain
                 resolve(false);
             }
         });
+
 
 
         // Load GIS
