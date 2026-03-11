@@ -141,6 +141,22 @@
                     <span class="slider round"></span>
                 </label>
             </div>
+            <div id="ttsSettingsContainer" style="display: none;">
+                <div class="dropdown-item-info">
+                    <div class="tts-speed-control">
+                        <span data-i18n="tts_speed" class="tts-label">Ses Hızı</span>
+                        <input type="range" id="ttsMenuSpeed" min="0.5" max="2.0" step="0.1" class="menu-tts-slider">
+                    </div>
+                </div>
+                <div class="dropdown-item-note">
+                    <svg viewBox="0 0 24 24" width="12" height="12" fill="none" stroke="currentColor" stroke-width="2">
+                        <circle cx="12" cy="12" r="10"></circle>
+                        <line x1="12" y1="16" x2="12" y2="12"></line>
+                        <line x1="12" y1="8" x2="12.01" y2="8"></line>
+                    </svg>
+                    <span data-i18n="tts_lang_note">TTS dili uygulama dili ile aynıdır</span>
+                </div>
+            </div>
             <div class="dropdown-divider"></div>
             <button class="dropdown-item" id="menuExit" style="color: var(--error-color);">
                 <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" style="color: inherit;">

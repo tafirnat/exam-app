@@ -483,13 +483,30 @@ function setupEventListeners() {
 
     // TTS Toggle
     const ttsToggle = document.getElementById('ttsToggle');
+    const ttsContainer = document.getElementById('ttsSettingsContainer');
+    const ttsMenuSpeed = document.getElementById('ttsMenuSpeed');
+
+    const updateTtsMenuUI = () => {
+        if (!ttsToggle || !ttsContainer) return;
+        ttsContainer.style.display = ttsToggle.checked ? 'block' : 'none';
+        if (ttsMenuSpeed) ttsMenuSpeed.value = AppState.ttsSpeed;
+    };
+
     if (ttsToggle) {
         ttsToggle.checked = AppState.ttsEnabled;
+        updateTtsMenuUI();
         ttsToggle.onchange = (e) => {
             AppState.ttsEnabled = e.target.checked;
+            updateTtsMenuUI();
             import('./core/state.js').then(m => m.saveTtsSettings());
-            // Re-render question to show/hide TTS button
             if (AppState.currentTest && AppState.currentTest.length > 0) renderQuestion();
+        };
+    }
+
+    if (ttsMenuSpeed) {
+        ttsMenuSpeed.oninput = (e) => {
+            AppState.ttsSpeed = parseFloat(e.target.value);
+            import('./core/state.js').then(m => m.saveTtsSettings());
         };
     }
 

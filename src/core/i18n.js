@@ -182,7 +182,8 @@ export const translations = {
         note: "Not",
         no_details_available: "Detay bulunamadı",
         tts_toggle: "Seslendirme aktif",
-        tts_speed: "Ses hızı"
+        tts_speed: "Ses Hızı",
+        tts_lang_note: "TTS dili uygulama dili ile aynıdır",
     },
     en: {
         theme_change: "Change Theme",
@@ -349,7 +350,8 @@ export const translations = {
         note: "Note",
         no_details_available: "No details available",
         tts_toggle: "Enable Voice",
-        tts_speed: "Speech Speed"
+        tts_speed: "Speech Speed",
+        tts_lang_note: "TTS language matches the application language",
     },
     de: {
         theme_change: "Design ändern",
@@ -516,7 +518,8 @@ export const translations = {
         note: "Notiz",
         no_details_available: "Keine Details verfügbar",
         tts_toggle: "Sprachausgabe aktivieren",
-        tts_speed: "Sprechgeschwindigkeit"
+        tts_speed: "Sprechgeschwindigkeit",
+        tts_lang_note: "TTS-Sprache entspricht der App-Sprache",
     },
 };
 
