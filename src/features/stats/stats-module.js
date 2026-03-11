@@ -766,6 +766,7 @@ function _drawWeeklyTrend(canvas) {
     });
 
     // Calculate nice intervals for Y-axis
+    const maxDayTotal = Math.max(...days.map(d => d.correct + d.wrong), 1);
     const roughStep = maxDayTotal / 5;
     const niceSteps = [1, 2, 5, 10, 20, 25, 50, 100, 250, 500];
     const step = niceSteps.find(s => s >= roughStep) || niceSteps[niceSteps.length - 1];
