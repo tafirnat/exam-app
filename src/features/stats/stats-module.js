@@ -878,6 +878,146 @@ function _drawWeeklyTrend(canvas) {
         ctx.textBaseline = 'bottom';
         ctx.fillText(dayTotal, x + barW / 2, baseY - totalHeight_px - 4);
     });
+
+    // --- Click handler: show day detail popup ---
+    // Store layout params on canvas so the click handler can reuse them
+    canvas._weeklyLayout = { padL, gap, barW, days, W, H, padTop, chartH };
+
+    if (!canvas._weeklyClickBound) {
+        canvas._weeklyClickBound = true;
+        canvas.style.cursor = 'pointer';
+        canvas.addEventListener('click', (e) => {
+            const rect   = canvas.getBoundingClientRect();
+            const scaleX = canvas.offsetWidth / rect.width;
+            const clickX = (e.clientX - rect.left) * scaleX;
+
+            const { padL, gap, barW, days } = canvas._weeklyLayout;
+            const dayIndex = days.findIndex((_, i) => {
+                const barX = padL + i * gap + (gap - barW) / 2;
+                return clickX >= barX - 4 && clickX <= barX + barW + 4;
+            });
+            if (dayIndex === -1) return;
+            _showDayPopup(canvas, dayIndex, canvas._weeklyLayout, e);
+        });
+    }
+}
+
+/** Builds and shows a positioned popup for a clicked day bar. */
+function _showDayPopup(canvas, dayIndex, layout, mouseEvent) {
+    _removeDayPopup();
+
+    const { padL, gap, barW, days } = layout;
+    const day = days[dayIndex];
+    const unanswered = Math.max(0, day.total - day.correct - day.wrong);
+
+    // --- Unique question count for this day ---
+    const uniqueIds = new Set();
+    (AppState.recentTests || []).forEach(test => {
+        if (!test?.startTime) return;
+        if (test.startTime.slice(0, 10) !== day.dateStr) return;
+        (test.questions || []).forEach(q => {
+            const id = q.id || q.content?.id;
+            if (id) uniqueIds.add(id);
+        });
+    });
+    const uniqueCount = uniqueIds.size;
+    const totalAnswers = day.correct + day.wrong + unanswered;
+
+    const isDark = document.body.dataset.theme === 'dark';
+
+    // --- Popup element ---
+    const popup = document.createElement('div');
+    popup.id = 'weeklyDayPopup';
+
+    // Format date nicely
+    const dateObj = new Date(day.dateStr + 'T12:00:00');
+    const dateLabel = dateObj.toLocaleDateString(
+        AppState.language === 'tr' ? 'tr-TR' : AppState.language,
+        { weekday: 'long', day: 'numeric', month: 'short' }
+    );
+
+    popup.innerHTML = `
+        <div style="font-weight:700; font-size:0.85rem; margin-bottom:8px; padding-bottom:7px;
+                    border-bottom:1px solid ${isDark ? 'rgba(255,255,255,0.1)' : 'rgba(0,0,0,0.08)'};">
+            ${dateLabel}
+        </div>
+        <div style="display:flex; flex-direction:column; gap:5px; font-size:0.82rem;">
+            <div style="display:flex; justify-content:space-between; gap:16px;">
+                <span style="color:${isDark ? '#94a3b8' : '#64748b'};">Toplam cevap</span>
+                <b>${totalAnswers}</b>
+            </div>
+            <div style="display:flex; justify-content:space-between; gap:16px;">
+                <span style="display:flex; align-items:center; gap:5px;">
+                    <span style="width:8px;height:8px;border-radius:50%;background:#22c55e;display:inline-block;"></span>
+                    Doğru
+                </span>
+                <b style="color:#22c55e;">${day.correct}</b>
+            </div>
+            <div style="display:flex; justify-content:space-between; gap:16px;">
+                <span style="display:flex; align-items:center; gap:5px;">
+                    <span style="width:8px;height:8px;border-radius:50%;background:#ef4444;display:inline-block;"></span>
+                    Yanlış
+                </span>
+                <b style="color:#ef4444;">${day.wrong}</b>
+            </div>
+            <div style="display:flex; justify-content:space-between; gap:16px;">
+                <span style="display:flex; align-items:center; gap:5px;">
+                    <span style="width:8px;height:8px;border-radius:50%;background:${isDark ? '#64748b' : '#cbd5e1'};display:inline-block;"></span>
+                    Boş
+                </span>
+                <b style="color:${isDark ? '#94a3b8' : '#64748b'};">${unanswered}</b>
+            </div>
+            ${uniqueCount > 0 ? `
+            <div style="margin-top:4px; padding-top:6px; border-top:1px solid ${isDark ? 'rgba(255,255,255,0.08)' : 'rgba(0,0,0,0.06)'};
+                        display:flex; justify-content:space-between; gap:16px; color:${isDark ? '#94a3b8' : '#64748b'}; font-size:0.78rem;">
+                <span>Tekil soru</span>
+                <b>${uniqueCount}</b>
+            </div>` : ''}
+        </div>
+    `;
+
+    Object.assign(popup.style, {
+        position: 'absolute',
+        background: isDark ? '#1e293b' : '#ffffff',
+        color: isDark ? '#f1f5f9' : '#0f172a',
+        border: `1px solid ${isDark ? 'rgba(255,255,255,0.12)' : 'rgba(0,0,0,0.1)'}`,
+        borderRadius: '10px',
+        padding: '12px 14px',
+        boxShadow: '0 8px 24px rgba(0,0,0,0.25)',
+        zIndex: '9999',
+        minWidth: '170px',
+        pointerEvents: 'auto',
+        fontFamily: 'Inter, sans-serif',
+        fontSize: '0.85rem',
+        transition: 'opacity 0.15s',
+        opacity: '0',
+    });
+
+    // Position: above the clicked bar, anchored to viewport
+    document.body.appendChild(popup);
+
+    const canvasRect = canvas.getBoundingClientRect();
+    const barCenterX = canvasRect.left + (padL + dayIndex * gap + gap / 2) * (canvasRect.width / canvas.offsetWidth);
+    const popupTop   = canvasRect.top + window.scrollY - popup.offsetHeight - 10;
+    let   popupLeft  = barCenterX - popup.offsetWidth / 2;
+
+    // Keep inside viewport
+    popupLeft = Math.max(8, Math.min(popupLeft, window.innerWidth - popup.offsetWidth - 8));
+
+    popup.style.top  = `${popupTop}px`;
+    popup.style.left = `${popupLeft}px`;
+
+    requestAnimationFrame(() => { popup.style.opacity = '1'; });
+
+    // Close on outside click
+    setTimeout(() => {
+        document.addEventListener('click', _removeDayPopup, { once: true });
+    }, 0);
+}
+
+function _removeDayPopup() {
+    const existing = document.getElementById('weeklyDayPopup');
+    if (existing) existing.remove();
 }
 
 
