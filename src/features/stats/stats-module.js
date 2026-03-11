@@ -551,10 +551,10 @@ export function showProgressCharts() {
         document.getElementById('chartDifficulty'),
         document.getElementById('chartDiffLegend'),
         [
-            { label: `${t('difficulty_easy')} (≤1.0)`,     value: coeffGroups.easy,     color: '#22c55e' },
-            { label: `${t('difficulty_medium')} (1.0–2.0)`,   value: coeffGroups.medium,  color: '#ffed0e' },
-            { label: `${t('difficulty_hard')} (2.0–2.6)`,    value: coeffGroups.hard,    color: '#f97316' },
-            { label: `${t('difficulty_very_hard')} (>2.6)`,   value: coeffGroups.veryHard, color: '#ef4444' },
+            { label: `${t('difficulty_easy')} (≤1.0)`,     value: coeffGroups.easy,     color: '#22c55e', emoji: '🟢' },
+            { label: `${t('difficulty_medium')} (1.0–2.0)`,   value: coeffGroups.medium,  color: '#eab308', emoji: '🟡' },
+            { label: `${t('difficulty_hard')} (2.0–2.6)`,    value: coeffGroups.hard,    color: '#f97316', emoji: '🟠' },
+            { label: `${t('difficulty_very_hard')} (>2.6)`,   value: coeffGroups.veryHard, color: '#ef4444', emoji: '🔴' },
         ],
         total
     );
@@ -669,7 +669,7 @@ function _drawDonut(canvas, legendEl, segments, total) {
     // Create a new segments array for the donut: [Solved Diff 1, Solved Diff 2, ..., Unsolved (Grey)]
     const finalSegments = [...solvedSegments];
     if (unsolvedCount > 0) {
-        finalSegments.push({ label: t('stat_not_solved'), value: unsolvedCount, color: greyColor });
+        finalSegments.push({ label: t('stat_not_solved'), value: unsolvedCount, color: greyColor, emoji: '⚫' });
     }
 
     if (total === 0) {
@@ -718,8 +718,10 @@ function _drawDonut(canvas, legendEl, segments, total) {
         legendEl.innerHTML = finalSegments
             .map(s => {
                 const pct = total > 0 ? Math.round(s.value / total * 100) : 0;
-                // For Mittel (#ffed0e), we use the color passed in s.color
-                return `<span><span class="cl-dot" style="background-color:${s.color}; border:1px solid rgba(0,0,0,0.1)"></span>${s.label}: <b>${s.value}</b> (${pct}%)</span>`;
+                // Use emoji if provided, otherwise fallback to dot
+                const icon = s.emoji ? `<span style="font-size:0.9rem; line-height:1;">${s.emoji}</span>` 
+                             : `<span class="cl-dot" style="background-color:${s.color}; border:1px solid rgba(0,0,0,0.1)"></span>`;
+                return `<span>${icon} ${s.label}: <b>${s.value}</b> (${pct}%)</span>`;
             }).join('');
     }
 }
