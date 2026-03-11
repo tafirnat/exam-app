@@ -318,7 +318,7 @@ export function updateHomeStats() {
     const statTotalEl = document.getElementById('statTotal');
     if (statTotalEl) statTotalEl.innerText = total;
 
-    let solved = 0;
+    let solved = 0;      // en az bir kez cevaplanmis (doğru veya yanlış)
     let learnedCount = 0;
     let totalCoeff = 0;
     activeQuestions.forEach(q => {
@@ -326,13 +326,21 @@ export function updateHomeStats() {
         const qid = q.id;
         const s = AppState.stats[qid];
         if (s) {
-            if (s.correct > 0 || s.wrong > 0) solved++;
+            if ((s.correct || 0) + (s.wrong || 0) > 0) solved++;
             if (s.learned) learnedCount++;
             totalCoeff += s.coeff || 1.5;
         } else {
             totalCoeff += 1.5;
         }
     });
+
+    // Segment calculations — learnedCount is a subset of solved
+    const solvedOnlyCount = solved - learnedCount; // cevaplanmış ama öğrenilmemiş
+    const notSolvedCount  = total - solved;
+
+    const learnedPct    = total > 0 ? (learnedCount    / total * 100).toFixed(1) : 0;
+    const solvedOnlyPct = total > 0 ? (solvedOnlyCount / total * 100).toFixed(1) : 0;
+    const notSolvedPct  = total > 0 ? Math.max(0, 100 - parseFloat(learnedPct) - parseFloat(solvedOnlyPct)).toFixed(1) : 100;
 
     const avgCoeff = total > 0 ? (totalCoeff / total).toFixed(1) : "0.0";
     const updateEl = (id, text) => {
@@ -344,6 +352,7 @@ export function updateHomeStats() {
         if (el) el.style[prop] = val;
     };
 
+    // Percentage text next to label shows solved% (solved = cevaplanmış)
     const pct = total > 0 ? Math.round((solved / total) * 100) : 0;
     const pctText = `${pct}%`;
     const progressText = t('solved_count', { solved: solved, total: total });
@@ -351,19 +360,17 @@ export function updateHomeStats() {
 
     updateEl('homeStatTotal', total);
     updateEl('homeStatAvg', avgCoeff);
-
-    // Home
     updateEl('homeProgressPercent', pctText);
 
-    // Dynamic coloring based on avgCoeff
-    const coeffVal = parseFloat(avgCoeff);
-    const color = getCoeffColor(coeffVal);
+    // Update 3 segments
+    updateStyle('pbSegLearned',  'width', learnedPct + '%');
+    updateStyle('pbSegSolved',   'width', solvedOnlyPct + '%');
+    updateStyle('pbSegNotSolved','width', notSolvedPct + '%');
 
-    const fillEl = document.getElementById('homeProgressBarFill');
-    if (fillEl) {
-        fillEl.style.width = pctText;
-        fillEl.style.background = color;
-    }
+    // Update legend counts
+    updateEl('legendLearnedCount',   learnedCount > 0    ? `(${learnedCount})`    : '');
+    updateEl('legendSolvedCount',    solvedOnlyCount > 0 ? `(${solvedOnlyCount})` : '');
+    updateEl('legendNotSolvedCount', notSolvedCount > 0  ? `(${notSolvedCount})`  : '');
 
     updateEl('homeProgressDetail', progressText + learnedLabelText);
 
@@ -377,23 +384,18 @@ export function updateHomeStats() {
 
     console.log(`[DEBUG] updateHomeStats: totalQuestions=${total}, totalSources=${totalSources}, hasActive=${hasActiveSource}`);
 
-    // Update onboarding if exists
     if (onboarding) {
         if (totalSources === 0) {
-            console.log('[DEBUG] No sources, showing guide');
             onboarding.innerText = t('no_sources_msg');
             onboarding.style.display = 'block';
         } else if (!hasActiveSource) {
-            console.log('[DEBUG] Sources exist but none active, showing selection guide');
             onboarding.innerText = t('select_source_msg');
             onboarding.style.display = 'block';
         } else {
-            console.log('[DEBUG] Source active, hiding guide');
             onboarding.style.display = 'none';
         }
     }
 
-    // ALWAYS update panel visibility regardless of onboarding element
     const homeView = document.getElementById('homeView');
     if (totalSources === 0 || !hasActiveSource) {
         if (statsCard) statsCard.style.display = 'none';
@@ -410,6 +412,9 @@ export function updateHomeStats() {
     }
 
     if (statsBtn) statsBtn.disabled = !hasActiveSource;
+
+    // Bind chart overlay once
+    _bindChartOverlay();
 }
 
 function updateSortUI() {
@@ -455,20 +460,454 @@ export function setupStatsEventListeners() {
 function getCoeffColor(coeff) {
     let hue;
     if (coeff >= 1.5) {
-        // Interpolate Green (120) to Red (0) over range [1.5, 3.0]
         const ratio = Math.min(1, (coeff - 1.5) / 1.5);
         hue = 120 - (ratio * 120);
     } else {
-        // Interpolate Green (120) to Sky Blue (210) over range [1.5, 0.1]
         const ratio = Math.min(1, (1.5 - coeff) / 1.4);
         hue = 120 + (ratio * 90);
     }
-
-    // Saturation and Lightness for a premium look
-    // Slightly more saturated for harder questions
     const saturation = 70 + (coeff >= 1.0 ? (coeff - 1.0) * 5 : 0);
     const lightness = 50;
-
-    // Return a linear gradient for a more "wowed" effect
     return `linear-gradient(90deg, hsl(${hue}, ${saturation}%, ${lightness}%), hsl(${hue}, ${saturation + 10}%, ${lightness - 10}%))`;
 }
+
+// --------------------------------------------------------------------------
+// Chart Overlay
+// --------------------------------------------------------------------------
+let _chartOverlayBound = false;
+
+function _bindChartOverlay() {
+    if (_chartOverlayBound) return;
+    _chartOverlayBound = true;
+
+    const section = document.getElementById('homeProgressSection');
+    const overlay = document.getElementById('progressChartOverlay');
+    const closeBtn = document.getElementById('closeChartBtn');
+
+    if (!section || !overlay) return;
+
+    section.addEventListener('click', () => {
+        overlay.style.display = 'flex';
+        requestAnimationFrame(() => showProgressCharts());
+    });
+
+    closeBtn?.addEventListener('click', () => {
+        overlay.style.display = 'none';
+    });
+
+    overlay.addEventListener('click', (e) => {
+        if (e.target === overlay) overlay.style.display = 'none';
+    });
+}
+
+/**
+ * Renders three Canvas charts inside the progress chart overlay.
+ */
+export function showProgressCharts() {
+    const activeQuestions = [];
+    AppState.sources.forEach(s => {
+        if (s.active) activeQuestions.push(...(s.questions || []));
+    });
+    const total = activeQuestions.length;
+    if (total === 0) return;
+
+    // Compute segments
+    let learnedCount = 0, solvedCount = 0;
+    const coeffGroups = { easy: 0, medium: 0, hard: 0, veryHard: 0 };
+
+    activeQuestions.forEach(q => {
+        const s = AppState.stats[q.id];
+        if (s) {
+            const answered = (s.correct || 0) + (s.wrong || 0) > 0;
+            if (s.learned) learnedCount++;
+            else if (answered) solvedCount++;
+
+            // Coeff groups: only for SOLVED questions as per user request
+            if (answered) {
+                const c = s.coeff || 1.5;
+                if (c <= 1.0)      coeffGroups.easy++;
+                else if (c <= 2.0) coeffGroups.medium++;
+                else if (c <= 2.6) coeffGroups.hard++;
+                else               coeffGroups.veryHard++;
+            }
+        }
+    });
+    const notSolvedCount = total - learnedCount - solvedCount;
+
+    // ---- Chart 1: Stacked Horizontal Bar ----
+    _drawStackedBar(
+        document.getElementById('chartDistribution'),
+        document.getElementById('chartDistLegend'),
+        [
+            { label: 'Öğrenildi', value: learnedCount, color: '#22c55e' },
+            { label: 'Çözüldü',   value: solvedCount,  color: '#38bdf8' },
+            { label: 'Çözülmedi', value: notSolvedCount, color: '#475569' },
+        ],
+        total
+    );
+
+    // ---- Chart 2: Donut / Pie — Difficulty ----
+    _drawDonut(
+        document.getElementById('chartDifficulty'),
+        document.getElementById('chartDiffLegend'),
+        [
+            { label: 'Kolay (≤1.0)',     value: coeffGroups.easy,     color: '#22c55e' },
+            { label: 'Orta (1.0–2.0)',   value: coeffGroups.medium,  color: '#f59e0b' },
+            { label: 'Zor (2.0–2.6)',    value: coeffGroups.hard,    color: '#f97316' },
+            { label: 'Çok Zor (>2.6)',   value: coeffGroups.veryHard, color: '#ef4444' },
+        ],
+        total
+    );
+
+    // ---- Chart 3: Weekly bar chart ----
+    _drawWeeklyTrend(document.getElementById('chartWeekly'));
+}
+
+/** Draws a stacked horizontal bar chart with canvas */
+function _drawStackedBar(canvas, legendEl, segments, total) {
+    if (!canvas) return;
+    const dpr = window.devicePixelRatio || 1;
+    const W = canvas.offsetWidth || canvas.parentElement?.offsetWidth || 300;
+    const H = 60;
+    canvas.width  = W * dpr;
+    canvas.height = H * dpr;
+    canvas.style.width  = W + 'px';
+    canvas.style.height = H + 'px';
+
+    const ctx = canvas.getContext('2d');
+    ctx.scale(dpr, dpr);
+    ctx.clearRect(0, 0, W, H);
+
+    const barH = 18;
+    const barY = (H - barH) / 2 - 8;
+    const radius = barH / 2;
+
+    // Background pill
+    _roundRect(ctx, 0, barY, W, barH, radius, '#1e293b');
+
+    let x = 0;
+    segments.forEach((seg, i) => {
+        if (seg.value <= 0 || total === 0) return;
+        const w = (seg.value / total) * W;
+        const isFirst = (x === 0);
+        const isLast  = (i === segments.length - 1) ||
+                        segments.slice(i + 1).every(s => s.value === 0);
+
+        const tl = isFirst ? radius : 0;
+        const tr = isLast  ? radius : 0;
+        _roundRectPartial(ctx, x, barY, w, barH, tl, tr, seg.color);
+        x += w;
+    });
+
+    // Percent labels inside bar
+    ctx.font = `bold ${Math.max(10, barH * 0.55)}px Inter, sans-serif`;
+    ctx.textBaseline = 'middle';
+    x = 0;
+    segments.forEach(seg => {
+        const w = total > 0 ? (seg.value / total) * W : 0;
+        const pct = total > 0 ? Math.round(seg.value / total * 100) : 0;
+        if (w > 28 && pct > 0) {
+            ctx.fillStyle = 'rgba(255,255,255,0.9)';
+            ctx.textAlign = 'center';
+            ctx.fillText(`${pct}%`, x + w / 2, barY + barH / 2);
+        }
+        x += w;
+    });
+
+    // Count labels below bar
+    const labelY = barY + barH + 14;
+    ctx.font = `600 11px Inter, sans-serif`;
+    ctx.textBaseline = 'alphabetic';
+    x = 0;
+    segments.forEach(seg => {
+        const w = total > 0 ? (seg.value / total) * W : 0;
+        if (w > 10) {
+            ctx.fillStyle = seg.color;
+            ctx.textAlign = 'center';
+            ctx.fillText(seg.value, x + w / 2, labelY);
+        }
+        x += w;
+    });
+
+    // Legend
+    if (legendEl) {
+        legendEl.innerHTML = segments.map(s =>
+            `<span><span class="cl-dot" style="background:${s.color}"></span>${s.label}: <b>${s.value}</b></span>`
+        ).join('');
+    }
+}
+
+/** Draws a donut chart */
+function _drawDonut(canvas, legendEl, segments, total) {
+    if (!canvas) return;
+    const size = Math.min(canvas.parentElement?.offsetWidth / 2 || 160, 180);
+    const dpr = window.devicePixelRatio || 1;
+    canvas.width  = size * dpr;
+    canvas.height = size * dpr;
+    canvas.style.width  = size + 'px';
+    canvas.style.height = size + 'px';
+
+    const ctx = canvas.getContext('2d');
+    ctx.scale(dpr, dpr);
+    ctx.clearRect(0, 0, size, size);
+
+    const cx = size / 2, cy = size / 2;
+    const outerR = size / 2 - 4;
+    const innerR = outerR * 0.60;
+    let startAngle = -Math.PI / 2;
+
+    const isDark = document.body.dataset.theme === 'dark';
+    const bgColor = isDark ? '#0b1120' : '#f8fafc';
+    const greyColor = isDark ? '#334155' : '#e2e8f0';
+
+    // We want to show difficulty segments ONLY for solved questions, 
+    // and the rest of the ring should be grey (unsolved).
+    const solvedSegments = segments.filter(s => s.label !== 'Çözülmedi');
+    const solvedTotal = solvedSegments.reduce((a, s) => a + s.value, 0);
+    const unsolvedCount = total - solvedTotal;
+
+    // Create a new segments array for the donut: [Solved Diff 1, Solved Diff 2, ..., Unsolved (Grey)]
+    const finalSegments = [...solvedSegments];
+    if (unsolvedCount > 0) {
+        finalSegments.push({ label: 'Çözülmedi', value: unsolvedCount, color: greyColor });
+    }
+
+    if (total === 0) {
+        ctx.beginPath();
+        ctx.arc(cx, cy, outerR, 0, Math.PI * 2);
+        ctx.arc(cx, cy, innerR, Math.PI * 2, 0, true);
+        ctx.fillStyle = greyColor;
+        ctx.fill();
+    } else {
+        finalSegments.forEach((seg, i) => {
+            const sweep = (seg.value / total) * Math.PI * 2;
+            if (sweep <= 0) return;
+            const endAngle = startAngle + sweep;
+
+            ctx.beginPath();
+            ctx.moveTo(cx, cy);
+            ctx.arc(cx, cy, outerR, startAngle, endAngle);
+            ctx.arc(cx, cy, innerR, endAngle, startAngle, true);
+            ctx.closePath();
+            ctx.fillStyle = seg.color;
+            ctx.fill();
+
+            // Gap
+            ctx.beginPath();
+            ctx.moveTo(cx, cy);
+            ctx.arc(cx, cy, outerR + 1, endAngle - 0.015, endAngle + 0.015);
+            ctx.fillStyle = bgColor;
+            ctx.fill();
+
+            startAngle = endAngle;
+        });
+    }
+
+    // Center text
+    ctx.textAlign = 'center';
+    ctx.textBaseline = 'middle';
+    ctx.font = `bold ${Math.round(size * 0.14)}px Inter, sans-serif`;
+    ctx.fillStyle = isDark ? '#f8fafc' : '#0f172a';
+    ctx.fillText(total, cx, cy - size * 0.04);
+    ctx.font = `${Math.round(size * 0.09)}px Inter, sans-serif`;
+    ctx.fillStyle = '#64748b';
+    ctx.fillText('Soru', cx, cy + size * 0.1);
+
+    // Legend
+    if (legendEl) {
+        legendEl.innerHTML = finalSegments
+            .filter(s => s.value > 0)
+            .map(s => {
+                const pct = total > 0 ? Math.round(s.value / total * 100) : 0;
+                return `<span><span class="cl-dot" style="background:${s.color}"></span>${s.label}: <b>${s.value}</b> (${pct}%)</span>`;
+            }).join('');
+    }
+}
+
+/** Draws last 7-day correct answer trend as a column chart */
+function _drawWeeklyTrend(canvas) {
+    if (!canvas) return;
+    const dpr = window.devicePixelRatio || 1;
+    const W = canvas.offsetWidth || canvas.parentElement?.offsetWidth || 300;
+    const H = 140; // Slightly taller for counts
+    canvas.width  = W * dpr;
+    canvas.height = H * dpr;
+    canvas.style.width  = W + 'px';
+    canvas.style.height = H + 'px';
+
+    const ctx = canvas.getContext('2d');
+    ctx.scale(dpr, dpr);
+    ctx.clearRect(0, 0, W, H);
+
+    // Build day buckets (last 7 days)
+    const days = [];
+    for (let i = 6; i >= 0; i--) {
+        const d = new Date();
+        d.setDate(d.getDate() - i);
+        days.push({
+            label: d.toLocaleDateString('tr-TR', { weekday: 'short' }),
+            dateStr: d.toISOString().slice(0, 10),
+            correct: 0,
+            wrong: 0,
+            total: 0,
+        });
+    }
+
+    // Pull from recentTests
+    (AppState.recentTests || []).forEach(test => {
+        if (!test?.startTime) return;
+        const dayStr = test.startTime.slice(0, 10);
+        const bucket = days.find(d => d.dateStr === dayStr);
+        if (bucket) {
+            bucket.correct += test.correctCount || 0;
+            bucket.wrong   += test.wrongCount   || 0;
+            bucket.total   += (test.correctCount || 0) + (test.wrongCount || 0) + (test.unansweredCount || 0);
+        }
+    });
+
+    // maxTotal defines the chart scale
+    const maxDayTotal = Math.max(...days.map(d => d.correct + d.wrong), 1);
+    const isDark = document.body.dataset.theme === 'dark';
+    const gridColor = isDark ? 'rgba(255,255,255,0.07)' : 'rgba(0,0,0,0.07)';
+    const textColor = isDark ? '#94a3b8' : '#64748b';
+
+    const padL = 20, padR = 10, padTop = 20, padBot = 28;
+    const chartW = W - padL - padR;
+    const chartH = H - padTop - padBot;
+    const gap    = chartW / 7;
+    const barW   = Math.floor(gap * 0.65);
+
+    // Grid lines
+    ctx.strokeStyle = gridColor;
+    ctx.lineWidth = 1;
+    [0, 0.5, 1.0].forEach(f => {
+        const y = padTop + chartH * (1 - f);
+        ctx.beginPath(); ctx.moveTo(padL, y); ctx.lineTo(W - padR, y); ctx.stroke();
+    });
+
+    days.forEach((day, i) => {
+        const solvedCount = day.correct + day.wrong;
+        if (solvedCount === 0) {
+            // Empty state placeholder
+            const x = padL + i * gap + (gap - barW) / 2;
+            _roundRect(ctx, x, padTop + chartH - 2, barW, 2, 1, isDark ? '#1e293b' : '#f1f5f9');
+            
+            // Day label
+            ctx.fillStyle = textColor;
+            ctx.font = `10px Inter, sans-serif`;
+            ctx.textAlign = 'center';
+            ctx.fillText(day.label, x + barW / 2, padTop + chartH + 14);
+            return;
+        }
+
+        const x = padL + i * gap + (gap - barW) / 2;
+        
+        // Stacked Bar Calculation
+        const totalHeight_px = (solvedCount / maxDayTotal) * chartH;
+        const wrongHeight_px = (day.wrong / solvedCount) * totalHeight_px;
+        const correctHeight_px = totalHeight_px - wrongHeight_px;
+
+        const baseY = padTop + chartH;
+
+        // Draw Wrong (Bottom - Red)
+        if (day.wrong > 0) {
+            const tr = day.correct === 0 ? 3 : 0;
+            _roundRectPartial(ctx, x, baseY - wrongHeight_px, barW, wrongHeight_px, 0, 0, '#ef4444');
+            // Bottom corners always rounded
+            _roundRectPartial(ctx, x, baseY - wrongHeight_px, barW, wrongHeight_px, 0, 0, '#ef4444');
+            // Manual fix: round bottom
+            _roundRectBottom(ctx, x, baseY - wrongHeight_px, barW, wrongHeight_px, 3, '#ef4444');
+        }
+
+        // Draw Correct (Top - Green)
+        if (day.correct > 0) {
+            const y = baseY - totalHeight_px;
+            const h = correctHeight_px;
+            const br = day.wrong === 0 ? 3 : 0;
+            _roundRectTop(ctx, x, y, barW, h, 3, '#22c55e');
+            if (day.wrong > 0) {
+                // If there's wrong below, this is just a top part
+                // _roundRectTop already handles top rounding
+            } else {
+                // If no wrong, round bottom too
+                _roundRectBottom(ctx, x, y, barW, h, 3, '#22c55e');
+            }
+        }
+
+        // Labels
+        ctx.textAlign = 'center';
+        
+        // Total count on top
+        ctx.fillStyle = isDark ? '#f8fafc' : '#0f172a';
+        ctx.font = `bold 11px Inter, sans-serif`;
+        ctx.fillText(solvedCount, x + barW / 2, baseY - totalHeight_px - 5);
+
+        // Day label below
+        ctx.fillStyle = textColor;
+        ctx.font = `10px Inter, sans-serif`;
+        ctx.fillText(day.label, x + barW / 2, baseY + 14);
+    });
+}
+
+/** Helper: Round TOP ONLY */
+function _roundRectTop(ctx, x, y, w, h, r, color) {
+    ctx.beginPath();
+    ctx.moveTo(x, y + h);
+    ctx.lineTo(x, y + r);
+    ctx.quadraticCurveTo(x, y, x + r, y);
+    ctx.lineTo(x + w - r, y);
+    ctx.quadraticCurveTo(x + w, y, x + w, y + r);
+    ctx.lineTo(x + w, y + h);
+    ctx.fillStyle = color;
+    ctx.fill();
+}
+
+/** Helper: Round BOTTOM ONLY */
+function _roundRectBottom(ctx, x, y, w, h, r, color) {
+    ctx.beginPath();
+    ctx.moveTo(x, y);
+    ctx.lineTo(x + w, y);
+    ctx.lineTo(x + w, y + h - r);
+    ctx.quadraticCurveTo(x + w, y + h, x + w - r, y + h);
+    ctx.lineTo(x + r, y + h);
+    ctx.quadraticCurveTo(x, y + h, x, y + h - r);
+    ctx.lineTo(x, y);
+    ctx.fillStyle = color;
+    ctx.fill();
+}
+
+/** Helper: filled rounded rect */
+function _roundRect(ctx, x, y, w, h, r, color) {
+    ctx.beginPath();
+    ctx.moveTo(x + r, y);
+    ctx.lineTo(x + w - r, y);
+    ctx.quadraticCurveTo(x + w, y, x + w, y + r);
+    ctx.lineTo(x + w, y + h - r);
+    ctx.quadraticCurveTo(x + w, y + h, x + w - r, y + h);
+    ctx.lineTo(x + r, y + h);
+    ctx.quadraticCurveTo(x, y + h, x, y + h - r);
+    ctx.lineTo(x, y + r);
+    ctx.quadraticCurveTo(x, y, x + r, y);
+    ctx.closePath();
+    ctx.fillStyle = color;
+    ctx.fill();
+}
+
+/** Helper: fills a rect with radius only on specified corners */
+function _roundRectPartial(ctx, x, y, w, h, rTL, rTR, color) {
+    const rBL = 0, rBR = 0;
+    ctx.beginPath();
+    ctx.moveTo(x + rTL, y);
+    ctx.lineTo(x + w - rTR, y);
+    ctx.quadraticCurveTo(x + w, y,     x + w,     y + rTR);
+    ctx.lineTo(x + w, y + h - rBR);
+    ctx.quadraticCurveTo(x + w, y + h, x + w - rBR, y + h);
+    ctx.lineTo(x + rBL, y + h);
+    ctx.quadraticCurveTo(x, y + h,     x,           y + h - rBL);
+    ctx.lineTo(x, y + rTL);
+    ctx.quadraticCurveTo(x, y,         x + rTL,     y);
+    ctx.closePath();
+    ctx.fillStyle = color;
+    ctx.fill();
+}
+

@@ -174,8 +174,27 @@
                             data-i18n="progress">Lernfortschritt</span>
                         <span style="font-size: 0.85rem; font-weight: 600;" id="homeProgressPercent">0%</span>
                     </div>
-                    <div class="progress-bar-track">
-                        <div class="progress-bar-fill" id="homeProgressBarFill" style="width: 0%;"></div>
+                    <div class="progress-bar-track progress-bar-clickable" id="homeProgressBarTrack" title="Grafik görünümü">
+                        <div class="progress-bar-segment seg-learned" id="pbSegLearned" style="width:0%"></div>
+                        <div class="progress-bar-segment seg-solved" id="pbSegSolved" style="width:0%"></div>
+                        <div class="progress-bar-segment seg-not-solved" id="pbSegNotSolved" style="width:100%"></div>
+                    </div>
+                    <div class="progress-legend" style="margin-top: 0.5rem;">
+                        <span class="legend-item">
+                            <span class="legend-dot dot-learned"></span>
+                            <span data-i18n="stat_learned">Öğrenildi</span>
+                            <span class="legend-count" id="legendLearnedCount"></span>
+                        </span>
+                        <span class="legend-item">
+                            <span class="legend-dot dot-solved"></span>
+                            <span data-i18n="stat_solved">Çözüldü</span>
+                            <span class="legend-count" id="legendSolvedCount"></span>
+                        </span>
+                        <span class="legend-item">
+                            <span class="legend-dot dot-not-solved"></span>
+                            <span data-i18n="stat_not_solved">Çözülmedi</span>
+                            <span class="legend-count" id="legendNotSolvedCount"></span>
+                        </span>
                     </div>
                     <div style="font-size: 0.75rem; color: var(--text-secondary); margin-top: 0.25rem;"
                         id="homeProgressDetail">Gelöst: 0 / 0</div>
@@ -679,6 +698,42 @@
     </div>
 
     <div class="toast" id="toast"></div>
+
+    <!-- Progress Chart Overlay -->
+    <div id="progressChartOverlay" class="chart-overlay" style="display:none;">
+        <div class="chart-panel">
+            <div class="chart-panel-header">
+                <h3 style="margin:0; font-size:1rem;" data-i18n="chart_title">İlerleme Analizi</h3>
+                <button id="closeChartBtn" class="icon-btn" style="margin-left:auto;">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round">
+                        <line x1="18" y1="6" x2="6" y2="18"></line>
+                        <line x1="6" y1="6" x2="18" y2="18"></line>
+                    </svg>
+                </button>
+            </div>
+            <div class="chart-panel-body">
+                <!-- Chart 1: Dağılım Barı -->
+                <div class="chart-section">
+                    <div class="chart-section-label">Soru Tamamlanma Durumu</div>
+                    <canvas id="chartDistribution"></canvas>
+                    <div class="chart-canvas-legend" id="chartDistLegend"></div>
+                </div>
+                <!-- Chart 2: Zorluk Pasta -->
+                <div class="chart-section">
+                    <div class="chart-section-label">Soru Zorluk Analizi</div>
+                    <div style="display:flex; align-items:center; gap:1rem; justify-content:center;">
+                        <canvas id="chartDifficulty" style="max-width:180px; max-height:180px;"></canvas>
+                        <div class="chart-canvas-legend" id="chartDiffLegend" style="text-align:left;"></div>
+                    </div>
+                </div>
+                <!-- Chart 3: Haftalık Trend -->
+                <div class="chart-section">
+                    <div class="chart-section-label">Haftalık Çalışma Trendi</div>
+                    <canvas id="chartWeekly"></canvas>
+                </div>
+            </div>
+        </div>
+    </div>
 
     <!-- Custom Professional Modal -->
     <div id="customModalOverlay" class="modal-overlay" style="z-index: 9999;">
