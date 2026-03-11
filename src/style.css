@@ -1610,7 +1610,7 @@ input:focus+.slider {
 /* Mobile: shrink source name further so badges never wrap */
 @media (max-width: 600px) {
     .stats-item-source {
-        max-width: 30% !important;
+        max-width: 50% !important;
     }
 }
 
