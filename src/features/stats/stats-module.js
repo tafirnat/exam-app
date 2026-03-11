@@ -767,17 +767,18 @@ function _drawWeeklyTrend(canvas) {
         }
     });
 
-    // Calculate nice intervals for Y-axis
-    const maxDayTotal = Math.max(...days.map(d => d.correct + d.wrong), 1);
+    const isDark = document.body.dataset.theme === 'dark';
+    const gridColor = isDark ? 'rgba(255,255,255,0.08)' : 'rgba(0,0,0,0.06)';
+    const textColor = isDark ? '#94a3b8' : '#64748b';
+    const skippedColor = isDark ? '#334155' : '#cbd5e1';
+
+    // Calculate nice intervals for Y-axis based on total (incl. unanswered)
+    const maxDayTotal = Math.max(...days.map(d => d.total), 1);
     const roughStep = maxDayTotal / 5;
     const niceSteps = [1, 2, 5, 10, 20, 25, 50, 100, 250, 500];
     const step = niceSteps.find(s => s >= roughStep) || niceSteps[niceSteps.length - 1];
     const lineCount = Math.ceil(maxDayTotal / step);
     const chartMax = step * lineCount;
-
-    const isDark = document.body.dataset.theme === 'dark';
-    const gridColor = isDark ? 'rgba(255,255,255,0.08)' : 'rgba(0,0,0,0.06)';
-    const textColor = isDark ? '#94a3b8' : '#64748b';
 
     const padL = 32, padR = 10, padTop = 20, padBot = 28;
     const chartW = W - padL - padR;
@@ -808,7 +809,8 @@ function _drawWeeklyTrend(canvas) {
     }
 
     days.forEach((day, i) => {
-        const solvedCount = day.correct + day.wrong;
+        const unanswered = Math.max(0, day.total - day.correct - day.wrong);
+        const dayTotal = day.correct + day.wrong + unanswered;
         const x = padL + i * gap + (gap - barW) / 2;
         const baseY = padTop + chartH;
 
@@ -819,37 +821,62 @@ function _drawWeeklyTrend(canvas) {
         ctx.textBaseline = 'top';
         ctx.fillText(day.label, x + barW / 2, baseY + 14);
 
-        if (solvedCount === 0) {
+        if (dayTotal === 0) {
             // Empty state placeholder
             _roundRect(ctx, x, baseY - 2, barW, 2, 1, isDark ? '#1e293b' : '#f1f5f9');
             return;
         }
-        
-        // Stacked Bar Calculation using chartMax
-        const totalHeight_px = (solvedCount / chartMax) * chartH;
-        const wrongHeight_px = (day.wrong / solvedCount) * totalHeight_px;
-        const correctHeight_px = totalHeight_px - wrongHeight_px;
 
-        // Draw Wrong (Bottom - Red)
+        // Pixel heights for each segment
+        const totalHeight_px    = (dayTotal      / chartMax) * chartH;
+        const wrongHeight_px    = (day.wrong      / dayTotal) * totalHeight_px;
+        const skippedHeight_px  = (unanswered     / dayTotal) * totalHeight_px;
+        const correctHeight_px  = (day.correct    / dayTotal) * totalHeight_px;
+
+        // Draw from bottom to top: Wrong (red) → Skipped (grey) → Correct (green)
+        let drawY = baseY;
+
+        // Wrong (Bottom - Red)
         if (day.wrong > 0) {
-            _roundRectBottom(ctx, x, baseY - wrongHeight_px, barW, wrongHeight_px, 3, '#ef4444');
+            drawY -= wrongHeight_px;
+            const isOnlySegment = unanswered === 0 && day.correct === 0;
+            _roundRectBottom(ctx, x, drawY, barW, wrongHeight_px, 3, '#ef4444');
+            if (isOnlySegment) _roundRectTop(ctx, x, drawY, barW, wrongHeight_px, 3, '#ef4444');
         }
 
-        // Draw Correct (Top - Green)
-        if (day.correct > 0) {
-            const y = baseY - totalHeight_px;
-            const h = correctHeight_px;
-            _roundRectTop(ctx, x, y, barW, h, 3, '#22c55e');
-            if (day.wrong === 0) {
-                _roundRectBottom(ctx, x, y, barW, h, 3, '#22c55e');
+        // Skipped (Middle - Grey)
+        if (unanswered > 0) {
+            drawY -= skippedHeight_px;
+            const isBottom = day.wrong === 0;
+            const isTop    = day.correct === 0;
+            if (isBottom && isTop) {
+                // Only segment — round all corners
+                _roundRect(ctx, x, drawY, barW, skippedHeight_px, 3, skippedColor);
+            } else if (isBottom) {
+                _roundRectBottom(ctx, x, drawY, barW, skippedHeight_px, 3, skippedColor);
+            } else if (isTop) {
+                _roundRectTop(ctx, x, drawY, barW, skippedHeight_px, 3, skippedColor);
+            } else {
+                // Sandwiched — no rounding
+                ctx.fillStyle = skippedColor;
+                ctx.fillRect(x, drawY, barW, skippedHeight_px);
             }
         }
 
-        // Count above
+        // Correct (Top - Green)
+        if (day.correct > 0) {
+            drawY -= correctHeight_px;
+            _roundRectTop(ctx, x, drawY, barW, correctHeight_px, 3, '#22c55e');
+            if (day.wrong === 0 && unanswered === 0) {
+                _roundRectBottom(ctx, x, drawY, barW, correctHeight_px, 3, '#22c55e');
+            }
+        }
+
+        // Count above bar
         ctx.fillStyle = isDark ? '#f8fafc' : '#0f172a';
         ctx.font = 'bold 10px Inter, sans-serif';
         ctx.textBaseline = 'bottom';
-        ctx.fillText(solvedCount, x + barW / 2, baseY - totalHeight_px - 4);
+        ctx.fillText(dayTotal, x + barW / 2, baseY - totalHeight_px - 4);
     });
 }
 
