@@ -765,57 +765,68 @@ function _drawWeeklyTrend(canvas) {
         }
     });
 
-    // maxTotal defines the chart scale
-    const maxDayTotal = Math.max(...days.map(d => d.correct + d.wrong), 1);
+    // Calculate nice intervals for Y-axis
+    const roughStep = maxDayTotal / 5;
+    const niceSteps = [1, 2, 5, 10, 20, 25, 50, 100, 250, 500];
+    const step = niceSteps.find(s => s >= roughStep) || niceSteps[niceSteps.length - 1];
+    const lineCount = Math.ceil(maxDayTotal / step);
+    const chartMax = step * lineCount;
+
     const isDark = document.body.dataset.theme === 'dark';
-    const gridColor = isDark ? 'rgba(255,255,255,0.07)' : 'rgba(0,0,0,0.07)';
+    const gridColor = isDark ? 'rgba(255,255,255,0.08)' : 'rgba(0,0,0,0.06)';
     const textColor = isDark ? '#94a3b8' : '#64748b';
 
-    const padL = 20, padR = 10, padTop = 20, padBot = 28;
+    const padL = 32, padR = 10, padTop = 20, padBot = 28;
     const chartW = W - padL - padR;
     const chartH = H - padTop - padBot;
     const gap    = chartW / 7;
     const barW   = Math.floor(gap * 0.65);
 
-    // Grid lines
+    // Grid lines & Y-Axis Labels
     ctx.strokeStyle = gridColor;
     ctx.lineWidth = 1;
-    [0, 0.5, 1.0].forEach(f => {
-        const y = padTop + chartH * (1 - f);
-        ctx.beginPath(); ctx.moveTo(padL, y); ctx.lineTo(W - padR, y); ctx.stroke();
-    });
+    ctx.font = '10px Inter, sans-serif';
+    ctx.fillStyle = textColor;
+    ctx.textAlign = 'right';
+    ctx.textBaseline = 'middle';
+
+    for (let i = 0; i <= lineCount; i++) {
+        const val = i * step;
+        const y = padTop + chartH * (1 - (val / chartMax));
+        
+        // Grid line
+        ctx.beginPath(); 
+        ctx.moveTo(padL, y); 
+        ctx.lineTo(W - padR, y); 
+        ctx.stroke();
+
+        // Label
+        ctx.fillText(val, padL - 8, y);
+    }
 
     days.forEach((day, i) => {
         const solvedCount = day.correct + day.wrong;
+        const x = padL + i * gap + (gap - barW) / 2;
+        const baseY = padTop + chartH;
+
         if (solvedCount === 0) {
             // Empty state placeholder
-            const x = padL + i * gap + (gap - barW) / 2;
-            _roundRect(ctx, x, padTop + chartH - 2, barW, 2, 1, isDark ? '#1e293b' : '#f1f5f9');
+            _roundRect(ctx, x, baseY - 2, barW, 2, 1, isDark ? '#1e293b' : '#f1f5f9');
             
             // Day label
-            ctx.fillStyle = textColor;
-            ctx.font = `10px Inter, sans-serif`;
             ctx.textAlign = 'center';
-            ctx.fillText(day.label, x + barW / 2, padTop + chartH + 14);
+            ctx.textBaseline = 'top';
+            ctx.fillText(day.label, x + barW / 2, baseY + 14);
             return;
         }
-
-        const x = padL + i * gap + (gap - barW) / 2;
         
-        // Stacked Bar Calculation
-        const totalHeight_px = (solvedCount / maxDayTotal) * chartH;
+        // Stacked Bar Calculation using chartMax
+        const totalHeight_px = (solvedCount / chartMax) * chartH;
         const wrongHeight_px = (day.wrong / solvedCount) * totalHeight_px;
         const correctHeight_px = totalHeight_px - wrongHeight_px;
 
-        const baseY = padTop + chartH;
-
         // Draw Wrong (Bottom - Red)
         if (day.wrong > 0) {
-            const tr = day.correct === 0 ? 3 : 0;
-            _roundRectPartial(ctx, x, baseY - wrongHeight_px, barW, wrongHeight_px, 0, 0, '#ef4444');
-            // Bottom corners always rounded
-            _roundRectPartial(ctx, x, baseY - wrongHeight_px, barW, wrongHeight_px, 0, 0, '#ef4444');
-            // Manual fix: round bottom
             _roundRectBottom(ctx, x, baseY - wrongHeight_px, barW, wrongHeight_px, 3, '#ef4444');
         }
 
@@ -823,13 +834,8 @@ function _drawWeeklyTrend(canvas) {
         if (day.correct > 0) {
             const y = baseY - totalHeight_px;
             const h = correctHeight_px;
-            const br = day.wrong === 0 ? 3 : 0;
             _roundRectTop(ctx, x, y, barW, h, 3, '#22c55e');
-            if (day.wrong > 0) {
-                // If there's wrong below, this is just a top part
-                // _roundRectTop already handles top rounding
-            } else {
-                // If no wrong, round bottom too
+            if (day.wrong === 0) {
                 _roundRectBottom(ctx, x, y, barW, h, 3, '#22c55e');
             }
         }
