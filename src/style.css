@@ -3141,7 +3141,3 @@ input:focus+.slider {
     70% { box-shadow: 0 0 0 4px rgba(var(--primary-rgb), 0); }
     100% { box-shadow: 0 0 0 0 rgba(var(--primary-rgb), 0); }
 }
-imary-color);
-    cursor: pointer;
-    border: none;
-}
