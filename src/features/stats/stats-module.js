@@ -552,7 +552,7 @@ export function showProgressCharts() {
         document.getElementById('chartDiffLegend'),
         [
             { label: `${t('difficulty_easy')} (≤1.0)`,     value: coeffGroups.easy,     color: '#22c55e' },
-            { label: `${t('difficulty_medium')} (1.0–2.0)`,   value: coeffGroups.medium,  color: '#f59e0b' },
+            { label: `${t('difficulty_medium')} (1.0–2.0)`,   value: coeffGroups.medium,  color: '#ffed0e' },
             { label: `${t('difficulty_hard')} (2.0–2.6)`,    value: coeffGroups.hard,    color: '#f97316' },
             { label: `${t('difficulty_very_hard')} (>2.6)`,   value: coeffGroups.veryHard, color: '#ef4444' },
         ],
