@@ -896,7 +896,10 @@ function _drawWeeklyTrend(canvas) {
                 const barX = padL + i * gap + (gap - barW) / 2;
                 return clickX >= barX - 4 && clickX <= barX + barW + 4;
             });
-            if (dayIndex === -1) return;
+            // Stop propagation so the document-level close listener
+            // from a previously opened popup doesn't close this new one.
+            e.stopPropagation();
+            if (dayIndex === -1) { _removeDayPopup(); return; }
             _showDayPopup(canvas, dayIndex, canvas._weeklyLayout, e);
         });
     }
@@ -978,12 +981,14 @@ function _showDayPopup(canvas, dayIndex, layout, mouseEvent) {
 
     Object.assign(popup.style, {
         position: 'absolute',
-        background: isDark ? '#1e293b' : '#ffffff',
+        background: isDark ? '#2d3f55' : '#f0f4f8',
         color: isDark ? '#f1f5f9' : '#0f172a',
-        border: `1px solid ${isDark ? 'rgba(255,255,255,0.12)' : 'rgba(0,0,0,0.1)'}`,
+        border: `1px solid ${isDark ? 'rgba(255,255,255,0.18)' : 'rgba(0,0,0,0.12)'}`,
         borderRadius: '10px',
         padding: '12px 14px',
-        boxShadow: '0 8px 24px rgba(0,0,0,0.25)',
+        boxShadow: isDark
+            ? '0 8px 28px rgba(0,0,0,0.5)'
+            : '0 8px 24px rgba(0,0,0,0.15)',
         zIndex: '9999',
         minWidth: '170px',
         pointerEvents: 'auto',
