@@ -3099,7 +3099,12 @@ input:focus+.slider {
 .chart-canvas-legend .cl-dot {
     width: 10px;
     height: 10px;
-    border-radius: /* TTS Styles */
+    border-radius: 50%;
+    display: inline-block;
+    flex-shrink: 0;
+}
+
+/* TTS Styles */
 .tts-btn {
     position: absolute;
     top: 0;
