@@ -45,11 +45,9 @@ export function renderQuestion() {
     }
 
     // Handle TTS
-    // Remove existing TTS container
-    card.querySelectorAll('.tts-container').forEach(c => c.remove());
+    // Remove existing TTS elements
+    card.querySelectorAll('.tts-btn').forEach(c => c.remove());
     if (AppState.ttsEnabled) {
-        const ttsCont = document.createElement('div');
-        ttsCont.className = 'tts-container';
         
         const tBtn = document.createElement('button');
         tBtn.className = 'tts-btn';
@@ -60,25 +58,7 @@ export function renderQuestion() {
         
         tBtn.onclick = () => handleTtsToggle(q.content?.text || q.text || '');
 
-        const speedSlider = document.createElement('input');
-        speedSlider.type = 'range';
-        speedSlider.className = 'tts-speed-slider';
-        speedSlider.min = '0.5';
-        speedSlider.max = '2.0';
-        speedSlider.step = '0.1';
-        speedSlider.value = AppState.ttsSpeed;
-        speedSlider.title = t('tts_speed');
-        speedSlider.oninput = (e) => {
-            AppState.ttsSpeed = parseFloat(e.target.value);
-            // Don't save on every tiny slide, but let's do it for simplicity or add debounce
-            import('../../core/state.js').then(m => m.saveTtsSettings());
-            // If playing, we can't easily change speed of Google API mid-stream without restarting, 
-            // but for next play it will take effect.
-        };
-
-        ttsCont.appendChild(tBtn);
-        ttsCont.appendChild(speedSlider);
-        card.appendChild(ttsCont);
+        card.appendChild(tBtn);
     }
 
     // Reset translation state for new question

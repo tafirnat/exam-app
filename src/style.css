@@ -3099,47 +3099,35 @@ input:focus+.slider {
 .chart-canvas-legend .cl-dot {
     width: 10px;
     height: 10px;
-    border-radius: 50%;
-    display: inline-block;
-    flex-shrink: 0;
-}
-/* TTS Styles */
-.tts-container {
-    position: absolute;
-    top: 1rem;
-    left: 1rem;
-    display: flex;
-    flex-direction: column;
-    align-items: flex-start;
-    gap: 0.5rem;
-    z-index: 10;
-}
-
+    border-radius: /* TTS Styles */
 .tts-btn {
+    position: absolute;
+    top: 0;
+    right: 0;
+    padding: 0.5rem;
     background: var(--surface-hover);
-    border: 1px solid var(--border-color);
-    border-radius: 8px;
-    width: 32px;
-    height: 32px;
+    border: none;
+    border-bottom-left-radius: 8px;
+    border-top-right-radius: var(--radius-lg);
+    width: 38px;
+    height: 38px;
     display: flex;
     align-items: center;
     justify-content: center;
     cursor: pointer;
     color: var(--text-secondary);
     transition: all 0.2s ease;
-    padding: 0;
+    z-index: 5;
 }
 
 .tts-btn:hover {
     background: var(--surface-color);
     color: var(--primary-color);
-    border-color: var(--primary-color);
 }
 
 .tts-btn.playing {
     color: var(--primary-color);
     background: rgba(var(--primary-rgb), 0.1);
-    border-color: var(--primary-color);
     animation: pulse-border 1.5s infinite;
 }
 
@@ -3148,37 +3136,7 @@ input:focus+.slider {
     70% { box-shadow: 0 0 0 4px rgba(var(--primary-rgb), 0); }
     100% { box-shadow: 0 0 0 0 rgba(var(--primary-rgb), 0); }
 }
-
-.tts-speed-slider {
-    -webkit-appearance: none;
-    width: 60px;
-    height: 2px;
-    background: var(--border-color);
-    outline: none;
-    opacity: 0.7;
-    transition: opacity 0.2s;
-    cursor: pointer;
-}
-
-.tts-speed-slider:hover {
-    opacity: 1;
-}
-
-.tts-speed-slider::-webkit-slider-thumb {
-    -webkit-appearance: none;
-    appearance: none;
-    width: 10px;
-    height: 10px;
-    border-radius: 50%;
-    background: var(--primary-color);
-    cursor: pointer;
-}
-
-.tts-speed-slider::-moz-range-thumb {
-    width: 10px;
-    height: 10px;
-    border-radius: 50%;
-    background: var(--primary-color);
+imary-color);
     cursor: pointer;
     border: none;
 }
