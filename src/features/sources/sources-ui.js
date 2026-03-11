@@ -104,7 +104,7 @@ export function renderSourcesList() {
     const countEl = document.getElementById('sourcesCount');
     if (countEl) {
         const n = AppState.sources.length;
-        countEl.textContent = n > 0 ? `${n} ${t('total')}` : '';
+        countEl.textContent = n > 0 ? t('questions_count', { count: n }) : '';
     }
 
     // Sort by last used
@@ -142,7 +142,7 @@ export function renderSourcesList() {
             ? `<a href="${displayPath}" target="_blank" onclick="event.stopPropagation()" class="hide-mobile" style="color:inherit; text-decoration:none; display:flex; align-items:center; gap:4px;">${originIcon}<span class="truncate">${displayPath}</span></a>`
             : `<div class="hide-mobile" style="display:flex; align-items:center; gap:4px;">${originIcon}<span class="truncate">${displayPath}</span></div>`;
 
-        const qText = s.name || 'Untitled Source';
+        const qText = s.name || t('untitled_source');
         const questions = s.questions || [];
         const totalQ = questions.length;
 
@@ -170,7 +170,7 @@ export function renderSourcesList() {
         info.innerHTML = `
             <div style="font-weight:600; font-size:0.9rem; margin-bottom: 2px;">${qText}</div>
             <div style="font-size:0.75rem; color:var(--text-secondary); margin-bottom: 4px; display: flex; align-items: center; gap: 6px; flex-wrap:wrap;">
-                <span>${totalQ} ${t('total')}</span>
+                <span>${t('questions_count', { count: totalQ })}</span>
                 ${s.importDate ? `<span style="opacity:0.6;">• ${s.importDate}</span>` : ''}
                 ${rateChip}${coeffChip}
             </div>

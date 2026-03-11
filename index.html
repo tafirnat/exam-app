@@ -109,12 +109,7 @@
                 </svg>
                 <span id="menuFlagText" data-i18n="flag">Flaggen</span>
             </button>
-            <button class="dropdown-item" id="menuNote">
-                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor">
-                    <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"></path>
-                </svg>
                 <span data-i18n="note">Notiz</span>
-            </button>
             <div class="dropdown-divider"></div>
             <button class="dropdown-item" id="menuTranslateAll">
                 <svg viewBox="0 0 24 24" fill="none" stroke="currentColor">
@@ -710,13 +705,13 @@
             <div class="chart-panel-body">
                 <!-- Chart 1: Dağılım Barı -->
                 <div class="chart-section">
-                    <div class="chart-section-label">Soru Tamamlanma Durumu</div>
+                    <div class="chart-section-label" data-i18n="chart_dist_label">Soru Tamamlanma Durumu</div>
                     <canvas id="chartDistribution"></canvas>
                     <div class="chart-canvas-legend" id="chartDistLegend"></div>
                 </div>
                 <!-- Chart 2: Zorluk Pasta -->
                 <div class="chart-section">
-                    <div class="chart-section-label">Soru Zorluk Analizi</div>
+                    <div class="chart-section-label" data-i18n="chart_diff_label">Soru Zorluk Analizi</div>
                     <div style="display:flex; align-items:center; gap:1rem; justify-content:center;">
                         <canvas id="chartDifficulty" style="max-width:180px; max-height:180px;"></canvas>
                         <div class="chart-canvas-legend" id="chartDiffLegend" style="text-align:left;"></div>
@@ -724,7 +719,7 @@
                 </div>
                 <!-- Chart 3: Haftalık Trend -->
                 <div class="chart-section">
-                    <div class="chart-section-label">Haftalık Çalışma Trendi</div>
+                    <div class="chart-section-label" data-i18n="chart_weekly_label">Haftalık Çalışma Trendi</div>
                     <canvas id="chartWeekly"></canvas>
                 </div>
             </div>

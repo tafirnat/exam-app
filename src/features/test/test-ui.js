@@ -69,7 +69,7 @@ export function renderQuestion() {
 
         container.innerHTML = `
             <div class="text-input-wrapper">
-                <input type="text" id="textAnswerInput" value="${val}" placeholder="Ihre Antwort..." ${isChecked ? 'disabled' : ''} oninput="window.syncTextInput(this.value)">
+                <input type="text" id="textAnswerInput" value="${val}" placeholder="${t('answer_placeholder')}" ${isChecked ? 'disabled' : ''} oninput="window.syncTextInput(this.value)">
                 ${isChecked && !isCorrect ? `
                     <div class="feedback-container" style="margin-top: 0.75rem; display: flex; align-items: start; gap: 0.5rem;">
                         <div style="flex: 1;">
@@ -642,14 +642,14 @@ export function renderTestResults() {
                 listEl.appendChild(item);
             });
         } else {
-            listEl.innerHTML = '<div style="opacity: 0.5; font-size: 0.8rem; text-align: center; width: 100%;">Keine Details verfügbar</div>';
+            listEl.innerHTML = `<div style="opacity: 0.5; font-size: 0.8rem; text-align: center; width: 100%;">${t('no_details_available')}</div>`;
         }
     }
 
     const dateEl = document.getElementById('resultsDate');
     if (dateEl && latestTest.endTime) {
         try {
-            dateEl.textContent = new Date(latestTest.endTime).toLocaleString();
+            dateEl.textContent = new Date(latestTest.endTime).toLocaleString(AppState.language);
         } catch (e) {
             dateEl.textContent = '';
         }

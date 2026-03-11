@@ -286,7 +286,7 @@ window.renderQuestionPreview = (q, stats = null, source = null) => {
     } else {
         const correctAnswers = getCorrectAnswers(q);
         const answerToShow = correctAnswers.length > 0 ? (isTextQuestion ? correctAnswers[0] : `${t('correct')}: ${correctAnswers[0]}`) : '';
-        const userVal = hasUserAnswer ? (Array.isArray(q.userAnswer) ? q.userAnswer[0] : q.userAnswer) : '';
+        const userVal = hasUserAnswer ? (Array.isArray(q.userAnswer) ? q.userAnswer[0] : q.userAnswer) : t('no_answer');
 
         if (answerToShow || userVal) {
             if (isTextQuestion) {
@@ -298,10 +298,10 @@ window.renderQuestionPreview = (q, stats = null, source = null) => {
                 const isCorrect = q.isCorrect;
 
                 wrapper.innerHTML = `
-                    <div style="margin-bottom: 0.5rem; font-size: 0.8rem; color: var(--text-secondary);">Ihre Antwort:</div>
-                    <input type="text" id="previewUserTextAnswer" value="${userVal || 'Keine Antwort'}" class="${hasUserAnswer ? (isCorrect ? 'correct' : 'wrong') : ''}" disabled style="margin-bottom: 1rem;">
+                    <div style="margin-bottom: 0.5rem; font-size: 0.8rem; color: var(--text-secondary);">${t('your_answer')}:</div>
+                    <input type="text" id="previewUserTextAnswer" value="${userVal}" class="${hasUserAnswer ? (isCorrect ? 'correct' : 'wrong') : ''}" disabled style="margin-bottom: 1rem;">
                     
-                    <div style="margin-bottom: 0.5rem; font-size: 0.8rem; color: var(--text-secondary);">Richtige Antwort:</div>
+                    <div style="margin-bottom: 0.5rem; font-size: 0.8rem; color: var(--text-secondary);">${t('correct_answer')}:</div>
                     <input type="text" id="previewTextAnswerInput" value="${answerToShow}" class="correct" disabled>
                     <div class="feedback-container" style="margin-top: 0.75rem; display: flex; align-items: start; gap: 0.5rem;">
                         <div style="flex: 1;">
@@ -577,7 +577,7 @@ function setupEventListeners() {
         a.href = url;
         a.download = `exam-app-backup-${new Date().toISOString().split('T')[0]}.json`;
         a.click();
-        showToast(t('export_success') || 'Export erfolgreich');
+        showToast(t('export_success'));
     };
 
     const handleImport = async (file) => {
@@ -591,7 +591,7 @@ function setupEventListeners() {
                     await processJSON(data, file.name);
                 } else if (data.sources || data.stats) {
                     // Full backup import
-                    if (await showConfirm(t('confirm_import_backup') || 'Möchten Sie dieses Backup laden? Bestehende Daten werden überschrieben.')) {
+                    if (await showConfirm(t('confirm_import_backup'))) {
                         if (data.sources) AppState.sources = data.sources;
                         if (data.stats) AppState.stats = data.stats;
                         if (data.recentTests) AppState.recentTests = data.recentTests;
@@ -601,11 +601,11 @@ function setupEventListeners() {
                         location.reload(); // Simplest way to re-init everything safely
                     }
                 } else {
-                    showToast(t('invalid_format') || 'Ungültiges Format');
+                    showToast(t('invalid_format'));
                 }
             } catch (err) {
                 console.error(err);
-                showToast(t('import_failed') || 'Import fehlgeschlagen');
+                showToast(t('import_failed'));
             }
         };
         reader.readAsText(file);

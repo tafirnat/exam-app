@@ -112,7 +112,7 @@ export function renderStatsList(filter = 'all', searchKeyword = '') {
         const percent = total > 0 ? Math.round((s.correct / total) * 100) : 0;
         const item = document.createElement('div');
         item.className = 'stats-list-item';
-        const qText = q.content?.text || q.text || 'Untitled Question';
+        const qText = q.content?.text || q.text || t('untitled_question');
 
         const isLearned = !!s.learned;
         const streak = s.streak || 0;
@@ -123,7 +123,7 @@ export function renderStatsList(filter = 'all', searchKeyword = '') {
 
         item.innerHTML = `
             <div style="flex: 1; min-width: 0;">
-                <div class="stats-item-text">${isLearned ? `<span class="learned-badge" title="${t('learned_msg') || 'Gelernt'}">🎓</span> ` : ''}${qText}</div>
+                <div class="stats-item-text">${isLearned ? `<span class="learned-badge" title="${t('learned_label')}">🎓</span> ` : ''}${qText}</div>
                 <div style="display: flex; align-items: center; gap: 4px;">
                     ${q.sourceName ? `<div class="stats-item-source">${q.sourceName}</div>` : ''}
                     <div class="stats-item-ref">#${q.originalIndex}</div>
@@ -179,9 +179,9 @@ function renderHistoricalTests(list, filter) {
         if (questionsToShow.length === 0 && filter === 'incorrect') return;
         if (test.questions.length === 0) return;
 
-        const sourceNames = test.sourceNames || [test.sourceTitle || "Mixed Sources"];
+        const sourceNames = test.sourceNames || [test.sourceTitle || t('mixed_sources')];
         const isMixed = sourceNames.length > 1;
-        const fullTitle = isMixed ? `Mix Test: ${sourceNames.join(', ')}` : sourceNames[0];
+        const fullTitle = isMixed ? `${t('mixed_sources')}: ${sourceNames.join(', ')}` : sourceNames[0];
 
         const testEl = document.createElement('div');
         testEl.className = 'history-test-item';
@@ -197,7 +197,7 @@ function renderHistoricalTests(list, filter) {
                 <div class="history-test-info">
                     <div class="history-test-title">${fullTitle}</div>
                     <div class="history-test-meta">
-                        <span>${questionsToShow.length} Questions</span> • 
+                        <span>${t('questions_count', { count: questionsToShow.length })}</span> • 
                         <span>${startTime} - ${endTime}</span>
                     </div>
                 </div>
@@ -356,7 +356,7 @@ export function updateHomeStats() {
     const pct = total > 0 ? Math.round((solved / total) * 100) : 0;
     const pctText = `${pct}%`;
     const progressText = t('solved_count', { solved: solved, total: total });
-    const learnedLabelText = learnedCount > 0 ? ` • ${learnedCount} ${t('learned_label') || 'Öğrenildi'}` : '';
+    const learnedLabelText = learnedCount > 0 ? ` • ${learnedCount} ${t('learned_label')}` : '';
 
     updateEl('homeStatTotal', total);
     updateEl('homeStatAvg', avgCoeff);
@@ -946,34 +946,34 @@ function _showDayPopup(canvas, dayIndex, layout, mouseEvent) {
         </div>
         <div style="display:flex; flex-direction:column; gap:5px; font-size:0.82rem;">
             <div style="display:flex; justify-content:space-between; gap:16px;">
-                <span style="color:${isDark ? '#94a3b8' : '#64748b'};">Toplam cevap</span>
+                <span style="color:${isDark ? '#94a3b8' : '#64748b'};">${t('stat_total_answers')}</span>
                 <b>${totalAnswers}</b>
             </div>
             <div style="display:flex; justify-content:space-between; gap:16px;">
                 <span style="display:flex; align-items:center; gap:5px;">
                     <span style="width:8px;height:8px;border-radius:50%;background:#22c55e;display:inline-block;"></span>
-                    Doğru
+                    ${t('correct')}
                 </span>
                 <b style="color:#22c55e;">${day.correct}</b>
             </div>
             <div style="display:flex; justify-content:space-between; gap:16px;">
                 <span style="display:flex; align-items:center; gap:5px;">
                     <span style="width:8px;height:8px;border-radius:50%;background:#ef4444;display:inline-block;"></span>
-                    Yanlış
+                    ${t('wrong')}
                 </span>
                 <b style="color:#ef4444;">${day.wrong}</b>
             </div>
             <div style="display:flex; justify-content:space-between; gap:16px;">
                 <span style="display:flex; align-items:center; gap:5px;">
                     <span style="width:8px;height:8px;border-radius:50%;background:${isDark ? '#64748b' : '#cbd5e1'};display:inline-block;"></span>
-                    Boş
+                    ${t('unanswered_count')}
                 </span>
                 <b style="color:${isDark ? '#94a3b8' : '#64748b'};">${unanswered}</b>
             </div>
             ${uniqueCount > 0 ? `
             <div style="margin-top:4px; padding-top:6px; border-top:1px solid ${isDark ? 'rgba(255,255,255,0.08)' : 'rgba(0,0,0,0.06)'};
                         display:flex; justify-content:space-between; gap:16px; color:${isDark ? '#94a3b8' : '#64748b'}; font-size:0.78rem;">
-                <span>Tekil soru</span>
+                <span>${t('stat_unique_questions')}</span>
                 <b>${uniqueCount}</b>
             </div>` : ''}
         </div>
