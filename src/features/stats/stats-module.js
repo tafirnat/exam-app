@@ -770,7 +770,7 @@ function _drawWeeklyTrend(canvas) {
     const isDark = document.body.dataset.theme === 'dark';
     const gridColor = isDark ? 'rgba(255,255,255,0.08)' : 'rgba(0,0,0,0.06)';
     const textColor = isDark ? '#94a3b8' : '#64748b';
-    const skippedColor = isDark ? '#334155' : '#cbd5e1';
+    const skippedColor = isDark ? '#64748b' : '#cbd5e1';
 
     // Calculate nice intervals for Y-axis based on total (incl. unanswered)
     const maxDayTotal = Math.max(...days.map(d => d.total), 1);
