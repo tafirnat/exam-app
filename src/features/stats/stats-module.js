@@ -368,9 +368,9 @@ export function updateHomeStats() {
     updateStyle('pbSegNotSolved','width', notSolvedPct + '%');
 
     // Update legend counts
-    updateEl('legendLearnedCount',   learnedCount > 0    ? `(${learnedCount})`    : '');
-    updateEl('legendSolvedCount',    solvedOnlyCount > 0 ? `(${solvedOnlyCount})` : '');
-    updateEl('legendNotSolvedCount', notSolvedCount > 0  ? `(${notSolvedCount})`  : '');
+    updateEl('legendLearnedCount',   learnedCount > 0    ? learnedCount    : '');
+    updateEl('legendSolvedCount',    solvedOnlyCount > 0 ? solvedOnlyCount : '');
+    updateEl('legendNotSolvedCount', notSolvedCount > 0  ? notSolvedCount  : '');
 
     updateEl('homeProgressDetail', progressText + learnedLabelText);
 
@@ -810,14 +810,16 @@ function _drawWeeklyTrend(canvas) {
         const x = padL + i * gap + (gap - barW) / 2;
         const baseY = padTop + chartH;
 
+        // Reset color for labels
+        ctx.fillStyle = textColor;
+        ctx.font = '10px Inter, sans-serif';
+        ctx.textAlign = 'center';
+        ctx.textBaseline = 'top';
+        ctx.fillText(day.label, x + barW / 2, baseY + 14);
+
         if (solvedCount === 0) {
             // Empty state placeholder
             _roundRect(ctx, x, baseY - 2, barW, 2, 1, isDark ? '#1e293b' : '#f1f5f9');
-            
-            // Day label
-            ctx.textAlign = 'center';
-            ctx.textBaseline = 'top';
-            ctx.fillText(day.label, x + barW / 2, baseY + 14);
             return;
         }
         
@@ -841,20 +843,14 @@ function _drawWeeklyTrend(canvas) {
             }
         }
 
-        // Labels
-        ctx.textAlign = 'center';
-        
-        // Total count on top
+        // Count above
         ctx.fillStyle = isDark ? '#f8fafc' : '#0f172a';
-        ctx.font = `bold 11px Inter, sans-serif`;
-        ctx.fillText(solvedCount, x + barW / 2, baseY - totalHeight_px - 5);
-
-        // Day label below
-        ctx.fillStyle = textColor;
-        ctx.font = `10px Inter, sans-serif`;
-        ctx.fillText(day.label, x + barW / 2, baseY + 14);
+        ctx.font = 'bold 10px Inter, sans-serif';
+        ctx.textBaseline = 'bottom';
+        ctx.fillText(solvedCount, x + barW / 2, baseY - totalHeight_px - 4);
     });
 }
+
 
 /** Helper: Round TOP ONLY */
 function _roundRectTop(ctx, x, y, w, h, r, color) {
