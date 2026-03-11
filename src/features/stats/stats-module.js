@@ -125,7 +125,7 @@ export function renderStatsList(filter = 'all', searchKeyword = '') {
             <div style="flex: 1; min-width: 0;">
                 <div class="stats-item-text">${isLearned ? `<span class="learned-badge" title="${t('learned_msg') || 'Gelernt'}">🎓</span> ` : ''}${qText}</div>
                 <div style="display: flex; align-items: center; gap: 4px;">
-                    ${q.sourceName ? `<div class="stats-item-source" title="${q.sourceName}" onclick="(function(e){e.stopPropagation();const t=document.getElementById('toast');if(t){t.innerText='${q.sourceName.replace(/'/g, "\\'")}';t.classList.add('show');setTimeout(()=>t.classList.remove('show'),2000);}})(event)">${q.sourceName}</div>` : ''}
+                    ${q.sourceName ? `<div class="stats-item-source">${q.sourceName}</div>` : ''}
                     <div class="stats-item-ref">#${q.originalIndex}</div>
                     ${streakAbs > 1 ? `<span class="stats-item-streak" title="Streak: ${streak}" style="font-size: 0.72rem; line-height: 1;">${streakIcon}${streakAbs}</span>` : ''}
                     ${rPercent !== null ? `<span class="stats-item-retrievability ${r <= 0.9 ? 'overdue' : ''}" title="Retrievability: ${rPercent}%" style="font-size: 0.72rem; line-height: 1;">🧠 ${rPercent}%</span>` : ''}
@@ -336,11 +336,11 @@ export function updateHomeStats() {
 
     // Segment calculations — learnedCount is a subset of solved
     const solvedOnlyCount = solved - learnedCount; // cevaplanmış ama öğrenilmemiş
-    const notSolvedCount = total - solved;
+    const notSolvedCount  = total - solved;
 
-    const learnedPct = total > 0 ? (learnedCount / total * 100).toFixed(1) : 0;
+    const learnedPct    = total > 0 ? (learnedCount    / total * 100).toFixed(1) : 0;
     const solvedOnlyPct = total > 0 ? (solvedOnlyCount / total * 100).toFixed(1) : 0;
-    const notSolvedPct = total > 0 ? Math.max(0, 100 - parseFloat(learnedPct) - parseFloat(solvedOnlyPct)).toFixed(1) : 100;
+    const notSolvedPct  = total > 0 ? Math.max(0, 100 - parseFloat(learnedPct) - parseFloat(solvedOnlyPct)).toFixed(1) : 100;
 
     const avgCoeff = total > 0 ? (totalCoeff / total).toFixed(1) : "0.0";
     const updateEl = (id, text) => {
@@ -363,13 +363,13 @@ export function updateHomeStats() {
     updateEl('homeProgressPercent', pctText);
 
     // Update 3 segments
-    updateStyle('pbSegLearned', 'width', learnedPct + '%');
-    updateStyle('pbSegSolved', 'width', solvedOnlyPct + '%');
-    updateStyle('pbSegNotSolved', 'width', notSolvedPct + '%');
+    updateStyle('pbSegLearned',  'width', learnedPct + '%');
+    updateStyle('pbSegSolved',   'width', solvedOnlyPct + '%');
+    updateStyle('pbSegNotSolved','width', notSolvedPct + '%');
 
     // Update legend counts (always show even if 0)
-    updateEl('legendLearnedCount', learnedCount);
-    updateEl('legendSolvedCount', solvedOnlyCount);
+    updateEl('legendLearnedCount',   learnedCount);
+    updateEl('legendSolvedCount',    solvedOnlyCount);
     updateEl('legendNotSolvedCount', notSolvedCount);
 
     updateEl('homeProgressDetail', progressText);
@@ -525,10 +525,10 @@ export function showProgressCharts() {
             // Coeff groups: only for SOLVED questions as per user request
             if (answered) {
                 const c = s.coeff || 1.5;
-                if (c <= 1.0) coeffGroups.easy++;
+                if (c <= 1.0)      coeffGroups.easy++;
                 else if (c <= 2.0) coeffGroups.medium++;
                 else if (c <= 2.6) coeffGroups.hard++;
-                else coeffGroups.veryHard++;
+                else               coeffGroups.veryHard++;
             }
         }
     });
@@ -540,7 +540,7 @@ export function showProgressCharts() {
         document.getElementById('chartDistLegend'),
         [
             { label: t('stat_learned'), value: learnedCount, color: '#22c55e' },
-            { label: t('stat_solved'), value: solvedCount, color: '#38bdf8' },
+            { label: t('stat_solved'),  value: solvedCount,  color: '#38bdf8' },
             { label: t('stat_not_solved'), value: notSolvedCount, color: '#475569' },
         ],
         total
@@ -551,10 +551,10 @@ export function showProgressCharts() {
         document.getElementById('chartDifficulty'),
         document.getElementById('chartDiffLegend'),
         [
-            { label: `${t('difficulty_easy')} (≤1.0)`, value: coeffGroups.easy, color: '#22c55e', emoji: '🟢' },
-            { label: `${t('difficulty_medium')} (1.0–2.0)`, value: coeffGroups.medium, color: '#eab308', emoji: '🟡' },
-            { label: `${t('difficulty_hard')} (2.0–2.6)`, value: coeffGroups.hard, color: '#f97316', emoji: '🟠' },
-            { label: `${t('difficulty_very_hard')} (>2.6)`, value: coeffGroups.veryHard, color: '#ef4444', emoji: '🔴' },
+            { label: `${t('difficulty_easy')} (≤1.0)`,     value: coeffGroups.easy,     color: '#22c55e', emoji: '🟢' },
+            { label: `${t('difficulty_medium')} (1.0–2.0)`,   value: coeffGroups.medium,  color: '#eab308', emoji: '🟡' },
+            { label: `${t('difficulty_hard')} (2.0–2.6)`,    value: coeffGroups.hard,    color: '#f97316', emoji: '🟠' },
+            { label: `${t('difficulty_very_hard')} (>2.6)`,   value: coeffGroups.veryHard, color: '#ef4444', emoji: '🔴' },
         ],
         total
     );
@@ -569,9 +569,9 @@ function _drawStackedBar(canvas, legendEl, segments, total) {
     const dpr = window.devicePixelRatio || 1;
     const W = canvas.offsetWidth || canvas.parentElement?.offsetWidth || 300;
     const H = 60;
-    canvas.width = W * dpr;
+    canvas.width  = W * dpr;
     canvas.height = H * dpr;
-    canvas.style.width = W + 'px';
+    canvas.style.width  = W + 'px';
     canvas.style.height = H + 'px';
 
     const ctx = canvas.getContext('2d');
@@ -590,11 +590,11 @@ function _drawStackedBar(canvas, legendEl, segments, total) {
         if (seg.value <= 0 || total === 0) return;
         const w = (seg.value / total) * W;
         const isFirst = (x === 0);
-        const isLast = (i === segments.length - 1) ||
-            segments.slice(i + 1).every(s => s.value === 0);
+        const isLast  = (i === segments.length - 1) ||
+                        segments.slice(i + 1).every(s => s.value === 0);
 
         const tl = isFirst ? radius : 0;
-        const tr = isLast ? radius : 0;
+        const tr = isLast  ? radius : 0;
         _roundRectPartial(ctx, x, barY, w, barH, tl, tr, seg.color);
         x += w;
     });
@@ -642,9 +642,9 @@ function _drawDonut(canvas, legendEl, segments, total) {
     if (!canvas) return;
     const size = Math.min(canvas.parentElement?.offsetWidth / 2 || 160, 180);
     const dpr = window.devicePixelRatio || 1;
-    canvas.width = size * dpr;
+    canvas.width  = size * dpr;
     canvas.height = size * dpr;
-    canvas.style.width = size + 'px';
+    canvas.style.width  = size + 'px';
     canvas.style.height = size + 'px';
 
     const ctx = canvas.getContext('2d');
@@ -719,8 +719,8 @@ function _drawDonut(canvas, legendEl, segments, total) {
             .map(s => {
                 const pct = total > 0 ? Math.round(s.value / total * 100) : 0;
                 // Use emoji if provided, otherwise fallback to dot
-                const icon = s.emoji ? `<span style="font-size:0.9rem; line-height:1;">${s.emoji}</span>`
-                    : `<span class="cl-dot" style="background-color:${s.color}; border:1px solid rgba(0,0,0,0.1)"></span>`;
+                const icon = s.emoji ? `<span style="font-size:0.9rem; line-height:1;">${s.emoji}</span>` 
+                             : `<span class="cl-dot" style="background-color:${s.color}; border:1px solid rgba(0,0,0,0.1)"></span>`;
                 return `<span>${icon} ${s.label}: <b>${s.value}</b> (${pct}%)</span>`;
             }).join('');
     }
@@ -732,9 +732,9 @@ function _drawWeeklyTrend(canvas) {
     const dpr = window.devicePixelRatio || 1;
     const W = canvas.offsetWidth || canvas.parentElement?.offsetWidth || 300;
     const H = 140; // Slightly taller for counts
-    canvas.width = W * dpr;
+    canvas.width  = W * dpr;
     canvas.height = H * dpr;
-    canvas.style.width = W + 'px';
+    canvas.style.width  = W + 'px';
     canvas.style.height = H + 'px';
 
     const ctx = canvas.getContext('2d');
@@ -762,8 +762,8 @@ function _drawWeeklyTrend(canvas) {
         const bucket = days.find(d => d.dateStr === dayStr);
         if (bucket) {
             bucket.correct += test.correctCount || 0;
-            bucket.wrong += test.wrongCount || 0;
-            bucket.total += (test.correctCount || 0) + (test.wrongCount || 0) + (test.unansweredCount || 0);
+            bucket.wrong   += test.wrongCount   || 0;
+            bucket.total   += (test.correctCount || 0) + (test.wrongCount || 0) + (test.unansweredCount || 0);
         }
     });
 
@@ -783,8 +783,8 @@ function _drawWeeklyTrend(canvas) {
     const padL = 32, padR = 10, padTop = 20, padBot = 28;
     const chartW = W - padL - padR;
     const chartH = H - padTop - padBot;
-    const gap = chartW / 7;
-    const barW = Math.floor(gap * 0.65);
+    const gap    = chartW / 7;
+    const barW   = Math.floor(gap * 0.65);
 
     // Grid lines & Y-Axis Labels
     ctx.strokeStyle = gridColor;
@@ -797,11 +797,11 @@ function _drawWeeklyTrend(canvas) {
     for (let i = 0; i <= lineCount; i++) {
         const val = i * step;
         const y = padTop + chartH * (1 - (val / chartMax));
-
+        
         // Grid line
-        ctx.beginPath();
-        ctx.moveTo(padL, y);
-        ctx.lineTo(W - padR, y);
+        ctx.beginPath(); 
+        ctx.moveTo(padL, y); 
+        ctx.lineTo(W - padR, y); 
         ctx.stroke();
 
         // Label
@@ -828,10 +828,10 @@ function _drawWeeklyTrend(canvas) {
         }
 
         // Pixel heights for each segment
-        const totalHeight_px = (dayTotal / chartMax) * chartH;
-        const wrongHeight_px = (day.wrong / dayTotal) * totalHeight_px;
-        const skippedHeight_px = (unanswered / dayTotal) * totalHeight_px;
-        const correctHeight_px = (day.correct / dayTotal) * totalHeight_px;
+        const totalHeight_px    = (dayTotal      / chartMax) * chartH;
+        const wrongHeight_px    = (day.wrong      / dayTotal) * totalHeight_px;
+        const skippedHeight_px  = (unanswered     / dayTotal) * totalHeight_px;
+        const correctHeight_px  = (day.correct    / dayTotal) * totalHeight_px;
 
         // Draw from bottom to top: Wrong (red) → Skipped (grey) → Correct (green)
         let drawY = baseY;
@@ -848,7 +848,7 @@ function _drawWeeklyTrend(canvas) {
         if (unanswered > 0) {
             drawY -= skippedHeight_px;
             const isBottom = day.wrong === 0;
-            const isTop = day.correct === 0;
+            const isTop    = day.correct === 0;
             if (isBottom && isTop) {
                 // Only segment — round all corners
                 _roundRect(ctx, x, drawY, barW, skippedHeight_px, 3, skippedColor);
@@ -887,7 +887,7 @@ function _drawWeeklyTrend(canvas) {
         canvas._weeklyClickBound = true;
         canvas.style.cursor = 'pointer';
         canvas.addEventListener('click', (e) => {
-            const rect = canvas.getBoundingClientRect();
+            const rect   = canvas.getBoundingClientRect();
             const scaleX = canvas.offsetWidth / rect.width;
             const clickX = (e.clientX - rect.left) * scaleX;
 
@@ -1003,13 +1003,13 @@ function _showDayPopup(canvas, dayIndex, layout, mouseEvent) {
 
     const canvasRect = canvas.getBoundingClientRect();
     const barCenterX = canvasRect.left + (padL + dayIndex * gap + gap / 2) * (canvasRect.width / canvas.offsetWidth);
-    const popupTop = canvasRect.top + window.scrollY - popup.offsetHeight - 10;
-    let popupLeft = barCenterX - popup.offsetWidth / 2;
+    const popupTop   = canvasRect.top + window.scrollY - popup.offsetHeight - 10;
+    let   popupLeft  = barCenterX - popup.offsetWidth / 2;
 
     // Keep inside viewport
     popupLeft = Math.max(8, Math.min(popupLeft, window.innerWidth - popup.offsetWidth - 8));
 
-    popup.style.top = `${popupTop}px`;
+    popup.style.top  = `${popupTop}px`;
     popup.style.left = `${popupLeft}px`;
 
     requestAnimationFrame(() => { popup.style.opacity = '1'; });
@@ -1076,13 +1076,13 @@ function _roundRectPartial(ctx, x, y, w, h, rTL, rTR, color) {
     ctx.beginPath();
     ctx.moveTo(x + rTL, y);
     ctx.lineTo(x + w - rTR, y);
-    ctx.quadraticCurveTo(x + w, y, x + w, y + rTR);
+    ctx.quadraticCurveTo(x + w, y,     x + w,     y + rTR);
     ctx.lineTo(x + w, y + h - rBR);
     ctx.quadraticCurveTo(x + w, y + h, x + w - rBR, y + h);
     ctx.lineTo(x + rBL, y + h);
-    ctx.quadraticCurveTo(x, y + h, x, y + h - rBL);
+    ctx.quadraticCurveTo(x, y + h,     x,           y + h - rBL);
     ctx.lineTo(x, y + rTL);
-    ctx.quadraticCurveTo(x, y, x + rTL, y);
+    ctx.quadraticCurveTo(x, y,         x + rTL,     y);
     ctx.closePath();
     ctx.fillStyle = color;
     ctx.fill();
