@@ -150,7 +150,13 @@ export const translations = {
         google_logout: "Oturumu Kapat",
         cloud_status_connected: "Bulut Bağlı",
         cloud_status_disconnected: "Bağlı Değil",
-        syncing: "Eşitleniyor..."
+        syncing: "Eşitleniyor...",
+        stat_learned: "Öğrenildi",
+        stat_solved: "Çözüldü",
+        stat_not_solved: "Çözülmedi",
+        difficulty_medium: "Orta",
+        difficulty_very_hard: "Çok Zor",
+        charts_question: "Soru"
     },
     en: {
         theme_change: "Change Theme",
@@ -285,7 +291,13 @@ export const translations = {
         google_logout: "Logout",
         cloud_status_connected: "Cloud Connected",
         cloud_status_disconnected: "Not Connected",
-        syncing: "Syncing..."
+        syncing: "Syncing...",
+        stat_learned: "Learned",
+        stat_solved: "Solved",
+        stat_not_solved: "Unsolved",
+        difficulty_medium: "Medium",
+        difficulty_very_hard: "Very Hard",
+        charts_question: "Question"
     },
     de: {
         theme_change: "Design ändern",
@@ -420,7 +432,13 @@ export const translations = {
         google_logout: "Abmelden",
         cloud_status_connected: "Cloud verbunden",
         cloud_status_disconnected: "Nicht verbunden",
-        syncing: "Synchronisierung..."
+        syncing: "Synchronisierung...",
+        stat_learned: "Gelernt",
+        stat_solved: "Gelöst",
+        stat_not_solved: "Nicht gelöst",
+        difficulty_medium: "Mittel",
+        difficulty_very_hard: "Sehr schwer",
+        charts_question: "Frage"
     },
 };
 

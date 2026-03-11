@@ -539,9 +539,9 @@ export function showProgressCharts() {
         document.getElementById('chartDistribution'),
         document.getElementById('chartDistLegend'),
         [
-            { label: 'Öğrenildi', value: learnedCount, color: '#22c55e' },
-            { label: 'Çözüldü',   value: solvedCount,  color: '#38bdf8' },
-            { label: 'Çözülmedi', value: notSolvedCount, color: '#475569' },
+            { label: t('stat_learned'), value: learnedCount, color: '#22c55e' },
+            { label: t('stat_solved'),  value: solvedCount,  color: '#38bdf8' },
+            { label: t('stat_not_solved'), value: notSolvedCount, color: '#475569' },
         ],
         total
     );
@@ -551,10 +551,10 @@ export function showProgressCharts() {
         document.getElementById('chartDifficulty'),
         document.getElementById('chartDiffLegend'),
         [
-            { label: 'Kolay (≤1.0)',     value: coeffGroups.easy,     color: '#22c55e' },
-            { label: 'Orta (1.0–2.0)',   value: coeffGroups.medium,  color: '#f59e0b' },
-            { label: 'Zor (2.0–2.6)',    value: coeffGroups.hard,    color: '#f97316' },
-            { label: 'Çok Zor (>2.6)',   value: coeffGroups.veryHard, color: '#ef4444' },
+            { label: `${t('difficulty_easy')} (≤1.0)`,     value: coeffGroups.easy,     color: '#22c55e' },
+            { label: `${t('difficulty_medium')} (1.0–2.0)`,   value: coeffGroups.medium,  color: '#f59e0b' },
+            { label: `${t('difficulty_hard')} (2.0–2.6)`,    value: coeffGroups.hard,    color: '#f97316' },
+            { label: `${t('difficulty_very_hard')} (>2.6)`,   value: coeffGroups.veryHard, color: '#ef4444' },
         ],
         total
     );
@@ -711,7 +711,7 @@ function _drawDonut(canvas, legendEl, segments, total) {
     ctx.fillText(total, cx, cy - size * 0.04);
     ctx.font = `${Math.round(size * 0.09)}px Inter, sans-serif`;
     ctx.fillStyle = '#64748b';
-    ctx.fillText('Soru', cx, cy + size * 0.1);
+    ctx.fillText(t('charts_question'), cx, cy + size * 0.1);
 
     // Legend
     if (legendEl) {
@@ -745,7 +745,7 @@ function _drawWeeklyTrend(canvas) {
         const d = new Date();
         d.setDate(d.getDate() - i);
         days.push({
-            label: d.toLocaleDateString('tr-TR', { weekday: 'short' }),
+            label: d.toLocaleDateString(AppState.language === 'tr' ? 'tr-TR' : AppState.language, { weekday: 'short' }),
             dateStr: d.toISOString().slice(0, 10),
             correct: 0,
             wrong: 0,
