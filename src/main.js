@@ -6,7 +6,7 @@ import { migrateOldData } from './core/migration.js';
 import { processJSON, loadFromUrl, loadFromFile, normalizeQuestions } from './features/sources/sources-service.js';
 import { renderSourcesList } from './features/sources/sources-ui.js';
 import { prepareTest, finishTest, prepareRetake } from './features/test/test-engine.js';
-import { renderQuestion, handleCheckAnswer, updateIndicators, handleTranslation, handleDifficultyRating, renderTestResults } from './features/test/test-ui.js';
+import { renderQuestion, handleCheckAnswer, updateIndicators, handleTranslation, handleDifficultyRating, renderTestResults, initTtsVoice } from './features/test/test-ui.js';
 import { renderStatsList, updateHomeStats, setupStatsEventListeners } from './features/stats/stats-module.js';
 
 
@@ -478,6 +478,18 @@ function setupEventListeners() {
             AppState.translationEnabled = e.target.checked;
             localStorage.setItem('focus_app_translation_enabled', e.target.checked);
             updateTranslationUI();
+        };
+    }
+
+    // TTS Toggle
+    const ttsToggle = document.getElementById('ttsToggle');
+    if (ttsToggle) {
+        ttsToggle.checked = AppState.ttsEnabled;
+        ttsToggle.onchange = (e) => {
+            AppState.ttsEnabled = e.target.checked;
+            import('./core/state.js').then(m => m.saveTtsSettings());
+            // Re-render question to show/hide TTS button
+            if (AppState.currentTest && AppState.currentTest.length > 0) renderQuestion();
         };
     }
 

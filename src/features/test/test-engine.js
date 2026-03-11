@@ -94,6 +94,10 @@ export function prepareTest(count) {
         if (q.options) AppState.shuffledOptionsMap[q.id] = shuffleArray([...q.options]);
     });
 
+    // Randomize TTS Voice (A-G)
+    const voices = ["A", "B", "C", "D", "E", "F", "G"];
+    AppState.currentTtsVoice = voices[Math.floor(Math.random() * voices.length)];
+
     startTestTracking(count);
 
     return AppState.currentTest;
@@ -156,6 +160,10 @@ export function prepareRetake(historyEntry, onlyIncorrect = false) {
         const q = rawQuestions[idx];
         if (q.options) AppState.shuffledOptionsMap[q.id] = shuffleArray([...q.options]);
     });
+
+    // Randomize TTS Voice (A-G)
+    const voices = ["A", "B", "C", "D", "E", "F", "G"];
+    AppState.currentTtsVoice = voices[Math.floor(Math.random() * voices.length)];
 
     // Tracking metadata
     AppState.testTracking = {

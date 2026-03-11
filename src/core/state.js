@@ -30,6 +30,9 @@ export const AppState = {
     activeStatsSortDir: 'asc', // 'asc', 'desc'
     customAIPrompt: localStorage.getItem('focus_app_custom_ai_prompt') || '',
     aiIntegration: localStorage.getItem('focus_app_ai_integration') || 'clipboard',
+    ttsEnabled: JSON.parse(localStorage.getItem('focus_app_tts_enabled') ?? 'false'),
+    ttsSpeed: parseFloat(localStorage.getItem('focus_app_tts_speed') ?? '1.0'),
+    currentTtsVoice: null, // Randomly selected at test start
     viewHistory: [] // Stack to track last 10 visited screens
 };
 
@@ -43,6 +46,11 @@ export function saveCustomAIPrompt() {
 
 export function saveAiIntegration() {
     localStorage.setItem('focus_app_ai_integration', AppState.aiIntegration);
+}
+
+export function saveTtsSettings() {
+    localStorage.setItem('focus_app_tts_enabled', JSON.stringify(AppState.ttsEnabled));
+    localStorage.setItem('focus_app_tts_speed', AppState.ttsSpeed.toString());
 }
 
 export function saveSources() {

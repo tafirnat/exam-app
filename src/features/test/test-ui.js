@@ -1,8 +1,11 @@
 
 import { AppState, saveStats } from '../../core/state.js';
 import { translateText, showToast, showConfirm, getCorrectAnswers } from '../../core/utils.js';
-import { t } from '../../core/i18n.js';
+import { t, targetLanguages } from '../../core/i18n.js';
 import { evaluateAnswer, updateStats, finishTest, calculateRetrievability } from './test-engine.js';
+
+let currentAudio = null;
+let isAudioPlaying = false;
 
 export function renderQuestion() {
     if (!AppState.currentTest || AppState.currentTest.length === 0) {
@@ -39,6 +42,43 @@ export function renderQuestion() {
             // Default: above
             card.insertBefore(img, qTextEl);
         }
+    }
+
+    // Handle TTS
+    // Remove existing TTS container
+    card.querySelectorAll('.tts-container').forEach(c => c.remove());
+    if (AppState.ttsEnabled) {
+        const ttsCont = document.createElement('div');
+        ttsCont.className = 'tts-container';
+        
+        const tBtn = document.createElement('button');
+        tBtn.className = 'tts-btn';
+        if (isAudioPlaying) tBtn.classList.add('playing');
+        tBtn.innerHTML = isAudioPlaying ? 
+            '<svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2.5"><rect x="6" y="4" width="4" height="16"></rect><rect x="14" y="4" width="4" height="16"></rect></svg>' : 
+            '<svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2.5"><polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5"></polygon><path d="M19.07 4.93a10 10 0 0 1 0 14.14M15.54 8.46a5 5 0 0 1 0 7.07"></path></svg>';
+        
+        tBtn.onclick = () => handleTtsToggle(q.content?.text || q.text || '');
+
+        const speedSlider = document.createElement('input');
+        speedSlider.type = 'range';
+        speedSlider.className = 'tts-speed-slider';
+        speedSlider.min = '0.5';
+        speedSlider.max = '2.0';
+        speedSlider.step = '0.1';
+        speedSlider.value = AppState.ttsSpeed;
+        speedSlider.title = t('tts_speed');
+        speedSlider.oninput = (e) => {
+            AppState.ttsSpeed = parseFloat(e.target.value);
+            // Don't save on every tiny slide, but let's do it for simplicity or add debounce
+            import('../../core/state.js').then(m => m.saveTtsSettings());
+            // If playing, we can't easily change speed of Google API mid-stream without restarting, 
+            // but for next play it will take effect.
+        };
+
+        ttsCont.appendChild(tBtn);
+        ttsCont.appendChild(speedSlider);
+        card.appendChild(ttsCont);
     }
 
     // Reset translation state for new question
@@ -667,3 +707,49 @@ window.showQuestionResult = (testId, questionId) => {
         detail: { question: q, stats: AppState.stats[q.id] || { coeff: 1.5, correct: 0, wrong: 0 }, source: 'results' }
     }));
 };
+
+export function handleTtsToggle(text) {
+    if (isAudioPlaying && currentAudio) {
+        currentAudio.pause();
+        currentAudio = null;
+        isAudioPlaying = false;
+        renderQuestion();
+        return;
+    }
+
+    if (!text) return;
+
+    const lang = AppState.language === 'tr' ? 'tr' : (AppState.language === 'de' ? 'de' : 'en');
+    const voicePrefix = lang === 'tr' ? 'tr-TR-Wavenet-' : (lang === 'de' ? 'de-DE-Wavenet-' : 'en-US-Wavenet-');
+    const voice = AppState.currentTtsVoice || "A";
+    const speed = AppState.ttsSpeed || 1.0;
+
+    const baseUrl = "https://www.google.com/speech-api/v1/synthesize";
+    const params = new URLSearchParams({
+        enc: 'mpeg',
+        lang: lang,
+        speed: speed,
+        client: 'lr-language-tts',
+        use_google_only_voices: '1',
+        name: voicePrefix + voice,
+        text: text
+    });
+
+    const url = `${baseUrl}?${params.toString()}`;
+
+    currentAudio = new Audio(url);
+    isAudioPlaying = true;
+    renderQuestion();
+
+    currentAudio.play().catch(err => {
+        console.error("TTS Playback failed:", err);
+        isAudioPlaying = false;
+        renderQuestion();
+    });
+
+    currentAudio.onended = () => {
+        isAudioPlaying = false;
+        currentAudio = null;
+        renderQuestion();
+    };
+}

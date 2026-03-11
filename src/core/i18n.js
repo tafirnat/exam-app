@@ -180,7 +180,9 @@ export const translations = {
         menu: "Menü",
         back: "Geri",
         note: "Not",
-        no_details_available: "Detay bulunamadı"
+        no_details_available: "Detay bulunamadı",
+        tts_toggle: "Seslendirme aktif",
+        tts_speed: "Ses hızı"
     },
     en: {
         theme_change: "Change Theme",
@@ -345,7 +347,9 @@ export const translations = {
         menu: "Menu",
         back: "Back",
         note: "Note",
-        no_details_available: "No details available"
+        no_details_available: "No details available",
+        tts_toggle: "Enable Voice",
+        tts_speed: "Speech Speed"
     },
     de: {
         theme_change: "Design ändern",
@@ -510,7 +514,9 @@ export const translations = {
         menu: "Menü",
         back: "Zurück",
         note: "Notiz",
-        no_details_available: "Keine Details verfügbar"
+        no_details_available: "Keine Details verfügbar",
+        tts_toggle: "Sprachausgabe aktivieren",
+        tts_speed: "Sprechgeschwindigkeit"
     },
 };
 
