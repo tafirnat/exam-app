@@ -662,14 +662,14 @@ function _drawDonut(canvas, legendEl, segments, total) {
 
     // We want to show difficulty segments ONLY for solved questions, 
     // and the rest of the ring should be grey (unsolved).
-    const solvedSegments = segments.filter(s => s.label !== 'Çözülmedi');
+    const solvedSegments = segments.filter(s => s.label !== t('stat_not_solved'));
     const solvedTotal = solvedSegments.reduce((a, s) => a + s.value, 0);
-    const unsolvedCount = total - solvedTotal;
+    const unsolvedCount = Math.max(0, total - solvedTotal);
 
     // Create a new segments array for the donut: [Solved Diff 1, Solved Diff 2, ..., Unsolved (Grey)]
     const finalSegments = [...solvedSegments];
     if (unsolvedCount > 0) {
-        finalSegments.push({ label: 'Çözülmedi', value: unsolvedCount, color: greyColor });
+        finalSegments.push({ label: t('stat_not_solved'), value: unsolvedCount, color: greyColor });
     }
 
     if (total === 0) {
@@ -716,10 +716,10 @@ function _drawDonut(canvas, legendEl, segments, total) {
     // Legend
     if (legendEl) {
         legendEl.innerHTML = finalSegments
-            .filter(s => s.value > 0)
             .map(s => {
                 const pct = total > 0 ? Math.round(s.value / total * 100) : 0;
-                return `<span><span class="cl-dot" style="background:${s.color}"></span>${s.label}: <b>${s.value}</b> (${pct}%)</span>`;
+                // Use background-color for better compatibility, and always show labels for consistency
+                return `<span><span class="cl-dot" style="background-color:${s.color}; border:1px solid rgba(0,0,0,0.1)"></span>${s.label}: <b>${s.value}</b> (${pct}%)</span>`;
             }).join('');
     }
 }
