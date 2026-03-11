@@ -367,12 +367,12 @@ export function updateHomeStats() {
     updateStyle('pbSegSolved',   'width', solvedOnlyPct + '%');
     updateStyle('pbSegNotSolved','width', notSolvedPct + '%');
 
-    // Update legend counts
-    updateEl('legendLearnedCount',   learnedCount > 0    ? learnedCount    : '');
-    updateEl('legendSolvedCount',    solvedOnlyCount > 0 ? solvedOnlyCount : '');
-    updateEl('legendNotSolvedCount', notSolvedCount > 0  ? notSolvedCount  : '');
+    // Update legend counts (always show even if 0)
+    updateEl('legendLearnedCount',   learnedCount);
+    updateEl('legendSolvedCount',    solvedOnlyCount);
+    updateEl('legendNotSolvedCount', notSolvedCount);
 
-    updateEl('homeProgressDetail', progressText + learnedLabelText);
+    updateEl('homeProgressDetail', progressText);
 
     const startPanel = document.getElementById('startPanel');
     const statsCard = document.getElementById('homeStatsCard');
@@ -718,7 +718,7 @@ function _drawDonut(canvas, legendEl, segments, total) {
         legendEl.innerHTML = finalSegments
             .map(s => {
                 const pct = total > 0 ? Math.round(s.value / total * 100) : 0;
-                // Use background-color for better compatibility, and always show labels for consistency
+                // For Mittel (#ffed0e), we use the color passed in s.color
                 return `<span><span class="cl-dot" style="background-color:${s.color}; border:1px solid rgba(0,0,0,0.1)"></span>${s.label}: <b>${s.value}</b> (${pct}%)</span>`;
             }).join('');
     }

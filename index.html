@@ -179,25 +179,21 @@
                         <div class="progress-bar-segment seg-solved" id="pbSegSolved" style="width:0%"></div>
                         <div class="progress-bar-segment seg-not-solved" id="pbSegNotSolved" style="width:100%"></div>
                     </div>
-                    <div class="progress-legend" style="margin-top: 0.5rem;">
+                    <div class="progress-legend" style="margin-top: 0.5rem; display: flex; align-items: center;">
                         <span class="legend-item">
                             <span class="legend-dot dot-learned"></span>
                             <span class="legend-count" id="legendLearnedCount"></span>
-                            <span data-i18n="stat_learned">Öğrenildi</span>
                         </span>
                         <span class="legend-item">
                             <span class="legend-dot dot-solved"></span>
                             <span class="legend-count" id="legendSolvedCount"></span>
-                            <span data-i18n="stat_solved">Çözüldü</span>
                         </span>
-                        <span class="legend-item legend-item-right">
+                        <span class="legend-item">
                             <span class="legend-dot dot-not-solved"></span>
                             <span class="legend-count" id="legendNotSolvedCount"></span>
-                            <span data-i18n="stat_not_solved">Çözülmedi</span>
                         </span>
+                        <div id="homeProgressDetail" style="font-size: 0.72rem; color: var(--text-secondary); margin-left: auto; font-weight: 500;"></div>
                     </div>
-                    <div style="font-size: 0.75rem; color: var(--text-secondary); margin-top: 0.25rem;"
-                        id="homeProgressDetail">Gelöst: 0 / 0</div>
                 </div>
 
                 <div style="margin-top: 1.5rem; padding-top: 1rem; border-top: 1px solid var(--border-color);">
