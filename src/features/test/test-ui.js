@@ -8,6 +8,7 @@ let currentAudio = null;
 let isAudioPlaying = false;
 let autoplayTimeoutId = null;
 let lastTtsStopReason = 'none'; // 'none', 'finished', 'navigation', 'manual'
+let lastRenderedIndex = -1;
 
 export function getIsAudioPlaying() {
     return isAudioPlaying;
@@ -29,20 +30,29 @@ export function renderQuestion(isRefresh = false) {
         return;
     }
 
-    // New: If navigating while audio is playing, stop it and mark as interrupted
-    // Fix: Only stop if it's a real navigation, not just a UI refresh
-    if (!isRefresh && isAudioPlaying) {
-        stopAudio(true, 'navigation');
-    }
-
-    // New: Clear any pending autoplay
-    // Fix: Only clear on real navigation
-    if (!isRefresh && autoplayTimeoutId) {
-        clearTimeout(autoplayTimeoutId);
-        autoplayTimeoutId = null;
-    }
-
     const qIndex = AppState.currentIndex;
+    const isNewQuestion = qIndex !== lastRenderedIndex;
+
+    // Handle session start or navigation
+    if (!isRefresh && isNewQuestion) {
+        // If navigating while audio is playing, stop it and mark as interrupted
+        if (isAudioPlaying) {
+            stopAudio(true, 'navigation');
+        } else {
+            // If starting fresh or from a manual stop, reset reason to allow quick start
+            if (lastTtsStopReason !== 'finished') {
+                lastTtsStopReason = 'none';
+            }
+        }
+        
+        lastRenderedIndex = qIndex;
+
+        // Clear any pending autoplay from previous navigation
+        if (autoplayTimeoutId) {
+            clearTimeout(autoplayTimeoutId);
+            autoplayTimeoutId = null;
+        }
+    }
     const q = AppState.rawQuestions[AppState.currentTest[qIndex]];
     const stat = AppState.stats[q.id] || { coeff: 1.5, note: '' };
     const isChecked = AppState.isAnswerChecked[qIndex];
@@ -91,11 +101,11 @@ export function renderQuestion(isRefresh = false) {
 
         card.appendChild(tBtn);
 
-        // Autoplay Logic
-        if (AppState.ttsAutoplay && !isAudioPlaying) {
-            // If we came from a navigation interruption, wait 1.5s (browsing mode)
-            // Otherwise start immediately (sequential mode)
-            const delay = lastTtsStopReason === 'navigation' ? 1500 : 100;
+        // Autoplay Logic - Only trigger on new navigation, never on UI refresh
+        if (!isRefresh && isNewQuestion && AppState.ttsAutoplay && !isAudioPlaying) {
+            // User browsing delay: If we interrupted a previous playback, wait 5s
+            // Normal flow: wait 1s (1000ms)
+            const delay = lastTtsStopReason === 'navigation' ? 5000 : 1000;
 
             autoplayTimeoutId = setTimeout(() => {
                 autoplayTimeoutId = null;
