@@ -6,7 +6,7 @@ import { migrateOldData } from './core/migration.js';
 import { processJSON, loadFromUrl, loadFromFile, normalizeQuestions } from './features/sources/sources-service.js';
 import { renderSourcesList } from './features/sources/sources-ui.js';
 import { prepareTest, finishTest, prepareRetake } from './features/test/test-engine.js';
-import { renderQuestion, handleCheckAnswer, updateIndicators, handleTranslation, handleDifficultyRating, renderTestResults } from './features/test/test-ui.js';
+import { renderQuestion, handleCheckAnswer, updateIndicators, handleTranslation, handleDifficultyRating, renderTestResults, handleTtsToggle, getIsAudioPlaying } from './features/test/test-ui.js';
 import { renderStatsList, updateHomeStats, setupStatsEventListeners } from './features/stats/stats-module.js';
 
 
@@ -212,6 +212,27 @@ window.renderQuestionPreview = (q, stats = null, source = null) => {
             // Default: above
             card.insertBefore(img, qTextEl);
         }
+    }
+    
+    // Handle TTS in Preview
+    const isPlaying = getIsAudioPlaying();
+    card.querySelectorAll('.tts-btn').forEach(c => c.remove());
+    if (AppState.ttsEnabled) {
+        const tBtn = document.createElement('button');
+        tBtn.className = 'tts-btn';
+        if (isPlaying) tBtn.classList.add('playing');
+        tBtn.innerHTML = isPlaying ? 
+            '<svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2.5"><rect x="6" y="4" width="4" height="16"></rect><rect x="14" y="4" width="4" height="16"></rect></svg>' : 
+            '<svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2.5"><polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5"></polygon><path d="M19.07 4.93a10 10 0 0 1 0 14.14M15.54 8.46a5 5 0 0 1 0 7.07"></path></svg>';
+        
+        tBtn.onclick = () => {
+            const questionText = q.content?.text || q.text || '';
+            handleTtsToggle(questionText, () => {
+                // Refresh preview UI
+                renderQuestionPreview(q, stats, AppState.currentPreviewSource);
+            });
+        };
+        card.appendChild(tBtn);
     }
 
     // Reset translation state for new question
@@ -483,13 +504,47 @@ function setupEventListeners() {
 
     // TTS Toggle
     const ttsToggle = document.getElementById('ttsToggle');
+    const ttsAutoplayToggle = document.getElementById('ttsAutoplayToggle');
     const ttsContainer = document.getElementById('ttsSettingsContainer');
     const ttsMenuSpeed = document.getElementById('ttsMenuSpeed');
 
     const updateTtsMenuUI = () => {
         if (!ttsToggle || !ttsContainer) return;
         ttsContainer.style.display = ttsToggle.checked ? 'block' : 'none';
-        if (ttsMenuSpeed) ttsMenuSpeed.value = AppState.ttsSpeed;
+        
+        if (ttsAutoplayToggle) ttsAutoplayToggle.checked = AppState.ttsAutoplay;
+        
+        if (ttsMenuSpeed) {
+            const val = AppState.ttsSpeed;
+            ttsMenuSpeed.value = val;
+            
+            updateTtsTooltip(val);
+        }
+    };
+
+    const updateTtsTooltip = (val) => {
+        const tooltip = document.getElementById('ttsSliderTooltip');
+        if (!tooltip || !ttsMenuSpeed) return;
+
+        const displayVal = (val * 2.0).toFixed(1);
+        tooltip.textContent = `x${displayVal}`;
+
+        // Position tooltip
+        const min = parseFloat(ttsMenuSpeed.min);
+        const max = parseFloat(ttsMenuSpeed.max);
+        const percent = ((val - min) / (max - min)) * 100;
+        tooltip.style.left = `${percent}%`;
+
+        // Highlight default (0.5 actual / x1.0 display)
+        if (Math.abs(val - 0.5) < 0.01) {
+            ttsMenuSpeed.classList.add('is-default');
+            tooltip.style.color = 'var(--error-color)';
+            tooltip.style.borderColor = 'var(--error-color)';
+        } else {
+            ttsMenuSpeed.classList.remove('is-default');
+            tooltip.style.color = 'var(--primary-color)';
+            tooltip.style.borderColor = 'var(--border-color)';
+        }
     };
 
     if (ttsToggle) {
@@ -503,9 +558,18 @@ function setupEventListeners() {
         };
     }
 
+    if (ttsAutoplayToggle) {
+        ttsAutoplayToggle.onchange = (e) => {
+            AppState.ttsAutoplay = e.target.checked;
+            import('./core/state.js').then(m => m.saveTtsSettings());
+        };
+    }
+
     if (ttsMenuSpeed) {
         ttsMenuSpeed.oninput = (e) => {
-            AppState.ttsSpeed = parseFloat(e.target.value);
+            const val = parseFloat(e.target.value);
+            AppState.ttsSpeed = val;
+            updateTtsTooltip(val);
             import('./core/state.js').then(m => m.saveTtsSettings());
         };
     }

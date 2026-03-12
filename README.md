@@ -29,6 +29,12 @@ Experience the application live: **[https://tafirnat.github.io/exam-app/](https:
 - **Premium UI/UX**: Modern dark mode, glassmorphism elements, and smooth micro-animations.
 - **Single-File Distribution**: Optimized build process that generates a perfectly standalone `index.html` file for easy hosting Anywhere.
 - **Custom Data Sources**: Load your exams from local JSON files or remote URLs.
+- **Advanced Text-to-Speech (TTS)**:
+  - **Manual Playback**: Tap the speaker icon to read questions aloud.
+  - **Autoplay Mode**: Automatically reads each new question upon navigation.
+  - **Speed Control**: Adjustable speed range from **x0.7 to x1.3** with a smooth, interactive slider.
+  - **Premium UI**: Floating labels and a professional, minimalist control interface.
+  - **Language Sync**: Automatically uses the UI language for speech synthesis.
 
 ## 🛠️ Tech Stack
 

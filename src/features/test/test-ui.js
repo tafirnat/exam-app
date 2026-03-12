@@ -6,11 +6,42 @@ import { evaluateAnswer, updateStats, finishTest, calculateRetrievability } from
 
 let currentAudio = null;
 let isAudioPlaying = false;
+let autoplayTimeoutId = null;
+let lastTtsStopReason = 'none'; // 'none', 'finished', 'navigation', 'manual'
 
-export function renderQuestion() {
+export function getIsAudioPlaying() {
+    return isAudioPlaying;
+}
+
+function stopAudio(silent = false, reason = 'manual') {
+    if (currentAudio) {
+        currentAudio.onended = null;
+        currentAudio.pause();
+        currentAudio = null;
+    }
+    isAudioPlaying = false;
+    if (reason !== 'none') lastTtsStopReason = reason;
+    if (!silent) renderQuestion();
+}
+
+export function renderQuestion(isRefresh = false) {
     if (!AppState.currentTest || AppState.currentTest.length === 0) {
         return;
     }
+
+    // New: If navigating while audio is playing, stop it and mark as interrupted
+    // Fix: Only stop if it's a real navigation, not just a UI refresh
+    if (!isRefresh && isAudioPlaying) {
+        stopAudio(true, 'navigation');
+    }
+
+    // New: Clear any pending autoplay
+    // Fix: Only clear on real navigation
+    if (!isRefresh && autoplayTimeoutId) {
+        clearTimeout(autoplayTimeoutId);
+        autoplayTimeoutId = null;
+    }
+
     const qIndex = AppState.currentIndex;
     const q = AppState.rawQuestions[AppState.currentTest[qIndex]];
     const stat = AppState.stats[q.id] || { coeff: 1.5, note: '' };
@@ -59,6 +90,20 @@ export function renderQuestion() {
         tBtn.onclick = () => handleTtsToggle(q.content?.text || q.text || '');
 
         card.appendChild(tBtn);
+
+        // Autoplay Logic
+        if (AppState.ttsAutoplay && !isAudioPlaying) {
+            // If we came from a navigation interruption, wait 1.5s (browsing mode)
+            // Otherwise start immediately (sequential mode)
+            const delay = lastTtsStopReason === 'navigation' ? 1500 : 100;
+
+            autoplayTimeoutId = setTimeout(() => {
+                autoplayTimeoutId = null;
+                if (AppState.ttsAutoplay && !isAudioPlaying) {
+                    handleTtsToggle(q.content?.text || q.text || '');
+                }
+            }, delay);
+        }
     }
 
     // Reset translation state for new question
@@ -688,21 +733,23 @@ window.showQuestionResult = (testId, questionId) => {
     }));
 };
 
-export function handleTtsToggle(text) {
+export function handleTtsToggle(text, onRefresh = null) {
+    const refresh = onRefresh || (() => renderQuestion(true));
+
     if (isAudioPlaying && currentAudio) {
-        currentAudio.pause();
-        currentAudio = null;
-        isAudioPlaying = false;
-        renderQuestion();
+        stopAudio(onRefresh !== null, 'manual');
         return;
     }
 
     if (!text) return;
 
+    // Reset stop reason when starting manually or via autoplay
+    lastTtsStopReason = 'none';
+
     const lang = AppState.language === 'tr' ? 'tr' : (AppState.language === 'de' ? 'de' : 'en');
     const voicePrefix = lang === 'tr' ? 'tr-TR-Wavenet-' : (lang === 'de' ? 'de-DE-Wavenet-' : 'en-US-Wavenet-');
     const voice = AppState.currentTtsVoice || "A";
-    const speed = AppState.ttsSpeed || 1.0;
+    const speed = AppState.ttsSpeed || 0.5;
 
     const baseUrl = "https://www.google.com/speech-api/v1/synthesize";
     const params = new URLSearchParams({
@@ -719,17 +766,20 @@ export function handleTtsToggle(text) {
 
     currentAudio = new Audio(url);
     isAudioPlaying = true;
-    renderQuestion();
+    refresh();
 
-    currentAudio.play().catch(err => {
-        console.error("TTS Playback failed:", err);
-        isAudioPlaying = false;
-        renderQuestion();
-    });
+    if (currentAudio) {
+        currentAudio.play().catch(err => {
+            console.error("TTS Playback failed:", err);
+            isAudioPlaying = false;
+            refresh();
+        });
 
-    currentAudio.onended = () => {
-        isAudioPlaying = false;
-        currentAudio = null;
-        renderQuestion();
-    };
+        currentAudio.onended = () => {
+            isAudioPlaying = false;
+            currentAudio = null;
+            lastTtsStopReason = 'finished';
+            refresh();
+        };
+    }
 }

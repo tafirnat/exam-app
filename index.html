@@ -66,12 +66,63 @@
 
         <div class="dropdown-divider"></div>
 
-        <button class="dropdown-item" id="menuEditPrompt">
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor">
+        <div class="dropdown-header" style="display: flex; justify-content: space-between; align-items: center;">
+            <span data-i18n="tts_toggle" style="flex: 1;">Seslendirme aktif</span>
+            <label class="switch">
+                <input type="checkbox" id="ttsToggle">
+                <span class="slider round"></span>
+            </label>
+        </div>
+        <div id="ttsSettingsContainer" style="display: none;">
+            
+            <div class="dropdown-item-info" style="margin-top: 0; display: flex; flex-direction: column; align-items: center;">
+                <div class="tts-speed-control" style="width: 100%; display: flex; flex-direction: column; align-items: center;">
+                    <div class="tts-label-row" style="width: 100%; margin-bottom: 0.25rem;">
+                        <span data-i18n="tts_speed" class="tts-label">Ses Hızı</span>
+                    </div>
+                    <div class="slider-with-ticks">
+                        <div class="tts-slider-tooltip" id="ttsSliderTooltip">x1.0</div>
+                        <div class="tts-ticks-container" id="ttsTicksContainer">
+                            <div class="tts-tick-dot"></div>
+                            <div class="tts-tick-dot"></div>
+                            <div class="tts-tick-dot"></div>
+                            <div class="tts-tick-dot default"></div>
+                            <div class="tts-tick-dot"></div>
+                            <div class="tts-tick-dot"></div>
+                            <div class="tts-tick-dot"></div>
+                        </div>
+                        <input type="range" id="ttsMenuSpeed" min="0.35" max="0.65" step="0.05" class="menu-tts-slider">
+                    </div>
+                </div>
+            </div>
+            <!-- Autoplay as its own item -->
+            <div class="dropdown-item-info" style="padding: 0.5rem 1rem; border-top: 1px solid var(--border-color); margin-top: 0.5rem;">
+                <div class="tts-label-row" style="width: 100%; margin-bottom: 0.5rem; display: flex; justify-content: space-between; align-items: center;">
+                    <span data-i18n="tts_autoplay" class="tts-label">Otomatik Oynat</span>
+                    <label class="switch">
+                        <input type="checkbox" id="ttsAutoplayToggle">
+                        <span class="slider round"></span>
+                    </label>
+                </div>
+            </div>
+            <div class="dropdown-item-note">
+                <svg viewBox="0 0 24 24" width="12" height="12" fill="none" stroke="currentColor" stroke-width="2">
+                    <circle cx="12" cy="12" r="10"></circle>
+                    <line x1="12" y1="16" x2="12" y2="12"></line>
+                    <line x1="12" y1="8" x2="12.01" y2="8"></line>
+                </svg>
+                <span data-i18n="tts_lang_note">TTS dili uygulama dili ile aynıdır</span>
+            </div>
+        </div>
+
+        <div class="dropdown-divider"></div>
+
+        <button class="dropdown-item" id="menuEditPrompt" style="display: flex; justify-content: space-between; align-items: center;">
+            <span data-i18n="edit_prompt" class="tts-label">Promptu Düzenle</span>
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" width="16" height="16">
                 <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"></path>
                 <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"></path>
             </svg>
-            <span data-i18n="edit_prompt">Promptu Düzenle</span>
         </button>
 
         <div class="dropdown-divider"></div>
@@ -134,29 +185,6 @@
                 <span data-i18n="copy_ai">KI Prompt kopieren</span>
             </button>
             <div class="dropdown-divider"></div>
-            <div class="dropdown-item dropdown-toggle-item">
-                <span data-i18n="tts_toggle" style="flex: 1;">Seslendirme aktif</span>
-                <label class="switch">
-                    <input type="checkbox" id="ttsToggle">
-                    <span class="slider round"></span>
-                </label>
-            </div>
-            <div id="ttsSettingsContainer" style="display: none;">
-                <div class="dropdown-item-info">
-                    <div class="tts-speed-control">
-                        <span data-i18n="tts_speed" class="tts-label">Ses Hızı</span>
-                        <input type="range" id="ttsMenuSpeed" min="0.5" max="2.0" step="0.1" class="menu-tts-slider">
-                    </div>
-                </div>
-                <div class="dropdown-item-note">
-                    <svg viewBox="0 0 24 24" width="12" height="12" fill="none" stroke="currentColor" stroke-width="2">
-                        <circle cx="12" cy="12" r="10"></circle>
-                        <line x1="12" y1="16" x2="12" y2="12"></line>
-                        <line x1="12" y1="8" x2="12.01" y2="8"></line>
-                    </svg>
-                    <span data-i18n="tts_lang_note">TTS dili uygulama dili ile aynıdır</span>
-                </div>
-            </div>
             <div class="dropdown-divider"></div>
             <button class="dropdown-item" id="menuExit" style="color: var(--error-color);">
                 <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" style="color: inherit;">
