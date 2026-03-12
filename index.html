@@ -149,9 +149,16 @@
                                 <span class="slider-small"></span>
                             </label>
                         </div>
-                        <div class="input-group" style="margin-bottom: 0;" id="timerLimitContainer">
-                            <label data-i18n="timer_countdown_limit" style="font-size: 0.85rem;">Soru Süresi (Saniye)</label>
-                            <input type="number" id="timerCountdownLimitInput" min="5" max="3600" value="59" style="width: 100%; padding: 0.5rem; border-radius: var(--radius-md); border: 1px solid var(--border-color); background-color: var(--bg-color); color: var(--text-primary); font-size: 0.95rem;">
+                        <div class="menu-item">
+                            <span><span data-i18n="timer_countdown_limit">Soru Süresi (Saniye)</span></span>
+                            <input type="number" id="timerCountdownLimitInput" min="1" max="999" value="59" style="width: 60px; text-align: center;">
+                        </div>
+                        <div class="menu-item">
+                            <span><span data-i18n="timer_countdown_autocheck">Süre bitince cevabı göster</span></span>
+                            <label class="switch">
+                                <input type="checkbox" id="timerCountdownAutoCheckToggle">
+                                <span class="slider"></span>
+                            </label>
                         </div>
                     </div>
                 </div>
@@ -504,7 +511,7 @@
             <div class="indicators-bar" id="indicatorsBar">
                 <span id="progressText">Frage 1 / 20</span>
                 
-                <span id="timerDisplay" style="display: none; align-items: center; gap: 4px; font-variant-numeric: tabular-nums; font-weight: 500; font-size: 0.95rem; margin-left: 0.75rem;">
+                <span id="timerDisplay" style="display: none; align-items: center; gap: 4px; font-variant-numeric: tabular-nums; font-weight: 600; font-size: 0.9rem; margin-left: 0.75rem; color: var(--text-secondary);">
                     <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2">
                         <circle cx="12" cy="12" r="10"></circle>
                         <polyline points="12 6 12 12 16 14"></polyline>

@@ -580,6 +580,13 @@ function setupEventListeners() {
     const stopwatchToggle = document.getElementById('timerStopwatchToggle');
     const countdownToggle = document.getElementById('timerCountdownToggle');
     const countdownLimitInput = document.getElementById('timerCountdownLimitInput');
+    const countdownAutoCheckToggle = document.getElementById('timerCountdownAutoCheckToggle');
+
+    const updateCountdownUI = () => {
+        const isEnabled = AppState.timerCountdownEnabled;
+        if (countdownLimitInput) countdownLimitInput.disabled = !isEnabled;
+        if (countdownAutoCheckToggle) countdownAutoCheckToggle.disabled = !isEnabled;
+    };
 
     if (stopwatchToggle) {
         stopwatchToggle.checked = AppState.timerStopwatchEnabled;
@@ -588,6 +595,7 @@ function setupEventListeners() {
             if (e.target.checked && AppState.timerCountdownEnabled) {
                 AppState.timerCountdownEnabled = false;
                 if (countdownToggle) countdownToggle.checked = false;
+                updateCountdownUI();
             }
             import('./core/state.js').then(m => m.saveTimerSettings());
         };
@@ -595,12 +603,14 @@ function setupEventListeners() {
     
     if (countdownToggle) {
         countdownToggle.checked = AppState.timerCountdownEnabled;
+        updateCountdownUI();
         countdownToggle.onchange = (e) => {
             AppState.timerCountdownEnabled = e.target.checked;
             if (e.target.checked && AppState.timerStopwatchEnabled) {
                 AppState.timerStopwatchEnabled = false;
                 if (stopwatchToggle) stopwatchToggle.checked = false;
             }
+            updateCountdownUI();
             import('./core/state.js').then(m => m.saveTimerSettings());
         };
     }
@@ -621,6 +631,14 @@ function setupEventListeners() {
                 e.target.value = 59;
                 import('./core/state.js').then(m => m.saveTimerSettings());
             }
+        };
+    }
+
+    if (countdownAutoCheckToggle) {
+        countdownAutoCheckToggle.checked = AppState.timerAutoCheckEnabled ?? true;
+        countdownAutoCheckToggle.onchange = (e) => {
+            AppState.timerAutoCheckEnabled = e.target.checked;
+            import('./core/state.js').then(m => m.saveTimerSettings());
         };
     }
 

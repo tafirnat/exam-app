@@ -64,7 +64,7 @@ function tickTimer(textElement, skipIncrement = false) {
         const s = (totalSecs % 60).toString().padStart(2, '0');
         displayStr = `${m}:${s}`;
         
-        if (textElement) textElement.style.color = 'inherit'; // default color
+        if (textElement) textElement.style.color = 'var(--text-secondary)'; // default color
     } else if (AppState.timerCountdownEnabled) {
         // Countdown mode
         if (AppState.testTracking.questionTimeRemaining[qIndex] === undefined) {
@@ -76,9 +76,11 @@ function tickTimer(textElement, skipIncrement = false) {
                 AppState.testTracking.questionTimeRemaining[qIndex]--;
             } else if (AppState.testTracking.questionTimeRemaining[qIndex] === 0) {
                 // Time's up - trigger auto click if available
-                const btn = document.getElementById('checkBtn');
-                if (btn && btn.style.display !== 'none' && !btn.disabled) {
-                    btn.click(); // Automatically click check button
+                if (AppState.timerAutoCheckEnabled) {
+                    const btn = document.getElementById('checkBtn');
+                    if (btn && btn.style.display !== 'none' && !btn.disabled) {
+                        btn.click(); // Automatically click check button
+                    }
                 }
             }
         }
@@ -90,7 +92,7 @@ function tickTimer(textElement, skipIncrement = false) {
             if (rem <= 10 && !isChecked) {
                 textElement.style.color = 'var(--error-color)';
             } else {
-                textElement.style.color = 'inherit';
+                textElement.style.color = 'var(--text-secondary)';
             }
         }
     }

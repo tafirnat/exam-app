@@ -36,6 +36,7 @@ export const AppState = {
     timerStopwatchEnabled: JSON.parse(localStorage.getItem('focus_app_timer_stopwatch') ?? 'false'),
     timerCountdownEnabled: JSON.parse(localStorage.getItem('focus_app_timer_countdown') ?? 'false'),
     timerCountdownLimit: parseInt(localStorage.getItem('focus_app_timer_limit') || '59', 10),
+    timerAutoCheckEnabled: JSON.parse(localStorage.getItem('focus_app_timer_auto_check') ?? 'true'), // Default to true
     currentTtsVoice: null, // Randomly selected at test start
     viewHistory: [] // Stack to track last 10 visited screens
 };
@@ -62,6 +63,7 @@ export function saveTimerSettings() {
     localStorage.setItem('focus_app_timer_stopwatch', JSON.stringify(AppState.timerStopwatchEnabled));
     localStorage.setItem('focus_app_timer_countdown', JSON.stringify(AppState.timerCountdownEnabled));
     localStorage.setItem('focus_app_timer_limit', AppState.timerCountdownLimit.toString());
+    localStorage.setItem('focus_app_timer_auto_check', JSON.stringify(AppState.timerAutoCheckEnabled));
 }
 
 export function saveSources() {
