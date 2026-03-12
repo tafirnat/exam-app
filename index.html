@@ -51,6 +51,34 @@
 
         <div class="dropdown-divider"></div>
 
+        <div class="dropdown-header" data-i18n="ai_integration_title">AI Entegrasyonu</div>
+        <div style="padding: 0 1rem 1rem 1.5rem;">
+            <select id="aiIntegrationSelect" class="menu-select" style="margin-bottom: 0.5rem;">
+                <option value="clipboard" data-i18n="ai_clipboard_only">Sadece Panoya Kopyala</option>
+                <option value="gemini">Google Gemini</option>
+                <option value="chatgpt">ChatGPT</option>
+                <option value="perplexity">Perplexity</option>
+                <option value="copilot">Microsoft Copilot</option>
+                <option value="deepseek">DeepSeek</option>
+            </select>
+            <div style="font-size: 0.7rem; color: var(--text-secondary); line-height: 1.2;"
+                data-i18n="ai_integration_hint">
+                Seçili AI, prompt butonuna basıldığında otomatik açılır.
+            </div>
+        </div>
+
+        <div class="dropdown-divider"></div>
+
+        <button class="dropdown-item" id="menuEditPrompt" style="display: flex; justify-content: space-between; align-items: center;">
+            <span data-i18n="edit_prompt" class="tts-label">Promptu Düzenle</span>
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" width="16" height="16">
+                <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"></path>
+                <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"></path>
+            </svg>
+        </button>
+
+        <div class="dropdown-divider"></div>
+
         <div class="dropdown-header" style="display: flex; justify-content: space-between; align-items: center;">
             <span data-i18n="target_lang_label">Çeviri Hedef Dili</span>
             <label class="switch">
@@ -112,33 +140,6 @@
                     <line x1="12" y1="8" x2="12.01" y2="8"></line>
                 </svg>
                 <span data-i18n="tts_lang_note">TTS dili uygulama dili ile aynıdır</span>
-            </div>
-        </div>
-
-        <div class="dropdown-divider"></div>
-
-        <button class="dropdown-item" id="menuEditPrompt" style="display: flex; justify-content: space-between; align-items: center;">
-            <span data-i18n="edit_prompt" class="tts-label">Promptu Düzenle</span>
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" width="16" height="16">
-                <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"></path>
-                <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"></path>
-            </svg>
-        </button>
-
-        <div class="dropdown-divider"></div>
-        <div class="dropdown-header" data-i18n="ai_integration_title">AI Entegrasyonu</div>
-        <div style="padding: 0 1rem 1rem 1.5rem;">
-            <select id="aiIntegrationSelect" class="menu-select" style="margin-bottom: 0.5rem;">
-                <option value="clipboard" data-i18n="ai_clipboard_only">Sadece Panoya Kopyala</option>
-                <option value="gemini">Google Gemini</option>
-                <option value="chatgpt">ChatGPT</option>
-                <option value="perplexity">Perplexity</option>
-                <option value="copilot">Microsoft Copilot</option>
-                <option value="deepseek">DeepSeek</option>
-            </select>
-            <div style="font-size: 0.7rem; color: var(--text-secondary); line-height: 1.2;"
-                data-i18n="ai_integration_hint">
-                Seçili AI, prompt butonuna basıldığında otomatik açılır.
             </div>
         </div>
 
