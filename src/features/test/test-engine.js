@@ -112,6 +112,8 @@ function startTestTracking(count) {
         endTime: null,
         sourceNames: names,
         questionCount: count,
+        elapsedSeconds: 0,
+        questionTimeRemaining: {},
         results: [] // Will store { questionId, isCorrect, userAnswer }
     };
 }
@@ -172,6 +174,8 @@ export function prepareRetake(historyEntry, onlyIncorrect = false) {
         sourceNames: historyEntry.sourceNames,
         questionCount: shuffledIndices.length,
         retakeOfId: historyEntry.id, // Reference to original
+        elapsedSeconds: 0,
+        questionTimeRemaining: {},
         results: []
     };
 

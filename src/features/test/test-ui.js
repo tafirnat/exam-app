@@ -3,6 +3,7 @@ import { AppState, saveStats } from '../../core/state.js';
 import { translateText, showToast, showConfirm, getCorrectAnswers } from '../../core/utils.js';
 import { t, targetLanguages } from '../../core/i18n.js';
 import { evaluateAnswer, updateStats, finishTest, calculateRetrievability } from './test-engine.js';
+import { resetTimerForNewQuestion } from './timer-module.js';
 
 let currentAudio = null;
 let isAudioPlaying = false;
@@ -58,6 +59,9 @@ export function renderQuestion(isRefresh = false) {
             clearTimeout(autoplayTimeoutId);
             autoplayTimeoutId = null;
         }
+
+        // Reset countdown timer if applicable
+        resetTimerForNewQuestion();
     }
     const q = AppState.rawQuestions[AppState.currentTest[qIndex]];
     const stat = AppState.stats[q.id] || { coeff: 1.5, note: '' };

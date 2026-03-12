@@ -8,6 +8,7 @@ import { renderSourcesList } from './features/sources/sources-ui.js';
 import { prepareTest, finishTest, prepareRetake } from './features/test/test-engine.js';
 import { renderQuestion, handleCheckAnswer, updateIndicators, handleTranslation, handleDifficultyRating, renderTestResults, handleTtsToggle, getIsAudioPlaying, stopAudio } from './features/test/test-ui.js';
 import { renderStatsList, updateHomeStats, setupStatsEventListeners } from './features/stats/stats-module.js';
+import { initTimer, stopTimer } from './features/test/timer-module.js';
 
 
 
@@ -584,6 +585,10 @@ function setupEventListeners() {
         stopwatchToggle.checked = AppState.timerStopwatchEnabled;
         stopwatchToggle.onchange = (e) => {
             AppState.timerStopwatchEnabled = e.target.checked;
+            if (e.target.checked && AppState.timerCountdownEnabled) {
+                AppState.timerCountdownEnabled = false;
+                if (countdownToggle) countdownToggle.checked = false;
+            }
             import('./core/state.js').then(m => m.saveTimerSettings());
         };
     }
@@ -592,6 +597,10 @@ function setupEventListeners() {
         countdownToggle.checked = AppState.timerCountdownEnabled;
         countdownToggle.onchange = (e) => {
             AppState.timerCountdownEnabled = e.target.checked;
+            if (e.target.checked && AppState.timerStopwatchEnabled) {
+                AppState.timerStopwatchEnabled = false;
+                if (stopwatchToggle) stopwatchToggle.checked = false;
+            }
             import('./core/state.js').then(m => m.saveTimerSettings());
         };
     }
@@ -971,6 +980,12 @@ function switchView(view, isBack = false) {
             if (AppState.viewHistory.length > 10) AppState.viewHistory.pop();
             renderHistoryList();
         }
+    }
+
+    if (view === 'test') {
+        initTimer();
+    } else {
+        stopTimer();
     }
 
     document.getElementById('homeView').style.display = view === 'home' ? 'block' : 'none';
