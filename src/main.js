@@ -584,8 +584,10 @@ function setupEventListeners() {
 
     const updateCountdownUI = () => {
         const isEnabled = AppState.timerCountdownEnabled;
-        if (countdownLimitInput) countdownLimitInput.disabled = !isEnabled;
-        if (countdownAutoCheckToggle) countdownAutoCheckToggle.disabled = !isEnabled;
+        const subMenu = document.getElementById('countdownSubMenu');
+        if (subMenu) {
+            subMenu.style.display = isEnabled ? 'flex' : 'none';
+        }
     };
 
     if (stopwatchToggle) {

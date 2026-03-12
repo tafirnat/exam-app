@@ -142,23 +142,27 @@
                                 <span class="slider-small"></span>
                             </label>
                         </div>
-                        <div style="display: flex; justify-content: space-between; align-items: center; padding-bottom: 0.5rem; border-bottom: 1px solid var(--border-color);">
-                            <span data-i18n="timer_countdown" style="font-size: 0.85rem;">Soru Başına Geri Sayım</span>
-                            <label class="switch-small">
-                                <input type="checkbox" id="timerCountdownToggle">
-                                <span class="slider-small"></span>
-                            </label>
-                        </div>
-                        <div style="display: flex; justify-content: space-between; align-items: center; padding-bottom: 0.5rem; border-bottom: 1px solid var(--border-color);">
-                            <span data-i18n="timer_countdown_limit" style="font-size: 0.85rem;">Soru Süresi (Saniye)</span>
-                            <input type="number" id="timerCountdownLimitInput" min="1" max="999" value="59" style="width: 60px; text-align: center; border: 1px solid var(--border-color); border-radius: 4px; background-color: var(--surface-hover); color: var(--text-primary); padding: 0.2rem;">
-                        </div>
-                        <div style="display: flex; justify-content: space-between; align-items: center;">
-                            <span data-i18n="timer_countdown_autocheck" style="font-size: 0.85rem;">Süre bitince cevabı göster</span>
-                            <label class="switch-small">
-                                <input type="checkbox" id="timerCountdownAutoCheckToggle">
-                                <span class="slider-small"></span>
-                            </label>
+                        <div style="display: flex; flex-direction: column; padding-bottom: 0.5rem; border-bottom: 1px solid var(--border-color);">
+                            <div style="display: flex; justify-content: space-between; align-items: center;">
+                                <span data-i18n="timer_countdown" style="font-size: 0.85rem;">Soru Başına Geri Sayım</span>
+                                <label class="switch-small">
+                                    <input type="checkbox" id="timerCountdownToggle">
+                                    <span class="slider-small"></span>
+                                </label>
+                            </div>
+                            <div id="countdownSubMenu" style="display: flex; flex-direction: column; gap: 0.6rem; padding: 0.75rem; margin-top: 0.75rem; border-left: 3px solid var(--primary-color); background-color: var(--surface-hover); border-radius: 0 6px 6px 0;">
+                                <div style="display: flex; justify-content: space-between; align-items: center;">
+                                    <span data-i18n="timer_countdown_limit" style="font-size: 0.8rem; color: var(--text-secondary);">Soru Süresi (Saniye)</span>
+                                    <input type="number" id="timerCountdownLimitInput" min="1" max="999" value="59" style="width: 60px; text-align: center; border: 1px solid var(--border-color); border-radius: 4px; background-color: var(--bg-color); color: var(--text-primary); padding: 0.2rem;">
+                                </div>
+                                <div style="display: flex; justify-content: space-between; align-items: center;">
+                                    <span data-i18n="timer_countdown_autocheck" style="font-size: 0.8rem; color: var(--text-secondary);">Süre bitince cevabı göster</span>
+                                    <label class="switch-small">
+                                        <input type="checkbox" id="timerCountdownAutoCheckToggle">
+                                        <span class="slider-small"></span>
+                                    </label>
+                                </div>
+                            </div>
                         </div>
                     </div>
                 </div>
