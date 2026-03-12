@@ -75,11 +75,9 @@ function tickTimer(textElement, skipIncrement = false) {
             if (AppState.testTracking.questionTimeRemaining[qIndex] > 0) {
                 AppState.testTracking.questionTimeRemaining[qIndex]--;
             } else if (AppState.testTracking.questionTimeRemaining[qIndex] === 0) {
-                // Time's up - trigger auto click if available
                 if (AppState.timerAutoCheckEnabled) {
-                    const btn = document.getElementById('checkBtn');
-                    if (btn && btn.style.display !== 'none' && !btn.disabled) {
-                        btn.click(); // Automatically click check button
+                    if (!AppState.isAnswerChecked[qIndex]) {
+                        import('./test-ui.js').then(m => m.handleCheckAnswer(true));
                     }
                 }
             }
