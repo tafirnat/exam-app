@@ -150,7 +150,7 @@
                                     <span class="slider-small"></span>
                                 </label>
                             </div>
-                            <div id="countdownSubMenu" style="display: flex; flex-direction: column; gap: 0.6rem; padding: 0.75rem; margin-top: 0.75rem; border-left: 3px solid var(--primary-color); background-color: var(--surface-hover); border-radius: 0 6px 6px 0;">
+                            <div id="countdownSubMenu" style="display: flex; flex-direction: column; gap: 0.6rem; padding: 0.75rem; margin-top: 0.75rem; background-color: var(--surface-hover); border-radius: 6px;">
                                 <div style="display: flex; justify-content: space-between; align-items: center;">
                                     <span data-i18n="timer_countdown_limit" style="font-size: 0.8rem; color: var(--text-secondary);">Soru Süresi (Saniye)</span>
                                     <input type="number" id="timerCountdownLimitInput" min="1" max="999" value="59" style="width: 60px; text-align: center; border: 1px solid var(--border-color); border-radius: 4px; background-color: var(--bg-color); color: var(--text-primary); padding: 0.2rem;">
@@ -187,19 +187,18 @@
                     </svg>
                 </div>
                 <div class="menu-section-content" id="section-translate">
-                    <div style="padding: 0 0.5rem;">
-                        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1rem; padding-bottom: 0.5rem; border-bottom: 1px solid var(--border-color);">
-                            <span data-i18n="enable_translation" style="font-size: 0.85rem;">Çeviriyi Etkinleştir</span>
-                            <label class="switch-small">
-                                <input type="checkbox" id="translationToggle">
-                                <span class="slider-small"></span>
-                            </label>
+                        <div style="padding: 0 0.5rem;">
+                            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1rem; padding-bottom: 0.5rem; border-bottom: 1px solid var(--border-color);">
+                                <span data-i18n="enable_translation" style="font-size: 0.85rem;">Çeviriyi Etkinleştir</span>
+                                <label class="switch-small">
+                                    <input type="checkbox" id="translationToggle">
+                                    <span class="slider-small"></span>
+                                </label>
+                            </div>
+                            <select id="translationTargetSelect" class="menu-select" style="display: none;">
+                                <!-- Populated by JS -->
+                            </select>
                         </div>
-                        <div class="menu-label" data-i18n="target_lang_label">Hedef Dil</div>
-                        <select id="translationTargetSelect" class="menu-select">
-                            <!-- Populated by JS -->
-                        </select>
-                    </div>
                 </div>
             </div>
 
@@ -225,7 +224,7 @@
                             <span class="slider-small"></span>
                         </label>
                     </div>
-                    <div id="ttsSettingsContainer">
+                    <div id="ttsSettingsContainer" style="display: none;">
                         <div class="menu-label" data-i18n="tts_speed">Ses Hızı</div>
                         <div class="slider-with-ticks" style="margin: 1.5rem 0.5rem 2rem 0.5rem;">
                             <div class="tts-slider-tooltip" id="ttsSliderTooltip">x1.0</div>
@@ -370,10 +369,10 @@
                     <div class="input-group">
                         <label data-i18n="question_count_label">Anzahl der Fragen</label>
                         <select id="questionCount">
-                            <option value="10" data-i18n="q_count_10">10 Fragen (Smart)</option>
-                            <option value="15" data-i18n="q_count_15">15 Fragen (Smart)</option>
-                            <option value="20" data-i18n="q_count_20">20 Fragen (Smart)</option>
-                            <option value="40" data-i18n="q_count_40">40 Fragen (Prüfung)</option>
+                            <option value="10" data-i18n="q_count_10">10 Fragen</option>
+                            <option value="15" data-i18n="q_count_15">15 Fragen</option>
+                            <option value="20" data-i18n="q_count_20">20 Fragen</option>
+                            <option value="40" data-i18n="q_count_40">40 Fragen</option>
                         </select>
                     </div>
                     <div id="startBtnContainer" style="display: flex; gap: 0.75rem; flex-direction: column;">
@@ -478,6 +477,14 @@
                         <div class="res-stat-value" id="resUnansweredCount">0</div>
                         <div class="res-stat-label" data-i18n="unanswered_count">Boş</div>
                     </div>
+                </div>
+
+                <div id="resDurationBox" style="display: none; align-items: center; justify-content: center; gap: 0.5rem; margin: 1rem 0; padding: 0.75rem; background: var(--surface-hover); border-radius: 12px; color: var(--text-secondary); font-weight: 600;">
+                    <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2">
+                        <circle cx="12" cy="12" r="10"></circle>
+                        <polyline points="12 6 12 12 16 14"></polyline>
+                    </svg>
+                    <span data-i18n="test_duration">Test Süresi</span>: <span id="resDurationText">00:00</span>
                 </div>
 
                 <div class="success-rate-container">
@@ -722,6 +729,21 @@
                                 <line x1="9" y1="9" x2="15" y2="15"></line>
                             </svg>
                             <span class="sort-btn-text" data-i18n="sort_wrong">Hata Sayısı</span>
+                            <span class="sort-dir"></span>
+                        </button>
+                        <button class="sort-btn" data-sort="retrievability">
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
+                                stroke-linecap="round" stroke-linejoin="round" style="width:16px; height:16px;">
+                                <path d="M9.5 2A2.5 2.5 0 0 1 12 4.5v15a2.5 2.5 0 0 1-2.5 2.5"></path>
+                                <path d="M14.5 2A2.5 2.5 0 0 0 12 4.5v15a2.5 2.5 0 0 0 2.5 2.5"></path>
+                                <path d="M12 11h.01"></path>
+                                <path d="M11 7h.01"></path>
+                                <path d="M13 7h.01"></path>
+                                <path d="M10 15h.01"></path>
+                                <path d="M14 15h.01"></path>
+                                <path d="M12 18h.01"></path>
+                            </svg>
+                            <span class="sort-btn-text" data-i18n="sort_retrievability">Hatırlanabilirlik</span>
                             <span class="sort-dir"></span>
                         </button>
 

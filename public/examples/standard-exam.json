@@ -3,7 +3,7 @@
         "title": "AI Learning Template (Golden Reference)",
         "id": "ref_template_001",
         "category": "Exam App Documentation",
-        "total_questions": 7,
+        "total_questions": 8,
         "date": "2026-03-08",
         "source": "https://github.com/tafirnat/exam-app",
         "description": "This file serves as a reference for AI to generate compatible test JSON files. It demonstrates all supported features of the Exam App."
@@ -277,6 +277,32 @@
                     1
                 ],
                 "explanation": "The <code>pop()</code> method removes the last element (30), and <code>append(40)</code> adds 40 at the end."
+            },
+            "user_state": {
+                "is_flagged": false,
+                "is_marked": false
+            }
+        },
+        {
+            "id": "q8_sensitive",
+            "order": 8,
+            "type": "text_input",
+            "difficulty": 3,
+            "tags": [
+                "coding",
+                "case-sensitive"
+            ],
+            "content": {
+                "text": "Which keyword is used to create a loop in Python? (Be careful with casing!)",
+                "media": []
+            },
+            "options": [],
+            "answer": {
+                "accepted_texts": [
+                    "for"
+                ],
+                "caseSensitive": true,
+                "explanation": "In Python, keywords like 'for' must be written exactly as they are defined, which is lowercase."
             },
             "user_state": {
                 "is_flagged": false,

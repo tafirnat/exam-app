@@ -24,6 +24,9 @@ window.onRetake = (historyEntry, onlyIncorrect) => {
     }
 };
 
+// --- Global access for module cross-communication ---
+window.renderStatsList = renderStatsList;
+
 // --- Initialize ---
 document.addEventListener('DOMContentLoaded', () => {
     console.log('DOMContentLoaded start');
@@ -846,40 +849,50 @@ function setupEventListeners() {
             renderStatsList(btn.dataset.filter, btn.dataset.filter === 'all' ? getStatsSearchKeyword() : '');
         };
     });
-    const statsCardHeader = document.querySelector('#statsView .stats-card-header');
 
     if (statsSearchInput) {
         // Unified function to sync search UI state
-        const syncSearchState = () => {
+        window.syncStatsSearchUI = (forceExpand = false) => {
             const input = document.getElementById('statsSearchInput');
-            const wrapper = document.getElementById('statsSearchWrapper');
-            if (!input || !wrapper) return;
+            if (!input || !statsSearchWrapper) return;
 
             const hasText = input.value.trim().length > 0;
             const hasFocus = document.activeElement === input;
-            const shouldExpand = hasText || hasFocus;
+            const shouldExpand = forceExpand || hasText || hasFocus;
 
             const sortBar = document.getElementById('statsSortBar');
 
             if (shouldExpand) {
-                wrapper.classList.add('expanded');
+                statsSearchWrapper.classList.add('expanded');
+                statsSearchWrapper.classList.remove('icon-only');
                 if (sortBar) sortBar.classList.add('search-expanded');
             } else {
-                wrapper.classList.remove('expanded');
+                statsSearchWrapper.classList.remove('expanded');
                 if (sortBar) sortBar.classList.remove('search-expanded');
-            }
-
-            // Ensure logic matches selected filter
-            if (AppState.activeStatsFilter === 'all') {
-                wrapper.classList.remove('icon-only');
-            } else {
-                wrapper.classList.add('icon-only');
+                
+                // Determine if it should be icon-only based on sort/filter state
+                const sortField = AppState.activeStatsSortField || 'original';
+                const isOriginalSort = sortField === 'original';
+                const isAllFilter = (AppState.activeStatsFilter || 'all') === 'all';
+                
+                if (isAllFilter && isOriginalSort) {
+                    statsSearchWrapper.classList.remove('icon-only');
+                } else {
+                    statsSearchWrapper.classList.add('icon-only');
+                }
             }
 
             if (statsSearchClear) {
                 statsSearchClear.style.display = input.value.length > 0 ? 'flex' : 'none';
             }
+
+            // Explicitly refresh sort UI highlights if the function exists
+            if (typeof window.refreshStatsSortUI === 'function') {
+                window.refreshStatsSortUI();
+            }
         };
+
+        const syncSearchState = window.syncStatsSearchUI;
 
         statsSearchInput.oninput = () => {
             syncSearchState();
@@ -890,52 +903,63 @@ function setupEventListeners() {
         statsSearchInput.onfocus = () => {
             if (AppState.activeStatsFilter !== 'all') {
                 const allBtn = document.querySelector('.filter-btn[data-filter="all"]');
-                if (allBtn) allBtn.click();
+                if (allBtn) {
+                    allBtn.click();
+                }
+            } else {
+                syncSearchState(true); // Force expand on focus
             }
-            syncSearchState();
         };
 
         if (statsSearchExpand) {
             statsSearchExpand.onclick = (e) => {
                 e.stopPropagation();
-                // If not on 'all' filter, switch to it first
+                
+                // 1. If not on 'all' filter, switch to it first
+                let filterSwitched = false;
                 if (AppState.activeStatsFilter !== 'all') {
                     const allBtn = document.querySelector('.filter-btn[data-filter="all"]');
                     if (allBtn) {
                         allBtn.click();
+                        filterSwitched = true;
                     }
                 }
-                setTimeout(() => {
-                    statsSearchInput.focus();
-                    syncSearchState();
-                }, 10);
+                
+                // 2. Expand UI immediately
+                syncSearchState(true); 
+                
+                // 3. Focus input
+                statsSearchInput.focus();
+                
+                // 4. Ensure final sync if no filter change happened
+                if (!filterSwitched) {
+                    syncSearchState(true);
+                }
+            };
+        }
+
+        if (statsSearchWrapper) {
+            statsSearchWrapper.onclick = (e) => {
+                if (statsSearchWrapper.classList.contains('icon-only')) {
+                    if (statsSearchExpand) statsSearchExpand.click();
+                } else if (e.target === statsSearchWrapper) {
+                    if (statsSearchInput) statsSearchInput.focus();
+                }
             };
         }
 
         statsSearchInput.onblur = () => {
-            // Small delay to let click handlers (like clear) execute first
-            setTimeout(syncSearchState, 10);
+            setTimeout(() => syncSearchState(), 150);
         };
 
         if (statsSearchClear) {
-            statsSearchClear.onclick = () => {
+            statsSearchClear.onclick = (e) => {
+                e.stopPropagation();
                 statsSearchInput.value = '';
                 const activeFilter = document.querySelector('.filter-btn.active')?.dataset.filter || 'all';
                 renderStatsList(activeFilter, '');
-
-                if (window.innerWidth <= 850) {
-                    // On mobile, collapse everything
-                    const wrapper = document.getElementById('statsSearchWrapper');
-                    const header = document.querySelector('#statsView .stats-card-header');
-                    const sortBar = document.getElementById('statsSortBar');
-                    wrapper?.classList.remove('expanded');
-                    header?.classList.remove('search-active');
-                    sortBar?.classList.remove('search-expanded');
-                    if (statsSearchClear) statsSearchClear.style.display = 'none';
-                } else {
-                    statsSearchInput.focus();
-                    syncSearchState();
-                }
+                statsSearchInput.focus();
+                syncSearchState();
             };
         }
     }
@@ -1411,10 +1435,13 @@ async function retakeSession() {
 }
 
 function updateTranslationUI() {
-    if (AppState.translationEnabled) {
-        document.body.classList.remove('translation-disabled');
-    } else {
-        document.body.classList.add('translation-disabled');
+    const isEnabled = AppState.translationEnabled;
+    document.body.classList.toggle('translation-disabled', !isEnabled);
+    
+    // Toggle target select visibility in menu
+    const transSelect = document.getElementById('translationTargetSelect');
+    if (transSelect) {
+        transSelect.style.display = isEnabled ? 'block' : 'none';
     }
 }
 

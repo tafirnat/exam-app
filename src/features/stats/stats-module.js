@@ -87,11 +87,20 @@ export function renderStatsList(filter = 'all', searchKeyword = '') {
             result = pctA - pctB;
         } else if (field === 'wrong') {
             result = sa.wrong - sb.wrong;
+        } else if (field === 'retrievability') {
+            const ra = calculateRetrievability(sa.stability, sa.lastReview) || 0;
+            const rb = calculateRetrievability(sb.stability, sb.lastReview) || 0;
+            result = ra - rb;
         }
         return result * dir;
     });
 
     updateSortUI();
+
+    // Coordinate search visibility if global sync exists
+    if (typeof window.syncStatsSearchUI === 'function') {
+        window.syncStatsSearchUI();
+    }
 
     updateStatsFooter(filter, searchKeyword, filteredQuestions.length);
     if (filteredQuestions.length === 0) {
@@ -421,15 +430,30 @@ function updateSortUI() {
     const field = AppState.activeStatsSortField || 'original';
     const dir = AppState.activeStatsSortDir;
 
+    // Check if search is active via CSS class on sort bar (more robust)
+    const sortBar = document.getElementById('statsSortBar');
+    const isSearchExpanded = sortBar && sortBar.classList.contains('search-expanded');
+    
+    // Also check if search input has focus or text to be doubly sure
+    const searchInput = document.getElementById('statsSearchInput');
+    const hasFocus = document.activeElement === searchInput;
+    const hasText = searchInput && searchInput.value.trim().length > 0;
+    const isSearching = isSearchExpanded || hasText || hasFocus;
+
     document.querySelectorAll('.sort-btn').forEach(btn => {
         const isMatch = btn.dataset.sort === field;
-        btn.classList.toggle('active', isMatch);
+        // If search is active (expanded, has text, or focused), we hide the .active highlight 
+        // and text to make buttons icon-only.
+        btn.classList.toggle('active', isMatch && !isSearching);
         const dirEl = btn.querySelector('.sort-dir');
         if (dirEl) {
-            dirEl.innerText = isMatch ? (dir === 'asc' ? ' ↑' : ' ↓') : '';
+            dirEl.innerText = (isMatch && !isSearching) ? (dir === 'asc' ? ' ↑' : ' ↓') : '';
         }
     });
 }
+
+// Expose globally for coordination with search logic in main.js
+window.refreshStatsSortUI = updateSortUI;
 
 export function setupStatsEventListeners() {
     document.querySelectorAll('.sort-btn').forEach(btn => {
@@ -444,6 +468,10 @@ export function setupStatsEventListeners() {
                 // Default to descending for wrong answers and coefficient as it's more useful
                 if (sortField === 'wrong' || sortField === 'coeff') {
                     AppState.activeStatsSortDir = 'desc';
+                }
+                // Retrievability usually more useful when showing overdue first (lowest R)
+                if (sortField === 'retrievability') {
+                    AppState.activeStatsSortDir = 'asc';
                 }
             }
             renderStatsList(AppState.activeStatsFilter, AppState.searchKeyword);

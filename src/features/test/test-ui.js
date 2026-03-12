@@ -3,7 +3,7 @@ import { AppState, saveStats } from '../../core/state.js';
 import { translateText, showToast, showConfirm, getCorrectAnswers } from '../../core/utils.js';
 import { t, targetLanguages } from '../../core/i18n.js';
 import { evaluateAnswer, updateStats, finishTest, calculateRetrievability } from './test-engine.js';
-import { resetTimerForNewQuestion } from './timer-module.js';
+import { resetTimerForNewQuestion, stopTimer } from './timer-module.js';
 
 let currentAudio = null;
 let isAudioPlaying = false;
@@ -30,6 +30,7 @@ export function renderQuestion(isRefresh = false) {
     if (!AppState.currentTest || AppState.currentTest.length === 0) {
         return;
     }
+
 
     const qIndex = AppState.currentIndex;
     const isNewQuestion = qIndex !== lastRenderedIndex;
@@ -62,6 +63,12 @@ export function renderQuestion(isRefresh = false) {
 
         // Reset countdown timer if applicable
         resetTimerForNewQuestion();
+
+        const summaryEl = document.getElementById('testSummarySection');
+        if (summaryEl) {
+            summaryEl.dataset.autoShown = 'false';
+            summaryEl.dataset.manuallyToggled = 'false';
+        }
     }
     const q = AppState.rawQuestions[AppState.currentTest[qIndex]];
     const stat = AppState.stats[q.id] || { coeff: 1.5, note: '' };
@@ -309,16 +316,26 @@ function renderSummarySection() {
     }
     document.getElementById('testView').appendChild(summaryEl);
 
-    // Default visibility: hidden on non-last questions
-    const isLastQuestion = AppState.currentIndex === AppState.currentTest.length - 1;
-    let isVisible = isLastQuestion;
-    if (!isLastQuestion) {
-        // Keep current state if it was manually toggled, or hide by default
-        if (summaryEl.dataset.manuallyToggled === 'true') {
-            isVisible = summaryEl.style.display !== 'none';
-        }
+    // Visibility logic: hidden by default
+    let isVisible = false;
+    
+    // Auto-show if it was just checked on the last question
+    if (summaryEl.dataset.autoShown === 'true') {
+        isVisible = true;
     }
+    
+    // Respect manual toggles (within the same question session)
+    if (summaryEl.dataset.manuallyToggled === 'true') {
+        isVisible = summaryEl.style.display !== 'none';
+    }
+    
     summaryEl.style.display = isVisible ? 'block' : 'none';
+
+    // Apply dynamic bottom rule based on summary visibility
+    const testView = document.getElementById('testView');
+    if (testView) {
+        testView.style.bottom = !isVisible ? '1rem' : '0';
+    }
 
     // Quick Navigation & Overlay setup
     let quickNavEl = document.getElementById('quickNavContainer');
@@ -518,6 +535,7 @@ export function selectOption(id, type) {
         else selected.push(id);
     }
     AppState.userAnswers[qIndex] = selected;
+    stopTimer();
     renderQuestion();
 }
 
@@ -543,6 +561,15 @@ export const handleCheckAnswer = (forceCheck = false) => {
     AppState.isAnswerChecked[qIndex] = true;
     updateStats(q.id, isCorrect, userAnswer);
     saveStats();
+
+    // Auto-show summary if this is the last question
+    const isLastQuestion = qIndex === AppState.currentTest.length - 1;
+    if (isLastQuestion) {
+        const summaryEl = document.getElementById('testSummarySection');
+        if (summaryEl) summaryEl.dataset.autoShown = 'true';
+    }
+
+    stopTimer();
     renderQuestion();
 };
 
@@ -639,6 +666,11 @@ export function updateQuestionStatsInfo(qid) {
                     summarySection.style.display = isHidden ? 'block' : 'none';
                     summarySection.dataset.manuallyToggled = 'true';
 
+                    const testView = document.getElementById('testView');
+                    if (testView) {
+                        testView.style.bottom = isHidden ? '0' : '1rem';
+                    }
+
                     if (isHidden) {
                         summarySection.scrollIntoView({ behavior: 'smooth', block: 'start' });
                     }
@@ -715,6 +747,21 @@ export function renderTestResults() {
     document.getElementById('resWrongCount').textContent = wrong;
     document.getElementById('resUnansweredCount').textContent = unanswered;
     document.getElementById('resSuccessRate').textContent = `${rate}%`;
+
+    // Display Duration if available
+    const durationBox = document.getElementById('resDurationBox');
+    const durationText = document.getElementById('resDurationText');
+    if (durationBox && durationText) {
+        const secs = latestTest.elapsedSeconds || 0;
+        if (secs > 0) {
+            const m = Math.floor(secs / 60).toString().padStart(2, '0');
+            const s = Math.floor(secs % 60).toString().padStart(2, '0');
+            durationText.textContent = `${m}:${s}`;
+            durationBox.style.display = 'flex';
+        } else {
+            durationBox.style.display = 'none';
+        }
+    }
 
     const gauge = document.querySelector('.success-rate-gauge');
     if (gauge) {

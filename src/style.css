@@ -1012,7 +1012,8 @@ pre code {
     right: 0;
     background-color: transparent;
     border: none;
-    border-top-left-radius: var(--radius-md);
+    border-top-left-radius: 24px;
+    border-bottom-right-radius: 12px;
     padding: 8px;
     cursor: pointer;
     color: var(--text-secondary);
@@ -2088,12 +2089,14 @@ input:checked + .slider-small:before {
 /* Hide sort text when search is expanded */
 .stats-sort-bar.search-expanded .sort-btn .sort-btn-text,
 .stats-sort-bar.search-expanded .sort-btn .sort-dir {
-    display: none;
+    display: none !important;
 }
 
 .stats-sort-bar.search-expanded .sort-btn {
-    padding: 0.5rem;
-    gap: 0;
+    padding: 0.5rem !important;
+    gap: 0 !important;
+    min-width: 38px;
+    justify-content: center;
 }
 
 .stats-card-header {
@@ -2220,7 +2223,7 @@ input:checked + .slider-small:before {
     background: var(--surface-color);
     border-color: var(--primary-color);
     box-shadow: 0 0 0 3px rgba(var(--primary-rgb), 0.1);
-    flex: 1;
+    flex: 1 1 auto;
     max-width: none;
 }
 
@@ -2239,6 +2242,7 @@ input:checked + .slider-small:before {
     width: 0;
     padding: 0;
     pointer-events: none;
+    display: none;
 }
 
 .search-input-wrapper.icon-only .search-expand-btn {
@@ -2734,8 +2738,10 @@ input:checked + .slider-small:before {
 }
 
 .test-summary-section {
+    display: none;
     margin-top: 1.5rem;
     padding-top: 1.5rem;
+    padding-bottom: 6rem;
     border-top: 2px solid var(--border-color);
 }
 
@@ -3341,6 +3347,7 @@ input:checked + .slider-small:before {
 
 .menu-tts-slider::-webkit-slider-thumb {
     -webkit-appearance: none;
+    appearance: none;
     width: 14px;
     height: 14px;
     border-radius: 50%;

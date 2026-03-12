@@ -1,0 +1,17 @@
+279:            contentWrapper.className = 'option-content-wrapper';
+319:                // Render as text input wrapper matching test UI
+320:                const wrapper = document.createElement('div');
+321:                wrapper.className = 'text-input-wrapper';
+322:                wrapper.style.width = '100%';
+326:                wrapper.innerHTML = `
+344:                container.appendChild(wrapper);
+356:                contentWrapper.className = 'option-content-wrapper';
+857:            const wrapper = document.getElementById('statsSearchWrapper');
+858:            if (!input || !wrapper) return;
+867:                wrapper.classList.add('expanded');
+868:                wrapper.classList.remove('icon-only');
+871:                wrapper.classList.remove('expanded');
+880:                    wrapper.classList.remove('icon-only');
+882:                    wrapper.classList.add('icon-only');
+942:        // Add a click handler to the wrapper too for better UX
+943:        if (statsSearchWrapper) { // Ensure wrapper exists before adding click handler

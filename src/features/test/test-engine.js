@@ -245,6 +245,7 @@ export async function finishTest() {
             correctCount,
             wrongCount,
             unansweredCount,
+            elapsedSeconds: AppState.testTracking.elapsedSeconds || 0,
             successRate: total > 0 ? Math.round((correctCount / total) * 100) : 0,
             avgCoeff: total > 0 ? sessionQuestions.reduce((acc, q) => acc + (AppState.stats[q.id]?.coeff || 1.5), 0) / total : 2.0,
             questions: sessionQuestions
@@ -280,9 +281,16 @@ export function evaluateAnswer(questionIndex, userAnswer) {
     let isCorrect = false;
 
     if (q.type === 'text' || q.type === 'text_input' || q.type === 'open_ended' || q.type === 'fill_in_the_blank') {
-        const val = (userAnswer[0] || '').toString().trim().toLowerCase();
+        const isCaseSensitive = q.answer?.caseSensitive || q.caseSensitive || false;
+        let val = (userAnswer[0] || '').toString().trim();
+        if (!isCaseSensitive) val = val.toLowerCase();
+
         const correctAnswers = getCorrectAnswers(q);
-        isCorrect = correctAnswers.some(c => String(c).trim().toLowerCase() === val);
+        isCorrect = correctAnswers.some(c => {
+            let target = String(c).trim();
+            if (!isCaseSensitive) target = target.toLowerCase();
+            return target === val;
+        });
     } else {
         const sel = userAnswer || [];
         const correctIds = getCorrectAnswers(q);
