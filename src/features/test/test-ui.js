@@ -184,7 +184,7 @@ export function renderQuestion(isRefresh = false) {
             }
         } else {
             input.onkeydown = (e) => {
-                if (e.key === 'Enter') handleCheckAnswer();
+                if (e.key === 'Enter') window.handleCheckAnswer();
             };
         }
     } else {
@@ -535,19 +535,22 @@ export function selectOption(id, type) {
     renderQuestion();
 }
 
-export function handleCheckAnswer() {
+export const handleCheckAnswer = (forceCheck = false) => {
+    window.handleCheckAnswer = handleCheckAnswer;
     const qIndex = AppState.currentIndex;
     const q = AppState.rawQuestions[AppState.currentTest[qIndex]];
     let userAnswer = AppState.userAnswers[qIndex] || [];
 
     if (q.type === 'text' || q.type === 'text_input' || q.type === 'open_ended' || q.type === 'fill_in_the_blank') {
         const input = document.getElementById('textAnswerInput');
-        const val = input.value.trim();
-        if (!val) return;
-        userAnswer = [val];
-        AppState.userAnswers[qIndex] = userAnswer;
+        if (input) {
+            const val = input.value.trim();
+            if (!val && !forceCheck) return;
+            userAnswer = [val];
+            AppState.userAnswers[qIndex] = userAnswer;
+        }
     } else {
-        if (!userAnswer.length) return;
+        if (!userAnswer.length && !forceCheck) return;
     }
 
     const isCorrect = evaluateAnswer(qIndex, userAnswer);
@@ -555,7 +558,7 @@ export function handleCheckAnswer() {
     updateStats(q.id, isCorrect, userAnswer);
     saveStats();
     renderQuestion();
-}
+};
 
 export async function handleTranslation(btn, sid, tid) {
     const srcEl = document.getElementById(sid);

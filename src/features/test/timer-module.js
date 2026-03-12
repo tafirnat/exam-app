@@ -77,7 +77,12 @@ function tickTimer(textElement, skipIncrement = false) {
             } else if (AppState.testTracking.questionTimeRemaining[qIndex] === 0) {
                 if (AppState.timerAutoCheckEnabled) {
                     if (!AppState.isAnswerChecked[qIndex]) {
-                        import('./test-ui.js').then(m => m.handleCheckAnswer(true));
+                        if (window.handleCheckAnswer) {
+                            window.handleCheckAnswer(true);
+                        } else {
+                            // Fallback if not attached yet
+                            import('./test-ui.js').then(m => m.handleCheckAnswer(true));
+                        }
                     }
                 }
             }
