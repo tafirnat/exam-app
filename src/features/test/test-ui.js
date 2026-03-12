@@ -14,7 +14,7 @@ export function getIsAudioPlaying() {
     return isAudioPlaying;
 }
 
-function stopAudio(silent = false, reason = 'manual') {
+export function stopAudio(silent = false, reason = 'manual') {
     if (currentAudio) {
         currentAudio.onended = null;
         currentAudio.pause();

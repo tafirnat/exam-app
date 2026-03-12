@@ -6,7 +6,7 @@ import { migrateOldData } from './core/migration.js';
 import { processJSON, loadFromUrl, loadFromFile, normalizeQuestions } from './features/sources/sources-service.js';
 import { renderSourcesList } from './features/sources/sources-ui.js';
 import { prepareTest, finishTest, prepareRetake } from './features/test/test-engine.js';
-import { renderQuestion, handleCheckAnswer, updateIndicators, handleTranslation, handleDifficultyRating, renderTestResults, handleTtsToggle, getIsAudioPlaying } from './features/test/test-ui.js';
+import { renderQuestion, handleCheckAnswer, updateIndicators, handleTranslation, handleDifficultyRating, renderTestResults, handleTtsToggle, getIsAudioPlaying, stopAudio } from './features/test/test-ui.js';
 import { renderStatsList, updateHomeStats, setupStatsEventListeners } from './features/stats/stats-module.js';
 
 
@@ -900,6 +900,11 @@ function setupEventListeners() {
 // --- View Management ---
 function switchView(view, isBack = false) {
     if (!view) return;
+
+    // Stop audio when leaving test environment
+    if (view !== 'test' && view !== 'statsPreview') {
+        stopAudio(true, 'manual');
+    }
 
     // History API integration
     if (!isBack) {
