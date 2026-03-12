@@ -51,7 +51,7 @@ export function renderQuestion(isRefresh = false) {
                 lastTtsStopReason = 'none';
             }
         }
-        
+
         lastRenderedIndex = qIndex;
 
         // Clear any pending autoplay from previous navigation
@@ -99,14 +99,14 @@ export function renderQuestion(isRefresh = false) {
     // Remove existing TTS elements
     card.querySelectorAll('.tts-btn').forEach(c => c.remove());
     if (AppState.ttsEnabled) {
-        
+
         const tBtn = document.createElement('button');
         tBtn.className = 'tts-btn';
         if (isAudioPlaying) tBtn.classList.add('playing');
-        tBtn.innerHTML = isAudioPlaying ? 
-            '<svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2.5"><rect x="6" y="4" width="4" height="16"></rect><rect x="14" y="4" width="4" height="16"></rect></svg>' : 
+        tBtn.innerHTML = isAudioPlaying ?
+            '<svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2.5"><rect x="6" y="4" width="4" height="16"></rect><rect x="14" y="4" width="4" height="16"></rect></svg>' :
             '<svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2.5"><polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5"></polygon><path d="M19.07 4.93a10 10 0 0 1 0 14.14M15.54 8.46a5 5 0 0 1 0 7.07"></path></svg>';
-        
+
         tBtn.onclick = () => handleTtsToggle(q.content?.text || q.text || '');
 
         card.appendChild(tBtn);
@@ -571,7 +571,7 @@ export function updateQuestionStatsInfo(qid) {
     if (infoEl) {
         const total = s.correct + s.wrong;
         const percent = total > 0 ? Math.round((s.correct / total) * 100) : 0;
-        
+
         const r = calculateRetrievability(s.stability, s.lastReview);
         const rPercent = r > 0 ? Math.round(r * 100) : null;
 

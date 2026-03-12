@@ -6,14 +6,14 @@ export function initTimer() {
     if (timerInterval) clearInterval(timerInterval);
     const displayElement = document.getElementById('timerDisplay');
     const textElement = document.getElementById('timerText');
-    
+
     if (!AppState.timerStopwatchEnabled && !AppState.timerCountdownEnabled) {
-        if(displayElement) displayElement.style.display = 'none';
+        if (displayElement) displayElement.style.display = 'none';
         return;
     }
-    
-    if(displayElement) displayElement.style.display = 'flex';
-    
+
+    if (displayElement) displayElement.style.display = 'flex';
+
     // Initialize properties if they don't exist
     if (AppState.testTracking) {
         if (AppState.testTracking.elapsedSeconds === undefined) AppState.testTracking.elapsedSeconds = 0;
@@ -51,7 +51,7 @@ function tickTimer(textElement, skipIncrement = false) {
 
     let displayStr = '';
     const qIndex = AppState.currentIndex;
-    
+
     // Check if the current question is already answered. If so, pause countdown.
     const isChecked = AppState.isAnswerChecked[qIndex];
 
@@ -63,14 +63,14 @@ function tickTimer(textElement, skipIncrement = false) {
         const m = Math.floor(totalSecs / 60).toString().padStart(2, '0');
         const s = (totalSecs % 60).toString().padStart(2, '0');
         displayStr = `${m}:${s}`;
-        
+
         if (textElement) textElement.style.color = 'var(--text-secondary)'; // default color
     } else if (AppState.timerCountdownEnabled) {
         // Countdown mode
         if (AppState.testTracking.questionTimeRemaining[qIndex] === undefined) {
             AppState.testTracking.questionTimeRemaining[qIndex] = AppState.timerCountdownLimit || 59;
         }
-        
+
         if (!skipIncrement && !isChecked) {
             if (AppState.testTracking.questionTimeRemaining[qIndex] > 0) {
                 AppState.testTracking.questionTimeRemaining[qIndex]--;
@@ -84,10 +84,10 @@ function tickTimer(textElement, skipIncrement = false) {
                 }
             }
         }
-        
+
         const rem = AppState.testTracking.questionTimeRemaining[qIndex] || 0;
         displayStr = rem.toString() + 's';
-        
+
         if (textElement) {
             if (rem <= 10 && !isChecked) {
                 textElement.style.color = 'var(--error-color)';
