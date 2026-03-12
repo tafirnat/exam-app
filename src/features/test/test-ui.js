@@ -35,11 +35,17 @@ export function renderQuestion(isRefresh = false) {
 
     // Handle session start or navigation
     if (!isRefresh && isNewQuestion) {
+        const wasInBrowsingMode = lastTtsStopReason === 'navigation' || !!autoplayTimeoutId;
+
         // If navigating while audio is playing, stop it and mark as interrupted
         if (isAudioPlaying) {
             stopAudio(true, 'navigation');
+        } else if (wasInBrowsingMode) {
+            // If we skip while already waiting (browsing), keep the navigation reason
+            // so the 5s delay resets for the new question.
+            lastTtsStopReason = 'navigation';
         } else {
-            // If starting fresh or from a manual stop, reset reason to allow quick start
+            // If starting fresh or from a finished state, reset/keep logic
             if (lastTtsStopReason !== 'finished') {
                 lastTtsStopReason = 'none';
             }
