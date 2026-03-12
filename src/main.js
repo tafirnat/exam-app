@@ -93,6 +93,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
         console.log('Setting up event listeners...');
         setupEventListeners();
+        initMenuAccordion();
 
         console.log('Updating translation UI...');
         updateTranslationUI();
@@ -600,6 +601,21 @@ function setupEventListeners() {
         updateHomeStats();
     });
 
+    // Sidebar Close Button & Overlay
+    const closeBtn = document.getElementById('menuCloseBtn');
+    if (closeBtn) closeBtn.onclick = toggleMenu;
+    
+    const overlay = document.getElementById('menuOverlay');
+    if (overlay) overlay.onclick = toggleMenu;
+
+    // Premium Theme Switch in Sidebar
+    const themeSimpleToggle = document.getElementById('themeSimpleToggle');
+    if (themeSimpleToggle) {
+        // Sync state on open
+        themeSimpleToggle.checked = (localStorage.getItem('focus_app_theme') || 'dark') === 'light';
+        themeSimpleToggle.onchange = () => toggleTheme();
+    }
+
     window.addEventListener('show-stats-preview', (e) => {
         const { question, stats, source } = e.detail;
         AppState.previewQuestionId = question.id;
@@ -860,9 +876,9 @@ function setupEventListeners() {
         }
     }
 
-    // Global Click Close
+    // Global Click Close (Updated for Sidebar)
     document.addEventListener('click', (e) => {
-        if (menuActive && !e.target.closest('.dropdown-menu') && !e.target.closest('#menuToggleBtn')) {
+        if (menuActive && !e.target.closest('.side-menu') && !e.target.closest('#menuToggleBtn')) {
             toggleMenu();
         }
     });
@@ -1007,10 +1023,38 @@ function renderHistoryList() {
 function toggleMenu() {
     menuActive = !menuActive;
     const menu = document.getElementById('actionMenu');
-    menu.classList.toggle('active', menuActive);
+    const overlay = document.getElementById('menuOverlay');
+    
+    if (menu) menu.classList.toggle('active', menuActive);
+    if (overlay) overlay.classList.toggle('active', menuActive);
+    
     if (menuActive) {
         updateLangUI();
+        // Sync theme toggle state
+        const themeSimpleToggle = document.getElementById('themeSimpleToggle');
+        if (themeSimpleToggle) {
+            themeSimpleToggle.checked = (localStorage.getItem('focus_app_theme') || 'dark') === 'light';
+        }
     }
+}
+
+function initMenuAccordion() {
+    const headers = document.querySelectorAll('.menu-section-header:not(.no-accordion)');
+    headers.forEach(header => {
+        header.onclick = () => {
+            const isActive = header.classList.contains('active');
+            
+            // Close all others
+            headers.forEach(h => {
+                h.classList.remove('active');
+            });
+            
+            // Toggle current
+            if (!isActive) {
+                header.classList.add('active');
+            }
+        };
+    });
 }
 
 function updateLangUI() {
@@ -1242,6 +1286,8 @@ function copyAIPrompt() {
         const aiUrls = {
             gemini: 'https://gemini.google.com/app?prompt=',
             chatgpt: 'https://chatgpt.com/?q=',
+            claude: 'https://claude.ai/new?q=',
+            kimi: 'https://kimi.moonshot.cn/?q=',
             perplexity: 'https://www.perplexity.ai/search?q=',
             copilot: 'https://copilot.microsoft.com/?q=',
             deepseek: 'https://chat.deepseek.com/?q='
