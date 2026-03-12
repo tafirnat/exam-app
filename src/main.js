@@ -575,6 +575,46 @@ function setupEventListeners() {
         };
     }
 
+    // Timer Settings
+    const stopwatchToggle = document.getElementById('timerStopwatchToggle');
+    const countdownToggle = document.getElementById('timerCountdownToggle');
+    const countdownLimitInput = document.getElementById('timerCountdownLimitInput');
+
+    if (stopwatchToggle) {
+        stopwatchToggle.checked = AppState.timerStopwatchEnabled;
+        stopwatchToggle.onchange = (e) => {
+            AppState.timerStopwatchEnabled = e.target.checked;
+            import('./core/state.js').then(m => m.saveTimerSettings());
+        };
+    }
+    
+    if (countdownToggle) {
+        countdownToggle.checked = AppState.timerCountdownEnabled;
+        countdownToggle.onchange = (e) => {
+            AppState.timerCountdownEnabled = e.target.checked;
+            import('./core/state.js').then(m => m.saveTimerSettings());
+        };
+    }
+    
+    if (countdownLimitInput) {
+        countdownLimitInput.value = AppState.timerCountdownLimit;
+        countdownLimitInput.oninput = (e) => {
+            const val = parseInt(e.target.value, 10);
+            if (!isNaN(val) && val > 0) {
+                AppState.timerCountdownLimit = val;
+                import('./core/state.js').then(m => m.saveTimerSettings());
+            }
+        };
+        countdownLimitInput.onblur = (e) => {
+            const val = parseInt(e.target.value, 10);
+            if (isNaN(val) || val <= 0) {
+                AppState.timerCountdownLimit = 59;
+                e.target.value = 59;
+                import('./core/state.js').then(m => m.saveTimerSettings());
+            }
+        };
+    }
+
     setupStatsEventListeners();
 
     document.getElementById('indStar').onclick = toggleStar;

@@ -134,9 +134,25 @@
                     </svg>
                 </div>
                 <div class="menu-section-content" id="section-timer">
-                    <!-- Placeholder as requested -->
-                    <div class="menu-hint" style="text-align: center; padding: 1rem;">
-                        Yakında eklenecek...
+                    <div style="padding: 0 0.5rem 0.5rem; display: flex; flex-direction: column; gap: 0.75rem;">
+                        <div style="display: flex; justify-content: space-between; align-items: center; padding-bottom: 0.5rem; border-bottom: 1px solid var(--border-color);">
+                            <span data-i18n="timer_stopwatch" style="font-size: 0.85rem;">Genel Süre (Kronometre)</span>
+                            <label class="switch-small">
+                                <input type="checkbox" id="timerStopwatchToggle">
+                                <span class="slider-small"></span>
+                            </label>
+                        </div>
+                        <div style="display: flex; justify-content: space-between; align-items: center; padding-bottom: 0.5rem; border-bottom: 1px solid var(--border-color);">
+                            <span data-i18n="timer_countdown" style="font-size: 0.85rem;">Soru Başına Geri Sayım</span>
+                            <label class="switch-small">
+                                <input type="checkbox" id="timerCountdownToggle">
+                                <span class="slider-small"></span>
+                            </label>
+                        </div>
+                        <div class="input-group" style="margin-bottom: 0;" id="timerLimitContainer">
+                            <label data-i18n="timer_countdown_limit" style="font-size: 0.85rem;">Soru Süresi (Saniye)</label>
+                            <input type="number" id="timerCountdownLimitInput" min="5" max="3600" value="59" style="width: 100%; padding: 0.5rem; border-radius: var(--radius-md); border: 1px solid var(--border-color); background-color: var(--bg-color); color: var(--text-primary); font-size: 0.95rem;">
+                        </div>
                     </div>
                 </div>
             </div>
