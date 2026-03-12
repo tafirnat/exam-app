@@ -184,7 +184,9 @@ export const translations = {
         menu_title: "MENÜ",
         timer_operations: "Süre İşlemleri",
         translation_title: "Çeviri",
+        enable_translation: "Çeviriyi Etkinleştir",
         tts_title: "Metin Okuma",
+        enable_tts: "Metin Okumayı Etkinleştir",
     },
     en: {
         theme_change: "Change Theme",
@@ -353,7 +355,9 @@ export const translations = {
         menu_title: "MENU",
         timer_operations: "Time Operations",
         translation_title: "Translation",
+        enable_translation: "Enable Translation",
         tts_title: "Text-to-Speech",
+        enable_tts: "Enable Text-to-Speech",
     },
     de: {
         theme_change: "Design ändern",
@@ -522,7 +526,9 @@ export const translations = {
         menu_title: "MENÜ",
         timer_operations: "Zeit-Operationen",
         translation_title: "Übersetzung",
+        enable_translation: "Übersetzung aktivieren",
         tts_title: "Text-zu-Sprache",
+        enable_tts: "Text-zu-Sprache aktivieren",
     },
 };
 

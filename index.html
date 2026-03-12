@@ -155,18 +155,19 @@
                         </svg>
                         <span data-i18n="translation_title">Çeviri</span>
                     </div>
-                    <div style="display: flex; align-items: center; gap: 0.75rem;">
-                        <label class="switch-small">
-                            <input type="checkbox" id="translationToggle">
-                            <span class="slider-small"></span>
-                        </label>
-                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" class="chevron">
-                            <polyline points="6 9 12 15 18 9"></polyline>
-                        </svg>
-                    </div>
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" class="chevron">
+                        <polyline points="6 9 12 15 18 9"></polyline>
+                    </svg>
                 </div>
                 <div class="menu-section-content" id="section-translate">
                     <div style="padding: 0 0.5rem;">
+                        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1rem; padding-bottom: 0.5rem; border-bottom: 1px solid var(--border-color);">
+                            <span data-i18n="enable_translation" style="font-size: 0.85rem;">Çeviriyi Etkinleştir</span>
+                            <label class="switch-small">
+                                <input type="checkbox" id="translationToggle">
+                                <span class="slider-small"></span>
+                            </label>
+                        </div>
                         <div class="menu-label" data-i18n="target_lang_label">Hedef Dil</div>
                         <select id="translationTargetSelect" class="menu-select">
                             <!-- Populated by JS -->
@@ -185,17 +186,18 @@
                         </svg>
                         <span data-i18n="tts_title">Metin Okuma</span>
                     </div>
-                    <div style="display: flex; align-items: center; gap: 0.75rem;">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" class="chevron">
+                        <polyline points="6 9 12 15 18 9"></polyline>
+                    </svg>
+                </div>
+                <div class="menu-section-content" id="section-tts">
+                    <div style="display: flex; justify-content: space-between; align-items: center; padding: 0 0.5rem 0.5rem 0.5rem; border-bottom: 1px solid var(--border-color); margin-bottom: 0.5rem;">
+                        <span data-i18n="enable_tts" style="font-size: 0.85rem;">Metin Okumayı Etkinleştir</span>
                         <label class="switch-small">
                             <input type="checkbox" id="ttsToggle">
                             <span class="slider-small"></span>
                         </label>
-                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" class="chevron">
-                            <polyline points="6 9 12 15 18 9"></polyline>
-                        </svg>
                     </div>
-                </div>
-                <div class="menu-section-content" id="section-tts">
                     <div id="ttsSettingsContainer">
                         <div class="menu-label" data-i18n="tts_speed">Ses Hızı</div>
                         <div class="slider-with-ticks" style="margin: 1.5rem 0.5rem 2rem 0.5rem;">
