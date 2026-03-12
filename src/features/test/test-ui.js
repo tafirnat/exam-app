@@ -155,17 +155,21 @@ export function renderQuestion(isRefresh = false) {
         container.innerHTML = `
             <div class="text-input-wrapper">
                 <input type="text" id="textAnswerInput" value="${val}" placeholder="${t('answer_placeholder')}" ${isChecked ? 'disabled' : ''} oninput="window.syncTextInput(this.value)">
-                ${isChecked && !isCorrect ? `
+                ${isChecked ? `
                     <div class="feedback-container" style="margin-top: 0.75rem; display: flex; align-items: start; gap: 0.5rem;">
                         <div style="flex: 1;">
-                            <div id="correctAnswerText" class="correct-answer-feedback" style="color: var(--success-color); font-weight: 600; font-size: 0.9rem;">
-                                ${t('correct_answer_was')} ${getCorrectAnswers(q)[0] || ''}
-                            </div>
-                            <div id="trans_correctAnswerText" class="translation-text" style="display: none; margin-top: 0.25rem; font-size: 0.85rem; color: var(--text-secondary);"></div>
+                            ${!val ? `<div style="color: var(--error-color); font-weight: 600; font-size: 0.85rem; margin-bottom: 0.5rem;">Boş bırakıldı / Süre doldu</div>` : ''}
+                            ${!isCorrect ? `
+                                <div id="correctAnswerText" class="correct-answer-feedback" style="color: var(--success-color); font-weight: 600; font-size: 0.9rem;">
+                                    ${t('correct_answer_was')} ${getCorrectAnswers(q)[0] || ''}
+                                </div>
+                                <div id="trans_correctAnswerText" class="translation-text" style="display: none; margin-top: 0.25rem; font-size: 0.85rem; color: var(--text-secondary);"></div>
+                            ` : ''}
                         </div>
+                        ${!isCorrect ? `
                         <button id="feedbackTranslateBtn" class="corner-translate-btn" style="padding: 2px;">
                             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" style="width: 14px; height: 14px;"><path d="M5 8l6 6"></path><path d="M4 14l6-6 2-3"></path><path d="M2 5h12"></path><path d="M7 2h1"></path><path d="M22 22l-5-10-5 10"></path><path d="M14 18h6"></path></svg>
-                        </button>
+                        </button>` : ''}
                     </div>
                 ` : ''}
             </div>
@@ -185,6 +189,20 @@ export function renderQuestion(isRefresh = false) {
         }
     } else {
         const options = AppState.shuffledOptionsMap[q.id] || q.options || [];
+        const anySelected = (AppState.userAnswers[qIndex] || []).length > 0;
+        
+        // If checked but no answers were given, we might want to highlight that fact at the top of the container
+        if (isChecked && !anySelected) {
+            const emptyWarning = document.createElement('div');
+            emptyWarning.style.color = 'var(--error-color)';
+            emptyWarning.style.fontWeight = '600';
+            emptyWarning.style.fontSize = '0.85rem';
+            emptyWarning.style.marginBottom = '1rem';
+            emptyWarning.style.textAlign = 'center';
+            emptyWarning.innerText = 'Boş bırakıldı / Süre doldu';
+            container.appendChild(emptyWarning);
+        }
+
         options.forEach(opt => {
             const isSelected = (AppState.userAnswers[qIndex] || []).includes(String(opt.id));
             const card = document.createElement('div');
@@ -199,6 +217,11 @@ export function renderQuestion(isRefresh = false) {
                     card.classList.add('wrong'); // Wrongly selected option
                 }
                 card.classList.add('checked-state');
+                
+                // Dim unselected incorrect choices to emphasize the correct/missed ones
+                if (!isOptionCorrect && !isSelected) {
+                    card.style.opacity = '0.5';
+                }
             }
 
             const input = document.createElement('input');
