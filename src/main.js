@@ -609,12 +609,7 @@ function setupEventListeners() {
     if (overlay) overlay.onclick = toggleMenu;
 
     // Premium Theme Switch in Sidebar
-    const themeSimpleToggle = document.getElementById('themeSimpleToggle');
-    if (themeSimpleToggle) {
-        // Sync state on open
-        themeSimpleToggle.checked = (localStorage.getItem('focus_app_theme') || 'dark') === 'light';
-        themeSimpleToggle.onchange = () => toggleTheme();
-    }
+    // Theme is toggled via clicking the menu item directly now.
 
     window.addEventListener('show-stats-preview', (e) => {
         const { question, stats, source } = e.detail;
@@ -1030,11 +1025,7 @@ function toggleMenu() {
     
     if (menuActive) {
         updateLangUI();
-        // Sync theme toggle state
-        const themeSimpleToggle = document.getElementById('themeSimpleToggle');
-        if (themeSimpleToggle) {
-            themeSimpleToggle.checked = (localStorage.getItem('focus_app_theme') || 'dark') === 'light';
-        }
+        // Theme toggle state is now handled solely via click.
     }
 }
 
