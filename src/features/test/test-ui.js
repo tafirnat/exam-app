@@ -158,7 +158,6 @@ export function renderQuestion(isRefresh = false) {
                 ${isChecked ? `
                     <div class="feedback-container" style="margin-top: 0.75rem; display: flex; align-items: start; gap: 0.5rem;">
                         <div style="flex: 1;">
-                            ${!val ? `<div style="color: var(--error-color); font-weight: 600; font-size: 0.85rem; margin-bottom: 0.5rem;">Boş bırakıldı / Süre doldu</div>` : ''}
                             ${!isCorrect ? `
                                 <div id="correctAnswerText" class="correct-answer-feedback" style="color: var(--success-color); font-weight: 600; font-size: 0.9rem;">
                                     ${t('correct_answer_was')} ${getCorrectAnswers(q)[0] || ''}
@@ -189,19 +188,6 @@ export function renderQuestion(isRefresh = false) {
         }
     } else {
         const options = AppState.shuffledOptionsMap[q.id] || q.options || [];
-        const anySelected = (AppState.userAnswers[qIndex] || []).length > 0;
-        
-        // If checked but no answers were given, we might want to highlight that fact at the top of the container
-        if (isChecked && !anySelected) {
-            const emptyWarning = document.createElement('div');
-            emptyWarning.style.color = 'var(--error-color)';
-            emptyWarning.style.fontWeight = '600';
-            emptyWarning.style.fontSize = '0.85rem';
-            emptyWarning.style.marginBottom = '1rem';
-            emptyWarning.style.textAlign = 'center';
-            emptyWarning.innerText = 'Boş bırakıldı / Süre doldu';
-            container.appendChild(emptyWarning);
-        }
 
         options.forEach(opt => {
             const isSelected = (AppState.userAnswers[qIndex] || []).includes(String(opt.id));
