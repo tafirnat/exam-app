@@ -710,7 +710,7 @@ function setupEventListeners() {
     document.getElementById('resRetakeBtn').onclick = retakeSession;
     const scBackBtn = document.getElementById('statsBackBtn');
     if (scBackBtn) {
-        scBackBtn.onclick = goBack;
+        scBackBtn.onclick = goHome;
     }
 
     // Sources
@@ -765,6 +765,7 @@ function setupEventListeners() {
                 if (data.questions) {
                     // Single source import
                     await processJSON(data, file.name);
+                    renderSourcesList();
                 } else if (data.sources || data.stats) {
                     // Full backup import
                     if (await showConfirm(t('confirm_import_backup'))) {

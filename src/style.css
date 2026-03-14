@@ -3376,3 +3376,4 @@ input:checked + .slider-small:before {
 .dropdown-item-note svg {
     flex-shrink: 0;
 }
+.source-item.active { border-left: 2px solid #1b9473 !important; border-right: 2px solid #1b9473 !important; background-color: var(--surface-hover) !important; }

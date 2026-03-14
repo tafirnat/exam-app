@@ -1,5 +1,6 @@
 import { AppState, saveSources } from '../../core/state.js';
-import { showToast, getCorrectAnswers } from '../../core/utils.js';
+import { showToast, getCorrectAnswers, showAlert } from '../../core/utils.js';
+import { t } from '../../core/i18n.js';
 
 export function normalizeQuestions(questions) {
     return questions.map(q => {
@@ -14,17 +15,24 @@ export function normalizeQuestions(questions) {
 
 export function processJSON(data, name, options = {}) {
     if (!data.questions || !Array.isArray(data.questions)) {
-        showToast('Ungültiges JSON Format');
+        showAlert(t('json_error_no_questions'), t('invalid_format'));
         return null;
     }
 
     const normalizedQuestions = normalizeQuestions(data.questions);
-    const title = data.exam_metadata?.title || data.exam?.title || name;
-    // Generate a more robust ID if possible, but keep it simple
-    const id = btoa(unescape(encodeURIComponent(title + normalizedQuestions.length))).substring(0, 12);
+    let title = data.exam_metadata?.title || data.exam?.title || name;
 
-    // Check if source already exists
-    const existingIdx = AppState.sources.findIndex(s => s.id === id);
+    // Smart Name Suffixing Logic
+    let finalTitle = title;
+    let counter = 2;
+    while (AppState.sources.some(s => s.name === finalTitle)) {
+        finalTitle = `${title} [New-${counter}]`;
+        counter++;
+    }
+    title = finalTitle;
+
+    // Generate a more robust ID based on final uniqueness
+    const id = btoa(unescape(encodeURIComponent(title + normalizedQuestions.length + Date.now()))).substring(0, 12);
 
     const sourceName = name || 'Unknown Source';
 
@@ -48,16 +56,10 @@ export function processJSON(data, name, options = {}) {
         metadata: data.exam_metadata || {}
     };
 
-    if (existingIdx > -1) {
-        // preserve some existing state if needed, but here we overwrite content
-        source.active = AppState.sources[existingIdx].active;
-        AppState.sources[existingIdx] = source;
-    } else {
-        AppState.sources.push(source);
-    }
+    AppState.sources.push(source);
 
     saveSources();
-    showToast(`${normalizedQuestions.length} Fragen geladen`);
+    showAlert(t('import_success_msg', { name: title, count: normalizedQuestions.length }), t('success_title'));
     return source;
 }
 
@@ -69,7 +71,7 @@ export async function loadFromUrl(url, options = {}) {
         const data = await res.json();
         return processJSON(data, fullUrl.hostname || 'local', options);
     } catch (e) {
-        showToast('Laden fehlgeschlagen');
+        showAlert(t('import_failed') + ': ' + e.message, t('invalid_format'));
         console.error(e);
         return null;
     }
@@ -83,7 +85,7 @@ export function loadFromFile(file) {
                 const source = processJSON(JSON.parse(e.target.result), file.name);
                 resolve(source);
             } catch (err) {
-                showToast('Ungültiges Dateiformat');
+                showAlert(t('json_error_invalid_json'), t('invalid_format'));
                 reject(err);
             }
         };

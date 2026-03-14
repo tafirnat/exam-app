@@ -1,12 +1,16 @@
 import { AppState, saveSources, saveStats } from '../../core/state.js';
 import { t } from '../../core/i18n.js';
-import { showConfirm } from '../../core/utils.js';
+import { showConfirm, showAlert } from '../../core/utils.js';
 
 export function toggleSource(id) {
+    let sourceName = '';
+    let statusText = '';
     AppState.sources.forEach(s => {
         if (s.id === id) {
             s.active = !s.active;
             if (s.active) s.lastUsed = Date.now();
+            sourceName = s.name;
+            statusText = s.active ? (AppState.language === 'tr' ? 'aktif' : (AppState.language === 'de' ? 'aktiv' : 'active')) : (AppState.language === 'tr' ? 'pasif' : (AppState.language === 'de' ? 'inaktiv' : 'inactive'));
         }
     });
     saveSources();
@@ -15,11 +19,15 @@ export function toggleSource(id) {
 }
 
 export async function removeSource(id) {
+    const source = AppState.sources.find(s => s.id === id);
+    if (!source) return;
     if (!await showConfirm(t('confirm_remove_source', { name: '' }))) return;
+    const oldName = source.name;
     AppState.sources = AppState.sources.filter(s => s.id !== id);
     saveSources();
     renderSourcesList();
     if (window.onSourcesUpdated) window.onSourcesUpdated();
+    showAlert(t('source_removed_msg', { name: oldName }), t('info_title'));
 }
 
 export async function resetSourceStats(id) {
@@ -36,6 +44,7 @@ export async function resetSourceStats(id) {
     saveStats();
     renderSourcesList();
     if (window.onSourcesUpdated) window.onSourcesUpdated();
+    showAlert(t('source_reset_msg', { name: source.name }), t('info_title'));
 }
 
 export function getCleanSourceData(source) {
