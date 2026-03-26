@@ -33,10 +33,16 @@ export function migrateOldData() {
         localStorage.setItem('focusAppData_' + key, oldJSON);
 
         // Migrate stats
-        const oldStats = localStorage.getItem('focusAppStats');
-        if (oldStats) {
-            localStorage.setItem('focus_app_stats_local', oldStats);
-            AppState.stats = JSON.parse(oldStats);
+        const oldStatsStr = localStorage.getItem('focusAppStats');
+        if (oldStatsStr) {
+            const oldStats = JSON.parse(oldStatsStr);
+            const migratedStats = {};
+            Object.keys(oldStats).forEach(qid => {
+                const key = `${sourceId}_${qid}`;
+                migratedStats[key] = oldStats[qid];
+            });
+            AppState.stats = migratedStats;
+            saveStats();
         }
 
         saveCurrentSource(key);

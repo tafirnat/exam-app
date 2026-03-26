@@ -3,11 +3,12 @@ import { initTheme, toggleTheme } from './core/theme.js';
 import { updateStaticTranslations, t, targetLanguages, translations } from './core/i18n.js';
 import { showToast, showConfirm, getCorrectAnswers, highlightText } from './core/utils.js';
 import { migrateOldData } from './core/migration.js';
-import { processJSON, loadFromUrl, loadFromFile, normalizeQuestions } from './features/sources/sources-service.js';
-import { renderSourcesList } from './features/sources/sources-ui.js';
+import { processJSON, loadFromUrl, loadFromFile, normalizeQuestions, mergeSources } from './features/sources/sources-service.js';
+import { renderSourcesList, showMergeModal, closeAllSourcesModals } from './features/sources/sources-ui.js';
 import { prepareTest, finishTest, prepareRetake } from './features/test/test-engine.js';
 import { renderQuestion, handleCheckAnswer, updateIndicators, handleTranslation, handleDifficultyRating, renderTestResults, handleTtsToggle, getIsAudioPlaying, stopAudio } from './features/test/test-ui.js';
 import { renderStatsList, updateHomeStats, setupStatsEventListeners } from './features/stats/stats-module.js';
+import { openQuestionEditor, closeQuestionEditor } from './features/stats/question-editor.js';
 import { initTimer, stopTimer } from './features/test/timer-module.js';
 
 
@@ -26,11 +27,15 @@ window.onRetake = (historyEntry, onlyIncorrect) => {
 
 // --- Global access for module cross-communication ---
 window.renderStatsList = renderStatsList;
+window.updateHomeStats = updateHomeStats;
+window.switchView = switchView; // Ensure it's available for modules
+window.goHome = goHome;
 
 // --- Initialize ---
 document.addEventListener('DOMContentLoaded', () => {
     console.log('DOMContentLoaded start');
     checkActiveTest();
+
     try {
         console.log('Migrating old data...');
         migrateOldData();
@@ -58,11 +63,18 @@ document.addEventListener('DOMContentLoaded', () => {
             if (!s) return;
 
             let changed = false;
+            
+            // Failsafe: Ensure s.coeff is a number (legacy compatibility)
+            if (isNaN(s.coeff)) {
+                s.coeff = 1.5;
+                changed = true;
+            }
+
             if (s.correct === 0 && s.wrong === 0 && s.coeff === 1.0) {
                 s.coeff = 1.5;
                 changed = true;
             }
-            if (s.streak === undefined) {
+            if (s.streak === undefined || isNaN(s.streak)) {
                 s.streak = 0;
                 changed = true;
             }
@@ -70,12 +82,17 @@ document.addEventListener('DOMContentLoaded', () => {
                 s.learned = false;
                 changed = true;
             }
-            if (s.stability === undefined || isNaN(s.stability)) {
+            if (s.stability === undefined || isNaN(s.stability) || s.stability === null) {
                 s.stability = 0;
                 changed = true;
             }
-            if (s.difficulty === undefined || isNaN(s.difficulty)) {
-                s.difficulty = 0;
+            if (s.difficulty === undefined || isNaN(s.difficulty) || s.difficulty === 0 || s.difficulty === null) {
+                // Migrate from legacy coeff if it exists, otherwise default to 5.0 (Center of 1-10)
+                if (s.coeff !== undefined && !isNaN(s.coeff)) {
+                    s.difficulty = Math.min(Math.max((s.coeff - 0.1) * (9 / 2.9) + 1, 1), 10);
+                } else {
+                    s.difficulty = 5.0;
+                }
                 changed = true;
             }
             if (s.lastReview === undefined) {
@@ -133,7 +150,11 @@ document.addEventListener('DOMContentLoaded', () => {
             // (they should be normalized/processed by now in the DOMContentLoaded logic above)
             const questions = [];
             AppState.sources.forEach(s => {
-                if (s.active && s.questions) questions.push(...s.questions);
+                if (s.active && s.questions) {
+                    s.questions.forEach(q => {
+                        questions.push({ ...q, sourceId: s.id });
+                    });
+                }
             });
             if (questions.length > 0) {
                 AppState.rawQuestions = questions;
@@ -143,6 +164,13 @@ document.addEventListener('DOMContentLoaded', () => {
 
         // --- History API popstate listener ---
         window.onpopstate = (e) => {
+            // Priority: Close any open modal first
+            const modalClosed = closeAllModals();
+            
+            // If a modal was closed, we might want to stay on the same page?
+            // However, the browser already moved the history. 
+            // To prevent double navigation, we check if it was just a modal close.
+            
             if (e.state && e.state.view) {
                 switchView(e.state.view, true);
             } else {
@@ -184,10 +212,10 @@ window.renderQuestionPreview = (q, stats = null, source = null) => {
     switchView('statsPreview');
 
     // Update the header title based on source
-    const isFromResults = AppState.currentPreviewSource === 'results';
+    // Update the header title
     const titleEl = document.querySelector('#previewIndicatorsBar .preview-title');
     if (titleEl) {
-        const titleKey = isFromResults ? 'result_preview' : 'stats_preview';
+        const titleKey = 'view_statsPreview';
         titleEl.setAttribute('data-i18n', titleKey);
         titleEl.innerText = t(titleKey);
     }
@@ -388,38 +416,38 @@ window.renderQuestionPreview = (q, stats = null, source = null) => {
             }
         }
     }
-    const s = stats || AppState.stats[q.id] || { correct: 0, wrong: 0, coeff: 1.5, note: '' };
+    const statKey = `${q.sourceId}_${q.id}`;
+    const baseDiff = (q.difficulty || 2.5) * 2;
+    const s = stats || AppState.stats[statKey] || { correct: 0, wrong: 0, difficulty: baseDiff, note: '' };
     const total = s.correct + s.wrong;
     const percent = total > 0 ? Math.round((s.correct / total) * 100) : 0;
     document.getElementById('previewStatsInfo').innerHTML = `
         <span>${t('correct')}: <b>${s.correct}</b></span>
         <span>${t('wrong')}: <b>${s.wrong}</b></span>
         <span>${t('success_percent', { percent })}</span>
-        <span>${t('coeff_label')} <b>${s.coeff.toFixed(1)}</b></span>
+        <span>${t('difficulty_label')} <b>${(s.difficulty / 2).toFixed(1)}</b></span>
     `;
     document.getElementById('previewNoteInput').value = s.note || '';
     const previewNoteArea = document.getElementById('previewNoteArea');
     if (previewNoteArea) previewNoteArea.classList.remove('visible');
+
+    // Display Tags
+    import('./features/test/test-ui.js').then(testUi => {
+        testUi.updateFooterTags(q.tags, 'previewFooterTags');
+    });
+
     updateIndicatorsPreview();
 
-    // Update the back button to show the correct view
     const backBtnText = document.getElementById('previewBackBtnText');
     if (backBtnText) {
-        const isFromResults = AppState.currentPreviewSource === 'results';
-        const key = isFromResults ? 'back_to_results' : 'back_to_stats';
+        const key = 'back'; // Simple and universal
         backBtnText.setAttribute('data-i18n', key);
         backBtnText.innerText = t(key);
     }
     const backBtn = document.getElementById('previewBackBtn');
     if (backBtn) {
-        const isFromResults = AppState.currentPreviewSource === 'results';
         backBtn.onclick = () => {
-            if (isFromResults) {
-                switchView('results');
-            } else {
-                switchView('stats');
-                renderStatsList(document.querySelector('.filter-btn.active')?.dataset.filter || 'all', document.getElementById('statsSearchInput')?.value || '');
-            }
+            window.history.back();
         };
     }
 };
@@ -427,9 +455,10 @@ window.renderQuestionPreview = (q, stats = null, source = null) => {
 window.onPreviewQuestion = window.renderQuestionPreview;
 
 function updateIndicatorsPreview() {
-    const qid = AppState.previewQuestionId;
-    if (!qid) return;
-    const s = AppState.stats[qid] || {};
+    const q = AppState.previewQuestion;
+    if (!q) return;
+    const statKey = `${q.sourceId}_${q.id}`;
+    const s = AppState.stats[statKey] || {};
     document.getElementById('previewIndStar').classList.toggle('active-star', !!s.starred);
     document.getElementById('previewIndFlag').classList.toggle('active-flag', !!s.flagged);
     document.getElementById('previewIndNote').classList.toggle('active-note', !!(s.note && s.note.trim() !== ''));
@@ -663,6 +692,11 @@ function setupEventListeners() {
     document.getElementById('previewMenuTranslateAllInline').onclick = translateAll;
     document.getElementById('previewMenuCopyAIInline').onclick = copyAIPrompt;
     document.getElementById('previewMenuCopyTextInline').onclick = copyQuestionText;
+    document.getElementById('statsPreviewEditBtn').onclick = () => {
+        if (AppState.previewQuestion) {
+            openQuestionEditor(AppState.previewQuestion);
+        }
+    };
 
 
 
@@ -714,6 +748,14 @@ function setupEventListeners() {
     }
 
     // Sources
+    const msBtn = document.getElementById('mergeSourcesBtn');
+    if (msBtn) msBtn.onclick = showMergeModal;
+
+    window.onMergeSourcesConfirm = (ids) => {
+        const source = mergeSources(ids);
+        if (source) renderSourcesList();
+    };
+
     document.getElementById('toggleAddSourceBtn').onclick = toggleAddSourcePanel;
     document.getElementById('loadUrlBtn').onclick = async () => {
         const url = document.getElementById('urlInput').value.trim();
@@ -731,6 +773,30 @@ function setupEventListeners() {
             const panel = document.getElementById('addSourcePanel');
             if (panel.style.display !== 'none') toggleAddSourcePanel();
             renderSourcesList();
+        }
+    };
+
+    document.getElementById('loadClipboardBtn').onclick = async () => {
+        try {
+            const text = await navigator.clipboard.readText();
+            if (!text || text.trim() === '') {
+                showToast(t('clipboard_empty'));
+                return;
+            }
+            const data = JSON.parse(text);
+            if (data.questions) {
+                const source = processJSON(data, t('load_clipboard'));
+                if (source) {
+                    const panel = document.getElementById('addSourcePanel');
+                    if (panel.style.display !== 'none') toggleAddSourcePanel();
+                    renderSourcesList();
+                }
+            } else {
+                showToast(t('invalid_format'));
+            }
+        } catch (err) {
+            console.error(err);
+            showToast(t('clipboard_error'));
         }
     };
 
@@ -897,8 +963,12 @@ function setupEventListeners() {
 
         statsSearchInput.oninput = () => {
             syncSearchState();
-            const activeFilter = document.querySelector('.filter-btn.active')?.dataset.filter || 'all';
-            renderStatsList(activeFilter, statsSearchInput.value);
+            if (AppState.activeTagFilter) {
+                renderTagView(AppState.activeTagFilter, 'all', statsSearchInput.value);
+            } else {
+                const activeFilter = document.querySelector('.filter-btn.active')?.dataset.filter || 'all';
+                renderStatsList(activeFilter, statsSearchInput.value);
+            }
         };
 
         statsSearchInput.onfocus = () => {
@@ -957,8 +1027,12 @@ function setupEventListeners() {
             statsSearchClear.onclick = (e) => {
                 e.stopPropagation();
                 statsSearchInput.value = '';
-                const activeFilter = document.querySelector('.filter-btn.active')?.dataset.filter || 'all';
-                renderStatsList(activeFilter, '');
+                if (AppState.activeTagFilter) {
+                    renderTagView(AppState.activeTagFilter, 'all', '');
+                } else {
+                    const activeFilter = document.querySelector('.filter-btn.active')?.dataset.filter || 'all';
+                    renderStatsList(activeFilter, '');
+                }
                 statsSearchInput.focus();
                 syncSearchState();
             };
@@ -978,8 +1052,9 @@ function setupEventListeners() {
         clearTimeout(noteTimeout);
         noteTimeout = setTimeout(() => {
             const q = AppState.rawQuestions[AppState.currentTest[AppState.currentIndex]];
-            if (!AppState.stats[q.id]) AppState.stats[q.id] = { coeff: 1.5, correct: 0, wrong: 0 };
-            AppState.stats[q.id].note = e.target.value.trim();
+            const statKey = `${q.sourceId}_${q.id}`;
+            if (!AppState.stats[statKey]) AppState.stats[statKey] = { difficulty: 5.0, correct: 0, wrong: 0 };
+            AppState.stats[statKey].note = e.target.value.trim();
             saveStats();
             updateIndicators();
         }, 500);
@@ -989,14 +1064,17 @@ function setupEventListeners() {
     document.getElementById('previewNoteInput').oninput = (e) => {
         clearTimeout(previewNoteTimeout);
         previewNoteTimeout = setTimeout(() => {
-            const qid = AppState.previewQuestionId;
-            if (!qid) return;
-            if (!AppState.stats[qid]) AppState.stats[qid] = { coeff: 1.5, correct: 0, wrong: 0 };
-            AppState.stats[qid].note = e.target.value.trim();
+            const q = AppState.previewQuestion;
+            if (!q) return;
+            const statKey = `${q.sourceId}_${q.id}`;
+            if (!AppState.stats[statKey]) AppState.stats[statKey] = { difficulty: 5.0, correct: 0, wrong: 0 };
+            AppState.stats[statKey].note = e.target.value.trim();
             saveStats();
             updateIndicatorsPreview();
         }, 500);
     };
+
+
 }
 
 
@@ -1045,6 +1123,7 @@ function switchView(view, isBack = false) {
         document.getElementById('statsView').style.display = 'none';
     }
     document.getElementById('statsPreviewView').style.display = view === 'statsPreview' ? 'flex' : 'none';
+
     if (view === 'statsPreview') {
         document.getElementById('statsPreviewView').style.flexDirection = 'column';
         document.getElementById('statsPreviewView').style.flex = '1';
@@ -1255,14 +1334,14 @@ function toggleStar() {
     const q = isPreview ? AppState.previewQuestion
         : AppState.rawQuestions[AppState.currentTest[AppState.currentIndex]];
     if (!q) return;
-    const qid = String(q.id);
-    if (!AppState.stats[qid]) AppState.stats[qid] = { coeff: 1.5, correct: 0, wrong: 0 };
-    AppState.stats[qid].starred = !AppState.stats[qid].starred;
+    const statKey = `${q.sourceId}_${q.id}`;
+    if (!AppState.stats[statKey]) AppState.stats[statKey] = { difficulty: 5.0, correct: 0, wrong: 0 };
+    AppState.stats[statKey].starred = !AppState.stats[statKey].starred;
     saveStats();
     if (isPreview) {
         updateIndicatorsPreview();
         const kw = document.getElementById('statsSearchInput')?.value || '';
-        renderStatsList(document.querySelector('.filter-btn.active')?.dataset.filter || 'all', kw);
+        renderStatsList(AppState.activeStatsFilter || 'all', kw);
     }
     else updateIndicators();
 
@@ -1274,14 +1353,14 @@ function toggleFlag() {
     const q = isPreview ? AppState.previewQuestion
         : AppState.rawQuestions[AppState.currentTest[AppState.currentIndex]];
     if (!q) return;
-    const qid = String(q.id);
-    if (!AppState.stats[qid]) AppState.stats[qid] = { coeff: 1.5, correct: 0, wrong: 0 };
-    AppState.stats[qid].flagged = !AppState.stats[qid].flagged;
+    const statKey = `${q.sourceId}_${q.id}`;
+    if (!AppState.stats[statKey]) AppState.stats[statKey] = { difficulty: 5.0, correct: 0, wrong: 0 };
+    AppState.stats[statKey].flagged = !AppState.stats[statKey].flagged;
     saveStats();
     if (isPreview) {
         updateIndicatorsPreview();
         const kw = document.getElementById('statsSearchInput')?.value || '';
-        renderStatsList(document.querySelector('.filter-btn.active')?.dataset.filter || 'all', kw);
+        renderStatsList(AppState.activeStatsFilter || 'all', kw);
     }
     else updateIndicators();
 
@@ -1485,5 +1564,42 @@ async function resetCustomPrompt() {
         saveCustomAIPrompt();
         showToast(t('reset_success') || 'Sıfırlandı');
     }
+}
+
+function closeAllModals() {
+    let closedAny = false;
+
+    // 1. Question Editor
+    const qe = document.getElementById('questionEditorOverlay');
+    if (qe && qe.style.display !== 'none') {
+        closeQuestionEditor();
+        closedAny = true;
+    }
+
+    // 2. Prompt Editor
+    const pe = document.getElementById('promptEditorOverlay');
+    if (pe && pe.classList.contains('active')) {
+        closePromptEditor();
+        closedAny = true;
+    }
+
+    // 3. Sources UI Modals
+    closeAllSourcesModals();
+
+    // 4. Progress Chart (Overlay)
+    const pc = document.getElementById('progressChartOverlay');
+    if (pc && pc.classList.contains('active')) {
+        pc.classList.remove('active');
+        closedAny = true;
+    }
+
+    // 5. Custom Modal (Utils)
+    const cm = document.getElementById('customModalOverlay');
+    if (cm && cm.classList.contains('active')) {
+        cm.classList.remove('active');
+        closedAny = true;
+    }
+
+    return closedAny;
 }
 

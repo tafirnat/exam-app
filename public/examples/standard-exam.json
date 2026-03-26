@@ -36,7 +36,13 @@
                 {
                     "id": 3,
                     "text": "Jupiter",
-                    "media": []
+                    "media": [
+                        {
+                            "type": "image",
+                            "url": "https://upload.wikimedia.org/wikipedia/commons/2/2b/Jupiter_and_its_shrunken_Great_Red_Spot.jpg",
+                            "position": "above"
+                        }
+                    ]
                 }
             ],
             "answer": {

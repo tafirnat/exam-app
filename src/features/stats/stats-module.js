@@ -3,20 +3,71 @@ import { t } from '../../core/i18n.js';
 import { showConfirm } from '../../core/utils.js';
 import { calculateRetrievability } from '../test/test-engine.js';
 
+
 export function renderStatsList(filter = 'all', searchKeyword = '') {
     AppState.searchKeyword = searchKeyword;
+    AppState.activeStatsFilter = filter;
+
     const list = document.getElementById('statsList');
     const sortBar = document.getElementById('statsSortBar');
     if (!list) return;
     list.innerHTML = '';
 
+    // Determine if we are in Tag Mode
+    const isTagMode = filter.startsWith('tag:');
+    const tagName = isTagMode ? filter.split('tag:')[1] : null;
+
+    // Restore/Update Title and Header Icon
+    const titleEl = document.getElementById('statsTitleText');
+    const headerIconEl = document.querySelector('#statsView .stats-header-icon');
+    
+    if (titleEl) {
+        titleEl.innerText = isTagMode ? `${t('tag_label') || 'Etiket'}: ${tagName}` : t('show_stats');
+    }
+
+    if (headerIconEl) {
+        if (isTagMode) {
+            headerIconEl.innerHTML = `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M20.59 13.41l-7.17 7.17a2 2 0 0 1-2.83 0L2 12V2h10l8.59 8.59a2 2 0 0 1 0 2.82z"></path><line x1="7" y1="7" x2="7.01" y2="7"></line></svg>`;
+        } else {
+            headerIconEl.innerHTML = `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="20" x2="18" y2="10"></line><line x1="12" y1="20" x2="12" y2="4"></line><line x1="6" y1="20" x2="6" y2="14"></line><path d="M2 20h20"></path></svg>`;
+        }
+    }
+
+    const backBtn = document.getElementById('statsBackBtn');
+    if (backBtn) {
+        if (isTagMode) {
+            backBtn.onclick = () => {
+                if (AppState.navigationSourceView) {
+                    const source = AppState.navigationSourceView;
+                    AppState.navigationSourceView = null; // Clear to prevent loops later
+                    if (window.switchView) window.switchView(source);
+                } else {
+                    window.history.back();
+                }
+            };
+        } else if (window.goHome) {
+            backBtn.onclick = window.goHome;
+        }
+    }
+
+    const filterTabs = document.getElementById('statsFilterBar');
+    if (filterTabs) {
+        filterTabs.style.display = isTagMode ? 'none' : 'flex';
+        
+        // Ensure specific filters are hidden/shown correctly if we ever show the bar in tag mode
+        const recentFilter = filterTabs.querySelector('[data-filter="recent"]');
+        const incorrectFilter = filterTabs.querySelector('[data-filter="incorrect"]');
+        if (recentFilter) recentFilter.style.display = isTagMode ? 'none' : 'flex';
+        if (incorrectFilter) incorrectFilter.style.display = isTagMode ? 'none' : 'flex';
+    }
+
     if (sortBar) {
-        sortBar.style.display = filter === 'all' ? 'flex' : 'none';
+        sortBar.style.display = (isTagMode || filter === 'all' || filter === 'starred' || filter === 'flagged' || filter === 'noted') ? 'flex' : 'none';
     }
 
     const filterBar = document.getElementById('statsFilterBar');
     if (filterBar) {
-        filterBar.classList.toggle('has-border', filter === 'all');
+        filterBar.classList.toggle('has-border', filter === 'all' || isTagMode);
     }
 
     if (filter === 'recent' || filter === 'incorrect') {
@@ -24,27 +75,74 @@ export function renderStatsList(filter = 'all', searchKeyword = '') {
         return;
     }
 
-    // Use the pool of questions from currently active sources
+    // Use the pool of questions from selected sources
     const activeQuestions = [];
-    const activeSources = AppState.sources.filter(s => s.active);
-    activeSources.forEach(s => {
+    const globalToggle = document.getElementById('statsGlobalToggle');
+    const isGlobal = globalToggle ? globalToggle.checked : false;
+
+    // Get sources sorted by last activity (most recent test)
+    const sortedSources = [...AppState.sources].sort((a, b) => {
+        const getLatest = (src) => {
+            const results = src.testResults || [];
+            if (results.length === 0) return 0;
+            const lastTime = results[results.length - 1].startTime;
+            if (!lastTime) return 0;
+            const time = new Date(lastTime).getTime();
+            return isNaN(time) ? 0 : time;
+        };
+        return getLatest(b) - getLatest(a);
+    });
+
+    let filterSources = [];
+    if (isGlobal || isTagMode) {
+        // In Tag Mode, we respect isGlobal for filtering, but start with sortedSources
+        if (isGlobal) {
+            filterSources = sortedSources;
+        } else {
+            const activeSources = sortedSources.filter(s => s.active);
+            const currentSource = sortedSources.find(s => s.id === AppState.currentSourceKey);
+            
+            filterSources = activeSources;
+            if (currentSource && currentSource.active) {
+                filterSources = [currentSource];
+            }
+        }
+    } else {
+        const activeSources = sortedSources.filter(s => s.active);
+        const currentSource = sortedSources.find(s => s.id === AppState.currentSourceKey);
+        
+        filterSources = activeSources;
+        if (currentSource && currentSource.active) {
+            filterSources = [currentSource];
+        }
+    }
+
+    filterSources.forEach(s => {
+        if (!s.questions) return;
         s.questions.forEach((q, originalIdx) => {
-            activeQuestions.push({ ...q, sourceName: s.name, originalIndex: originalIdx + 1 });
+            activeQuestions.push({ ...q, sourceId: s.id, sourceName: s.name, originalIndex: originalIdx + 1 });
         });
     });
 
     let filteredQuestions = activeQuestions;
 
     // Apply Tab Filter
-    if (filter !== 'all') {
+    if (isTagMode) {
         filteredQuestions = filteredQuestions.filter(q => {
-            const s = AppState.stats[q.id] || {};
+            const tags = q.tags || [];
+            return tags.includes(tagName);
+        });
+    } else if (filter !== 'all') {
+        filteredQuestions = filteredQuestions.filter(q => {
+            const statKey = `${q.sourceId}_${q.id}`;
+            const s = AppState.stats[statKey] || {};
             if (filter === 'starred') return s.starred;
             if (filter === 'flagged') return s.flagged;
             if (filter === 'noted') return s.note && s.note.trim() !== '';
             return true;
         });
     }
+
 
     // Apply Search Filter
     if (searchKeyword.trim() !== '') {
@@ -69,16 +167,16 @@ export function renderStatsList(filter = 'all', searchKeyword = '') {
     const dir = AppState.activeStatsSortDir === 'asc' ? 1 : -1;
 
     filteredQuestions.sort((a, b) => {
-        const sa = AppState.stats[a.id] || { correct: 0, wrong: 0, coeff: 1.5 };
-        const sb = AppState.stats[b.id] || { correct: 0, wrong: 0, coeff: 1.5 };
+        const sa = AppState.stats[`${a.sourceId}_${a.id}`] || { correct: 0, wrong: 0, difficulty: 5.0 };
+        const sb = AppState.stats[`${b.sourceId}_${b.id}`] || { correct: 0, wrong: 0, difficulty: 5.0 };
 
         let result = 0;
         if (field === 'original') {
             const idxA = activeQuestions.findIndex(q => q.id === a.id);
             const idxB = activeQuestions.findIndex(q => q.id === b.id);
             result = idxA - idxB;
-        } else if (field === 'coeff') {
-            result = sa.coeff - sb.coeff;
+        } else if (field === 'diff') {
+            result = sa.difficulty - sb.difficulty;
         } else if (field === 'success') {
             const totalA = sa.correct + sa.wrong;
             const totalB = sb.correct + sb.wrong;
@@ -116,7 +214,8 @@ export function renderStatsList(filter = 'all', searchKeyword = '') {
     }
 
     filteredQuestions.forEach((q, i) => {
-        const s = AppState.stats[q.id] || { correct: 0, wrong: 0, coeff: 1.5 };
+        const statKey = `${q.sourceId}_${q.id}`;
+        const s = AppState.stats[statKey] || { correct: 0, wrong: 0, difficulty: 5.0 };
         const total = s.correct + s.wrong;
         const percent = total > 0 ? Math.round((s.correct / total) * 100) : 0;
         const item = document.createElement('div');
@@ -145,7 +244,7 @@ export function renderStatsList(filter = 'all', searchKeyword = '') {
             </div>
             <div class="stats-item-meta">
                 <span>✓${s.correct} ✗${s.wrong} (${percent}%)</span>
-                <span class="${isLearned ? 'learned-coeff' : ''}">${t('coeff_label')} ${s.coeff.toFixed(1)}</span>
+                <span class="${isLearned ? 'learned-coeff' : ''}">${t('difficulty_label')} ${(s.difficulty / 2).toFixed(1)}</span>
             </div>
         `;
         item.onclick = () => {
@@ -169,12 +268,49 @@ function updateStatsFooter(filter, keyword, count) {
 }
 
 function renderHistoricalTests(list, filter) {
-    if (!AppState.recentTests || AppState.recentTests.length === 0) {
+    let testsToShow = [];
+    const globalToggle = document.getElementById('statsGlobalToggle');
+    const isGlobal = globalToggle ? globalToggle.checked : false;
+    const currentSource = AppState.sources.find(s => s.id === AppState.currentSourceKey);
+
+    if (!isGlobal && currentSource && currentSource.active && AppState.sources.filter(s => s.active).length === 1) {
+        // Use source-specific logs ONLY if specifically focusing on ONE active source AND not in global mode
+        if (filter === 'recent') {
+            testsToShow = currentSource.testResults || [];
+        } else if (filter === 'incorrect') {
+            testsToShow = currentSource.wrongData || [];
+        }
+    } else {
+        // Use global logs if multiple sources are active, no focus, or in global mode
+        testsToShow = AppState.recentTests || [];
+
+        if (filter === 'incorrect') {
+            // Further filter global tests to only show those with mistakes
+            testsToShow = testsToShow.filter(t => t.questions.some(q => !q.isCorrect && !q.isUnanswered));
+        }
+    }
+
+    if (testsToShow.length === 0) {
         list.innerHTML = `<div style="text-align:center; padding: 2rem; color: var(--text-secondary);">${t('no_recent_tests')}</div>`;
         return;
     }
 
-    AppState.recentTests.forEach((test, testIdx) => {
+    // Sort: "hataları her zaman eski tarihli test loglarına göre en üstte listelenmeli"
+    // This implies sorting by (wrongCount > 0) DESC, then by Date DESC?
+    // Or just prioritize any test with errors.
+    const sortedTests = [...testsToShow].sort((a, b) => {
+        const aHasWrong = (a.wrongCount || 0) > 0;
+        const bHasWrong = (b.wrongCount || 0) > 0;
+        
+        if (aHasWrong !== bHasWrong) {
+            return aHasWrong ? -1 : 1; // Prioritize tests with errors
+        }
+        
+        // Secondary sort: Date descending (newest first)
+        return new Date(b.startTime) - new Date(a.startTime);
+    });
+
+    sortedTests.forEach((test, testIdx) => {
         if (!test || !Array.isArray(test.questions)) return;
 
         // Independent deletion check
@@ -188,9 +324,9 @@ function renderHistoricalTests(list, filter) {
         if (questionsToShow.length === 0 && filter === 'incorrect') return;
         if (test.questions.length === 0) return;
 
-        const sourceNames = test.sourceNames || [test.sourceTitle || t('mixed_sources')];
-        const isMixed = sourceNames.length > 1;
-        const fullTitle = isMixed ? `${t('mixed_sources')}: ${sourceNames.join(', ')}` : sourceNames[0];
+        const sourceTitle = test.sourceTitle || (test.sourceNames?.length > 1 ? test.sourceNames.join(' + ') : (test.sourceNames?.[0] || t('mixed_sources')));
+        const isMixed = (test.sourceNames?.length > 1);
+        const fullTitle = sourceTitle;
 
         const testEl = document.createElement('div');
         testEl.className = 'history-test-item';
@@ -278,7 +414,11 @@ function renderHistoricalTests(list, filter) {
                 if (filter === 'recent') test.hiddenInRecent = true;
                 if (filter === 'incorrect') test.hiddenInIncorrect = true;
 
-                import('../../core/state.js').then(m => m.saveRecentTests());
+                if (currentSource) {
+                    import('../../core/state.js').then(m => m.saveSources());
+                } else {
+                    import('../../core/state.js').then(m => m.saveRecentTests());
+                }
                 renderStatsList(filter); // Refresh
             }
         };
@@ -304,11 +444,13 @@ function renderHistoricalTests(list, filter) {
     });
 
     // Update footer for historical tests
-    const visibleCount = AppState.recentTests.filter(test => {
+    const visibleCount = testsToShow.filter(test => {
         if (!test || !Array.isArray(test.questions) || test.questions.length === 0) return false;
         if (filter === 'recent' && test.hiddenInRecent) return false;
         if (filter === 'incorrect') {
             if (test.hiddenInIncorrect) return false;
+            // For incorrect tab, we already filtered tests with errors into wrongData if source-focused,
+            // but for global view or fallback, we check again.
             const hasIncorrect = test.questions.some(q => !q.isCorrect && !q.isUnanswered);
             if (!hasIncorrect) return false;
         }
@@ -319,8 +461,11 @@ function renderHistoricalTests(list, filter) {
 
 export function updateHomeStats() {
     const activeQuestions = [];
-    AppState.sources.forEach(s => {
-        if (s.active) activeQuestions.push(...(s.questions || []));
+    const activeSources = AppState.sources.filter(s => s.active);
+    const filterSources = activeSources;
+
+    filterSources.forEach(s => {
+        if (s.questions) activeQuestions.push(...s.questions);
     });
 
     const total = activeQuestions.length;
@@ -329,18 +474,21 @@ export function updateHomeStats() {
 
     let solved = 0;      // en az bir kez cevaplanmis (doğru veya yanlış)
     let learnedCount = 0;
-    let totalCoeff = 0;
-    activeQuestions.forEach(q => {
-        if (!q) return;
-        const qid = q.id;
-        const s = AppState.stats[qid];
-        if (s) {
-            if ((s.correct || 0) + (s.wrong || 0) > 0) solved++;
-            if (s.learned) learnedCount++;
-            totalCoeff += s.coeff || 1.5;
-        } else {
-            totalCoeff += 1.5;
-        }
+    let totalDifficulty = 0;
+    filterSources.forEach(source => {
+        if (!source.questions) return;
+        source.questions.forEach(q => {
+            if (!q) return;
+            const statKey = `${source.id}_${q.id}`;
+            const s = AppState.stats[statKey];
+            if (s) {
+                if ((s.correct || 0) + (s.wrong || 0) > 0) solved++;
+                if (s.learned) learnedCount++;
+                totalDifficulty += s.difficulty || 5.0;
+            } else {
+                totalDifficulty += 5.0;
+            }
+        });
     });
 
     // Segment calculations — learnedCount is a subset of solved
@@ -351,7 +499,7 @@ export function updateHomeStats() {
     const solvedOnlyPct = total > 0 ? (solvedOnlyCount / total * 100).toFixed(1) : 0;
     const notSolvedPct  = total > 0 ? Math.max(0, 100 - parseFloat(learnedPct) - parseFloat(solvedOnlyPct)).toFixed(1) : 100;
 
-    const avgCoeff = total > 0 ? (totalCoeff / total).toFixed(1) : "0.0";
+    const avgDiff = total > 0 ? (totalDifficulty / total / 2).toFixed(1) : "0.0";
     const updateEl = (id, text) => {
         const el = document.getElementById(id);
         if (el) el.innerText = text;
@@ -368,7 +516,7 @@ export function updateHomeStats() {
     const learnedLabelText = learnedCount > 0 ? ` • ${learnedCount} ${t('learned_label')}` : '';
 
     updateEl('homeStatTotal', total);
-    updateEl('homeStatAvg', avgCoeff);
+    updateEl('homeStatAvg', avgDiff);
     updateEl('homeProgressPercent', pctText);
 
     // Update 3 segments
@@ -477,6 +625,13 @@ export function setupStatsEventListeners() {
             renderStatsList(AppState.activeStatsFilter, AppState.searchKeyword);
         };
     });
+
+    const globalToggle = document.getElementById('statsGlobalToggle');
+    if (globalToggle) {
+        globalToggle.onchange = () => {
+            renderStatsList(AppState.activeStatsFilter, AppState.searchKeyword);
+        };
+    }
 }
 
 /**
@@ -533,8 +688,11 @@ function _bindChartOverlay() {
  */
 export function showProgressCharts() {
     const activeQuestions = [];
-    AppState.sources.forEach(s => {
-        if (s.active) activeQuestions.push(...(s.questions || []));
+    const activeSources = AppState.sources.filter(s => s.active);
+    const filterSources = activeSources;
+
+    filterSources.forEach(s => {
+        if (s.questions) activeQuestions.push(...s.questions);
     });
     const total = activeQuestions.length;
     if (total === 0) return;
@@ -543,22 +701,26 @@ export function showProgressCharts() {
     let learnedCount = 0, solvedCount = 0;
     const coeffGroups = { easy: 0, medium: 0, hard: 0, veryHard: 0 };
 
-    activeQuestions.forEach(q => {
-        const s = AppState.stats[q.id];
-        if (s) {
-            const answered = (s.correct || 0) + (s.wrong || 0) > 0;
-            if (s.learned) learnedCount++;
-            else if (answered) solvedCount++;
+    filterSources.forEach(source => {
+        if (!source.questions) return;
+        source.questions.forEach(q => {
+            const statKey = `${source.id}_${q.id}`;
+            const s = AppState.stats[statKey];
+            if (s) {
+                const answered = (s.correct || 0) + (s.wrong || 0) > 0;
+                if (s.learned) learnedCount++;
+                else if (answered) solvedCount++;
 
-            // Coeff groups: only for SOLVED questions as per user request
-            if (answered) {
-                const c = s.coeff || 1.5;
-                if (c <= 1.0)      coeffGroups.easy++;
-                else if (c <= 2.0) coeffGroups.medium++;
-                else if (c <= 2.6) coeffGroups.hard++;
-                else               coeffGroups.veryHard++;
+                // Difficulty groups: only for SOLVED questions as per user request
+                if (answered) {
+                    const d = s.difficulty || 5; 
+                    if (d <= 4.0)      coeffGroups.easy++;     // Display <= 2.0
+                    else if (d <= 6.0) coeffGroups.medium++;   // Display 2.0 - 3.0 
+                    else if (d <= 8.0) coeffGroups.hard++;     // Display 3.0 - 4.0
+                    else               coeffGroups.veryHard++; // Display > 4.0
+                }
             }
-        }
+        });
     });
     const notSolvedCount = total - learnedCount - solvedCount;
 
@@ -579,10 +741,10 @@ export function showProgressCharts() {
         document.getElementById('chartDifficulty'),
         document.getElementById('chartDiffLegend'),
         [
-            { label: `${t('difficulty_easy')} (≤1.0)`,     value: coeffGroups.easy,     color: '#22c55e', emoji: '🟢' },
-            { label: `${t('difficulty_medium')} (1.0–2.0)`,   value: coeffGroups.medium,  color: '#eab308', emoji: '🟡' },
-            { label: `${t('difficulty_hard')} (2.0–2.6)`,    value: coeffGroups.hard,    color: '#f97316', emoji: '🟠' },
-            { label: `${t('difficulty_very_hard')} (>2.6)`,   value: coeffGroups.veryHard, color: '#ef4444', emoji: '🔴' },
+            { label: `${t('difficulty_easy')}`,     value: coeffGroups.easy,     color: '#22c55e', emoji: '🟢' },
+            { label: `${t('difficulty_medium')}`,   value: coeffGroups.medium,  color: '#eab308', emoji: '🟡' },
+            { label: `${t('difficulty_hard')}`,    value: coeffGroups.hard,    color: '#f97316', emoji: '🟠' },
+            { label: `${t('difficulty_very_hard')}`,   value: coeffGroups.veryHard, color: '#ef4444', emoji: '🔴' },
         ],
         total
     );
@@ -749,7 +911,7 @@ function _drawDonut(canvas, legendEl, segments, total) {
                 // Use emoji if provided, otherwise fallback to dot
                 const icon = s.emoji ? `<span style="font-size:0.9rem; line-height:1;">${s.emoji}</span>` 
                              : `<span class="cl-dot" style="background-color:${s.color}; border:1px solid rgba(0,0,0,0.1)"></span>`;
-                return `<span>${icon} ${s.label}: <b>${s.value}</b> (${pct}%)</span>`;
+                return `<span>${icon} ${s.label}: ${s.value} (${pct}%)</span>`;
             }).join('');
     }
 }
@@ -783,8 +945,11 @@ function _drawWeeklyTrend(canvas) {
         });
     }
 
-    // Pull from recentTests
-    (AppState.recentTests || []).forEach(test => {
+    // Pull from reliable recentTests or source-specific logs
+    const currentSource = AppState.sources.find(s => s.id === AppState.currentSourceKey);
+    const testsToScan = currentSource ? (currentSource.testResults || []) : (AppState.recentTests || []);
+
+    testsToScan.forEach(test => {
         if (!test?.startTime) return;
         const dayStr = test.startTime.slice(0, 10);
         const bucket = days.find(d => d.dateStr === dayStr);

@@ -20,7 +20,7 @@ export const AppState = {
     language: detectLanguage(),
     translationTarget: detectTranslationTarget(),
     translationEnabled: JSON.parse(localStorage.getItem('focus_app_translation_enabled') ?? 'true'),
-    recentTests: JSON.parse(localStorage.getItem('focus_app_recent_tests') || '[]'),
+    recentTests: JSON.parse(localStorage.getItem('focus_app_recent_tests') || '[]').slice(0, 10),
     testTracking: null,
     previewQuestion: null,
     searchKeyword: '',
@@ -38,7 +38,9 @@ export const AppState = {
     timerCountdownLimit: parseInt(localStorage.getItem('focus_app_timer_limit') || '59', 10),
     timerAutoCheckEnabled: JSON.parse(localStorage.getItem('focus_app_timer_auto_check') ?? 'true'), // Default to true
     currentTtsVoice: null, // Randomly selected at test start
-    viewHistory: [] // Stack to track last 10 visited screens
+    viewHistory: [], // Stack to track last 10 visited screens
+    navigationSourceView: null, // View to return to from Tag Mode
+    activeTagFilter: null // Currently active tag Filter for stats view
 };
 
 export function saveStats() {

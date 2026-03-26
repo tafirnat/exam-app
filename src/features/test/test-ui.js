@@ -5,25 +5,109 @@ import { t, targetLanguages } from '../../core/i18n.js';
 import { evaluateAnswer, updateStats, finishTest, calculateRetrievability } from './test-engine.js';
 import { resetTimerForNewQuestion, stopTimer } from './timer-module.js';
 
-let currentAudio = null;
-let isAudioPlaying = false;
-let autoplayTimeoutId = null;
-let lastTtsStopReason = 'none'; // 'none', 'finished', 'navigation', 'manual'
-let lastRenderedIndex = -1;
+// --- TTS State Machine ---
+// States: 'IDLE' | 'SCHEDULED' | 'PLAYING'
+const TTS = {
+    state: 'IDLE',
+    audio: null,
+    timerId: null,
+    lastQIndex: -1,
+
+    get isPlaying() { return this.state === 'PLAYING'; },
+    get wasInterrupted() { return this.state === 'SCHEDULED' || this.state === 'PLAYING'; },
+
+    _cancelSchedule() {
+        if (this.timerId) {
+            clearTimeout(this.timerId);
+            this.timerId = null;
+        }
+    },
+
+    stop(silent = false) {
+        this._cancelSchedule();
+        if (this.audio) {
+            this.audio.onended = null;
+            this.audio.pause();
+            this.audio = null;
+        }
+        const wasActive = this.state !== 'IDLE';
+        this.state = 'IDLE';
+        if (!silent && wasActive) renderQuestion(true);
+    },
+
+    schedule(text, delay) {
+        this._cancelSchedule();
+        this.state = 'SCHEDULED';
+        this.timerId = setTimeout(() => {
+            this.timerId = null;
+            if (AppState.ttsAutoplay && this.state === 'SCHEDULED') {
+                this._play(text);
+            } else {
+                this.state = 'IDLE';
+            }
+        }, delay);
+    },
+
+    _play(text) {
+        if (!text) { this.state = 'IDLE'; return; }
+        const lang = AppState.language === 'tr' ? 'tr' : (AppState.language === 'de' ? 'de' : 'en');
+        const voicePrefix = lang === 'tr' ? 'tr-TR-Wavenet-' : (lang === 'de' ? 'de-DE-Wavenet-' : 'en-US-Wavenet-');
+        const voice = AppState.currentTtsVoice || 'A';
+        const speed = AppState.ttsSpeed || 0.5;
+        const baseUrl = 'https://www.google.com/speech-api/v1/synthesize';
+        const params = new URLSearchParams({ enc: 'mpeg', lang, speed, client: 'lr-language-tts', use_google_only_voices: '1', name: voicePrefix + voice, text });
+        const url = `${baseUrl}?${params.toString()}`;
+
+        this.audio = new Audio(url);
+        this.state = 'PLAYING';
+        renderQuestion(true);
+
+        this.audio.play().catch(err => {
+            console.error('TTS Playback failed:', err);
+            this.audio = null;
+            this.state = 'IDLE';
+            renderQuestion(true);
+        });
+
+        this.audio.onended = () => {
+            this.audio = null;
+            this.state = 'IDLE';
+            renderQuestion(true);
+        };
+    },
+
+    toggle(text) {
+        if (this.state === 'PLAYING') {
+            this.stop(false);
+        } else {
+            this._cancelSchedule();
+            this.state = 'IDLE';
+            this._play(text);
+        }
+    },
+
+    onNewQuestion(qIndex, text) {
+        const isNew = qIndex !== this.lastQIndex;
+        if (!isNew) return false;
+
+        const needsLongDelay = this.wasInterrupted;
+        this.stop(true); // silent stop: we'll re-render after scheduling
+        this.lastQIndex = qIndex;
+
+        if (AppState.ttsAutoplay && text) {
+            const delay = needsLongDelay ? 5000 : 1000;
+            this.schedule(text, delay);
+        }
+        return true;
+    }
+};
 
 export function getIsAudioPlaying() {
-    return isAudioPlaying;
+    return TTS.isPlaying;
 }
 
-export function stopAudio(silent = false, reason = 'manual') {
-    if (currentAudio) {
-        currentAudio.onended = null;
-        currentAudio.pause();
-        currentAudio = null;
-    }
-    isAudioPlaying = false;
-    if (reason !== 'none') lastTtsStopReason = reason;
-    if (!silent) renderQuestion();
+export function stopAudio(silent = false) {
+    TTS.stop(silent);
 }
 
 export function renderQuestion(isRefresh = false) {
@@ -33,33 +117,12 @@ export function renderQuestion(isRefresh = false) {
 
 
     const qIndex = AppState.currentIndex;
-    const isNewQuestion = qIndex !== lastRenderedIndex;
+    const isNewQuestion = qIndex !== TTS.lastQIndex;
 
     // Handle session start or navigation
     if (!isRefresh && isNewQuestion) {
-        const wasInBrowsingMode = lastTtsStopReason === 'navigation' || !!autoplayTimeoutId;
-
-        // If navigating while audio is playing, stop it and mark as interrupted
-        if (isAudioPlaying) {
-            stopAudio(true, 'navigation');
-        } else if (wasInBrowsingMode) {
-            // If we skip while already waiting (browsing), keep the navigation reason
-            // so the 5s delay resets for the new question.
-            lastTtsStopReason = 'navigation';
-        } else {
-            // If starting fresh or from a finished state, reset/keep logic
-            if (lastTtsStopReason !== 'finished') {
-                lastTtsStopReason = 'none';
-            }
-        }
-
-        lastRenderedIndex = qIndex;
-
-        // Clear any pending autoplay from previous navigation
-        if (autoplayTimeoutId) {
-            clearTimeout(autoplayTimeoutId);
-            autoplayTimeoutId = null;
-        }
+        const questionText = AppState.rawQuestions?.[AppState.currentTest?.[qIndex]]?.content?.text || '';
+        TTS.onNewQuestion(qIndex, questionText);
 
         // Reset countdown timer if applicable
         resetTimerForNewQuestion();
@@ -71,7 +134,8 @@ export function renderQuestion(isRefresh = false) {
         }
     }
     const q = AppState.rawQuestions[AppState.currentTest[qIndex]];
-    const stat = AppState.stats[q.id] || { coeff: 1.5, note: '' };
+    const statKey = `${q.sourceId}_${q.id}`;
+    const stat = AppState.stats[statKey] || { difficulty: 5.0, note: '' };
     const isChecked = AppState.isAnswerChecked[qIndex];
 
     document.getElementById('progressText').innerText = `${t('question_label')} ${qIndex + 1} / ${AppState.currentTest.length}`;
@@ -106,31 +170,16 @@ export function renderQuestion(isRefresh = false) {
     // Remove existing TTS elements
     card.querySelectorAll('.tts-btn').forEach(c => c.remove());
     if (AppState.ttsEnabled) {
-
+        const playing = TTS.isPlaying;
         const tBtn = document.createElement('button');
         tBtn.className = 'tts-btn';
-        if (isAudioPlaying) tBtn.classList.add('playing');
-        tBtn.innerHTML = isAudioPlaying ?
+        if (playing) tBtn.classList.add('playing');
+        tBtn.innerHTML = playing ?
             '<svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2.5"><rect x="6" y="4" width="4" height="16"></rect><rect x="14" y="4" width="4" height="16"></rect></svg>' :
             '<svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2.5"><polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5"></polygon><path d="M19.07 4.93a10 10 0 0 1 0 14.14M15.54 8.46a5 5 0 0 1 0 7.07"></path></svg>';
-
-        tBtn.onclick = () => handleTtsToggle(q.content?.text || q.text || '');
-
+        tBtn.onclick = () => TTS.toggle(q.content?.text || q.text || '');
         card.appendChild(tBtn);
-
-        // Autoplay Logic - Only trigger on new navigation, never on UI refresh
-        if (!isRefresh && isNewQuestion && AppState.ttsAutoplay && !isAudioPlaying) {
-            // User browsing delay: If we interrupted a previous playback, wait 5s
-            // Normal flow: wait 1s (1000ms)
-            const delay = lastTtsStopReason === 'navigation' ? 5000 : 1000;
-
-            autoplayTimeoutId = setTimeout(() => {
-                autoplayTimeoutId = null;
-                if (AppState.ttsAutoplay && !isAudioPlaying) {
-                    handleTtsToggle(q.content?.text || q.text || '');
-                }
-            }, delay);
-        }
+        // Autoplay is now handled by TTS.onNewQuestion() called above
     }
 
     // Reset translation state for new question
@@ -152,8 +201,10 @@ export function renderQuestion(isRefresh = false) {
 
     document.getElementById('noteInput').value = stat.note || '';
     document.getElementById('noteArea').classList.remove('visible');
+    
+    updateFooterTags(q.tags, 'questionFooterTags');
     updateIndicators();
-    updateQuestionStatsInfo(q.id);
+    updateQuestionStatsInfo(q.sourceId, q.id);
 
     if (q.type === 'text' || q.type === 'text_input' || q.type === 'open_ended' || q.type === 'fill_in_the_blank') {
         const val = AppState.userAnswers[qIndex]?.[0] || '';
@@ -438,10 +489,11 @@ function renderSummarySection() {
                 const q = AppState.rawQuestions[qId];
                 const isCorrect = evaluateAnswer(idx, userAnswer);
                 AppState.isAnswerChecked[idx] = true;
-                updateStats(q.id, isCorrect, userAnswer);
+                updateStats(q.sourceId, q.id, isCorrect, userAnswer);
             }
         });
         saveStats();
+        if (window.updateHomeStats) window.updateHomeStats();
 
         // If absolutely nothing was answered, just go home silently
         if (interactionCount === 0) {
@@ -466,7 +518,14 @@ function renderSummarySection() {
             }
         }
         showToast(t('test_completed'));
-        finishTest();
+        try {
+            console.log("Finishing test...");
+            await finishTest();
+            console.log("Test finished successfully.");
+        } catch (err) {
+            console.error("Error finishing test:", err);
+            showToast(t('error_occurred'));
+        }
     };
 }
 
@@ -535,7 +594,9 @@ export function selectOption(id, type) {
         else selected.push(id);
     }
     AppState.userAnswers[qIndex] = selected;
-    stopTimer();
+    if (AppState.timerCountdownEnabled) {
+        stopTimer();
+    }
     renderQuestion();
 }
 
@@ -559,8 +620,9 @@ export const handleCheckAnswer = (forceCheck = false) => {
 
     const isCorrect = evaluateAnswer(qIndex, userAnswer);
     AppState.isAnswerChecked[qIndex] = true;
-    updateStats(q.id, isCorrect, userAnswer);
+    updateStats(q.sourceId, q.id, isCorrect, userAnswer);
     saveStats();
+    if (window.updateHomeStats) window.updateHomeStats();
 
     // Auto-show summary if this is the last question
     const isLastQuestion = qIndex === AppState.currentTest.length - 1;
@@ -569,7 +631,9 @@ export const handleCheckAnswer = (forceCheck = false) => {
         if (summaryEl) summaryEl.dataset.autoShown = 'true';
     }
 
-    stopTimer();
+    if (AppState.timerCountdownEnabled) {
+        stopTimer();
+    }
     renderQuestion();
 };
 
@@ -598,14 +662,17 @@ export async function handleTranslation(btn, sid, tid) {
 export function updateIndicators() {
     const qIndex = AppState.currentIndex;
     const q = AppState.rawQuestions[AppState.currentTest[qIndex]];
-    const s = AppState.stats[q.id] || {};
+    if (!q) return;
+    const statKey = `${q.sourceId}_${q.id}`;
+    const s = AppState.stats[statKey] || {};
     document.getElementById('indStar').classList.toggle('active-star', !!s.starred);
     document.getElementById('indFlag').classList.toggle('active-flag', !!s.flagged);
     document.getElementById('indNote').classList.toggle('active-note', !!(s.note && s.note.trim() !== ''));
 }
 
-export function updateQuestionStatsInfo(qid) {
-    const s = AppState.stats[qid] || { correct: 0, wrong: 0, coeff: 1.5, stability: 0, lastReview: null };
+export function updateQuestionStatsInfo(sourceId, qid) {
+    const statKey = `${sourceId}_${qid}`;
+    const s = AppState.stats[statKey] || { correct: 0, wrong: 0, difficulty: 5.0, stability: 0, lastReview: null };
     const infoEl = document.getElementById('questionStatsInfo');
     if (infoEl) {
         const total = s.correct + s.wrong;
@@ -619,7 +686,7 @@ export function updateQuestionStatsInfo(qid) {
             <span>${t('correct')}: <b>${s.correct}</b></span>
             <span>${t('wrong')}: <b>${s.wrong}</b></span>
             <span>${t('success_percent', { percent })}</span>
-            <span>${t('coeff_label')} <b>${s.coeff.toFixed(1)}</b></span>
+            <span>${t('difficulty_label')} <b>${(s.difficulty / 2).toFixed(1)}</b></span>
             <span id="scrollSummaryBtn" style="
                 display: flex;
                 align-items: center;
@@ -682,41 +749,45 @@ export function updateQuestionStatsInfo(qid) {
 
 export function handleDifficultyRating(rating) {
     const qIndex = AppState.currentIndex;
-    const qId = AppState.currentTest[qIndex];
-    const q = AppState.rawQuestions[qId];
-    const userAnswer = AppState.userAnswers[qIndex];
-    const isCorrect = evaluateAnswer(qIndex, userAnswer);
+    const q = AppState.rawQuestions[AppState.currentTest[qIndex]];
+    if (!q) return;
+
+    const hardBtn = document.getElementById('diffHardBtn');
+    const easyBtn = document.getElementById('diffEasyBtn');
+
+    // Use the button's current active state as the single source of truth for toggle.
+    // This avoids any ambiguity between null / undefined in existingResult.feedback.
+    const clickedBtn = rating === 'hard' ? hardBtn : easyBtn;
+    const isCurrentlyActive = clickedBtn?.classList.contains('active');
+    const targetRating = isCurrentlyActive ? undefined : rating; // undefined = "no special feedback"
+
+    // Special case: switching from hard → easy stars the question
     const existingResult = AppState.testTracking?.results.find(r => String(r.questionId) === String(q.id));
-
-    let targetRating = rating;
-    let isTogglingOff = false;
-
-    if (existingResult && existingResult.feedback === rating) {
-        targetRating = null; // Toggle off
-        isTogglingOff = true;
-    } else if (existingResult && existingResult.feedback === 'hard' && rating === 'easy') {
-        // Special requirement: Switching from Hard to Easy stars the question
-        if (!AppState.stats[q.id]) AppState.stats[q.id] = { coeff: 1.5, correct: 0, wrong: 0 };
-        AppState.stats[q.id].starred = true;
+    if (!isCurrentlyActive && rating === 'easy' && existingResult?.feedback === 'hard') {
+        const statKey = `${q.sourceId}_${q.id}`;
+        if (!AppState.stats[statKey]) AppState.stats[statKey] = { difficulty: 5.0, correct: 0, wrong: 0 };
+        AppState.stats[statKey].starred = true;
         updateIndicators();
     }
 
-    // Update stats with feedback
-    updateStats(q.id, isCorrect, userAnswer, targetRating);
+    // Use the isCorrect already stored in existingResult to stay consistent with check time.
+    // Fall back to re-evaluation only if no tracking entry exists yet.
+    const isCorrect = existingResult ? existingResult.isCorrect : evaluateAnswer(qIndex, AppState.userAnswers[qIndex] || []);
+    const userAnswer = AppState.userAnswers[qIndex] || [];
+
+    updateStats(q.sourceId, q.id, isCorrect, userAnswer, targetRating);
     saveStats();
 
-    // Visual feedback: highlight selected button
-    const hardBtn = document.getElementById('diffHardBtn');
-    const easyBtn = document.getElementById('diffEasyBtn');
+    // Reflect toggle state visually
     if (hardBtn && easyBtn) {
         hardBtn.classList.toggle('active', targetRating === 'hard');
         easyBtn.classList.toggle('active', targetRating === 'easy');
     }
 
-    // Refresh UI to show new coefficient
-    updateQuestionStatsInfo(q.id);
+    updateQuestionStatsInfo(q.sourceId, q.id);
+    if (window.updateHomeStats) window.updateHomeStats();
 
-    if (isTogglingOff) {
+    if (targetRating === undefined) {
         showToast(t('feedback_removed'));
     } else {
         showToast(`${t('difficulty_' + rating)} ${t('feedback_received')}.`);
@@ -741,7 +812,9 @@ export function renderTestResults() {
     const correct = latestTest.correctCount ?? 0;
     const wrong = latestTest.wrongCount ?? 0;
     const unanswered = latestTest.unansweredCount ?? 0;
-    const rate = latestTest.successRate ?? 0;
+    // Success Rate Calculation (Correct / Total Questions)
+    const totalQuestions = correct + wrong + unanswered;
+    const rate = totalQuestions > 0 ? Math.round((correct / totalQuestions) * 100) : 0;
 
     document.getElementById('resCorrectCount').textContent = correct;
     document.getElementById('resWrongCount').textContent = wrong;
@@ -763,10 +836,33 @@ export function renderTestResults() {
         }
     }
 
+    // Gauge Update (3-Segment Donut)
     const gauge = document.querySelector('.success-rate-gauge');
     if (gauge) {
-        gauge.style.background = `conic-gradient(var(--primary-color) ${rate * 3.6}deg, var(--border-color) 0deg)`;
+        const total = correct + wrong + unanswered;
+        if (total > 0) {
+            const correctDeg = (correct / total) * 360;
+            const wrongDeg = (wrong / total) * 360;
+            const unansweredDeg = (unanswered / total) * 360;
+
+            // Colors
+            const colorCorrect = 'var(--success-color)';
+            const colorWrong = 'var(--error-color)';
+            const colorUnanswered = 'rgba(148, 163, 184, 0.3)'; // Grey as requested
+
+            gauge.style.background = `conic-gradient(
+                ${colorCorrect} 0deg ${correctDeg}deg, 
+                ${colorWrong} ${correctDeg}deg ${correctDeg + wrongDeg}deg, 
+                ${colorUnanswered} ${correctDeg + wrongDeg}deg 360deg
+            )`;
+        } else {
+            gauge.style.background = 'var(--border-color)';
+        }
     }
+    
+    // Update rate text inside gauge if it exists
+    const gaugeRateText = document.getElementById('resSuccessRateGaugeText');
+    if (gaugeRateText) gaugeRateText.textContent = `${rate}%`;
 
     // Question List
     const listEl = document.getElementById('resQuestionList');
@@ -777,11 +873,15 @@ export function renderTestResults() {
                 if (!q) return;
                 const item = document.createElement('div');
                 item.className = 'result-item';
-                if (q.isCorrect) item.classList.add('correct');
-                else if (q.isUnanswered) item.classList.add('unanswered');
-                else item.classList.add('wrong');
+                if (q.isCorrect) {
+                    item.classList.add('correct');
+                } else if (q.isUnanswered) {
+                    item.classList.add('unanswered');
+                } else {
+                    item.classList.add('wrong');
+                }
 
-                item.innerHTML = `#${idx + 1}`;
+                item.innerHTML = `${idx + 1}`; // Just the number as per mockup
                 item.onclick = () => window.showQuestionResult(latestTest.id, q.id);
                 listEl.appendChild(item);
             });
@@ -793,10 +893,9 @@ export function renderTestResults() {
     const dateEl = document.getElementById('resultsDate');
     if (dateEl && latestTest.endTime) {
         try {
-            dateEl.textContent = new Date(latestTest.endTime).toLocaleString(AppState.language);
-        } catch (e) {
-            dateEl.textContent = '';
-        }
+            const date = new Date(latestTest.endTime);
+            dateEl.textContent = date.toLocaleString();
+        } catch (e) {}
     }
 }
 
@@ -808,57 +907,69 @@ window.showQuestionResult = (testId, questionId) => {
 
     // Use stats preview logic from main.js (needs to be available)
     window.dispatchEvent(new CustomEvent('show-stats-preview', {
-        detail: { question: q, stats: AppState.stats[q.id] || { coeff: 1.5, correct: 0, wrong: 0 }, source: 'results' }
+        detail: { 
+            question: q, 
+            stats: AppState.stats[`${q.sourceId}_${q.id}`] || { difficulty: 5.0, correct: 0, wrong: 0 }, 
+            source: 'results' 
+        }
     }));
 };
 
+// handleTtsToggle: preview bağlamı için onRefresh callback desteğiyle TTS toggle
 export function handleTtsToggle(text, onRefresh = null) {
-    const refresh = onRefresh || (() => renderQuestion(true));
-
-    if (isAudioPlaying && currentAudio) {
-        stopAudio(onRefresh !== null, 'manual');
-        return;
+    if (onRefresh) {
+        // Preview context: use a custom refresh callback via a one-shot wrapper
+        if (TTS.isPlaying) {
+            TTS.stop(true);
+            onRefresh();
+        } else {
+            TTS._play(text);
+            if (TTS.audio) {
+                const origOnEnded = TTS.audio.onended;
+                TTS.audio.onended = () => {
+                    if (origOnEnded) origOnEnded();
+                    onRefresh();
+                };
+            }
+            onRefresh();
+        }
+    } else {
+        TTS.toggle(text);
     }
+}
 
-    if (!text) return;
+export function updateFooterTags(tags, containerId) {
+    const container = document.getElementById(containerId);
+    if (!container) return;
+    
+    container.innerHTML = '';
+    if (!tags || !Array.isArray(tags) || tags.length === 0) return;
 
-    // Reset stop reason when starting manually or via autoplay
-    lastTtsStopReason = 'none';
+    // Add Tag Icon once
+    const iconSpan = document.createElement('span');
+    iconSpan.className = 'tag-icon';
+    iconSpan.innerHTML = '<svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M20.59 13.41l-7.17 7.17a2 2 0 0 1-2.83 0L2 12V2h10l8.59 8.59a2 2 0 0 1 0 2.82z"></path><line x1="7" y1="7" x2="7.01" y2="7"></line></svg>';
+    container.appendChild(iconSpan);
 
-    const lang = AppState.language === 'tr' ? 'tr' : (AppState.language === 'de' ? 'de' : 'en');
-    const voicePrefix = lang === 'tr' ? 'tr-TR-Wavenet-' : (lang === 'de' ? 'de-DE-Wavenet-' : 'en-US-Wavenet-');
-    const voice = AppState.currentTtsVoice || "A";
-    const speed = AppState.ttsSpeed || 0.5;
-
-    const baseUrl = "https://www.google.com/speech-api/v1/synthesize";
-    const params = new URLSearchParams({
-        enc: 'mpeg',
-        lang: lang,
-        speed: speed,
-        client: 'lr-language-tts',
-        use_google_only_voices: '1',
-        name: voicePrefix + voice,
-        text: text
-    });
-
-    const url = `${baseUrl}?${params.toString()}`;
-
-    currentAudio = new Audio(url);
-    isAudioPlaying = true;
-    refresh();
-
-    if (currentAudio) {
-        currentAudio.play().catch(err => {
-            console.error("TTS Playback failed:", err);
-            isAudioPlaying = false;
-            refresh();
-        });
-
-        currentAudio.onended = () => {
-            isAudioPlaying = false;
-            currentAudio = null;
-            lastTtsStopReason = 'finished';
-            refresh();
+    tags.forEach(tag => {
+        const tagEl = document.createElement('span');
+        tagEl.className = 'footer-tag-item';
+        tagEl.innerText = tag;
+        tagEl.style.cursor = 'pointer'; // Ensure pointer cursor for accessibility
+        tagEl.onclick = (e) => {
+            e.stopPropagation();
+            // Store return path
+            const currentView = ['home', 'test', 'results', 'statsPreview'].find(v => {
+                const el = document.getElementById(v + 'View');
+                return el && el.style.display !== 'none';
+            }) || 'home';
+            
+            import('../../core/state.js').then(m => {
+                m.AppState.navigationSourceView = currentView;
+                if (window.switchView) window.switchView('stats');
+                if (window.renderStatsList) window.renderStatsList('tag:' + tag);
+            });
         };
-    }
+        container.appendChild(tagEl);
+    });
 }

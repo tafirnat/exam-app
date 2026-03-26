@@ -1,4 +1,4 @@
-import { AppState, saveStats, saveRecentTests, saveActiveTest, clearActiveTest } from '../../core/state.js';
+import { AppState, saveStats, saveRecentTests, saveActiveTest, clearActiveTest, saveSources } from '../../core/state.js';
 import { shuffleArray, getCorrectAnswers } from '../../core/utils.js';
 
 // FSRS v4.5 Simplified Constants
@@ -13,7 +13,11 @@ export function calculateRetrievability(stability, lastReviewDate) {
 export function prepareTest(count) {
     const rawQuestions = [];
     AppState.sources.forEach(s => {
-        if (s.active) rawQuestions.push(...s.questions);
+        if (s.active && s.questions) {
+            s.questions.forEach(q => {
+                rawQuestions.push({ ...q, sourceId: s.id });
+            });
+        }
     });
 
     if (rawQuestions.length === 0) return null;
@@ -22,7 +26,7 @@ export function prepareTest(count) {
 
     // FSRS Selection logic: Prioritize Overdue (R <= 0.9), then use Smart Selection
     let qs = rawQuestions.map((q, idx) => {
-        const stat = AppState.stats[q.id] || { coeff: 1.5, learned: false };
+        const stat = AppState.stats[q.id] || { difficulty: 5.0, learned: false };
         const r = calculateRetrievability(stat.stability, stat.lastReview);
         return { 
             idx, 
@@ -106,11 +110,15 @@ export function prepareTest(count) {
 function startTestTracking(count) {
     const activeSources = AppState.sources.filter(s => s.active);
     const names = activeSources.map(s => s.name || s.id);
+    
+    // Create a combined source title if multiple are active
+    const sourceTitle = names.length > 1 ? names.join(' + ') : (names[0] || "Unknown Source");
 
     AppState.testTracking = {
         startTime: new Date().toISOString(),
         endTime: null,
         sourceNames: names,
+        sourceTitle: sourceTitle, // Store the combined string
         questionCount: count,
         elapsedSeconds: 0,
         questionTimeRemaining: {},
@@ -135,7 +143,11 @@ export function prepareRetake(historyEntry, onlyIncorrect = false) {
     // Fallback: If rawQuestions is empty, we must ensure it's populated from active sources
     if (rawQuestions.length === 0) {
         AppState.sources.forEach(s => {
-            if (s.active) rawQuestions.push(...s.questions);
+            if (s.active && s.questions) {
+                s.questions.forEach(q => {
+                    rawQuestions.push({ ...q, sourceId: s.id });
+                });
+            }
         });
         AppState.rawQuestions = rawQuestions;
     }
@@ -172,6 +184,7 @@ export function prepareRetake(historyEntry, onlyIncorrect = false) {
         startTime: new Date().toISOString(),
         endTime: null,
         sourceNames: historyEntry.sourceNames,
+        sourceTitle: historyEntry.sourceTitle || (historyEntry.sourceNames?.length > 1 ? historyEntry.sourceNames.join(' + ') : historyEntry.sourceNames?.[0]),
         questionCount: shuffledIndices.length,
         retakeOfId: historyEntry.id, // Reference to original
         elapsedSeconds: 0,
@@ -196,7 +209,11 @@ export async function finishTest() {
             console.log("finishTest: Reconstructing rawQuestions from active sources...");
             AppState.rawQuestions = [];
             AppState.sources.forEach(s => {
-                if (s.active && s.questions) AppState.rawQuestions.push(...s.questions);
+                if (s.active && s.questions) {
+                    s.questions.forEach(q => {
+                        AppState.rawQuestions.push({ ...q, sourceId: s.id });
+                    });
+                }
             });
         }
 
@@ -212,7 +229,9 @@ export async function finishTest() {
                 return null;
             }
 
-            const result = AppState.testTracking.results.find(r => String(r.questionId) === String(q.id));
+            const result = AppState.testTracking.results.find(r => 
+                String(r.questionId) === String(q.id)
+            );
 
             if (result) {
                 return {
@@ -239,6 +258,7 @@ export async function finishTest() {
         const historyEntry = {
             id: Date.now(),
             sourceNames: AppState.testTracking.sourceNames || ["Unknown Source"],
+            sourceTitle: AppState.testTracking.sourceTitle || (AppState.testTracking.sourceNames?.length > 1 ? AppState.testTracking.sourceNames.join(' + ') : AppState.testTracking.sourceNames?.[0]),
             startTime: AppState.testTracking.startTime,
             endTime: AppState.testTracking.endTime,
             questionCount: total,
@@ -247,23 +267,76 @@ export async function finishTest() {
             unansweredCount,
             elapsedSeconds: AppState.testTracking.elapsedSeconds || 0,
             successRate: total > 0 ? Math.round((correctCount / total) * 100) : 0,
-            avgCoeff: total > 0 ? sessionQuestions.reduce((acc, q) => acc + (AppState.stats[q.id]?.coeff || 1.5), 0) / total : 2.0,
+            avgCoeff: total > 0 ? sessionQuestions.reduce((acc, q) => {
+                const key = `${q.sourceId}_${q.id}`;
+                return acc + (AppState.stats[key]?.coeff || 1.5);
+            }, 0) / total : 2.0,
             questions: sessionQuestions
         };
 
-        // If no questions were answered at all, don't save to history
-        if (correctCount === 0 && wrongCount === 0) {
-            console.log("finishTest: No questions answered, skipping history save.");
-            return null;
-        }
+        // Optional: If no questions were answered at all, you might want a message, 
+        // but the user wants to see the list anyway. 
+        // So we proceed to save history even with 0 answers.
 
         if (!Array.isArray(AppState.recentTests)) AppState.recentTests = [];
         AppState.recentTests.unshift(historyEntry);
-        if (AppState.recentTests.length > 15) {
-            AppState.recentTests = AppState.recentTests.slice(0, 15);
+        if (AppState.recentTests.length > 10) {
+            AppState.recentTests = AppState.recentTests.slice(0, 10);
         }
-
         saveRecentTests();
+
+        // --- Per-Source Logging (Limit 5) ---
+        // Identify sources based on the questions in this test
+        const involvedSourceIds = new Set();
+        sessionQuestions.forEach(q => {
+            if (q.sourceId) involvedSourceIds.add(q.sourceId);
+        });
+
+        involvedSourceIds.forEach(sourceId => {
+            const source = AppState.sources.find(s => s.id === sourceId);
+            if (!source) return;
+
+            // Questions specifically from this source
+            const sourceQuestions = sessionQuestions.filter(q => q.sourceId === sourceId);
+
+            if (sourceQuestions.length === 0) return;
+
+            const sourceCorrectCount = sourceQuestions.filter(q => q.isCorrect).length;
+            const sourceUnansweredCount = sourceQuestions.filter(q => q.isUnanswered).length;
+            const sourceWrongCount = sourceQuestions.length - sourceCorrectCount - sourceUnansweredCount;
+
+            const sourceEntry = {
+                ...historyEntry,
+                id: Date.now() + Math.random(), // Unique ID for source-specific entry
+                questionCount: sourceQuestions.length,
+                correctCount: sourceCorrectCount,
+                wrongCount: sourceWrongCount,
+                unansweredCount: sourceUnansweredCount,
+                successRate: sourceQuestions.length > 0 ? Math.round((sourceCorrectCount / sourceQuestions.length) * 100) : 0,
+                questions: sourceQuestions,
+                // For source-specific log, we include both the combined title AND sourceNames
+                sourceNames: historyEntry.sourceNames,
+                sourceTitle: historyEntry.sourceTitle
+            };
+
+            // 1. General Results Log (Last 5)
+            if (!source.testResults) source.testResults = [];
+            source.testResults.unshift(sourceEntry);
+            if (source.testResults.length > 5) {
+                source.testResults = source.testResults.slice(0, 5);
+            }
+
+            // 2. Wrong Data Log (Last 5 with errors)
+            if (sourceWrongCount > 0) {
+                if (!source.wrongData) source.wrongData = [];
+                source.wrongData.unshift(sourceEntry);
+                if (source.wrongData.length > 5) {
+                    source.wrongData = source.wrongData.slice(0, 5);
+                }
+            }
+        });
+        saveSources();
+
 
         // Dispatch event AFTER state is updated and historyEntry is added
         window.dispatchEvent(new CustomEvent('test-finished', { detail: historyEntry }));
@@ -302,26 +375,46 @@ export function evaluateAnswer(questionIndex, userAnswer) {
     return isCorrect;
 }
 
-export function updateStats(questionId, isCorrect, userAnswer, feedback = undefined) {
-    if (!AppState.stats[questionId]) {
-        AppState.stats[questionId] = { 
-            coeff: 1.5, 
+export function updateStats(sourceId, questionId, isCorrect, userAnswer, feedback = undefined) {
+    const key = `${sourceId}_${questionId}`;
+    if (!AppState.stats[key]) {
+        AppState.stats[key] = { 
+            difficulty: 5.0, 
             correct: 0, 
             wrong: 0, 
             starred: false, 
             flagged: false, 
             streak: 0,
             stability: 0,
-            difficulty: 0, // Will be initialized on first answer
             lastReview: null
         };
     }
-    const stat = AppState.stats[questionId];
+    let stat = AppState.stats[key];
     if (stat.streak === undefined) stat.streak = 0;
 
     let existingResult = null;
-    if (AppState.testTracking) {
+    if (AppState.testTracking && AppState.testTracking.results) {
+        // Find existing result for THIS session
         existingResult = AppState.testTracking.results.find(r => String(r.questionId) === String(questionId));
+    }
+
+    // --- Toggle Logic: Snapshot & Restore ---
+    if (existingResult && existingResult._preSessionState) {
+        // Restore to the EXACT state before this question was first answered in this session
+        Object.keys(existingResult._preSessionState).forEach(prop => {
+            stat[prop] = JSON.parse(JSON.stringify(existingResult._preSessionState[prop]));
+        });
+    } else if (AppState.testTracking && !existingResult) {
+        // First time this question is touched in this session: take a snapshot
+        const snapshot = JSON.parse(JSON.stringify(stat));
+        existingResult = {
+            questionId: questionId,
+            isCorrect: isCorrect,
+            userAnswer: userAnswer,
+            streak: stat.streak,
+            _preSessionState: snapshot
+        };
+        AppState.testTracking.results.push(existingResult);
     }
 
     // FSRS Rating Mapping
@@ -336,17 +429,25 @@ export function updateStats(questionId, isCorrect, userAnswer, feedback = undefi
     if (!stat.lastReview || !stat.stability || isNaN(stat.stability)) {
         // First review or recovery from corrupt/legacy data
         stat.stability = FSRS_W[rating - 1];
-        stat.difficulty = Math.min(Math.max(FSRS_W[4] - FSRS_W[5] * (rating - 3), 1), 10);
+        
+        // Use JSON difficulty (1-5) mapped to Algorithm difficulty (1-10) if available
+        const q = AppState.rawQuestions?.find(q => String(q.id) === String(questionId) && String(q.sourceId) === String(sourceId));
+        if (q && q.difficulty !== undefined) {
+            const baseD = Math.min(Math.max(q.difficulty * 2, 1), 10);
+            stat.difficulty = Math.min(Math.max(baseD - FSRS_W[6] * (rating - 3), 1), 10);
+        } else {
+            stat.difficulty = Math.min(Math.max(FSRS_W[4] - FSRS_W[5] * (rating - 3), 1), 10);
+        }
     } else {
         const elapsedDays = (new Date() - new Date(stat.lastReview)) / (1000 * 60 * 60 * 24);
         const retrievability = calculateRetrievability(stat.stability, stat.lastReview);
 
-        // Update Difficulty
+        // Update Difficulty (Toggle behavior supported by restoration above)
         stat.difficulty = Math.min(Math.max(stat.difficulty - FSRS_W[6] * (rating - 3), 1), 10);
 
         // Update Stability
         if (rating === 1) {
-            // Again: S_new = w[7] * exp(w[8] * (rate-1)??) -> simplified: S_new = S * factor
+            // Again: S_new = S * 0.2
             stat.stability = Math.max(stat.stability * 0.2, 0.1);
         } else {
             // Correct answer
@@ -354,7 +455,6 @@ export function updateStats(questionId, isCorrect, userAnswer, feedback = undefi
             const easyFactor = rating === 4 ? FSRS_W[16] : 1;
             
             // FSRS Stability boost formula (simplified)
-            // S = S * (1 + exp(w[8]) * (11 - D) * S^-w[9] * (exp(w[10] * (1 - R)) - 1))
             const factor = 1 + Math.exp(FSRS_W[8]) * (11 - stat.difficulty) * Math.pow(stat.stability, -FSRS_W[9]) * 
                            (Math.exp(FSRS_W[10] * (1 - retrievability)) - 1);
             
@@ -365,43 +465,34 @@ export function updateStats(questionId, isCorrect, userAnswer, feedback = undefi
     stat.lastReview = now;
 
     // Legacy Coeff update for UI continuity
-    // Map Difficulty 1-10 to Coeff 0.1-3.0
-    // Difficulty 5 (Neutral) -> Coeff 1.5
-    // Difficulty 1 (Easy) -> Coeff 0.1
-    // Difficulty 10 (Hard) -> Coeff 3.0
-    stat.coeff = 0.1 + (stat.difficulty - 1) * (2.9 / 9);
+    stat.coeff = stat.difficulty / 2;
 
-    if (feedback !== undefined) {
-        // Direct feedback update
-        if (feedback === 'hard') stat.learned = false;
-        if (existingResult) {
-            existingResult.feedback = feedback;
-        }
+    // --- Core Answer/Session Update ---
+    // We apply this AND the feedback logic to ensure data integrity after restoration.
+    if (isCorrect) {
+        if (stat.streak < 0) stat.streak = 1; else stat.streak++;
+        stat.correct++;
     } else {
-        // Initial session update
-        if (isCorrect) {
-            if (stat.streak < 0) stat.streak = 1; else stat.streak++;
-            stat.correct++;
-        } else {
-            if (stat.streak > 0) stat.streak = -1; else stat.streak--;
-            stat.wrong++;
-            stat.learned = false;
-        }
+        if (stat.streak > 0) stat.streak = -1; else stat.streak--;
+        stat.wrong++;
+        stat.learned = false;
+    }
 
-        // Streak-based "Learned" status
-        if (stat.streak >= 5 || (stat.stability > 30)) {
-            stat.learned = true;
-        }
+    // Streak-based "Learned" status
+    if (stat.streak >= 5 || (stat.stability > 30)) {
+        stat.learned = true;
+    }
 
-        if (AppState.testTracking && !existingResult) {
-            AppState.testTracking.results.push({
-                questionId,
-                isCorrect,
-                userAnswer,
-                streak: stat.streak
-            });
+    if (existingResult) {
+        existingResult.isCorrect = isCorrect;
+        existingResult.userAnswer = userAnswer;
+        existingResult.streak = stat.streak;
+        if (feedback !== undefined) {
+            existingResult.feedback = feedback;
+            if (feedback === 'hard') stat.learned = false;
         }
     }
+
     saveActiveTest();
     saveStats();
 }

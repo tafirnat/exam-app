@@ -59,21 +59,23 @@ function scheduleNextTick(textElement) {
 }
 
 export function resetTimerForNewQuestion() {
-    if (!AppState.timerCountdownEnabled) return;
     const qIndex = AppState.currentIndex;
-    if (AppState.testTracking && AppState.testTracking.questionTimeRemaining) {
-        // If we revisit a question, don't reset unless it's not set yet
-        if (AppState.testTracking.questionTimeRemaining[qIndex] === undefined) {
-            AppState.testTracking.questionTimeRemaining[qIndex] = AppState.timerCountdownLimit || 59;
+    if (AppState.timerCountdownEnabled) {
+        if (AppState.testTracking && AppState.testTracking.questionTimeRemaining) {
+            // If we revisit a question, don't reset unless it's not set yet
+            if (AppState.testTracking.questionTimeRemaining[qIndex] === undefined) {
+                AppState.testTracking.questionTimeRemaining[qIndex] = AppState.timerCountdownLimit || 59;
+            }
         }
     }
+    
     // Update display immediately so there's no lag
     const textElement = document.getElementById('timerText');
     lastTickTime = Date.now(); // Reset baseline
     tickTimer(textElement, 0); // Re-render with 0 delta
     
     // Ensure the loop is running (restarts if it was stopped)
-    if (!timerTimeout && AppState.testTracking) {
+    if (!timerTimeout && AppState.testTracking && (AppState.timerCountdownEnabled || AppState.timerStopwatchEnabled)) {
         scheduleNextTick(textElement);
     }
 }
@@ -86,9 +88,8 @@ function tickTimer(textElement, delta) {
     const isChecked = AppState.isAnswerChecked[qIndex];
 
     if (AppState.timerStopwatchEnabled) {
-        if (!isChecked) {
-            AppState.testTracking.elapsedSeconds += delta;
-        }
+        // Stopwatch runs continuously regardless of whether the question is checked
+        AppState.testTracking.elapsedSeconds += delta;
         const totalSecs = AppState.testTracking.elapsedSeconds || 0;
         displayStr = formatTimeDisplay(totalSecs, totalSecs < 10);
 

@@ -3,16 +3,24 @@ import { t } from '../../core/i18n.js';
 import { showConfirm, showAlert } from '../../core/utils.js';
 
 export function toggleSource(id) {
-    let sourceName = '';
-    let statusText = '';
+    let activeCount = 0;
     AppState.sources.forEach(s => {
         if (s.id === id) {
             s.active = !s.active;
-            if (s.active) s.lastUsed = Date.now();
-            sourceName = s.name;
-            statusText = s.active ? (AppState.language === 'tr' ? 'aktif' : (AppState.language === 'de' ? 'aktiv' : 'active')) : (AppState.language === 'tr' ? 'pasif' : (AppState.language === 'de' ? 'inaktiv' : 'inactive'));
+            if (s.active) {
+                s.lastUsed = Date.now();
+                // When a source is activated, we set it as the "focused" source 
+                // but keep other active sources as well.
+                import('../../core/state.js').then(m => m.saveCurrentSource(id));
+            } else if (AppState.currentSourceKey === id) {
+                // If the currently focused source is deactivated, find another active one or null
+                const anotherActive = AppState.sources.find(s => s.active && s.id !== id);
+                import('../../core/state.js').then(m => m.saveCurrentSource(anotherActive ? anotherActive.id : null));
+            }
         }
+        if (s.active) activeCount++;
     });
+
     saveSources();
     renderSourcesList();
     if (window.onSourcesUpdated) window.onSourcesUpdated();
@@ -23,7 +31,28 @@ export async function removeSource(id) {
     if (!source) return;
     if (!await showConfirm(t('confirm_remove_source', { name: '' }))) return;
     const oldName = source.name;
+    
+    // 1. Purge related stats
+    Object.keys(AppState.stats).forEach(key => {
+        if (key.startsWith(`${id}_`)) {
+            delete AppState.stats[key];
+        }
+    });
+    
+    // 2. Purge related global history entries
+    import('../../core/state.js').then(m => {
+        AppState.recentTests = AppState.recentTests.filter(entry => entry.sourceId !== id);
+        m.saveRecentTests();
+    });
+
+    // 3. Remove from sources
     AppState.sources = AppState.sources.filter(s => s.id !== id);
+    
+    if (AppState.currentSourceKey === id) {
+        import('../../core/state.js').then(m => m.saveCurrentSource(null));
+    }
+
+    saveStats();
     saveSources();
     renderSourcesList();
     if (window.onSourcesUpdated) window.onSourcesUpdated();
@@ -35,13 +64,19 @@ export async function resetSourceStats(id) {
     const source = AppState.sources.find(s => s.id === id);
     if (!source) return;
 
-    if (source.questions) {
-        source.questions.forEach(q => {
-            if (q.id) delete AppState.stats[q.id];
-        });
-    }
+    // 1. Purge all related stats (composite keys)
+    Object.keys(AppState.stats).forEach(key => {
+        if (key.startsWith(`${id}_`)) {
+            delete AppState.stats[key];
+        }
+    });
+
+    // 2. Clear per-source logs
+    source.testResults = [];
+    source.wrongData = [];
 
     saveStats();
+    saveSources(); // To save the cleared logs in the source object
     renderSourcesList();
     if (window.onSourcesUpdated) window.onSourcesUpdated();
     showAlert(t('source_reset_msg', { name: source.name }), t('info_title'));
@@ -103,6 +138,112 @@ export async function shareSourceJSON(source) {
     }
 }
 
+export function showSourceActions(source) {
+    const overlay = document.getElementById('sourceActionsOverlay');
+    const nameEl = document.getElementById('sourceActionsName');
+    const resetBtn = document.getElementById('modalResetBtn');
+    const downloadBtn = document.getElementById('modalDownloadBtn');
+    const shareBtn = document.getElementById('modalShareBtn');
+    const editBtn = document.getElementById('modalEditMetadataBtn');
+    const closeBtn = document.getElementById('sourceActionsCloseBtn');
+
+    if (!overlay || !nameEl || !resetBtn || !downloadBtn || !shareBtn || !editBtn || !closeBtn) return;
+
+    nameEl.textContent = source.name;
+    overlay.classList.add('active');
+
+    const closeActions = () => {
+        overlay.classList.remove('active');
+        resetBtn.onclick = null;
+        downloadBtn.onclick = null;
+        shareBtn.onclick = null;
+        editBtn.onclick = null;
+        closeBtn.onclick = null;
+    };
+
+    editBtn.onclick = () => {
+        closeActions();
+        showEditMetadata(source);
+    };
+
+    resetBtn.onclick = async () => {
+        closeActions();
+        await resetSourceStats(source.id);
+    };
+
+    downloadBtn.onclick = () => {
+        closeActions();
+        downloadSourceJSON(source);
+    };
+
+    shareBtn.onclick = () => {
+        closeActions();
+        shareSourceJSON(source);
+    };
+
+    closeBtn.onclick = closeActions;
+    
+    // Also close on overlay click
+    overlay.onclick = (e) => {
+        if (e.target === overlay) closeActions();
+    };
+}
+
+export function showEditMetadata(source) {
+    const overlay = document.getElementById('editMetadataOverlay');
+    const titleInput = document.getElementById('editMetaTitle');
+    const categoryInput = document.getElementById('editMetaCategory');
+    const descInput = document.getElementById('editMetaDescription');
+    const saveBtn = document.getElementById('editMetaSaveBtn');
+    const cancelBtn = document.getElementById('editMetaCancelBtn');
+
+    if (!overlay || !titleInput || !categoryInput || !descInput || !saveBtn || !cancelBtn) return;
+
+    // Populate with current values
+    const meta = source.metadata || {};
+    titleInput.value = meta.title || source.name || '';
+    categoryInput.value = meta.category || '';
+    descInput.value = meta.description || '';
+
+    overlay.classList.add('active');
+
+    const closeEdit = () => {
+        overlay.classList.remove('active');
+        saveBtn.onclick = null;
+        cancelBtn.onclick = null;
+    };
+
+    saveBtn.onclick = () => {
+        const newTitle = titleInput.value.trim();
+        const newCategory = categoryInput.value.trim();
+        const newDesc = descInput.value.trim();
+
+        // Validation
+        const finalTitle = newTitle || meta.title || source.name || t('untitled_source');
+        const finalCategory = newCategory || meta.category || 'General';
+        const finalDesc = newDesc || meta.description || '';
+
+        source.metadata = {
+            ...(source.metadata || {}),
+            title: finalTitle,
+            category: finalCategory,
+            description: finalDesc
+        };
+        source.name = finalTitle;
+
+        saveSources();
+        renderSourcesList();
+        if (window.onSourcesUpdated) window.onSourcesUpdated();
+        
+        closeEdit();
+    };
+
+    cancelBtn.onclick = closeEdit;
+    overlay.onclick = (e) => {
+        if (e.target === overlay) closeEdit();
+    };
+}
+
 export function renderSourcesList() {
     const container = document.getElementById('sourcesList');
     if (!container) return;
@@ -158,7 +299,7 @@ export function renderSourcesList() {
         // Simpler: success rate = correct / (correct + wrong) across all answered questions
         let totalCorrect = 0, totalWrong = 0, totalCoeffSum = 0, answeredAny = 0;
         questions.forEach(q => {
-            const st = AppState.stats[q.id];
+            const st = AppState.stats[`${s.id}_${q.id}`];
             if (st && (st.correct > 0 || st.wrong > 0)) {
                 totalCorrect += st.correct || 0;
                 totalWrong += st.wrong || 0;
@@ -185,57 +326,31 @@ export function renderSourcesList() {
             </div>
             <div class="origin-tag" style="font-size:0.7rem; color:var(--primary-color); opacity:0.8; margin-top:4px; display: flex; align-items: center; gap: 6px; flex-wrap: wrap;">
                 ${originContent}
-                <div style="display:flex; gap: 4px; margin-left: auto;">
-                    <button class="reset-source-btn" style="background: var(--surface-hover); border: 1px solid var(--border-color); padding: 4px 8px; border-radius: 6px; cursor: pointer; color: var(--text-secondary); display: flex; align-items: center; gap: 4px; transition: all 0.2s;" title="${t('reset_source')}">
-                        <svg viewBox="0 0 24 24" width="12" height="12" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M23 4v6h-6"></path><path d="M20.49 15a9 9 0 1 1-2.12-9.36L23 10"></path></svg>
-                        <span style="font-size: 0.7rem; font-weight: 500;">${t('reset')}</span>
-                    </button>
-                    <button class="download-source-btn" style="background: var(--surface-hover); border: 1px solid var(--border-color); padding: 4px 8px; border-radius: 6px; cursor: pointer; color: var(--text-secondary); display: flex; align-items: center; gap: 4px; transition: all 0.2s;" title="${t('download')}">
-                        <svg viewBox="0 0 24 24" width="12" height="12" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path><polyline points="7 10 12 15 17 10"></polyline><line x1="12" y1="15" x2="12" y2="3"></line></svg>
-                        <span style="font-size: 0.7rem; font-weight: 500;">${t('download')}</span>
-                    </button>
-                    <button class="share-source-btn" style="background: var(--primary-color); border: none; padding: 4px 8px; border-radius: 6px; cursor: pointer; color: white; display: flex; align-items: center; gap: 4px; transition: all 0.2s; box-shadow: 0 2px 4px rgba(0,0,0,0.1);" title="${t('share_source')}">
-                        <svg viewBox="0 0 24 24" width="12" height="12" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="18" cy="5" r="3"></circle><circle cx="6" cy="12" r="3"></circle><circle cx="18" cy="19" r="3"></circle><line x1="8.59" y1="13.51" x2="15.42" y2="17.49"></line><line x1="15.41" y1="6.51" x2="8.59" y2="10.49"></line></svg>
-                        <span style="font-size: 0.7rem; font-weight: 500;">${t('share_source')}</span>
-                    </button>
-                </div>
             </div>
         `;
 
-        const resetBtn = info.querySelector('.reset-source-btn');
-        if (resetBtn) {
-            resetBtn.onclick = (e) => {
-                e.stopPropagation();
-                resetSourceStats(s.id);
-            };
-        }
-
-        const downloadBtn = info.querySelector('.download-source-btn');
-        if (downloadBtn) {
-            downloadBtn.onclick = (e) => {
-                e.stopPropagation();
-                downloadSourceJSON(s);
-            };
-        }
-
-        const shareBtn = info.querySelector('.share-source-btn');
-        if (shareBtn) {
-            shareBtn.onclick = (e) => {
-                e.stopPropagation();
-                shareSourceJSON(s);
-            };
-        }
+        const actionsBtn = document.createElement('button');
+        actionsBtn.className = 'icon-btn';
+        actionsBtn.style.color = 'var(--primary-color)';
+        actionsBtn.title = t('source_actions_title');
+        actionsBtn.innerHTML = `
+            <svg viewBox="0 0 24 24" width="20" height="20">
+                <rect x="4" y="4" width="7" height="7" rx="1.5" fill="currentColor"></rect>
+                <circle cx="16.5" cy="7.5" r="3.5" class="status-dot-svg ${s.active ? 'active' : ''}" 
+                    stroke="currentColor" stroke-width="2" fill="none"></circle>
+                <rect x="4" y="13" width="7" height="7" rx="1.5" fill="currentColor"></rect>
+                <rect x="13" y="13" width="7" height="7" rx="1.5" fill="currentColor"></rect>
+            </svg>
+        `;
+        actionsBtn.onclick = (e) => {
+            e.stopPropagation();
+            showSourceActions(s);
+        };
 
         const actions = document.createElement('div');
         actions.style.display = 'flex';
         actions.style.gap = '0.5rem';
         actions.style.alignItems = 'center';
-
-        const statusIndicator = document.createElement('div');
-        statusIndicator.style.display = 'flex';
-        statusIndicator.style.alignItems = 'center';
-        statusIndicator.style.padding = '0 4px';
-        statusIndicator.innerHTML = `<span class="status-dot ${s.active ? 'active' : ''}"></span>`;
 
         const delBtn = document.createElement('button');
         delBtn.className = 'icon-btn';
@@ -243,11 +358,11 @@ export function renderSourcesList() {
         delBtn.innerHTML = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="3 6 5 6 21 6"></polyline><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path></svg>';
         delBtn.onclick = (e) => {
             e.stopPropagation();
-            removeSource(s.id);
+            removeSource(e.target.closest('.source-item').dataset.id || s.id); // Guard against missing ID if needed
         };
 
         item.appendChild(info);
-        actions.appendChild(statusIndicator);
+        actions.appendChild(actionsBtn);
         actions.appendChild(delBtn);
         item.appendChild(actions);
         container.appendChild(item);
@@ -255,4 +370,82 @@ export function renderSourcesList() {
 
     // Trigger callback if needed for UI updates elsewhere
     if (window.onSourcesUpdated) window.onSourcesUpdated();
+}
+
+export function showMergeModal() {
+    const overlay = document.getElementById('mergeSourcesOverlay');
+    const list = document.getElementById('mergeSourcesList');
+    const confirmBtn = document.getElementById('mergeSourcesConfirmBtn');
+    const cancelBtn = document.getElementById('mergeSourcesCancelBtn');
+
+    if (!overlay || !list || !confirmBtn || !cancelBtn) return;
+
+    list.innerHTML = '';
+    const selectedIds = new Set();
+
+    AppState.sources.forEach(s => {
+        const item = document.createElement('label');
+        item.className = 'merge-source-item';
+        item.style.display = 'flex';
+        item.style.alignItems = 'center';
+        item.style.gap = '0.75rem';
+        item.style.padding = '0.75rem';
+        item.style.border = '1px solid var(--border-color)';
+        item.style.borderRadius = 'var(--radius-md)';
+        item.style.cursor = 'pointer';
+        item.style.transition = 'all 0.2s ease';
+
+        item.innerHTML = `
+            <input type="checkbox" value="${s.id}" style="width: 18px; height: 18px; cursor: pointer;">
+            <div style="flex: 1;">
+                <div style="font-weight: 600; font-size: 0.9rem;">${s.name}</div>
+                <div style="font-size: 0.75rem; color: var(--text-secondary);">${t('questions_count', { count: s.questions?.length || 0 })}</div>
+            </div>
+        `;
+
+        const cb = item.querySelector('input');
+        cb.onchange = () => {
+            if (cb.checked) {
+                selectedIds.add(s.id);
+                item.style.backgroundColor = 'var(--surface-hover)';
+                item.style.borderColor = 'var(--primary-color)';
+            } else {
+                selectedIds.delete(s.id);
+                item.style.backgroundColor = 'transparent';
+                item.style.borderColor = 'var(--border-color)';
+            }
+            confirmBtn.disabled = selectedIds.size < 2;
+        };
+
+        list.appendChild(item);
+    });
+
+    overlay.classList.add('active');
+    confirmBtn.disabled = true;
+
+    const closeActions = () => {
+        overlay.classList.remove('active');
+        confirmBtn.onclick = null;
+        cancelBtn.onclick = null;
+    };
+
+    confirmBtn.onclick = async () => {
+        if (window.onMergeSourcesConfirm) {
+            await window.onMergeSourcesConfirm(Array.from(selectedIds));
+        }
+        closeActions();
+    };
+
+    cancelBtn.onclick = closeActions;
+    overlay.onclick = (e) => {
+        if (e.target === overlay) closeActions();
+    };
+}
+
+export function closeAllSourcesModals() {
+    const overlays = ['sourceActionsOverlay', 'editMetadataOverlay', 'mergeSourcesOverlay'];
+    overlays.forEach(id => {
+        const el = document.getElementById(id);
+        if (el) el.classList.remove('active');
+    });
 }
