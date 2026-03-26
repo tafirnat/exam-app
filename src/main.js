@@ -146,18 +146,20 @@ document.addEventListener('DOMContentLoaded', () => {
                 }
             });
 
-            // If still no questions in AppState.rawQuestions, but we have active sources with questions
-            // (they should be normalized/processed by now in the DOMContentLoaded logic above)
             const questions = [];
+            const questionMap = {};
             AppState.sources.forEach(s => {
                 if (s.active && s.questions) {
                     s.questions.forEach(q => {
-                        questions.push({ ...q, sourceId: s.id });
+                        const entry = { ...q, sourceId: s.id };
+                        questions.push(entry);
+                        questionMap[`${s.id}_${q.id}`] = entry;
                     });
                 }
             });
             if (questions.length > 0) {
                 AppState.rawQuestions = questions;
+                AppState.questionMap = questionMap;
             }
         }
         checkActiveTest();
@@ -1051,7 +1053,7 @@ function setupEventListeners() {
     document.getElementById('noteInput').oninput = (e) => {
         clearTimeout(noteTimeout);
         noteTimeout = setTimeout(() => {
-            const q = AppState.rawQuestions[AppState.currentTest[AppState.currentIndex]];
+            const q = AppState.questionMap[AppState.currentTest[AppState.currentIndex]];
             const statKey = `${q.sourceId}_${q.id}`;
             if (!AppState.stats[statKey]) AppState.stats[statKey] = { difficulty: 5.0, correct: 0, wrong: 0 };
             AppState.stats[statKey].note = e.target.value.trim();
@@ -1297,13 +1299,21 @@ function resumeActiveTest() {
     AppState.shuffledOptionsMap = activeData.shuffledOptionsMap;
     AppState.testTracking = activeData.testTracking;
 
-    // Ensure rawQuestions are loaded (already done in DOMContentLoaded)
+    // Ensure questionMap is populated (rawQuestions built in DOMContentLoaded)
     if (AppState.rawQuestions.length === 0) {
         const questions = [];
+        const questionMap = {};
         AppState.sources.forEach(s => {
-            if (s.active && s.questions) questions.push(...s.questions);
+            if (s.active && s.questions) {
+                s.questions.forEach(q => {
+                    const entry = { ...q, sourceId: s.id };
+                    questions.push(entry);
+                    questionMap[`${s.id}_${q.id}`] = entry;
+                });
+            }
         });
         AppState.rawQuestions = questions;
+        AppState.questionMap = questionMap;
     }
 
     switchView('test');
@@ -1332,7 +1342,7 @@ function nextQuestion() {
 function toggleStar() {
     const isPreview = document.getElementById('statsPreviewView').offsetParent !== null;
     const q = isPreview ? AppState.previewQuestion
-        : AppState.rawQuestions[AppState.currentTest[AppState.currentIndex]];
+        : AppState.questionMap[AppState.currentTest[AppState.currentIndex]];
     if (!q) return;
     const statKey = `${q.sourceId}_${q.id}`;
     if (!AppState.stats[statKey]) AppState.stats[statKey] = { difficulty: 5.0, correct: 0, wrong: 0 };
@@ -1351,7 +1361,7 @@ function toggleStar() {
 function toggleFlag() {
     const isPreview = document.getElementById('statsPreviewView').offsetParent !== null;
     const q = isPreview ? AppState.previewQuestion
-        : AppState.rawQuestions[AppState.currentTest[AppState.currentIndex]];
+        : AppState.questionMap[AppState.currentTest[AppState.currentIndex]];
     if (!q) return;
     const statKey = `${q.sourceId}_${q.id}`;
     if (!AppState.stats[statKey]) AppState.stats[statKey] = { difficulty: 5.0, correct: 0, wrong: 0 };
@@ -1415,7 +1425,7 @@ function copyAIPrompt() {
     if (isPreview) {
         q = AppState.previewQuestion;
     } else {
-        q = AppState.rawQuestions[AppState.currentTest[AppState.currentIndex]];
+        q = AppState.questionMap[AppState.currentTest[AppState.currentIndex]];
     }
 
     if (!q) {
@@ -1477,8 +1487,8 @@ function copyQuestionText() {
         q = AppState.previewQuestion;
     } else {
         const qIndex = AppState.currentIndex;
-        const qId = AppState.currentTest[qIndex];
-        q = AppState.rawQuestions[qId];
+        const compositeId = AppState.currentTest[qIndex];
+        q = AppState.questionMap[compositeId];
     }
 
     const text = q?.content?.text || q?.text || '';

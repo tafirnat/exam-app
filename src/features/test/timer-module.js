@@ -41,7 +41,7 @@ function scheduleNextTick(textElement) {
     const isStopwatch = AppState.timerStopwatchEnabled;
     const elapsed = isStopwatch ? (AppState.testTracking.elapsedSeconds || 0) : 11;
     // Determine interval: 50ms if below 10s, otherwise 1000ms
-    const isHighFreq = (isCountdown && rem <= 10 && rem > 0) || (isStopwatch && elapsed < 10);
+    const isHighFreq = (isCountdown && rem <= 10 && rem > 0);
     const interval = isHighFreq ? 50 : 1000;
 
     timerTimeout = setTimeout(() => {
@@ -91,7 +91,7 @@ function tickTimer(textElement, delta) {
         // Stopwatch runs continuously regardless of whether the question is checked
         AppState.testTracking.elapsedSeconds += delta;
         const totalSecs = AppState.testTracking.elapsedSeconds || 0;
-        displayStr = formatTimeDisplay(totalSecs, totalSecs < 10);
+        displayStr = formatTimeDisplay(totalSecs, false);
 
         if (textElement) textElement.style.color = 'var(--text-secondary)';
     } else if (AppState.timerCountdownEnabled) {

@@ -121,7 +121,7 @@ export function renderQuestion(isRefresh = false) {
 
     // Handle session start or navigation
     if (!isRefresh && isNewQuestion) {
-        const questionText = AppState.rawQuestions?.[AppState.currentTest?.[qIndex]]?.content?.text || '';
+        const questionText = AppState.questionMap?.[AppState.currentTest?.[qIndex]]?.content?.text || '';
         TTS.onNewQuestion(qIndex, questionText);
 
         // Reset countdown timer if applicable
@@ -133,7 +133,7 @@ export function renderQuestion(isRefresh = false) {
             summaryEl.dataset.manuallyToggled = 'false';
         }
     }
-    const q = AppState.rawQuestions[AppState.currentTest[qIndex]];
+    const q = AppState.questionMap[AppState.currentTest[qIndex]];
     const statKey = `${q.sourceId}_${q.id}`;
     const stat = AppState.stats[statKey] || { difficulty: 5.0, note: '' };
     const isChecked = AppState.isAnswerChecked[qIndex];
@@ -431,7 +431,7 @@ function renderSummarySection() {
                 <h3 style="font-size: 1rem; margin-bottom: 0.75rem; color: var(--text-secondary);">${t('unanswered_questions')}</h3>
                 <div class="unanswered-list">
                     ${unansweredIndices.map(idx => `
-                            <div class="unanswered-item" onclick="window.goToQuestion(${idx})" title="${AppState.rawQuestions[AppState.currentTest[idx]].text?.substring(0, 50)}...">
+                            <div class="unanswered-item" onclick="window.goToQuestion(${idx})" title="${AppState.questionMap[AppState.currentTest[idx]]?.text?.substring(0, 50)}...">
                                 <span class="unanswered-item-num">#${idx + 1}</span>
                             </div>
                         `).join('')}
@@ -477,7 +477,7 @@ function renderSummarySection() {
     document.getElementById('finishTestBtn').onclick = async () => {
         // Auto-evaluate unchecked but answered questions
         let interactionCount = 0;
-        AppState.currentTest.forEach((qId, idx) => {
+        AppState.currentTest.forEach((compositeId, idx) => {
             const userAnswer = AppState.userAnswers[idx];
             const hasAnswer = userAnswer && Array.isArray(userAnswer) && userAnswer.length > 0 && userAnswer.some(v => v !== null && v !== undefined && String(v).trim() !== '');
 
@@ -486,13 +486,12 @@ function renderSummarySection() {
             }
 
             if (!AppState.isAnswerChecked[idx] && hasAnswer) {
-                const q = AppState.rawQuestions[qId];
+                const q = AppState.questionMap[compositeId];
                 const isCorrect = evaluateAnswer(idx, userAnswer);
                 AppState.isAnswerChecked[idx] = true;
                 updateStats(q.sourceId, q.id, isCorrect, userAnswer);
             }
         });
-        saveStats();
         if (window.updateHomeStats) window.updateHomeStats();
 
         // If absolutely nothing was answered, just go home silently
@@ -547,7 +546,7 @@ window.syncTextInput = (val) => {
     const unansweredList = document.querySelector('.unanswered-list');
     if (unansweredList) {
         unansweredList.innerHTML = unansweredIndices.map(idx => `
-            <div class="unanswered-item" onclick="window.goToQuestion(${idx})" title="${AppState.rawQuestions[AppState.currentTest[idx]].text?.substring(0, 50)}...">
+            <div class="unanswered-item" onclick="window.goToQuestion(${idx})" title="${AppState.questionMap[AppState.currentTest[idx]]?.text?.substring(0, 50)}...">
                 <span class="unanswered-item-num">#${idx + 1}</span>
             </div>
         `).join('');
@@ -603,7 +602,7 @@ export function selectOption(id, type) {
 export const handleCheckAnswer = (forceCheck = false) => {
     window.handleCheckAnswer = handleCheckAnswer;
     const qIndex = AppState.currentIndex;
-    const q = AppState.rawQuestions[AppState.currentTest[qIndex]];
+    const q = AppState.questionMap[AppState.currentTest[qIndex]];
     let userAnswer = AppState.userAnswers[qIndex] || [];
 
     if (q.type === 'text' || q.type === 'text_input' || q.type === 'open_ended' || q.type === 'fill_in_the_blank') {
@@ -621,7 +620,6 @@ export const handleCheckAnswer = (forceCheck = false) => {
     const isCorrect = evaluateAnswer(qIndex, userAnswer);
     AppState.isAnswerChecked[qIndex] = true;
     updateStats(q.sourceId, q.id, isCorrect, userAnswer);
-    saveStats();
     if (window.updateHomeStats) window.updateHomeStats();
 
     // Auto-show summary if this is the last question
@@ -661,7 +659,7 @@ export async function handleTranslation(btn, sid, tid) {
 
 export function updateIndicators() {
     const qIndex = AppState.currentIndex;
-    const q = AppState.rawQuestions[AppState.currentTest[qIndex]];
+    const q = AppState.questionMap[AppState.currentTest[qIndex]];
     if (!q) return;
     const statKey = `${q.sourceId}_${q.id}`;
     const s = AppState.stats[statKey] || {};
@@ -749,7 +747,7 @@ export function updateQuestionStatsInfo(sourceId, qid) {
 
 export function handleDifficultyRating(rating) {
     const qIndex = AppState.currentIndex;
-    const q = AppState.rawQuestions[AppState.currentTest[qIndex]];
+    const q = AppState.questionMap[AppState.currentTest[qIndex]];
     if (!q) return;
 
     const hardBtn = document.getElementById('diffHardBtn');
