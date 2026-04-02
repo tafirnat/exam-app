@@ -57,10 +57,12 @@ function applyFSRS(stat, rating, qDifficulty) {
         } else {
             const hardFactor = rating === 2 ? FSRS_W[15] : 1;
             const easyFactor = rating === 4 ? FSRS_W[16] : 1;
-            const factor = 1 + Math.exp(FSRS_W[8]) * (11 - stat.difficulty) *
+            // FSRS v4.5: S'_r = S * (1 + core * hardFactor * easyFactor)
+            // Cezalar/bonuslar sadece büyümeyi etkiler, temel stability'yi değil
+            const core = Math.exp(FSRS_W[8]) * (11 - stat.difficulty) *
                 Math.pow(stat.stability, -FSRS_W[9]) *
                 (Math.exp(FSRS_W[10] * (1 - retrievability)) - 1);
-            stat.stability = stat.stability * factor * hardFactor * easyFactor;
+            stat.stability = stat.stability * (1 + core * hardFactor * easyFactor);
         }
     }
     stat.lastReview = new Date().toISOString();
