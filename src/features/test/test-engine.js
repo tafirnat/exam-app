@@ -416,13 +416,30 @@ export function updateStats(sourceId, questionId, isCorrect, userAnswer, feedbac
     }
 
     // FSRS Rating: 1=Again, 2=Hard, 3=Good, 4=Easy
+    // Doğru cevap: feedback rating'i kaydırır (3→2 veya 3→4)
+    // Yanlış cevap: her zaman rating=1 (Again), feedback sonradan ek düzeltme olarak uygulanır
     let rating = isCorrect ? 3 : 1;
-    if (feedback === 'easy') rating = 4;
-    if (feedback === 'hard') rating = 2;
+    if (isCorrect) {
+        if (feedback === 'hard') rating = 2;
+        if (feedback === 'easy') rating = 4;
+    }
 
     // Apply FSRS algorithm
     const q = AppState.questionMap?.[key];
     applyFSRS(stat, rating, q?.difficulty);
+
+    // Yanlış + feedback: rating=1 sonucuna ek düzeltme uygula
+    // Hard: stability daha da kıs (W[15]=0.26), difficulty biraz daha artır
+    // Easy: stability biraz geri ver (W[16]=2.05), difficulty artışını azalt
+    if (!isCorrect && feedback === 'hard') {
+        stat.stability = Math.max(stat.stability * FSRS_W[15], 0.1);
+        stat.difficulty = Math.min(stat.difficulty + FSRS_W[6], 10);
+        stat.coeff = stat.difficulty / 2;
+    } else if (!isCorrect && feedback === 'easy') {
+        stat.stability = stat.stability * FSRS_W[16];
+        stat.difficulty = Math.max(stat.difficulty - FSRS_W[6], 1);
+        stat.coeff = stat.difficulty / 2;
+    }
 
     // Streak and learned status
     if (isCorrect) {
@@ -445,6 +462,10 @@ export function updateStats(sourceId, questionId, isCorrect, userAnswer, feedbac
         if (feedback !== undefined) {
             existingResult.feedback = feedback;
             if (feedback === 'hard') stat.learned = false;
+        } else {
+            // Seçim kaldırıldı: feedback temizle, aksi halde soru tekrar ziyaret edildiğinde
+            // buton yanlışlıkla aktif görünür
+            delete existingResult.feedback;
         }
     }
 
