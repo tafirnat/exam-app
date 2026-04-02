@@ -70,7 +70,8 @@ export function prepareTest(count) {
 
     // FSRS Selection logic: Prioritize Overdue (R <= 0.9), then use Smart Selection
     let qs = rawQuestions.map((q, idx) => {
-        const stat = AppState.stats[q.id] || { difficulty: 5.0, learned: false };
+        const key = `${q.sourceId}_${q.id}`;
+        const stat = AppState.stats[key] || { difficulty: 5.0, learned: false };
         const r = calculateRetrievability(stat.stability, stat.lastReview);
         return {
             idx,
