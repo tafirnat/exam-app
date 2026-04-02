@@ -46,7 +46,10 @@ function applyFSRS(stat, rating, qDifficulty) {
         }
     } else {
         const retrievability = calculateRetrievability(stat.stability, stat.lastReview);
-        stat.difficulty = Math.min(Math.max(stat.difficulty - FSRS_W[6] * (rating - 3), 1), 10);
+        // FSRS v4.5: D' = D - w6*(r-3), ardından mean reversion: D_new = w7*D0(4) + (1-w7)*D'
+        const d0_easy = Math.min(Math.max(FSRS_W[4] - FSRS_W[5] * 1, 1), 10); // D0(rating=4)
+        const dPrime = stat.difficulty - FSRS_W[6] * (rating - 3);
+        stat.difficulty = Math.min(Math.max(FSRS_W[7] * d0_easy + (1 - FSRS_W[7]) * dPrime, 1), 10);
         if (rating === 1) {
             // FSRS v4.5: S'_f = w11 * D^(-w12) * ((S+1)^w13 - 1) * e^(w14*(1-R))
             const sf = FSRS_W[11]
