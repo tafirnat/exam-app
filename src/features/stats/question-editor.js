@@ -217,12 +217,30 @@ function renderTagChips() {
     `).join('');
 }
 
+function setupTagPillListeners() {
+    const overlay = document.getElementById('question-editor-overlay');
+    if (!overlay) return;
+    overlay.querySelectorAll('.tag-pill').forEach(pill => {
+        pill.onclick = () => {
+            const clickedTag = pill.dataset.tag;
+            const tags = currentEditingQuestion.tags || [];
+            const idx = tags.indexOf(clickedTag);
+            if (idx > -1) {
+                removeTag(idx);
+            } else {
+                addTag(clickedTag);
+            }
+        };
+    });
+}
+
 function refreshTagChipsUI() {
     const container = document.getElementById('tag-chips-container');
     if (container) container.innerHTML = renderTagChips();
     const suggestionsContainer = document.getElementById('tag-suggestions-container');
     if (suggestionsContainer) suggestionsContainer.innerHTML = renderTagSuggestions();
     setupTagChipListeners();
+    setupTagPillListeners();
 }
 
 function addTag(name) {
@@ -354,18 +372,7 @@ function setupEditorListeners() {
     setupTagChipListeners();
 
     // Tag suggestion pills: clicking toggles tag on/off
-    overlay.querySelectorAll('.tag-pill').forEach(pill => {
-        pill.onclick = () => {
-            const clickedTag = pill.dataset.tag;
-            const tags = currentEditingQuestion.tags || [];
-            const idx = tags.indexOf(clickedTag);
-            if (idx > -1) {
-                removeTag(idx);
-            } else {
-                addTag(clickedTag);
-            }
-        };
-    });
+    setupTagPillListeners();
 
     // Wrap Code buttons
     overlay.querySelectorAll('.wrap-code-btn').forEach(btn => {
