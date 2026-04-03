@@ -737,8 +737,9 @@ function setupEventListeners() {
     document.getElementById('diffHardBtn').onclick = () => handleDifficultyRating('hard');
     document.getElementById('diffEasyBtn').onclick = () => handleDifficultyRating('easy');
     document.getElementById('homeStatsBtn').onclick = () => {
+        const lastFilter = AppState.activeStatsFilter || 'all';
         switchView('stats');
-        renderStatsList(AppState.activeStatsFilter || 'all');
+        renderStatsList(lastFilter.startsWith('tag:') ? 'all' : lastFilter);
     };
 
     // Results View

@@ -37,6 +37,7 @@ export function renderStatsList(filter = 'all', searchKeyword = '') {
     if (backBtn) {
         if (isTagMode) {
             backBtn.onclick = () => {
+                AppState.activeStatsFilter = 'all'; // Tag modundan çıkışta filtreyi sıfırla
                 if (AppState.navigationSourceView) {
                     const source = AppState.navigationSourceView;
                     AppState.navigationSourceView = null; // Clear to prevent loops later
