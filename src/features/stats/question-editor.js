@@ -156,10 +156,26 @@ function renderEditorModal() {
 
 function renderOptionsList() {
     const options = currentEditingQuestion.options || [];
-    return options.map((opt, idx) => `
-        <div class="option-edit-card" data-idx="${idx}">
+    const type = currentEditingQuestion.type || '';
+    const isChoice = ['single_choice', 'multiple_choice', 'true_false'].includes(type);
+    const isMultiple = type === 'multiple_choice';
+    const correctIds = (currentEditingQuestion.answer?.correct_ids || []).map(String);
+
+    return options.map((opt, idx) => {
+        const isCorrect = correctIds.includes(String(opt.id));
+        const inputType = isMultiple ? 'checkbox' : 'radio';
+
+        const correctIndicator = isChoice ? `
+            <label class="opt-correct-label ${isCorrect ? 'is-correct' : ''}" title="Doğru cevap olarak işaretle">
+                <input type="${inputType}" name="correct-answer" class="answer-option-input" value="${opt.id}" ${isCorrect ? 'checked' : ''}>
+                <span>${isCorrect ? '✓ Doğru' : 'Doğru değil'}</span>
+            </label>` : '';
+
+        return `
+        <div class="option-edit-card ${isCorrect ? 'is-correct-card' : ''}" data-idx="${idx}">
             <div class="option-edit-header">
                 <span class="option-id-badge">ID: ${opt.id}</span>
+                ${correctIndicator}
                 <button class="delete-opt-btn" data-idx="${idx}" title="${t('delete_option')}">
                     <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2"><polyline points="3 6 5 6 21 6"></polyline><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path></svg>
                 </button>
@@ -185,7 +201,8 @@ function renderOptionsList() {
                 </div>
             </div>
         </div>
-    `).join('');
+    `;
+    }).join('');
 }
 
 function renderTagChips() {
@@ -197,6 +214,33 @@ function renderTagChips() {
             <button type="button" class="tag-chip-delete" data-idx="${idx}" title="Sil">×</button>
         </span>
     `).join('');
+}
+
+function setupOptionCorrectListeners() {
+    const overlay = document.getElementById('questionEditorOverlay');
+    if (!overlay) return;
+    overlay.querySelectorAll('.answer-option-input').forEach(input => {
+        input.onchange = () => {
+            // Tüm kartları sıfırla, seçili olanları vurgula
+            overlay.querySelectorAll('.option-edit-card').forEach(card => {
+                card.classList.remove('is-correct-card');
+            });
+            overlay.querySelectorAll('.opt-correct-label').forEach(lbl => {
+                lbl.classList.remove('is-correct');
+                lbl.querySelector('span').textContent = 'Doğru değil';
+            });
+            const checked = [...overlay.querySelectorAll('.answer-option-input:checked')];
+            checked.forEach(el => {
+                const card = el.closest('.option-edit-card');
+                const label = el.closest('.opt-correct-label');
+                if (card) card.classList.add('is-correct-card');
+                if (label) {
+                    label.classList.add('is-correct');
+                    label.querySelector('span').textContent = '✓ Doğru';
+                }
+            });
+        };
+    });
 }
 
 function setupTagPillListeners() {
@@ -310,25 +354,11 @@ function renderAnswerSection() {
         </div>`;
 
     if (isChoice) {
-        const options = q.options || [];
-        const correctIds = (q.answer?.correct_ids || []).map(String);
-        const inputType = isSingle ? 'radio' : 'checkbox';
-
-        const optionRows = options.length > 0
-            ? options.map(opt => {
-                const checked = correctIds.includes(String(opt.id)) ? 'checked' : '';
-                return `<label class="answer-option-row">
-                    <input type="${inputType}" name="correct-answer" class="answer-option-input" value="${opt.id}" ${checked}>
-                    <span class="answer-option-text">${opt.text || `Option ${opt.id}`}</span>
-                </label>`;
-            }).join('')
-            : `<span style="color:var(--text-secondary);font-size:0.8rem;padding:0.5rem 0;display:block;">(Seçenekler sekmesinden önce seçenek ekleyin)</span>`;
-
+        // Doğru cevap seçimi Seçenekler sekmesinden yapılır
         return `${explanationBlock}
-            <div class="editor-input-group">
-                <label>${t('correct_ids_label')}</label>
-                <div class="answer-options-list">${optionRows}</div>
-            </div>`;
+            <p style="font-size:0.8rem; color:var(--text-secondary); margin:0; padding: 0.25rem 0;">
+                Doğru cevabı işaretlemek için <strong>Seçenekler</strong> sekmesini kullanın.
+            </p>`;
     }
 
     // Text-based
@@ -405,6 +435,9 @@ function setupEditorListeners() {
 
     // Tag suggestion pills: clicking toggles tag on/off
     setupTagPillListeners();
+
+    // Correct answer radio/checkbox visual sync
+    setupOptionCorrectListeners();
 
     // Wrap Code buttons
     overlay.querySelectorAll('.wrap-code-btn').forEach(btn => {
