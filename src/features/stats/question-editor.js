@@ -5,6 +5,10 @@ import { showToast } from '../../core/utils.js';
 let currentEditingQuestion = null;
 let activeGroup = 'general';
 
+function getQuestionCategory(type) {
+    return ['single_choice', 'multiple_choice', 'true_false'].includes(type) ? 'choice' : 'text';
+}
+
 export function closeQuestionEditor() {
     const overlay = document.getElementById('questionEditorOverlay');
     if (overlay) {
@@ -28,6 +32,13 @@ export function openQuestionEditor(question) {
 }
 
 function renderEditorModal() {
+    const category = getQuestionCategory(currentEditingQuestion.type || 'single_choice');
+
+    // Validate activeGroup: 'options' tab only exists for choice questions
+    if (category === 'text' && activeGroup === 'options') {
+        activeGroup = 'general';
+    }
+
     let overlay = document.getElementById('questionEditorOverlay');
     if (!overlay) {
         overlay = document.createElement('div');
@@ -37,6 +48,29 @@ function renderEditorModal() {
     }
     overlay.style.display = 'flex';
 
+    const isChoice = category === 'choice';
+    // Choice: 4 tabs (2×2 grid) | Text: 3 tabs (1×3 grid)
+    const navStyle = isChoice ? '' : 'grid-template-columns: 1fr 1fr 1fr;';
+    const answerTabLabel = isChoice ? t('group_explanation') : t('group_answer');
+
+    const optionsTab = isChoice ? `
+                <button class="group-btn ${activeGroup === 'options' ? 'active' : ''}" data-group="options">
+                    <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2"><line x1="8" y1="6" x2="21" y2="6"></line><line x1="8" y1="12" x2="21" y2="12"></line><line x1="8" y1="18" x2="21" y2="18"></line><line x1="3" y1="6" x2="3.01" y2="6"></line><line x1="3" y1="12" x2="3.01" y2="12"></line><line x1="3" y1="18" x2="3.01" y2="18"></line></svg>
+                    ${t('group_options')}
+                </button>` : '';
+
+    const optionsSection = isChoice ? `
+                <div class="edit-section ${activeGroup === 'options' ? 'active' : ''}" id="section-options">
+                    <div class="code-info-box">${t('code_usage_info')}</div>
+                    <div id="editor-options-list">
+                        ${renderOptionsList()}
+                    </div>
+                    <button class="add-opt-btn" id="add-option-btn">
+                        <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="12" y1="5" x2="12" y2="19"></line><line x1="5" y1="12" x2="19" y2="12"></line></svg>
+                        ${t('add_option')}
+                    </button>
+                </div>` : '';
+
     overlay.innerHTML = `
         <div class="editor-card">
             <div class="editor-header">
@@ -44,7 +78,7 @@ function renderEditorModal() {
                 <div style="font-size: 0.75rem; color: var(--text-secondary);">ID: ${currentEditingQuestion.id}</div>
             </div>
 
-            <div class="editor-group-nav">
+            <div class="editor-group-nav" style="${navStyle}">
                 <button class="group-btn ${activeGroup === 'general' ? 'active' : ''}" data-group="general">
                     <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"></circle><line x1="12" y1="16" x2="12" y2="12"></line><line x1="12" y1="8" x2="12.01" y2="8"></line></svg>
                     ${t('group_general')}
@@ -53,13 +87,10 @@ function renderEditorModal() {
                     <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path><polyline points="14 2 14 8 20 8"></polyline><line x1="16" y1="13" x2="8" y2="13"></line><line x1="16" y1="17" x2="8" y2="17"></line><polyline points="10 9 9 9 8 9"></polyline></svg>
                     ${t('group_content')}
                 </button>
-                <button class="group-btn ${activeGroup === 'options' ? 'active' : ''}" data-group="options">
-                    <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2"><line x1="8" y1="6" x2="21" y2="6"></line><line x1="8" y1="12" x2="21" y2="12"></line><line x1="8" y1="18" x2="21" y2="18"></line><line x1="3" y1="6" x2="3.01" y2="6"></line><line x1="3" y1="12" x2="3.01" y2="12"></line><line x1="3" y1="18" x2="3.01" y2="18"></line></svg>
-                    ${t('group_options')}
-                </button>
+                ${optionsTab}
                 <button class="group-btn ${activeGroup === 'answer' ? 'active' : ''}" data-group="answer">
                     <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"></path><polyline points="22 4 12 14.01 9 11.01"></polyline></svg>
-                    ${t('group_answer')}
+                    ${answerTabLabel}
                 </button>
             </div>
 
@@ -104,7 +135,7 @@ function renderEditorModal() {
                         </div>
                         <textarea class="editor-field code-font" id="edit-text" style="min-height: 120px;">${currentEditingQuestion.content?.text || currentEditingQuestion.text || ''}</textarea>
                     </div>
-                    
+
                     <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1rem;">
                         <div class="editor-input-group">
                             <label>${t('media_type_label')}</label>
@@ -128,16 +159,7 @@ function renderEditorModal() {
                     </div>
                 </div>
 
-                <div class="edit-section ${activeGroup === 'options' ? 'active' : ''}" id="section-options">
-                    <div class="code-info-box">${t('code_usage_info')}</div>
-                    <div id="editor-options-list">
-                        ${renderOptionsList()}
-                    </div>
-                    <button class="add-opt-btn" id="add-option-btn">
-                        <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="12" y1="5" x2="12" y2="19"></line><line x1="5" y1="12" x2="19" y2="12"></line></svg>
-                        ${t('add_option')}
-                    </button>
-                </div>
+                ${optionsSection}
 
                 <div class="edit-section ${activeGroup === 'answer' ? 'active' : ''}" id="section-answer">
                     ${renderAnswerSection()}
@@ -342,7 +364,6 @@ function renderAnswerSection() {
     const q = currentEditingQuestion;
     const type = q.type || '';
     const isChoice = ['single_choice', 'multiple_choice', 'true_false'].includes(type);
-    const isSingle = type === 'single_choice' || type === 'true_false';
 
     const explanationBlock = `
         <div class="editor-input-group">
@@ -350,28 +371,26 @@ function renderAnswerSection() {
                 <label>${t('explanation_label')}</label>
                 <button class="wrap-code-btn" data-target="edit-explanation">${t('wrap_code_btn')}</button>
             </div>
-            <textarea class="editor-field code-font" id="edit-explanation" style="min-height: 100px;">${q.answer?.explanation || ''}</textarea>
+            <textarea class="editor-field code-font" id="edit-explanation" style="min-height: 120px;">${q.answer?.explanation || ''}</textarea>
         </div>`;
 
     if (isChoice) {
-        // Doğru cevap seçimi Seçenekler sekmesinden yapılır
-        return `${explanationBlock}
-            <p style="font-size:0.8rem; color:var(--text-secondary); margin:0; padding: 0.25rem 0;">
-                Doğru cevabı işaretlemek için <strong>Seçenekler</strong> sekmesini kullanın.
-            </p>`;
+        // Correct answer selection is handled in the Options tab
+        return `${explanationBlock}`;
     }
 
-    // Text-based
+    // Text-based: accepted answers + case sensitivity + explanation
     const acceptedTexts = (q.answer?.accepted_texts || []).join('\n');
-    return `${explanationBlock}
+    return `
         <div class="editor-input-group">
             <label>${t('accepted_texts_label')}</label>
-            <textarea class="editor-field" id="edit-accepted-texts" style="min-height: 80px;" placeholder="Her satıra bir kabul edilen cevap...">${acceptedTexts}</textarea>
+            <textarea class="editor-field" id="edit-accepted-texts" style="min-height: 90px;" placeholder="Her satıra bir kabul edilen cevap...">${acceptedTexts}</textarea>
         </div>
-        <div style="display: flex; align-items: center; gap: 0.75rem; padding-top: 0.5rem;">
-            <input type="checkbox" id="edit-case-sensitive" ${q.answer?.caseSensitive ? 'checked' : ''} style="width: 18px; height: 18px;">
-            <label for="edit-case-sensitive" style="font-size: 0.85rem; font-weight: 600;">${t('case_sensitive_label')}</label>
-        </div>`;
+        <div style="display: flex; align-items: center; gap: 0.75rem; padding: 0.25rem 0 0.5rem;">
+            <input type="checkbox" id="edit-case-sensitive" ${q.answer?.caseSensitive ? 'checked' : ''} style="width: 18px; height: 18px; flex-shrink: 0;">
+            <label for="edit-case-sensitive" style="font-size: 0.85rem; font-weight: 600; cursor: pointer;">${t('case_sensitive_label')}</label>
+        </div>
+        ${explanationBlock}`;
 }
 
 function renderTagSuggestions() {
