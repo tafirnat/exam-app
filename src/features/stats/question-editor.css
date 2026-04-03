@@ -356,6 +356,50 @@ select.editor-field {
     to { transform: translateY(0); opacity: 1; }
 }
 
+.answer-options-list {
+    display: flex;
+    flex-direction: column;
+    gap: 0.5rem;
+    padding: 0.5rem 0;
+}
+
+.answer-option-row {
+    display: flex;
+    align-items: flex-start;
+    gap: 0.65rem;
+    padding: 0.55rem 0.75rem;
+    border-radius: 8px;
+    border: 1px solid var(--border-color);
+    background: var(--surface-color);
+    cursor: pointer;
+    transition: background 0.15s, border-color 0.15s;
+}
+
+.answer-option-row:hover {
+    background: rgba(127, 164, 230, 0.08);
+    border-color: var(--primary-color);
+}
+
+.answer-option-row input[type="radio"],
+.answer-option-row input[type="checkbox"] {
+    margin-top: 2px;
+    width: 16px;
+    height: 16px;
+    flex-shrink: 0;
+    accent-color: var(--primary-color);
+}
+
+.answer-option-row input:checked + .answer-option-text {
+    color: var(--primary-color);
+    font-weight: 600;
+}
+
+.answer-option-text {
+    font-size: 0.875rem;
+    line-height: 1.4;
+    color: var(--text-primary);
+}
+
 @media (max-width: 480px) {
     .editor-card {
         width: 100%;

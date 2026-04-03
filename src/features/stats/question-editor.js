@@ -140,25 +140,7 @@ function renderEditorModal() {
                 </div>
 
                 <div class="edit-section ${activeGroup === 'answer' ? 'active' : ''}" id="section-answer">
-                    <div class="editor-input-group">
-                        <div class="label-row">
-                            <label>${t('explanation_label')}</label>
-                            <button class="wrap-code-btn" data-target="edit-explanation">${t('wrap_code_btn')}</button>
-                        </div>
-                        <textarea class="editor-field code-font" id="edit-explanation" style="min-height: 100px;">${currentEditingQuestion.answer?.explanation || ''}</textarea>
-                    </div>
-                    <div class="editor-input-group">
-                        <label>${t('correct_ids_label')}</label>
-                        <input type="text" class="editor-field" id="edit-correct-ids" value="${(currentEditingQuestion.answer?.correct_ids || []).join(', ')}">
-                    </div>
-                    <div class="editor-input-group">
-                        <label>${t('accepted_texts_label')}</label>
-                        <input type="text" class="editor-field" id="edit-accepted-texts" value="${(currentEditingQuestion.answer?.accepted_texts || []).join(', ')}">
-                    </div>
-                    <div style="display: flex; align-items: center; gap: 0.75rem; padding-top: 0.5rem;">
-                        <input type="checkbox" id="edit-case-sensitive" ${currentEditingQuestion.answer?.caseSensitive ? 'checked' : ''} style="width: 18px; height: 18px;">
-                        <label for="edit-case-sensitive" style="font-size: 0.85rem; font-weight: 600;">${t('case_sensitive_label')}</label>
-                    </div>
+                    ${renderAnswerSection()}
                 </div>
             </div>
 
@@ -218,7 +200,7 @@ function renderTagChips() {
 }
 
 function setupTagPillListeners() {
-    const overlay = document.getElementById('question-editor-overlay');
+    const overlay = document.getElementById('questionEditorOverlay');
     if (!overlay) return;
     overlay.querySelectorAll('.tag-pill').forEach(pill => {
         pill.onclick = () => {
@@ -310,6 +292,56 @@ function setupTagChipListeners() {
             };
         };
     });
+}
+
+function renderAnswerSection() {
+    const q = currentEditingQuestion;
+    const type = q.type || '';
+    const isChoice = ['single_choice', 'multiple_choice', 'true_false'].includes(type);
+    const isSingle = type === 'single_choice' || type === 'true_false';
+
+    const explanationBlock = `
+        <div class="editor-input-group">
+            <div class="label-row">
+                <label>${t('explanation_label')}</label>
+                <button class="wrap-code-btn" data-target="edit-explanation">${t('wrap_code_btn')}</button>
+            </div>
+            <textarea class="editor-field code-font" id="edit-explanation" style="min-height: 100px;">${q.answer?.explanation || ''}</textarea>
+        </div>`;
+
+    if (isChoice) {
+        const options = q.options || [];
+        const correctIds = (q.answer?.correct_ids || []).map(String);
+        const inputType = isSingle ? 'radio' : 'checkbox';
+
+        const optionRows = options.length > 0
+            ? options.map(opt => {
+                const checked = correctIds.includes(String(opt.id)) ? 'checked' : '';
+                return `<label class="answer-option-row">
+                    <input type="${inputType}" name="correct-answer" class="answer-option-input" value="${opt.id}" ${checked}>
+                    <span class="answer-option-text">${opt.text || `Option ${opt.id}`}</span>
+                </label>`;
+            }).join('')
+            : `<span style="color:var(--text-secondary);font-size:0.8rem;padding:0.5rem 0;display:block;">(Seçenekler sekmesinden önce seçenek ekleyin)</span>`;
+
+        return `${explanationBlock}
+            <div class="editor-input-group">
+                <label>${t('correct_ids_label')}</label>
+                <div class="answer-options-list">${optionRows}</div>
+            </div>`;
+    }
+
+    // Text-based
+    const acceptedTexts = (q.answer?.accepted_texts || []).join('\n');
+    return `${explanationBlock}
+        <div class="editor-input-group">
+            <label>${t('accepted_texts_label')}</label>
+            <textarea class="editor-field" id="edit-accepted-texts" style="min-height: 80px;" placeholder="Her satıra bir kabul edilen cevap...">${acceptedTexts}</textarea>
+        </div>
+        <div style="display: flex; align-items: center; gap: 0.75rem; padding-top: 0.5rem;">
+            <input type="checkbox" id="edit-case-sensitive" ${q.answer?.caseSensitive ? 'checked' : ''} style="width: 18px; height: 18px;">
+            <label for="edit-case-sensitive" style="font-size: 0.85rem; font-weight: 600;">${t('case_sensitive_label')}</label>
+        </div>`;
 }
 
 function renderTagSuggestions() {
@@ -515,26 +547,27 @@ function syncDataFromInputs() {
     });
 
     // Answer
-    const expl = document.getElementById('edit-explanation');
-    const correctIds = document.getElementById('edit-correct-ids');
-    const acceptedTexts = document.getElementById('edit-accepted-texts');
-    const caseSensitive = document.getElementById('edit-case-sensitive');
+    if (!currentEditingQuestion.answer) currentEditingQuestion.answer = {};
 
-    if (expl) {
-        if (!currentEditingQuestion.answer) currentEditingQuestion.answer = {};
-        currentEditingQuestion.answer.explanation = expl.value;
-    }
-    if (correctIds) {
-        if (!currentEditingQuestion.answer) currentEditingQuestion.answer = {};
-        currentEditingQuestion.answer.correct_ids = correctIds.value.split(',').map(s => parseInt(s.trim())).filter(n => !isNaN(n));
-    }
-    if (acceptedTexts) {
-        if (!currentEditingQuestion.answer) currentEditingQuestion.answer = {};
-        currentEditingQuestion.answer.accepted_texts = acceptedTexts.value.split(',').map(s => s.trim()).filter(s => s !== '');
-    }
-    if (caseSensitive) {
-        if (!currentEditingQuestion.answer) currentEditingQuestion.answer = {};
-        currentEditingQuestion.answer.caseSensitive = caseSensitive.checked;
+    const expl = document.getElementById('edit-explanation');
+    if (expl) currentEditingQuestion.answer.explanation = expl.value;
+
+    const qType = currentEditingQuestion.type || '';
+    const isChoice = ['single_choice', 'multiple_choice', 'true_false'].includes(qType);
+
+    if (isChoice) {
+        // Doğru cevap(lar) radio/checkbox seçiminden okunur
+        const checked = [...document.querySelectorAll('.answer-option-input:checked')];
+        currentEditingQuestion.answer.correct_ids = checked.map(el => parseInt(el.value));
+    } else {
+        // Metin cevabı: her satır ayrı bir kabul edilen cevap
+        const acceptedTexts = document.getElementById('edit-accepted-texts');
+        const caseSensitive = document.getElementById('edit-case-sensitive');
+        if (acceptedTexts) {
+            currentEditingQuestion.answer.accepted_texts = acceptedTexts.value
+                .split('\n').map(s => s.trim()).filter(s => s !== '');
+        }
+        if (caseSensitive) currentEditingQuestion.answer.caseSensitive = caseSensitive.checked;
     }
 }
 
