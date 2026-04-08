@@ -135,6 +135,16 @@ document.addEventListener('DOMContentLoaded', () => {
             localStorage.setItem('focus_app_template_added', 'true');
         }
 
+        // One-time: Add IHK FISI flashcard demo for all users (new + existing)
+        const flashcardDemoAdded = localStorage.getItem('focus_app_flashcard_demo_added');
+        if (!flashcardDemoAdded) {
+            console.log('Adding IHK FISI flashcard demo...');
+            loadFromUrl('./examples/ihk-fisi-flashcards.json', { active: false }).then(source => {
+                if (source) renderSourcesList();
+            });
+            localStorage.setItem('focus_app_flashcard_demo_added', 'true');
+        }
+
         // Fix: If we have active sources but no questions loaded (e.g. after refresh), load them
         if (AppState.rawQuestions.length === 0) {
             const activeSources = AppState.sources.filter(s => s.active);
