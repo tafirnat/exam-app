@@ -377,8 +377,8 @@ export function renderQuestion(isRefresh = false) {
                 // Back is revealed — show only rating buttons, hide nav
                 checkBtn.style.display = 'none';
                 if (flashcardRatingBar) flashcardRatingBar.style.display = 'flex';
-                if (prevBtn) prevBtn.style.visibility = 'hidden';
-                if (nextBtn) nextBtn.style.visibility = 'hidden';
+                if (prevBtn) prevBtn.style.display = 'none';
+                if (nextBtn) nextBtn.style.display = 'none';
             } else {
                 // Show "Cevabı Göster" button, show nav
                 checkBtn.style.display = 'flex';
@@ -386,12 +386,12 @@ export function renderQuestion(isRefresh = false) {
                 checkBtn.style.opacity = '1';
                 if (checkText) checkText.innerText = t('flashcard_reveal');
                 if (checkIcon) checkIcon.style.display = 'none';
-                if (prevBtn) prevBtn.style.visibility = '';
-                if (nextBtn) nextBtn.style.visibility = '';
+                if (prevBtn) prevBtn.style.display = '';
+                if (nextBtn) nextBtn.style.display = '';
             }
         } else if (isChecked) {
-            if (prevBtn) prevBtn.style.visibility = '';
-            if (nextBtn) nextBtn.style.visibility = '';
+            if (prevBtn) prevBtn.style.display = '';
+            if (nextBtn) nextBtn.style.display = '';
             checkBtn.style.display = 'none';
             difficultyPill.style.display = 'flex';
             if (flashcardRatingBar) flashcardRatingBar.style.display = 'none';
@@ -412,8 +412,8 @@ export function renderQuestion(isRefresh = false) {
             if (checkIcon) checkIcon.style.display = 'none';
             checkBtn.disabled = false;
             checkBtn.style.opacity = '1';
-            if (prevBtn) prevBtn.style.visibility = '';
-            if (nextBtn) nextBtn.style.visibility = '';
+            if (prevBtn) prevBtn.style.display = '';
+            if (nextBtn) nextBtn.style.display = '';
 
             // Reset buttons
             const hardBtn = document.getElementById('diffHardBtn');

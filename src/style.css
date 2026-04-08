@@ -3844,13 +3844,15 @@ input:checked + .slider-small:before {
     align-items: center;
     justify-content: center;
     flex: 1;
+    width: 100%;
 }
 
 .fc-rating-btn {
     flex: 1;
-    padding: 0.5rem 0.25rem;
+    height: 48px;
+    padding: 0 0.25rem;
     border: none;
-    border-radius: 8px;
+    border-radius: var(--radius-md);
     font-size: 0.78rem;
     font-weight: 700;
     cursor: pointer;
@@ -3866,3 +3868,15 @@ input:checked + .slider-small:before {
 .fc-hard   { background: #f59e0b; }
 .fc-normal { background: #64748b; }
 .fc-easy   { background: #22c55e; }
+
+@media (max-width: 600px) {
+    .flashcard-rating-bar {
+        gap: 0.5rem;
+    }
+
+    .fc-rating-btn {
+        height: 52px;
+        font-size: 0.9rem;
+        border-radius: var(--radius-md);
+    }
+}
