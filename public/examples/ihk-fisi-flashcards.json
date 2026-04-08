@@ -19,7 +19,7 @@
                 "text": "OSI-Modell\n\nWas ist das OSI-Referenzmodell und welche 7 Schichten hat es?"
             },
             "answer": {
-                "back": "Das OSI-Modell (Open Systems Interconnection) ist ein standardisiertes Schichtenmodell für Netzwerkkommunikation:\n\n1. Bitübertragungsschicht (Physical)\n2. Sicherungsschicht (Data Link)\n3. Vermittlungsschicht (Network)\n4. Transportschicht (Transport)\n5. Sitzungsschicht (Session)\n6. Darstellungsschicht (Presentation)\n7. Anwendungsschicht (Application)\n\nMerkhilfe: „Alle Deutschen Studenten Trinken Sehr Dunkles Bier""
+                "back": "Das OSI-Modell (Open Systems Interconnection) ist ein standardisiertes Schichtenmodell für Netzwerkkommunikation:\n\n1. Bitübertragungsschicht (Physical)\n2. Sicherungsschicht (Data Link)\n3. Vermittlungsschicht (Network)\n4. Transportschicht (Transport)\n5. Sitzungsschicht (Session)\n6. Darstellungsschicht (Presentation)\n7. Anwendungsschicht (Application)\n\nMerkhilfe: (A-D-S-T-S-D-B)"
             }
         },
         {
