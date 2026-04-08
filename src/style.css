@@ -3766,12 +3766,15 @@ input:checked + .slider-small:before {
     }
     
     .results-question-list {
-        grid-template-columns: repeat(6, 1fr);
-        gap: 0.5rem;
+        grid-template-columns: repeat(auto-fill, minmax(38px, 1fr));
+        gap: 0.4rem;
+        max-width: 100%;
     }
-    
+
     .result-item {
-        height: 40px;
+        width: 100%;
+        height: 38px;
+        font-size: 0.8rem;
     }
 }
 
