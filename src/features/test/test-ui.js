@@ -148,6 +148,17 @@ export function renderQuestion(isRefresh = false) {
     // Remove existing media
     card.querySelectorAll('.question-media').forEach(m => m.remove());
 
+    // Flashcard front: style question-card as the front face
+    card.querySelectorAll('.flashcard-label').forEach(el => el.remove());
+    card.classList.remove('flashcard-front');
+    if (q.type === 'flashcard') {
+        card.classList.add('flashcard-front');
+        const frontLabel = document.createElement('span');
+        frontLabel.className = 'flashcard-label';
+        frontLabel.textContent = t('flashcard_front');
+        card.insertBefore(frontLabel, card.firstChild);
+    }
+
     const media = q.content?.media || [];
     const imageMedia = media.find(m => m.type === 'image');
 
@@ -207,20 +218,14 @@ export function renderQuestion(isRefresh = false) {
     updateQuestionStatsInfo(q.sourceId, q.id);
 
     if (q.type === 'flashcard') {
-        const isRevealed = isChecked;
-        container.innerHTML = `
-            <div class="flashcard-container">
-                <div class="flashcard-face flashcard-front">
-                    <span class="flashcard-label">${t('flashcard_front')}</span>
-                    <div class="flashcard-text">${q.content?.text || ''}</div>
-                </div>
-                ${isRevealed ? `
+        if (isChecked) {
+            container.innerHTML = `
                 <div class="flashcard-face flashcard-back">
                     <span class="flashcard-label">${t('flashcard_back')}</span>
                     <div class="flashcard-text">${q.answer?.back || ''}</div>
-                </div>` : ''}
-            </div>
-        `;
+                </div>
+            `;
+        }
     } else if (q.type === 'text' || q.type === 'text_input' || q.type === 'open_ended' || q.type === 'fill_in_the_blank') {
         const val = AppState.userAnswers[qIndex]?.[0] || '';
         const isCorrect = isChecked ? evaluateAnswer(qIndex, [val]) : false;
@@ -341,24 +346,33 @@ export function renderQuestion(isRefresh = false) {
     const flashcardRatingBar = document.getElementById('flashcardRatingBar');
 
     if (checkBtn && difficultyPill) {
+        const prevBtn = document.getElementById('prevBtn');
+        const nextBtn = document.getElementById('nextBtn');
+
         if (q.type === 'flashcard') {
             // Flashcard: hide difficultyPill; show reveal btn or rating bar
             difficultyPill.style.display = 'none';
             if (flashcardRatingBar) flashcardRatingBar.style.display = 'none';
 
             if (isChecked) {
-                // Back is revealed — show rating buttons
+                // Back is revealed — show only rating buttons, hide nav
                 checkBtn.style.display = 'none';
                 if (flashcardRatingBar) flashcardRatingBar.style.display = 'flex';
+                if (prevBtn) prevBtn.style.visibility = 'hidden';
+                if (nextBtn) nextBtn.style.visibility = 'hidden';
             } else {
-                // Show "Cevabı Göster" button
+                // Show "Cevabı Göster" button, show nav
                 checkBtn.style.display = 'flex';
                 checkBtn.disabled = false;
                 checkBtn.style.opacity = '1';
                 if (checkText) checkText.innerText = t('flashcard_reveal');
                 if (checkIcon) checkIcon.style.display = 'none';
+                if (prevBtn) prevBtn.style.visibility = '';
+                if (nextBtn) nextBtn.style.visibility = '';
             }
         } else if (isChecked) {
+            if (prevBtn) prevBtn.style.visibility = '';
+            if (nextBtn) nextBtn.style.visibility = '';
             checkBtn.style.display = 'none';
             difficultyPill.style.display = 'flex';
             if (flashcardRatingBar) flashcardRatingBar.style.display = 'none';
@@ -379,6 +393,8 @@ export function renderQuestion(isRefresh = false) {
             if (checkIcon) checkIcon.style.display = 'none';
             checkBtn.disabled = false;
             checkBtn.style.opacity = '1';
+            if (prevBtn) prevBtn.style.visibility = '';
+            if (nextBtn) nextBtn.style.visibility = '';
 
             // Reset buttons
             const hardBtn = document.getElementById('diffHardBtn');

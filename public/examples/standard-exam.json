@@ -1,12 +1,12 @@
 {
     "exam_metadata": {
-        "title": "Örnek Soru Tipleri – Tüm Formatlar",
+        "title": "Sample Question Types – All Formats",
         "id": "ref_template_001",
-        "category": "Demo & Şablon",
+        "category": "Demo & Template",
         "total_questions": 9,
         "date": "2026-04-08",
         "source": "https://github.com/tafirnat/exam-app",
-        "description": "Uygulamanın desteklediği tüm soru tiplerini gösteren demo kaynak: single_choice, multiple_choice, true_false, text_input ve flashcard. AI ile JSON oluşturmak için şablon olarak kullanılabilir."
+        "description": "A demo source showcasing all supported question types: single_choice, multiple_choice, true_false, text_input, and flashcard. Can be used as a template for generating JSON with AI."
     },
     "questions": [
         {
