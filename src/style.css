@@ -3584,7 +3584,7 @@ input:checked + .slider-small:before {
     display: flex;
     justify-content: center;
     gap: 1.5rem;
-    margin-bottom: 2.5rem;
+    margin-bottom: 0;
 }
 
 .res-stat-item {
@@ -3632,7 +3632,7 @@ input:checked + .slider-small:before {
     flex-direction: column;
     align-items: center;
     gap: 1rem;
-    margin-bottom: 2.5rem;
+    margin-bottom: 0;
 }
 
 .success-rate-gauge {
@@ -3774,3 +3774,84 @@ input:checked + .slider-small:before {
         height: 40px;
     }
 }
+
+/* ==================== Flashcard Styles ==================== */
+
+.flashcard-container {
+    display: flex;
+    flex-direction: column;
+    gap: 1rem;
+}
+
+.flashcard-face {
+    background: var(--surface-color);
+    border: 1.5px solid var(--border-color);
+    border-radius: var(--radius-md);
+    padding: 1.25rem 1.5rem;
+    display: flex;
+    flex-direction: column;
+    gap: 0.5rem;
+}
+
+.flashcard-front {
+    border-color: var(--primary-color);
+    border-left: 4px solid var(--primary-color);
+}
+
+.flashcard-back {
+    border-color: var(--success-color);
+    border-left: 4px solid var(--success-color);
+    animation: fc-reveal 0.25s ease-out;
+}
+
+@keyframes fc-reveal {
+    from { opacity: 0; transform: translateY(-6px); }
+    to   { opacity: 1; transform: translateY(0); }
+}
+
+.flashcard-label {
+    font-size: 0.7rem;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+    color: var(--text-secondary);
+}
+
+.flashcard-front .flashcard-label { color: var(--primary-color); }
+.flashcard-back  .flashcard-label { color: var(--success-color); }
+
+.flashcard-text {
+    font-size: 1rem;
+    line-height: 1.6;
+    color: var(--text-primary);
+}
+
+/* ---- Flashcard Rating Bar ---- */
+.flashcard-rating-bar {
+    display: flex;
+    gap: 0.4rem;
+    align-items: center;
+    justify-content: center;
+    flex: 1;
+}
+
+.fc-rating-btn {
+    flex: 1;
+    padding: 0.5rem 0.25rem;
+    border: none;
+    border-radius: 8px;
+    font-size: 0.78rem;
+    font-weight: 700;
+    cursor: pointer;
+    transition: opacity 0.15s, transform 0.1s;
+    color: #fff;
+    min-width: 0;
+}
+
+.fc-rating-btn:active { transform: scale(0.95); }
+.fc-rating-btn:hover  { opacity: 0.88; }
+
+.fc-again  { background: #ef4444; }
+.fc-hard   { background: #f59e0b; }
+.fc-normal { background: #64748b; }
+.fc-easy   { background: #22c55e; }
