@@ -222,9 +222,28 @@ export function renderQuestion(isRefresh = false) {
             container.innerHTML = `
                 <div class="flashcard-face flashcard-back">
                     <span class="flashcard-label">${t('flashcard_back')}</span>
-                    <div class="flashcard-text">${q.answer?.back || ''}</div>
+                    <div class="flashcard-text" id="flashcardBackText">${q.answer?.back || ''}</div>
+                    <div class="translation-text" id="trans_flashcardBackText" style="display:none;"></div>
                 </div>
             `;
+
+            const backFace = container.querySelector('.flashcard-back');
+
+            // TTS button for back face
+            if (AppState.ttsEnabled) {
+                const tBtn = document.createElement('button');
+                tBtn.className = 'tts-btn';
+                tBtn.innerHTML = '<svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2.5"><polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5"></polygon><path d="M19.07 4.93a10 10 0 0 1 0 14.14M15.54 8.46a5 5 0 0 1 0 7.07"></path></svg>';
+                tBtn.onclick = () => TTS.toggle(q.answer?.back || '');
+                backFace.appendChild(tBtn);
+            }
+
+            // Translate button for back face
+            const transBtn = document.createElement('button');
+            transBtn.className = 'corner-translate-btn';
+            transBtn.innerHTML = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M5 8l6 6"></path><path d="M4 14l6-6 2-3"></path><path d="M2 5h12"></path><path d="M7 2h1"></path><path d="M22 22l-5-10-5 10"></path><path d="M14 18h6"></path></svg>';
+            transBtn.onclick = () => handleTranslation(transBtn, 'flashcardBackText', 'trans_flashcardBackText');
+            backFace.appendChild(transBtn);
         }
     } else if (q.type === 'text' || q.type === 'text_input' || q.type === 'open_ended' || q.type === 'fill_in_the_blank') {
         const val = AppState.userAnswers[qIndex]?.[0] || '';

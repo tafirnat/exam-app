@@ -3788,9 +3788,20 @@ input:checked + .slider-small:before {
     border: 1.5px solid var(--border-color);
     border-radius: var(--radius-md);
     padding: 1.25rem 1.5rem;
+    position: relative;
     display: flex;
     flex-direction: column;
     gap: 0.5rem;
+}
+
+.flashcard-face .corner-translate-btn {
+    border-left: 1px solid var(--border-color);
+    border-top: 1px solid var(--border-color);
+    background-color: var(--surface-hover);
+}
+
+.flashcard-face .tts-btn {
+    border-top-left-radius: var(--radius-md);
 }
 
 .flashcard-front {
