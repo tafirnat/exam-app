@@ -6,7 +6,9 @@ let currentEditingQuestion = null;
 let activeGroup = 'general';
 
 function getQuestionCategory(type) {
-    return ['single_choice', 'multiple_choice', 'true_false'].includes(type) ? 'choice' : 'text';
+    if (['single_choice', 'multiple_choice', 'true_false'].includes(type)) return 'choice';
+    if (type === 'flashcard') return 'flashcard';
+    return 'text';
 }
 
 export function closeQuestionEditor() {
@@ -34,8 +36,11 @@ export function openQuestionEditor(question) {
 function renderEditorModal() {
     const category = getQuestionCategory(currentEditingQuestion.type || 'single_choice');
 
-    // Validate activeGroup: 'options' tab only exists for choice questions
+    // Validate activeGroup based on category
     if (category === 'text' && activeGroup === 'options') {
+        activeGroup = 'general';
+    }
+    if (category === 'flashcard' && (activeGroup === 'options' || activeGroup === 'answer' || activeGroup === 'content')) {
         activeGroup = 'general';
     }
 
@@ -49,8 +54,10 @@ function renderEditorModal() {
     overlay.style.display = 'flex';
 
     const isChoice = category === 'choice';
-    // Choice: 4 tabs (2×2 grid) | Text: 3 tabs (1×3 grid)
-    const navStyle = isChoice ? '' : 'grid-template-columns: 1fr 1fr 1fr;';
+    const isFlashcard = category === 'flashcard';
+    // Choice: 4 tabs (2×2 grid) | Text: 3 tabs | Flashcard: 2 tabs (1fr 1fr)
+    let navStyle = isChoice ? '' : 'grid-template-columns: 1fr 1fr 1fr;';
+    if (isFlashcard) navStyle = 'grid-template-columns: 1fr 1fr;';
     const answerTabLabel = isChoice ? t('group_explanation') : t('group_answer');
 
     const optionsTab = isChoice ? `
@@ -71,6 +78,18 @@ function renderEditorModal() {
                     </button>
                 </div>` : '';
 
+    const flashcardSection = isFlashcard ? `
+                <div class="edit-section ${activeGroup === 'flashcard' ? 'active' : ''}" id="section-flashcard">
+                    <div class="editor-input-group">
+                        <label>${t('flashcard_front')}</label>
+                        <textarea class="editor-field code-font" id="edit-fc-front" style="min-height: 120px;">${currentEditingQuestion.content?.text || ''}</textarea>
+                    </div>
+                    <div class="editor-input-group">
+                        <label>${t('flashcard_back')}</label>
+                        <textarea class="editor-field code-font" id="edit-fc-back" style="min-height: 120px;">${currentEditingQuestion.answer?.back || ''}</textarea>
+                    </div>
+                </div>` : '';
+
     overlay.innerHTML = `
         <div class="editor-card">
             <div class="editor-header">
@@ -83,6 +102,11 @@ function renderEditorModal() {
                     <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"></circle><line x1="12" y1="16" x2="12" y2="12"></line><line x1="12" y1="8" x2="12.01" y2="8"></line></svg>
                     ${t('group_general')}
                 </button>
+                ${isFlashcard ? `
+                <button class="group-btn ${activeGroup === 'flashcard' ? 'active' : ''}" data-group="flashcard">
+                    <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2"><rect x="2" y="5" width="20" height="14" rx="2"></rect><line x1="2" y1="10" x2="22" y2="10"></line></svg>
+                    ${t('group_flashcard')}
+                </button>` : `
                 <button class="group-btn ${activeGroup === 'content' ? 'active' : ''}" data-group="content">
                     <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path><polyline points="14 2 14 8 20 8"></polyline><line x1="16" y1="13" x2="8" y2="13"></line><line x1="16" y1="17" x2="8" y2="17"></line><polyline points="10 9 9 9 8 9"></polyline></svg>
                     ${t('group_content')}
@@ -91,7 +115,7 @@ function renderEditorModal() {
                 <button class="group-btn ${activeGroup === 'answer' ? 'active' : ''}" data-group="answer">
                     <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"></path><polyline points="22 4 12 14.01 9 11.01"></polyline></svg>
                     ${answerTabLabel}
-                </button>
+                </button>`}
             </div>
 
             <div class="editor-content-area">
@@ -103,6 +127,7 @@ function renderEditorModal() {
                             <option value="multiple_choice" ${currentEditingQuestion.type === 'multiple_choice' ? 'selected' : ''}>multiple_choice</option>
                             <option value="true_false" ${currentEditingQuestion.type === 'true_false' ? 'selected' : ''}>true_false</option>
                             <option value="text_input" ${currentEditingQuestion.type === 'text_input' ? 'selected' : ''}>text_input</option>
+                            <option value="flashcard" ${currentEditingQuestion.type === 'flashcard' ? 'selected' : ''}>flashcard</option>
                         </select>
                     </div>
                     <div class="editor-input-group">
@@ -126,6 +151,7 @@ function renderEditorModal() {
                     </div>
                 </div>
 
+                ${isFlashcard ? '' : `
                 <div class="edit-section ${activeGroup === 'content' ? 'active' : ''}" id="section-content">
                     <div class="code-info-box">${t('code_usage_info')}</div>
                     <div class="editor-input-group">
@@ -135,7 +161,6 @@ function renderEditorModal() {
                         </div>
                         <textarea class="editor-field code-font" id="edit-text" style="min-height: 120px;">${currentEditingQuestion.content?.text || currentEditingQuestion.text || ''}</textarea>
                     </div>
-
                     <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1rem;">
                         <div class="editor-input-group">
                             <label>${t('media_type_label')}</label>
@@ -158,12 +183,12 @@ function renderEditorModal() {
                         <input type="text" class="editor-field" id="edit-media-url" value="${currentEditingQuestion.content?.media?.[0]?.url || ''}">
                     </div>
                 </div>
-
                 ${optionsSection}
-
                 <div class="edit-section ${activeGroup === 'answer' ? 'active' : ''}" id="section-answer">
                     ${renderAnswerSection()}
-                </div>
+                </div>`}
+
+                ${isFlashcard ? flashcardSection : ''}
             </div>
 
             <div class="editor-footer">
@@ -598,14 +623,25 @@ function syncDataFromInputs() {
         }
     });
 
+    const qType = currentEditingQuestion.type || '';
+    const isChoice = ['single_choice', 'multiple_choice', 'true_false'].includes(qType);
+
+    if (qType === 'flashcard') {
+        const front = document.getElementById('edit-fc-front');
+        const back = document.getElementById('edit-fc-back');
+        if (front) { currentEditingQuestion.content = { text: front.value }; }
+        if (back) {
+            if (!currentEditingQuestion.answer) currentEditingQuestion.answer = {};
+            currentEditingQuestion.answer.back = back.value;
+        }
+        return;
+    }
+
     // Answer
     if (!currentEditingQuestion.answer) currentEditingQuestion.answer = {};
 
     const expl = document.getElementById('edit-explanation');
     if (expl) currentEditingQuestion.answer.explanation = expl.value;
-
-    const qType = currentEditingQuestion.type || '';
-    const isChoice = ['single_choice', 'multiple_choice', 'true_false'].includes(qType);
 
     if (isChoice) {
         // Doğru cevap(lar) radio/checkbox seçiminden okunur
