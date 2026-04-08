@@ -2,8 +2,9 @@ import { AppState, saveSources } from '../../core/state.js';
 import { showToast, getCorrectAnswers, showAlert } from '../../core/utils.js';
 import { t } from '../../core/i18n.js';
 
-const VALID_TYPES = new Set(['single_choice', 'multiple_choice', 'true_false', 'text_input', 'text', 'open_ended', 'fill_in_the_blank']);
+const VALID_TYPES = new Set(['single_choice', 'multiple_choice', 'true_false', 'text_input', 'text', 'open_ended', 'fill_in_the_blank', 'flashcard']);
 const TEXT_TYPES = new Set(['text_input', 'text', 'open_ended', 'fill_in_the_blank']);
+const FLASHCARD_TYPES = new Set(['flashcard']);
 
 export function validateExamSchema(data) {
     const errors = [];
@@ -45,14 +46,21 @@ export function validateExamSchema(data) {
             errors.push(`${prefix}: Geçersiz tür "${q.type}". Geçerli türler: ${[...VALID_TYPES].join(', ')}.`);
         }
 
-        if (q.type && !TEXT_TYPES.has(q.type)) {
+        if (q.type && !TEXT_TYPES.has(q.type) && !FLASHCARD_TYPES.has(q.type)) {
             if (!Array.isArray(q.options) || q.options.length < 2) {
                 errors.push(`${prefix}: "${q.type}" türü için en az 2 seçenek gereklidir.`);
             }
         }
 
         if (!q.answer || typeof q.answer !== 'object') {
-            errors.push(`${prefix}: "answer" nesnesi zorunludur.`);
+            // Flashcard: answer.back is enough
+            if (!FLASHCARD_TYPES.has(q.type)) {
+                errors.push(`${prefix}: "answer" nesnesi zorunludur.`);
+            }
+        } else if (FLASHCARD_TYPES.has(q.type)) {
+            if (!q.answer.back || String(q.answer.back).trim() === '') {
+                errors.push(`${prefix}: Flashcard türü için answer.back zorunludur.`);
+            }
         } else if (!TEXT_TYPES.has(q.type)) {
             const hasCorrectIds = Array.isArray(q.answer.correct_ids) && q.answer.correct_ids.length > 0;
             const hasCorrectId = q.answer.correct_id !== undefined;
@@ -136,7 +144,9 @@ export function processJSON(data, name, options = {}) {
     AppState.sources.push(source);
 
     saveSources();
-    showAlert(t('import_success_msg', { name: title, count: normalizedQuestions.length }), t('success_title'));
+    if (!options.silent) {
+        showAlert(t('import_success_msg', { name: title, count: normalizedQuestions.length }), t('success_title'));
+    }
     return source;
 }
 

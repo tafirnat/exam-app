@@ -1,11 +1,12 @@
-const CACHE_NAME = 'focus-app-v11';
+const CACHE_NAME = 'focus-app-v12';
 const ASSETS_TO_CACHE = [
     './',
     './index.html',
     './manifest.webmanifest',
     './icon-192.png',
     './icon-512.png',
-    './examples/standard-exam.json'
+    './examples/standard-exam.json',
+    './examples/ihk-fisi-flashcards.json'
 ];
 
 // Installaion: Cache files and skip waiting

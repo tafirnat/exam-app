@@ -1,12 +1,12 @@
 {
     "exam_metadata": {
-        "title": "AI Learning Template (Golden Reference)",
+        "title": "Örnek Soru Tipleri – Tüm Formatlar",
         "id": "ref_template_001",
-        "category": "Exam App Documentation",
-        "total_questions": 8,
-        "date": "2026-03-08",
+        "category": "Demo & Şablon",
+        "total_questions": 9,
+        "date": "2026-04-08",
         "source": "https://github.com/tafirnat/exam-app",
-        "description": "This file serves as a reference for AI to generate compatible test JSON files. It demonstrates all supported features of the Exam App."
+        "description": "Uygulamanın desteklediği tüm soru tiplerini gösteren demo kaynak: single_choice, multiple_choice, true_false, text_input ve flashcard. AI ile JSON oluşturmak için şablon olarak kullanılabilir."
     },
     "questions": [
         {
@@ -313,6 +313,23 @@
             "user_state": {
                 "is_flagged": false,
                 "is_marked": false
+            }
+        },
+        {
+            "id": "q9_flashcard",
+            "order": 9,
+            "type": "flashcard",
+            "difficulty": 2,
+            "tags": [
+                "flashcard",
+                "networking",
+                "concept"
+            ],
+            "content": {
+                "text": "What is the OSI Model?"
+            },
+            "answer": {
+                "back": "The OSI (Open Systems Interconnection) Model is a conceptual framework that standardizes network communication into 7 layers:\n1. Physical\n2. Data Link\n3. Network\n4. Transport\n5. Session\n6. Presentation\n7. Application\n\nEach layer has a specific role and communicates only with the layers directly above and below it."
             }
         }
     ]

@@ -129,7 +129,7 @@ document.addEventListener('DOMContentLoaded', () => {
         const templateAdded = localStorage.getItem('focus_app_template_added');
         if (!templateAdded) {
             console.log('Adding default exam template...');
-            loadFromUrl('./examples/standard-exam.json', { active: false }).then(source => {
+            loadFromUrl('./examples/standard-exam.json', { active: false, silent: true }).then(source => {
                 if (source) renderSourcesList();
             });
             localStorage.setItem('focus_app_template_added', 'true');
@@ -139,7 +139,7 @@ document.addEventListener('DOMContentLoaded', () => {
         const flashcardDemoAdded = localStorage.getItem('focus_app_flashcard_demo_added');
         if (!flashcardDemoAdded) {
             console.log('Adding IHK FISI flashcard demo...');
-            loadFromUrl('./examples/ihk-fisi-flashcards.json', { active: false }).then(source => {
+            loadFromUrl('./examples/ihk-fisi-flashcards.json', { active: false, silent: true }).then(source => {
                 if (source) renderSourcesList();
             });
             localStorage.setItem('focus_app_flashcard_demo_added', 'true');

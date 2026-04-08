@@ -1,0 +1,143 @@
+{
+    "exam_metadata": {
+        "title": "IHK FISI – IT-Grundlagen Lernkarten",
+        "id": "ihk_fisi_flashcards_de_001",
+        "category": "IHK Prüfungsvorbereitung",
+        "description": "10 Lernkarten (Deutsch–Deutsch) zu zentralen IT-Themen der IHK-Abschlussprüfung Fachinformatiker Systemintegration (FISI). Ideal für Spaced-Repetition-Lernen mit dem FSRS-Algorithmus.",
+        "total_questions": 10,
+        "date": "2026-04-08",
+        "tags": ["IHK", "FISI", "Systemintegration", "Netzwerk", "IT-Grundlagen"]
+    },
+    "questions": [
+        {
+            "id": "fisi_fc_01",
+            "order": 1,
+            "type": "flashcard",
+            "difficulty": 2.5,
+            "tags": ["Netzwerk", "OSI-Modell", "Grundlagen"],
+            "content": {
+                "text": "OSI-Modell\n\nWas ist das OSI-Referenzmodell und welche 7 Schichten hat es?"
+            },
+            "answer": {
+                "back": "Das OSI-Modell (Open Systems Interconnection) ist ein standardisiertes Schichtenmodell für Netzwerkkommunikation:\n\n1. Bitübertragungsschicht (Physical)\n2. Sicherungsschicht (Data Link)\n3. Vermittlungsschicht (Network)\n4. Transportschicht (Transport)\n5. Sitzungsschicht (Session)\n6. Darstellungsschicht (Presentation)\n7. Anwendungsschicht (Application)\n\nMerkhilfe: „Alle Deutschen Studenten Trinken Sehr Dunkles Bier""
+            }
+        },
+        {
+            "id": "fisi_fc_02",
+            "order": 2,
+            "type": "flashcard",
+            "difficulty": 2.0,
+            "tags": ["Netzwerk", "Protokolle", "TCP", "UDP"],
+            "content": {
+                "text": "TCP vs. UDP\n\nWas sind die wesentlichen Unterschiede zwischen TCP und UDP?"
+            },
+            "answer": {
+                "back": "TCP (Transmission Control Protocol):\n• Verbindungsorientiert (3-Way-Handshake)\n• Zuverlässige Übertragung mit Bestätigung (ACK)\n• Flusskontrolle und Fehlerkorrektur\n• Langsamer, aber sicher\n• Einsatz: HTTP/S, FTP, E-Mail\n\nUDP (User Datagram Protocol):\n• Verbindungslos\n• Keine Bestätigung, keine Fehlerkorrektur\n• Schneller, geringer Overhead\n• Einsatz: DNS, VoIP, Streaming, Online-Spiele"
+            }
+        },
+        {
+            "id": "fisi_fc_03",
+            "order": 3,
+            "type": "flashcard",
+            "difficulty": 3.0,
+            "tags": ["Speicher", "RAID", "Datensicherheit"],
+            "content": {
+                "text": "RAID-Level\n\nWas bedeuten RAID 0, RAID 1 und RAID 5 – und welches bietet Redundanz?"
+            },
+            "answer": {
+                "back": "RAID 0 – Striping:\n• Daten auf mehrere Festplatten verteilt\n• Hohe Geschwindigkeit, KEINE Redundanz\n• Fällt eine Platte aus → Datenverlust\n\nRAID 1 – Mirroring:\n• Daten werden gespiegelt (dupliziert)\n• Volle Redundanz, aber 50 % Kapazitätsverlust\n\nRAID 5 – Striping mit Parität:\n• Mindestens 3 Festplatten\n• Paritätsdaten verteilt gespeichert\n• 1 Platte darf ausfallen ohne Datenverlust\n• Guter Kompromiss aus Leistung und Redundanz"
+            }
+        },
+        {
+            "id": "fisi_fc_04",
+            "order": 4,
+            "type": "flashcard",
+            "difficulty": 1.5,
+            "tags": ["Netzwerk", "DNS", "Dienste"],
+            "content": {
+                "text": "DNS (Domain Name System)\n\nWelche Aufgabe hat ein DNS-Server?"
+            },
+            "answer": {
+                "back": "Der DNS-Server übersetzt Domainnamen in IP-Adressen (Namensauflösung).\n\nBeispiel: www.google.de → 142.250.185.35\n\nWichtige DNS-Eintragstypen:\n• A-Record: Domain → IPv4-Adresse\n• AAAA-Record: Domain → IPv6-Adresse\n• MX-Record: Domain → Mailserver\n• CNAME: Alias für eine Domain\n• PTR: IP-Adresse → Domain (Reverse-Lookup)\n\nPort: 53 (UDP/TCP)"
+            }
+        },
+        {
+            "id": "fisi_fc_05",
+            "order": 5,
+            "type": "flashcard",
+            "difficulty": 2.0,
+            "tags": ["Netzwerk", "DHCP", "Dienste"],
+            "content": {
+                "text": "DHCP (Dynamic Host Configuration Protocol)\n\nWas macht ein DHCP-Server und wie läuft die Adressvergabe ab?"
+            },
+            "answer": {
+                "back": "Ein DHCP-Server vergibt automatisch Netzwerkkonfigurationen an Clients:\n• IP-Adresse\n• Subnetzmaske\n• Standard-Gateway\n• DNS-Serveradresse\n\nDHCP-Ablauf (DORA-Prozess):\n1. Discover – Client sendet Broadcast-Anfrage\n2. Offer – Server bietet IP-Adresse an\n3. Request – Client bestätigt das Angebot\n4. Acknowledge – Server bestätigt die Vergabe\n\nPort: 67 (Server), 68 (Client) | UDP"
+            }
+        },
+        {
+            "id": "fisi_fc_06",
+            "order": 6,
+            "type": "flashcard",
+            "difficulty": 2.5,
+            "tags": ["Netzwerk", "VPN", "Sicherheit"],
+            "content": {
+                "text": "VPN (Virtual Private Network)\n\nWas ist ein VPN, wie funktioniert es und welche Typen gibt es?"
+            },
+            "answer": {
+                "back": "Ein VPN ermöglicht eine verschlüsselte, sichere Verbindung über ein öffentliches Netzwerk (z. B. Internet), als wäre man im internen Firmennetzwerk.\n\nFunktion:\n• Daten werden verschlüsselt (Tunnel)\n• IP-Adresse wird verschleiert\n\nWichtige VPN-Typen:\n• Site-to-Site VPN: Verbindet zwei Standorte dauerhaft\n• Remote-Access VPN: Einzelner Nutzer verbindet sich mit dem Firmennetz\n\nGängige Protokolle: IPSec, SSL/TLS, OpenVPN, WireGuard"
+            }
+        },
+        {
+            "id": "fisi_fc_07",
+            "order": 7,
+            "type": "flashcard",
+            "difficulty": 3.5,
+            "tags": ["Netzwerk", "IPv4", "IPv6", "Subnetting"],
+            "content": {
+                "text": "IPv4 vs. IPv6\n\nWas sind die wesentlichen Unterschiede zwischen IPv4 und IPv6?"
+            },
+            "answer": {
+                "back": "IPv4:\n• 32 Bit Adresslänge → ca. 4,3 Milliarden Adressen\n• Schreibweise: 192.168.1.1 (dezimal, Punkt-getrennt)\n• Adressmangel → Lösung durch NAT\n• Broadcast-Unterstützung\n\nIPv6:\n• 128 Bit Adresslänge → 340 Sextillionen Adressen\n• Schreibweise: 2001:0db8::1 (hexadezimal, Doppelpunkt)\n• Kein Broadcast, stattdessen Multicast & Anycast\n• Integrierte Sicherheit (IPSec)\n• Automatische Adresskonfiguration (SLAAC)\n• Kein NAT erforderlich"
+            }
+        },
+        {
+            "id": "fisi_fc_08",
+            "order": 8,
+            "type": "flashcard",
+            "difficulty": 2.0,
+            "tags": ["Sicherheit", "Firewall", "Netzwerkschutz"],
+            "content": {
+                "text": "Firewall\n\nWas ist eine Firewall und welche Arten gibt es?"
+            },
+            "answer": {
+                "back": "Eine Firewall kontrolliert und filtert den Netzwerkverkehr anhand von Regeln, um unerlaubte Zugriffe zu blockieren.\n\nArten:\n• Paketfilter-Firewall: Prüft IP-Adressen und Ports (Layer 3/4)\n• Stateful Inspection Firewall: Prüft Verbindungszustand (Zustandstabelle)\n• Application Layer Firewall (WAF): Prüft Inhalte auf Anwendungsebene (Layer 7)\n• Next Generation Firewall (NGFW): Kombination aller Methoden + IDS/IPS\n\nStellung im Netzwerk:\nInternet → Firewall → DMZ → Internes Netz"
+            }
+        },
+        {
+            "id": "fisi_fc_09",
+            "order": 9,
+            "type": "flashcard",
+            "difficulty": 2.5,
+            "tags": ["IT-Service", "SLA", "Verträge"],
+            "content": {
+                "text": "SLA (Service Level Agreement)\n\nWas ist ein SLA und welche Kennzahlen sind typischerweise enthalten?"
+            },
+            "answer": {
+                "back": "Ein SLA (Service Level Agreement) ist ein Vertrag zwischen Dienstleister und Auftraggeber, der die vereinbarte Qualität und Verfügbarkeit eines Services definiert.\n\nTypische SLA-Kennzahlen:\n• Verfügbarkeit (Uptime): z. B. 99,9 % → max. 8,7 Stunden Ausfall/Jahr\n• Reaktionszeit (Response Time): Zeit bis zur ersten Reaktion bei Störung\n• Lösungszeit (Resolution Time): Zeit bis zur Behebung der Störung\n• MTTR: Mean Time to Repair – Ø Reparaturzeit\n• MTBF: Mean Time Between Failures – Ø Zeit zwischen zwei Ausfällen\n\nBei SLA-Verletzung: Vertragsstrafen (Pönalen) möglich"
+            }
+        },
+        {
+            "id": "fisi_fc_10",
+            "order": 10,
+            "type": "flashcard",
+            "difficulty": 3.0,
+            "tags": ["Netzwerk", "VLAN", "Switching"],
+            "content": {
+                "text": "VLAN (Virtual Local Area Network)\n\nWas ist ein VLAN, warum wird es eingesetzt und wie funktioniert das Tagging?"
+            },
+            "answer": {
+                "back": "Ein VLAN teilt ein physisches Netzwerk logisch in mehrere unabhängige Netzsegmente auf.\n\nVorteile:\n• Netzsegmentierung ohne zusätzliche Hardware\n• Erhöhte Sicherheit (Abteilungen voneinander isolieren)\n• Reduzierung von Broadcast-Domänen\n• Flexibles Netzwerkmanagement\n\nVLAN-Tagging (IEEE 802.1Q):\n• Pakete werden mit einer VLAN-ID (1–4094) markiert (getaggt)\n• Access Port: Verbindet Endgeräte, kein Tag sichtbar\n• Trunk Port: Verbindet Switches, überträgt mehrere VLANs mit Tag\n\nRouting zwischen VLANs: Layer-3-Switch oder Router-on-a-Stick"
+            }
+        }
+    ]
+}
