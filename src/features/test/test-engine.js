@@ -375,6 +375,58 @@ export function evaluateAnswer(questionIndex, userAnswer) {
     return isCorrect;
 }
 
+export function updateFlashcardStats(sourceId, questionId, rating) {
+    const key = `${sourceId}_${questionId}`;
+    if (!AppState.stats[key]) {
+        AppState.stats[key] = {
+            difficulty: 5.0,
+            correct: 0,
+            wrong: 0,
+            starred: false,
+            flagged: false,
+            streak: 0,
+            stability: 0,
+            lastReview: null
+        };
+    }
+    const stat = AppState.stats[key];
+
+    // Snapshot for toggle logic
+    let existingResult = AppState.testTracking?.results?.find(r => String(r.questionId) === String(questionId));
+    if (existingResult && existingResult._preSessionState) {
+        Object.keys(existingResult._preSessionState).forEach(prop => {
+            stat[prop] = JSON.parse(JSON.stringify(existingResult._preSessionState[prop]));
+        });
+    } else if (!existingResult) {
+        const snapshot = JSON.parse(JSON.stringify(stat));
+        existingResult = { questionId, isCorrect: rating >= 3, userAnswer: [String(rating)], _preSessionState: snapshot };
+        if (AppState.testTracking) AppState.testTracking.results.push(existingResult);
+    }
+
+    const q = AppState.questionMap?.[key];
+    applyFSRS(stat, rating, q?.difficulty);
+
+    // Streak and learned
+    if (rating >= 3) {
+        if (stat.streak < 0) stat.streak = 1; else stat.streak++;
+        stat.correct++;
+    } else {
+        if (stat.streak > 0) stat.streak = -1; else stat.streak--;
+        stat.wrong++;
+        stat.learned = false;
+    }
+    if (stat.streak >= 5 || stat.stability > 30) stat.learned = true;
+
+    if (existingResult) {
+        existingResult.isCorrect = rating >= 3;
+        existingResult.userAnswer = [String(rating)];
+        existingResult.streak = stat.streak;
+    }
+
+    saveActiveTest();
+    saveStats();
+}
+
 export function updateStats(sourceId, questionId, isCorrect, userAnswer, feedback = undefined) {
     const key = `${sourceId}_${questionId}`;
     if (!AppState.stats[key]) {

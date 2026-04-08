@@ -501,7 +501,7 @@
                     </div>
                 </div>
 
-                <div id="resDurationBox" style="display: none; align-items: center; justify-content: center; gap: 0.5rem; margin: 1rem 0; padding: 0.75rem; background: var(--surface-hover); border-radius: 12px; color: var(--text-secondary); font-weight: 600;">
+                <div id="resDurationBox" style="display: none; align-items: center; justify-content: center; gap: 0.5rem; padding: 0.75rem; background: var(--surface-hover); border-radius: 12px; color: var(--text-secondary); font-weight: 600;">
                     <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2">
                         <circle cx="12" cy="12" r="10"></circle>
                         <polyline points="12 6 12 12 16 14"></polyline>
@@ -921,6 +921,12 @@
                 <div class="difficulty-divider"></div>
                 <button class="difficulty-btn difficulty-easy" id="diffEasyBtn"
                     data-i18n="difficulty_easy">Kolay</button>
+            </div>
+            <div class="flashcard-rating-bar" id="flashcardRatingBar" style="display: none;">
+                <button class="fc-rating-btn fc-again" onclick="window.handleFlashcardRating('again')" data-i18n="rating_again">Tekrar</button>
+                <button class="fc-rating-btn fc-hard" onclick="window.handleFlashcardRating('hard')" data-i18n="rating_hard">Zor</button>
+                <button class="fc-rating-btn fc-normal" onclick="window.handleFlashcardRating('normal')" data-i18n="rating_normal">Normal</button>
+                <button class="fc-rating-btn fc-easy" onclick="window.handleFlashcardRating('easy')" data-i18n="rating_easy">Kolay</button>
             </div>
             <button class="nav-btn" id="nextBtn">
                 <span class="nav-btn-text" data-i18n="next">Nächste</span>

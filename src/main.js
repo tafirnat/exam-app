@@ -6,7 +6,7 @@ import { migrateOldData } from './core/migration.js';
 import { processJSON, loadFromUrl, loadFromFile, normalizeQuestions, mergeSources } from './features/sources/sources-service.js';
 import { renderSourcesList, showMergeModal, closeAllSourcesModals } from './features/sources/sources-ui.js';
 import { prepareTest, finishTest, prepareRetake } from './features/test/test-engine.js';
-import { renderQuestion, handleCheckAnswer, updateIndicators, handleTranslation, handleDifficultyRating, renderTestResults, handleTtsToggle, getIsAudioPlaying, stopAudio } from './features/test/test-ui.js';
+import { renderQuestion, handleCheckAnswer, updateIndicators, handleTranslation, handleDifficultyRating, handleFlashcardRating, renderTestResults, handleTtsToggle, getIsAudioPlaying, stopAudio } from './features/test/test-ui.js';
 import { renderStatsList, updateHomeStats, setupStatsEventListeners } from './features/stats/stats-module.js';
 import { openQuestionEditor, closeQuestionEditor } from './features/stats/question-editor.js';
 import { initTimer, stopTimer } from './features/test/timer-module.js';
@@ -736,6 +736,7 @@ function setupEventListeners() {
     document.getElementById('checkBtn').onclick = handleCheckAnswer;
     document.getElementById('diffHardBtn').onclick = () => handleDifficultyRating('hard');
     document.getElementById('diffEasyBtn').onclick = () => handleDifficultyRating('easy');
+    window.handleFlashcardRating = handleFlashcardRating;
     document.getElementById('homeStatsBtn').onclick = () => {
         const lastFilter = AppState.activeStatsFilter || 'all';
         switchView('stats');

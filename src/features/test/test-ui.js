@@ -2,7 +2,7 @@
 import { AppState, saveStats } from '../../core/state.js';
 import { translateText, showToast, showConfirm, getCorrectAnswers } from '../../core/utils.js';
 import { t, targetLanguages } from '../../core/i18n.js';
-import { evaluateAnswer, updateStats, finishTest, calculateRetrievability } from './test-engine.js';
+import { evaluateAnswer, updateStats, updateFlashcardStats, finishTest, calculateRetrievability } from './test-engine.js';
 import { resetTimerForNewQuestion, stopTimer } from './timer-module.js';
 
 // --- TTS State Machine ---
@@ -206,7 +206,22 @@ export function renderQuestion(isRefresh = false) {
     updateIndicators();
     updateQuestionStatsInfo(q.sourceId, q.id);
 
-    if (q.type === 'text' || q.type === 'text_input' || q.type === 'open_ended' || q.type === 'fill_in_the_blank') {
+    if (q.type === 'flashcard') {
+        const isRevealed = isChecked;
+        container.innerHTML = `
+            <div class="flashcard-container">
+                <div class="flashcard-face flashcard-front">
+                    <span class="flashcard-label">${t('flashcard_front')}</span>
+                    <div class="flashcard-text">${q.content?.text || ''}</div>
+                </div>
+                ${isRevealed ? `
+                <div class="flashcard-face flashcard-back">
+                    <span class="flashcard-label">${t('flashcard_back')}</span>
+                    <div class="flashcard-text">${q.answer?.back || ''}</div>
+                </div>` : ''}
+            </div>
+        `;
+    } else if (q.type === 'text' || q.type === 'text_input' || q.type === 'open_ended' || q.type === 'fill_in_the_blank') {
         const val = AppState.userAnswers[qIndex]?.[0] || '';
         const isCorrect = isChecked ? evaluateAnswer(qIndex, [val]) : false;
 
@@ -323,10 +338,30 @@ export function renderQuestion(isRefresh = false) {
     const checkText = document.getElementById('checkBtnText');
     const checkIcon = document.getElementById('checkIcon');
 
+    const flashcardRatingBar = document.getElementById('flashcardRatingBar');
+
     if (checkBtn && difficultyPill) {
-        if (isChecked) {
+        if (q.type === 'flashcard') {
+            // Flashcard: hide difficultyPill; show reveal btn or rating bar
+            difficultyPill.style.display = 'none';
+            if (flashcardRatingBar) flashcardRatingBar.style.display = 'none';
+
+            if (isChecked) {
+                // Back is revealed — show rating buttons
+                checkBtn.style.display = 'none';
+                if (flashcardRatingBar) flashcardRatingBar.style.display = 'flex';
+            } else {
+                // Show "Cevabı Göster" button
+                checkBtn.style.display = 'flex';
+                checkBtn.disabled = false;
+                checkBtn.style.opacity = '1';
+                if (checkText) checkText.innerText = t('flashcard_reveal');
+                if (checkIcon) checkIcon.style.display = 'none';
+            }
+        } else if (isChecked) {
             checkBtn.style.display = 'none';
             difficultyPill.style.display = 'flex';
+            if (flashcardRatingBar) flashcardRatingBar.style.display = 'none';
 
             // Show current feedback if already given
             const result = AppState.testTracking?.results.find(r => String(r.questionId) === String(q.id));
@@ -339,6 +374,7 @@ export function renderQuestion(isRefresh = false) {
         } else {
             checkBtn.style.display = 'flex';
             difficultyPill.style.display = 'none';
+            if (flashcardRatingBar) flashcardRatingBar.style.display = 'none';
             if (checkText) checkText.innerText = t('check');
             if (checkIcon) checkIcon.style.display = 'none';
             checkBtn.disabled = false;
@@ -605,6 +641,13 @@ export const handleCheckAnswer = (forceCheck = false) => {
     const q = AppState.questionMap[AppState.currentTest[qIndex]];
     let userAnswer = AppState.userAnswers[qIndex] || [];
 
+    // Flashcard: just reveal the back face, don't evaluate
+    if (q.type === 'flashcard') {
+        AppState.isAnswerChecked[qIndex] = true;
+        renderQuestion();
+        return;
+    }
+
     if (q.type === 'text' || q.type === 'text_input' || q.type === 'open_ended' || q.type === 'fill_in_the_blank') {
         const input = document.getElementById('textAnswerInput');
         if (input) {
@@ -791,6 +834,30 @@ export function handleDifficultyRating(rating) {
         showToast(`${t('difficulty_' + rating)} ${t('feedback_received')}.`);
     }
 }
+export function handleFlashcardRating(ratingKey) {
+    const ratingMap = { again: 1, hard: 2, normal: 3, easy: 4 };
+    const rating = ratingMap[ratingKey];
+    if (!rating) return;
+
+    const qIndex = AppState.currentIndex;
+    const q = AppState.questionMap[AppState.currentTest[qIndex]];
+    if (!q) return;
+
+    updateFlashcardStats(q.sourceId, q.id, rating);
+    if (window.updateHomeStats) window.updateHomeStats();
+
+    // Auto-advance to next question
+    const isLastQuestion = qIndex === AppState.currentTest.length - 1;
+    if (isLastQuestion) {
+        const summaryEl = document.getElementById('testSummarySection');
+        if (summaryEl) summaryEl.dataset.autoShown = 'true';
+        renderQuestion();
+    } else {
+        AppState.currentIndex++;
+        renderQuestion();
+    }
+}
+
 export function renderTestResults() {
     let latestTest = AppState.recentTests && AppState.recentTests.length > 0 ? AppState.recentTests[0] : null;
 
