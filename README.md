@@ -1,6 +1,8 @@
 # 🎓 Exam App - Minimalist Learning Platform
 
-[![Live Demo](https://img.shields.io/badge/demo-live-green?style=for-the-badge&logo=github)](https://tafirnat.github.io/exam-app/)
+[![Live Demo](https://img.shields.io/badge/Demo-Online-brightgreen.svg)](https://tafirnat.github.io/exam-app/)
+![Lizenz](https://img.shields.io/badge/Lizenz-MIT-blue.svg)
+![Technologien](https://img.shields.io/badge/Tech-HTML5%20%7C%20CSS3%20%7C%20JS-orange)
 
 A professional, modular, and high-performance examination application designed for seamless learning. Built with modern web technologies and a focus on visual excellence.
 
