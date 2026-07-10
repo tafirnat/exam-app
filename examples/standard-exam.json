@@ -49,7 +49,7 @@
                 "correct_ids": [
                     2
                 ],
-                "explanation": "Mars is often called the Red Planet because of iron oxide on its surface."
+                "explanation": "Mars is often called the <b>Red Planet</b> because of iron oxide on its surface. For more details, see the <a href=\"https://en.wikipedia.org/wiki/Mars\" target=\"_blank\">Mars Wikipedia page</a>."
             },
             "user_state": {
                 "is_flagged": false,
