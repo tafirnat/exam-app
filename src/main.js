@@ -34,6 +34,87 @@ window.goHome = goHome;
 // --- Initialize ---
 document.addEventListener('DOMContentLoaded', () => {
     console.log('DOMContentLoaded start');
+    
+    // Backwards compatibility helper to make contenteditable divs act like textareas
+    const setupDivInput = (id) => {
+        const el = document.getElementById(id);
+        if (el) {
+            Object.defineProperty(el, 'value', {
+                get: function() { 
+                    return el.contentEditable === "true" ? el.textContent : el.innerHTML; 
+                },
+                set: function(val) { 
+                    if (el.contentEditable === "true") {
+                        el.textContent = val || ''; 
+                    } else {
+                        el.innerHTML = val || ''; 
+                    }
+                },
+                configurable: true
+            });
+            Object.defineProperty(el, 'placeholder', {
+                get: function() { return el.getAttribute('placeholder') || ''; },
+                set: function(val) { el.setAttribute('placeholder', val || ''); },
+                configurable: true
+            });
+        }
+    };
+    setupDivInput('noteInput');
+    setupDivInput('previewNoteInput');
+
+    // Setup edit button click handlers for note input contenteditable toggle
+    const setupEditBtn = (btnId, inputId) => {
+        const btn = document.getElementById(btnId);
+        const input = document.getElementById(inputId);
+        if (btn && input) {
+            btn.onclick = () => {
+                const isEditable = input.contentEditable === "true";
+                const transBtn = document.getElementById(inputId === 'noteInput' ? 'noteTranslateBtn' : 'previewNoteTranslateBtn');
+                const transText = document.getElementById(inputId === 'noteInput' ? 'trans_noteInput' : 'trans_previewNoteInput');
+                
+                if (isEditable) {
+                    input.contentEditable = "false";
+                    btn.classList.remove('active');
+                    
+                    // Render edited text containing HTML tags back to HTML elements
+                    input.innerHTML = input.textContent;
+
+                    // Show translate button if there is content
+                    const hasContent = input.innerText.trim() !== '' || input.innerHTML.trim() !== '';
+                    if (transBtn) transBtn.style.display = hasContent ? 'flex' : 'none';
+                } else {
+                    // Show raw HTML source code in the editor for editing
+                    input.textContent = input.innerHTML;
+                    
+                    input.contentEditable = "true";
+                    btn.classList.add('active');
+                    input.focus();
+                    
+                    // Hide translate button & clear current translation
+                    if (transBtn) transBtn.style.display = 'none';
+                    if (transText) {
+                        transText.innerText = '';
+                        transText.style.display = 'none';
+                    }
+                }
+            };
+        }
+    };
+    setupEditBtn('noteEditBtn', 'noteInput');
+    setupEditBtn('previewNoteEditBtn', 'previewNoteInput');
+
+    // Setup translate button click handlers
+    const setupTranslateBtn = (btnId, inputId, targetId) => {
+        const btn = document.getElementById(btnId);
+        if (btn) {
+            btn.onclick = () => {
+                handleTranslation(btn, inputId, targetId);
+            };
+        }
+    };
+    setupTranslateBtn('noteTranslateBtn', 'noteInput', 'trans_noteInput');
+    setupTranslateBtn('previewNoteTranslateBtn', 'previewNoteInput', 'trans_previewNoteInput');
+
     checkActiveTest();
 
     try {
@@ -439,9 +520,60 @@ window.renderQuestionPreview = (q, stats = null, source = null) => {
         <span>${t('success_percent', { percent })}</span>
         <span>${t('difficulty_label')} <b>${(s.difficulty / 2).toFixed(1)}</b></span>
     `;
-    document.getElementById('previewNoteInput').value = s.note || '';
+    const previewInputEl = document.getElementById('previewNoteInput');
     const previewNoteArea = document.getElementById('previewNoteArea');
-    if (previewNoteArea) previewNoteArea.classList.remove('visible');
+    const previewLabelEl = document.getElementById('previewNoteLabel');
+    const previewEditBtn = document.getElementById('previewNoteEditBtn');
+    const previewTransBtn = document.getElementById('previewNoteTranslateBtn');
+    const previewTransText = document.getElementById('trans_previewNoteInput');
+
+    if (previewTransText) {
+        previewTransText.innerText = '';
+        previewTransText.style.display = 'none';
+    }
+
+    if (previewInputEl && previewNoteArea) {
+        const hasExplanation = q.answer && q.answer.explanation && q.answer.explanation.trim() !== '';
+        const userNote = s.note;
+        const tempDiv = document.createElement('div');
+        tempDiv.innerHTML = userNote || '';
+        const userHasNote = userNote && tempDiv.textContent.trim() !== '';
+
+        // Reset editable state on load, default to read-only
+        previewInputEl.contentEditable = "false";
+        if (previewEditBtn) {
+            previewEditBtn.classList.remove('active');
+            previewEditBtn.style.display = 'flex';
+        }
+
+        const hasContent = userHasNote || hasExplanation;
+        if (previewTransBtn) {
+            previewTransBtn.style.display = hasContent ? 'flex' : 'none';
+        }
+
+        if (userHasNote) {
+            previewInputEl.value = userNote;
+            if (previewLabelEl) {
+                previewLabelEl.setAttribute('data-i18n', 'note_label');
+                previewLabelEl.innerText = t('note_label') || 'Your Note:';
+            }
+            previewNoteArea.classList.remove('visible');
+        } else if (hasExplanation) {
+            previewInputEl.innerHTML = q.answer.explanation;
+            if (previewLabelEl) {
+                previewLabelEl.removeAttribute('data-i18n');
+                previewLabelEl.innerText = t('explanation_label') || 'Explanation:';
+            }
+            previewNoteArea.classList.remove('visible');
+        } else {
+            previewInputEl.value = '';
+            if (previewLabelEl) {
+                previewLabelEl.setAttribute('data-i18n', 'note_label');
+                previewLabelEl.innerText = t('note_label') || 'Your Note:';
+            }
+            previewNoteArea.classList.remove('visible');
+        }
+    }
 
     // Display Tags
     import('./features/test/test-ui.js').then(testUi => {
@@ -473,7 +605,9 @@ function updateIndicatorsPreview() {
     const s = AppState.stats[statKey] || {};
     document.getElementById('previewIndStar').classList.toggle('active-star', !!s.starred);
     document.getElementById('previewIndFlag').classList.toggle('active-flag', !!s.flagged);
-    document.getElementById('previewIndNote').classList.toggle('active-note', !!(s.note && s.note.trim() !== ''));
+    const hasExplanation = q.answer && q.answer.explanation && q.answer.explanation.trim() !== '';
+    const hasNote = s.note && s.note.trim() !== '';
+    document.getElementById('previewIndNote').classList.toggle('active-note', !!(hasExplanation || hasNote));
 }
 
 function setupEventListeners() {

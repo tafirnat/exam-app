@@ -617,10 +617,26 @@
             </div>
 
             <div class="note-area" id="noteArea" style="margin-top: 0.75rem; border-top: none;">
-                <label style="font-size: 0.85rem; color: var(--text-secondary); margin-bottom:0.8rem; display:block;"
-                    data-i18n="note_label">Notunuz:</label>
-                <textarea id="noteInput" data-i18n-placeholder="note_placeholder"
-                    placeholder="Notunuzu buraya yazın..."></textarea>
+                <div class="note-header-row" style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.8rem;">
+                    <label id="noteLabel" style="font-size: 0.85rem; color: var(--text-secondary); margin: 0; display: block;"
+                        data-i18n="note_label">Notunuz:</label>
+                </div>
+                <div class="note-input-wrapper" id="noteInputWrapper">
+                    <div class="note-input-scroll-container">
+                        <div id="noteInput" contenteditable="false" data-i18n-placeholder="note_placeholder"
+                            placeholder="Notunuzu buraya yazın..." class="note-input-content"></div>
+                        <div class="translation-text" id="trans_noteInput" style="display:none;"></div>
+                    </div>
+                    <button class="note-edit-btn" id="noteEditBtn" title="Düzenle">
+                        <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                            <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"></path>
+                            <path d="M18.5 2.5a2.121 2.121 0 1 1 3 3L12 15l-4 1 1-4 9.5-9.5z"></path>
+                        </svg>
+                    </button>
+                    <button class="corner-translate-btn" id="noteTranslateBtn" title="Çevir" style="display: none;">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M5 8l6 6"></path><path d="M4 14l6-6 2-3"></path><path d="M2 5h12"></path><path d="M7 2h1"></path><path d="M22 22l-5-10-5 10"></path><path d="M14 18h6"></path></svg>
+                    </button>
+                </div>
             </div>
 
             <div class="flex-spacer" style="flex: 1; pointer-events: none;"></div>
@@ -872,10 +888,26 @@
             </div>
 
             <div class="note-area" id="previewNoteArea">
-                <label style="font-size: 0.85rem; color: var(--text-secondary); margin-bottom:0.5rem; display:block;"
-                    data-i18n="note_label">Ihre Notiz:</label>
-                <textarea id="previewNoteInput" data-i18n-placeholder="note_placeholder"
-                    placeholder="Ihre Notiz hier eingeben..."></textarea>
+                <div class="note-header-row" style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.5rem;">
+                    <label id="previewNoteLabel" style="font-size: 0.85rem; color: var(--text-secondary); margin: 0; display: block;"
+                        data-i18n="note_label">Ihre Notiz:</label>
+                </div>
+                <div class="note-input-wrapper" id="previewNoteInputWrapper">
+                    <div class="note-input-scroll-container">
+                        <div id="previewNoteInput" contenteditable="false" data-i18n-placeholder="note_placeholder"
+                            placeholder="Ihre Notiz hier eingeben..." class="note-input-content"></div>
+                        <div class="translation-text" id="trans_previewNoteInput" style="display:none;"></div>
+                    </div>
+                    <button class="note-edit-btn" id="previewNoteEditBtn" title="Düzenle">
+                        <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                            <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"></path>
+                            <path d="M18.5 2.5a2.121 2.121 0 1 1 3 3L12 15l-4 1 1-4 9.5-9.5z"></path>
+                        </svg>
+                    </button>
+                    <button class="corner-translate-btn" id="previewNoteTranslateBtn" title="Çevir" style="display: none;">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M5 8l6 6"></path><path d="M4 14l6-6 2-3"></path><path d="M2 5h12"></path><path d="M7 2h1"></path><path d="M22 22l-5-10-5 10"></path><path d="M14 18h6"></path></svg>
+                    </button>
+                </div>
             </div>
 
             <div class="flex-spacer" style="flex: 1; pointer-events: none;"></div>

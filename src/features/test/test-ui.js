@@ -210,8 +210,71 @@ export function renderQuestion(isRefresh = false) {
     const container = document.getElementById('optionsContainer');
     container.innerHTML = '';
 
-    document.getElementById('noteInput').value = stat.note || '';
-    document.getElementById('noteArea').classList.remove('visible');
+    const noteInputEl = document.getElementById('noteInput');
+    const noteAreaEl = document.getElementById('noteArea');
+    const noteLabelEl = document.getElementById('noteLabel');
+
+    const transTextEl = document.getElementById('trans_noteInput');
+    if (transTextEl) {
+        transTextEl.innerText = '';
+        transTextEl.style.display = 'none';
+    }
+
+    if (noteInputEl && noteAreaEl) {
+        const hasExplanation = q.answer && q.answer.explanation && q.answer.explanation.trim() !== '';
+        const userNote = AppState.stats[statKey]?.note;
+        const tempDiv = document.createElement('div');
+        tempDiv.innerHTML = userNote || '';
+        const userHasNote = userNote && tempDiv.textContent.trim() !== '';
+        const noteEditBtn = document.getElementById('noteEditBtn');
+        const noteTransBtn = document.getElementById('noteTranslateBtn');
+
+        // Reset editable state on load, default to read-only
+        noteInputEl.contentEditable = "false";
+        if (noteEditBtn) {
+            noteEditBtn.classList.remove('active');
+            noteEditBtn.style.display = 'flex';
+        }
+
+        const hasContent = userHasNote || hasExplanation;
+        if (noteTransBtn) {
+            noteTransBtn.style.display = hasContent ? 'flex' : 'none';
+        }
+
+        if (userHasNote) {
+            // Display user personal note or user-edited explanation (read-only by default)
+            noteInputEl.value = userNote;
+            if (noteLabelEl) {
+                noteLabelEl.setAttribute('data-i18n', 'note_label');
+                noteLabelEl.innerText = t('note_label') || 'Your Note:';
+            }
+            if (isChecked && hasExplanation) {
+                noteAreaEl.classList.add('visible');
+            } else {
+                noteAreaEl.classList.remove('visible');
+            }
+        } else if (hasExplanation) {
+            // Display official question explanation (read-only by default)
+            noteInputEl.innerHTML = q.answer.explanation;
+            if (noteLabelEl) {
+                noteLabelEl.removeAttribute('data-i18n');
+                noteLabelEl.innerText = t('explanation_label') || 'Explanation:';
+            }
+            if (isChecked) {
+                noteAreaEl.classList.add('visible');
+            } else {
+                noteAreaEl.classList.remove('visible');
+            }
+        } else {
+            // Display empty note (read-only by default)
+            noteInputEl.value = '';
+            if (noteLabelEl) {
+                noteLabelEl.setAttribute('data-i18n', 'note_label');
+                noteLabelEl.innerText = t('note_label') || 'Your Note:';
+            }
+            noteAreaEl.classList.remove('visible');
+        }
+    }
     
     updateFooterTags(q.tags, 'questionFooterTags');
     updateIndicators();
@@ -743,7 +806,9 @@ export function updateIndicators() {
     const s = AppState.stats[statKey] || {};
     document.getElementById('indStar').classList.toggle('active-star', !!s.starred);
     document.getElementById('indFlag').classList.toggle('active-flag', !!s.flagged);
-    document.getElementById('indNote').classList.toggle('active-note', !!(s.note && s.note.trim() !== ''));
+    const hasExplanation = q.answer && q.answer.explanation && q.answer.explanation.trim() !== '';
+    const hasNote = s.note && s.note.trim() !== '';
+    document.getElementById('indNote').classList.toggle('active-note', !!(hasExplanation || hasNote));
 }
 
 export function updateQuestionStatsInfo(sourceId, qid) {

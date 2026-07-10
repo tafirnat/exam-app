@@ -25,6 +25,7 @@ Experience the application live: **[https://tafirnat.github.io/exam-app/](https:
   - **Symmetric Progression:** Starts from a 1.5 baseline, moving toward 0.1 (Easy) or 3.0 (Hard).
   - **Learned Threshold:** Autonomously marks questions as "Learned" (🎓) based on retention stability.
   - **Intuitive Feedback:** Seamless "Hard" / "Easy" mapping that harmonizes with the algorithmic interval calculation.
+- **Interactive Explanations**: Native support for HTML-formatted explanation rendering (supporting bold text, line breaks, and hyperlinks) in the note area. These pre-populate automatically on question load (allowing viewing via the note icon) and display automatically upon checking the answer.
 - **Dynamic Internationalization**: Native support for **Turkish**, **English**, and **German** with automatic detection.
 - **Multilingual Translations**: Integrated Google Translate API supporting over 10 target languages for questions and options.
 - **AI-Ready**: Built-in prompts to easily copy questions to your favorite AI (ChatGPT, Claude, etc.) for detailed explanations.
@@ -102,7 +103,7 @@ The application reads exam data through a standard JSON structure. You can follo
       ],
       "answer": {
         "correct_ids": [1],
-        "explanation": "Explanation of the solution."
+        "explanation": "Explanation of the solution with support for HTML tags like <b>bold text</b> and <a href=\"https://example.com\" target=\"_blank\">hyperlinks</a>."
       }
     }
   ]

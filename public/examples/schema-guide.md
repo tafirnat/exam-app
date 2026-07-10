@@ -38,7 +38,7 @@ This is a **critical** key for the application's learning algorithm.
 
 ### `explanation` (String)
 - **Location**: Must be placed inside the `answer` object.
-- **Usage**: Provides context or reasoning for the correct answer. Supports HTML tags like `<code>` and `<pre>`.
+- **Usage**: Provides context or reasoning for the correct answer. Fully supports rendering HTML tags (e.g. `<b>`, `<i>`, `<code>`, `<a href="..." target="_blank">` hyperlinks, etc.) in the UI.
 
 ---
 
