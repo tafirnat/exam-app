@@ -1,4 +1,7 @@
-const CACHE_NAME = 'focus-app-v15';
+// Bump on every release: the activate handler deletes any cache whose name no
+// longer matches, and an unchanged name is also what stops the browser from
+// noticing this file changed at all.
+const CACHE_NAME = 'focus-app-v16';
 const ASSETS_TO_CACHE = [
     './',
     './index.html',
@@ -41,8 +44,16 @@ self.addEventListener('fetch', (event) => {
     }
 
 
+    // The whole app is one index.html, so a stale copy of it freezes every
+    // feature at once. Navigations bypass the HTTP cache; without this, the
+    // network-first strategy still resolves from the browser cache and the
+    // page can stay on an old build long after a deploy.
+    const request = event.request.mode === 'navigate'
+        ? new Request(event.request, { cache: 'reload' })
+        : event.request;
+
     event.respondWith(
-        fetch(event.request)
+        fetch(request)
             .then((response) => {
                 // If network works, update cache and return response
                 if (response && response.status === 200 && event.request.method === 'GET') {
