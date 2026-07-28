@@ -636,7 +636,7 @@ function setupEventListeners() {
     document.getElementById('menuFlag').onclick = toggleFlag;
     document.getElementById('menuNote').onclick = toggleNoteArea;
     document.getElementById('menuTranslateAll').onclick = translateAll;
-    document.getElementById('menuCopyAI').onclick = copyAIPrompt;
+    document.getElementById('menuCopyAI').onclick = () => copyAIPrompt(false);
 
     // Language selection
     // Language selection
@@ -1711,6 +1711,21 @@ function executeAiSearch(providerId, isPreview = false) {
             window.open(provider.url, '_blank', 'noopener,noreferrer');
         }).catch(err => console.error('Clipboard error:', err));
     }
+}
+
+function copyAIPrompt(isPreview = false) {
+    const prompt = getFormattedPrompt(isPreview);
+    if (!prompt) return;
+
+    navigator.clipboard.writeText(prompt).then(() => {
+        showToast(t('prompt_copied_toast') || 'Soru promptu panoya alındı.');
+        const btnId = isPreview ? 'previewMenuCopyToggleInline' : 'menuCopyToggleInline';
+        const btn = document.getElementById(btnId);
+        if (btn) {
+            btn.classList.add('copy-flash');
+            setTimeout(() => btn.classList.remove('copy-flash'), 500);
+        }
+    }).catch(err => console.error('Clipboard error:', err));
 }
 
 function copyQuestionText() {
