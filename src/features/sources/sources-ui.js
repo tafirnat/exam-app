@@ -788,7 +788,7 @@ export function renderSourcesList() {
         countDiv.style.position = 'absolute';
         countDiv.style.right = '50px';
         countDiv.style.top = '50%';
-        countDiv.style.transform = 'translateY(-50%) skewX(-33deg)';
+        countDiv.style.transform = 'translateY(-50%) skewX(-12deg)';
         countDiv.style.userSelect = 'none';
         countDiv.style.lineHeight = '1';
         countDiv.style.pointerEvents = 'none';
