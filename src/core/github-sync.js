@@ -32,7 +32,6 @@ export function getSyncPayload() {
             ttsEnabled: AppState.ttsEnabled,
             ttsAutoplay: AppState.ttsAutoplay,
             ttsSpeed: AppState.ttsSpeed,
-            aiIntegration: AppState.aiIntegration,
             customAIPrompt: AppState.customAIPrompt,
             timerStopwatchEnabled: AppState.timerStopwatchEnabled,
             timerCountdownEnabled: AppState.timerCountdownEnabled,

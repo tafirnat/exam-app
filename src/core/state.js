@@ -51,7 +51,6 @@ export const AppState = {
     activeStatsSortField: 'original', // 'original', 'coeff', 'success', 'wrong'
     activeStatsSortDir: 'asc', // 'asc', 'desc'
     customAIPrompt: localStorage.getItem('focus_app_custom_ai_prompt') || '',
-    aiIntegration: localStorage.getItem('focus_app_ai_integration') || 'clipboard',
     aiProviders: safeJSONParse('focus_app_ai_providers', DEFAULT_AI_PROVIDERS),
     ttsEnabled: safeJSONParse('focus_app_tts_enabled', false),
     ttsAutoplay: safeJSONParse('focus_app_tts_autoplay', false),
@@ -109,9 +108,6 @@ export function saveCustomAIPrompt() {
     localStorage.setItem('focus_app_custom_ai_prompt', AppState.customAIPrompt);
 }
 
-export function saveAiIntegration() {
-    localStorage.setItem('focus_app_ai_integration', AppState.aiIntegration);
-}
 
 export function saveAiProviders() {
     localStorage.setItem('focus_app_ai_providers', JSON.stringify(AppState.aiProviders));

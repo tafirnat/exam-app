@@ -1,4 +1,4 @@
-import { AppState, saveStats, saveSources, saveCurrentSource, saveCustomAIPrompt, saveAiIntegration, saveAiProviders, DEFAULT_AI_PROVIDERS, saveActiveTest, clearActiveTest } from './core/state.js';
+import { AppState, saveStats, saveSources, saveCurrentSource, saveCustomAIPrompt, saveAiProviders, DEFAULT_AI_PROVIDERS, saveActiveTest, clearActiveTest } from './core/state.js';
 import { initTheme, toggleTheme } from './core/theme.js';
 import { updateStaticTranslations, t, targetLanguages, translations } from './core/i18n.js';
 import { showToast, showConfirm, getCorrectAnswers, highlightText } from './core/utils.js';
@@ -686,15 +686,6 @@ function setupEventListeners() {
         };
     }
 
-    // AI Integration selection
-    const aiSelect = document.getElementById('aiIntegrationSelect');
-    if (aiSelect) {
-        aiSelect.value = AppState.aiIntegration;
-        aiSelect.onchange = (e) => {
-            AppState.aiIntegration = e.target.value;
-            saveAiIntegration();
-        };
-    }
 
     // Translation Toggle
     const transToggle = document.getElementById('translationToggle');
