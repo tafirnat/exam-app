@@ -365,6 +365,16 @@ export async function syncFromGist(options = {}) {
             // Apply merged sources
             if (Array.isArray(merged.sources)) {
                 AppState.sources = merged.sources;
+                // Normalize questions in all sources to ensure correctOptionIds & difficulty exist
+                import('../features/sources/sources-service.js').then(m => {
+                    if (typeof m.normalizeQuestions === 'function') {
+                        AppState.sources.forEach(s => {
+                            if (s.questions && Array.isArray(s.questions)) {
+                                s.questions = m.normalizeQuestions(s.questions);
+                            }
+                        });
+                    }
+                }).catch(() => {});
                 saveSources();
             }
 
@@ -398,6 +408,11 @@ export async function syncFromGist(options = {}) {
 
             AppState.lastSyncTime = Date.now();
             localStorage.setItem('focus_app_last_sync', AppState.lastSyncTime.toString());
+
+            // Rebuild question pool and questionMap for Test Engine & UI
+            import('../features/test/test-engine.js').then(m => {
+                if (typeof m.buildQuestionPool === 'function') m.buildQuestionPool();
+            }).catch(() => {});
 
             // Re-render UI components if available globally
             if (typeof window.renderSourcesList === 'function') window.renderSourcesList();
@@ -448,7 +463,15 @@ export function mergeSyncData(local, remote) {
             hasLocalChanges = true;
         } else {
             const existing = sourcesMap.get(s.id);
-            if ((s.lastUsed || 0) > (existing.lastUsed || 0)) {
+            const localHasQuestions = Array.isArray(s.questions) && s.questions.length > 0;
+            const existingHasQuestions = Array.isArray(existing.questions) && existing.questions.length > 0;
+
+            if (!existingHasQuestions && localHasQuestions) {
+                sourcesMap.set(s.id, s);
+                hasLocalChanges = true;
+            } else if (existingHasQuestions && !localHasQuestions) {
+                // Keep existing remote source which has questions
+            } else if ((s.lastUsed || 0) > (existing.lastUsed || 0)) {
                 sourcesMap.set(s.id, s);
                 hasLocalChanges = true;
             }
