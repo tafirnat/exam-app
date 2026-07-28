@@ -291,7 +291,13 @@ const initApp = () => {
         // Fallback to setup at least basic listeners if possible
         try { setupEventListeners(); } catch (e) { }
     }
-});
+};
+
+if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', initApp);
+} else {
+    initApp();
+}
 
 // Callback for sources update
 window.onSourcesUpdated = () => {
