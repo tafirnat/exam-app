@@ -4288,3 +4288,13 @@ input:checked + .slider-small:before {
     width: 90%;
 }
 
+
+
+/* Hide scrollbar for elements with .hide-scrollbar class */
+.hide-scrollbar::-webkit-scrollbar {
+    display: none;
+}
+.hide-scrollbar {
+    -ms-overflow-style: none;  /* IE and Edge */
+    scrollbar-width: none;  /* Firefox */
+}
