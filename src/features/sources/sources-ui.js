@@ -122,23 +122,126 @@ export async function shareSourceJSON(source) {
     const cleanData = getCleanSourceData(source);
     const jsonStr = JSON.stringify(cleanData, null, 2);
 
-    // Attempt Web Share API (Level 1 - Text)
-    if (navigator.share) {
-        try {
-            await navigator.share({
-                title: source.name,
-                text: jsonStr
-            });
-        } catch (err) {
-            if (err.name !== 'AbortError') {
-                console.error('Share failed:', err);
-            }
+    const overlay = document.getElementById('shareOptionsOverlay');
+    const nameEl = document.getElementById('shareOptionsSourceName');
+    const hintBox = document.getElementById('shareLargeDataHint');
+    const hintText = document.getElementById('shareLargeDataHintText');
+
+    const copyBtn = document.getElementById('shareCopyClipboardBtn');
+    const textBtn = document.getElementById('shareAsTextBtn');
+    const fileBtn = document.getElementById('shareAsFileBtn');
+    const closeBtn = document.getElementById('shareOptionsCloseBtn');
+
+    if (!overlay || !copyBtn || !textBtn || !fileBtn || !closeBtn) {
+        // Basic fallback if modal elements are missing
+        if (navigator.clipboard && navigator.clipboard.writeText) {
+            await navigator.clipboard.writeText(jsonStr);
+            showToast(t('copy_success'));
+        }
+        return;
+    }
+
+    if (nameEl) nameEl.textContent = source.name;
+
+    // Karakter 500+ uyarısı
+    if (jsonStr.length > 500) {
+        if (hintBox && hintText) {
+            hintText.textContent = t('share_large_data_hint', { count: jsonStr.length });
+            hintBox.style.display = 'flex';
         }
     } else {
-        // Fallback for browsers that don't support sharing at all (like some desktops)
-        // In this case, downloading is the best alternative
-        downloadSourceJSON(source);
+        if (hintBox) hintBox.style.display = 'none';
     }
+
+    overlay.classList.add('active');
+
+    const closeShareOptions = () => {
+        overlay.classList.remove('active');
+        copyBtn.onclick = null;
+        textBtn.onclick = null;
+        fileBtn.onclick = null;
+        closeBtn.onclick = null;
+        overlay.onclick = null;
+    };
+
+    // 1. Panoya Kopyala (Copy to Clipboard - Pure JSON string for easy pasting)
+    copyBtn.onclick = async () => {
+        closeShareOptions();
+        try {
+            if (navigator.clipboard && navigator.clipboard.writeText) {
+                await navigator.clipboard.writeText(jsonStr);
+                showToast(t('copy_success'));
+            } else {
+                const textArea = document.createElement('textarea');
+                textArea.value = jsonStr;
+                document.body.appendChild(textArea);
+                textArea.select();
+                document.execCommand('copy');
+                document.body.removeChild(textArea);
+                showToast(t('copy_success'));
+            }
+        } catch (err) {
+            console.error('Clipboard copy failed:', err);
+        }
+    };
+
+    // 2. Metin Olarak Paylaş (Share Text via Web Share API)
+    textBtn.onclick = async () => {
+        closeShareOptions();
+        if (navigator.share) {
+            try {
+                await navigator.share({
+                    title: source.name,
+                    text: jsonStr
+                });
+            } catch (err) {
+                if (err.name !== 'AbortError') {
+                    console.error('Share text failed:', err);
+                }
+            }
+        } else {
+            // Fallback to clipboard copy if Web Share API is unavailable
+            try {
+                if (navigator.clipboard && navigator.clipboard.writeText) {
+                    await navigator.clipboard.writeText(jsonStr);
+                    showToast(t('copy_success'));
+                }
+            } catch (e) {
+                downloadSourceJSON(source);
+            }
+        }
+    };
+
+    // 3. JSON Dosyası Olarak Paylaş (Share JSON File)
+    fileBtn.onclick = async () => {
+        closeShareOptions();
+        const sanitizeFileName = (source.name || 'exam_source').replace(/\s+/g, '_');
+        const fileName = `${sanitizeFileName}.json`;
+        const blob = new Blob([jsonStr], { type: 'application/json' });
+        const file = new File([blob], fileName, { type: 'application/json' });
+
+        if (navigator.canShare && navigator.canShare({ files: [file] })) {
+            try {
+                await navigator.share({
+                    title: source.name,
+                    files: [file]
+                });
+                return;
+            } catch (err) {
+                if (err.name === 'AbortError') return;
+                console.error('File share failed, falling back to download:', err);
+            }
+        }
+
+        // Fallback for browsers that don't support file sharing
+        downloadSourceJSON(source);
+    };
+
+    closeBtn.onclick = closeShareOptions;
+
+    overlay.onclick = (e) => {
+        if (e.target === overlay) closeShareOptions();
+    };
 }
 
 export function showSourceActions(source) {
