@@ -891,7 +891,10 @@ function createSourceItemDOM(s, folderId) {
     const coeffChip = avgCoeff !== null ? `<span style="font-size:0.68rem; padding:1px 6px; border-radius:999px; background:var(--surface-hover); color:var(--text-secondary); border:1px solid var(--border-color);">Ø ${avgCoeff}</span>` : '';
 
     info.innerHTML = `
-        <div style="font-weight:600; font-size:0.9rem; margin-bottom: 2px;">${qText}</div>
+        <div style="font-weight:600; font-size:0.9rem; margin-bottom: 2px; display:flex; align-items:center; gap:0.4rem; min-width:0;">
+            <span class="truncate">${qText}</span>
+            <span class="source-led ${s.active ? 'on' : ''}" aria-hidden="true"></span>
+        </div>
         <div style="font-size:0.75rem; color:var(--text-secondary); margin-bottom: 4px; display: flex; align-items: center; gap: 6px; flex-wrap:wrap;">
             <span>${t('questions_count', { count: totalQ })}</span>
             ${s.importDate ? `<span style="opacity:0.6;">• ${s.importDate}</span>` : ''}
