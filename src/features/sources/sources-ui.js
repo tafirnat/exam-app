@@ -404,150 +404,260 @@ export function showEditMetadata(source) {
 
 
 // --- Drag and Drop State ---
-let draggedItem = null;
-let draggedType = null;
-let dragSourceFolderId = null;
 let collapsedFolders = new Set();
+
+// Single source of truth for the active drag operation.
+const dragState = {
+    item: null,         // the dragged folder/source object
+    type: null,         // 'folder' | 'source'
+    fromFolderId: null, // folder the source was dragged out of (null = root)
+    indicatorEl: null,  // element currently showing the drop indicator
+    indicatorMode: null // 'before' | 'after' | 'inside'
+};
+
+// The row that is temporarily allowed to be dragged (armed by its grip handle).
+let armedRow = null;
 
 export function initFolderManagement() {
     const addBtn = document.getElementById('addFolderBtn');
     if(addBtn) addBtn.onclick = () => showFolderManageModal(null);
 }
 
-function handleDragStart(e, item, type, folderId) {
-    draggedItem = item;
-    draggedType = type;
-    dragSourceFolderId = folderId;
+const ROOT_KEY = '__root__';
+const byOrder = (a, b) => (a.order ?? 0) - (b.order ?? 0);
+const folderKeyOf = (s) => s.folderId || ROOT_KEY;
+
+// Sources/folders created before drag&drop existed have no `order` at all, which
+// made partially ordered lists collapse to "everything at index 0". Rebuilding a
+// dense 0..n-1 order per group before every render keeps drop math predictable.
+function normalizeOrders() {
+    const groups = new Map();
+    AppState.sources.forEach(s => {
+        // Normalize undefined -> null so group lookups never split root items.
+        if (!s.folderId) s.folderId = null;
+        const key = folderKeyOf(s);
+        if (!groups.has(key)) groups.set(key, []);
+        groups.get(key).push(s);
+    });
+    groups.forEach(list => {
+        list.sort(byOrder);
+        list.forEach((s, i) => { s.order = i; });
+    });
+
+    const folders = [...(AppState.folders || [])].sort(byOrder);
+    folders.forEach((f, i) => { f.order = i; });
+}
+
+// --- Drag handle (grip) arming -------------------------------------------------
+// Rows are NOT draggable by default: a drag may only be initiated from the grip,
+// so scrolling, clicking chips or selecting text never starts a move.
+function armRow(row) {
+    if (armedRow && armedRow !== row) armedRow.draggable = false;
+    armedRow = row;
+    row.draggable = true;
+}
+
+function disarmRow() {
+    if (armedRow) armedRow.draggable = false;
+    armedRow = null;
+}
+
+function createDragHandle(row) {
+    const handle = document.createElement('div');
+    handle.className = 'drag-handle';
+    handle.setAttribute('aria-label', 'drag');
+    handle.innerHTML = `<svg width="16" height="24" viewBox="0 0 16 24" fill="currentColor"><circle cx="6" cy="6" r="1.5"/><circle cx="10" cy="6" r="1.5"/><circle cx="6" cy="12" r="1.5"/><circle cx="10" cy="12" r="1.5"/><circle cx="6" cy="18" r="1.5"/><circle cx="10" cy="18" r="1.5"/></svg>`;
+    handle.addEventListener('mousedown', (e) => { e.stopPropagation(); armRow(row); });
+    handle.addEventListener('touchstart', () => armRow(row), { passive: true });
+    return handle;
+}
+
+// --- Drop indicator ------------------------------------------------------------
+function clearDropIndicator() {
+    if (dragState.indicatorEl) {
+        dragState.indicatorEl.classList.remove('drop-before', 'drop-after', 'drop-inside');
+    }
+    // Defensive sweep in case a render replaced the tracked element.
+    document.querySelectorAll('.drop-before, .drop-after, .drop-inside')
+        .forEach(el => el.classList.remove('drop-before', 'drop-after', 'drop-inside'));
+    dragState.indicatorEl = null;
+    dragState.indicatorMode = null;
+}
+
+function setDropIndicator(el, mode) {
+    if (dragState.indicatorEl === el && dragState.indicatorMode === mode) return;
+    clearDropIndicator();
+    el.classList.add(`drop-${mode}`);
+    dragState.indicatorEl = el;
+    dragState.indicatorMode = mode;
+}
+
+// Resolves the pointer position to exactly one drop position, or null when the
+// pointer is over something that is not a valid target (headers, stats, gaps...).
+function resolveDropTarget(e) {
+    const container = document.getElementById('sourcesList');
+    if (!container || !dragState.type || !dragState.item) return null;
+    if (!(e.target instanceof Element)) return null;
+
+    const row = e.target.closest('.source-item, .folder-header');
+    if (!row || !container.contains(row) || row.classList.contains('dragging')) return null;
+
+    const isHeader = row.classList.contains('folder-header');
+
+    if (dragState.type === 'folder') {
+        // Folders are always reordered relative to a whole folder block, no matter
+        // whether the pointer is over its header or over one of its sources.
+        const block = row.closest('.folder-container');
+        if (!block || block.classList.contains('dragging')) return null;
+        const folderId = block.dataset.folderId;
+        if (!folderId || folderId === dragState.item.id) return null;
+        const rect = block.getBoundingClientRect();
+        const after = (e.clientY - rect.top) >= rect.height / 2;
+        return { el: block, mode: after ? 'after' : 'before', kind: 'folder', folderId };
+    }
+
+    const rect = row.getBoundingClientRect();
+    const after = (e.clientY - rect.top) >= rect.height / 2;
+
+    if (isHeader) {
+        // A source dropped on a header moves into that folder.
+        const folderId = row.dataset.folderId;
+        if (!folderId) return null;
+        return { el: row, mode: 'inside', kind: 'folder', folderId };
+    }
+
+    const sourceId = row.dataset.sourceId;
+    if (!sourceId || sourceId === dragState.item.id) return null;
+    return {
+        el: row,
+        mode: after ? 'after' : 'before',
+        kind: 'source',
+        sourceId,
+        folderId: row.dataset.folderId || null
+    };
+}
+
+function handleDragStart(e, item, type, folderId, row) {
+    // Only grip-initiated drags are allowed.
+    if (row !== armedRow) {
+        e.preventDefault();
+        return;
+    }
+    dragState.item = item;
+    dragState.type = type;
+    dragState.fromFolderId = folderId || null;
     e.dataTransfer.effectAllowed = 'move';
     e.dataTransfer.setData('text/plain', item.id);
-    document.body.style.userSelect = 'none'; // Prevent text selection during drag
-    setTimeout(() => {
-        if(e.target) e.target.classList.add('dragging');
-    }, 0);
+    document.body.classList.add('dnd-active');
+    const dragged = type === 'folder' ? row.closest('.folder-container') || row : row;
+    setTimeout(() => { if (dragState.item) dragged.classList.add('dragging'); }, 0);
 }
 
-function handleDragEnd(e) {
-    if(e.target) e.target.classList.remove('dragging');
-    document.querySelectorAll('.drag-over, .drag-over-top, .drag-over-bottom').forEach(el => {
-        el.classList.remove('drag-over', 'drag-over-top', 'drag-over-bottom');
-        el.style.background = '';
-        el.style.boxShadow = '';
+function handleDragEnd() {
+    document.querySelectorAll('.dragging').forEach(el => el.classList.remove('dragging'));
+    clearDropIndicator();
+    document.body.classList.remove('dnd-active');
+    disarmRow();
+    dragState.item = null;
+    dragState.type = null;
+    dragState.fromFolderId = null;
+}
+
+function bindContainerDnd(container) {
+    if (container.dataset.dndBound === '1') return;
+    container.dataset.dndBound = '1';
+
+    container.addEventListener('dragover', (e) => {
+        if (!dragState.item) return;
+        const target = resolveDropTarget(e);
+        if (!target) {
+            clearDropIndicator();
+            return;
+        }
+        e.preventDefault();
+        e.dataTransfer.dropEffect = 'move';
+        setDropIndicator(target.el, target.mode);
     });
-    document.body.style.userSelect = '';
-    draggedItem = null;
-    draggedType = null;
-    dragSourceFolderId = null;
+
+    container.addEventListener('dragleave', (e) => {
+        if (!container.contains(e.relatedTarget)) clearDropIndicator();
+    });
+
+    container.addEventListener('drop', (e) => {
+        if (!dragState.item) return;
+        const target = resolveDropTarget(e);
+        e.preventDefault();
+        e.stopPropagation();
+        if (target) applyDrop(target);
+        handleDragEnd();
+    });
 }
 
-function handleDragOver(e) {
-    e.preventDefault();
-    e.dataTransfer.dropEffect = 'move';
-    const target = e.target.closest('.source-item, .folder-header');
-    if (target && !target.classList.contains('dragging')) {
-        // Clear old targets
-        document.querySelectorAll('.drag-over, .drag-over-top, .drag-over-bottom').forEach(el => {
-            if (el !== target) {
-                el.classList.remove('drag-over', 'drag-over-top', 'drag-over-bottom');
-                el.style.background = '';
-                el.style.boxShadow = '';
-            }
-        });
-
-        const rect = target.getBoundingClientRect();
-        const y = e.clientY - rect.top;
-        
-        target.classList.remove('drag-over', 'drag-over-top', 'drag-over-bottom');
-        target.style.background = '';
-        target.style.boxShadow = '';
-        
-        const tint = 'var(--surface-hover)';
-        const borderTint = 'var(--primary-color)';
-
-        if (draggedType === 'source' && target.classList.contains('folder-header')) {
-            target.classList.add('drag-over');
-            target.style.background = tint;
-            target.style.boxShadow = `inset 0 0 0 2px ${borderTint}`;
-        } else {
-            if (y < rect.height / 2) {
-                target.classList.add('drag-over-top');
-                target.style.boxShadow = `inset 0 4px 0 0 ${borderTint}`;
-            } else {
-                target.classList.add('drag-over-bottom');
-                target.style.boxShadow = `inset 0 -4px 0 0 ${borderTint}`;
-            }
-        }
+function applyDrop(target) {
+    if (dragState.type === 'folder') {
+        reorderFolder(dragState.item.id, target.folderId, target.mode);
+        return;
     }
+    if (target.mode === 'inside') {
+        moveSourceToFolder(dragState.item.id, target.folderId);
+        return;
+    }
+    reorderSource(dragState.item.id, target.sourceId, target.folderId, target.mode);
 }
 
-function handleDragLeave(e) {
-    const target = e.target.closest('.source-item, .folder-header');
-    const related = e.relatedTarget ? e.relatedTarget.closest('.source-item, .folder-header') : null;
-    
-    if (target && target !== related) {
-        target.classList.remove('drag-over', 'drag-over-top', 'drag-over-bottom');
-        target.style.boxShadow = '';
-        target.style.background = '';
-    }
+function reorderFolder(draggedId, targetFolderId, mode) {
+    if (!draggedId || draggedId === targetFolderId) return;
+    const folders = [...(AppState.folders || [])].sort(byOrder);
+    const dragged = folders.find(f => f.id === draggedId);
+    if (!dragged) return;
+
+    const rest = folders.filter(f => f.id !== draggedId);
+    let insertIdx = rest.findIndex(f => f.id === targetFolderId);
+    if (insertIdx === -1) insertIdx = rest.length;
+    else if (mode === 'after') insertIdx++;
+
+    rest.splice(insertIdx, 0, dragged);
+    rest.forEach((f, i) => { f.order = i; });
+    AppState.folders = rest;
+
+    saveFolders();
+    renderSourcesList();
 }
 
-function handleDrop(e, targetItem, targetType, targetFolderId) {
-    e.preventDefault();
-    e.stopPropagation();
-    
-    const targetEl = e.target.closest('.source-item, .folder-header');
-    if (targetEl) {
-        targetEl.classList.remove('drag-over', 'drag-over-top', 'drag-over-bottom');
-        targetEl.style.boxShadow = '';
-        targetEl.style.background = '';
-    }
-    
-    if (!draggedItem || draggedItem.id === targetItem.id) return;
+function reorderSource(draggedId, targetSourceId, targetFolderId, mode) {
+    const dragged = AppState.sources.find(s => s.id === draggedId);
+    if (!dragged || draggedId === targetSourceId) return;
 
-    if (draggedType === 'folder' && targetType === 'folder') {
-        const draggedIdx = AppState.folders.findIndex(f => f.id === draggedItem.id);
-        if (draggedIdx > -1) {
-            let foldersToReorder = AppState.folders.filter(f => f.id !== draggedItem.id).sort((a, b) => (a.order || 0) - (b.order || 0));
-            const rect = targetEl.getBoundingClientRect();
-            const y = e.clientY - rect.top;
-            let insertIdx = foldersToReorder.findIndex(f => f.id === targetItem.id);
-            if (insertIdx === -1) insertIdx = foldersToReorder.length;
-            if (y >= rect.height / 2) insertIdx++;
-            
-            foldersToReorder.splice(insertIdx, 0, AppState.folders[draggedIdx]);
-            
-            foldersToReorder.forEach((f, i) => f.order = i);
-            AppState.folders = foldersToReorder;
-            
-            import('../../core/state.js').then(m => m.saveFolders());
-            renderSourcesList();
-        }
-    } else if (draggedType === 'source') {
-        const sourceIdx = AppState.sources.findIndex(s => s.id === draggedItem.id);
-        if (sourceIdx > -1) {
-            if (targetType === 'folder') {
-                AppState.sources[sourceIdx].folderId = targetItem.id;
-                AppState.sources[sourceIdx].order = AppState.sources.filter(s => s.folderId === targetItem.id).length;
-                saveSources();
-                renderSourcesList();
-                return;
-            }
+    const destFolderId = targetFolderId || null;
+    dragged.folderId = destFolderId;
 
-            AppState.sources[sourceIdx].folderId = targetFolderId;
-            const folderItems = AppState.sources.filter(s => s.folderId === targetFolderId).sort((a, b) => (a.order || 0) - (b.order || 0));
-            let itemsToReorder = folderItems.filter(s => s.id !== draggedItem.id);
-            const rect = targetEl.getBoundingClientRect();
-            const y = e.clientY - rect.top;
-            let insertIdx = itemsToReorder.findIndex(s => s.id === targetItem.id);
-            if (insertIdx === -1) insertIdx = itemsToReorder.length;
-            if (y >= rect.height / 2) insertIdx++;
-            itemsToReorder.splice(insertIdx, 0, AppState.sources[sourceIdx]);
-            
-            // Reassign orders
-            itemsToReorder.forEach((s, i) => s.order = i);
-            saveSources();
-            renderSourcesList();
-        }
-    }
+    const group = AppState.sources
+        .filter(s => (s.folderId || null) === destFolderId)
+        .sort(byOrder);
+    const rest = group.filter(s => s.id !== draggedId);
+
+    let insertIdx = rest.findIndex(s => s.id === targetSourceId);
+    if (insertIdx === -1) insertIdx = rest.length;
+    else if (mode === 'after') insertIdx++;
+
+    rest.splice(insertIdx, 0, dragged);
+    rest.forEach((s, i) => { s.order = i; });
+
+    saveSources();
+    renderSourcesList();
+}
+
+function moveSourceToFolder(draggedId, folderId) {
+    const dragged = AppState.sources.find(s => s.id === draggedId);
+    if (!dragged) return;
+    const destFolderId = folderId || null;
+    if ((dragged.folderId || null) === destFolderId) return;
+
+    dragged.folderId = destFolderId;
+    dragged.order = AppState.sources.filter(s => (s.folderId || null) === destFolderId && s.id !== draggedId).length;
+
+    saveSources();
+    renderSourcesList();
 }
 
 export function renderSourcesList() {
@@ -555,7 +665,9 @@ export function renderSourcesList() {
     if (!container) return;
 
     container.innerHTML = '';
-    
+    bindContainerDnd(container);
+    normalizeOrders();
+
     // Check if init is needed
     if(!document.folderManagementInitialized) {
         initFolderManagement();
@@ -580,11 +692,14 @@ export function renderSourcesList() {
     sortedFolders.forEach(folder => {
         const folderEl = document.createElement('div');
         folderEl.className = 'folder-container';
+        folderEl.dataset.folderId = folder.id;
         folderEl.style.marginBottom = '1rem';
-        
+
         const header = document.createElement('div');
         header.className = 'folder-header';
-        header.draggable = true;
+        header.dataset.folderId = folder.id;
+        header.draggable = false;
+        header.style.position = 'relative';
         header.style.display = 'flex';
         header.style.alignItems = 'center';
         header.style.justifyContent = 'space-between';
@@ -593,11 +708,11 @@ export function renderSourcesList() {
         header.style.border = '1px solid var(--border-color)';
         header.style.borderLeft = `4px solid ${folder.color || '#3b82f6'}`;
         header.style.borderRadius = 'var(--radius-md)';
-        header.style.cursor = 'grab';
+        header.style.cursor = 'pointer';
         header.style.marginBottom = '0.5rem';
         
         header.onclick = (e) => {
-            if (e.target.closest('.icon-btn')) return;
+            if (e.target.closest('.icon-btn') || e.target.closest('.drag-handle')) return;
             if (collapsedFolders.has(folder.id)) {
                 collapsedFolders.delete(folder.id);
             } else {
@@ -606,11 +721,11 @@ export function renderSourcesList() {
             renderSourcesList();
         };
 
-        header.ondragstart = (e) => handleDragStart(e, folder, 'folder', null);
+        header.addEventListener('mousedown', (e) => {
+            if (!e.target.closest('.drag-handle')) disarmRow();
+        });
+        header.ondragstart = (e) => handleDragStart(e, folder, 'folder', null, header);
         header.ondragend = handleDragEnd;
-        header.ondragover = handleDragOver;
-        header.ondragleave = handleDragLeave;
-        header.ondrop = (e) => handleDrop(e, folder, 'folder', null);
 
         const titleDiv = document.createElement('div');
         titleDiv.style.display = 'flex';
@@ -624,10 +739,7 @@ export function renderSourcesList() {
             ? `<svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" style="opacity: 0.6;"><polyline points="9 18 15 12 9 6"></polyline></svg>`
             : `<svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" style="opacity: 0.6;"><polyline points="6 9 12 15 18 9"></polyline></svg>`;
 
-        const gripIcon = `<div style="color: var(--text-secondary); display: flex; align-items: center; margin: 0 0.1rem; transform: scale(0.9); opacity: 0.6;"><svg width="6" height="24" viewBox="0 0 6 24" fill="currentColor"><circle cx="3" cy="2" r="1.5"/><circle cx="3" cy="7" r="1.5"/><circle cx="3" cy="12" r="1.5"/><circle cx="3" cy="17" r="1.5"/><circle cx="3" cy="22" r="1.5"/></svg></div>`;
-
         titleDiv.innerHTML = `
-            ${gripIcon}
             ${toggleIcon}
             <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="${folder.color || '#3b82f6'}" stroke-width="2" style="margin-left: 0.2rem;">
                 <path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"></path>
@@ -637,7 +749,9 @@ export function renderSourcesList() {
                 ${folder.description ? `<span style="font-size: 0.7rem; color: var(--text-secondary);">${folder.description}</span>` : ''}
             </div>
         `;
-        
+        // Same grip element/markup as a source item, always the first child.
+        titleDiv.prepend(createDragHandle(header));
+
         const countDiv = document.createElement('div');
         countDiv.style.fontSize = '3.5rem';
         countDiv.style.fontWeight = '900';
@@ -710,7 +824,10 @@ export function renderSourcesList() {
 function createSourceItemDOM(s, folderId) {
     const item = document.createElement('div');
     item.className = `source-item ${s.active ? 'active' : ''}`;
-    item.draggable = true;
+    item.dataset.sourceId = s.id;
+    item.dataset.folderId = folderId || '';
+    item.draggable = false;
+    item.style.position = 'relative';
     item.style.display = 'flex';
     item.style.alignItems = 'center';
     item.style.justifyContent = 'space-between';
@@ -724,20 +841,14 @@ function createSourceItemDOM(s, folderId) {
     item.style.webkitUserSelect = 'none';
     item.style.webkitTouchCallout = 'none';
     
-    // Drag handlers
-    item.ondragstart = (e) => handleDragStart(e, s, 'source', folderId);
+    // Drag handlers (drag is only armed from the grip, see createDragHandle)
+    item.addEventListener('mousedown', (e) => {
+        if (!e.target.closest('.drag-handle')) disarmRow();
+    });
+    item.ondragstart = (e) => handleDragStart(e, s, 'source', folderId, item);
     item.ondragend = handleDragEnd;
-    item.ondragover = handleDragOver;
-    item.ondragleave = handleDragLeave;
-    item.ondrop = (e) => handleDrop(e, s, 'source', folderId);
 
-    const grip = document.createElement('div');
-    grip.style.cursor = 'grab';
-    grip.style.color = 'var(--text-secondary)';
-    grip.style.display = 'flex';
-    grip.style.alignItems = 'center';
-    grip.style.marginRight = '0.25rem';
-    grip.innerHTML = `<svg width="16" height="24" viewBox="0 0 16 24" fill="currentColor"><circle cx="6" cy="6" r="1.5"/><circle cx="10" cy="6" r="1.5"/><circle cx="6" cy="12" r="1.5"/><circle cx="10" cy="12" r="1.5"/><circle cx="6" cy="18" r="1.5"/><circle cx="10" cy="18" r="1.5"/></svg>`;
+    const grip = createDragHandle(item);
 
     const info = document.createElement('div');
     info.style.flex = '1';
@@ -1026,14 +1137,13 @@ export function closeAllSourcesModals() {
 }
 
 
-function clearGlobalDrag(e) {
-    if (!e.target.closest('.source-item, .folder-header')) {
-        document.querySelectorAll('.drag-over, .drag-over-top, .drag-over-bottom').forEach(el => {
-            el.classList.remove('drag-over', 'drag-over-top', 'drag-over-bottom');
-            el.style.background = '';
-            el.style.boxShadow = '';
-        });
-    }
-}
-document.addEventListener('dragover', clearGlobalDrag);
-document.addEventListener('dragend', clearGlobalDrag);
+// Global safety net: a drag that ends outside the list (cancelled, dropped on the
+// page background, ESC) must never leave a highlight or an armed row behind.
+document.addEventListener('dragover', (e) => {
+    if (!dragState.item) return;
+    const list = document.getElementById('sourcesList');
+    if (!list || !(e.target instanceof Element) || !list.contains(e.target)) clearDropIndicator();
+});
+document.addEventListener('dragend', handleDragEnd);
+document.addEventListener('drop', () => { if (dragState.item) handleDragEnd(); });
+document.addEventListener('mouseup', disarmRow);

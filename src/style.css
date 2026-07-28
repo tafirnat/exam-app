@@ -4290,6 +4290,72 @@ input:checked + .slider-small:before {
 
 
 
+/* --- Sources / Folders drag & drop --- */
+.folder-container {
+    position: relative;
+}
+
+.drag-handle {
+    display: flex;
+    align-items: center;
+    flex-shrink: 0;
+    margin-right: 0.25rem;
+    padding: 0 0.15rem;
+    color: var(--text-secondary);
+    opacity: 0.6;
+    cursor: grab;
+    border-radius: var(--radius-sm, 4px);
+    touch-action: none;
+    user-select: none;
+    -webkit-user-select: none;
+    transition: opacity 0.15s ease, background 0.15s ease;
+}
+
+.drag-handle:hover {
+    opacity: 1;
+    background: var(--surface-hover);
+}
+
+.drag-handle:active {
+    cursor: grabbing;
+}
+
+.source-item.dragging,
+.folder-container.dragging {
+    opacity: 0.4;
+}
+
+body.dnd-active {
+    user-select: none;
+    -webkit-user-select: none;
+}
+
+/* Drop position indicator: exactly one of these is present at any moment. */
+.source-item.drop-before::before,
+.source-item.drop-after::after,
+.folder-container.drop-before::before,
+.folder-container.drop-after::after {
+    content: '';
+    position: absolute;
+    left: 0;
+    right: 0;
+    height: 3px;
+    border-radius: 2px;
+    background: var(--primary-color);
+    z-index: 5;
+    pointer-events: none;
+}
+
+.source-item.drop-before::before { top: -3px; }
+.source-item.drop-after::after { bottom: -3px; }
+.folder-container.drop-before::before { top: -5px; }
+.folder-container.drop-after::after { bottom: -5px; }
+
+.folder-header.drop-inside {
+    background: var(--surface-hover) !important;
+    box-shadow: inset 0 0 0 2px var(--primary-color);
+}
+
 /* Hide scrollbar for elements with .hide-scrollbar class */
 .hide-scrollbar::-webkit-scrollbar {
     display: none;
