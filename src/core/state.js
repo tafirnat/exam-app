@@ -50,7 +50,7 @@ export const AppState = {
 
 export function saveStats() {
     localStorage.setItem('focus_app_stats_local', JSON.stringify(AppState.stats));
-    import('./github-sync.js').then(m => m.scheduleSync()).catch(() => {});
+    import('./github-sync.js').then(m => m.scheduleSync(1500)).catch(() => {});
 }
 
 export function saveCustomAIPrompt() {
@@ -76,7 +76,7 @@ export function saveTimerSettings() {
 
 export function saveSources() {
     localStorage.setItem('focus_app_sources', JSON.stringify(AppState.sources));
-    import('./github-sync.js').then(m => m.scheduleSync()).catch(() => {});
+    import('./github-sync.js').then(m => m.scheduleSync(300)).catch(() => {});
 }
 
 export function saveCurrentSource(key) {
@@ -86,7 +86,7 @@ export function saveCurrentSource(key) {
 
 export function saveRecentTests() {
     localStorage.setItem('focus_app_recent_tests', JSON.stringify(AppState.recentTests));
-    import('./github-sync.js').then(m => m.scheduleSync()).catch(() => {});
+    import('./github-sync.js').then(m => m.scheduleSync(300)).catch(() => {});
 }
 
 let _saveActiveTestTimer = null;

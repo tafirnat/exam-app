@@ -490,15 +490,15 @@ export function mergeSyncData(local, remote) {
 }
 
 /**
- * Debounced background sync trigger (5 seconds delay).
+ * Debounced background sync trigger (default 1.5s delay, customizable).
  */
-export function scheduleSync() {
+export function scheduleSync(delayMs = 1500) {
     if (!AppState.githubToken || !AppState.githubGistId) return;
 
     clearTimeout(syncTimer);
     syncTimer = setTimeout(() => {
         syncToGist({ silent: true });
-    }, 5000);
+    }, delayMs);
 }
 
 /**
