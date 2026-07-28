@@ -420,6 +420,7 @@ function handleDragStart(e, item, type, folderId) {
     dragSourceFolderId = folderId;
     e.dataTransfer.effectAllowed = 'move';
     e.dataTransfer.setData('text/plain', item.id);
+    document.body.style.userSelect = 'none'; // Prevent text selection during drag
     setTimeout(() => {
         if(e.target) e.target.classList.add('dragging');
     }, 0);
@@ -429,7 +430,10 @@ function handleDragEnd(e) {
     if(e.target) e.target.classList.remove('dragging');
     document.querySelectorAll('.drag-over, .drag-over-top, .drag-over-bottom').forEach(el => {
         el.classList.remove('drag-over', 'drag-over-top', 'drag-over-bottom');
+        el.style.background = '';
+        el.style.boxShadow = '';
     });
+    document.body.style.userSelect = '';
     draggedItem = null;
     draggedType = null;
     dragSourceFolderId = null;
@@ -477,7 +481,9 @@ function handleDragOver(e) {
 
 function handleDragLeave(e) {
     const target = e.target.closest('.source-item, .folder-header');
-    if (target) {
+    const related = e.relatedTarget ? e.relatedTarget.closest('.source-item, .folder-header') : null;
+    
+    if (target && target !== related) {
         target.classList.remove('drag-over', 'drag-over-top', 'drag-over-bottom');
         target.style.boxShadow = '';
         target.style.background = '';
@@ -709,6 +715,7 @@ function createSourceItemDOM(s, folderId) {
     item.style.marginBottom = '0.5rem';
     item.style.backgroundColor = s.active ? 'var(--surface-hover)' : 'var(--surface-color)';
     item.style.gap = '0.5rem';
+    item.style.userSelect = 'none';
     
     // Drag handlers
     item.ondragstart = (e) => handleDragStart(e, s, 'source', folderId);
