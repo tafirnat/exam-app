@@ -1,4 +1,4 @@
-import { AppState } from '../../core/state.js';
+import { AppState, liveSources } from '../../core/state.js';
 import { t } from '../../core/i18n.js';
 import { showConfirm, escapeHTML } from '../../core/utils.js';
 import { calculateRetrievability } from '../test/test-engine.js';
@@ -82,7 +82,7 @@ export function renderStatsList(filter = 'all', searchKeyword = '') {
     const isGlobal = globalToggle ? globalToggle.checked : false;
 
     // Get sources sorted by last activity (most recent test)
-    const sortedSources = [...AppState.sources].sort((a, b) => {
+    const sortedSources = liveSources().sort((a, b) => {
         const getLatest = (src) => {
             const results = src.testResults || [];
             if (results.length === 0) return 0;
@@ -539,8 +539,8 @@ export function updateHomeStats() {
     const statsBtn = document.getElementById('homeStatsBtn');
     const onboarding = document.getElementById('homeOnboardingBar');
 
-    const totalSources = AppState.sources.length;
-    const hasActiveSource = AppState.sources.some(s => s.active);
+    const totalSources = liveSources().length;
+    const hasActiveSource = liveSources().some(s => s.active);
 
     console.log(`[DEBUG] updateHomeStats: totalQuestions=${total}, totalSources=${totalSources}, hasActive=${hasActiveSource}`);
 

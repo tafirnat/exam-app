@@ -80,8 +80,37 @@ export const AppState = {
     githubUser: safeJSONParse('focus_app_github_user', null),
     lastGithubUser: localStorage.getItem('focus_app_last_github_user') || null,
     lastSyncTime: parseInt(localStorage.getItem('focus_app_last_sync') || '0', 10),
-    deletedSourceIds: safeJSONParse('focus_app_deleted_sources', [])
+    deletedSourceIds: safeJSONParse('focus_app_deleted_sources', []),
+    deletedFolderIds: safeJSONParse('focus_app_deleted_folders', []),
+    githubGistUrl: localStorage.getItem('focus_app_github_gist_url') || null
 };
+
+/**
+ * Sources the user still works with: everything except the archive.
+ * Archived sources stay in AppState.sources (so sync keeps merging them by id),
+ * so every list, counter and question pool has to filter them out explicitly.
+ */
+export function liveSources() {
+    return AppState.sources.filter(s => !s.archived);
+}
+
+export function archivedSources() {
+    return AppState.sources.filter(s => s.archived);
+}
+
+export function liveFolders() {
+    return (AppState.folders || []).filter(f => !f.archived);
+}
+
+/**
+ * Stamps a record as locally modified. `updatedAt` is the primary tiebreaker in
+ * mergeSyncData - without it an archived stub would lose against the remote copy
+ * that still carries questions.
+ */
+export function touch(record) {
+    if (record) record.updatedAt = Date.now();
+    return record;
+}
 
 export function clearLocalStudyData() {
     AppState.sources = [];
@@ -90,6 +119,7 @@ export function clearLocalStudyData() {
     AppState.totalStats = {};
     AppState.recentTests = [];
     AppState.deletedSourceIds = [];
+    AppState.deletedFolderIds = [];
     AppState.currentSourceKey = null;
 
     localStorage.removeItem('focus_app_sources');
@@ -98,6 +128,7 @@ export function clearLocalStudyData() {
     localStorage.removeItem('focus_app_stats_global');
     localStorage.removeItem('focus_app_recent_tests');
     localStorage.removeItem('focus_app_deleted_sources');
+    localStorage.removeItem('focus_app_deleted_folders');
     localStorage.removeItem('focus_app_current_source');
     localStorage.removeItem('focus_app_active_test');
 
@@ -109,6 +140,14 @@ export function trackDeletedSource(id) {
     if (!AppState.deletedSourceIds.includes(id)) {
         AppState.deletedSourceIds.push(id);
         localStorage.setItem('focus_app_deleted_sources', JSON.stringify(AppState.deletedSourceIds));
+    }
+}
+
+export function trackDeletedFolder(id) {
+    if (!id) return;
+    if (!AppState.deletedFolderIds.includes(id)) {
+        AppState.deletedFolderIds.push(id);
+        localStorage.setItem('focus_app_deleted_folders', JSON.stringify(AppState.deletedFolderIds));
     }
 }
 

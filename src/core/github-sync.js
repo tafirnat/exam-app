@@ -1,8 +1,13 @@
-import { AppState, saveSources, saveStats, saveRecentTests, clearLocalStudyData } from './state.js';
+import { AppState, saveSources, saveStats, saveRecentTests, saveFolders, clearLocalStudyData } from './state.js';
 import { showToast, showAlert } from './utils.js';
 import { t } from './i18n.js';
 
 const GIST_FILENAME = 'exam_app_backup.json';
+// The archive lives in its own file inside the same Gist. A Gist PATCH only
+// touches the files it names, so routine syncs of the backup file can never
+// overwrite or drop the archive - and the (large) archived questions never
+// travel with every single stats save.
+const ARCHIVE_FILENAME = 'exam_app_archive.json';
 const GIST_DESCRIPTION = 'Exam App - User Study & Resource Data Sync';
 const GITHUB_API_BASE = 'https://api.github.com';
 
@@ -18,10 +23,16 @@ let isSyncing = false;
  */
 export function getSyncPayload() {
     return {
-        version: 2,
+        version: 3,
         lastUpdated: Date.now(),
-        sources: AppState.sources || [],
+        // Offloaded archive entries are stubs here on purpose: their questions
+        // live in ARCHIVE_FILENAME only.
+        sources: (AppState.sources || []).map(s => (
+            s.archived && s.offloaded ? { ...s, questions: [] } : s
+        )),
+        folders: AppState.folders || [],
         deletedSourceIds: AppState.deletedSourceIds || [],
+        deletedFolderIds: AppState.deletedFolderIds || [],
         stats: AppState.stats || {},
         totalStats: AppState.totalStats || {},
         recentTests: AppState.recentTests || [],
@@ -47,6 +58,7 @@ export function getSyncPayload() {
 export async function initSync() {
     AppState.githubToken = localStorage.getItem('focus_app_github_token') || null;
     AppState.githubGistId = localStorage.getItem('focus_app_github_gist_id') || null;
+    AppState.githubGistUrl = localStorage.getItem('focus_app_github_gist_url') || null;
     AppState.githubUser = JSON.parse(localStorage.getItem('focus_app_github_user') || 'null');
     AppState.lastSyncTime = parseInt(localStorage.getItem('focus_app_last_sync') || '0', 10);
 
@@ -256,11 +268,13 @@ export async function logout() {
 
     AppState.githubToken = null;
     AppState.githubGistId = null;
+    AppState.githubGistUrl = null;
     AppState.githubUser = null;
     AppState.lastSyncTime = 0;
 
     localStorage.removeItem('focus_app_github_token');
     localStorage.removeItem('focus_app_github_gist_id');
+    localStorage.removeItem('focus_app_github_gist_url');
     localStorage.removeItem('focus_app_github_user');
     localStorage.removeItem('focus_app_last_sync');
 
@@ -303,9 +317,19 @@ async function pullRemoteGistOnly(token, gistId) {
                 saveSources();
             }
 
+            if (Array.isArray(remotePayload.folders)) {
+                AppState.folders = remotePayload.folders;
+                saveFolders();
+            }
+
             if (Array.isArray(remotePayload.deletedSourceIds)) {
                 AppState.deletedSourceIds = remotePayload.deletedSourceIds;
                 localStorage.setItem('focus_app_deleted_sources', JSON.stringify(remotePayload.deletedSourceIds));
+            }
+
+            if (Array.isArray(remotePayload.deletedFolderIds)) {
+                AppState.deletedFolderIds = remotePayload.deletedFolderIds;
+                localStorage.setItem('focus_app_deleted_folders', JSON.stringify(remotePayload.deletedFolderIds));
             }
 
             if (remotePayload.stats && typeof remotePayload.stats === 'object') {
@@ -468,6 +492,7 @@ async function findOrCreateGist(token) {
     const existing = gists.find(g => g.files && g.files[GIST_FILENAME]);
 
     if (existing) {
+        rememberGistUrl(existing.html_url);
         return existing.id;
     }
 
@@ -495,7 +520,17 @@ async function findOrCreateGist(token) {
     }
 
     const newGist = await createRes.json();
+    rememberGistUrl(newGist.html_url);
     return newGist.id;
+}
+
+/**
+ * Stores the Gist's web URL so the archive screen can offer "open on GitHub".
+ */
+function rememberGistUrl(url) {
+    if (!url) return;
+    AppState.githubGistUrl = url;
+    localStorage.setItem('focus_app_github_gist_url', url);
 }
 
 /**
@@ -589,10 +624,21 @@ export async function syncFromGist(options = {}) {
                 saveSources();
             }
 
+            // Apply merged folders
+            if (Array.isArray(merged.folders)) {
+                AppState.folders = merged.folders;
+                saveFolders();
+            }
+
             // Apply merged deleted source IDs (Tombstones)
             if (Array.isArray(merged.deletedSourceIds)) {
                 AppState.deletedSourceIds = merged.deletedSourceIds;
                 localStorage.setItem('focus_app_deleted_sources', JSON.stringify(merged.deletedSourceIds));
+            }
+
+            if (Array.isArray(merged.deletedFolderIds)) {
+                AppState.deletedFolderIds = merged.deletedFolderIds;
+                localStorage.setItem('focus_app_deleted_folders', JSON.stringify(merged.deletedFolderIds));
             }
 
             // Apply merged stats
@@ -659,6 +705,15 @@ export function mergeSyncData(local, remote) {
         ...(AppState.deletedSourceIds || [])
     ]));
 
+    // 0b. Combine Folder Tombstones
+    const mergedDeletedFolderIds = Array.from(new Set([
+        ...(remote.deletedFolderIds || []),
+        ...(local.deletedFolderIds || []),
+        ...(AppState.deletedFolderIds || [])
+    ]));
+
+    const revisionOf = (r) => r.updatedAt || r.lastUsed || 0;
+
     // 1. Merge Sources (by ID, respecting Tombstones)
     const sourcesMap = new Map();
     (remote.sources || []).forEach(s => {
@@ -677,12 +732,32 @@ export function mergeSyncData(local, remote) {
             const localHasQuestions = Array.isArray(s.questions) && s.questions.length > 0;
             const existingHasQuestions = Array.isArray(existing.questions) && existing.questions.length > 0;
 
+            // An offloaded archive entry is a stub without questions by design, so
+            // the "keep whichever side still has questions" rule below would happily
+            // resurrect the pre-archive copy. Whenever either side is archived, the
+            // newer revision wins outright.
+            if (s.archived || existing.archived) {
+                const localRev = revisionOf(s);
+                const remoteRev = revisionOf(existing);
+                if (localRev > remoteRev) {
+                    sourcesMap.set(s.id, s);
+                    hasLocalChanges = true;
+                } else if (localRev === remoteRev && !!s.archived === !!existing.archived
+                    && localHasQuestions && !existingHasQuestions) {
+                    // Same revision and same archive state: prefer the copy that
+                    // still holds the questions locally.
+                    sourcesMap.set(s.id, s);
+                    hasLocalChanges = true;
+                }
+                return;
+            }
+
             if (!existingHasQuestions && localHasQuestions) {
                 sourcesMap.set(s.id, s);
                 hasLocalChanges = true;
             } else if (existingHasQuestions && !localHasQuestions) {
                 // Keep existing remote source which has questions
-            } else if ((s.lastUsed || 0) > (existing.lastUsed || 0)) {
+            } else if (revisionOf(s) > revisionOf(existing)) {
                 sourcesMap.set(s.id, s);
                 hasLocalChanges = true;
             }
@@ -690,6 +765,28 @@ export function mergeSyncData(local, remote) {
     });
 
     const mergedSources = Array.from(sourcesMap.values());
+
+    // 1b. Merge Folders (by ID, respecting Folder Tombstones)
+    const foldersMap = new Map();
+    (remote.folders || []).forEach(f => {
+        if (f && f.id && !mergedDeletedFolderIds.includes(f.id)) {
+            foldersMap.set(f.id, f);
+        }
+    });
+
+    (local.folders || []).forEach(f => {
+        if (!f || !f.id || mergedDeletedFolderIds.includes(f.id)) return;
+        const existing = foldersMap.get(f.id);
+        if (!existing) {
+            foldersMap.set(f.id, f);
+            hasLocalChanges = true;
+        } else if ((f.updatedAt || 0) > (existing.updatedAt || 0)) {
+            foldersMap.set(f.id, f);
+            hasLocalChanges = true;
+        }
+    });
+
+    const mergedFolders = Array.from(foldersMap.values());
 
     // 2. Merge Stats (excluding stats for deleted sources)
     const mergedStats = { ...(remote.stats || {}) };
@@ -743,12 +840,90 @@ export function mergeSyncData(local, remote) {
 
     return {
         sources: mergedSources,
+        folders: mergedFolders,
         stats: mergedStats,
         totalStats: remote.totalStats || local.totalStats,
         recentTests: mergedRecentTests,
         deletedSourceIds: mergedDeletedIds,
+        deletedFolderIds: mergedDeletedFolderIds,
         hasLocalChanges
     };
+}
+
+// --- Archive file (separate Gist file, written only when the archive changes) ---
+
+/**
+ * True when archived questions can be offloaded to / restored from GitHub.
+ */
+export function canUseRemoteArchive() {
+    return !!(AppState.githubToken && AppState.githubGistId);
+}
+
+export function getGistUrl() {
+    if (AppState.githubGistUrl) return AppState.githubGistUrl;
+    return AppState.githubGistId ? `https://gist.github.com/${AppState.githubGistId}` : null;
+}
+
+/**
+ * Reads exam_app_archive.json. Returns a map of sourceId -> { name, questions }.
+ * Missing file resolves to an empty map; any transport error throws so callers
+ * can abort before they drop local questions.
+ */
+export async function fetchArchiveFile() {
+    if (!canUseRemoteArchive()) throw new Error('GitHub archive unavailable');
+
+    const res = await fetch(`${GITHUB_API_BASE}/gists/${AppState.githubGistId}`, {
+        headers: {
+            'Authorization': `Bearer ${AppState.githubToken}`,
+            'Accept': 'application/vnd.github+json'
+        }
+    });
+    if (!res.ok) throw new Error(`HTTP error ${res.status}`);
+
+    const gist = await res.json();
+    const file = gist.files && gist.files[ARCHIVE_FILENAME];
+    if (!file) return {};
+
+    // The API inlines at most 1MB; larger files come back flagged and must be
+    // read from raw_url or the archive would silently lose its tail.
+    let content = file.content;
+    if (file.truncated || content === undefined || content === null) {
+        if (!file.raw_url) throw new Error('Archive file truncated without raw_url');
+        const rawRes = await fetch(file.raw_url);
+        if (!rawRes.ok) throw new Error(`HTTP error ${rawRes.status}`);
+        content = await rawRes.text();
+    }
+
+    if (!content.trim()) return {};
+    const parsed = JSON.parse(content);
+    return (parsed && typeof parsed === 'object' && !Array.isArray(parsed)) ? parsed : {};
+}
+
+/**
+ * Writes the archive map back. Only ARCHIVE_FILENAME is named in the PATCH, so
+ * the main backup file is left untouched.
+ */
+export async function writeArchiveFile(archiveMap) {
+    if (!canUseRemoteArchive()) throw new Error('GitHub archive unavailable');
+
+    const res = await fetch(`${GITHUB_API_BASE}/gists/${AppState.githubGistId}`, {
+        method: 'PATCH',
+        headers: {
+            'Authorization': `Bearer ${AppState.githubToken}`,
+            'Content-Type': 'application/json',
+            'Accept': 'application/vnd.github+json'
+        },
+        body: JSON.stringify({
+            files: {
+                [ARCHIVE_FILENAME]: {
+                    content: JSON.stringify(archiveMap, null, 2)
+                }
+            }
+        })
+    });
+
+    if (!res.ok) throw new Error(`HTTP error ${res.status}`);
+    return true;
 }
 
 /**

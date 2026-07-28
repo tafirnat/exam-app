@@ -17,7 +17,7 @@ export function calculateRetrievability(stability, lastReviewDate) {
 export function buildQuestionPool() {
     const rawQuestions = [];
     AppState.sources.forEach(s => {
-        if (s.active && s.questions) {
+        if (s.active && !s.archived && s.questions) {
             s.questions.forEach(q => rawQuestions.push({ ...q, sourceId: s.id }));
         }
     });
@@ -160,7 +160,7 @@ export function prepareTest(count) {
 }
 
 function startTestTracking(count) {
-    const activeSources = AppState.sources.filter(s => s.active);
+    const activeSources = AppState.sources.filter(s => s.active && !s.archived);
     const names = activeSources.map(s => s.name || s.id);
     const sourceTitle = names.length > 1 ? names.join(' + ') : (names[0] || "Unknown Source");
 

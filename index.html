@@ -472,6 +472,13 @@
                                 <line x1="9" y1="14" x2="15" y2="14"></line>
                             </svg>
                         </button>
+                        <button class="icon-btn" id="archiveBtn" data-i18n-title="archive_title">
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+                                <polyline points="21 8 21 21 3 21 3 8"></polyline>
+                                <rect x="1" y="3" width="22" height="5"></rect>
+                                <line x1="10" y1="12" x2="14" y2="12"></line>
+                            </svg>
+                        </button>
                         <button class="icon-btn" id="mergeSourcesBtn" data-i18n-title="merge_sources">
                             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
                                 <path d="M3 6h4c2 0 4 6 8 6h5"></path>
@@ -1113,6 +1120,15 @@
                     <span data-i18n="reset">Sıfırla</span>
                 </button>
 
+                <button class="btn btn-secondary modal-action-btn" id="modalArchiveBtn" style="padding: 0.6rem; gap: 0.75rem;">
+                    <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+                        <polyline points="21 8 21 21 3 21 3 8"></polyline>
+                        <rect x="1" y="3" width="22" height="5"></rect>
+                        <line x1="10" y1="12" x2="14" y2="12"></line>
+                    </svg>
+                    <span data-i18n="archive_action">Arşivle</span>
+                </button>
+
                 <!-- Delete button with themed error background and white text -->
                 <button class="btn modal-action-btn" id="modalDeleteBtn" style="padding: 0.6rem; gap: 0.75rem; background-color: var(--error-bg, #ef4444); color: white;">
                     <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="3 6 5 6 21 6"></polyline><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path></svg>
@@ -1330,6 +1346,10 @@
                     <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2.5" style="margin-right: 0.25rem;"><polyline points="3 6 5 6 21 6"></polyline><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path></svg>
                     Sil
                 </button>
+                <button class="btn btn-secondary" id="folderManageArchiveBtn" style="display: none; padding: 0.5rem 0.75rem; border-radius: var(--radius-sm); font-size: 0.85rem; gap: 0.35rem;">
+                    <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="21 8 21 21 3 21 3 8"></polyline><rect x="1" y="3" width="22" height="5"></rect><line x1="10" y1="12" x2="14" y2="12"></line></svg>
+                    <span data-i18n="archive_action">Arşivle</span>
+                </button>
                 <div style="display: flex; gap: 0.5rem; margin-left: auto;">
                     <button class="btn btn-subtle" id="folderManageCancelBtn" data-i18n="cancel">İptal</button>
                     <button class="btn btn-primary" id="folderManageSaveBtn" data-i18n="save_folder">Kaydet</button>
@@ -1358,6 +1378,58 @@
                 <button class="btn btn-primary" id="folderDeleteMoveRootBtn" style="width: 100%;" data-i18n="move_to_root">Kök dizine taşı</button>
                 <button class="btn btn-secondary" id="folderDeleteDeleteItemsBtn" style="width: 100%; color: var(--error-color);" data-i18n="delete_items">Dosyaları da sil</button>
                 <button class="btn btn-subtle" id="folderDeleteCancelBtn" style="width: 100%;" data-i18n="cancel">İptal</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Archive Modal -->
+    <div id="archiveOverlay" class="modal-overlay" style="z-index: 10001;">
+        <div class="modal-card">
+            <div class="modal-header" style="display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 1rem;">
+                <div>
+                    <h3 style="margin: 0;" data-i18n="archive_title">Arşiv</h3>
+                    <p style="font-size: 0.78rem; color: var(--text-secondary); margin-top: 4px;" data-i18n="archive_subtitle">Arşivlenen kaynaklar teste dahil edilmez.</p>
+                </div>
+                <button class="icon-btn" id="archiveCloseBtn">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="18" height="18">
+                        <line x1="18" y1="6" x2="6" y2="18"></line>
+                        <line x1="6" y1="6" x2="18" y2="18"></line>
+                    </svg>
+                </button>
+            </div>
+            <div class="modal-body" style="max-height: 55vh; overflow-y: auto;">
+                <div id="archiveEmpty" style="display: none; padding: 2rem 1rem; text-align: center; color: var(--text-secondary); font-size: 0.88rem;" data-i18n="archive_empty">Arşiv boş.</div>
+                <div id="archiveLocalHint" style="display: none; padding: 0.6rem 0.8rem; margin-bottom: 0.75rem; background-color: var(--accent-bg, rgba(79, 70, 229, 0.1)); border-left: 3px solid var(--accent-color, #4f46e5); border-radius: var(--radius-sm, 6px); font-size: 0.78rem; color: var(--text-primary);" data-i18n="archive_local_hint">GitHub bağlı değil: arşiv bu cihazda tutuluyor.</div>
+                <div id="archiveList"></div>
+            </div>
+            <div class="modal-footer" style="display: flex; gap: 0.5rem; align-items: center;">
+                <a id="archiveGistLink" href="#" target="_blank" rel="noopener" class="btn btn-subtle" style="display: none; align-items: center; gap: 0.4rem; font-size: 0.8rem; text-decoration: none;">
+                    <svg viewBox="0 0 24 24" width="16" height="16" fill="currentColor"><path d="M12 0C5.37 0 0 5.37 0 12c0 5.31 3.435 9.795 8.205 11.385.6.105.825-.255.825-.57 0-.285-.015-1.23-.015-2.235-3.015.555-3.795-.735-4.035-1.41-.135-.345-.72-1.41-1.23-1.695-.42-.225-1.02-.78-.015-.795.945-.015 1.62.87 1.845 1.23 1.08 1.815 2.805 1.305 3.495.99.105-.78.42-1.305.765-1.605-2.67-.3-5.46-1.335-5.46-5.925 0-1.305.465-2.385 1.23-3.225-.12-.3-.54-1.53.12-3.18 0 0 1.005-.315 3.3 1.23.96-.27 1.98-.405 3-.405s2.04.135 3 .405c2.295-1.56 3.3-1.23 3.3-1.23.66 1.65.24 2.88.12 3.18.765.84 1.23 1.905 1.23 3.225 0 4.605-2.805 5.625-5.475 5.925.435.375.81 1.095.81 2.22 0 1.605-.015 2.895-.015 3.3 0 .315.225.69.825.57A12.02 12.02 0 0024 12c0-6.63-5.37-12-12-12z"/></svg>
+                    <span data-i18n="archive_open_github">GitHub'da Aç</span>
+                </a>
+                <button class="btn btn-subtle" id="archiveDoneBtn" style="margin-left: auto;" data-i18n="close">Kapat</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Archived Source Preview -->
+    <div id="archivePreviewOverlay" class="modal-overlay" style="z-index: 10003;">
+        <div class="modal-card">
+            <div class="modal-header" style="display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 1rem;">
+                <div style="min-width: 0;">
+                    <h3 style="margin: 0;" data-i18n="archive_preview">Önizleme</h3>
+                    <p id="archivePreviewName" class="truncate" style="font-size: 0.82rem; color: var(--text-secondary); margin-top: 4px; font-weight: 500;"></p>
+                </div>
+                <button class="icon-btn" id="archivePreviewCloseBtn">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="18" height="18">
+                        <line x1="18" y1="6" x2="6" y2="18"></line>
+                        <line x1="6" y1="6" x2="18" y2="18"></line>
+                    </svg>
+                </button>
+            </div>
+            <div class="modal-body" id="archivePreviewBody" style="max-height: 55vh; overflow-y: auto;"></div>
+            <div class="modal-footer">
+                <button class="btn btn-subtle" id="archivePreviewBackBtn" style="width: 100%;" data-i18n="close">Kapat</button>
             </div>
         </div>
     </div>

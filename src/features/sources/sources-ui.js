@@ -1,12 +1,14 @@
-import { AppState, saveSources, saveStats, saveFolders } from '../../core/state.js';
+import { AppState, saveSources, saveStats, saveFolders, liveSources, liveFolders, touch, trackDeletedFolder } from '../../core/state.js';
 import { t } from '../../core/i18n.js';
-import { showConfirm, showAlert } from '../../core/utils.js';
+import { showConfirm, showAlert, showToast } from '../../core/utils.js';
 
 export function toggleSource(id) {
     let activeCount = 0;
     AppState.sources.forEach(s => {
         if (s.id === id) {
+            if (s.archived) return;
             s.active = !s.active;
+            touch(s);
             if (s.active) {
                 s.lastUsed = Date.now();
                 // When a source is activated, we set it as the "focused" source 
@@ -272,10 +274,11 @@ export function showSourceActions(source) {
         if (actionsBody) actionsBody.prepend(moveContainer);
     }
     
-    if (AppState.folders && AppState.folders.length > 0) {
+    const selectableFolders = liveFolders();
+    if (selectableFolders.length > 0) {
         let optionsHtml = `<option value="">-- ${t('move_to_folder')} --</option>`;
         optionsHtml += `<option value="root">${t('root_folder')}</option>`;
-        AppState.folders.forEach(f => {
+        selectableFolders.forEach(f => {
             optionsHtml += `<option value="${f.id}" ${source.folderId === f.id ? 'selected' : ''}>${f.name}</option>`;
         });
         
@@ -294,7 +297,8 @@ export function showSourceActions(source) {
             } else if (val) {
                 source.folderId = val;
             }
-            source.order = AppState.sources.filter(s => s.folderId === source.folderId).length;
+            source.order = liveSources().filter(s => s.folderId === source.folderId).length;
+            touch(source);
             saveSources();
             renderSourcesList();
             overlay.classList.remove('active');
@@ -303,6 +307,8 @@ export function showSourceActions(source) {
         moveContainer.style.display = 'none';
     }
 
+    const archiveBtn = document.getElementById('modalArchiveBtn');
+
     const closeActions = () => {
         overlay.classList.remove('active');
         resetBtn.onclick = null;
@@ -310,12 +316,21 @@ export function showSourceActions(source) {
         shareBtn.onclick = null;
         editBtn.onclick = null;
         closeBtn.onclick = null;
+        if (archiveBtn) archiveBtn.onclick = null;
     };
 
     editBtn.onclick = () => {
         closeActions();
         showEditMetadata(source);
     };
+
+    if (archiveBtn) {
+        archiveBtn.onclick = async () => {
+            closeActions();
+            const { archiveSource } = await import('./archive.js');
+            await archiveSource(source.id);
+        };
+    }
 
     const deleteBtn = document.getElementById('modalDeleteBtn');
     if (deleteBtn) {
@@ -388,6 +403,7 @@ export function showEditMetadata(source) {
             description: finalDesc
         };
         source.name = finalTitle;
+        touch(source);
 
         saveSources();
         renderSourcesList();
@@ -432,7 +448,7 @@ const folderKeyOf = (s) => s.folderId || ROOT_KEY;
 // dense 0..n-1 order per group before every render keeps drop math predictable.
 function normalizeOrders() {
     const groups = new Map();
-    AppState.sources.forEach(s => {
+    liveSources().forEach(s => {
         // Normalize undefined -> null so group lookups never split root items.
         if (!s.folderId) s.folderId = null;
         const key = folderKeyOf(s);
@@ -444,7 +460,7 @@ function normalizeOrders() {
         list.forEach((s, i) => { s.order = i; });
     });
 
-    const folders = [...(AppState.folders || [])].sort(byOrder);
+    const folders = liveFolders().sort(byOrder);
     folders.forEach((f, i) => { f.order = i; });
 }
 
@@ -610,6 +626,7 @@ function reorderFolder(draggedId, targetFolderId, mode) {
     const folders = [...(AppState.folders || [])].sort(byOrder);
     const dragged = folders.find(f => f.id === draggedId);
     if (!dragged) return;
+    touch(dragged);
 
     const rest = folders.filter(f => f.id !== draggedId);
     let insertIdx = rest.findIndex(f => f.id === targetFolderId);
@@ -630,8 +647,9 @@ function reorderSource(draggedId, targetSourceId, targetFolderId, mode) {
 
     const destFolderId = targetFolderId || null;
     dragged.folderId = destFolderId;
+    touch(dragged);
 
-    const group = AppState.sources
+    const group = liveSources()
         .filter(s => (s.folderId || null) === destFolderId)
         .sort(byOrder);
     const rest = group.filter(s => s.id !== draggedId);
@@ -654,7 +672,8 @@ function moveSourceToFolder(draggedId, folderId) {
     if ((dragged.folderId || null) === destFolderId) return;
 
     dragged.folderId = destFolderId;
-    dragged.order = AppState.sources.filter(s => (s.folderId || null) === destFolderId && s.id !== draggedId).length;
+    dragged.order = liveSources().filter(s => (s.folderId || null) === destFolderId && s.id !== draggedId).length;
+    touch(dragged);
 
     saveSources();
     renderSourcesList();
@@ -676,15 +695,15 @@ export function renderSourcesList() {
 
     const countEl = document.getElementById('sourcesCount');
     if (countEl) {
-        const n = AppState.sources.length;
+        const n = liveSources().length;
         countEl.textContent = n > 0 ? t('questions_count', { count: n }) : '';
     }
 
-    // Group sources
-    const unassigned = AppState.sources.filter(s => !s.folderId).sort((a, b) => (a.order || 0) - (b.order || 0));
-    
+    // Group sources (archived ones are only reachable from the archive screen)
+    const unassigned = liveSources().filter(s => !s.folderId).sort((a, b) => (a.order || 0) - (b.order || 0));
+
     // Sort folders by order
-    const sortedFolders = [...(AppState.folders || [])].sort((a, b) => (a.order || 0) - (b.order || 0));
+    const sortedFolders = liveFolders().sort((a, b) => (a.order || 0) - (b.order || 0));
 
     // Render unassigned (root) items first, or at the end
     // Let's render folders first, then unassigned
@@ -733,11 +752,11 @@ export function renderSourcesList() {
         titleDiv.style.gap = '0.5rem';
         titleDiv.style.minWidth = '0';
         
-        const folderSourcesCount = AppState.sources.filter(s => s.folderId === folder.id).length;
+        const folderSourcesCount = liveSources().filter(s => s.folderId === folder.id).length;
         // Drives the edit button icon: its top-left square only stays bright while
         // the folder holds at least one active source, so a collapsed folder still
         // shows whether it holds a selection.
-        const folderHasActive = AppState.sources.some(s => s.folderId === folder.id && s.active);
+        const folderHasActive = liveSources().some(s => s.folderId === folder.id && s.active);
 
         const isCollapsed = collapsedFolders.has(folder.id);
         const toggleIcon = isCollapsed 
@@ -791,7 +810,7 @@ export function renderSourcesList() {
         folderEl.appendChild(header);
 
         // Sources inside folder
-        const folderSources = AppState.sources.filter(s => s.folderId === folder.id).sort((a, b) => (a.order || 0) - (b.order || 0));
+        const folderSources = liveSources().filter(s => s.folderId === folder.id).sort((a, b) => (a.order || 0) - (b.order || 0));
         
         const listDiv = document.createElement('div');
         listDiv.className = 'folder-list';
@@ -989,22 +1008,38 @@ export function showFolderManageModal(folder = null) {
         }
     }
 
+    const archiveFolderBtn = document.getElementById('folderManageArchiveBtn');
+    if (archiveFolderBtn) {
+        if (folder) {
+            archiveFolderBtn.style.display = 'inline-flex';
+            archiveFolderBtn.onclick = async () => {
+                overlay.classList.remove('active');
+                const { archiveFolder } = await import('./archive.js');
+                await archiveFolder(folder.id);
+            };
+        } else {
+            archiveFolderBtn.style.display = 'none';
+            archiveFolderBtn.onclick = null;
+        }
+    }
+
     saveBtn.onclick = () => {
         const name = nameInput.value.trim();
         if(!name) return;
-        
+
         if(folder) {
             folder.name = name;
             folder.description = descInput.value.trim();
             folder.color = colorInput.value;
+            touch(folder);
         } else {
-            AppState.folders.push({
+            AppState.folders.push(touch({
                 id: 'folder_' + Date.now(),
                 name: name,
                 description: descInput.value.trim(),
                 color: colorInput.value,
                 order: AppState.folders.length
-            });
+            }));
         }
         import('../../core/state.js').then(m => m.saveFolders());
         renderSourcesList();
@@ -1028,9 +1063,10 @@ export function showFolderDeleteModal(folderId) {
     
     moveRootBtn.onclick = () => {
         AppState.sources.forEach(s => {
-            if(s.folderId === folderId) s.folderId = null;
+            if(s.folderId === folderId) { s.folderId = null; touch(s); }
         });
         AppState.folders = AppState.folders.filter(f => f.id !== folderId);
+        trackDeletedFolder(folderId);
         saveSources();
         import('../../core/state.js').then(m => m.saveFolders());
         renderSourcesList();
@@ -1051,6 +1087,7 @@ export function showFolderDeleteModal(folderId) {
         });
         
         AppState.folders = AppState.folders.filter(f => f.id !== folderId);
+        trackDeletedFolder(folderId);
         saveStats();
         saveSources();
         import('../../core/state.js').then(m => m.saveFolders());
@@ -1075,7 +1112,7 @@ export function showMergeModal() {
     list.innerHTML = '';
     const selectedIds = new Set();
 
-    AppState.sources.forEach(s => {
+    liveSources().forEach(s => {
         const item = document.createElement('label');
         item.className = 'merge-source-item';
         item.style.display = 'flex';

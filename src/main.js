@@ -5,6 +5,7 @@ import { showToast, showConfirm, getCorrectAnswers, highlightText } from './core
 import { migrateOldData } from './core/migration.js';
 import { processJSON, loadFromUrl, loadFromFile, normalizeQuestions, mergeSources } from './features/sources/sources-service.js';
 import { renderSourcesList, showMergeModal, closeAllSourcesModals } from './features/sources/sources-ui.js';
+import { initArchiveUI } from './features/sources/archive.js';
 import { prepareTest, finishTest, prepareRetake } from './features/test/test-engine.js';
 import { renderQuestion, handleCheckAnswer, updateIndicators, handleTranslation, handleDifficultyRating, handleFlashcardRating, renderTestResults, handleTtsToggle, getIsAudioPlaying, stopAudio } from './features/test/test-ui.js';
 import { renderStatsList, updateHomeStats, setupStatsEventListeners } from './features/stats/stats-module.js';
@@ -134,6 +135,7 @@ const initApp = () => {
 
         console.log('Rendering sources list...');
         renderSourcesList();
+        initArchiveUI();
 
         // Robust fix: Normalize all questions from existing sources on startup
         console.log('Normalizing existing sources...');
@@ -243,7 +245,7 @@ const initApp = () => {
 
         // Fix: If we have active sources but no questions loaded (e.g. after refresh), load them
         if (AppState.rawQuestions.length === 0) {
-            const activeSources = AppState.sources.filter(s => s.active);
+            const activeSources = AppState.sources.filter(s => s.active && !s.archived);
             activeSources.forEach(s => {
                 if (!s.questions || s.questions.length === 0) {
                     if (s.origin?.type === 'url' && s.origin.display) {
@@ -255,7 +257,7 @@ const initApp = () => {
             const questions = [];
             const questionMap = {};
             AppState.sources.forEach(s => {
-                if (s.active && s.questions) {
+                if (s.active && !s.archived && s.questions) {
                     s.questions.forEach(q => {
                         const entry = { ...q, sourceId: s.id };
                         questions.push(entry);
@@ -990,8 +992,9 @@ function setupEventListeners() {
     // Generic Data Export/Import
     const handleExport = () => {
         const data = {
-            version: "1.5",
+            version: "1.6",
             sources: AppState.sources,
+            folders: AppState.folders,
             stats: AppState.stats,
             recentTests: AppState.recentTests,
             settings: {
@@ -1023,10 +1026,15 @@ function setupEventListeners() {
                     // Full backup import
                     if (await showConfirm(t('confirm_import_backup'))) {
                         if (data.sources) AppState.sources = data.sources;
+                        if (data.folders) AppState.folders = data.folders;
                         if (data.stats) AppState.stats = data.stats;
                         if (data.recentTests) AppState.recentTests = data.recentTests;
                         saveStats();
                         saveSources();
+                        if (data.folders) {
+                            const { saveFolders } = await import('./core/state.js');
+                            saveFolders();
+                        }
                         import('./core/state.js').then(m => m.saveRecentTests());
                         location.reload(); // Simplest way to re-init everything safely
                     }
@@ -1489,7 +1497,7 @@ function resumeActiveTest() {
         const questions = [];
         const questionMap = {};
         AppState.sources.forEach(s => {
-            if (s.active && s.questions) {
+            if (s.active && !s.archived && s.questions) {
                 s.questions.forEach(q => {
                     const entry = { ...q, sourceId: s.id };
                     questions.push(entry);
