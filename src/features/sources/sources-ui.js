@@ -998,7 +998,9 @@ export function showFolderManageModal(folder = null) {
     const deleteBtn = document.getElementById('folderManageDeleteBtn');
     if (deleteBtn) {
         if (folder) {
-            deleteBtn.style.display = 'flex';
+            // Cleared rather than set, so the button falls back to the .btn
+            // display the footer grid expects.
+            deleteBtn.style.display = '';
             deleteBtn.onclick = () => {
                 overlay.classList.remove('active');
                 showFolderDeleteModal(folder.id);
@@ -1011,7 +1013,7 @@ export function showFolderManageModal(folder = null) {
     const archiveFolderBtn = document.getElementById('folderManageArchiveBtn');
     if (archiveFolderBtn) {
         if (folder) {
-            archiveFolderBtn.style.display = 'inline-flex';
+            archiveFolderBtn.style.display = '';
             archiveFolderBtn.onclick = async () => {
                 overlay.classList.remove('active');
                 const { archiveFolder } = await import('./archive.js');
