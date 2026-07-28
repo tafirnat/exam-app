@@ -307,7 +307,17 @@ export const translations = {
         move_to_root: "Kök dizine taşı",
         delete_items: "Dosyaları da sil",
         move_to_folder: "Klasöre Taşı...",
-        root_folder: "Klasörsüz (Genel)",
+        root_folder: "Klasörsüz",
+        ph_url: "https://.../sorular.json",
+        ph_meta_title: "örn: Yeni Sınav Başlığı",
+        ph_meta_category: "örn: Matematik, Genel",
+        ph_meta_desc: "Kaynak hakkında kısa bir açıklama yazın...",
+        ph_ai_name: "Servis adı (ör: Gemini)",
+        ph_ai_url: "URL kalıbı (ör: https://.../search?q={PROMPT})",
+        ph_folder_name: "örn: Çalışma Dosyaları",
+        ph_folder_desc: "örn: 1. Dönem Sınavları",
+        add: "Ekle",
+        tts_lang_note: "Seslendirme dili, uygulama dili ile aynıdır",
         save_folder: "Kaydet",
         folder_actions: "Klasör İşlemleri",
         close: "Kapat",
@@ -630,7 +640,17 @@ export const translations = {
         move_to_root: "Move to root",
         delete_items: "Delete files too",
         move_to_folder: "Move to Folder...",
-        root_folder: "Uncategorized (Root)",
+        root_folder: "Uncategorized",
+        ph_url: "https://.../questions.json",
+        ph_meta_title: "e.g. New Exam Title",
+        ph_meta_category: "e.g. Mathematics, General",
+        ph_meta_desc: "Write a short description of this source...",
+        ph_ai_name: "Service name (e.g. Gemini)",
+        ph_ai_url: "URL pattern (e.g. https://.../search?q={PROMPT})",
+        ph_folder_name: "e.g. Study Files",
+        ph_folder_desc: "e.g. First Term Exams",
+        add: "Add",
+        tts_lang_note: "Speech uses the same language as the app",
         save_folder: "Save",
         folder_actions: "Folder Actions",
         close: "Close",
@@ -953,7 +973,17 @@ export const translations = {
         move_to_root: "In den Hauptordner verschieben",
         delete_items: "Dateien ebenfalls löschen",
         move_to_folder: "In Ordner verschieben...",
-        root_folder: "Nicht kategorisiert (Hauptordner)",
+        root_folder: "Nicht kategorisiert",
+        ph_url: "https://.../fragen.json",
+        ph_meta_title: "z. B. Neuer Prüfungstitel",
+        ph_meta_category: "z. B. Mathematik, Allgemein",
+        ph_meta_desc: "Kurze Beschreibung dieser Quelle...",
+        ph_ai_name: "Dienstname (z. B. Gemini)",
+        ph_ai_url: "URL-Muster (z. B. https://.../search?q={PROMPT})",
+        ph_folder_name: "z. B. Lernunterlagen",
+        ph_folder_desc: "z. B. Prüfungen 1. Semester",
+        add: "Hinzufügen",
+        tts_lang_note: "Die Sprachausgabe folgt der App-Sprache",
         save_folder: "Speichern",
         folder_actions: "Ordneraktionen",
         close: "Schließen",
@@ -1021,7 +1051,11 @@ export function updateStaticTranslations() {
 
     document.querySelectorAll('[data-i18n-placeholder]').forEach(el => {
         const key = el.getAttribute('data-i18n-placeholder');
-        el.placeholder = t(key);
+        // setAttribute, not `.placeholder`: the note areas are contenteditable
+        // <div>s whose placeholder is drawn by CSS from attr(placeholder), and a
+        // <div> has no placeholder property - assigning one silently created an
+        // expando and left the hardcoded markup text on screen in every language.
+        el.setAttribute('placeholder', t(key));
     });
 
     document.querySelectorAll('[data-i18n-title]').forEach(el => {

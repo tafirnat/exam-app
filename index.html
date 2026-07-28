@@ -500,7 +500,7 @@
                     <div class="input-group">
                         <label data-i18n="load_url">Über URL laden</label>
                         <div style="display: flex; gap: 0.5rem;">
-                            <input type="text" id="urlInput" placeholder="https://.../fragen.json">
+                            <input type="text" id="urlInput" data-i18n-placeholder="ph_url" placeholder="https://.../questions.json">
                             <button class="btn" id="loadUrlBtn" data-i18n="load">Laden</button>
                         </div>
                     </div>
@@ -1188,15 +1188,15 @@
             <div class="modal-body" style="display: flex; flex-direction: column; gap: 1rem; margin: 1.5rem 0;">
                 <div class="input-group">
                     <label data-i18n="source_title">Kaynak Başlığı</label>
-                    <input type="text" id="editMetaTitle" placeholder="örn: Yeni Sınav Başlığı">
+                    <input type="text" id="editMetaTitle" data-i18n-placeholder="ph_meta_title" placeholder="örn: Yeni Sınav Başlığı">
                 </div>
                 <div class="input-group">
                     <label data-i18n="source_category">Kategori</label>
-                    <input type="text" id="editMetaCategory" placeholder="örn: Matematik, Genel">
+                    <input type="text" id="editMetaCategory" data-i18n-placeholder="ph_meta_category" placeholder="örn: Matematik, Genel">
                 </div>
                 <div class="input-group">
                     <label data-i18n="source_description">Açıklama</label>
-                    <textarea id="editMetaDescription" placeholder="Kaynak hakkında kısa bir açıklama yazın..." style="min-height: 80px;"></textarea>
+                    <textarea id="editMetaDescription" data-i18n-placeholder="ph_meta_desc" placeholder="Kaynak hakkında kısa bir açıklama yazın..." style="min-height: 80px;"></textarea>
                 </div>
             </div>
             <div class="modal-footer" style="display: flex; gap: 0.75rem;">
@@ -1261,8 +1261,8 @@
 
             <div style="border-top: 1px solid var(--border-color); padding-top: 1rem; margin-top: 0.5rem;">
                 <h4 style="font-size: 0.9rem; margin-bottom: 0.75rem; color: var(--text-primary);" data-i18n="add_ai_provider">Yeni AI Servisi Ekle</h4>
-                <input type="text" id="newAiNameInput" placeholder="Servis Adı (ör: Gemini)" style="margin-bottom: 0.5rem; width: 100%;">
-                <input type="text" id="newAiUrlInput" placeholder="URL Kalıbı (ör: https://.../search?q={PROMPT})" style="margin-bottom: 0.75rem; width: 100%;">
+                <input type="text" id="newAiNameInput" data-i18n-placeholder="ph_ai_name" placeholder="Servis Adı (ör: Gemini)" style="margin-bottom: 0.5rem; width: 100%;">
+                <input type="text" id="newAiUrlInput" data-i18n-placeholder="ph_ai_url" placeholder="URL Kalıbı (ör: https://.../search?q={PROMPT})" style="margin-bottom: 0.75rem; width: 100%;">
                 <button class="btn btn-primary" id="addAiProviderBtn" style="width: 100%;" data-i18n="add">Ekle</button>
             </div>
         </div>
@@ -1327,7 +1327,7 @@
             <div class="modal-body">
                 <div class="input-group">
                     <label data-i18n="folder_name">Klasör Adı</label>
-                    <input type="text" id="folderNameInput" placeholder="Örn: Çalışma Dosyaları">
+                    <input type="text" id="folderNameInput" data-i18n-placeholder="ph_folder_name" placeholder="Örn: Çalışma Dosyaları">
                 </div>
                 <div class="input-group">
                     <label data-i18n="folder_color">Klasör Rengi</label>
@@ -1338,7 +1338,7 @@
                 </div>
                 <div class="input-group">
                     <label data-i18n="folder_desc">Klasör Açıklaması (Opsiyonel)</label>
-                    <input type="text" id="folderDescInput" placeholder="Örn: 1. Dönem Sınavları">
+                    <input type="text" id="folderDescInput" data-i18n-placeholder="ph_folder_desc" placeholder="Örn: 1. Dönem Sınavları">
                 </div>
             </div>
             <div class="modal-footer modal-footer-grid">

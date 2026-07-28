@@ -782,13 +782,13 @@ export function renderSourcesList() {
         const countDiv = document.createElement('div');
         countDiv.style.fontSize = '3.5rem';
         countDiv.style.fontWeight = '900';
-        countDiv.style.fontFamily = '"Black Ops One", Impact, sans-serif';
+        countDiv.style.fontFamily = '"Rubik Maze", Impact, sans-serif';
         countDiv.style.color = '#ffffff';
         countDiv.style.opacity = '0.08';
         countDiv.style.position = 'absolute';
         countDiv.style.right = '50px';
         countDiv.style.top = '50%';
-        countDiv.style.transform = 'translateY(-50%) skewX(-5deg)';
+        countDiv.style.transform = 'translateY(-50%) skewX(-33deg)';
         countDiv.style.userSelect = 'none';
         countDiv.style.lineHeight = '1';
         countDiv.style.pointerEvents = 'none';
