@@ -10,6 +10,7 @@ import { renderQuestion, handleCheckAnswer, updateIndicators, handleTranslation,
 import { renderStatsList, updateHomeStats, setupStatsEventListeners } from './features/stats/stats-module.js';
 import { openQuestionEditor, closeQuestionEditor } from './features/stats/question-editor.js';
 import { initTimer, stopTimer } from './features/test/timer-module.js';
+import { initSync } from './core/github-sync.js';
 
 
 
@@ -199,6 +200,9 @@ document.addEventListener('DOMContentLoaded', () => {
 
         console.log('Updating translation UI...');
         updateTranslationUI();
+
+        console.log('Initializing GitHub sync...');
+        initSync();
 
 
 

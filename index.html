@@ -32,7 +32,34 @@
             </svg>
         </button>
         <div class="header-title" id="headerTitle">Exam App</div>
-        <div style="width: 40px;"></div>
+        <div class="header-sync-container" style="position: relative;">
+            <button class="github-sync-btn" id="githubSyncBtn" data-i18n-title="github_sync">
+                <svg viewBox="0 0 24 24" width="18" height="18" fill="currentColor">
+                    <path d="M12 0C5.37 0 0 5.37 0 12c0 5.31 3.435 9.795 8.205 11.385.6.105.825-.255.825-.57 0-.285-.015-1.23-.015-2.235-3.015.555-3.795-.735-4.035-1.41-.135-.345-.72-1.41-1.23-1.695-.42-.225-1.02-.78-.015-.795.945-.015 1.62.87 1.845 1.23 1.08 1.815 2.805 1.305 3.495.99.105-.78.42-1.305.765-1.605-2.67-.3-5.46-1.335-5.46-5.925 0-1.305.465-2.385 1.23-3.225-.12-.3-.54-1.53.12-3.18 0 0 1.005-.315 3.3 1.23.96-.27 1.98-.405 3-.405s2.04.135 3 .405c2.295-1.56 3.3-1.23 3.3-1.23.66 1.65.24 2.88.12 3.18.765.84 1.23 1.905 1.23 3.225 0 4.605-2.805 5.625-5.475 5.925.435.375.81 1.095.81 2.22 0 1.605-.015 2.895-.015 3.3 0 .315.225.69.825.57A12.02 12.02 0 0024 12c0-6.63-5.37-12-12-12z"/>
+                </svg>
+                <span class="github-sync-label" id="githubSyncLabel" data-i18n="github_login">Oturum Aç</span>
+            </button>
+            <div class="github-sync-dropdown" id="githubSyncDropdown">
+                <div class="github-dropdown-header">
+                    <div class="github-dropdown-user" id="githubDropdownUser">-</div>
+                    <div class="github-dropdown-status" id="githubDropdownLastSync">-</div>
+                </div>
+                <div class="github-dropdown-actions">
+                    <button class="github-dropdown-btn" id="githubDropdownSyncNow">
+                        <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2">
+                            <path d="M21.5 2v6h-6M2.5 22v-6h6M2 11.5a10 10 0 0 1 18.8-4.3M22 12.5a10 10 0 0 1-18.8 4.2"/>
+                        </svg>
+                        <span data-i18n="github_sync_now">Şimdi Eşitle</span>
+                    </button>
+                    <button class="github-dropdown-btn danger" id="githubDropdownLogout">
+                        <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2">
+                            <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4M16 17l5-5-5-5M21 12H9"/>
+                        </svg>
+                        <span data-i18n="github_logout">Çıkış Yap</span>
+                    </button>
+                </div>
+            </div>
+        </div>
     </header>
 
     <div class="side-menu" id="actionMenu">
@@ -1123,6 +1150,43 @@
                 <button class="btn btn-secondary" id="promptCancelBtn" style="flex: 1;"
                     data-i18n="cancel">Vazgeç</button>
                 <button class="btn btn-primary" id="promptSaveBtn" style="flex: 1;" data-i18n="save">Kaydet</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- GitHub Login Modal -->
+    <div id="githubLoginOverlay" class="modal-overlay">
+        <div class="modal-card github-login-card">
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1rem;">
+                <div style="display: flex; align-items: center; gap: 0.5rem;">
+                    <svg viewBox="0 0 24 24" width="22" height="22" fill="currentColor">
+                        <path d="M12 0C5.37 0 0 5.37 0 12c0 5.31 3.435 9.795 8.205 11.385.6.105.825-.255.825-.57 0-.285-.015-1.23-.015-2.235-3.015.555-3.795-.735-4.035-1.41-.135-.345-.72-1.41-1.23-1.695-.42-.225-1.02-.78-.015-.795.945-.015 1.62.87 1.845 1.23 1.08 1.815 2.805 1.305 3.495.99.105-.78.42-1.305.765-1.605-2.67-.3-5.46-1.335-5.46-5.925 0-1.305.465-2.385 1.23-3.225-.12-.3-.54-1.53.12-3.18 0 0 1.005-.315 3.3 1.23.96-.27 1.98-.405 3-.405s2.04.135 3 .405c2.295-1.56 3.3-1.23 3.3-1.23.66 1.65.24 2.88.12 3.18.765.84 1.23 1.905 1.23 3.225 0 4.605-2.805 5.625-5.475 5.925.435.375.81 1.095.81 2.22 0 1.605-.015 2.895-.015 3.3 0 .315.225.69.825.57A12.02 12.02 0 0024 12c0-6.63-5.37-12-12-12z"/>
+                    </svg>
+                    <h3 style="margin: 0; font-size: 1.1rem;" data-i18n="github_sync">GitHub Sync</h3>
+                </div>
+                <button class="icon-btn" id="githubLoginCloseBtn">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="18" height="18">
+                        <line x1="18" y1="6" x2="6" y2="18"></line>
+                        <line x1="6" y1="6" x2="18" y2="18"></line>
+                    </svg>
+                </button>
+            </div>
+            
+            <p style="font-size: 0.85rem; color: var(--text-secondary); margin-bottom: 1.25rem; line-height: 1.5;" data-i18n="github_token_hint">
+                Sadece "Gist" yetkili fine-grained token oluşturun
+            </p>
+
+            <div style="margin-bottom: 1.25rem;">
+                <label style="display: block; font-size: 0.8rem; font-weight: 600; margin-bottom: 0.4rem;" data-i18n="github_token_label">GitHub Personal Access Token</label>
+                <input type="password" id="githubTokenInput" class="menu-select" style="width: 100%; padding: 0.6rem 0.8rem; font-family: monospace;" data-i18n-placeholder="github_token_placeholder" placeholder="ghp_ veya github_pat_...">
+            </div>
+
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1.25rem;">
+                <a href="https://github.com/settings/tokens?type=beta" target="_blank" rel="noopener" style="font-size: 0.8rem; color: var(--primary-color); text-decoration: none;" data-i18n="github_create_token">Token Nasıl Alınır? ↗</a>
+            </div>
+
+            <div style="display: flex; gap: 0.75rem;">
+                <button class="btn btn-primary" id="githubConnectBtn" style="flex: 1;" data-i18n="github_connect">Bağlan & Eşitle</button>
             </div>
         </div>
     </div>

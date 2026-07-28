@@ -1,0 +1,539 @@
+import { AppState, saveSources, saveStats, saveRecentTests } from './state.js';
+import { showToast, showAlert } from './utils.js';
+import { t } from './i18n.js';
+
+const GIST_FILENAME = 'exam_app_backup.json';
+const GIST_DESCRIPTION = 'Exam App - User Study & Resource Data Sync';
+const GITHUB_API_BASE = 'https://api.github.com';
+
+let syncTimer = null;
+let isSyncing = false;
+
+/**
+ * Prepares the complete JSON payload of local data for backup/sync.
+ */
+export function getSyncPayload() {
+    return {
+        version: 2,
+        lastUpdated: Date.now(),
+        sources: AppState.sources || [],
+        stats: AppState.stats || {},
+        totalStats: AppState.totalStats || {},
+        recentTests: AppState.recentTests || [],
+        settings: {
+            language: AppState.language,
+            translationTarget: AppState.translationTarget,
+            translationEnabled: AppState.translationEnabled,
+            ttsEnabled: AppState.ttsEnabled,
+            ttsAutoplay: AppState.ttsAutoplay,
+            ttsSpeed: AppState.ttsSpeed,
+            aiIntegration: AppState.aiIntegration,
+            customAIPrompt: AppState.customAIPrompt,
+            timerStopwatchEnabled: AppState.timerStopwatchEnabled,
+            timerCountdownEnabled: AppState.timerCountdownEnabled,
+            timerCountdownLimit: AppState.timerCountdownLimit,
+            timerAutoCheckEnabled: AppState.timerAutoCheckEnabled
+        }
+    };
+}
+
+/**
+ * Initializes the GitHub sync state on app startup.
+ */
+export async function initSync() {
+    AppState.githubToken = localStorage.getItem('focus_app_github_token') || null;
+    AppState.githubGistId = localStorage.getItem('focus_app_github_gist_id') || null;
+    AppState.githubUser = JSON.parse(localStorage.getItem('focus_app_github_user') || 'null');
+    AppState.lastSyncTime = parseInt(localStorage.getItem('focus_app_last_sync') || '0', 10);
+
+    updateSyncUI();
+
+    // If logged in, perform automatic sync on startup
+    if (AppState.githubToken && AppState.githubGistId) {
+        try {
+            await syncFromGist({ silent: true });
+        } catch (err) {
+            console.warn('Initial GitHub sync failed:', err);
+        }
+    }
+
+    setupSyncDOMListeners();
+}
+
+/**
+ * Connects with a GitHub Personal Access Token.
+ */
+export async function loginWithToken(token) {
+    if (!token || !token.trim()) {
+        showAlert(t('github_invalid_token'), t('error_title') || 'Error');
+        return false;
+    }
+
+    const cleanToken = token.trim();
+    setSyncingState(true);
+
+    try {
+        // 1. Verify token & get user profile
+        const userRes = await fetch(`${GITHUB_API_BASE}/user`, {
+            headers: {
+                'Authorization': `Bearer ${cleanToken}`,
+                'Accept': 'application/vnd.github+json'
+            }
+        });
+
+        if (!userRes.ok) {
+            throw new Error(t('github_invalid_token'));
+        }
+
+        const userData = await userRes.json();
+        const userObj = {
+            login: userData.login,
+            name: userData.name || userData.login,
+            avatar_url: userData.avatar_url
+        };
+
+        // 2. Find existing Exam App Gist or create a new one
+        const gistId = await findOrCreateGist(cleanToken);
+
+        // 3. Save auth details to AppState & localStorage
+        AppState.githubToken = cleanToken;
+        AppState.githubGistId = gistId;
+        AppState.githubUser = userObj;
+
+        localStorage.setItem('focus_app_github_token', cleanToken);
+        localStorage.setItem('focus_app_github_gist_id', gistId);
+        localStorage.setItem('focus_app_github_user', JSON.stringify(userObj));
+
+        // 4. Perform initial full sync (pull & merge)
+        await syncFromGist({ silent: false });
+
+        updateSyncUI();
+        closeLoginModal();
+        showToast(t('github_connected_as', { user: userObj.login }));
+        return true;
+    } catch (err) {
+        console.error('GitHub login error:', err);
+        showAlert(err.message || t('github_sync_error'), t('error_title') || 'Error');
+        return false;
+    } finally {
+        setSyncingState(false);
+    }
+}
+
+/**
+ * Signs out from GitHub sync.
+ */
+export function logout() {
+    AppState.githubToken = null;
+    AppState.githubGistId = null;
+    AppState.githubUser = null;
+    AppState.lastSyncTime = 0;
+
+    localStorage.removeItem('focus_app_github_token');
+    localStorage.removeItem('focus_app_github_gist_id');
+    localStorage.removeItem('focus_app_github_user');
+    localStorage.removeItem('focus_app_last_sync');
+
+    updateSyncUI();
+    closeSyncDropdown();
+    showToast(t('github_logout'));
+}
+
+/**
+ * Searches user's Gists for `exam_app_backup.json`. Creates a new secret Gist if missing.
+ */
+async function findOrCreateGist(token) {
+    const res = await fetch(`${GITHUB_API_BASE}/gists?per_page=100`, {
+        headers: {
+            'Authorization': `Bearer ${token}`,
+            'Accept': 'application/vnd.github+json'
+        }
+    });
+
+    if (!res.ok) {
+        throw new Error('Failed to fetch Gists from GitHub');
+    }
+
+    const gists = await res.json();
+    const existing = gists.find(g => g.files && g.files[GIST_FILENAME]);
+
+    if (existing) {
+        return existing.id;
+    }
+
+    // Create a new secret Gist with initial payload
+    const createRes = await fetch(`${GITHUB_API_BASE}/gists`, {
+        method: 'POST',
+        headers: {
+            'Authorization': `Bearer ${token}`,
+            'Content-Type': 'application/json',
+            'Accept': 'application/vnd.github+json'
+        },
+        body: JSON.stringify({
+            description: GIST_DESCRIPTION,
+            public: false,
+            files: {
+                [GIST_FILENAME]: {
+                    content: JSON.stringify(getSyncPayload(), null, 2)
+                }
+            }
+        })
+    });
+
+    if (!createRes.ok) {
+        throw new Error('Failed to create Gist on GitHub. Make sure your token has "Gist" scope.');
+    }
+
+    const newGist = await createRes.json();
+    return newGist.id;
+}
+
+/**
+ * Pushes local data to GitHub Gist.
+ */
+export async function syncToGist(options = {}) {
+    if (!AppState.githubToken || !AppState.githubGistId || isSyncing) return;
+
+    setSyncingState(true);
+    try {
+        const payload = getSyncPayload();
+        const res = await fetch(`${GITHUB_API_BASE}/gists/${AppState.githubGistId}`, {
+            method: 'PATCH',
+            headers: {
+                'Authorization': `Bearer ${AppState.githubToken}`,
+                'Content-Type': 'application/json',
+                'Accept': 'application/vnd.github+json'
+            },
+            body: JSON.stringify({
+                description: GIST_DESCRIPTION,
+                files: {
+                    [GIST_FILENAME]: {
+                        content: JSON.stringify(payload, null, 2)
+                    }
+                }
+            })
+        });
+
+        if (!res.ok) {
+            throw new Error(`HTTP error ${res.status}`);
+        }
+
+        AppState.lastSyncTime = Date.now();
+        localStorage.setItem('focus_app_last_sync', AppState.lastSyncTime.toString());
+        updateSyncUI();
+
+        if (!options.silent) {
+            showToast(t('github_sync_success'));
+        }
+    } catch (err) {
+        console.error('syncToGist failed:', err);
+        if (!options.silent) {
+            showToast(t('github_sync_error'));
+        }
+    } finally {
+        setSyncingState(false);
+    }
+}
+
+/**
+ * Pulls remote data from GitHub Gist and merges with local data.
+ */
+export async function syncFromGist(options = {}) {
+    if (!AppState.githubToken || !AppState.githubGistId || isSyncing) return;
+
+    setSyncingState(true);
+    try {
+        const res = await fetch(`${GITHUB_API_BASE}/gists/${AppState.githubGistId}`, {
+            headers: {
+                'Authorization': `Bearer ${AppState.githubToken}`,
+                'Accept': 'application/vnd.github+json'
+            }
+        });
+
+        if (!res.ok) {
+            throw new Error(`HTTP error ${res.status}`);
+        }
+
+        const gist = await res.json();
+        const file = gist.files && gist.files[GIST_FILENAME];
+
+        if (file && file.content) {
+            const remotePayload = JSON.parse(file.content);
+            const localPayload = getSyncPayload();
+
+            const merged = mergeSyncData(localPayload, remotePayload);
+
+            // Apply merged sources
+            if (Array.isArray(merged.sources)) {
+                AppState.sources = merged.sources;
+                saveSources();
+            }
+
+            // Apply merged stats
+            if (merged.stats && typeof merged.stats === 'object') {
+                AppState.stats = merged.stats;
+                saveStats();
+            }
+
+            if (merged.totalStats && typeof merged.totalStats === 'object') {
+                AppState.totalStats = merged.totalStats;
+                localStorage.setItem('focus_app_stats_global', JSON.stringify(AppState.totalStats));
+            }
+
+            // Apply merged recent tests
+            if (Array.isArray(merged.recentTests)) {
+                AppState.recentTests = merged.recentTests.slice(0, 10);
+                saveRecentTests();
+            }
+
+            // Push merged state back to Gist if local had newer changes
+            if (merged.hasLocalChanges) {
+                await syncToGist({ silent: true });
+            }
+
+            AppState.lastSyncTime = Date.now();
+            localStorage.setItem('focus_app_last_sync', AppState.lastSyncTime.toString());
+
+            // Re-render UI components if available globally
+            if (typeof window.renderSourcesList === 'function') window.renderSourcesList();
+            if (typeof window.renderStatsList === 'function') window.renderStatsList();
+            if (typeof window.updateHomeStats === 'function') window.updateHomeStats();
+
+            updateSyncUI();
+
+            if (!options.silent) {
+                showToast(t('github_sync_success'));
+            }
+        }
+    } catch (err) {
+        console.error('syncFromGist failed:', err);
+        if (!options.silent) {
+            showToast(t('github_sync_error'));
+        }
+    } finally {
+        setSyncingState(false);
+    }
+}
+
+/**
+ * Intelligent merger for two AppState sync payloads (local vs remote).
+ */
+export function mergeSyncData(local, remote) {
+    let hasLocalChanges = false;
+
+    // 1. Merge Sources (by ID)
+    const sourcesMap = new Map();
+    (remote.sources || []).forEach(s => {
+        if (s && s.id) sourcesMap.set(s.id, s);
+    });
+
+    (local.sources || []).forEach(s => {
+        if (!s || !s.id) return;
+        if (!sourcesMap.has(s.id)) {
+            // Local source is missing remotely → Add it
+            sourcesMap.set(s.id, s);
+            hasLocalChanges = true;
+        } else {
+            // Source exists in both → pick the one with most recent lastUsed
+            const existing = sourcesMap.get(s.id);
+            if ((s.lastUsed || 0) > (existing.lastUsed || 0)) {
+                sourcesMap.set(s.id, s);
+                hasLocalChanges = true;
+            }
+        }
+    });
+
+    const mergedSources = Array.from(sourcesMap.values());
+
+    // 2. Merge Stats
+    const mergedStats = { ...(remote.stats || {}) };
+    const localStats = local.stats || {};
+
+    Object.keys(localStats).forEach(qid => {
+        const lStat = localStats[qid];
+        const rStat = mergedStats[qid];
+
+        if (!rStat) {
+            mergedStats[qid] = lStat;
+            hasLocalChanges = true;
+        } else {
+            // Combine stats accurately
+            const mergedItem = {
+                correct: Math.max(lStat.correct || 0, rStat.correct || 0),
+                wrong: Math.max(lStat.wrong || 0, rStat.wrong || 0),
+                difficulty: (lStat.correct + lStat.wrong) >= (rStat.correct + rStat.wrong) ? (lStat.difficulty ?? rStat.difficulty) : (rStat.difficulty ?? lStat.difficulty),
+                note: lStat.note && lStat.note.trim() ? lStat.note : rStat.note,
+                starred: !!(lStat.starred || rStat.starred),
+                flagged: !!(lStat.flagged || rStat.flagged),
+                learned: !!(lStat.learned || rStat.learned),
+                streak: Math.max(lStat.streak || 0, rStat.streak || 0),
+                stability: Math.max(lStat.stability || 0, rStat.stability || 0),
+                lastReview: Math.max(lStat.lastReview || 0, rStat.lastReview || 0)
+            };
+            mergedStats[qid] = mergedItem;
+        }
+    });
+
+    // 3. Merge Recent Tests
+    const testMap = new Map();
+    [...(remote.recentTests || []), ...(local.recentTests || [])].forEach(t => {
+        if (t && t.id) {
+            testMap.set(t.id, t);
+        }
+    });
+    const mergedRecentTests = Array.from(testMap.values())
+        .sort((a, b) => (b.timestamp || 0) - (a.timestamp || 0))
+        .slice(0, 10);
+
+    return {
+        sources: mergedSources,
+        stats: mergedStats,
+        totalStats: remote.totalStats || local.totalStats,
+        recentTests: mergedRecentTests,
+        hasLocalChanges
+    };
+}
+
+/**
+ * Debounced background sync trigger (5 seconds delay).
+ */
+export function scheduleSync() {
+    if (!AppState.githubToken || !AppState.githubGistId) return;
+
+    clearTimeout(syncTimer);
+    syncTimer = setTimeout(() => {
+        syncToGist({ silent: true });
+    }, 5000);
+}
+
+/**
+ * Sets syncing loading indicator state.
+ */
+function setSyncingState(syncing) {
+    isSyncing = syncing;
+    const btn = document.getElementById('githubSyncBtn');
+    if (btn) {
+        btn.classList.toggle('syncing', syncing);
+    }
+}
+
+/**
+ * Updates UI labels for the GitHub sync button.
+ */
+export function updateSyncUI() {
+    const labelEl = document.getElementById('githubSyncLabel');
+    const btn = document.getElementById('githubSyncBtn');
+    if (!btn || !labelEl) return;
+
+    if (AppState.githubToken && AppState.githubUser) {
+        labelEl.innerText = AppState.githubUser.login;
+        btn.classList.add('logged-in');
+        btn.setAttribute('title', t('github_connected_as', { user: AppState.githubUser.login }));
+    } else {
+        labelEl.innerText = t('github_login');
+        btn.classList.remove('logged-in');
+        btn.setAttribute('title', t('github_sync'));
+    }
+}
+
+// --- DOM & Modal Handlers ---
+
+export function showLoginModal() {
+    const modal = document.getElementById('githubLoginOverlay');
+    if (modal) {
+        modal.classList.add('active');
+        const input = document.getElementById('githubTokenInput');
+        if (input) {
+            input.value = '';
+            input.focus();
+        }
+    }
+}
+
+export function closeLoginModal() {
+    const modal = document.getElementById('githubLoginOverlay');
+    if (modal) modal.classList.remove('active');
+}
+
+export function toggleSyncDropdown() {
+    const dropdown = document.getElementById('githubSyncDropdown');
+    if (!dropdown) return;
+
+    if (dropdown.classList.contains('active')) {
+        closeSyncDropdown();
+    } else {
+        updateSyncDropdownInfo();
+        dropdown.classList.add('active');
+    }
+}
+
+export function closeSyncDropdown() {
+    const dropdown = document.getElementById('githubSyncDropdown');
+    if (dropdown) dropdown.classList.remove('active');
+}
+
+function updateSyncDropdownInfo() {
+    const userEl = document.getElementById('githubDropdownUser');
+    const timeEl = document.getElementById('githubDropdownLastSync');
+
+    if (userEl && AppState.githubUser) {
+        userEl.innerText = AppState.githubUser.name || AppState.githubUser.login;
+    }
+
+    if (timeEl) {
+        if (AppState.lastSyncTime > 0) {
+            const dateStr = new Date(AppState.lastSyncTime).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+            timeEl.innerText = t('github_last_sync', { time: dateStr });
+        } else {
+            timeEl.innerText = t('github_last_sync', { time: '-' });
+        }
+    }
+}
+
+function setupSyncDOMListeners() {
+    const btn = document.getElementById('githubSyncBtn');
+    if (btn) {
+        btn.onclick = (e) => {
+            e.stopPropagation();
+            if (AppState.githubToken) {
+                toggleSyncDropdown();
+            } else {
+                showLoginModal();
+            }
+        };
+    }
+
+    const closeBtn = document.getElementById('githubLoginCloseBtn');
+    if (closeBtn) closeBtn.onclick = closeLoginModal;
+
+    const connectBtn = document.getElementById('githubConnectBtn');
+    if (connectBtn) {
+        connectBtn.onclick = () => {
+            const input = document.getElementById('githubTokenInput');
+            if (input) loginWithToken(input.value);
+        };
+    }
+
+    const syncNowBtn = document.getElementById('githubDropdownSyncNow');
+    if (syncNowBtn) {
+        syncNowBtn.onclick = () => {
+            closeSyncDropdown();
+            syncFromGist({ silent: false });
+        };
+    }
+
+    const logoutBtn = document.getElementById('githubDropdownLogout');
+    if (logoutBtn) {
+        logoutBtn.onclick = () => {
+            logout();
+        };
+    }
+
+    // Close dropdown on outside click
+    document.addEventListener('click', (e) => {
+        const dropdown = document.getElementById('githubSyncDropdown');
+        if (dropdown && dropdown.classList.contains('active') && !dropdown.contains(e.target) && e.target !== btn) {
+            closeSyncDropdown();
+        }
+    });
+}

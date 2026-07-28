@@ -4037,3 +4037,139 @@ input:checked + .slider-small:before {
         border-radius: var(--radius-md);
     }
 }
+
+/* --- GitHub Sync Styles --- */
+.github-sync-btn {
+    display: flex;
+    align-items: center;
+    gap: 0.45rem;
+    padding: 0.35rem 0.75rem;
+    border-radius: 20px;
+    border: 1px solid var(--border-color);
+    background: var(--surface-color);
+    color: var(--text-primary);
+    font-size: 0.82rem;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    flex-shrink: 0;
+}
+
+.github-sync-btn:hover {
+    background: var(--surface-hover);
+    border-color: var(--primary-color);
+}
+
+.github-sync-btn.logged-in {
+    border-color: var(--success-color);
+    background: var(--selected-bg);
+}
+
+.github-sync-btn.syncing svg {
+    animation: githubSpin 1s linear infinite;
+}
+
+@keyframes githubSpin {
+    from { transform: rotate(0deg); }
+    to { transform: rotate(360deg); }
+}
+
+.github-sync-label {
+    white-space: nowrap;
+    max-width: 90px;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+@media (max-width: 480px) {
+    .github-sync-label {
+        display: none;
+    }
+    .github-sync-btn {
+        padding: 0.4rem;
+        border-radius: 50%;
+    }
+}
+
+.github-sync-dropdown {
+    position: absolute;
+    top: calc(100% + 8px);
+    right: 0;
+    min-width: 220px;
+    background: var(--surface-color);
+    border: 1px solid var(--border-color);
+    border-radius: var(--radius-md);
+    box-shadow: var(--shadow-md);
+    padding: 0.75rem;
+    z-index: 1200;
+    display: none;
+    flex-direction: column;
+    gap: 0.75rem;
+}
+
+.github-sync-dropdown.active {
+    display: flex;
+    animation: githubDropdownFade 0.15s ease-out;
+}
+
+@keyframes githubDropdownFade {
+    from { opacity: 0; transform: translateY(-6px); }
+    to { opacity: 1; transform: translateY(0); }
+}
+
+.github-dropdown-header {
+    padding-bottom: 0.5rem;
+    border-bottom: 1px solid var(--border-color);
+}
+
+.github-dropdown-user {
+    font-weight: 700;
+    font-size: 0.9rem;
+    color: var(--text-primary);
+}
+
+.github-dropdown-status {
+    font-size: 0.75rem;
+    color: var(--text-secondary);
+    margin-top: 0.2rem;
+}
+
+.github-dropdown-actions {
+    display: flex;
+    flex-direction: column;
+    gap: 0.4rem;
+}
+
+.github-dropdown-btn {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    padding: 0.5rem 0.75rem;
+    border: none;
+    background: transparent;
+    border-radius: 6px;
+    font-size: 0.85rem;
+    color: var(--text-primary);
+    cursor: pointer;
+    transition: background 0.15s;
+    text-align: left;
+    width: 100%;
+}
+
+.github-dropdown-btn:hover {
+    background: var(--surface-hover);
+}
+
+.github-dropdown-btn.danger {
+    color: var(--error-color);
+}
+
+.github-dropdown-btn.danger:hover {
+    background: var(--error-bg);
+}
+
+.github-login-card {
+    max-width: 420px;
+    width: 90%;
+}
+

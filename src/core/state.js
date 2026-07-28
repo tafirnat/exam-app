@@ -41,11 +41,16 @@ export const AppState = {
     viewHistory: [], // Stack to track last 10 visited screens
     navigationSourceView: null, // View to return to from Tag Mode
     activeTagFilter: null, // Currently active tag Filter for stats view
-    questionMap: {} // composite key (sourceId_questionId) → question object
+    questionMap: {}, // composite key (sourceId_questionId) → question object
+    githubToken: localStorage.getItem('focus_app_github_token') || null,
+    githubGistId: localStorage.getItem('focus_app_github_gist_id') || null,
+    githubUser: JSON.parse(localStorage.getItem('focus_app_github_user') || 'null'),
+    lastSyncTime: parseInt(localStorage.getItem('focus_app_last_sync') || '0', 10)
 };
 
 export function saveStats() {
     localStorage.setItem('focus_app_stats_local', JSON.stringify(AppState.stats));
+    import('./github-sync.js').then(m => m.scheduleSync()).catch(() => {});
 }
 
 export function saveCustomAIPrompt() {
@@ -71,6 +76,7 @@ export function saveTimerSettings() {
 
 export function saveSources() {
     localStorage.setItem('focus_app_sources', JSON.stringify(AppState.sources));
+    import('./github-sync.js').then(m => m.scheduleSync()).catch(() => {});
 }
 
 export function saveCurrentSource(key) {
@@ -80,6 +86,7 @@ export function saveCurrentSource(key) {
 
 export function saveRecentTests() {
     localStorage.setItem('focus_app_recent_tests', JSON.stringify(AppState.recentTests));
+    import('./github-sync.js').then(m => m.scheduleSync()).catch(() => {});
 }
 
 let _saveActiveTestTimer = null;
