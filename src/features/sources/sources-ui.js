@@ -731,8 +731,12 @@ export function renderSourcesList() {
         titleDiv.style.display = 'flex';
         titleDiv.style.alignItems = 'center';
         titleDiv.style.gap = '0.5rem';
+        titleDiv.style.minWidth = '0';
         
         const folderSourcesCount = AppState.sources.filter(s => s.folderId === folder.id).length;
+        // Lit as soon as at least one source inside is active, so a collapsed
+        // folder still shows whether it holds a selection.
+        const folderHasActive = AppState.sources.some(s => s.folderId === folder.id && s.active);
 
         const isCollapsed = collapsedFolders.has(folder.id);
         const toggleIcon = isCollapsed 
@@ -744,9 +748,12 @@ export function renderSourcesList() {
             <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="${folder.color || '#3b82f6'}" stroke-width="2" style="margin-left: 0.2rem;">
                 <path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"></path>
             </svg>
-            <div style="display: flex; flex-direction: column;">
-                <span style="font-weight: 600; font-size: 0.95rem;">${folder.name}</span>
-                ${folder.description ? `<span style="font-size: 0.7rem; color: var(--text-secondary);">${folder.description}</span>` : ''}
+            <div style="display: flex; flex-direction: column; min-width: 0;">
+                <div style="display: flex; align-items: center; gap: 0.4rem; min-width: 0;">
+                    <span class="truncate" style="font-weight: 600; font-size: 0.95rem;">${folder.name}</span>
+                    <span class="source-led ${folderHasActive ? 'on' : ''}" aria-hidden="true"></span>
+                </div>
+                ${folder.description ? `<span class="truncate" style="font-size: 0.7rem; color: var(--text-secondary);">${folder.description}</span>` : ''}
             </div>
         `;
         // Same grip element/markup as a source item, always the first child.
