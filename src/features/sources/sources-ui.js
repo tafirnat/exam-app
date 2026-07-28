@@ -782,7 +782,7 @@ export function renderSourcesList() {
         const countDiv = document.createElement('div');
         countDiv.style.fontSize = '3.5rem';
         countDiv.style.fontWeight = '900';
-        countDiv.style.fontFamily = '"Black Ops One", "Rubik Maze", Impact, sans-serif';
+        countDiv.style.fontFamily = '"Plaster", "Black Ops One", "Rubik Maze", Impact, sans-serif';
         countDiv.style.color = '#ffffff';
         countDiv.style.opacity = '0.08';
         countDiv.style.position = 'absolute';
