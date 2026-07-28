@@ -4304,26 +4304,6 @@ input:checked + .slider-small:before {
     min-width: 0;
 }
 
-/* Active-source LED, sits right after the source name */
-.source-led {
-    flex-shrink: 0;
-    width: 8px;
-    height: 8px;
-    border-radius: 50%;
-    background: var(--text-secondary);
-    opacity: 0.28;
-    box-shadow: inset 0 1px 1px rgba(0, 0, 0, 0.35);
-    transition: background 0.25s ease, opacity 0.25s ease, box-shadow 0.25s ease;
-}
-
-.source-led.on {
-    background: #10b981;
-    opacity: 1;
-    box-shadow:
-        0 0 0 2px rgba(16, 185, 129, 0.18),
-        0 0 6px 1px rgba(16, 185, 129, 0.55);
-}
-
 /* --- Sources / Folders drag & drop --- */
 .folder-container {
     position: relative;

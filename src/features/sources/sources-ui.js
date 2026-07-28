@@ -734,8 +734,9 @@ export function renderSourcesList() {
         titleDiv.style.minWidth = '0';
         
         const folderSourcesCount = AppState.sources.filter(s => s.folderId === folder.id).length;
-        // Lit as soon as at least one source inside is active, so a collapsed
-        // folder still shows whether it holds a selection.
+        // Drives the edit button icon: its top-left square only stays bright while
+        // the folder holds at least one active source, so a collapsed folder still
+        // shows whether it holds a selection.
         const folderHasActive = AppState.sources.some(s => s.folderId === folder.id && s.active);
 
         const isCollapsed = collapsedFolders.has(folder.id);
@@ -749,10 +750,7 @@ export function renderSourcesList() {
                 <path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"></path>
             </svg>
             <div style="display: flex; flex-direction: column; min-width: 0;">
-                <div style="display: flex; align-items: center; gap: 0.4rem; min-width: 0;">
-                    <span class="truncate" style="font-weight: 600; font-size: 0.95rem;">${folder.name}</span>
-                    <span class="source-led ${folderHasActive ? 'on' : ''}" aria-hidden="true"></span>
-                </div>
+                <span class="truncate" style="font-weight: 600; font-size: 0.95rem;">${folder.name}</span>
                 ${folder.description ? `<span class="truncate" style="font-size: 0.7rem; color: var(--text-secondary);">${folder.description}</span>` : ''}
             </div>
         `;
@@ -776,7 +774,7 @@ export function renderSourcesList() {
 
         const editBtn = document.createElement('button');
         editBtn.className = 'icon-btn';
-        editBtn.innerHTML = `<svg viewBox="0 0 24 24" width="18" height="18"><rect x="4" y="4" width="7" height="7" rx="1.5" fill="${folder.color}" opacity="1"></rect><rect x="13" y="4" width="7" height="7" rx="1.5" fill="${folder.color}" opacity="0.7"></rect><rect x="4" y="13" width="7" height="7" rx="1.5" fill="${folder.color}" opacity="0.4"></rect><rect x="13" y="13" width="7" height="7" rx="1.5" fill="${folder.color}" opacity="0.2"></rect></svg>`;
+        editBtn.innerHTML = `<svg viewBox="0 0 24 24" width="18" height="18"><rect x="4" y="4" width="7" height="7" rx="1.5" fill="${folder.color}" opacity="${folderHasActive ? '1' : '0.2'}"></rect><rect x="13" y="4" width="7" height="7" rx="1.5" fill="${folder.color}" opacity="0.7"></rect><rect x="4" y="13" width="7" height="7" rx="1.5" fill="${folder.color}" opacity="0.4"></rect><rect x="13" y="13" width="7" height="7" rx="1.5" fill="${folder.color}" opacity="0.2"></rect></svg>`;
         editBtn.onclick = (e) => {
             e.stopPropagation();
             showFolderManageModal(folder);
@@ -900,7 +898,6 @@ function createSourceItemDOM(s, folderId) {
     info.innerHTML = `
         <div style="font-weight:600; font-size:0.9rem; margin-bottom: 2px; display:flex; align-items:center; gap:0.4rem; min-width:0;">
             <span class="truncate">${qText}</span>
-            <span class="source-led ${s.active ? 'on' : ''}" aria-hidden="true"></span>
         </div>
         <div style="font-size:0.75rem; color:var(--text-secondary); margin-bottom: 4px; display: flex; align-items: center; gap: 6px; flex-wrap:wrap;">
             <span>${t('questions_count', { count: totalQ })}</span>
