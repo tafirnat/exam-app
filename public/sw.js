@@ -1,7 +1,7 @@
 // Bump on every release: the activate handler deletes any cache whose name no
 // longer matches, and an unchanged name is also what stops the browser from
 // noticing this file changed at all.
-const CACHE_NAME = 'focus-app-v16';
+const CACHE_NAME = 'focus-app-v17';
 const ASSETS_TO_CACHE = [
     './',
     './index.html',

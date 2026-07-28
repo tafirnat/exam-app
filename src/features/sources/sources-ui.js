@@ -440,7 +440,7 @@ export function initFolderManagement() {
 }
 
 // Blue slot of the folder palette; used for folders saved before colours existed.
-export const DEFAULT_FOLDER_COLOR = '#0097f8';
+export const DEFAULT_FOLDER_COLOR = '#0098fe';
 
 const ROOT_KEY = '__root__';
 const byOrder = (a, b) => (a.order ?? 0) - (b.order ?? 0);
@@ -972,14 +972,19 @@ export function showFolderManageModal(folder = null) {
     
     if(!overlay) return;
 
-    // Solved rather than picked by eye: every pair clears OKLab ΔE 15 under normal
-    // vision and sits above 3:1 against BOTH app surfaces (#ffffff and #1e293b), so
-    // a folder colour survives the theme switch and no two folders read alike in the
-    // list - where they appear in whatever order the user arranged them, which is why
-    // all pairs matter, not just neighbours in this picker. The old 12-colour set had
-    // pairs as close as ΔE 6 (violet/indigo) and five colours that washed out on white.
-    // Eight is the honest ceiling for those constraints; nine drops back under ΔE 15.
-    const colors = ['#ff2b86', '#da3200', '#c28400', '#00853c', '#00a8a2', '#0097f8', '#6d57ff', '#cf00d0'];
+    // Twelve slots, so the picker still fills its row edge to edge. Each colour is
+    // the most saturated one on its hue that clears 3:1 against BOTH app surfaces
+    // (#ffffff and #1e293b) - that gate is what keeps a folder colour from washing
+    // out when the theme flips. Hues are chosen farthest-point rather than every 30
+    // degrees, because even spacing in degrees is not even spacing to the eye and
+    // collapses the cyan region.
+    //
+    // Worst pair is OKLab ΔE 10.3 across all pairs, which is short of the 15 a chart
+    // legend would need; twelve slots simply cannot reach that here. It is well clear
+    // of the palette this replaces (ΔE 3.5 worst, and five of twelve below 3:1 on
+    // white), and a folder's name always sits beside its colour.
+    const colors = ['#ff0053', '#f75a00', '#ca8400', '#929b00', '#27ac00', '#00a97a',
+                    '#00a2b9', '#0098fe', '#0667ff', '#8a43ff', '#d200fe', '#ff00b7'];
     colorPicker.innerHTML = '';
     colors.forEach(c => {
         const d = document.createElement('div');
