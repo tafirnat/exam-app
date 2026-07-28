@@ -280,7 +280,7 @@ export function showSourceActions(source) {
         });
         
         moveContainer.innerHTML = `
-            <select id="moveToFolderSelect" class="menu-select" style="width: 100%; padding: 0.5rem; border-radius: var(--radius-sm);">
+            <select id="moveToFolderSelect" class="menu-select" style="width: 100%; padding: 0.85rem; border-radius: var(--radius-md); font-size: 0.9rem;">
                 ${optionsHtml}
             </select>
         `;
@@ -316,6 +316,14 @@ export function showSourceActions(source) {
         closeActions();
         showEditMetadata(source);
     };
+
+    const deleteBtn = document.getElementById('modalDeleteBtn');
+    if (deleteBtn) {
+        deleteBtn.onclick = () => {
+            closeActions();
+            removeSource(source.id);
+        };
+    }
 
     resetBtn.onclick = async () => {
         closeActions();
@@ -399,6 +407,7 @@ export function showEditMetadata(source) {
 let draggedItem = null;
 let draggedType = null;
 let dragSourceFolderId = null;
+let collapsedFolders = new Set();
 
 export function initFolderManagement() {
     const addBtn = document.getElementById('addFolderBtn');
@@ -433,20 +442,37 @@ function handleDragOver(e) {
     if (target && !target.classList.contains('dragging')) {
         const rect = target.getBoundingClientRect();
         const y = e.clientY - rect.top;
-        target.classList.remove('drag-over', 'drag-over-top', 'drag-over-bottom');
         
+        target.classList.remove('drag-over', 'drag-over-top', 'drag-over-bottom');
+        target.style.background = '';
+        target.style.boxShadow = '';
+        
+        const tint = 'var(--surface-hover)';
+        const borderTint = 'var(--primary-color)';
+
         if (draggedType === 'source' && target.classList.contains('folder-header')) {
             target.classList.add('drag-over');
+            target.style.background = tint;
+            target.style.boxShadow = `inset 0 0 0 2px ${borderTint}`;
         } else {
-            if (y < rect.height / 2) target.classList.add('drag-over-top');
-            else target.classList.add('drag-over-bottom');
+            if (y < rect.height / 2) {
+                target.classList.add('drag-over-top');
+                target.style.boxShadow = `inset 0 4px 0 0 ${borderTint}`;
+            } else {
+                target.classList.add('drag-over-bottom');
+                target.style.boxShadow = `inset 0 -4px 0 0 ${borderTint}`;
+            }
         }
     }
 }
 
 function handleDragLeave(e) {
     const target = e.target.closest('.source-item, .folder-header');
-    if (target) target.classList.remove('drag-over', 'drag-over-top', 'drag-over-bottom');
+    if (target) {
+        target.classList.remove('drag-over', 'drag-over-top', 'drag-over-bottom');
+        target.style.boxShadow = '';
+        target.style.background = '';
+    }
 }
 
 function handleDrop(e, targetItem, targetType, targetFolderId) {
@@ -454,7 +480,11 @@ function handleDrop(e, targetItem, targetType, targetFolderId) {
     e.stopPropagation();
     
     const targetEl = e.target.closest('.source-item, .folder-header');
-    if (targetEl) targetEl.classList.remove('drag-over', 'drag-over-top', 'drag-over-bottom');
+    if (targetEl) {
+        targetEl.classList.remove('drag-over', 'drag-over-top', 'drag-over-bottom');
+        targetEl.style.boxShadow = '';
+        targetEl.style.background = '';
+    }
     
     if (!draggedItem || draggedItem.id === targetItem.id) return;
 
@@ -546,6 +576,16 @@ export function renderSourcesList() {
         header.style.cursor = 'grab';
         header.style.marginBottom = '0.5rem';
         
+        header.onclick = (e) => {
+            if (e.target.closest('.icon-btn')) return;
+            if (collapsedFolders.has(folder.id)) {
+                collapsedFolders.delete(folder.id);
+            } else {
+                collapsedFolders.add(folder.id);
+            }
+            renderSourcesList();
+        };
+
         header.ondragstart = (e) => handleDragStart(e, folder, 'folder', null);
         header.ondragend = handleDragEnd;
         header.ondragover = handleDragOver;
@@ -556,7 +596,17 @@ export function renderSourcesList() {
         titleDiv.style.display = 'flex';
         titleDiv.style.alignItems = 'center';
         titleDiv.style.gap = '0.5rem';
+        
+        const isCollapsed = collapsedFolders.has(folder.id);
+        const toggleIcon = isCollapsed 
+            ? `<svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" style="opacity: 0.6;"><polyline points="9 18 15 12 9 6"></polyline></svg>`
+            : `<svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" style="opacity: 0.6;"><polyline points="6 9 12 15 18 9"></polyline></svg>`;
+
+        const gripIcon = `<div style="color: var(--text-secondary); display: flex; align-items: center; margin-right: 0.2rem;"><svg width="12" height="20" viewBox="0 0 16 24" fill="currentColor"><circle cx="6" cy="6" r="1.5"/><circle cx="10" cy="6" r="1.5"/><circle cx="6" cy="12" r="1.5"/><circle cx="10" cy="12" r="1.5"/><circle cx="6" cy="18" r="1.5"/><circle cx="10" cy="18" r="1.5"/></svg></div>`;
+
         titleDiv.innerHTML = `
+            ${gripIcon}
+            ${toggleIcon}
             <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="${folder.color || '#3b82f6'}" stroke-width="2">
                 <path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"></path>
             </svg>
@@ -569,7 +619,7 @@ export function renderSourcesList() {
         const editBtn = document.createElement('button');
         editBtn.className = 'icon-btn';
         editBtn.style.color = 'var(--text-secondary)';
-        editBtn.innerHTML = `<svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"></path><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"></path></svg>`;
+        editBtn.innerHTML = `<svg viewBox="0 0 24 24" width="18" height="18"><rect x="4" y="4" width="7" height="7" rx="1.5" fill="currentColor"></rect><rect x="13" y="4" width="7" height="7" rx="1.5" fill="currentColor"></rect><rect x="4" y="13" width="7" height="7" rx="1.5" fill="currentColor"></rect><rect x="13" y="13" width="7" height="7" rx="1.5" fill="currentColor"></rect></svg>`;
         editBtn.onclick = (e) => {
             e.stopPropagation();
             showFolderManageModal(folder);
@@ -600,6 +650,9 @@ export function renderSourcesList() {
         const listDiv = document.createElement('div');
         listDiv.className = 'folder-list';
         listDiv.style.paddingLeft = '1rem';
+        if (collapsedFolders.has(folder.id)) {
+            listDiv.style.display = 'none';
+        }
         
         folderSources.forEach(s => {
             listDiv.appendChild(createSourceItemDOM(s, folder.id));
@@ -726,22 +779,12 @@ function createSourceItemDOM(s, folderId) {
         showSourceActions(s);
     };
 
-    const delBtn = document.createElement('button');
-    delBtn.className = 'icon-btn';
-    delBtn.style.color = 'var(--error-color)';
-    delBtn.innerHTML = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="3 6 5 6 21 6"></polyline><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path></svg>';
-    delBtn.onclick = (e) => {
-        e.stopPropagation();
-        removeSource(s.id);
-    };
-
     const actions = document.createElement('div');
     actions.style.display = 'flex';
     actions.style.gap = '0.5rem';
     actions.style.alignItems = 'center';
     
     actions.appendChild(actionsBtn);
-    actions.appendChild(delBtn);
 
     item.appendChild(grip);
     item.appendChild(info);
