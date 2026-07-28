@@ -1,10 +1,9 @@
-const CACHE_NAME = 'focus-app-v12';
+const CACHE_NAME = 'focus-app-v13';
 const ASSETS_TO_CACHE = [
     './',
     './index.html',
     './manifest.webmanifest',
-    './icon-192.png',
-    './icon-512.png',
+    './app-icon.png',
     './examples/standard-exam.json',
     './examples/ihk-fisi-flashcards.json'
 ];
