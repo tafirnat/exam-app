@@ -26,6 +26,10 @@
     --primary-rgb: 59, 130, 246;
     --surface-color-rgb: 255, 255, 255;
 
+    /* Scrollbar */
+    --scrollbar-thumb: rgba(100, 116, 139, 0.35);
+    --scrollbar-thumb-hover: rgba(100, 116, 139, 0.6);
+
     /* Glassmorphism - Light Mode */
     --glass-bg: rgba(235, 240, 250, 0.4);
     --glass-border: rgba(148, 163, 184, 0.3);
@@ -57,6 +61,10 @@
     --primary-rgb: 127, 164, 230;
     --surface-color-rgb: 30, 41, 59;
 
+    /* Scrollbar */
+    --scrollbar-thumb: rgba(148, 163, 184, 0.3);
+    --scrollbar-thumb-hover: rgba(148, 163, 184, 0.55);
+
     /* Glassmorphism - Dark Mode (İstenen Değerler) */
     --glass-bg: #3e424d30;
     --glass-border: #94a3b86b;
@@ -72,6 +80,36 @@ body {
     box-sizing: border-box;
     padding: 0;
     -webkit-tap-highlight-color: transparent;
+}
+
+/* --- Global thin scrollbar (theme-aware) --- */
+* {
+    scrollbar-width: thin;
+    scrollbar-color: var(--scrollbar-thumb) transparent;
+}
+
+*::-webkit-scrollbar {
+    width: 8px;
+    height: 8px;
+}
+
+*::-webkit-scrollbar-track,
+*::-webkit-scrollbar-corner {
+    background: transparent;
+}
+
+/* The transparent border + padding-box clip keeps the visible bar 4px
+   while leaving a comfortable grab area. */
+*::-webkit-scrollbar-thumb {
+    background-color: var(--scrollbar-thumb);
+    background-clip: padding-box;
+    border: 2px solid transparent;
+    border-radius: 8px;
+    transition: background-color 0.2s ease;
+}
+
+*::-webkit-scrollbar-thumb:hover {
+    background-color: var(--scrollbar-thumb-hover);
 }
 
 /* Global cursor & selection reset for UI elements */
@@ -981,25 +1019,6 @@ pre code {
     box-sizing: border-box;
 }
 
-/* Thin modern scrollbar styling for note scroll container */
-.note-input-scroll-container::-webkit-scrollbar {
-    width: 6px;
-}
-
-.note-input-scroll-container::-webkit-scrollbar-track {
-    background: transparent;
-}
-
-.note-input-scroll-container::-webkit-scrollbar-thumb {
-    background-color: var(--border-color);
-    border-radius: 3px;
-    transition: background-color 0.2s ease;
-}
-
-.note-input-scroll-container::-webkit-scrollbar-thumb:hover {
-    background-color: var(--text-secondary);
-}
-
 /* Inner content area of the note */
 .note-input-content {
     width: 100%;
@@ -1749,20 +1768,6 @@ pre code {
     padding: 1rem 0;
     display: flex;
     flex-direction: column;
-}
-
-/* Custom Scrollbar for Sidebar */
-.menu-items::-webkit-scrollbar {
-    width: 4px;
-}
-
-.menu-items::-webkit-scrollbar-track {
-    background: transparent;
-}
-
-.menu-items::-webkit-scrollbar-thumb {
-    background: var(--border-color);
-    border-radius: 10px;
 }
 
 /* Menu Section (Accordion) */

@@ -95,15 +95,6 @@
     margin-bottom: 1.5rem;
 }
 
-/* Custom scrollbar for editor content area */
-.editor-content-area::-webkit-scrollbar {
-    width: 6px;
-}
-.editor-content-area::-webkit-scrollbar-thumb {
-    background: var(--border-color);
-    border-radius: 10px;
-}
-
 .edit-section {
     display: none;
     flex-direction: column;
