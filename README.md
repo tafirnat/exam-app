@@ -19,7 +19,12 @@ Experience the application live: **[https://exam.rifatarslan.dev/](https://exam.
   - **Background Auto-Sync**: Debounced automatic sync saves your progress in the background as you solve questions.
   - **Offline-First & Auto-Sync**: Fully functional offline via `localStorage`. Automatically fetches and merges the latest cloud data when online.
   - **Smart Merge Engine**: Intelligently resolves conflicts and merges study statistics from multiple devices.
+  - **Account Switch Safeguard**: Interactive prompts to safely merge or reset local data when changing accounts or logging out.
 - **PWA Support**: Installable on mobile and desktop for a full-screen, app-like experience with offline support.
+- **Flexible 3-Way Data Sharing**:
+  - **Clipboard Copy**: One-click copying of raw JSON datasets for seamless pasting and importing.
+  - **Web Share & File Export**: Native text or `.json` file sharing across apps (WhatsApp, Telegram, Mail, Files).
+  - **Smart Length Recommendations**: Context-aware guidance recommending file export for large datasets (>500 characters) to prevent text truncation.
 - **Modular Architecture**: Clean, separate logic for state management, UI rendering, and test engines.
 - **FS-Algorithm (Spaced Repetition)**: 
   - Implementation of the **FSRS v4.5** algorithm for scientifically optimized study intervals.
@@ -33,7 +38,7 @@ Experience the application live: **[https://exam.rifatarslan.dev/](https://exam.
 - **Interactive Explanations**: Native support for HTML-formatted explanation rendering (supporting bold text, line breaks, and hyperlinks) in the note area. These pre-populate automatically on question load (allowing viewing via the note icon) and display automatically upon checking the answer.
 - **Dynamic Internationalization**: Native support for **Turkish**, **English**, and **German** with automatic detection.
 - **Multilingual Translations**: Integrated Google Translate API supporting over 10 target languages for questions and options.
-- **AI-Ready**: Built-in prompts to easily copy questions to your favorite AI (ChatGPT, Claude, etc.) for detailed explanations.
+- **Custom AI Provider Hub & Localized Prompts**: Add, manage, and one-click query your favorite AI services (ChatGPT, Claude, Gemini, DeepSeek, Kimi, etc.) with prompt templates automatically localized to your UI language.
 - **Premium UI/UX**: Modern dark mode, glassmorphism elements, and smooth micro-animations.
 - **Single-File Distribution**: Optimized build process that generates a perfectly standalone `index.html` file for easy hosting Anywhere.
 - **Custom Data Sources**: Load your exams from local JSON files or remote URLs.
@@ -144,6 +149,10 @@ The application reads exam data through a standard JSON structure. You can follo
 }
 ```
 *Full template available in [public/examples/standard-exam.json](./public/examples/standard-exam.json).*
+
+## 🤖 Development & Transparency
+
+This project was created and developed by the author leveraging advanced AI coding assistants (**Antigravity** & **Claude**). While continuous testing and optimization have been performed across all modules, minor edge-case inconsistencies or oversights might occasionally exist. Feedback, contributions, and issue reports are warmly welcomed!
 
 ## 📄 License
 
