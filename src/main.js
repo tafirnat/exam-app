@@ -2,7 +2,7 @@ import { AppState, saveStats, saveSources, saveCurrentSource, saveCustomAIPrompt
 import { initTheme, toggleTheme } from './core/theme.js';
 import { updateStaticTranslations, t, targetLanguages, translations } from './core/i18n.js';
 import { showToast, showConfirm, getCorrectAnswers, highlightText } from './core/utils.js';
-import { migrateOldData } from './core/migration.js';
+import { migrateOldData, migrateFolderColors } from './core/migration.js';
 import { processJSON, loadFromUrl, loadFromFile, normalizeQuestions, mergeSources } from './features/sources/sources-service.js';
 import { renderSourcesList, showMergeModal, closeAllSourcesModals } from './features/sources/sources-ui.js';
 import { initArchiveUI } from './features/sources/archive.js';
@@ -126,6 +126,7 @@ const initApp = () => {
     try {
         console.log('Migrating old data...');
         migrateOldData();
+        migrateFolderColors();
 
         console.log('Initializing theme...');
         initTheme();

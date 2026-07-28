@@ -1,6 +1,7 @@
 import { AppState, saveSources, saveStats, saveRecentTests, saveFolders, clearLocalStudyData } from './state.js';
 import { showToast, showAlert } from './utils.js';
 import { t } from './i18n.js';
+import { migrateFolderColors } from './migration.js';
 
 const GIST_FILENAME = 'exam_app_backup.json';
 // The archive lives in its own file inside the same Gist. A Gist PATCH only
@@ -319,6 +320,7 @@ async function pullRemoteGistOnly(token, gistId) {
 
             if (Array.isArray(remotePayload.folders)) {
                 AppState.folders = remotePayload.folders;
+                migrateFolderColors({ force: true });
                 saveFolders();
             }
 
@@ -624,9 +626,11 @@ export async function syncFromGist(options = {}) {
                 saveSources();
             }
 
-            // Apply merged folders
+            // Apply merged folders. Remapped every time, not once: a device still
+            // running the old palette can push retired colours back up at any point.
             if (Array.isArray(merged.folders)) {
                 AppState.folders = merged.folders;
+                migrateFolderColors({ force: true });
                 saveFolders();
             }
 
