@@ -16,6 +16,9 @@ jobs:
         uses: actions/checkout@v4
 
       - name: Install and Build 🔧
+        env:
+          VITE_GITHUB_CLIENT_ID: ${{ vars.VITE_GITHUB_CLIENT_ID || 'Ov23liC1ye0QrGRwtyIB' }}
+          VITE_WORKER_URL: ${{ vars.VITE_WORKER_URL || 'https://exam-app.tafirnat02.workers.dev' }}
         run: |
           npm install
           npm run build
