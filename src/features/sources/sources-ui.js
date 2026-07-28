@@ -1,4 +1,4 @@
-import { AppState, saveSources, saveStats } from '../../core/state.js';
+import { AppState, saveSources, saveStats, saveFolders } from '../../core/state.js';
 import { t } from '../../core/i18n.js';
 import { showConfirm, showAlert } from '../../core/utils.js';
 
@@ -244,6 +244,7 @@ export async function shareSourceJSON(source) {
     };
 }
 
+
 export function showSourceActions(source) {
     const overlay = document.getElementById('sourceActionsOverlay');
     const nameEl = document.getElementById('sourceActionsName');
@@ -257,6 +258,50 @@ export function showSourceActions(source) {
 
     nameEl.textContent = source.name;
     overlay.classList.add('active');
+
+    // Add Move to Folder logic dynamically
+    let moveContainer = document.getElementById('moveToFolderContainer');
+    if (!moveContainer) {
+        moveContainer = document.createElement('div');
+        moveContainer.id = 'moveToFolderContainer';
+        moveContainer.style.marginTop = '1rem';
+        moveContainer.style.borderTop = '1px solid var(--border-color)';
+        moveContainer.style.paddingTop = '1rem';
+        
+        const actionsBody = overlay.querySelector('.modal-body');
+        if (actionsBody) actionsBody.appendChild(moveContainer);
+    }
+    
+    if (AppState.folders && AppState.folders.length > 0) {
+        let optionsHtml = `<option value="">-- ${t('move_to_folder')} --</option>`;
+        optionsHtml += `<option value="root">${t('root_folder')}</option>`;
+        AppState.folders.forEach(f => {
+            optionsHtml += `<option value="${f.id}" ${source.folderId === f.id ? 'selected' : ''}>${f.name}</option>`;
+        });
+        
+        moveContainer.innerHTML = `
+            <select id="moveToFolderSelect" class="menu-select" style="width: 100%; padding: 0.5rem; border-radius: var(--radius-sm);">
+                ${optionsHtml}
+            </select>
+        `;
+        moveContainer.style.display = 'block';
+        
+        const selectEl = document.getElementById('moveToFolderSelect');
+        selectEl.onchange = (e) => {
+            const val = e.target.value;
+            if (val === 'root') {
+                source.folderId = null;
+            } else if (val) {
+                source.folderId = val;
+            }
+            source.order = AppState.sources.filter(s => s.folderId === source.folderId).length;
+            saveSources();
+            renderSourcesList();
+            overlay.classList.remove('active');
+        };
+    } else {
+        moveContainer.style.display = 'none';
+    }
 
     const closeActions = () => {
         overlay.classList.remove('active');
@@ -274,11 +319,13 @@ export function showSourceActions(source) {
 
     resetBtn.onclick = async () => {
         closeActions();
+        // The resetSourceStats function exists in scope
         await resetSourceStats(source.id);
     };
 
     downloadBtn.onclick = () => {
         closeActions();
+        // The downloadSourceJSON exists
         downloadSourceJSON(source);
     };
 
@@ -288,13 +335,10 @@ export function showSourceActions(source) {
     };
 
     closeBtn.onclick = closeActions;
-    
-    // Also close on overlay click
     overlay.onclick = (e) => {
         if (e.target === overlay) closeActions();
     };
 }
-
 export function showEditMetadata(source) {
     const overlay = document.getElementById('editMetadataOverlay');
     const titleInput = document.getElementById('editMetaTitle');
@@ -350,133 +394,470 @@ export function showEditMetadata(source) {
     };
 }
 
+
+// --- Drag and Drop State ---
+let draggedItem = null;
+let draggedType = null;
+let dragSourceFolderId = null;
+
+export function initFolderManagement() {
+    const addBtn = document.getElementById('addFolderBtn');
+    if(addBtn) addBtn.onclick = () => showFolderManageModal(null);
+}
+
+function handleDragStart(e, item, type, folderId) {
+    draggedItem = item;
+    draggedType = type;
+    dragSourceFolderId = folderId;
+    e.dataTransfer.effectAllowed = 'move';
+    e.dataTransfer.setData('text/plain', item.id);
+    setTimeout(() => {
+        if(e.target) e.target.classList.add('dragging');
+    }, 0);
+}
+
+function handleDragEnd(e) {
+    if(e.target) e.target.classList.remove('dragging');
+    document.querySelectorAll('.drag-over, .drag-over-top, .drag-over-bottom').forEach(el => {
+        el.classList.remove('drag-over', 'drag-over-top', 'drag-over-bottom');
+    });
+    draggedItem = null;
+    draggedType = null;
+    dragSourceFolderId = null;
+}
+
+function handleDragOver(e) {
+    e.preventDefault();
+    e.dataTransfer.dropEffect = 'move';
+    const target = e.target.closest('.source-item, .folder-header');
+    if (target && !target.classList.contains('dragging')) {
+        const rect = target.getBoundingClientRect();
+        const y = e.clientY - rect.top;
+        target.classList.remove('drag-over', 'drag-over-top', 'drag-over-bottom');
+        
+        if (draggedType === 'source' && target.classList.contains('folder-header')) {
+            target.classList.add('drag-over');
+        } else {
+            if (y < rect.height / 2) target.classList.add('drag-over-top');
+            else target.classList.add('drag-over-bottom');
+        }
+    }
+}
+
+function handleDragLeave(e) {
+    const target = e.target.closest('.source-item, .folder-header');
+    if (target) target.classList.remove('drag-over', 'drag-over-top', 'drag-over-bottom');
+}
+
+function handleDrop(e, targetItem, targetType, targetFolderId) {
+    e.preventDefault();
+    e.stopPropagation();
+    
+    const targetEl = e.target.closest('.source-item, .folder-header');
+    if (targetEl) targetEl.classList.remove('drag-over', 'drag-over-top', 'drag-over-bottom');
+    
+    if (!draggedItem || draggedItem.id === targetItem.id) return;
+
+    if (draggedType === 'folder' && targetType === 'folder') {
+        const draggedIdx = AppState.folders.findIndex(f => f.id === draggedItem.id);
+        const targetIdx = AppState.folders.findIndex(f => f.id === targetItem.id);
+        if (draggedIdx > -1 && targetIdx > -1) {
+            AppState.folders.splice(draggedIdx, 1);
+            const rect = targetEl.getBoundingClientRect();
+            const y = e.clientY - rect.top;
+            const insertIdx = y < rect.height / 2 ? targetIdx : targetIdx + 1;
+            AppState.folders.splice(insertIdx, 0, draggedItem);
+            AppState.folders.forEach((f, i) => f.order = i);
+            import('../../core/state.js').then(m => m.saveFolders());
+            renderSourcesList();
+        }
+    } else if (draggedType === 'source') {
+        const sourceIdx = AppState.sources.findIndex(s => s.id === draggedItem.id);
+        if (sourceIdx > -1) {
+            if (targetType === 'folder' && targetEl.classList.contains('drag-over')) {
+                AppState.sources[sourceIdx].folderId = targetItem.id;
+                AppState.sources[sourceIdx].order = AppState.sources.filter(s => s.folderId === targetItem.id).length;
+                saveSources();
+                renderSourcesList();
+                return;
+            }
+
+            AppState.sources[sourceIdx].folderId = targetFolderId;
+            const folderItems = AppState.sources.filter(s => s.folderId === targetFolderId).sort((a, b) => (a.order || 0) - (b.order || 0));
+            let itemsToReorder = folderItems.filter(s => s.id !== draggedItem.id);
+            const rect = targetEl.getBoundingClientRect();
+            const y = e.clientY - rect.top;
+            let insertIdx = itemsToReorder.findIndex(s => s.id === targetItem.id);
+            if (insertIdx === -1) insertIdx = itemsToReorder.length;
+            if (y >= rect.height / 2) insertIdx++;
+            itemsToReorder.splice(insertIdx, 0, AppState.sources[sourceIdx]);
+            
+            // Reassign orders
+            itemsToReorder.forEach((s, i) => s.order = i);
+            saveSources();
+            renderSourcesList();
+        }
+    }
+}
+
 export function renderSourcesList() {
     const container = document.getElementById('sourcesList');
     if (!container) return;
 
     container.innerHTML = '';
+    
+    // Check if init is needed
+    if(!document.folderManagementInitialized) {
+        initFolderManagement();
+        document.folderManagementInitialized = true;
+    }
 
-    // Update source count badge
     const countEl = document.getElementById('sourcesCount');
     if (countEl) {
         const n = AppState.sources.length;
         countEl.textContent = n > 0 ? t('questions_count', { count: n }) : '';
     }
 
-    // Sort by last used
-    const sortedSources = [...AppState.sources].sort((a, b) => (b.lastUsed || 0) - (a.lastUsed || 0));
+    // Group sources
+    const unassigned = AppState.sources.filter(s => !s.folderId).sort((a, b) => (a.order || 0) - (b.order || 0));
+    
+    // Sort folders by order
+    const sortedFolders = [...(AppState.folders || [])].sort((a, b) => (a.order || 0) - (b.order || 0));
 
-    sortedSources.forEach(s => {
-        if (!s) return;
-        const item = document.createElement('div');
-        item.className = `source-item ${s.active ? 'active' : ''}`;
+    // Render unassigned (root) items first, or at the end
+    // Let's render folders first, then unassigned
+    
+    sortedFolders.forEach(folder => {
+        const folderEl = document.createElement('div');
+        folderEl.className = 'folder-container';
+        folderEl.style.marginBottom = '1rem';
+        
+        const header = document.createElement('div');
+        header.className = 'folder-header';
+        header.draggable = true;
+        header.style.display = 'flex';
+        header.style.alignItems = 'center';
+        header.style.justifyContent = 'space-between';
+        header.style.padding = '0.5rem';
+        header.style.backgroundColor = 'var(--surface-color)';
+        header.style.border = '1px solid var(--border-color)';
+        header.style.borderLeft = `4px solid ${folder.color || '#3b82f6'}`;
+        header.style.borderRadius = 'var(--radius-md)';
+        header.style.cursor = 'grab';
+        header.style.marginBottom = '0.5rem';
+        
+        header.ondragstart = (e) => handleDragStart(e, folder, 'folder', null);
+        header.ondragend = handleDragEnd;
+        header.ondragover = handleDragOver;
+        header.ondragleave = handleDragLeave;
+        header.ondrop = (e) => handleDrop(e, folder, 'folder', null);
 
-        // Let's use CSS for styling instead of inline as much as possible, but keeping current pattern
-        item.style.display = 'flex';
-        item.style.alignItems = 'center';
-        item.style.justifyContent = 'space-between';
-        item.style.padding = '0.75rem';
-        item.style.border = '1px solid var(--border-color)';
-        item.style.borderRadius = 'var(--radius-md)';
-        item.style.marginBottom = '0.5rem';
-        item.style.backgroundColor = s.active ? 'var(--surface-hover)' : 'var(--surface-color)';
-        item.style.gap = '0.5rem';
-
-        const info = document.createElement('div');
-        info.style.flex = '1';
-        info.style.cursor = 'pointer';
-        info.style.minWidth = '0'; // For text truncation
-        info.onclick = () => toggleSource(s.id);
-
-        const isUrl = s.origin?.type === 'url';
-        const displayPath = s.origin?.display || 'local';
-        const originIcon = isUrl
-            ? '<svg viewBox="0 0 24 24" width="12" height="12" fill="none" stroke="currentColor" stroke-width="2"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"></path><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"></path></svg>'
-            : '<svg viewBox="0 0 24 24" width="12" height="12" fill="none" stroke="currentColor" stroke-width="2"><path d="M13 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V9z"></path><polyline points="13 2 13 9 20 9"></polyline></svg>';
-
-        const originContent = isUrl
-            ? `<a href="${displayPath}" target="_blank" onclick="event.stopPropagation()" class="hide-mobile" style="color:inherit; text-decoration:none; display:flex; align-items:center; gap:4px;">${originIcon}<span class="truncate">${displayPath}</span></a>`
-            : `<div class="hide-mobile" style="display:flex; align-items:center; gap:4px;">${originIcon}<span class="truncate">${displayPath}</span></div>`;
-
-        const qText = s.name || t('untitled_source');
-        const questions = s.questions || [];
-        const totalQ = questions.length;
-
-        // Simpler: success rate = correct / (correct + wrong) across all answered questions
-        let totalCorrect = 0, totalWrong = 0, totalCoeffSum = 0, answeredAny = 0;
-        questions.forEach(q => {
-            const st = AppState.stats[`${s.id}_${q.id}`];
-            if (st && (st.correct > 0 || st.wrong > 0)) {
-                totalCorrect += st.correct || 0;
-                totalWrong += st.wrong || 0;
-                totalCoeffSum += (st.coeff !== undefined ? st.coeff : 1.5);
-                answeredAny++;
-            }
-        });
-        const successRate = (totalCorrect + totalWrong) > 0
-            ? Math.round((totalCorrect / (totalCorrect + totalWrong)) * 100)
-            : null;
-        const avgCoeff = answeredAny > 0
-            ? (totalCoeffSum / answeredAny).toFixed(1)
-            : null;
-
-        const rateChip = successRate !== null ? `<span style="font-size:0.68rem; padding:1px 6px; border-radius:999px; background:var(--surface-hover); color:var(--text-secondary); border:1px solid var(--border-color);">✓ ${successRate}%</span>` : '';
-        const coeffChip = avgCoeff !== null ? `<span style="font-size:0.68rem; padding:1px 6px; border-radius:999px; background:var(--surface-hover); color:var(--text-secondary); border:1px solid var(--border-color);">Ø ${avgCoeff}</span>` : '';
-
-        info.innerHTML = `
-            <div style="font-weight:600; font-size:0.9rem; margin-bottom: 2px;">${qText}</div>
-            <div style="font-size:0.75rem; color:var(--text-secondary); margin-bottom: 4px; display: flex; align-items: center; gap: 6px; flex-wrap:wrap;">
-                <span>${t('questions_count', { count: totalQ })}</span>
-                ${s.importDate ? `<span style="opacity:0.6;">• ${s.importDate}</span>` : ''}
-                ${rateChip}${coeffChip}
-            </div>
-            <div class="origin-tag" style="font-size:0.7rem; color:var(--primary-color); opacity:0.8; margin-top:4px; display: flex; align-items: center; gap: 6px; flex-wrap: wrap;">
-                ${originContent}
-            </div>
-        `;
-
-        const actionsBtn = document.createElement('button');
-        actionsBtn.className = 'icon-btn';
-        actionsBtn.style.color = 'var(--primary-color)';
-        actionsBtn.title = t('source_actions_title');
-        actionsBtn.innerHTML = `
-            <svg viewBox="0 0 24 24" width="20" height="20">
-                <rect x="4" y="4" width="7" height="7" rx="1.5" fill="currentColor"></rect>
-                <circle cx="16.5" cy="7.5" r="3.5" class="status-dot-svg ${s.active ? 'active' : ''}" 
-                    stroke="currentColor" stroke-width="2" fill="none"></circle>
-                <rect x="4" y="13" width="7" height="7" rx="1.5" fill="currentColor"></rect>
-                <rect x="13" y="13" width="7" height="7" rx="1.5" fill="currentColor"></rect>
+        const titleDiv = document.createElement('div');
+        titleDiv.style.display = 'flex';
+        titleDiv.style.alignItems = 'center';
+        titleDiv.style.gap = '0.5rem';
+        titleDiv.innerHTML = `
+            <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="${folder.color || '#3b82f6'}" stroke-width="2">
+                <path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"></path>
             </svg>
+            <div style="display: flex; flex-direction: column;">
+                <span style="font-weight: 600; font-size: 0.95rem;">${folder.name}</span>
+                ${folder.description ? `<span style="font-size: 0.7rem; color: var(--text-secondary);">${folder.description}</span>` : ''}
+            </div>
         `;
-        actionsBtn.onclick = (e) => {
+        
+        const editBtn = document.createElement('button');
+        editBtn.className = 'icon-btn';
+        editBtn.style.color = 'var(--text-secondary)';
+        editBtn.innerHTML = `<svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"></path><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"></path></svg>`;
+        editBtn.onclick = (e) => {
             e.stopPropagation();
-            showSourceActions(s);
+            showFolderManageModal(folder);
         };
-
-        const actions = document.createElement('div');
-        actions.style.display = 'flex';
-        actions.style.gap = '0.5rem';
-        actions.style.alignItems = 'center';
-
+        
         const delBtn = document.createElement('button');
         delBtn.className = 'icon-btn';
         delBtn.style.color = 'var(--error-color)';
-        delBtn.innerHTML = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="3 6 5 6 21 6"></polyline><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path></svg>';
+        delBtn.innerHTML = `<svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2"><polyline points="3 6 5 6 21 6"></polyline><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path></svg>`;
         delBtn.onclick = (e) => {
             e.stopPropagation();
-            removeSource(e.target.closest('.source-item').dataset.id || s.id); // Guard against missing ID if needed
+            showFolderDeleteModal(folder.id);
         };
+        
+        const actionsDiv = document.createElement('div');
+        actionsDiv.style.display = 'flex';
+        actionsDiv.style.gap = '0.25rem';
+        actionsDiv.appendChild(editBtn);
+        actionsDiv.appendChild(delBtn);
+        
+        header.appendChild(titleDiv);
+        header.appendChild(actionsDiv);
+        folderEl.appendChild(header);
 
-        item.appendChild(info);
-        actions.appendChild(actionsBtn);
-        actions.appendChild(delBtn);
-        item.appendChild(actions);
-        container.appendChild(item);
+        // Sources inside folder
+        const folderSources = AppState.sources.filter(s => s.folderId === folder.id).sort((a, b) => (a.order || 0) - (b.order || 0));
+        
+        const listDiv = document.createElement('div');
+        listDiv.className = 'folder-list';
+        listDiv.style.paddingLeft = '1rem';
+        
+        folderSources.forEach(s => {
+            listDiv.appendChild(createSourceItemDOM(s, folder.id));
+        });
+        
+        folderEl.appendChild(listDiv);
+        container.appendChild(folderEl);
     });
 
-    // Trigger callback if needed for UI updates elsewhere
-    if (window.onSourcesUpdated) window.onSourcesUpdated();
+    // Unassigned sources
+    if (unassigned.length > 0) {
+        const rootDiv = document.createElement('div');
+        rootDiv.className = 'folder-list';
+        const label = document.createElement('div');
+        label.style.fontSize = '0.8rem';
+        label.style.color = 'var(--text-secondary)';
+        label.style.marginBottom = '0.5rem';
+        label.textContent = t('root_folder');
+        rootDiv.appendChild(label);
+        
+        unassigned.forEach(s => {
+            rootDiv.appendChild(createSourceItemDOM(s, null));
+        });
+        container.appendChild(rootDiv);
+    }
 }
+
+function createSourceItemDOM(s, folderId) {
+    const item = document.createElement('div');
+    item.className = `source-item ${s.active ? 'active' : ''}`;
+    item.draggable = true;
+    item.style.display = 'flex';
+    item.style.alignItems = 'center';
+    item.style.justifyContent = 'space-between';
+    item.style.padding = '0.75rem';
+    item.style.border = '1px solid var(--border-color)';
+    item.style.borderRadius = 'var(--radius-md)';
+    item.style.marginBottom = '0.5rem';
+    item.style.backgroundColor = s.active ? 'var(--surface-hover)' : 'var(--surface-color)';
+    item.style.gap = '0.5rem';
+    
+    // Drag handlers
+    item.ondragstart = (e) => handleDragStart(e, s, 'source', folderId);
+    item.ondragend = handleDragEnd;
+    item.ondragover = handleDragOver;
+    item.ondragleave = handleDragLeave;
+    item.ondrop = (e) => handleDrop(e, s, 'source', folderId);
+
+    const grip = document.createElement('div');
+    grip.style.cursor = 'grab';
+    grip.style.color = 'var(--text-secondary)';
+    grip.style.display = 'flex';
+    grip.style.alignItems = 'center';
+    grip.style.marginRight = '0.25rem';
+    grip.innerHTML = `<svg width="16" height="24" viewBox="0 0 16 24" fill="currentColor"><circle cx="6" cy="6" r="1.5"/><circle cx="10" cy="6" r="1.5"/><circle cx="6" cy="12" r="1.5"/><circle cx="10" cy="12" r="1.5"/><circle cx="6" cy="18" r="1.5"/><circle cx="10" cy="18" r="1.5"/></svg>`;
+
+    const info = document.createElement('div');
+    info.style.flex = '1';
+    info.style.cursor = 'pointer';
+    info.style.minWidth = '0';
+    info.onclick = () => toggleSource(s.id);
+
+    const isUrl = s.origin?.type === 'url';
+    const displayPath = s.origin?.display || 'local';
+    const originIcon = isUrl
+        ? '<svg viewBox="0 0 24 24" width="12" height="12" fill="none" stroke="currentColor" stroke-width="2"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"></path><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"></path></svg>'
+        : '<svg viewBox="0 0 24 24" width="12" height="12" fill="none" stroke="currentColor" stroke-width="2"><path d="M13 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V9z"></path><polyline points="13 2 13 9 20 9"></polyline></svg>';
+
+    const originContent = isUrl
+        ? `<a href="${displayPath}" target="_blank" onclick="event.stopPropagation()" class="hide-mobile" style="color:inherit; text-decoration:none; display:flex; align-items:center; gap:4px;">${originIcon}<span class="truncate">${displayPath}</span></a>`
+        : `<div class="hide-mobile" style="display:flex; align-items:center; gap:4px;">${originIcon}<span class="truncate">${displayPath}</span></div>`;
+
+    const qText = s.name || t('untitled_source');
+    const questions = s.questions || [];
+    const totalQ = questions.length;
+
+    let totalCorrect = 0, totalWrong = 0, totalCoeffSum = 0, answeredAny = 0;
+    questions.forEach(q => {
+        const st = AppState.stats[`${s.id}_${q.id}`];
+        if (st && (st.correct > 0 || st.wrong > 0)) {
+            totalCorrect += st.correct || 0;
+            totalWrong += st.wrong || 0;
+            totalCoeffSum += (st.coeff !== undefined ? st.coeff : 1.5);
+            answeredAny++;
+        }
+    });
+    const successRate = (totalCorrect + totalWrong) > 0
+        ? Math.round((totalCorrect / (totalCorrect + totalWrong)) * 100)
+        : null;
+    const avgCoeff = answeredAny > 0
+        ? (totalCoeffSum / answeredAny).toFixed(1)
+        : null;
+
+    const rateChip = successRate !== null ? `<span style="font-size:0.68rem; padding:1px 6px; border-radius:999px; background:var(--surface-hover); color:var(--text-secondary); border:1px solid var(--border-color);">✓ ${successRate}%</span>` : '';
+    const coeffChip = avgCoeff !== null ? `<span style="font-size:0.68rem; padding:1px 6px; border-radius:999px; background:var(--surface-hover); color:var(--text-secondary); border:1px solid var(--border-color);">Ø ${avgCoeff}</span>` : '';
+
+    info.innerHTML = `
+        <div style="font-weight:600; font-size:0.9rem; margin-bottom: 2px;">${qText}</div>
+        <div style="font-size:0.75rem; color:var(--text-secondary); margin-bottom: 4px; display: flex; align-items: center; gap: 6px; flex-wrap:wrap;">
+            <span>${t('questions_count', { count: totalQ })}</span>
+            ${s.importDate ? `<span style="opacity:0.6;">• ${s.importDate}</span>` : ''}
+            ${rateChip}${coeffChip}
+        </div>
+        <div class="origin-tag" style="font-size:0.7rem; color:var(--primary-color); opacity:0.8; margin-top:4px; display: flex; align-items: center; gap: 6px; flex-wrap: wrap;">
+            ${originContent}
+        </div>
+    `;
+
+    const actionsBtn = document.createElement('button');
+    actionsBtn.className = 'icon-btn';
+    actionsBtn.style.color = 'var(--primary-color)';
+    actionsBtn.title = t('source_actions_title');
+    actionsBtn.innerHTML = `
+        <svg viewBox="0 0 24 24" width="20" height="20">
+            <rect x="4" y="4" width="7" height="7" rx="1.5" fill="currentColor"></rect>
+            <circle cx="16.5" cy="7.5" r="3.5" class="status-dot-svg ${s.active ? 'active' : ''}" 
+                stroke="currentColor" stroke-width="2" fill="none"></circle>
+            <rect x="4" y="13" width="7" height="7" rx="1.5" fill="currentColor"></rect>
+            <rect x="13" y="13" width="7" height="7" rx="1.5" fill="currentColor"></rect>
+        </svg>
+    `;
+    actionsBtn.onclick = (e) => {
+        e.stopPropagation();
+        showSourceActions(s);
+    };
+
+    const delBtn = document.createElement('button');
+    delBtn.className = 'icon-btn';
+    delBtn.style.color = 'var(--error-color)';
+    delBtn.innerHTML = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="3 6 5 6 21 6"></polyline><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path></svg>';
+    delBtn.onclick = (e) => {
+        e.stopPropagation();
+        removeSource(s.id);
+    };
+
+    const actions = document.createElement('div');
+    actions.style.display = 'flex';
+    actions.style.gap = '0.5rem';
+    actions.style.alignItems = 'center';
+    
+    actions.appendChild(actionsBtn);
+    actions.appendChild(delBtn);
+
+    item.appendChild(grip);
+    item.appendChild(info);
+    item.appendChild(actions);
+    
+    return item;
+}
+
+export function showFolderManageModal(folder = null) {
+    const overlay = document.getElementById('folderManageOverlay');
+    const title = document.getElementById('folderModalTitle');
+    const nameInput = document.getElementById('folderNameInput');
+    const descInput = document.getElementById('folderDescInput');
+    const colorInput = document.getElementById('folderColorInput');
+    const colorPicker = document.getElementById('folderColorPicker');
+    
+    if(!overlay) return;
+
+    const colors = ['#ef4444', '#f97316', '#f59e0b', '#10b981', '#3b82f6', '#6366f1', '#8b5cf6', '#ec4899'];
+    colorPicker.innerHTML = '';
+    colors.forEach(c => {
+        const d = document.createElement('div');
+        d.style.width = '24px';
+        d.style.height = '24px';
+        d.style.borderRadius = '50%';
+        d.style.backgroundColor = c;
+        d.style.cursor = 'pointer';
+        d.style.border = (folder && folder.color === c) || (!folder && c === '#3b82f6') ? '2px solid white' : '2px solid transparent';
+        d.onclick = () => {
+            Array.from(colorPicker.children).forEach(el => el.style.border = '2px solid transparent');
+            d.style.border = '2px solid white';
+            colorInput.value = c;
+        };
+        colorPicker.appendChild(d);
+    });
+
+    title.textContent = folder ? t('edit_folder') : t('add_folder');
+    nameInput.value = folder ? folder.name : '';
+    descInput.value = folder && folder.description ? folder.description : '';
+    colorInput.value = folder ? folder.color : '#3b82f6';
+
+    const saveBtn = document.getElementById('folderManageSaveBtn');
+    saveBtn.onclick = () => {
+        const name = nameInput.value.trim();
+        if(!name) return;
+        
+        if(folder) {
+            folder.name = name;
+            folder.description = descInput.value.trim();
+            folder.color = colorInput.value;
+        } else {
+            AppState.folders.push({
+                id: 'folder_' + Date.now(),
+                name: name,
+                description: descInput.value.trim(),
+                color: colorInput.value,
+                order: AppState.folders.length
+            });
+        }
+        import('../../core/state.js').then(m => m.saveFolders());
+        renderSourcesList();
+        overlay.classList.remove('active');
+    };
+
+    document.getElementById('folderManageCancelBtn').onclick = () => overlay.classList.remove('active');
+    document.getElementById('folderManageCloseBtn').onclick = () => overlay.classList.remove('active');
+    
+    overlay.classList.add('active');
+}
+
+export function showFolderDeleteModal(folderId) {
+    const overlay = document.getElementById('folderDeleteOverlay');
+    if(!overlay) return;
+    
+    const moveRootBtn = document.getElementById('folderDeleteMoveRootBtn');
+    const delItemsBtn = document.getElementById('folderDeleteDeleteItemsBtn');
+    
+    const close = () => overlay.classList.remove('active');
+    
+    moveRootBtn.onclick = () => {
+        AppState.sources.forEach(s => {
+            if(s.folderId === folderId) s.folderId = null;
+        });
+        AppState.folders = AppState.folders.filter(f => f.id !== folderId);
+        saveSources();
+        import('../../core/state.js').then(m => m.saveFolders());
+        renderSourcesList();
+        close();
+    };
+    
+    delItemsBtn.onclick = () => {
+        const idsToDelete = AppState.sources.filter(s => s.folderId === folderId).map(s => s.id);
+        AppState.sources = AppState.sources.filter(s => s.folderId !== folderId);
+        
+        idsToDelete.forEach(id => {
+            Object.keys(AppState.stats).forEach(key => {
+                if(key.startsWith(id + '_')) delete AppState.stats[key];
+            });
+            import('../../core/state.js').then(m => {
+                if (typeof m.trackDeletedSource === 'function') m.trackDeletedSource(id);
+            }).catch(() => {});
+        });
+        
+        AppState.folders = AppState.folders.filter(f => f.id !== folderId);
+        saveStats();
+        saveSources();
+        import('../../core/state.js').then(m => m.saveFolders());
+        renderSourcesList();
+        close();
+    };
+    
+    document.getElementById('folderDeleteCancelBtn').onclick = close;
+    document.getElementById('folderDeleteCloseBtn').onclick = close;
+    overlay.classList.add('active');
+}
+
 
 export function showMergeModal() {
     const overlay = document.getElementById('mergeSourcesOverlay');

@@ -31,6 +31,17 @@ export const AppState = {
     isAnswerChecked: {},
     shuffledOptionsMap: {},
     stats: safeJSONParse('focus_app_stats_local', {}),
+    folders: (() => {
+        let folders = safeJSONParse('focus_app_folders', null);
+        if (folders === null) {
+            // Create a default folder for sample templates
+            folders = [
+                { id: 'default-folder', name: 'Sample Folder', color: '#3b82f6', description: 'Varsayılan örnek klasör', order: 0 }
+            ];
+            try { localStorage.setItem('focus_app_folders', JSON.stringify(folders)); } catch(e){}
+        }
+        return Array.isArray(folders) ? folders : [];
+    })(),
     sources: (() => {
         const sources = safeJSONParse('focus_app_sources', []);
         // Cleanup: remove any sources without questions (leftovers from previous broken logic)
@@ -74,6 +85,7 @@ export const AppState = {
 
 export function clearLocalStudyData() {
     AppState.sources = [];
+    AppState.folders = [];
     AppState.stats = {};
     AppState.totalStats = {};
     AppState.recentTests = [];
@@ -81,6 +93,7 @@ export function clearLocalStudyData() {
     AppState.currentSourceKey = null;
 
     localStorage.removeItem('focus_app_sources');
+    localStorage.removeItem('focus_app_folders');
     localStorage.removeItem('focus_app_stats_local');
     localStorage.removeItem('focus_app_stats_global');
     localStorage.removeItem('focus_app_recent_tests');
@@ -128,6 +141,11 @@ export function saveTimerSettings() {
 
 export function saveSources() {
     localStorage.setItem('focus_app_sources', JSON.stringify(AppState.sources));
+    import('./github-sync.js').then(m => m.scheduleSync(300)).catch(() => {});
+}
+
+export function saveFolders() {
+    localStorage.setItem('focus_app_folders', JSON.stringify(AppState.folders));
     import('./github-sync.js').then(m => m.scheduleSync(300)).catch(() => {});
 }
 

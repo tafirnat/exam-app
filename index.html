@@ -465,6 +465,13 @@
                             style="font-size: 0.72rem; color: var(--text-secondary); opacity: 0.7; display: block; margin-top: 2px;"></span>
                     </div>
                     <div style="display: flex; gap: 0.25rem;">
+                        <button class="icon-btn" id="addFolderBtn" data-i18n-title="add_folder">
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+                                <path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"></path>
+                                <line x1="12" y1="11" x2="12" y2="17"></line>
+                                <line x1="9" y1="14" x2="15" y2="14"></line>
+                            </svg>
+                        </button>
                         <button class="icon-btn" id="mergeSourcesBtn" data-i18n-title="merge_sources">
                             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
                                 <path d="M3 6h4c2 0 4 6 8 6h5"></path>
@@ -1279,6 +1286,66 @@
                 <label style="display: block; font-size: 0.8rem; font-weight: 600; margin-bottom: 0.4rem;" data-i18n="github_token_label">Personal Access Token (PAT)</label>
                 <input type="password" id="githubTokenInput" class="menu-select" style="width: 100%; padding: 0.6rem 0.8rem; font-family: monospace; margin-bottom: 0.75rem;" data-i18n-placeholder="github_token_placeholder" placeholder="ghp_ veya github_pat_...">
                 <button class="btn btn-secondary" id="githubConnectPatBtn" style="width: 100%; font-size: 0.85rem;" data-i18n="github_connect">Token ile Bağlan</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Folder Management Modal -->
+    <div id="folderManageOverlay" class="modal-overlay">
+        <div class="modal-card">
+            <div class="modal-header">
+                <h3 id="folderModalTitle" data-i18n="add_folder">Klasör Ekle</h3>
+                <button class="icon-btn" id="folderManageCloseBtn">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="18" height="18">
+                        <line x1="18" y1="6" x2="6" y2="18"></line>
+                        <line x1="6" y1="6" x2="18" y2="18"></line>
+                    </svg>
+                </button>
+            </div>
+            <div class="modal-body">
+                <div class="input-group">
+                    <label data-i18n="folder_name">Klasör Adı</label>
+                    <input type="text" id="folderNameInput" placeholder="Örn: Çalışma Dosyaları">
+                </div>
+                <div class="input-group">
+                    <label data-i18n="folder_color">Klasör Rengi</label>
+                    <div style="display: flex; gap: 0.5rem; margin-top: 0.25rem;" id="folderColorPicker">
+                        <!-- Colors will be dynamically generated here -->
+                    </div>
+                    <input type="hidden" id="folderColorInput" value="#3b82f6">
+                </div>
+                <div class="input-group">
+                    <label data-i18n="folder_desc">Klasör Açıklaması (Opsiyonel)</label>
+                    <input type="text" id="folderDescInput" placeholder="Örn: 1. Dönem Sınavları">
+                </div>
+            </div>
+            <div class="modal-footer" style="display: flex; gap: 0.5rem; justify-content: flex-end;">
+                <button class="btn btn-subtle" id="folderManageCancelBtn" data-i18n="cancel">İptal</button>
+                <button class="btn btn-primary" id="folderManageSaveBtn" data-i18n="save_folder">Kaydet</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Folder Delete Options Modal -->
+    <div id="folderDeleteOverlay" class="modal-overlay">
+        <div class="modal-card">
+            <div class="modal-header">
+                <h3 data-i18n="delete_folder">Klasörü Sil</h3>
+                <button class="icon-btn" id="folderDeleteCloseBtn">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="18" height="18">
+                        <line x1="18" y1="6" x2="6" y2="18"></line>
+                        <line x1="6" y1="6" x2="18" y2="18"></line>
+                    </svg>
+                </button>
+            </div>
+            <div class="modal-body">
+                <p style="margin-bottom: 1rem; color: var(--text-primary);" data-i18n="delete_folder_confirm">Bu klasörü silmek istiyor musunuz?</p>
+                <p style="margin-bottom: 0.5rem; font-size: 0.85rem; color: var(--text-secondary);" data-i18n="delete_folder_options">İçindeki dosyaları ne yapmak istersiniz?</p>
+            </div>
+            <div class="modal-footer" style="display: flex; flex-direction: column; gap: 0.5rem;">
+                <button class="btn btn-primary" id="folderDeleteMoveRootBtn" style="width: 100%;" data-i18n="move_to_root">Kök dizine taşı</button>
+                <button class="btn btn-secondary" id="folderDeleteDeleteItemsBtn" style="width: 100%; color: var(--error-color);" data-i18n="delete_items">Dosyaları da sil</button>
+                <button class="btn btn-subtle" id="folderDeleteCancelBtn" style="width: 100%;" data-i18n="cancel">İptal</button>
             </div>
         </div>
     </div>
