@@ -143,6 +143,13 @@
                             </svg>
                             <span data-i18n="edit_prompt">Promptu Düzenle</span>
                         </button>
+                        <button class="menu-sub-item" id="menuManageAIProviders" style="margin-top: 0.4rem;">
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" width="14" height="14">
+                                <circle cx="12" cy="12" r="3"></circle>
+                                <path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"></path>
+                            </svg>
+                            <span data-i18n="manage_ai_services">AI Servislerini Düzenle</span>
+                        </button>
                         <div class="menu-hint" data-i18n="ai_integration_hint">
                             Seçili AI, prompt butonuna basıldığında otomatik açılır.
                         </div>
@@ -600,17 +607,24 @@
                         <path d="M14 18h6"></path>
                     </svg>
                 </div>
-                <div class="indicator-icon" id="menuCopyAIInline" data-i18n-title="copy_ai">
-                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor">
-                        <path d="M12 2l3 6 6 3-6 3-3 6-3-6-6-3 6-3z"></path>
-                    </svg>
-                </div>
-                <!-- New: Copy Question Text button -->
-                <div class="indicator-icon" id="menuCopyTextInline" data-i18n-title="copy_question">
-                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                        <path d="M16 4h2a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h2"></path>
-                        <rect x="8" y="2" width="8" height="4" rx="1" ry="1"></rect>
-                    </svg>
+                <div style="position: relative;">
+                    <div class="indicator-icon" id="menuCopyToggleInline" data-i18n-title="copy_ai_menu">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor">
+                            <path d="M12 2l3 6 6 3-6 3-3 6-3-6-6-3 6-3z"></path>
+                        </svg>
+                    </div>
+                    <div class="ai-copy-dropdown" id="aiCopyDropdown">
+                        <div class="ai-copy-header" data-i18n="ai_search_title">AI ile Çöz / Ara</div>
+                        <div class="ai-copy-list" id="aiCopyList"></div>
+                        <div class="ai-copy-divider"></div>
+                        <div class="ai-copy-item" id="aiCopyTextOption">
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                <path d="M16 4h2a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h2"></path>
+                                <rect x="8" y="2" width="8" height="4" rx="1" ry="1"></rect>
+                            </svg>
+                            <span data-i18n="copy_question">Soru Metnini Kopyala</span>
+                        </div>
+                    </div>
                 </div>
             </div>
 
@@ -873,16 +887,24 @@
                         <path d="M14 18h6"></path>
                     </svg>
                 </div>
-                <div class="indicator-icon" id="previewMenuCopyAIInline" data-i18n-title="copy_ai">
-                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor">
-                        <path d="M12 2l3 6 6 3-6 3-3 6-3-6-6-3 6-3z"></path>
-                    </svg>
-                </div>
-                <div class="indicator-icon" id="previewMenuCopyTextInline" data-i18n-title="copy_question">
-                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                        <path d="M16 4h2a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h2"></path>
-                        <rect x="8" y="2" width="8" height="4" rx="1" ry="1"></rect>
-                    </svg>
+                <div style="position: relative;">
+                    <div class="indicator-icon" id="previewMenuCopyToggleInline" data-i18n-title="copy_ai_menu">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor">
+                            <path d="M12 2l3 6 6 3-6 3-3 6-3-6-6-3 6-3z"></path>
+                        </svg>
+                    </div>
+                    <div class="ai-copy-dropdown" id="previewAiCopyDropdown">
+                        <div class="ai-copy-header" data-i18n="ai_search_title">AI ile Çöz / Ara</div>
+                        <div class="ai-copy-list" id="previewAiCopyList"></div>
+                        <div class="ai-copy-divider"></div>
+                        <div class="ai-copy-item" id="previewAiCopyTextOption">
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                <path d="M16 4h2a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h2"></path>
+                                <rect x="8" y="2" width="8" height="4" rx="1" ry="1"></rect>
+                            </svg>
+                            <span data-i18n="copy_question">Soru Metnini Kopyala</span>
+                        </div>
+                    </div>
                 </div>
             </div>
 
@@ -1161,6 +1183,30 @@
                 <button class="btn btn-secondary" id="promptCancelBtn" style="flex: 1;"
                     data-i18n="cancel">Vazgeç</button>
                 <button class="btn btn-primary" id="promptSaveBtn" style="flex: 1;" data-i18n="save">Kaydet</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- AI Provider Manager Modal -->
+    <div id="aiProvidersOverlay" class="modal-overlay">
+        <div class="modal-card" style="max-width: 480px;">
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1rem;">
+                <h3 style="margin: 0;" data-i18n="manage_ai_services">AI Servislerini Düzenle</h3>
+                <button class="icon-btn" id="aiProvidersCloseBtn">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="18" height="18">
+                        <line x1="18" y1="6" x2="6" y2="18"></line>
+                        <line x1="6" y1="6" x2="18" y2="18"></line>
+                    </svg>
+                </button>
+            </div>
+            
+            <div id="aiProvidersList" style="max-height: 250px; overflow-y: auto; margin-bottom: 1rem; display: flex; flex-direction: column; gap: 0.5rem;"></div>
+
+            <div style="border-top: 1px solid var(--border-color); padding-top: 1rem; margin-top: 0.5rem;">
+                <h4 style="font-size: 0.9rem; margin-bottom: 0.75rem; color: var(--text-primary);" data-i18n="add_ai_provider">Yeni AI Servisi Ekle</h4>
+                <input type="text" id="newAiNameInput" placeholder="Servis Adı (ör: Gemini)" style="margin-bottom: 0.5rem; width: 100%;">
+                <input type="text" id="newAiUrlInput" placeholder="URL Kalıbı (ör: https://.../search?q={PROMPT})" style="margin-bottom: 0.75rem; width: 100%;">
+                <button class="btn btn-primary" id="addAiProviderBtn" style="width: 100%;" data-i18n="add">Ekle</button>
             </div>
         </div>
     </div>

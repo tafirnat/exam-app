@@ -15,6 +15,14 @@ export function safeJSONParse(key, fallback) {
     }
 }
 
+export const DEFAULT_AI_PROVIDERS = [
+    { id: 'google', name: 'Google AI (Search)', url: 'https://www.google.com/search?q={PROMPT}&udm=50', domain: 'google.com' },
+    { id: 'chatgpt', name: 'ChatGPT (GPT-4o)', url: 'https://chatgpt.com/?prompt={PROMPT}&model=gpt-4o&hints=search', domain: 'chatgpt.com' },
+    { id: 'perplexity', name: 'Perplexity AI', url: 'https://www.perplexity.ai/search?focus=internet&copilot=true&q={PROMPT}', domain: 'perplexity.ai' },
+    { id: 'claude', name: 'Claude (Anthropic)', url: 'https://claude.ai/new?q={PROMPT}', domain: 'claude.ai' },
+    { id: 'deepseek', name: 'DeepSeek', url: 'https://chat.deepseek.com/?q={PROMPT}', domain: 'deepseek.com' }
+];
+
 export const AppState = {
     rawQuestions: [],
     currentTest: [],
@@ -44,6 +52,7 @@ export const AppState = {
     activeStatsSortDir: 'asc', // 'asc', 'desc'
     customAIPrompt: localStorage.getItem('focus_app_custom_ai_prompt') || '',
     aiIntegration: localStorage.getItem('focus_app_ai_integration') || 'clipboard',
+    aiProviders: safeJSONParse('focus_app_ai_providers', DEFAULT_AI_PROVIDERS),
     ttsEnabled: safeJSONParse('focus_app_tts_enabled', false),
     ttsAutoplay: safeJSONParse('focus_app_tts_autoplay', false),
     ttsSpeed: parseFloat(localStorage.getItem('focus_app_tts_speed') ?? '0.5'),
@@ -82,6 +91,10 @@ export function saveCustomAIPrompt() {
 
 export function saveAiIntegration() {
     localStorage.setItem('focus_app_ai_integration', AppState.aiIntegration);
+}
+
+export function saveAiProviders() {
+    localStorage.setItem('focus_app_ai_providers', JSON.stringify(AppState.aiProviders));
 }
 
 export function saveTtsSettings() {

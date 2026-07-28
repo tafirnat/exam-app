@@ -1,4 +1,4 @@
-import { AppState, saveStats, saveSources, saveCurrentSource, saveCustomAIPrompt, saveAiIntegration, saveActiveTest, clearActiveTest } from './core/state.js';
+import { AppState, saveStats, saveSources, saveCurrentSource, saveCustomAIPrompt, saveAiIntegration, saveAiProviders, DEFAULT_AI_PROVIDERS, saveActiveTest, clearActiveTest } from './core/state.js';
 import { initTheme, toggleTheme } from './core/theme.js';
 import { updateStaticTranslations, t, targetLanguages, translations } from './core/i18n.js';
 import { showToast, showConfirm, getCorrectAnswers, highlightText } from './core/utils.js';
@@ -845,16 +845,37 @@ function setupEventListeners() {
     document.getElementById('indFlag').onclick = toggleFlag;
     document.getElementById('indNote').onclick = toggleNoteArea;
     document.getElementById('menuTranslateAllInline').onclick = translateAll;
-    document.getElementById('menuCopyAIInline').onclick = copyAIPrompt;
-    document.getElementById('menuCopyTextInline').onclick = copyQuestionText;
+    document.getElementById('menuCopyToggleInline').onclick = (e) => toggleAiCopyMenu(false, e);
+    document.getElementById('aiCopyTextOption').onclick = (e) => {
+        e.stopPropagation();
+        closeAllAiCopyDropdowns();
+        copyQuestionText();
+    };
     document.getElementById('menuEditPrompt').onclick = openPromptEditor;
+    document.getElementById('menuManageAIProviders').onclick = openAiManager;
 
     document.getElementById('previewIndStar').onclick = toggleStar;
     document.getElementById('previewIndFlag').onclick = toggleFlag;
     document.getElementById('previewIndNote').onclick = toggleNoteArea;
     document.getElementById('previewMenuTranslateAllInline').onclick = translateAll;
-    document.getElementById('previewMenuCopyAIInline').onclick = copyAIPrompt;
-    document.getElementById('previewMenuCopyTextInline').onclick = copyQuestionText;
+    document.getElementById('previewMenuCopyToggleInline').onclick = (e) => toggleAiCopyMenu(true, e);
+    document.getElementById('previewAiCopyTextOption').onclick = (e) => {
+        e.stopPropagation();
+        closeAllAiCopyDropdowns();
+        copyQuestionText();
+    };
+
+    document.addEventListener('click', (e) => {
+        if (!e.target.closest('.ai-copy-dropdown') && !e.target.closest('#menuCopyToggleInline') && !e.target.closest('#previewMenuCopyToggleInline')) {
+            closeAllAiCopyDropdowns();
+        }
+    });
+
+    document.getElementById('aiProvidersCloseBtn').onclick = closeAiManager;
+    document.getElementById('addAiProviderBtn').onclick = addNewAiProvider;
+    document.getElementById('aiProvidersOverlay').onclick = (e) => {
+        if (e.target.id === 'aiProvidersOverlay') closeAiManager();
+    };
     document.getElementById('statsPreviewEditBtn').onclick = () => {
         if (AppState.previewQuestion) {
             openQuestionEditor(AppState.previewQuestion);
@@ -1582,64 +1603,113 @@ async function translateAll() {
     if (menuActive) toggleMenu();
 }
 
-function copyAIPrompt() {
-    const isPreview = document.getElementById('statsPreviewView').offsetParent !== null;
+// AI Copy Dropdown & Execution Logic
+function toggleAiCopyMenu(isPreview = false, event) {
+    if (event) event.stopPropagation();
+    const dropdownId = isPreview ? 'previewAiCopyDropdown' : 'aiCopyDropdown';
+    const dropdown = document.getElementById(dropdownId);
+    if (!dropdown) return;
+
+    const isActive = dropdown.classList.contains('active');
+    closeAllAiCopyDropdowns();
+
+    if (!isActive) {
+        renderAiCopyList(isPreview);
+        dropdown.classList.add('active');
+    }
+}
+
+function closeAllAiCopyDropdowns() {
+    document.querySelectorAll('.ai-copy-dropdown').forEach(d => d.classList.remove('active'));
+}
+
+function renderAiCopyList(isPreview = false) {
+    const containerId = isPreview ? 'previewAiCopyList' : 'aiCopyList';
+    const container = document.getElementById(containerId);
+    if (!container) return;
+
+    container.innerHTML = '';
+    const providers = AppState.aiProviders || DEFAULT_AI_PROVIDERS;
+
+    providers.forEach(p => {
+        const item = document.createElement('div');
+        item.className = 'ai-copy-item';
+
+        let domain = p.domain;
+        if (!domain) {
+            try {
+                domain = (new URL(p.url.replace('{PROMPT}', 'test'))).hostname;
+            } catch (e) {
+                domain = 'google.com';
+            }
+        }
+        const iconUrl = `https://www.google.com/s2/favicons?sz=64&domain=${domain}`;
+
+        item.innerHTML = `
+            <img class="ai-icon-img" src="${iconUrl}" onerror="this.style.display='none'; this.nextElementSibling.style.display='inline-block';" alt="${p.name}">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" style="display:none;" class="ai-icon-fallback">
+                <path d="M12 2l3 6 6 3-6 3-3 6-3-6-6-3 6-3z"></path>
+            </svg>
+            <span>${p.name}</span>
+        `;
+
+        item.onclick = (e) => {
+            e.stopPropagation();
+            closeAllAiCopyDropdowns();
+            executeAiSearch(p.id, isPreview);
+        };
+
+        container.appendChild(item);
+    });
+}
+
+function getFormattedPrompt(isPreview = false) {
     let q;
     if (isPreview) {
         q = AppState.previewQuestion;
     } else {
-        q = AppState.questionMap[AppState.currentTest[AppState.currentIndex]];
+        const qIndex = AppState.currentIndex;
+        const compositeId = AppState.currentTest[qIndex];
+        q = AppState.questionMap[compositeId];
     }
-
-    if (!q) {
-        console.error("copyAIPrompt: No question found", { isPreview, previewId: AppState.previewQuestionId });
-        return;
-    }
+    if (!q) return '';
 
     const optionsText = q.options?.map(o => o.text).join(', ') || 'Textantwort';
     const questionText = q.content?.text || q.text || '';
 
-    let promptLang = AppState.translationTarget;
+    let promptLang = AppState.translationTarget || 'en';
     if (!['tr', 'en', 'de'].includes(promptLang)) {
         promptLang = 'en';
     }
 
-    const template = AppState.customAIPrompt || translations[promptLang]?.ai_prompt_template || translations['en'].ai_prompt_template;
-    const prompt = template
+    const template = AppState.customAIPrompt || translations[promptLang]?.ai_prompt_template || translations['en']?.ai_prompt_template;
+    return template
         .replace('{question}', questionText)
         .replace('{options}', optionsText);
+}
 
-    // Always copy to clipboard as a fallback
-    navigator.clipboard.writeText(prompt).then(() => {
-        if (AppState.aiIntegration === 'clipboard') {
-            showToast(t('copy_ai_success'));
+function executeAiSearch(providerId, isPreview = false) {
+    const prompt = getFormattedPrompt(isPreview);
+    if (!prompt) return;
 
-            // Add copy-flash animation
-            const btnId = isPreview ? 'previewMenuCopyAIInline' : 'menuCopyAIInline';
-            const btn = document.getElementById(btnId);
-            if (btn) {
-                btn.classList.add('copy-flash');
-                setTimeout(() => btn.classList.remove('copy-flash'), 500);
-            }
-        }
-    }).catch(err => console.error('Clipboard error:', err));
+    const provider = (AppState.aiProviders || DEFAULT_AI_PROVIDERS).find(p => p.id === providerId);
+    if (!provider) return;
 
-    // AI Integration Logic
-    if (AppState.aiIntegration !== 'clipboard') {
-        const aiUrls = {
-            gemini: 'https://gemini.google.com/app?prompt=',
-            chatgpt: 'https://chatgpt.com/?q=',
-            claude: 'https://claude.ai/new?q=',
-            kimi: 'https://kimi.moonshot.cn/?q=',
-            perplexity: 'https://www.perplexity.ai/search?q=',
-            copilot: 'https://copilot.microsoft.com/?q=',
-            deepseek: 'https://chat.deepseek.com/?q='
-        };
-        const baseUrl = aiUrls[AppState.aiIntegration];
-        if (baseUrl) {
-            window.open(baseUrl + encodeURIComponent(prompt), '_blank');
-            if (menuActive) toggleMenu();
-        }
+    const btnId = isPreview ? 'previewMenuCopyToggleInline' : 'menuCopyToggleInline';
+    const btn = document.getElementById(btnId);
+    if (btn) {
+        btn.classList.add('copy-flash');
+        setTimeout(() => btn.classList.remove('copy-flash'), 500);
+    }
+
+    if (provider.url.includes('{PROMPT}')) {
+        const targetUrl = provider.url.replace('{PROMPT}', encodeURIComponent(prompt));
+        window.open(targetUrl, '_blank', 'noopener,noreferrer');
+    } else {
+        navigator.clipboard.writeText(prompt).then(() => {
+            showToast(t('prompt_copied_toast') || 'Soru promptu panoya alındı. AI sayfasına yapıştırabilirsiniz.');
+            window.open(provider.url, '_blank', 'noopener,noreferrer');
+        }).catch(err => console.error('Clipboard error:', err));
     }
 }
 
@@ -1661,7 +1731,7 @@ function copyQuestionText() {
         showToast(t('copy_success') || 'Soru metni kopyalandı.');
     });
 
-    const btnId = isPreview ? 'previewMenuCopyTextInline' : 'menuCopyTextInline';
+    const btnId = isPreview ? 'previewMenuCopyToggleInline' : 'menuCopyToggleInline';
     const btn = document.getElementById(btnId);
     if (btn) {
         btn.classList.add('copy-flash');
@@ -1739,8 +1809,108 @@ async function resetCustomPrompt() {
     }
 }
 
+// AI Provider Manager Functions
+function openAiManager() {
+    const overlay = document.getElementById('aiProvidersOverlay');
+    if (!overlay) return;
+    renderAiManagerList();
+    overlay.classList.add('active');
+    if (menuActive) toggleMenu();
+}
+
+function closeAiManager() {
+    const overlay = document.getElementById('aiProvidersOverlay');
+    if (overlay) overlay.classList.remove('active');
+}
+
+function renderAiManagerList() {
+    const container = document.getElementById('aiProvidersList');
+    if (!container) return;
+    container.innerHTML = '';
+
+    const providers = AppState.aiProviders || DEFAULT_AI_PROVIDERS;
+
+    providers.forEach(p => {
+        const item = document.createElement('div');
+        item.className = 'ai-manage-item';
+
+        item.innerHTML = `
+            <div class="ai-manage-item-info">
+                <span class="ai-manage-item-name">${p.name}</span>
+                <span class="ai-manage-item-url">${p.url}</span>
+            </div>
+            <button class="icon-btn delete-ai-btn" style="color: #ef4444;" title="${t('delete') || 'Sil'}">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="16" height="16">
+                    <polyline points="3 6 5 6 21 6"></polyline>
+                    <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path>
+                </svg>
+            </button>
+        `;
+
+        item.querySelector('.delete-ai-btn').onclick = () => {
+            deleteAiProvider(p.id);
+        };
+
+        container.appendChild(item);
+    });
+}
+
+function addNewAiProvider() {
+    const nameInput = document.getElementById('newAiNameInput');
+    const urlInput = document.getElementById('newAiUrlInput');
+
+    const name = nameInput.value.trim();
+    let url = urlInput.value.trim();
+
+    if (!name || !url) {
+        showToast('Lütfen servis adı ve URL girin.');
+        return;
+    }
+
+    if (!url.startsWith('http://') && !url.startsWith('https://')) {
+        url = 'https://' + url;
+    }
+
+    let domain = '';
+    try {
+        domain = new URL(url.replace('{PROMPT}', 'test')).hostname;
+    } catch (e) {
+        domain = 'ai.com';
+    }
+
+    const newProvider = {
+        id: 'custom_' + Date.now(),
+        name: name,
+        url: url,
+        domain: domain
+    };
+
+    AppState.aiProviders.push(newProvider);
+    saveAiProviders();
+
+    nameInput.value = '';
+    urlInput.value = '';
+
+    renderAiManagerList();
+    showToast(t('save_success') || 'Kaydedildi');
+}
+
+function deleteAiProvider(id) {
+    if (AppState.aiProviders.length <= 1) {
+        showToast('En az bir AI servisi olmalıdır.');
+        return;
+    }
+    AppState.aiProviders = AppState.aiProviders.filter(p => p.id !== id);
+    saveAiProviders();
+    renderAiManagerList();
+    showToast(t('reset_success') || 'Silindi');
+}
+
 function closeAllModals() {
     let closedAny = false;
+
+    // 0. AI Copy Dropdowns
+    closeAllAiCopyDropdowns();
 
     // 1. Question Editor
     const qe = document.getElementById('questionEditorOverlay');
@@ -1753,6 +1923,13 @@ function closeAllModals() {
     const pe = document.getElementById('promptEditorOverlay');
     if (pe && pe.classList.contains('active')) {
         closePromptEditor();
+        closedAny = true;
+    }
+
+    // 2.5 AI Providers Overlay
+    const aio = document.getElementById('aiProvidersOverlay');
+    if (aio && aio.classList.contains('active')) {
+        closeAiManager();
         closedAny = true;
     }
 
