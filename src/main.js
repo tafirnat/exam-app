@@ -33,8 +33,8 @@ window.switchView = switchView; // Ensure it's available for modules
 window.goHome = goHome;
 
 // --- Initialize ---
-document.addEventListener('DOMContentLoaded', () => {
-    console.log('DOMContentLoaded start');
+const initApp = () => {
+    console.log('initApp start');
     
     // Backwards compatibility helper to make contenteditable divs act like textareas
     const setupDivInput = (id) => {
@@ -178,15 +178,23 @@ document.addEventListener('DOMContentLoaded', () => {
                 changed = true;
             }
             if (s.lastReview === undefined) {
-                s.lastReview = null;
+                s.lastReview = Date.now();
                 changed = true;
             }
+
             if (changed) migrationCount++;
         });
+
         if (migrationCount > 0) {
-            console.log(`Migrated ${migrationCount} stats records`);
+            console.log(`Migrated ${migrationCount} stats records with new FSRS metrics.`);
             saveStats();
         }
+
+        console.log('Initializing timer...');
+        initTimer();
+
+        console.log('Initializing sync...');
+        initSync();
 
         console.log('Rendering stats list...');
         renderStatsList();
@@ -201,7 +209,6 @@ document.addEventListener('DOMContentLoaded', () => {
         console.log('Updating translation UI...');
         updateTranslationUI();
 
-        console.log('Initializing GitHub sync...');
         initSync();
 
 
