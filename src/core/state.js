@@ -45,8 +45,17 @@ export const AppState = {
     githubToken: localStorage.getItem('focus_app_github_token') || null,
     githubGistId: localStorage.getItem('focus_app_github_gist_id') || null,
     githubUser: JSON.parse(localStorage.getItem('focus_app_github_user') || 'null'),
-    lastSyncTime: parseInt(localStorage.getItem('focus_app_last_sync') || '0', 10)
+    lastSyncTime: parseInt(localStorage.getItem('focus_app_last_sync') || '0', 10),
+    deletedSourceIds: JSON.parse(localStorage.getItem('focus_app_deleted_sources') || '[]')
 };
+
+export function trackDeletedSource(id) {
+    if (!id) return;
+    if (!AppState.deletedSourceIds.includes(id)) {
+        AppState.deletedSourceIds.push(id);
+        localStorage.setItem('focus_app_deleted_sources', JSON.stringify(AppState.deletedSourceIds));
+    }
+}
 
 export function saveStats() {
     localStorage.setItem('focus_app_stats_local', JSON.stringify(AppState.stats));

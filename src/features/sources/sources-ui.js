@@ -45,8 +45,11 @@ export async function removeSource(id) {
         m.saveRecentTests();
     });
 
-    // 3. Remove from sources
+    // 3. Remove from sources and track deletion for sync
     AppState.sources = AppState.sources.filter(s => s.id !== id);
+    import('../../core/state.js').then(m => {
+        if (typeof m.trackDeletedSource === 'function') m.trackDeletedSource(id);
+    }).catch(() => {});
     
     if (AppState.currentSourceKey === id) {
         import('../../core/state.js').then(m => m.saveCurrentSource(null));

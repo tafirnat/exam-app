@@ -21,6 +21,7 @@ export function getSyncPayload() {
         version: 2,
         lastUpdated: Date.now(),
         sources: AppState.sources || [],
+        deletedSourceIds: AppState.deletedSourceIds || [],
         stats: AppState.stats || {},
         totalStats: AppState.totalStats || {},
         recentTests: AppState.recentTests || [],
@@ -367,6 +368,12 @@ export async function syncFromGist(options = {}) {
                 saveSources();
             }
 
+            // Apply merged deleted source IDs (Tombstones)
+            if (Array.isArray(merged.deletedSourceIds)) {
+                AppState.deletedSourceIds = merged.deletedSourceIds;
+                localStorage.setItem('focus_app_deleted_sources', JSON.stringify(merged.deletedSourceIds));
+            }
+
             // Apply merged stats
             if (merged.stats && typeof merged.stats === 'object') {
                 AppState.stats = merged.stats;
@@ -419,14 +426,23 @@ export async function syncFromGist(options = {}) {
 export function mergeSyncData(local, remote) {
     let hasLocalChanges = false;
 
-    // 1. Merge Sources (by ID)
+    // 0. Combine Tombstone Deletion Trackers
+    const mergedDeletedIds = Array.from(new Set([
+        ...(remote.deletedSourceIds || []),
+        ...(local.deletedSourceIds || []),
+        ...(AppState.deletedSourceIds || [])
+    ]));
+
+    // 1. Merge Sources (by ID, respecting Tombstones)
     const sourcesMap = new Map();
     (remote.sources || []).forEach(s => {
-        if (s && s.id) sourcesMap.set(s.id, s);
+        if (s && s.id && !mergedDeletedIds.includes(s.id)) {
+            sourcesMap.set(s.id, s);
+        }
     });
 
     (local.sources || []).forEach(s => {
-        if (!s || !s.id) return;
+        if (!s || !s.id || mergedDeletedIds.includes(s.id)) return;
         if (!sourcesMap.has(s.id)) {
             sourcesMap.set(s.id, s);
             hasLocalChanges = true;
@@ -441,11 +457,14 @@ export function mergeSyncData(local, remote) {
 
     const mergedSources = Array.from(sourcesMap.values());
 
-    // 2. Merge Stats
+    // 2. Merge Stats (excluding stats for deleted sources)
     const mergedStats = { ...(remote.stats || {}) };
     const localStats = local.stats || {};
 
     Object.keys(localStats).forEach(qid => {
+        const sourceId = qid.split('_')[0];
+        if (mergedDeletedIds.includes(sourceId)) return;
+
         const lStat = localStats[qid];
         const rStat = mergedStats[qid];
 
@@ -469,10 +488,18 @@ export function mergeSyncData(local, remote) {
         }
     });
 
-    // 3. Merge Recent Tests
+    // Remove any orphaned stats for deleted sources
+    Object.keys(mergedStats).forEach(qid => {
+        const sourceId = qid.split('_')[0];
+        if (mergedDeletedIds.includes(sourceId)) {
+            delete mergedStats[qid];
+        }
+    });
+
+    // 3. Merge Recent Tests (excluding deleted sources)
     const testMap = new Map();
     [...(remote.recentTests || []), ...(local.recentTests || [])].forEach(t => {
-        if (t && t.id) {
+        if (t && t.id && !mergedDeletedIds.includes(t.sourceId)) {
             testMap.set(t.id, t);
         }
     });
@@ -485,6 +512,7 @@ export function mergeSyncData(local, remote) {
         stats: mergedStats,
         totalStats: remote.totalStats || local.totalStats,
         recentTests: mergedRecentTests,
+        deletedSourceIds: mergedDeletedIds,
         hasLocalChanges
     };
 }
