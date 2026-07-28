@@ -911,15 +911,14 @@ function createSourceItemDOM(s, folderId) {
 
     const actionsBtn = document.createElement('button');
     actionsBtn.className = 'icon-btn';
-    actionsBtn.style.color = 'var(--primary-color)';
     actionsBtn.title = t('source_actions_title');
     actionsBtn.innerHTML = `
-        <svg viewBox="0 0 24 24" width="20" height="20">
-            <rect x="4" y="4" width="7" height="7" rx="1.5" fill="currentColor"></rect>
-            <circle cx="16.5" cy="7.5" r="3.5" class="status-dot-svg ${s.active ? 'active' : ''}" 
-                stroke="currentColor" stroke-width="2" fill="none"></circle>
-            <rect x="4" y="13" width="7" height="7" rx="1.5" fill="currentColor"></rect>
-            <rect x="13" y="13" width="7" height="7" rx="1.5" fill="currentColor"></rect>
+        <svg viewBox="0 0 24 24" width="20" height="20" class="source-actions-icon">
+            <rect x="4" y="4" width="7" height="7" rx="1.5" class="sq sq-tl"></rect>
+            <circle cx="16.5" cy="7.5" r="3.5" class="status-dot-svg ${s.active ? 'active' : ''}"
+                stroke-width="2" fill="none"></circle>
+            <rect x="4" y="13" width="7" height="7" rx="1.5" class="sq sq-bl"></rect>
+            <rect x="13" y="13" width="7" height="7" rx="1.5" class="sq sq-br"></rect>
         </svg>
     `;
     actionsBtn.onclick = (e) => {

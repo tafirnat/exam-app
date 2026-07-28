@@ -2832,6 +2832,27 @@ input:checked + .slider-small:before {
     animation: pulse-svg 2s infinite;
 }
 
+/* Source actions icon: grey squares keep the LED dot as the only accent */
+.source-actions-icon .sq {
+    fill: var(--text-secondary);
+    transition: fill-opacity 0.2s ease;
+}
+
+.source-actions-icon .sq-tl {
+    fill-opacity: 0.5;
+}
+
+.source-actions-icon .sq-br {
+    fill-opacity: 0.32;
+}
+
+.source-actions-icon .sq-bl {
+    fill-opacity: 0.16;
+    stroke: var(--text-secondary);
+    stroke-opacity: 0.6;
+    stroke-width: 1.2;
+}
+
 @keyframes pulse-svg {
     0% {
         opacity: 1;
