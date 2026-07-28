@@ -81,8 +81,8 @@ export function loginWithOAuth() {
     const state = Math.random().toString(36).substring(2) + Date.now().toString(36);
     sessionStorage.setItem('github_oauth_state', state);
 
-    const redirectUri = window.location.origin + window.location.pathname;
-    const authUrl = `https://github.com/login/oauth/authorize?client_id=${encodeURIComponent(GITHUB_CLIENT_ID)}&scope=gist&state=${encodeURIComponent(state)}&redirect_uri=${encodeURIComponent(redirectUri)}`;
+    // Omit explicit redirect_uri so GitHub defaults to the registered callback URL in OAuth App settings
+    const authUrl = `https://github.com/login/oauth/authorize?client_id=${encodeURIComponent(GITHUB_CLIENT_ID)}&scope=gist&state=${encodeURIComponent(state)}`;
 
     window.location.href = authUrl;
 }
