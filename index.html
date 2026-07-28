@@ -1315,7 +1315,7 @@
                 </div>
                 <div class="input-group">
                     <label data-i18n="folder_color">Klasör Rengi</label>
-                    <div style="display: flex; gap: 0.5rem; margin-top: 0.25rem;" id="folderColorPicker">
+                    <div style="display: flex; flex-wrap: nowrap; overflow-x: auto; gap: 0.5rem; margin-top: 0.25rem; padding-bottom: 0.25rem; scrollbar-width: thin; -webkit-overflow-scrolling: touch;" id="folderColorPicker">
                         <!-- Colors will be dynamically generated here -->
                     </div>
                     <input type="hidden" id="folderColorInput" value="#3b82f6">
@@ -1325,9 +1325,15 @@
                     <input type="text" id="folderDescInput" placeholder="Örn: 1. Dönem Sınavları">
                 </div>
             </div>
-            <div class="modal-footer" style="display: flex; gap: 0.5rem; justify-content: flex-end;">
-                <button class="btn btn-subtle" id="folderManageCancelBtn" data-i18n="cancel">İptal</button>
-                <button class="btn btn-primary" id="folderManageSaveBtn" data-i18n="save_folder">Kaydet</button>
+            <div class="modal-footer" style="display: flex; gap: 0.5rem; justify-content: space-between;">
+                <button class="btn" id="folderManageDeleteBtn" style="display: none; background-color: var(--error-bg, #ef4444); color: white; padding: 0.5rem 0.75rem; border-radius: var(--radius-sm); font-size: 0.85rem;" data-i18n="delete">
+                    <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2.5" style="margin-right: 0.25rem;"><polyline points="3 6 5 6 21 6"></polyline><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path></svg>
+                    Sil
+                </button>
+                <div style="display: flex; gap: 0.5rem; margin-left: auto;">
+                    <button class="btn btn-subtle" id="folderManageCancelBtn" data-i18n="cancel">İptal</button>
+                    <button class="btn btn-primary" id="folderManageSaveBtn" data-i18n="save_folder">Kaydet</button>
+                </div>
             </div>
         </div>
     </div>

@@ -440,6 +440,15 @@ function handleDragOver(e) {
     e.dataTransfer.dropEffect = 'move';
     const target = e.target.closest('.source-item, .folder-header');
     if (target && !target.classList.contains('dragging')) {
+        // Clear old targets
+        document.querySelectorAll('.drag-over, .drag-over-top, .drag-over-bottom').forEach(el => {
+            if (el !== target) {
+                el.classList.remove('drag-over', 'drag-over-top', 'drag-over-bottom');
+                el.style.background = '';
+                el.style.boxShadow = '';
+            }
+        });
+
         const rect = target.getBoundingClientRect();
         const y = e.clientY - rect.top;
         
@@ -597,17 +606,19 @@ export function renderSourcesList() {
         titleDiv.style.alignItems = 'center';
         titleDiv.style.gap = '0.5rem';
         
+        const folderSourcesCount = AppState.sources.filter(s => s.folderId === folder.id).length;
+
         const isCollapsed = collapsedFolders.has(folder.id);
         const toggleIcon = isCollapsed 
             ? `<svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" style="opacity: 0.6;"><polyline points="9 18 15 12 9 6"></polyline></svg>`
             : `<svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" style="opacity: 0.6;"><polyline points="6 9 12 15 18 9"></polyline></svg>`;
 
-        const gripIcon = `<div style="color: var(--text-secondary); display: flex; align-items: center; margin-right: 0.2rem;"><svg width="12" height="20" viewBox="0 0 16 24" fill="currentColor"><circle cx="6" cy="6" r="1.5"/><circle cx="10" cy="6" r="1.5"/><circle cx="6" cy="12" r="1.5"/><circle cx="10" cy="12" r="1.5"/><circle cx="6" cy="18" r="1.5"/><circle cx="10" cy="18" r="1.5"/></svg></div>`;
+        const gripIcon = `<div style="color: var(--text-secondary); display: flex; align-items: center; margin: 0 0.1rem; transform: scale(0.9); opacity: 0.6;"><svg width="6" height="24" viewBox="0 0 6 24" fill="currentColor"><circle cx="3" cy="2" r="1.5"/><circle cx="3" cy="7" r="1.5"/><circle cx="3" cy="12" r="1.5"/><circle cx="3" cy="17" r="1.5"/><circle cx="3" cy="22" r="1.5"/></svg></div>`;
 
         titleDiv.innerHTML = `
             ${gripIcon}
             ${toggleIcon}
-            <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="${folder.color || '#3b82f6'}" stroke-width="2">
+            <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="${folder.color || '#3b82f6'}" stroke-width="2" style="margin-left: 0.2rem;">
                 <path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"></path>
             </svg>
             <div style="display: flex; flex-direction: column;">
@@ -616,29 +627,31 @@ export function renderSourcesList() {
             </div>
         `;
         
+        const countDiv = document.createElement('div');
+        countDiv.style.fontSize = '2.2rem';
+        countDiv.style.fontWeight = '900';
+        countDiv.style.fontFamily = 'monospace';
+        countDiv.style.color = 'var(--text-secondary)';
+        countDiv.style.opacity = '0.12';
+        countDiv.style.transform = 'skewX(-12deg)';
+        countDiv.style.marginRight = '0.5rem';
+        countDiv.style.userSelect = 'none';
+        countDiv.style.lineHeight = '1';
+        countDiv.textContent = folderSourcesCount;
+
         const editBtn = document.createElement('button');
         editBtn.className = 'icon-btn';
-        editBtn.style.color = 'var(--text-secondary)';
-        editBtn.innerHTML = `<svg viewBox="0 0 24 24" width="18" height="18"><rect x="4" y="4" width="7" height="7" rx="1.5" fill="currentColor"></rect><rect x="13" y="4" width="7" height="7" rx="1.5" fill="currentColor"></rect><rect x="4" y="13" width="7" height="7" rx="1.5" fill="currentColor"></rect><rect x="13" y="13" width="7" height="7" rx="1.5" fill="currentColor"></rect></svg>`;
+        editBtn.innerHTML = `<svg viewBox="0 0 24 24" width="18" height="18"><rect x="4" y="4" width="7" height="7" rx="1.5" fill="${folder.color}" opacity="1"></rect><rect x="13" y="4" width="7" height="7" rx="1.5" fill="${folder.color}" opacity="0.7"></rect><rect x="4" y="13" width="7" height="7" rx="1.5" fill="${folder.color}" opacity="0.4"></rect><rect x="13" y="13" width="7" height="7" rx="1.5" fill="${folder.color}" opacity="0.2"></rect></svg>`;
         editBtn.onclick = (e) => {
             e.stopPropagation();
             showFolderManageModal(folder);
         };
         
-        const delBtn = document.createElement('button');
-        delBtn.className = 'icon-btn';
-        delBtn.style.color = 'var(--error-color)';
-        delBtn.innerHTML = `<svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2"><polyline points="3 6 5 6 21 6"></polyline><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path></svg>`;
-        delBtn.onclick = (e) => {
-            e.stopPropagation();
-            showFolderDeleteModal(folder.id);
-        };
-        
         const actionsDiv = document.createElement('div');
         actionsDiv.style.display = 'flex';
-        actionsDiv.style.gap = '0.25rem';
+        actionsDiv.style.alignItems = 'center';
+        actionsDiv.appendChild(countDiv);
         actionsDiv.appendChild(editBtn);
-        actionsDiv.appendChild(delBtn);
         
         header.appendChild(titleDiv);
         header.appendChild(actionsDiv);
