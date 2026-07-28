@@ -47,18 +47,25 @@ export function getCorrectAnswers(q) {
     }
 
     // Check 'answer' object patterns
-    if (q.answer) {
-        if (Array.isArray(q.answer.correct_ids)) return q.answer.correct_ids;
-        if (Array.isArray(q.answer.correctIds)) return q.answer.correctIds;
-        if (Array.isArray(q.answer.accepted_texts)) return q.answer.accepted_texts;
-        if (typeof q.answer === 'string' && q.answer.trim()) return [q.answer];
+    if (q.answer && typeof q.answer === 'object') {
+        if (Array.isArray(q.answer.correct_ids) && q.answer.correct_ids.length > 0) return q.answer.correct_ids;
+        if (Array.isArray(q.answer.correct_option_ids) && q.answer.correct_option_ids.length > 0) return q.answer.correct_option_ids;
+        if (Array.isArray(q.answer.correctIds) && q.answer.correctIds.length > 0) return q.answer.correctIds;
+        if (Array.isArray(q.answer.accepted_texts) && q.answer.accepted_texts.length > 0) return q.answer.accepted_texts;
+        if (q.answer.correct_id !== undefined) return [q.answer.correct_id];
+        if (q.answer.correct_option_id !== undefined) return [q.answer.correct_option_id];
+        if (q.answer.correct_option !== undefined) return [q.answer.correct_option];
+        if (q.answer.correct_answer !== undefined) return Array.isArray(q.answer.correct_answer) ? q.answer.correct_answer : [q.answer.correct_answer];
+        if (q.answer.correct_text !== undefined) return Array.isArray(q.answer.correct_text) ? q.answer.correct_text : [q.answer.correct_text];
+    } else if (typeof q.answer === 'string' && q.answer.trim()) {
+        return [q.answer];
     }
 
     // Check direct properties
-    if (q.correct_answer) {
+    if (q.correct_answer !== undefined) {
         return Array.isArray(q.correct_answer) ? q.correct_answer : [q.correct_answer];
     }
-    if (q.correctAnswer) {
+    if (q.correctAnswer !== undefined) {
         return Array.isArray(q.correctAnswer) ? q.correctAnswer : [q.correctAnswer];
     }
 

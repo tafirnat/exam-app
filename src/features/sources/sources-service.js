@@ -62,16 +62,15 @@ export function validateExamSchema(data) {
                 errors.push(`${prefix}: Flashcard türü için answer.back zorunludur.`);
             }
         } else if (!TEXT_TYPES.has(q.type)) {
-            const hasCorrectIds = Array.isArray(q.answer.correct_ids) && q.answer.correct_ids.length > 0;
-            const hasCorrectId = q.answer.correct_id !== undefined;
-            const hasCorrectOption = q.answer.correct_option !== undefined;
-            if (!hasCorrectIds && !hasCorrectId && !hasCorrectOption) {
+            const answers = getCorrectAnswers(q);
+            if (!Array.isArray(answers) || answers.length === 0) {
                 errors.push(`${prefix}: answer.correct_ids (veya correct_id) belirtilmelidir.`);
             }
         } else {
             const hasTexts = Array.isArray(q.answer.accepted_texts) && q.answer.accepted_texts.length > 0;
             const hasText = q.answer.correct_answer !== undefined || q.answer.correct_text !== undefined;
-            if (!hasTexts && !hasText) {
+            const answers = getCorrectAnswers(q);
+            if (!hasTexts && !hasText && answers.length === 0) {
                 errors.push(`${prefix}: Metin tipi sorular için answer.accepted_texts belirtilmelidir.`);
             }
         }
