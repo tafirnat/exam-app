@@ -916,7 +916,12 @@ export async function writeArchiveFile(archiveMap) {
         body: JSON.stringify({
             files: {
                 [ARCHIVE_FILENAME]: {
-                    content: JSON.stringify(archiveMap, null, 2)
+                    // Written without indentation: the archive is the one file that
+                    // grows without bound and gets re-uploaded whole on every change,
+                    // and pretty printing costs 20-50% on real question data.
+                    // Reading stays compatible - JSON.parse ignores whitespace, so
+                    // files written by older builds keep working unchanged.
+                    content: JSON.stringify(archiveMap)
                 }
             }
         })
