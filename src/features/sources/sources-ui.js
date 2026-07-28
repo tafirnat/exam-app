@@ -826,7 +826,7 @@ export function showFolderManageModal(folder = null) {
     
     if(!overlay) return;
 
-    const colors = ['#ef4444', '#f97316', '#f59e0b', '#10b981', '#3b82f6', '#6366f1', '#8b5cf6', '#ec4899'];
+    const colors = ['#ef4444', '#f97316', '#f59e0b', '#84cc16', '#10b981', '#06b6d4', '#3b82f6', '#6366f1', '#8b5cf6', '#d946ef', '#ec4899', '#f43f5e'];
     colorPicker.innerHTML = '';
     colors.forEach(c => {
         const d = document.createElement('div');
@@ -835,11 +835,12 @@ export function showFolderManageModal(folder = null) {
         d.style.borderRadius = '50%';
         d.style.backgroundColor = c;
         d.style.cursor = 'pointer';
-        d.style.border = (folder && folder.color === c) || (!folder && c === '#3b82f6') ? '2px solid white' : '2px solid transparent';
+        d.style.flexShrink = '0';
+        d.style.border = (folder && folder.color === c) || (!folder && c === '#3b82f6') ? '2px solid var(--text-primary)' : '2px solid transparent';
         d.onclick = () => {
-            Array.from(colorPicker.children).forEach(el => el.style.border = '2px solid transparent');
-            d.style.border = '2px solid white';
             colorInput.value = c;
+            Array.from(colorPicker.children).forEach(child => child.style.border = '2px solid transparent');
+            d.style.border = '2px solid var(--text-primary)';
         };
         colorPicker.appendChild(d);
     });
@@ -850,6 +851,20 @@ export function showFolderManageModal(folder = null) {
     colorInput.value = folder ? folder.color : '#3b82f6';
 
     const saveBtn = document.getElementById('folderManageSaveBtn');
+    
+    const deleteBtn = document.getElementById('folderManageDeleteBtn');
+    if (deleteBtn) {
+        if (folder) {
+            deleteBtn.style.display = 'flex';
+            deleteBtn.onclick = () => {
+                overlay.classList.remove('active');
+                showFolderDeleteModal(folder.id);
+            };
+        } else {
+            deleteBtn.style.display = 'none';
+        }
+    }
+
     saveBtn.onclick = () => {
         const name = nameInput.value.trim();
         if(!name) return;
