@@ -1,4 +1,4 @@
-import { AppState, saveSources, saveStats, saveRecentTests } from './state.js';
+import { AppState, saveSources, saveStats, saveRecentTests, clearLocalStudyData } from './state.js';
 import { showToast, showAlert } from './utils.js';
 import { t } from './i18n.js';
 
@@ -199,6 +199,21 @@ async function completeLoginWithToken(token) {
         avatar_url: userData.avatar_url
     };
 
+    // Check if switching from a different previously logged-in GitHub account
+    const previousUser = AppState.lastGithubUser || localStorage.getItem('focus_app_last_github_user');
+    let shouldReplaceLocalData = false;
+
+    if (previousUser && previousUser.toLowerCase() !== userObj.login.toLowerCase()) {
+        const choice = await showAccountSwitchModal(previousUser, userObj.login);
+        if (choice === 'replace') {
+            shouldReplaceLocalData = true;
+        }
+    }
+
+    if (shouldReplaceLocalData) {
+        clearLocalStudyData();
+    }
+
     // 2. Find or create Gist
     const gistId = await findOrCreateGist(token);
 
@@ -206,13 +221,19 @@ async function completeLoginWithToken(token) {
     AppState.githubToken = token;
     AppState.githubGistId = gistId;
     AppState.githubUser = userObj;
+    AppState.lastGithubUser = userObj.login;
 
     localStorage.setItem('focus_app_github_token', token);
     localStorage.setItem('focus_app_github_gist_id', gistId);
     localStorage.setItem('focus_app_github_user', JSON.stringify(userObj));
+    localStorage.setItem('focus_app_last_github_user', userObj.login);
 
-    // 4. Perform initial full sync (pull & merge)
-    await syncFromGist({ silent: false });
+    // 4. Perform initial sync
+    if (shouldReplaceLocalData) {
+        await pullRemoteGistOnly(token, gistId);
+    } else {
+        await syncFromGist({ silent: false });
+    }
 
     updateSyncUI();
     closeLoginModal();
@@ -220,9 +241,20 @@ async function completeLoginWithToken(token) {
 }
 
 /**
- * Signs out from GitHub sync.
+ * Signs out from GitHub sync with optional local data wipe prompt.
  */
-export function logout() {
+export async function logout() {
+    const clearData = await showLogoutDataClearPrompt();
+    if (clearData) {
+        clearLocalStudyData();
+        import('../features/test/test-engine.js').then(m => {
+            if (typeof m.buildQuestionPool === 'function') m.buildQuestionPool();
+        }).catch(() => {});
+        if (typeof window.renderSourcesList === 'function') window.renderSourcesList();
+        if (typeof window.renderStatsList === 'function') window.renderStatsList();
+        if (typeof window.updateHomeStats === 'function') window.updateHomeStats();
+    }
+
     AppState.githubToken = null;
     AppState.githubGistId = null;
     AppState.githubUser = null;
@@ -236,6 +268,186 @@ export function logout() {
     updateSyncUI();
     closeSyncDropdown();
     showToast(t('github_logout'));
+}
+
+/**
+ * Fetches remote Gist data and overwrites local state cleanly without merging previous account data back to Gist.
+ */
+async function pullRemoteGistOnly(token, gistId) {
+    try {
+        const res = await fetch(`${GITHUB_API_BASE}/gists/${gistId}`, {
+            headers: {
+                'Authorization': `Bearer ${token}`,
+                'Accept': 'application/vnd.github+json'
+            }
+        });
+
+        if (!res.ok) return;
+
+        const gist = await res.json();
+        const file = gist.files && gist.files[GIST_FILENAME];
+
+        if (file && file.content) {
+            const remotePayload = JSON.parse(file.content);
+
+            if (Array.isArray(remotePayload.sources)) {
+                AppState.sources = remotePayload.sources;
+                import('../features/sources/sources-service.js').then(m => {
+                    if (typeof m.normalizeQuestions === 'function') {
+                        AppState.sources.forEach(s => {
+                            if (s.questions && Array.isArray(s.questions)) {
+                                s.questions = m.normalizeQuestions(s.questions);
+                            }
+                        });
+                    }
+                }).catch(() => {});
+                saveSources();
+            }
+
+            if (Array.isArray(remotePayload.deletedSourceIds)) {
+                AppState.deletedSourceIds = remotePayload.deletedSourceIds;
+                localStorage.setItem('focus_app_deleted_sources', JSON.stringify(remotePayload.deletedSourceIds));
+            }
+
+            if (remotePayload.stats && typeof remotePayload.stats === 'object') {
+                AppState.stats = remotePayload.stats;
+                saveStats();
+            }
+
+            if (remotePayload.totalStats && typeof remotePayload.totalStats === 'object') {
+                AppState.totalStats = remotePayload.totalStats;
+                localStorage.setItem('focus_app_stats_global', JSON.stringify(AppState.totalStats));
+            }
+
+            if (Array.isArray(remotePayload.recentTests)) {
+                AppState.recentTests = remotePayload.recentTests.slice(0, 10);
+                saveRecentTests();
+            }
+
+            AppState.lastSyncTime = Date.now();
+            localStorage.setItem('focus_app_last_sync', AppState.lastSyncTime.toString());
+
+            import('../features/test/test-engine.js').then(m => {
+                if (typeof m.buildQuestionPool === 'function') m.buildQuestionPool();
+            }).catch(() => {});
+
+            if (typeof window.renderSourcesList === 'function') window.renderSourcesList();
+            if (typeof window.renderStatsList === 'function') window.renderStatsList();
+            if (typeof window.updateHomeStats === 'function') window.updateHomeStats();
+        }
+    } catch (err) {
+        console.error('pullRemoteGistOnly error:', err);
+    }
+}
+
+/**
+ * Custom Modal prompt when switching GitHub accounts.
+ */
+function showAccountSwitchModal(oldUser, newUser) {
+    return new Promise((resolve) => {
+        const overlay = document.getElementById('customModalOverlay');
+        const titleEl = document.getElementById('modalTitle');
+        const headerEl = document.getElementById('modalHeader');
+        const messageEl = document.getElementById('modalMessage');
+        const confirmBtn = document.getElementById('modalConfirmBtn');
+        const cancelBtn = document.getElementById('modalCancelBtn');
+
+        const title = t('github_account_switch_title');
+        const message = t('github_account_switch_msg', { oldUser, newUser });
+
+        if (!overlay || !messageEl || !confirmBtn || !cancelBtn) {
+            const replace = window.confirm(`${title}\n\n${message}`);
+            resolve(replace ? 'replace' : 'merge');
+            return;
+        }
+
+        const origConfirmText = confirmBtn.innerText;
+        const origCancelText = cancelBtn.innerText;
+
+        messageEl.innerText = message;
+        titleEl.innerText = title;
+        headerEl.style.display = 'block';
+
+        confirmBtn.innerText = t('github_switch_replace_btn');
+        cancelBtn.innerText = t('github_switch_merge_btn');
+        cancelBtn.style.display = 'inline-flex';
+
+        overlay.classList.add('active');
+
+        const handleReplace = () => {
+            cleanup();
+            resolve('replace');
+        };
+
+        const handleMerge = () => {
+            cleanup();
+            resolve('merge');
+        };
+
+        const cleanup = () => {
+            confirmBtn.removeEventListener('click', handleReplace);
+            cancelBtn.removeEventListener('click', handleMerge);
+            confirmBtn.innerText = origConfirmText;
+            cancelBtn.innerText = origCancelText;
+            overlay.classList.remove('active');
+        };
+
+        confirmBtn.addEventListener('click', handleReplace);
+        cancelBtn.addEventListener('click', handleMerge);
+    });
+}
+
+/**
+ * Custom Modal prompt on logout asking whether to clear local study data.
+ */
+function showLogoutDataClearPrompt() {
+    return new Promise((resolve) => {
+        const overlay = document.getElementById('customModalOverlay');
+        const titleEl = document.getElementById('modalTitle');
+        const headerEl = document.getElementById('modalHeader');
+        const messageEl = document.getElementById('modalMessage');
+        const confirmBtn = document.getElementById('modalConfirmBtn');
+        const cancelBtn = document.getElementById('modalCancelBtn');
+
+        if (!overlay || !messageEl || !confirmBtn || !cancelBtn) {
+            resolve(window.confirm(t('github_logout_clear_prompt')));
+            return;
+        }
+
+        const origConfirmText = confirmBtn.innerText;
+        const origCancelText = cancelBtn.innerText;
+
+        messageEl.innerText = t('github_logout_clear_prompt');
+        titleEl.innerText = t('github_logout_clear_title');
+        headerEl.style.display = 'block';
+
+        confirmBtn.innerText = t('github_logout_clear');
+        cancelBtn.innerText = t('github_logout_keep');
+        cancelBtn.style.display = 'inline-flex';
+
+        overlay.classList.add('active');
+
+        const handleClear = () => {
+            cleanup();
+            resolve(true);
+        };
+
+        const handleKeep = () => {
+            cleanup();
+            resolve(false);
+        };
+
+        const cleanup = () => {
+            confirmBtn.removeEventListener('click', handleClear);
+            cancelBtn.removeEventListener('click', handleKeep);
+            confirmBtn.innerText = origConfirmText;
+            cancelBtn.innerText = origCancelText;
+            overlay.classList.remove('active');
+        };
+
+        confirmBtn.addEventListener('click', handleClear);
+        cancelBtn.addEventListener('click', handleKeep);
+    });
 }
 
 /**

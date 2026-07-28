@@ -68,9 +68,29 @@ export const AppState = {
     githubToken: localStorage.getItem('focus_app_github_token') || null,
     githubGistId: localStorage.getItem('focus_app_github_gist_id') || null,
     githubUser: safeJSONParse('focus_app_github_user', null),
+    lastGithubUser: localStorage.getItem('focus_app_last_github_user') || null,
     lastSyncTime: parseInt(localStorage.getItem('focus_app_last_sync') || '0', 10),
     deletedSourceIds: safeJSONParse('focus_app_deleted_sources', [])
 };
+
+export function clearLocalStudyData() {
+    AppState.sources = [];
+    AppState.stats = {};
+    AppState.totalStats = {};
+    AppState.recentTests = [];
+    AppState.deletedSourceIds = [];
+    AppState.currentSourceKey = null;
+
+    localStorage.removeItem('focus_app_sources');
+    localStorage.removeItem('focus_app_stats_local');
+    localStorage.removeItem('focus_app_stats_global');
+    localStorage.removeItem('focus_app_recent_tests');
+    localStorage.removeItem('focus_app_deleted_sources');
+    localStorage.removeItem('focus_app_current_source');
+    localStorage.removeItem('focus_app_active_test');
+
+    clearActiveTest();
+}
 
 export function trackDeletedSource(id) {
     if (!id) return;
