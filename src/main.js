@@ -1684,13 +1684,19 @@ function getFormattedPrompt(isPreview = false) {
     }
     if (!q) return '';
 
-    const optionsText = q.options?.map(o => o.text).join(', ') || 'Textantwort';
-    const questionText = q.content?.text || q.text || '';
-
-    let promptLang = AppState.translationTarget || 'en';
+    let promptLang = AppState.language || 'tr';
     if (!['tr', 'en', 'de'].includes(promptLang)) {
         promptLang = 'en';
     }
+
+    const defaultTextAnswer = {
+        tr: 'Metin yanıtı',
+        en: 'Text response',
+        de: 'Textantwort'
+    }[promptLang] || 'Text response';
+
+    const optionsText = q.options?.map(o => o.text).join(', ') || defaultTextAnswer;
+    const questionText = q.content?.text || q.text || '';
 
     const template = AppState.customAIPrompt || translations[promptLang]?.ai_prompt_template || translations['en']?.ai_prompt_template;
     return template
@@ -1798,7 +1804,7 @@ function openPromptEditor() {
     const overlay = document.getElementById('promptEditorOverlay');
     const input = document.getElementById('customPromptInput');
 
-    let promptLang = AppState.translationTarget || 'en';
+    let promptLang = AppState.language || 'tr';
     if (!['tr', 'en', 'de'].includes(promptLang)) promptLang = 'en';
 
     const defaultPrompt = translations[promptLang]?.ai_prompt_template || translations['en']?.ai_prompt_template;
@@ -1823,7 +1829,7 @@ function saveCustomPrompt() {
 
 async function resetCustomPrompt() {
     if (await showConfirm(t('confirm_reset') || 'Varsayılan prompta dönmek istediğinize emin misiniz?')) {
-        let promptLang = AppState.translationTarget || 'en';
+        let promptLang = AppState.language || 'tr';
         if (!['tr', 'en', 'de'].includes(promptLang)) promptLang = 'en';
         const defaultPrompt = translations[promptLang]?.ai_prompt_template || translations['en']?.ai_prompt_template;
 
