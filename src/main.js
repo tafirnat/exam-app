@@ -31,6 +31,10 @@ window.renderStatsList = renderStatsList;
 window.updateHomeStats = updateHomeStats;
 window.switchView = switchView; // Ensure it's available for modules
 window.goHome = goHome;
+window.copyAIPrompt = copyAIPrompt;
+window.executeAiSearch = executeAiSearch;
+window.copyQuestionText = copyQuestionText;
+
 
 // --- Initialize ---
 const initApp = () => {
@@ -628,15 +632,21 @@ function updateIndicatorsPreview() {
 }
 
 function setupEventListeners() {
+    // Safe event listener binding helper
+    const setClick = (id, handler) => {
+        const el = document.getElementById(id);
+        if (el) el.onclick = handler;
+    };
+
     // Menu
-    document.getElementById('menuToggleBtn').onclick = toggleMenu;
-    document.getElementById('menuTheme').onclick = toggleTheme;
-    document.getElementById('menuExit').onclick = confirmExit;
-    document.getElementById('menuStar').onclick = toggleStar;
-    document.getElementById('menuFlag').onclick = toggleFlag;
-    document.getElementById('menuNote').onclick = toggleNoteArea;
-    document.getElementById('menuTranslateAll').onclick = translateAll;
-    document.getElementById('menuCopyAI').onclick = () => copyAIPrompt(false);
+    setClick('menuToggleBtn', toggleMenu);
+    setClick('menuTheme', toggleTheme);
+    setClick('menuExit', confirmExit);
+    setClick('menuStar', toggleStar);
+    setClick('menuFlag', toggleFlag);
+    setClick('menuNote', toggleNoteArea);
+    setClick('menuTranslateAll', translateAll);
+    setClick('menuCopyAI', () => copyAIPrompt(false));
 
     // Language selection
     // Language selection
