@@ -7,3 +7,10 @@ dist
 .env.*.local
 .npmrc
 
+# Logs & Debug files
+*.log
+diff.txt
+findstr_output.txt
+verification_test.json
+
+

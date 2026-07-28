@@ -1,6 +1,7 @@
 # 🎓 Exam App - Minimalist Learning Platform
 
-[![Live Demo](https://img.shields.io/badge/Demo-Online-brightgreen.svg)](https://tafirnat.github.io/exam-app/)
+[![Live Demo](https://img.shields.io/badge/Demo-Online-brightgreen.svg)](https://exam.rifatarslan.dev/)
+[![Deploy to GitHub Pages](https://github.com/tafirnat/exam-app/actions/workflows/deploy.yml/badge.svg)](https://github.com/tafirnat/exam-app/actions/workflows/deploy.yml)
 ![Lizenz](https://img.shields.io/badge/Lizenz-MIT-blue.svg)
 ![Technologien](https://img.shields.io/badge/Tech-HTML5%20%7C%20CSS3%20%7C%20JS-orange)
 
@@ -8,7 +9,7 @@ A professional, modular, and high-performance examination application designed f
 
 ## 🌐 Live Demo
 
-Experience the application live: **[https://tafirnat.github.io/exam-app/](https://tafirnat.github.io/exam-app/)**
+Experience the application live: **[https://exam.rifatarslan.dev/](https://exam.rifatarslan.dev/)**
 
 ---
 
@@ -55,7 +56,7 @@ Experience the application live: **[https://tafirnat.github.io/exam-app/](https:
 
 ```bash
 git clone https://github.com/tafirnat/exam-app.git
-cd exam-app/modular-exam-app
+cd exam-app
 npm install
 ```
 
@@ -71,6 +72,14 @@ npm run dev
 npm run build
 ```
 The result will be available in `dist/index.html`.
+
+## 🚀 CI/CD & Automated Deployment
+
+This repository includes continuous integration and deployment configured via **GitHub Actions**:
+- **Workflow Path**: [.github/workflows/deploy.yml](.github/workflows/deploy.yml)
+- **Automatic Deployment**: Every push to the `main` branch automatically triggers the build process via Vite and deploys the generated output (`dist/index.html`) to the `gh-pages` branch.
+- **Single-File Bundle**: Uses `vite-plugin-singlefile` to ensure all assets (HTML, CSS, JS) are bundled into a portable static application served directly on GitHub Pages.
+
 
 ## 🔄 Setting Up Cross-Device Sync (GitHub Gist)
 
