@@ -272,6 +272,10 @@ export const translations = {
         github_create_token: "Token Nasıl Alınır?",
         github_confirm_logout: "Oturumu kapatmak istediğinize emin misiniz? Verileriniz bu cihazda kalacaktır.",
         github_syncing: "Eşitleniyor...",
+        github_login_oauth: "GitHub ile Giriş Yap",
+        github_oauth_hint: "GitHub hesabınızla giriş yaparak tüm cihazlarınızdaki soru ve istatistikleri senkronize edin.",
+        github_pat_fallback: "Gelişmiş / Manuel Token Girişi",
+        github_env_missing: "GitHub Client ID yapılandırılmadı. Lütfen .env dosyasını kontrol edin.",
     },
     en: {
         theme_change: "Change Theme",
@@ -528,6 +532,10 @@ export const translations = {
         github_create_token: "How to get a token?",
         github_confirm_logout: "Are you sure you want to sign out? Your data will remain on this device.",
         github_syncing: "Syncing...",
+        github_login_oauth: "Sign in with GitHub",
+        github_oauth_hint: "Sign in with your GitHub account to sync questions and statistics across all your devices.",
+        github_pat_fallback: "Advanced / Manual Token Entry",
+        github_env_missing: "GitHub Client ID is not configured. Please check your .env file.",
     },
     de: {
         theme_change: "Design ändern",
@@ -784,6 +792,10 @@ export const translations = {
         github_create_token: "Wie bekomme ich ein Token?",
         github_confirm_logout: "Möchten Sie sich wirklich abmelden? Ihre Daten bleiben auf diesem Gerät.",
         github_syncing: "Synchronisiere...",
+        github_login_oauth: "Mit GitHub anmelden",
+        github_oauth_hint: "Melden Sie sich mit Ihrem GitHub-Konto an, um Fragen und Statistiken auf allen Ihren Geräten zu synchronisieren.",
+        github_pat_fallback: "Erweitert / Manuelle Token-Eingabe",
+        github_env_missing: "GitHub Client-ID ist nicht konfiguriert. Bitte überprüfen Sie Ihre .env-Datei.",
     },
 };
 

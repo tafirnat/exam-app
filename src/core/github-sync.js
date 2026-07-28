@@ -6,6 +6,10 @@ const GIST_FILENAME = 'exam_app_backup.json';
 const GIST_DESCRIPTION = 'Exam App - User Study & Resource Data Sync';
 const GITHUB_API_BASE = 'https://api.github.com';
 
+// Environment variables from Vite (.env)
+const GITHUB_CLIENT_ID = import.meta.env.VITE_GITHUB_CLIENT_ID || '';
+const WORKER_URL = import.meta.env.VITE_WORKER_URL || '';
+
 let syncTimer = null;
 let isSyncing = false;
 
@@ -38,7 +42,7 @@ export function getSyncPayload() {
 }
 
 /**
- * Initializes the GitHub sync state on app startup.
+ * Initializes the GitHub sync state on app startup and handles OAuth redirect callbacks.
  */
 export async function initSync() {
     AppState.githubToken = localStorage.getItem('focus_app_github_token') || null;
@@ -46,22 +50,108 @@ export async function initSync() {
     AppState.githubUser = JSON.parse(localStorage.getItem('focus_app_github_user') || 'null');
     AppState.lastSyncTime = parseInt(localStorage.getItem('focus_app_last_sync') || '0', 10);
 
+    setupSyncDOMListeners();
+
+    // Check if coming back from GitHub OAuth redirect (?code=...)
+    const hasCallback = await handleOAuthCallback();
+
     updateSyncUI();
 
-    // If logged in, perform automatic sync on startup
-    if (AppState.githubToken && AppState.githubGistId) {
+    // If logged in and no fresh OAuth callback happened, perform automatic sync
+    if (!hasCallback && AppState.githubToken && AppState.githubGistId) {
         try {
             await syncFromGist({ silent: true });
         } catch (err) {
             console.warn('Initial GitHub sync failed:', err);
         }
     }
-
-    setupSyncDOMListeners();
 }
 
 /**
- * Connects with a GitHub Personal Access Token.
+ * Initiates the standard GitHub OAuth 2.0 Login redirect.
+ */
+export function loginWithOAuth() {
+    if (!GITHUB_CLIENT_ID) {
+        // Fallback: If CLIENT_ID is not configured in .env, prompt user to use PAT or configure env
+        showToast(t('github_env_missing'));
+        togglePatManualSection(true);
+        return;
+    }
+
+    const state = Math.random().toString(36).substring(2) + Date.now().toString(36);
+    sessionStorage.setItem('github_oauth_state', state);
+
+    const redirectUri = window.location.origin + window.location.pathname;
+    const authUrl = `https://github.com/login/oauth/authorize?client_id=${encodeURIComponent(GITHUB_CLIENT_ID)}&scope=gist&state=${encodeURIComponent(state)}&redirect_uri=${encodeURIComponent(redirectUri)}`;
+
+    window.location.href = authUrl;
+}
+
+/**
+ * Handles the OAuth redirect URL parameters (?code=XYZ).
+ */
+async function handleOAuthCallback() {
+    const urlParams = new URLSearchParams(window.location.search);
+    const code = urlParams.get('code');
+    const state = urlParams.get('state');
+
+    if (!code) return false;
+
+    // Clean URL parameters immediately
+    window.history.replaceState({}, document.title, window.location.pathname);
+
+    // Verify CSRF state token
+    const savedState = sessionStorage.getItem('github_oauth_state');
+    sessionStorage.removeItem('github_oauth_state');
+
+    if (savedState && state && state !== savedState) {
+        showAlert(t('github_sync_error') + ': Invalid OAuth state', t('error_title') || 'Error');
+        return false;
+    }
+
+    setSyncingState(true);
+    showToast(t('github_syncing'));
+
+    try {
+        if (!WORKER_URL) {
+            throw new Error('Cloudflare Worker URL (VITE_WORKER_URL) is not configured in .env');
+        }
+
+        // Exchange code for token via Cloudflare Worker
+        const res = await fetch(WORKER_URL, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify({ code })
+        });
+
+        if (!res.ok) {
+            const errData = await res.json().catch(() => ({}));
+            throw new Error(errData.error || `HTTP ${res.status}`);
+        }
+
+        const data = await res.json();
+        if (data.error || !data.access_token) {
+            throw new Error(data.error_description || data.error || t('github_invalid_token'));
+        }
+
+        const token = data.access_token;
+
+        // Verify token & complete login flow
+        await completeLoginWithToken(token);
+        return true;
+    } catch (err) {
+        console.error('OAuth callback failed:', err);
+        showAlert(t('github_sync_error') + ': ' + err.message, t('error_title') || 'Error');
+        return false;
+    } finally {
+        setSyncingState(false);
+    }
+}
+
+/**
+ * Connects directly with a Personal Access Token (PAT) as a secondary/manual option.
  */
 export async function loginWithToken(token) {
     if (!token || !token.trim()) {
@@ -73,51 +163,59 @@ export async function loginWithToken(token) {
     setSyncingState(true);
 
     try {
-        // 1. Verify token & get user profile
-        const userRes = await fetch(`${GITHUB_API_BASE}/user`, {
-            headers: {
-                'Authorization': `Bearer ${cleanToken}`,
-                'Accept': 'application/vnd.github+json'
-            }
-        });
-
-        if (!userRes.ok) {
-            throw new Error(t('github_invalid_token'));
-        }
-
-        const userData = await userRes.json();
-        const userObj = {
-            login: userData.login,
-            name: userData.name || userData.login,
-            avatar_url: userData.avatar_url
-        };
-
-        // 2. Find existing Exam App Gist or create a new one
-        const gistId = await findOrCreateGist(cleanToken);
-
-        // 3. Save auth details to AppState & localStorage
-        AppState.githubToken = cleanToken;
-        AppState.githubGistId = gistId;
-        AppState.githubUser = userObj;
-
-        localStorage.setItem('focus_app_github_token', cleanToken);
-        localStorage.setItem('focus_app_github_gist_id', gistId);
-        localStorage.setItem('focus_app_github_user', JSON.stringify(userObj));
-
-        // 4. Perform initial full sync (pull & merge)
-        await syncFromGist({ silent: false });
-
-        updateSyncUI();
+        await completeLoginWithToken(cleanToken);
         closeLoginModal();
-        showToast(t('github_connected_as', { user: userObj.login }));
         return true;
     } catch (err) {
-        console.error('GitHub login error:', err);
+        console.error('GitHub token login error:', err);
         showAlert(err.message || t('github_sync_error'), t('error_title') || 'Error');
         return false;
     } finally {
         setSyncingState(false);
     }
+}
+
+/**
+ * Helper to fetch user details, setup Gist, and initialize sync.
+ */
+async function completeLoginWithToken(token) {
+    // 1. Fetch user profile
+    const userRes = await fetch(`${GITHUB_API_BASE}/user`, {
+        headers: {
+            'Authorization': `Bearer ${token}`,
+            'Accept': 'application/vnd.github+json'
+        }
+    });
+
+    if (!userRes.ok) {
+        throw new Error(t('github_invalid_token'));
+    }
+
+    const userData = await userRes.json();
+    const userObj = {
+        login: userData.login,
+        name: userData.name || userData.login,
+        avatar_url: userData.avatar_url
+    };
+
+    // 2. Find or create Gist
+    const gistId = await findOrCreateGist(token);
+
+    // 3. Save auth details to AppState & localStorage
+    AppState.githubToken = token;
+    AppState.githubGistId = gistId;
+    AppState.githubUser = userObj;
+
+    localStorage.setItem('focus_app_github_token', token);
+    localStorage.setItem('focus_app_github_gist_id', gistId);
+    localStorage.setItem('focus_app_github_user', JSON.stringify(userObj));
+
+    // 4. Perform initial full sync (pull & merge)
+    await syncFromGist({ silent: false });
+
+    updateSyncUI();
+    closeLoginModal();
+    showToast(t('github_connected_as', { user: userObj.login }));
 }
 
 /**
@@ -181,7 +279,7 @@ async function findOrCreateGist(token) {
     });
 
     if (!createRes.ok) {
-        throw new Error('Failed to create Gist on GitHub. Make sure your token has "Gist" scope.');
+        throw new Error('Failed to create Gist on GitHub. Make sure your token/OAuth scope has "Gist" permission.');
     }
 
     const newGist = await createRes.json();
@@ -330,11 +428,9 @@ export function mergeSyncData(local, remote) {
     (local.sources || []).forEach(s => {
         if (!s || !s.id) return;
         if (!sourcesMap.has(s.id)) {
-            // Local source is missing remotely → Add it
             sourcesMap.set(s.id, s);
             hasLocalChanges = true;
         } else {
-            // Source exists in both → pick the one with most recent lastUsed
             const existing = sourcesMap.get(s.id);
             if ((s.lastUsed || 0) > (existing.lastUsed || 0)) {
                 sourcesMap.set(s.id, s);
@@ -357,7 +453,6 @@ export function mergeSyncData(local, remote) {
             mergedStats[qid] = lStat;
             hasLocalChanges = true;
         } else {
-            // Combine stats accurately
             const mergedItem = {
                 correct: Math.max(lStat.correct || 0, rStat.correct || 0),
                 wrong: Math.max(lStat.wrong || 0, rStat.wrong || 0),
@@ -442,11 +537,6 @@ export function showLoginModal() {
     const modal = document.getElementById('githubLoginOverlay');
     if (modal) {
         modal.classList.add('active');
-        const input = document.getElementById('githubTokenInput');
-        if (input) {
-            input.value = '';
-            input.focus();
-        }
     }
 }
 
@@ -470,6 +560,14 @@ export function toggleSyncDropdown() {
 export function closeSyncDropdown() {
     const dropdown = document.getElementById('githubSyncDropdown');
     if (dropdown) dropdown.classList.remove('active');
+}
+
+export function togglePatManualSection(show) {
+    const section = document.getElementById('githubPatSection');
+    if (section) {
+        const isVisible = show !== undefined ? show : section.style.display === 'none';
+        section.style.display = isVisible ? 'block' : 'none';
+    }
 }
 
 function updateSyncDropdownInfo() {
@@ -506,9 +604,26 @@ function setupSyncDOMListeners() {
     const closeBtn = document.getElementById('githubLoginCloseBtn');
     if (closeBtn) closeBtn.onclick = closeLoginModal;
 
-    const connectBtn = document.getElementById('githubConnectBtn');
-    if (connectBtn) {
-        connectBtn.onclick = () => {
+    // Main OAuth Login button
+    const oauthLoginBtn = document.getElementById('githubOAuthLoginBtn');
+    if (oauthLoginBtn) {
+        oauthLoginBtn.onclick = () => {
+            loginWithOAuth();
+        };
+    }
+
+    // Toggle PAT manual input fallback
+    const togglePatBtn = document.getElementById('githubTogglePatBtn');
+    if (togglePatBtn) {
+        togglePatBtn.onclick = () => {
+            togglePatManualSection();
+        };
+    }
+
+    // Connect via PAT manual fallback
+    const connectPatBtn = document.getElementById('githubConnectPatBtn');
+    if (connectPatBtn) {
+        connectPatBtn.onclick = () => {
             const input = document.getElementById('githubTokenInput');
             if (input) loginWithToken(input.value);
         };
