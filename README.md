@@ -12,8 +12,11 @@ Experience the application live: **[https://tafirnat.github.io/exam-app/](https:
 
 ---
 
-## 🚀 Features
-
+- **GitHub Gist Cross-Device Sync**:
+  - **Zero Server Costs ($0)**: Seamlessly sync study resources (JSON question banks), question statistics, notes, stars, flags, test history, and preferences across devices using GitHub Gists.
+  - **Privacy First**: Data is stored securely in a private Gist (`exam_app_backup.json`) directly on your GitHub account without third-party servers.
+  - **Background Auto-Sync**: Debounced automatic sync saves your progress in the background as you solve questions.
+  - **Smart Merge Engine**: Intelligently resolves conflicts and merges study statistics from multiple devices.
 - **PWA Support**: Installable on mobile and desktop for a full-screen, app-like experience with offline support.
 - **Modular Architecture**: Clean, separate logic for state management, UI rendering, and test engines.
 - **FS-Algorithm (Spaced Repetition)**: 
@@ -68,6 +71,21 @@ npm run dev
 npm run build
 ```
 The result will be available in `dist/index.html`.
+
+## 🔄 Setting Up Cross-Device Sync (GitHub Gist)
+
+To sync your study progress, JSON question sources, notes, and stats across devices without any backend:
+
+1. **Create a GitHub Token:**
+   - Go to [GitHub Settings > Personal Access Tokens (Fine-grained)](https://github.com/settings/tokens?type=beta).
+   - Click **Generate new token**.
+   - Under **User permissions**, set **Gists** to **Read and write**. (No other permissions required).
+2. **Connect in Exam App:**
+   - Click the **GitHub ↗** button in the header.
+   - Paste your token and click **Connect & Sync**.
+3. **Enjoy Automatic Sync:**
+   - Exam App creates a secret Gist (`exam_app_backup.json`) under your GitHub account.
+   - Any progress, new JSON resources, or stats updated on one device will automatically sync across all your devices!
 
 ## 📊 Data Structure (JSON)
 
