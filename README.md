@@ -108,6 +108,15 @@ To sync your study progress, JSON question sources, notes, and stats across devi
 - **Automatic Online Sync**: When online, Exam App automatically fetches the latest data from your private GitHub Gist upon startup or reconnection.
 - **Smart Data Merging**: Uses a bi-directional merging engine (`mergeSyncData`) that compares item usage timestamps, question attempt counters, and tombstone deletion markers (`deletedSourceIds`) to keep all your devices up to date without data loss.
 
+### 🔗 Obsidian Integration (Community Plugin)
+
+If you use [Obsidian](https://obsidian.md/) to write and manage your test questions in JSON format, you can use the companion plugin:
+**[Obsidian ExamApp Gist Sync](https://github.com/tafirnat/Obsidian-ExamApp-Sync)**
+
+This plugin allows you to synchronize your local Obsidian Vault questions directly with your Exam App web data via GitHub Gists—without any external dependencies or scripts.
+- **Two-way Sync**: Push your local changes to the cloud or pull the latest test data from your Exam App.
+- **Safe Merging**: Intelligently preserves your test statistics, recent tests, and user settings while updating your question pools.
+
 ## 📊 Data Structure (JSON)
 
 The application reads exam data through a standard JSON structure. You can follow the schema below to create your own exams.
