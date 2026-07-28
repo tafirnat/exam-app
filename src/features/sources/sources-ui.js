@@ -264,12 +264,12 @@ export function showSourceActions(source) {
     if (!moveContainer) {
         moveContainer = document.createElement('div');
         moveContainer.id = 'moveToFolderContainer';
-        moveContainer.style.marginTop = '1rem';
-        moveContainer.style.borderTop = '1px solid var(--border-color)';
-        moveContainer.style.paddingTop = '1rem';
+        moveContainer.style.marginBottom = '0.5rem';
+        moveContainer.style.borderBottom = '1px solid var(--border-color)';
+        moveContainer.style.paddingBottom = '1rem';
         
         const actionsBody = overlay.querySelector('.modal-body');
-        if (actionsBody) actionsBody.appendChild(moveContainer);
+        if (actionsBody) actionsBody.prepend(moveContainer);
     }
     
     if (AppState.folders && AppState.folders.length > 0) {
@@ -513,7 +513,7 @@ function handleDrop(e, targetItem, targetType, targetFolderId) {
     } else if (draggedType === 'source') {
         const sourceIdx = AppState.sources.findIndex(s => s.id === draggedItem.id);
         if (sourceIdx > -1) {
-            if (targetType === 'folder' && targetEl.classList.contains('drag-over')) {
+            if (targetType === 'folder') {
                 AppState.sources[sourceIdx].folderId = targetItem.id;
                 AppState.sources[sourceIdx].order = AppState.sources.filter(s => s.folderId === targetItem.id).length;
                 saveSources();
@@ -628,15 +628,18 @@ export function renderSourcesList() {
         `;
         
         const countDiv = document.createElement('div');
-        countDiv.style.fontSize = '2.2rem';
+        countDiv.style.fontSize = '3.5rem';
         countDiv.style.fontWeight = '900';
-        countDiv.style.fontFamily = 'monospace';
-        countDiv.style.color = 'var(--text-secondary)';
-        countDiv.style.opacity = '0.12';
-        countDiv.style.transform = 'skewX(-12deg)';
-        countDiv.style.marginRight = '0.5rem';
+        countDiv.style.fontFamily = '"Black Ops One", Impact, sans-serif';
+        countDiv.style.color = '#ffffff';
+        countDiv.style.opacity = '0.08';
+        countDiv.style.position = 'absolute';
+        countDiv.style.right = '40px';
+        countDiv.style.top = '50%';
+        countDiv.style.transform = 'translateY(-50%) skewX(-5deg)';
         countDiv.style.userSelect = 'none';
         countDiv.style.lineHeight = '1';
+        countDiv.style.pointerEvents = 'none';
         countDiv.textContent = folderSourcesCount;
 
         const editBtn = document.createElement('button');
