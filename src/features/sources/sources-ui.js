@@ -505,14 +505,19 @@ function handleDrop(e, targetItem, targetType, targetFolderId) {
 
     if (draggedType === 'folder' && targetType === 'folder') {
         const draggedIdx = AppState.folders.findIndex(f => f.id === draggedItem.id);
-        const targetIdx = AppState.folders.findIndex(f => f.id === targetItem.id);
-        if (draggedIdx > -1 && targetIdx > -1) {
-            AppState.folders.splice(draggedIdx, 1);
+        if (draggedIdx > -1) {
+            let foldersToReorder = AppState.folders.filter(f => f.id !== draggedItem.id).sort((a, b) => (a.order || 0) - (b.order || 0));
             const rect = targetEl.getBoundingClientRect();
             const y = e.clientY - rect.top;
-            const insertIdx = y < rect.height / 2 ? targetIdx : targetIdx + 1;
-            AppState.folders.splice(insertIdx, 0, draggedItem);
-            AppState.folders.forEach((f, i) => f.order = i);
+            let insertIdx = foldersToReorder.findIndex(f => f.id === targetItem.id);
+            if (insertIdx === -1) insertIdx = foldersToReorder.length;
+            if (y >= rect.height / 2) insertIdx++;
+            
+            foldersToReorder.splice(insertIdx, 0, AppState.folders[draggedIdx]);
+            
+            foldersToReorder.forEach((f, i) => f.order = i);
+            AppState.folders = foldersToReorder;
+            
             import('../../core/state.js').then(m => m.saveFolders());
             renderSourcesList();
         }
@@ -716,6 +721,8 @@ function createSourceItemDOM(s, folderId) {
     item.style.backgroundColor = s.active ? 'var(--surface-hover)' : 'var(--surface-color)';
     item.style.gap = '0.5rem';
     item.style.userSelect = 'none';
+    item.style.webkitUserSelect = 'none';
+    item.style.webkitTouchCallout = 'none';
     
     // Drag handlers
     item.ondragstart = (e) => handleDragStart(e, s, 'source', folderId);
@@ -1017,3 +1024,16 @@ export function closeAllSourcesModals() {
         if (el) el.classList.remove('active');
     });
 }
+
+
+function clearGlobalDrag(e) {
+    if (!e.target.closest('.source-item, .folder-header')) {
+        document.querySelectorAll('.drag-over, .drag-over-top, .drag-over-bottom').forEach(el => {
+            el.classList.remove('drag-over', 'drag-over-top', 'drag-over-bottom');
+            el.style.background = '';
+            el.style.boxShadow = '';
+        });
+    }
+}
+document.addEventListener('dragover', clearGlobalDrag);
+document.addEventListener('dragend', clearGlobalDrag);
