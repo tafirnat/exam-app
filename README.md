@@ -17,6 +17,7 @@ Experience the application live: **[https://exam.rifatarslan.dev/](https://exam.
   - **Zero Server Costs ($0)**: Seamlessly sync study resources (JSON question banks), question statistics, notes, stars, flags, test history, and preferences across devices using GitHub Gists.
   - **Privacy First**: Data is stored securely in a private Gist (`exam_app_backup.json`) directly on your GitHub account without third-party servers.
   - **Background Auto-Sync**: Debounced automatic sync saves your progress in the background as you solve questions.
+  - **Offline-First & Auto-Sync**: Fully functional offline via `localStorage`. Automatically fetches and merges the latest cloud data when online.
   - **Smart Merge Engine**: Intelligently resolves conflicts and merges study statistics from multiple devices.
 - **PWA Support**: Installable on mobile and desktop for a full-screen, app-like experience with offline support.
 - **Modular Architecture**: Clean, separate logic for state management, UI rendering, and test engines.
@@ -95,6 +96,12 @@ To sync your study progress, JSON question sources, notes, and stats across devi
 3. **Enjoy Automatic Sync:**
    - Exam App creates a secret Gist (`exam_app_backup.json`) under your GitHub account.
    - Any progress, new JSON resources, or stats updated on one device will automatically sync across all your devices!
+
+### 📡 Offline-First & Online Synchronization
+
+- **Offline-First Storage**: All question banks, test progress, and FSRS metrics are saved locally in your browser (`localStorage`). The app remains fully functional without an active internet connection.
+- **Automatic Online Sync**: When online, Exam App automatically fetches the latest data from your private GitHub Gist upon startup or reconnection.
+- **Smart Data Merging**: Uses a bi-directional merging engine (`mergeSyncData`) that compares item usage timestamps, question attempt counters, and tombstone deletion markers (`deletedSourceIds`) to keep all your devices up to date without data loss.
 
 ## 📊 Data Structure (JSON)
 
