@@ -1,6 +1,6 @@
 
 import { AppState, saveStats } from '../../core/state.js';
-import { translateText, showToast, showConfirm, getCorrectAnswers } from '../../core/utils.js';
+import { translateText, showToast, showConfirm, getCorrectAnswers, escapeHTML } from '../../core/utils.js';
 import { t, targetLanguages } from '../../core/i18n.js';
 import { evaluateAnswer, updateStats, updateFlashcardStats, finishTest, calculateRetrievability } from './test-engine.js';
 import { resetTimerForNewQuestion, stopTimer } from './timer-module.js';
@@ -139,9 +139,8 @@ export function renderQuestion(isRefresh = false) {
     const isChecked = AppState.isAnswerChecked[qIndex];
 
     document.getElementById('progressText').innerText = `${t('question_label')} ${qIndex + 1} / ${AppState.currentTest.length}`;
-    document.getElementById('progressText').innerText = `${t('question_label')} ${qIndex + 1} / ${AppState.currentTest.length}`;
     const qTextEl = document.getElementById('questionText');
-    qTextEl.innerHTML = q.content?.text || q.text || '';
+    qTextEl.innerHTML = escapeHTML(q.content?.text || q.text || '');
 
     // Handle Media (Images)
     const card = qTextEl.closest('.question-card');
@@ -255,7 +254,7 @@ export function renderQuestion(isRefresh = false) {
             }
         } else if (hasExplanation) {
             // Display official question explanation (read-only by default)
-            noteInputEl.innerHTML = q.answer.explanation;
+            noteInputEl.innerHTML = escapeHTML(q.answer.explanation);
             if (noteLabelEl) {
                 noteLabelEl.removeAttribute('data-i18n');
                 noteLabelEl.innerText = t('explanation_label') || 'Explanation:';
@@ -285,7 +284,7 @@ export function renderQuestion(isRefresh = false) {
             container.innerHTML = `
                 <div class="flashcard-face flashcard-back">
                     <span class="flashcard-label">${t('flashcard_back')}</span>
-                    <div class="flashcard-text" id="flashcardBackText">${q.answer?.back || ''}</div>
+                    <div class="flashcard-text" id="flashcardBackText">${escapeHTML(q.answer?.back || '')}</div>
                     <div class="translation-text" id="trans_flashcardBackText" style="display:none;"></div>
                 </div>
             `;
@@ -384,7 +383,7 @@ export function renderQuestion(isRefresh = false) {
             const content = document.createElement('div');
             content.className = 'option-content';
             content.id = `optText_${opt.id}`;
-            content.innerHTML = opt.text;
+            content.innerHTML = escapeHTML(opt.text);
 
             const trans = document.createElement('div');
             trans.className = 'translation-text';
@@ -564,11 +563,15 @@ function renderSummarySection() {
             <div style="margin-bottom: 1.5rem;">
                 <h3 style="font-size: 1rem; margin-bottom: 0.75rem; color: var(--text-secondary);">${t('unanswered_questions')}</h3>
                 <div class="unanswered-list">
-                    ${unansweredIndices.map(idx => `
-                            <div class="unanswered-item" onclick="window.goToQuestion(${idx})" title="${AppState.questionMap[AppState.currentTest[idx]]?.text?.substring(0, 50)}...">
+                    ${unansweredIndices.map(idx => {
+                        const rawTitle = AppState.questionMap[AppState.currentTest[idx]]?.text || '';
+                        const safeTitle = escapeHTML(rawTitle.substring(0, 50));
+                        return `
+                            <div class="unanswered-item" data-question-idx="${idx}" title="${safeTitle}...">
                                 <span class="unanswered-item-num">#${idx + 1}</span>
                             </div>
-                        `).join('')}
+                        `;
+                    }).join('')}
                 </div>
             </div>
         `;
@@ -581,6 +584,16 @@ function renderSummarySection() {
             ${t('finish_test')}
         </button>
     `;
+
+    const unansweredContainer = summaryEl.querySelector('.unanswered-list');
+    if (unansweredContainer) {
+        unansweredContainer.onclick = (e) => {
+            const item = e.target.closest('.unanswered-item');
+            if (item && item.dataset.questionIdx !== undefined) {
+                window.goToQuestion(parseInt(item.dataset.questionIdx, 10));
+            }
+        };
+    }
 
     // Render Quick Nav content
     if (AppState.currentTest.length > 1) {

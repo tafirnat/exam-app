@@ -73,19 +73,36 @@ export function getCorrectAnswers(q) {
 }
 
 /**
- * Highlights a keyword within a string by wrapping it in a span.
+ * Escapes special HTML characters to prevent XSS vulnerabilities.
+ * @param {string} str The string to escape.
+ * @returns {string} The escaped string.
+ */
+export function escapeHTML(str) {
+    if (!str || typeof str !== 'string') return str || '';
+    return str
+        .replace(/&/g, '&amp;')
+        .replace(/</g, '&lt;')
+        .replace(/>/g, '&gt;')
+        .replace(/"/g, '&quot;')
+        .replace(/'/g, '&#039;');
+}
+
+/**
+ * Highlights a keyword within a string by wrapping it in a span, with HTML escaping for XSS safety.
  * @param {string} text The source text.
  * @param {string} keyword The keyword to highlight.
  * @returns {string} The HTML string with highlights.
  */
 export function highlightText(text, keyword) {
-    if (!text || !keyword || keyword.trim() === '') return text;
+    if (!text || typeof text !== 'string') return '';
+    const safeText = escapeHTML(text);
+    if (!keyword || typeof keyword !== 'string' || keyword.trim() === '') return safeText;
     try {
         const escapedKeyword = keyword.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
         const regex = new RegExp(`(${escapedKeyword})`, 'gi');
-        return text.replace(regex, '<span class="search-highlight">$1</span>');
+        return safeText.replace(regex, '<span class="search-highlight">$1</span>');
     } catch (e) {
-        return text;
+        return safeText;
     }
 }
 /**

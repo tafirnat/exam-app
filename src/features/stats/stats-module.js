@@ -1,6 +1,6 @@
 import { AppState } from '../../core/state.js';
 import { t } from '../../core/i18n.js';
-import { showConfirm } from '../../core/utils.js';
+import { showConfirm, escapeHTML } from '../../core/utils.js';
 import { calculateRetrievability } from '../test/test-engine.js';
 
 
@@ -221,7 +221,9 @@ export function renderStatsList(filter = 'all', searchKeyword = '') {
         const percent = total > 0 ? Math.round((s.correct / total) * 100) : 0;
         const item = document.createElement('div');
         item.className = 'stats-list-item';
-        const qText = q.content?.text || q.text || t('untitled_question');
+        const rawQText = q.content?.text || q.text || t('untitled_question');
+        const qText = escapeHTML(rawQText);
+        const safeSourceName = q.sourceName ? escapeHTML(q.sourceName) : '';
 
         const isLearned = !!s.learned;
         const streak = s.streak || 0;
@@ -234,7 +236,7 @@ export function renderStatsList(filter = 'all', searchKeyword = '') {
             <div style="flex: 1; min-width: 0;">
                 <div class="stats-item-text">${isLearned ? `<span class="learned-badge" title="${t('learned_label')}">🎓</span> ` : ''}${qText}</div>
                 <div style="display: flex; align-items: center; gap: 4px;">
-                    ${q.sourceName ? `<div class="stats-item-source">${q.sourceName}</div>` : ''}
+                    ${safeSourceName ? `<div class="stats-item-source">${safeSourceName}</div>` : ''}
                     <div class="stats-item-ref">#${q.originalIndex}</div>
                     ${streakAbs > 1 ? `<span class="stats-item-streak" title="Streak: ${streak}" style="font-size: 0.72rem; line-height: 1;">${streakIcon}${streakAbs}</span>` : ''}
                     ${rPercent !== null ? `<span class="stats-item-retrievability ${r <= 0.9 ? 'overdue' : ''}" title="Retrievability: ${rPercent}%" style="font-size: 0.72rem; line-height: 1;">🧠 ${rPercent}%</span>` : ''}

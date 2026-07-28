@@ -1,5 +1,20 @@
 import { detectLanguage, detectTranslationTarget } from './i18n.js';
 
+/**
+ * Safely reads and parses a JSON item from localStorage.
+ * Returns fallback value if item is missing or corrupted.
+ */
+export function safeJSONParse(key, fallback) {
+    try {
+        const item = localStorage.getItem(key);
+        if (item === null || item === undefined) return fallback;
+        return JSON.parse(item);
+    } catch (e) {
+        console.warn(`[AppState] Corrupted JSON in localStorage key "${key}", falling back.`, e);
+        return fallback;
+    }
+}
+
 export const AppState = {
     rawQuestions: [],
     currentTest: [],
@@ -7,20 +22,19 @@ export const AppState = {
     userAnswers: {},
     isAnswerChecked: {},
     shuffledOptionsMap: {},
-    stats: JSON.parse(localStorage.getItem('focus_app_stats_local') || '{}'),
+    stats: safeJSONParse('focus_app_stats_local', {}),
     sources: (() => {
-        const stored = localStorage.getItem('focus_app_sources');
-        const sources = JSON.parse(stored || '[]');
+        const sources = safeJSONParse('focus_app_sources', []);
         // Cleanup: remove any sources without questions (leftovers from previous broken logic)
-        return sources.filter(s => s && s.questions && Array.isArray(s.questions));
+        return Array.isArray(sources) ? sources.filter(s => s && s.questions && Array.isArray(s.questions)) : [];
     })(),
-    totalStats: JSON.parse(localStorage.getItem('focus_app_stats_global') || '{}'),
+    totalStats: safeJSONParse('focus_app_stats_global', {}),
     currentSourceKey: localStorage.getItem('focus_app_current_source') || null,
     examTitle: 'Exam App',
     language: detectLanguage(),
     translationTarget: detectTranslationTarget(),
-    translationEnabled: JSON.parse(localStorage.getItem('focus_app_translation_enabled') ?? 'true'),
-    recentTests: JSON.parse(localStorage.getItem('focus_app_recent_tests') || '[]').slice(0, 10),
+    translationEnabled: safeJSONParse('focus_app_translation_enabled', true),
+    recentTests: safeJSONParse('focus_app_recent_tests', []).slice(0, 10),
     testTracking: null,
     previewQuestion: null,
     searchKeyword: '',
@@ -30,13 +44,13 @@ export const AppState = {
     activeStatsSortDir: 'asc', // 'asc', 'desc'
     customAIPrompt: localStorage.getItem('focus_app_custom_ai_prompt') || '',
     aiIntegration: localStorage.getItem('focus_app_ai_integration') || 'clipboard',
-    ttsEnabled: JSON.parse(localStorage.getItem('focus_app_tts_enabled') ?? 'false'),
-    ttsAutoplay: JSON.parse(localStorage.getItem('focus_app_tts_autoplay') ?? 'false'),
+    ttsEnabled: safeJSONParse('focus_app_tts_enabled', false),
+    ttsAutoplay: safeJSONParse('focus_app_tts_autoplay', false),
     ttsSpeed: parseFloat(localStorage.getItem('focus_app_tts_speed') ?? '0.5'),
-    timerStopwatchEnabled: JSON.parse(localStorage.getItem('focus_app_timer_stopwatch') ?? 'false'),
-    timerCountdownEnabled: JSON.parse(localStorage.getItem('focus_app_timer_countdown') ?? 'false'),
+    timerStopwatchEnabled: safeJSONParse('focus_app_timer_stopwatch', false),
+    timerCountdownEnabled: safeJSONParse('focus_app_timer_countdown', false),
     timerCountdownLimit: parseInt(localStorage.getItem('focus_app_timer_limit') || '59', 10),
-    timerAutoCheckEnabled: JSON.parse(localStorage.getItem('focus_app_timer_auto_check') ?? 'true'), // Default to true
+    timerAutoCheckEnabled: safeJSONParse('focus_app_timer_auto_check', true), // Default to true
     currentTtsVoice: null, // Randomly selected at test start
     viewHistory: [], // Stack to track last 10 visited screens
     navigationSourceView: null, // View to return to from Tag Mode
@@ -44,9 +58,9 @@ export const AppState = {
     questionMap: {}, // composite key (sourceId_questionId) → question object
     githubToken: localStorage.getItem('focus_app_github_token') || null,
     githubGistId: localStorage.getItem('focus_app_github_gist_id') || null,
-    githubUser: JSON.parse(localStorage.getItem('focus_app_github_user') || 'null'),
+    githubUser: safeJSONParse('focus_app_github_user', null),
     lastSyncTime: parseInt(localStorage.getItem('focus_app_last_sync') || '0', 10),
-    deletedSourceIds: JSON.parse(localStorage.getItem('focus_app_deleted_sources') || '[]')
+    deletedSourceIds: safeJSONParse('focus_app_deleted_sources', [])
 };
 
 export function trackDeletedSource(id) {

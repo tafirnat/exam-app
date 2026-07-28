@@ -79,7 +79,7 @@ export function loginWithOAuth() {
         return;
     }
 
-    const state = Math.random().toString(36).substring(2) + Date.now().toString(36);
+    const state = crypto.randomUUID();
     sessionStorage.setItem('github_oauth_state', state);
 
     // Omit explicit redirect_uri so GitHub defaults to the registered callback URL in OAuth App settings
@@ -105,7 +105,7 @@ async function handleOAuthCallback() {
     const savedState = sessionStorage.getItem('github_oauth_state');
     sessionStorage.removeItem('github_oauth_state');
 
-    if (savedState && state && state !== savedState) {
+    if (!savedState || !state || state !== savedState) {
         showAlert(t('github_sync_error') + ': Invalid OAuth state', t('error_title') || 'Error');
         return false;
     }
