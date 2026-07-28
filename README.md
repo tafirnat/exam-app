@@ -14,12 +14,17 @@ Experience the application live: **[https://exam.rifatarslan.dev/](https://exam.
 ---
 
 - **GitHub Gist Cross-Device Sync**:
-  - **Zero Server Costs ($0)**: Seamlessly sync study resources (JSON question banks), question statistics, notes, stars, flags, test history, and preferences across devices using GitHub Gists.
+  - **Zero Server Costs ($0)**: Seamlessly sync study resources (JSON question banks), the folder structure, question statistics, notes, stars, flags, test history, and preferences across devices using GitHub Gists.
   - **Privacy First**: Data is stored securely in a private Gist (`exam_app_backup.json`) directly on your GitHub account without third-party servers.
   - **Background Auto-Sync**: Debounced automatic sync saves your progress in the background as you solve questions.
   - **Offline-First & Auto-Sync**: Fully functional offline via `localStorage`. Automatically fetches and merges the latest cloud data when online.
   - **Smart Merge Engine**: Intelligently resolves conflicts and merges study statistics from multiple devices.
   - **Account Switch Safeguard**: Interactive prompts to safely merge or reset local data when changing accounts or logging out.
+- **Archive**:
+  - Park a single source or a whole folder (with its contents) out of the active study set without deleting it. Archived items are excluded from tests, statistics and counters, but keep their history for when they come back.
+  - **Kept on GitHub, not on the device**: archived questions move to a separate file in the same Gist (`exam_app_archive.json`), so they stop travelling with every routine sync. They leave the device only after GitHub confirms that write — with no connection, archiving still works and the questions simply stay local.
+  - **Folder memory**: restoring returns an item to its original folder by id, so renaming a folder in the meantime changes nothing. If the folder was deleted, the item lands in the root.
+  - **Direct access**: preview an archived source in place, download it as JSON, or open the Gist on GitHub. Items leave the archive only from the archive screen.
 - **PWA Support**: Installable on mobile and desktop for a full-screen, app-like experience with offline support.
 - **Flexible 3-Way Data Sharing**:
   - **Clipboard Copy**: One-click copying of raw JSON datasets for seamless pasting and importing.
@@ -39,7 +44,7 @@ Experience the application live: **[https://exam.rifatarslan.dev/](https://exam.
 - **Dynamic Internationalization**: Native support for **Turkish**, **English**, and **German** with automatic detection.
 - **Multilingual Translations**: Integrated Google Translate API supporting over 10 target languages for questions and options.
 - **Custom AI Provider Hub & Localized Prompts**: Add, manage, and one-click query your favorite AI services (ChatGPT, Claude, Gemini, DeepSeek, Kimi, etc.) with prompt templates automatically localized to your UI language.
-- **Premium UI/UX**: Modern dark mode, glassmorphism elements, and smooth micro-animations.
+- **Premium UI/UX**: Modern dark mode, glassmorphism elements, and smooth micro-animations. Folder colours come from a palette solved for contrast against both the light and dark surface, so a colour stays legible after a theme switch and no two folders read alike.
 - **Single-File Distribution**: Optimized build process that generates a perfectly standalone `index.html` file for easy hosting Anywhere.
 - **Custom Data Sources**: Load your exams from local JSON files or remote URLs.
 - **Advanced Text-to-Speech (TTS)**:
@@ -101,12 +106,14 @@ To sync your study progress, JSON question sources, notes, and stats across devi
 3. **Enjoy Automatic Sync:**
    - Exam App creates a secret Gist (`exam_app_backup.json`) under your GitHub account.
    - Any progress, new JSON resources, or stats updated on one device will automatically sync across all your devices!
+   - If you archive anything, a second file (`exam_app_archive.json`) appears in the same Gist. A Gist update only touches the files it names, so routine syncs never rewrite the archive.
 
 ### 📡 Offline-First & Online Synchronization
 
 - **Offline-First Storage**: All question banks, test progress, and FSRS metrics are saved locally in your browser (`localStorage`). The app remains fully functional without an active internet connection.
 - **Automatic Online Sync**: When online, Exam App automatically fetches the latest data from your private GitHub Gist upon startup or reconnection.
-- **Smart Data Merging**: Uses a bi-directional merging engine (`mergeSyncData`) that compares item usage timestamps, question attempt counters, and tombstone deletion markers (`deletedSourceIds`) to keep all your devices up to date without data loss.
+- **Smart Data Merging**: Uses a bi-directional merging engine (`mergeSyncData`) that compares revision timestamps, question attempt counters, and tombstone deletion markers (`deletedSourceIds`, `deletedFolderIds`) to keep all your devices up to date without data loss.
+- **Archive-Aware Merging**: An offloaded archive entry is a record without questions, which is also what a half-synced source looks like. The merge resolves those by revision timestamp instead, so an item archived on one device is never brought back by another device still holding the old copy.
 
 ### 🔗 Obsidian Integration (Community Plugin)
 

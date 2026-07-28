@@ -36,7 +36,7 @@ export const AppState = {
         if (folders === null) {
             // Create a default folder for sample templates
             folders = [
-                { id: 'default-folder', name: 'Sample Folder', color: '#3b82f6', description: 'Varsayılan örnek klasör', order: 0 }
+                { id: 'default-folder', name: 'Sample Folder', color: '#0097f8', description: 'Varsayılan örnek klasör', order: 0 }
             ];
             try { localStorage.setItem('focus_app_folders', JSON.stringify(folders)); } catch(e){}
         }

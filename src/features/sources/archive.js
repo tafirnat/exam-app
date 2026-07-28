@@ -8,7 +8,7 @@ import {
 import { showToast, showAlert, showConfirm, escapeHTML } from '../../core/utils.js';
 import { t } from '../../core/i18n.js';
 import { normalizeQuestions } from './sources-service.js';
-import { renderSourcesList, downloadSourceJSON } from './sources-ui.js';
+import { renderSourcesList, downloadSourceJSON, DEFAULT_FOLDER_COLOR } from './sources-ui.js';
 
 /**
  * Archiving is a flag on the source, never a move into a second collection: every
@@ -483,7 +483,7 @@ export function renderArchiveList() {
                 iconButton(t('delete'), ICONS.trash, () => deleteArchivedFolder(folder.id), true)
             ]
         });
-        header.style.borderLeft = `4px solid ${folder.color || '#3b82f6'}`;
+        header.style.borderLeft = `4px solid ${folder.color || DEFAULT_FOLDER_COLOR}`;
         block.appendChild(header);
 
         const nested = document.createElement('div');
