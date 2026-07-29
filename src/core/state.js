@@ -29,7 +29,7 @@ export function getDefaultSampleSources() {
             id: 'reading_feature_guide',
             name: 'Reading & Topic Review Feature Guide',
             folderId: 'default-folder',
-            questionCount: 3,
+            questionCount: 4,
             lastUsed: Date.now(),
             active: true,
             order: 0,
@@ -60,6 +60,20 @@ export function getDefaultSampleSources() {
                     },
                     answer: {
                         explanation: 'Example of a technical reading card containing code blocks and JSON schema usage guidance.'
+                    }
+                },
+                {
+                    id: 'read_003',
+                    type: 'reading',
+                    category: 'Environmental Studies',
+                    tags: ['environment', 'sustainability', 'climate-action', 'long-reading'],
+                    starred: true,
+                    flagged: false,
+                    content: {
+                        text: '<h3>🌍 Environmental Awareness & Global Sustainability</h3><p>Environmental awareness is the understanding of the fragility of our environment and the importance of its protection. Promoting environmental awareness is an easy way to become an environmental steward and participate in creating a brighter, more sustainable future for upcoming generations.</p><h4>1. The Imperative of Biodiversity & Ecosystem Conservation</h4><p>Biodiversity underpins all life on Earth. Ecosystems provide essential services such as clean air, water purification, soil fertility, and global climate regulation. Human activities—including industrial deforestation, overfishing, and rapid urbanization—have accelerated species extinction rates to unprecedented levels in modern history.</p><ul><li><strong>Deforestation & Carbon Sinks:</strong> Tropical rainforests absorb roughly 2.6 billion tonnes of carbon dioxide annually. Protecting Amazonian and Boreal forests is vital for maintaining the global carbon balance.</li><li><strong>Ocean Health & Acidification:</strong> Oceans absorb over 30% of anthropogenic CO2 emissions, resulting in marine acidification that threatens coral reef biomes and aquatic food webs.</li><li><strong>Renewable Energy Transition:</strong> Shifting rapidly from fossil fuels (coal, oil, gas) to solar, wind, and geothermal power serves as the cornerstone of global decarbonization targets.</li></ul><blockquote><p><mark>Key Insight:</mark> Sustainability is not about halting economic development; it is about decoupling human prosperity from environmental degradation.</p></blockquote><h4>2. Technical Infrastructure & Data Center Energy Metrics</h4><p>In the modern digital economy, cloud infrastructure, enterprise servers, and artificial intelligence workloads consume vast amounts of electricity. Software engineers and systems architects play a pivotal role in optimizing code for energy efficiency and reducing digital carbon footprints.</p><p>Below is a standardized telemetry schema used by green computing frameworks to calculate software service energy metrics:</p><pre><code class="language-json">{\n  "service": "Cloud Data Analytics Engine",\n  "region": "eu-central-1",\n  "telemetry": {\n    "serverInstances": 24,\n    "kwhPerGigabyte": 0.00125,\n    "carbonIntensityGramsPerKwh": 245,\n    "renewablePowerRatio": 88.4\n  },\n  "optimizationPlan": "Schedule intensive batch workloads during peak solar generation windows to minimize fossil grid reliance."\n}</code></pre><h4>3. Individual Action & Sustainable Circular Economies</h4><p>While industrial policy and government regulations drive systemic change, individual lifestyle choices aggregate into immense collective impact. Transitioning from a linear <em>take-make-waste</em> economic model to a <strong>circular economy</strong> emphasizes repairing, reusing, and recycling materials to eliminate unnecessary landfill waste.</p><ol><li><strong>Energy Efficiency:</strong> Implementing LED lighting, smart thermostats, and high-efficiency heat pumps across residential and commercial buildings.</li><li><strong>Sustainable Transport:</strong> Prioritizing electric mass transit, cycling infrastructure, and pedestrian-friendly urban planning to reduce vehicle emissions.</li><li><strong>Water Stewardship:</strong> Implementing rainwater harvesting systems and eliminating microplastic runoff into local watersheds.</li></ol><blockquote><p><em>"We do not inherit the Earth from our ancestors; we borrow it from our children."</em> — Indigenous Proverb</p></blockquote>'
+                    },
+                    answer: {
+                        explanation: 'Long-form environmental study passage designed for testing rich text formatting and continuous dikey scroll mechanics.'
                     }
                 },
                 {

@@ -138,9 +138,9 @@ export function renderQuestion(isRefresh = false) {
     const stat = AppState.stats[statKey] || { difficulty: 5.0, note: '' };
     const isChecked = AppState.isAnswerChecked[qIndex];
 
-    document.getElementById('progressText').innerText = `${t('question_label')} ${qIndex + 1} / ${AppState.currentTest.length}`;
-    const qTextEl = document.getElementById('questionText');
-    qTextEl.innerHTML = escapeHTML(q.content?.text || q.text || '');
+    const rawQText = q.content?.text || q.text || '';
+    const isFormattedContent = q.type === 'reading' || q.type === 'topic_review' || q.format === 'html' || /<[a-z][\s\S]*>/i.test(rawQText);
+    qTextEl.innerHTML = isFormattedContent ? rawQText : escapeHTML(rawQText);
 
     // Handle Media (Images)
     const card = qTextEl.closest('.question-card');
@@ -253,8 +253,8 @@ export function renderQuestion(isRefresh = false) {
                 noteAreaEl.classList.remove('visible');
             }
         } else if (hasExplanation) {
-            // Display official question explanation (read-only by default)
-            noteInputEl.innerHTML = escapeHTML(q.answer.explanation);
+            const isExpHtml = /<[a-z][\s\S]*>/i.test(q.answer.explanation || '');
+            noteInputEl.innerHTML = isExpHtml ? q.answer.explanation : escapeHTML(q.answer.explanation);
             if (noteLabelEl) {
                 noteLabelEl.removeAttribute('data-i18n');
                 noteLabelEl.innerText = t('explanation_label') || 'Explanation:';
