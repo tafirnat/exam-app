@@ -38,7 +38,7 @@ Exam App parses **100% native Obsidian Markdown syntax**. Obsidian is the source
 | **Blockquote** | `> Text` | `<blockquote>` |
 | **Callout** | `> [!type] Title` followed by `> ` body lines | `<div class="md-callout md-callout-<type>">` |
 | **Fenced Code** | ` ```lang ` ... ` ``` ` | `<pre><code class="language-lang">` (unparsed raw text) |
-| **Table** | Pipe table with `---` delimiter & optional `:---:` align | `<table><thead>...<tbody>` |
+| **Table** | Pipe table with a required `---` delimiter row & optional `:---:` align | `<table><thead>...<tbody>` |
 | **Thematic Break** | `---` or `***` on a single line | `<hr>` |
 | **Paragraph** | Text blocks separated by blank lines | `<p>` |
 
@@ -57,6 +57,7 @@ To prevent content headings from competing with the question title:
 
 ### 3.3 Strip Comments & Frontmatter
 - Inline or block comments using `%%comment text%%` are completely stripped from output.
+- A `%%` pair **inside inline code or a fenced code block is not a comment** and is emitted verbatim, because code content is never reinterpreted.
 - YAML frontmatter blocks bounded by leading `---` lines at the top of a note are automatically removed.
 
 ### 3.4 Callout Aliases
@@ -82,6 +83,19 @@ Unrecognized callout types fall back safely to `note`. Foldable callout markers 
 
 ### 3.5 Embedded Note Markers `![[embed]]`
 Obsidian note embeds (`![[Note Name]]`) render as a muted placeholder `<span class="md-embed-missing">[[Note Name]]</span>`. Images continue to use the question schema's `content.media` property.
+
+### 3.6 Emphasis Delimiters
+Matching Obsidian, a delimiter only opens emphasis when it is followed by a non-space character, and only closes it when preceded by one:
+
+- `2 * 3 and 4 * 5` stays literal — the asterisks are arithmetic, not italics.
+- `**bold with *italic* inside**` nests correctly, in either order.
+- `snake_case_name` is never italicised, because the underscores are intra-word.
+
+### 3.7 Code Is Never Reinterpreted
+Inside inline code and fenced code blocks, content is escaped and emitted exactly as written. That means no emphasis, no links, no callout parsing, no cloze blanks, no comment stripping, and no backslash-escape processing — `` `a\*b` `` shows `a\*b`. Conversely, outside code a backslash escape (`\*`, `\_`, `\=`, `\~`, `` \` ``, `\[`, `\\`) yields the literal character, and an escaped backtick therefore does **not** open a code span.
+
+### 3.8 Nested Lists
+Nesting is determined by indentation, not by marker type. A tab counts as four columns, so tab-indented and space-indented notes nest identically. A sub-list may switch between `-` and `1.` freely; each level takes its `<ul>`/`<ol>` from its own first item. An indented line that is not itself a list item is treated as lazy wrapping and joins the item above it.
 
 ---
 

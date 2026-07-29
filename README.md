@@ -135,6 +135,14 @@ The application reads exam data through a standard JSON structure. You can follo
     *   `type`: `single_choice`, `multiple_choice`, `true_false`, `text_input`.
     *   `answer`: Correct option IDs (`correct_ids`) or accepted texts (`accepted_texts`).
 
+### Content Format: Obsidian Markdown
+
+Every text field a learner reads — question bodies, options, explanations, flashcard backs, reading cards — is **Obsidian Markdown**. Not a subset with a different flavour, and not HTML: `&`, `<` and `>` are escaped before rendering, so a stray tag shows up as literal text rather than markup.
+
+The practical upshot is that **a note from your Obsidian vault can be pasted into a question as-is**. Headings, `**bold**`, `==highlights==`, `> [!tip]` callouts, pipe tables, task lists, nested lists, fenced code, `[[wikilinks]]` and `[external links](https://obsidian.md/)` all survive the trip with no translation step. YAML frontmatter and `%%author comments%%` are stripped automatically, and headings are shifted so the note's top level never collides with the question card's own title.
+
+Constructs Obsidian supports but the app deliberately does not render — LaTeX math, footnotes, inline `#tags`, `![[embeds]]` — appear as plain text instead of breaking the card. The complete list is in [docs/MARKDOWN_SPEC.md](./docs/MARKDOWN_SPEC.md).
+
 ### Example JSON
 
 ```json
@@ -158,7 +166,7 @@ The application reads exam data through a standard JSON structure. You can follo
       ],
       "answer": {
         "correct_ids": [1],
-        "explanation": "Explanation of the solution with support for HTML tags like <b>bold text</b> and <a href=\"https://example.com\" target=\"_blank\">hyperlinks</a>."
+        "explanation": "Explanation of the solution in Obsidian Markdown — **bold text**, `code`, ==highlights==, and [hyperlinks](https://example.com)."
       }
     }
   ]

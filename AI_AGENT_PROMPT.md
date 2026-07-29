@@ -17,7 +17,41 @@ Your mission is to process educational material, topic descriptions, notes, or r
 1. **JSON ONLY Output**: You MUST return ONLY the final JSON structure inside a standard Markdown ```json ... ``` code block. Do NOT include introductory text, pleasantries, preambles, or conversational sign-offs outside the JSON block.
 2. **Syntax Validation**: Ensure valid JSON syntax—no trailing commas, no unescaped quotes in strings, and proper escaping of special characters.
 3. **No Schema Hallucination**: You MUST adhere strictly to the schema keys defined below. Do NOT invent custom field names or combine incompatible question properties.
-4. **Markdown Formatting**: Question text (`content.text`) and explanations (`answer.explanation`) use 100% Obsidian-compatible Markdown syntax (e.g., `#` headings, `**bold**`, `*italic*`, inline `code`, ``` code blocks ```, `==highlight==`, `[links](url)`, `> [!note]` callouts, pipe tables, task lists). Do NOT output raw HTML tags.
+4. **Markdown Formatting**: Every author-facing string (`content.text`, `answer.explanation`, `answer.back`, option `text`) is **Obsidian Markdown**. The app is a consumer of Obsidian's syntax, never a definer of it: if Obsidian does not support a construct natively, neither does the app. Do NOT invent markers — no `{color}`, no shortcodes, no `==red: text==`.
+5. **NO HTML, ever**: The renderer escapes `&`, `<` and `>` before it emits anything, so a tag you write is displayed to the learner as literal text — `<b>bold</b>` appears on screen exactly like that, angle brackets included. Use the Markdown equivalent instead.
+
+---
+
+## ✍️ Formatting Cheat Sheet
+
+Use these and nothing else. The full specification, including the deliberately unsupported constructs, is [`docs/MARKDOWN_SPEC.md`](docs/MARKDOWN_SPEC.md).
+
+| Intent | Write this | Never write this |
+| :--- | :--- | :--- |
+| Bold | `**text**` | `<b>`, `<strong>` |
+| Italic | `*text*` | `<i>`, `<em>` |
+| Bold + italic | `***text***` | — |
+| Strikethrough | `~~text~~` | `<del>`, `<s>` |
+| Highlight | `==text==` | `<mark>`, any colour markup |
+| Inline code | `` `text` `` | `<code>` |
+| Code block | ```` ```lang … ``` ```` | `<pre>` |
+| Heading | `## text` (`#`…`######`) | `<h1>`…`<h6>` |
+| Bullet list | `- item`, nested by indent | `<ul>`, `<li>` |
+| Numbered list | `1. item` | `<ol>` |
+| Task | `- [ ] item`, `- [x] item` | checkbox markup |
+| Quote | `> text` | `<blockquote>` |
+| Callout | `> [!note] Title` then `> body` | any styled `<div>` |
+| Table | pipe table with a `\| --- \|` row | `<table>` |
+| Link | `[label](https://…)` | `<a href="…">` |
+| Line break | a single newline | `<br>` |
+| Horizontal rule | `---` | `<hr>` |
+
+Callout types available: `note`, `abstract`, `info`, `todo`, `tip`, `success`, `question`, `warning`, `failure`, `danger`, `bug`, `example`, `quote` (Obsidian's aliases such as `summary`, `hint`, `error` are accepted too).
+
+Two behaviours worth knowing when you write JSON strings:
+
+- A single `\n` is a real line break, and a blank line (`\n\n`) starts a new paragraph.
+- Headings are normalised: whatever you use, the shallowest heading in a string is rendered as `<h2>` so it never competes with the question card's own title. Relative hierarchy is preserved, so `#`/`##` and `##`/`###` behave identically.
 
 ---
 
@@ -81,7 +115,7 @@ Must include an `options` array containing objects with `id` (integer) and `text
   "type": "single_choice",
   "difficulty": 2.0,
   "tags": ["web", "protocols"],
-  "content": { "text": "Which HTTP status code signifies <b>Not Found</b>?" },
+  "content": { "text": "Which HTTP status code signifies **Not Found**?" },
   "options": [
     { "id": 1, "text": "200 OK" },
     { "id": 2, "text": "404 Not Found" },
@@ -89,7 +123,7 @@ Must include an `options` array containing objects with `id` (integer) and `text
   ],
   "answer": {
     "correct_ids": [2],
-    "explanation": "The <code>404 Not Found</code> status code indicates the server cannot find the requested resource."
+    "explanation": "The `404 Not Found` status code indicates the server cannot find the requested resource."
   }
 }
 ```
@@ -104,7 +138,7 @@ Must include an `options` array containing objects with `id` (integer) and `text
   "type": "multiple_choice",
   "difficulty": 3.2,
   "tags": ["networking"],
-  "content": { "text": "Which of the following protocols operate at the <b>Transport Layer</b> of the OSI model?" },
+  "content": { "text": "Which of the following protocols operate at the **Transport Layer** of the OSI model?" },
   "options": [
     { "id": 1, "text": "TCP (Transmission Control Protocol)" },
     { "id": 2, "text": "IP (Internet Protocol)" },
@@ -113,7 +147,7 @@ Must include an `options` array containing objects with `id` (integer) and `text
   ],
   "answer": {
     "correct_ids": [1, 3],
-    "explanation": "Both <b>TCP</b> and <b>UDP</b> reside at Layer 4 (Transport Layer). IP is Layer 3, HTTP is Layer 7."
+    "explanation": "Both **TCP** and **UDP** reside at Layer 4 (Transport Layer). IP is Layer 3, HTTP is Layer 7."
   }
 }
 ```
@@ -135,7 +169,7 @@ Must include an `options` array containing objects with `id` (integer) and `text
   ],
   "answer": {
     "correct_ids": [1],
-    "explanation": "<b>True</b>. RAM (Random Access Memory) is volatile memory."
+    "explanation": "**True**. RAM (Random Access Memory) is volatile memory."
   }
 }
 ```
@@ -155,14 +189,14 @@ The user types their response manually.
   "type": "short_answer",
   "difficulty": 2.5,
   "tags": ["databases"],
-  "content": { "text": "What does the acronym <b>SQL</b> stand for?" },
+  "content": { "text": "What does the acronym **SQL** stand for?" },
   "answer": {
     "accepted_texts": [
       "Structured Query Language",
       "Structured Query Language."
     ],
     "caseSensitive": false,
-    "explanation": "SQL stands for <b>Structured Query Language</b>, used to manage relational databases."
+    "explanation": "SQL stands for **Structured Query Language**, used to manage relational databases."
   }
 }
 ```
@@ -187,7 +221,7 @@ Answers are embedded directly inside `content.text` using double braces `{{ ... 
     "text": "By default, HTTP communicates on port {{80}} and HTTPS communicates on port {{443|Port 443}}."
   },
   "answer": {
-    "explanation": "Standard unencrypted web traffic uses port <b>80</b>, whereas encrypted TLS/SSL web traffic uses port <b>443</b>."
+    "explanation": "Standard unencrypted web traffic uses port **80**, whereas encrypted TLS/SSL web traffic uses port **443**."
   }
 }
 ```
@@ -286,7 +320,7 @@ When asked to generate an exam for a given topic or repository reference, produc
       ],
       "answer": {
         "correct_ids": [2],
-        "explanation": "<code>PUT</code> is defined as idempotent; repeated identical requests will leave the resource in the same state."
+        "explanation": "`PUT` is defined as idempotent; repeated identical requests will leave the resource in the same state."
       }
     },
     {
@@ -298,7 +332,7 @@ When asked to generate an exam for a given topic or repository reference, produc
         "text": "CORS stands for Cross-{{Origin}} Resource {{Sharing}}."
       },
       "answer": {
-        "explanation": "<b>CORS</b> (Cross-Origin Resource Sharing) is a browser mechanism that restricts resource loading from another domain."
+        "explanation": "**CORS** (Cross-Origin Resource Sharing) is a browser mechanism that restricts resource loading from another domain."
       }
     },
     {
@@ -307,7 +341,7 @@ When asked to generate an exam for a given topic or repository reference, produc
       "difficulty": 1.5,
       "tags": ["cookies"],
       "content": {
-        "text": "Cookies configured with the <code>HttpOnly</code> attribute cannot be accessed by client-side JavaScript."
+        "text": "Cookies configured with the `HttpOnly` attribute cannot be accessed by client-side JavaScript."
       },
       "options": [
         { "id": 1, "text": "True" },
@@ -315,7 +349,7 @@ When asked to generate an exam for a given topic or repository reference, produc
       ],
       "answer": {
         "correct_ids": [1],
-        "explanation": "<b>True</b>. The <code>HttpOnly</code> flag protects sensitive cookies (like session tokens) from XSS theft."
+        "explanation": "**True**. The `HttpOnly` flag protects sensitive cookies (like session tokens) from XSS theft."
       }
     }
   ]
