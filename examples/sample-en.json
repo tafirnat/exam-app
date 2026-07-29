@@ -12,8 +12,9 @@
       "category": "Overview",
       "tags": ["guide", "start-here"],
       "starred": true,
+      "flagged": true,
       "content": {
-        "text": "<h3>Welcome</h3><p>This source holds one question of every type the app supports. Work through it once and you will have seen everything a JSON file can contain.</p><h4>The eight types</h4><ul><li><strong>reading</strong> and <strong>topic_review</strong> — prose cards with no answer. You read them and rate how well you knew the material.</li><li><strong>single_choice</strong>, <strong>multiple_choice</strong>, <strong>true_false</strong> — options with one or more marked correct.</li><li><strong>short_answer</strong> — you type the answer and it is compared to a list of accepted spellings.</li><li><strong>fill_in_the_blank</strong> — the answer sits inside the sentence.</li><li><strong>flashcard</strong> — a front and a back; you rate yourself instead of being graded.</li></ul><blockquote><p>Open any question in the editor to see how it is built, then use this file as a template for your own.</p></blockquote>"
+        "text": "<h3>Welcome</h3><p>This source holds one question of every type the app supports. Work through it once and you will have seen everything a JSON file can contain.</p><h4>The seven types</h4><ul><li><strong>reading</strong> — prose cards with no answer. You read them and rate how well you knew the material.</li><li><strong>single_choice</strong>, <strong>multiple_choice</strong>, <strong>true_false</strong> — options with one or more marked correct.</li><li><strong>short_answer</strong> — you type the answer and it is compared to a list of accepted spellings.</li><li><strong>fill_in_the_blank</strong> — the answer sits inside the sentence.</li><li><strong>flashcard</strong> — a front and a back; you rate yourself instead of being graded.</li></ul><h4>Field reference</h4><p>Only <code>id</code>, <code>type</code> and the question text are required. Everything below is optional — this file leaves several of them out on purpose so you can see what a minimal question looks like.</p><ul><li><code>category</code> — a label for grouping</li><li><code>tags</code> — an array of strings, searchable and filterable</li><li><code>difficulty</code> — 1 to 5, feeds the scheduling algorithm</li><li><code>starred</code> / <code>flagged</code> — the two markers shown above the question</li><li><code>answer.explanation</code> — shown after checking, on every type</li><li><code>content.media</code> — an image or video, positioned above or below the text</li></ul><h4>Answers by type</h4><ul><li>choice types → <code>answer.correct_ids</code></li><li>short_answer → <code>answer.accepted_texts</code></li><li>fill_in_the_blank → <code>{{markers}}</code> in the text itself</li><li>flashcard → <code>answer.back</code></li><li>reading → no answer at all</li></ul><blockquote><p>Open any question in the editor to see how it is built, then use this file as a template for your own.</p></blockquote>"
       },
       "answer": {
         "explanation": "Reading cards carry no answer. They exist to be read before you test yourself on the material."
@@ -116,20 +117,7 @@
         "text": "What makes a flashcard different from every other question type?"
       },
       "answer": {
-        "back": "Nothing is graded. You reveal the back, judge yourself with Again / Hard / Normal / Easy, and that rating decides when the card comes back."
-      }
-    },
-    {
-      "id": "sample_topic_review",
-      "type": "topic_review",
-      "category": "Reference",
-      "tags": ["cheat-sheet", "schema"],
-      "flagged": true,
-      "content": {
-        "text": "<h3>Field reference</h3><p>Only <code>id</code>, <code>type</code> and the question text are required. Everything below is optional — this file leaves several of them out on purpose so you can see what a minimal question looks like.</p><ul><li><code>category</code> — a label for grouping</li><li><code>tags</code> — an array of strings, searchable and filterable</li><li><code>difficulty</code> — 1 to 5, feeds the scheduling algorithm</li><li><code>starred</code> / <code>flagged</code> — the two markers shown above the question</li><li><code>answer.explanation</code> — shown after checking, on every type</li><li><code>content.media</code> — an image or video, positioned above or below the text</li></ul><h4>Answers by type</h4><ul><li>choice types → <code>answer.correct_ids</code></li><li>short_answer → <code>answer.accepted_texts</code></li><li>fill_in_the_blank → <code>{{markers}}</code> in the text itself</li><li>flashcard → <code>answer.back</code></li><li>reading / topic_review → no answer at all</li></ul>"
-      },
-      "answer": {
-        "explanation": "Keep this card flagged while you write your first file, then unflag it once the schema is familiar."
+        "back": "Nothing is graded. Open the back, rate yourself Again / Hard / Good / Easy; that rating decides when the card returns."
       }
     }
   ]

@@ -12,8 +12,9 @@
       "category": "Überblick",
       "tags": ["anleitung", "hier-starten"],
       "starred": true,
+      "flagged": true,
       "content": {
-        "text": "<h3>Willkommen</h3><p>Diese Quelle enthält je eine Frage von jedem Typ, den die App unterstützt. Einmal durchgearbeitet haben Sie alles gesehen, was in einer JSON-Datei stehen kann.</p><h4>Die acht Typen</h4><ul><li><strong>reading</strong> und <strong>topic_review</strong> — Lesekarten ohne Antwort. Sie lesen und bewerten selbst, wie sicher Sie im Stoff waren.</li><li><strong>single_choice</strong>, <strong>multiple_choice</strong>, <strong>true_false</strong> — Optionen, von denen eine oder mehrere als richtig markiert sind.</li><li><strong>short_answer</strong> — Sie tippen die Antwort, sie wird mit einer Liste akzeptierter Schreibweisen verglichen.</li><li><strong>fill_in_the_blank</strong> — die Antwort steht im Satz selbst.</li><li><strong>flashcard</strong> — Vorder- und Rückseite; nichts wird bewertet, Sie bewerten sich selbst.</li></ul><blockquote><p>Öffnen Sie eine beliebige Frage im Editor, um ihren Aufbau zu sehen, und nutzen Sie diese Datei dann als Vorlage für Ihre eigene.</p></blockquote>"
+        "text": "<h3>Willkommen</h3><p>Diese Quelle enthält je eine Frage von jedem Typ, den die App unterstützt. Einmal durchgearbeitet haben Sie alles gesehen, was in einer JSON-Datei stehen kann.</p><h4>Die sieben Typen</h4><ul><li><strong>reading</strong> — Lesekarten ohne Antwort. Sie lesen und bewerten selbst, wie sicher Sie im Stoff waren.</li><li><strong>single_choice</strong>, <strong>multiple_choice</strong>, <strong>true_false</strong> — Optionen, von denen eine oder mehere als richtig markiert sind.</li><li><strong>short_answer</strong> — Sie tippen die Antwort, sie wird mit einer Liste akzeptierter Schreibweisen verglichen.</li><li><strong>fill_in_the_blank</strong> — die Antwort steht im Satz selbst.</li><li><strong>flashcard</strong> — Vorder- und Rückseite; nichts wird bewertet, Sie bewerten sich selbst.</li></ul><h4>Feldreferenz</h4><p>Pflicht sind nur <code>id</code>, <code>type</code> und der Fragetext. Alles Folgende ist optional — diese Datei lässt einiges davon bewusst weg, damit Sie sehen, wie eine minimale Frage aussieht.</p><ul><li><code>category</code> — Bezeichnung zur Gruppierung</li><li><code>tags</code> — Array von Schlagwörtern, durchsuchbar und filterbar</li><li><code>difficulty</code> — 1 bis 5, fließt in den Wiederholungsalgorithmus ein</li><li><code>starred</code> / <code>flagged</code> — die beiden Markierungen über der Frage</li><li><code>answer.explanation</code> — nach dem Prüfen sichtbar, bei jedem Typ</li><li><code>content.media</code> — Bild oder Video, ober- oder unterhalb des Textes</li></ul><h4>Antwortfeld nach Typ</h4><ul><li>Auswahltypen → <code>answer.correct_ids</code></li><li>short_answer → <code>answer.accepted_texts</code></li><li>fill_in_the_blank → <code>{{Markierungen}}</code> im Text selbst</li><li>flashcard → <code>answer.back</code></li><li>reading → gar keine Antwort</li></ul><blockquote><p>Öffnen Sie eine beliebige Frage im Editor, um ihren Aufbau zu sehen, und nutzen Sie diese Datei dann als Vorlage für Ihre eigene.</p></blockquote>"
       },
       "answer": {
         "explanation": "Lesekarten haben keine Antwort. Sie sind dazu da, den Stoff zu lesen, bevor Sie sich abfragen."
@@ -117,19 +118,6 @@
       },
       "answer": {
         "back": "Es wird nichts bewertet. Sie decken die Rückseite auf, beurteilen sich selbst mit Nochmal / Schwer / Normal / Einfach, und diese Bewertung entscheidet, wann die Karte wiederkommt."
-      }
-    },
-    {
-      "id": "sample_topic_review",
-      "type": "topic_review",
-      "category": "Referenz",
-      "tags": ["spickzettel", "schema"],
-      "flagged": true,
-      "content": {
-        "text": "<h3>Feldreferenz</h3><p>Pflicht sind nur <code>id</code>, <code>type</code> und der Fragetext. Alles Folgende ist optional — diese Datei lässt einiges davon bewusst weg, damit Sie sehen, wie eine minimale Frage aussieht.</p><ul><li><code>category</code> — Bezeichnung zur Gruppierung</li><li><code>tags</code> — Array von Schlagwörtern, durchsuchbar und filterbar</li><li><code>difficulty</code> — 1 bis 5, fließt in den Wiederholungsalgorithmus ein</li><li><code>starred</code> / <code>flagged</code> — die beiden Markierungen über der Frage</li><li><code>answer.explanation</code> — nach dem Prüfen sichtbar, bei jedem Typ</li><li><code>content.media</code> — Bild oder Video, ober- oder unterhalb des Textes</li></ul><h4>Antwortfeld nach Typ</h4><ul><li>Auswahltypen → <code>answer.correct_ids</code></li><li>short_answer → <code>answer.accepted_texts</code></li><li>fill_in_the_blank → <code>{{Markierungen}}</code> im Text selbst</li><li>flashcard → <code>answer.back</code></li><li>reading / topic_review → gar keine Antwort</li></ul>"
-      },
-      "answer": {
-        "explanation": "Lassen Sie diese Karte markiert, solange Sie Ihre erste Datei schreiben, und entfernen Sie die Markierung, sobald Ihnen das Schema vertraut ist."
       }
     }
   ]
