@@ -716,11 +716,8 @@ function openResetAppModal() {
         input.value = '';
         input.classList.remove('valid');
     }
-    if (confirmBtn) {
-        confirmBtn.disabled = true;
-        confirmBtn.style.opacity = '0.5';
-        confirmBtn.style.cursor = 'not-allowed';
-    }
+    // Disabled styling comes from the .btn system's :disabled rule.
+    if (confirmBtn) confirmBtn.disabled = true;
 
     modal.style.display = 'flex';
 }
@@ -738,11 +735,7 @@ function handleResetInputChange(e) {
     const isValid = typed === currentResetWord.toUpperCase();
     input.classList.toggle('valid', isValid);
 
-    if (confirmBtn) {
-        confirmBtn.disabled = !isValid;
-        confirmBtn.style.opacity = isValid ? '1' : '0.5';
-        confirmBtn.style.cursor = isValid ? 'pointer' : 'not-allowed';
-    }
+    if (confirmBtn) confirmBtn.disabled = !isValid;
 }
 
 async function executeFactoryReset() {

@@ -61,7 +61,7 @@ function renderEditorModal() {
     const answerTabLabel = isChoice ? t('group_explanation') : t('group_answer');
 
     const optionsTab = isChoice ? `
-                <button class="group-btn ${activeGroup === 'options' ? 'active' : ''}" data-group="options">
+                <button class="btn btn-secondary group-btn ${activeGroup === 'options' ? 'active' : ''}" data-group="options">
                     <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2"><line x1="8" y1="6" x2="21" y2="6"></line><line x1="8" y1="12" x2="21" y2="12"></line><line x1="8" y1="18" x2="21" y2="18"></line><line x1="3" y1="6" x2="3.01" y2="6"></line><line x1="3" y1="12" x2="3.01" y2="12"></line><line x1="3" y1="18" x2="3.01" y2="18"></line></svg>
                     ${t('group_options')}
                 </button>` : '';
@@ -72,7 +72,7 @@ function renderEditorModal() {
                     <div id="editor-options-list">
                         ${renderOptionsList()}
                     </div>
-                    <button class="add-opt-btn" id="add-option-btn">
+                    <button class="btn btn-subtle btn-block add-opt-btn" id="add-option-btn">
                         <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="12" y1="5" x2="12" y2="19"></line><line x1="5" y1="12" x2="19" y2="12"></line></svg>
                         ${t('add_option')}
                     </button>
@@ -98,21 +98,21 @@ function renderEditorModal() {
             </div>
 
             <div class="editor-group-nav" style="${navStyle}">
-                <button class="group-btn ${activeGroup === 'general' ? 'active' : ''}" data-group="general">
+                <button class="btn btn-secondary group-btn ${activeGroup === 'general' ? 'active' : ''}" data-group="general">
                     <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"></circle><line x1="12" y1="16" x2="12" y2="12"></line><line x1="12" y1="8" x2="12.01" y2="8"></line></svg>
                     ${t('group_general')}
                 </button>
                 ${isFlashcard ? `
-                <button class="group-btn ${activeGroup === 'flashcard' ? 'active' : ''}" data-group="flashcard">
+                <button class="btn btn-secondary group-btn ${activeGroup === 'flashcard' ? 'active' : ''}" data-group="flashcard">
                     <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2"><rect x="2" y="5" width="20" height="14" rx="2"></rect><line x1="2" y1="10" x2="22" y2="10"></line></svg>
                     ${t('group_flashcard')}
                 </button>` : `
-                <button class="group-btn ${activeGroup === 'content' ? 'active' : ''}" data-group="content">
+                <button class="btn btn-secondary group-btn ${activeGroup === 'content' ? 'active' : ''}" data-group="content">
                     <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path><polyline points="14 2 14 8 20 8"></polyline><line x1="16" y1="13" x2="8" y2="13"></line><line x1="16" y1="17" x2="8" y2="17"></line><polyline points="10 9 9 9 8 9"></polyline></svg>
                     ${t('group_content')}
                 </button>
                 ${optionsTab}
-                <button class="group-btn ${activeGroup === 'answer' ? 'active' : ''}" data-group="answer">
+                <button class="btn btn-secondary group-btn ${activeGroup === 'answer' ? 'active' : ''}" data-group="answer">
                     <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"></path><polyline points="22 4 12 14.01 9 11.01"></polyline></svg>
                     ${answerTabLabel}
                 </button>`}
@@ -142,7 +142,7 @@ function renderEditorModal() {
                             </div>
                             <div class="tag-add-row">
                                 <input type="text" id="new-tag-input" class="editor-field" placeholder="${t('tags_placeholder') || 'Yeni tag...'}" style="flex:1; margin:0;">
-                                <button type="button" id="add-tag-btn" class="btn btn-primary" style="padding:0.4rem 0.75rem; min-width:unset;">+</button>
+                                <button type="button" id="add-tag-btn" class="btn btn-primary btn-sm">+</button>
                             </div>
                             <div class="tag-suggestions" id="tag-suggestions-container">
                                 ${renderTagSuggestions()}
@@ -157,7 +157,7 @@ function renderEditorModal() {
                     <div class="editor-input-group">
                         <div class="label-row">
                             <label>${t('text_label')}</label>
-                            <button class="wrap-code-btn" data-target="edit-text">${t('wrap_code_btn')}</button>
+                            <button class="btn btn-primary-soft btn-xs wrap-code-btn" data-target="edit-text">${t('wrap_code_btn')}</button>
                         </div>
                         <textarea class="editor-field code-font" id="edit-text" style="min-height: 120px;">${currentEditingQuestion.content?.text || currentEditingQuestion.text || ''}</textarea>
                     </div>
@@ -192,8 +192,8 @@ function renderEditorModal() {
             </div>
 
             <div class="editor-footer">
-                <button class="btn btn-secondary" id="editor-cancel-btn">${t('cancel')}</button>
-                <button class="btn btn-primary" id="editor-save-btn">${t('save_changes')}</button>
+                <button class="btn btn-secondary btn-lg btn-flex" id="editor-cancel-btn">${t('cancel')}</button>
+                <button class="btn btn-primary btn-lg btn-flex" id="editor-save-btn">${t('save_changes')}</button>
             </div>
         </div>
     `;
@@ -229,7 +229,7 @@ function renderOptionsList() {
             </div>
             <div class="label-row" style="margin-bottom: 4px;">
                 <label style="font-size: 0.7rem;">${t('text_label')}</label>
-                <button class="wrap-code-btn opt-code-btn" data-idx="${idx}">${t('wrap_code_btn')}</button>
+                <button class="btn btn-primary-soft btn-xs wrap-code-btn opt-code-btn" data-idx="${idx}">${t('wrap_code_btn')}</button>
             </div>
             <textarea class="editor-field code-font opt-text-field" style="min-height: 60px; margin-bottom: 0.75rem;">${opt.text || ''}</textarea>
             
@@ -394,7 +394,7 @@ function renderAnswerSection() {
         <div class="editor-input-group">
             <div class="label-row">
                 <label>${t('explanation_label')}</label>
-                <button class="wrap-code-btn" data-target="edit-explanation">${t('wrap_code_btn')}</button>
+                <button class="btn btn-primary-soft btn-xs wrap-code-btn" data-target="edit-explanation">${t('wrap_code_btn')}</button>
             </div>
             <textarea class="editor-field code-font" id="edit-explanation" style="min-height: 120px;">${q.answer?.explanation || ''}</textarea>
         </div>`;

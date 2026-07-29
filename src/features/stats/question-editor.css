@@ -60,31 +60,17 @@
     margin-bottom: 1.5rem;
 }
 
+/* Editor tabs: `.btn.btn-secondary` in markup, left-aligned. The selected tab
+   is promoted to the primary fill — same active treatment as .filter-btn and
+   .lang-btn so "selected" reads identically everywhere. */
 .group-btn {
-    display: flex;
-    align-items: center;
-    gap: 0.6rem;
-    padding: 0.8rem;
-    border-radius: 12px;
-    border: 1px solid var(--border-color);
-    background: var(--surface-hover);
-    color: var(--text-primary);
-    font-weight: 600;
-    font-size: 0.85rem;
-    cursor: pointer;
-    transition: all 0.2s ease;
+    justify-content: flex-start;
 }
 
-.group-btn:hover {
-    background: var(--primary-color);
-    color: white;
-    transform: translateY(-2px);
-    box-shadow: 0 4px 12px rgba(56, 189, 248, 0.3);
-}
-
-.group-btn.active {
-    background: var(--primary-color);
-    color: white;
+.group-btn.active,
+.group-btn.active:hover:not(:disabled) {
+    background-color: var(--primary-color);
+    color: var(--btn-on-solid);
     border-color: var(--primary-color);
 }
 
@@ -186,24 +172,13 @@ select.editor-field {
     background: rgba(239, 68, 68, 0.1);
 }
 
+/* "Add option" is `.btn.btn-subtle.btn-block`; the dashed outline is the only
+   thing that distinguishes it as an insert affordance. */
 .add-opt-btn {
-    width: 100%;
-    padding: 0.75rem;
     border: 2px dashed var(--border-color);
-    background: none;
-    color: var(--text-secondary);
-    border-radius: 12px;
-    font-weight: 600;
-    cursor: pointer;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    gap: 0.5rem;
-    transition: all 0.2s;
 }
 
-.add-opt-btn:hover {
-    background: var(--surface-hover);
+.add-opt-btn:hover:not(:disabled) {
     border-color: var(--primary-color);
     color: var(--primary-color);
 }
@@ -211,10 +186,6 @@ select.editor-field {
 .editor-footer {
     display: flex;
     gap: 1rem;
-}
-
-.editor-footer button {
-    flex: 1;
 }
 
 .code-info-box {
@@ -320,22 +291,8 @@ select.editor-field {
     align-items: center;
 }
 
-.wrap-code-btn {
-    font-size: 0.7rem;
-    padding: 2px 8px;
-    background: var(--surface-hover);
-    color: var(--primary-color);
-    border: 1px solid var(--primary-color);
-    border-radius: 6px;
-    cursor: pointer;
-    font-weight: 700;
-    transition: all 0.2s;
-}
-
-.wrap-code-btn:hover {
-    background: var(--primary-color);
-    color: white;
-}
+/* Inline label-row chip: `.btn.btn-primary-soft.btn-xs` — no local styling
+   beyond what the system already gives it. */
 
 @keyframes fadeIn {
     from { opacity: 0; }
