@@ -1,11 +1,16 @@
 import { AppState, saveSources } from '../../core/state.js';
-import { showToast, getCorrectAnswers, showAlert } from '../../core/utils.js';
+import { getCorrectAnswers, showAlert } from '../../core/utils.js';
 import { t } from '../../core/i18n.js';
+import { KNOWN_TYPES, findContentGaps } from '../../core/question-rules.js';
+import { showImportReport } from './import-report.js';
 
-const VALID_TYPES = new Set(['single_choice', 'multiple_choice', 'true_false', 'text_input', 'text', 'open_ended', 'fill_in_the_blank', 'flashcard']);
-const TEXT_TYPES = new Set(['text_input', 'text', 'open_ended', 'fill_in_the_blank']);
-const FLASHCARD_TYPES = new Set(['flashcard']);
+const VALID_TYPES = new Set(KNOWN_TYPES);
 
+/* Structural validation only: a file that fails here cannot be read at all, so
+   the import is refused outright. Whether the questions are *answerable* is a
+   separate matter handled by findContentGaps() — see question-rules.js. A file
+   can be perfectly formed and still hold a choice question with no correct
+   option marked, and that must not cost the user the whole import. */
 export function validateExamSchema(data) {
     const errors = [];
 
@@ -35,44 +40,18 @@ export function validateExamSchema(data) {
             ids.add(String(q.id));
         }
 
-        const text = q.content?.text || q.text;
-        if (!text || String(text).trim() === '') {
-            errors.push(`${prefix}: Soru metni (content.text) zorunludur.`);
-        }
-
         if (!q.type) {
             errors.push(`${prefix}: "type" alanı zorunludur.`);
         } else if (!VALID_TYPES.has(q.type)) {
             errors.push(`${prefix}: Geçersiz tür "${q.type}". Geçerli türler: ${[...VALID_TYPES].join(', ')}.`);
         }
 
-        if (q.type && !TEXT_TYPES.has(q.type) && !FLASHCARD_TYPES.has(q.type)) {
-            if (!Array.isArray(q.options) || q.options.length < 2) {
-                errors.push(`${prefix}: "${q.type}" türü için en az 2 seçenek gereklidir.`);
-            }
+        if (q.options !== undefined && !Array.isArray(q.options)) {
+            errors.push(`${prefix}: "options" bir dizi olmalıdır.`);
         }
 
-        if (!q.answer || typeof q.answer !== 'object') {
-            // Flashcard: answer.back is enough
-            if (!FLASHCARD_TYPES.has(q.type)) {
-                errors.push(`${prefix}: "answer" nesnesi zorunludur.`);
-            }
-        } else if (FLASHCARD_TYPES.has(q.type)) {
-            if (!q.answer.back || String(q.answer.back).trim() === '') {
-                errors.push(`${prefix}: Flashcard türü için answer.back zorunludur.`);
-            }
-        } else if (!TEXT_TYPES.has(q.type)) {
-            const answers = getCorrectAnswers(q);
-            if (!Array.isArray(answers) || answers.length === 0) {
-                errors.push(`${prefix}: answer.correct_ids (veya correct_id) belirtilmelidir.`);
-            }
-        } else {
-            const hasTexts = Array.isArray(q.answer.accepted_texts) && q.answer.accepted_texts.length > 0;
-            const hasText = q.answer.correct_answer !== undefined || q.answer.correct_text !== undefined;
-            const answers = getCorrectAnswers(q);
-            if (!hasTexts && !hasText && answers.length === 0) {
-                errors.push(`${prefix}: Metin tipi sorular için answer.accepted_texts belirtilmelidir.`);
-            }
+        if (q.answer !== undefined && (typeof q.answer !== 'object' || Array.isArray(q.answer))) {
+            errors.push(`${prefix}: "answer" bir nesne olmalıdır.`);
         }
     });
 
@@ -143,8 +122,16 @@ export function processJSON(data, name, options = {}) {
     AppState.sources.push(source);
 
     saveSources();
+
     if (!options.silent) {
-        showAlert(t('import_success_msg', { name: title, count: normalizedQuestions.length }), t('success_title'));
+        // The file parsed, but some questions may still be unanswerable. Let the
+        // user decide what happens to those rather than quietly importing them.
+        const gaps = findContentGaps(normalizedQuestions);
+        if (gaps.length > 0) {
+            showImportReport(source, gaps);
+        } else {
+            showAlert(t('import_success_msg', { name: title, count: normalizedQuestions.length }), t('success_title'));
+        }
     }
     return source;
 }

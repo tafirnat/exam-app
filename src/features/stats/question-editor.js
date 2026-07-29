@@ -1,31 +1,14 @@
 import { AppState, saveSources, saveStats } from '../../core/state.js';
 import { t } from '../../core/i18n.js';
 import { showToast } from '../../core/utils.js';
+// The question type is the single source of truth for this editor: it decides
+// which tabs exist, which fields render, and what a valid question looks like.
+// The rules themselves live in core so the importer applies exactly the same
+// ones — see question-rules.js.
+import { KNOWN_TYPES, getQuestionCategory, findQuestionIssues } from '../../core/question-rules.js';
 
 let currentEditingQuestion = null;
 let activeGroup = 'general';
-
-// The question type is the single source of truth for this editor: it decides
-// which tabs exist, which fields render, and what a valid question looks like.
-// Grouped by category so that adding a type only means putting it in the right
-// bucket here.
-const CHOICE_TYPES = ['single_choice', 'multiple_choice', 'true_false'];
-const TEXT_TYPES = ['text_input', 'text', 'open_ended', 'fill_in_the_blank'];
-const READING_TYPES = ['reading', 'topic_review'];
-const FLASHCARD_TYPES = ['flashcard'];
-
-// The type <select> must list every one of these: an unlisted type makes the
-// browser fall back to the first option, and the next syncDataFromInputs()
-// would silently rewrite the question's type.
-const KNOWN_TYPES = [...CHOICE_TYPES, ...TEXT_TYPES, ...FLASHCARD_TYPES, ...READING_TYPES];
-
-function getQuestionCategory(type) {
-    if (CHOICE_TYPES.includes(type)) return 'choice';
-    if (FLASHCARD_TYPES.includes(type)) return 'flashcard';
-    // Reading/topic cards are prose only — no options and no answer to check.
-    if (READING_TYPES.includes(type)) return 'reading';
-    return 'text';
-}
 
 // Tab order is fixed; only membership varies by category, so a tab never moves
 // position between question types.
@@ -68,44 +51,13 @@ function normalizeForType() {
     }
 }
 
-/* What the type demands before the question can be saved. Returns the offending
-   tab plus a message, or null when the question is consistent. */
+/* What the type demands before the question can be saved. The rules come from
+   question-rules.js — this only turns the first issue into a tab to land on and
+   a message to show. */
 function validateQuestion() {
-    const q = currentEditingQuestion;
-    const category = getQuestionCategory(q.type || '');
-    const filled = (value) => String(value || '').trim() !== '';
-
-    if (category === 'flashcard') {
-        if (!filled(q.content?.text)) return { group: 'flashcard', message: t('validation_front_required') };
-        if (!filled(q.answer?.back)) return { group: 'flashcard', message: t('validation_back_required') };
-        return null;
-    }
-
-    // Media-only content is legitimate, so either one satisfies the requirement.
-    if (!filled(q.content?.text) && !filled(q.content?.media?.[0]?.url)) {
-        return { group: 'content', message: t('validation_text_required') };
-    }
-
-    if (category === 'choice') {
-        const options = q.options || [];
-        if (options.length < 2) return { group: 'options', message: t('validation_min_options') };
-        if (options.some(o => !filled(o.text) && !filled(o.media?.[0]?.url))) {
-            return { group: 'options', message: t('validation_empty_option') };
-        }
-
-        const correct = q.answer?.correct_ids || [];
-        if (q.type === 'multiple_choice') {
-            if (correct.length < 2) return { group: 'options', message: t('validation_multi_correct') };
-        } else if (correct.length !== 1) {
-            return { group: 'options', message: t('validation_single_correct') };
-        }
-    }
-
-    if (category === 'text' && (q.answer?.accepted_texts || []).length === 0) {
-        return { group: 'answer', message: t('validation_accepted_required') };
-    }
-
-    return null;
+    const [first] = findQuestionIssues(currentEditingQuestion);
+    if (!first) return null;
+    return { group: first.group, message: t(`validation_${first.code}`) };
 }
 
 export function closeQuestionEditor() {

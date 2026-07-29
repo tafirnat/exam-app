@@ -1,0 +1,108 @@
+/* ==========================================================================
+   IMPORT REPORT
+   ---------------------------------------------------------------------------
+   The post-import dialog listing questions that parsed fine but cannot be
+   answered. It reuses the generic modal shell (.editor-overlay / .editor-card)
+   and the .btn / .btn-row button system; everything below is only what is
+   specific to this dialog.
+   ========================================================================== */
+
+.import-report-card {
+    max-width: 640px;
+}
+
+.import-report-count {
+    font-size: 0.75rem;
+    font-weight: 700;
+    color: var(--warning-color);
+}
+
+.import-report-summary {
+    margin: 0 0 1.25rem;
+    font-size: 0.9rem;
+    line-height: 1.5;
+    color: var(--text-primary);
+}
+
+.import-report-actions {
+    margin-bottom: 0.75rem;
+}
+
+/* Sits between the choice and the evidence, explaining what each button does
+   to the list below it. */
+.import-report-hint {
+    margin: 0 0 1rem;
+    font-size: 0.78rem;
+    line-height: 1.45;
+    color: var(--text-secondary);
+}
+
+.gap-list {
+    flex: 1;
+    overflow-y: auto;
+    margin: 0;
+    padding: 0 0.5rem 0 0;
+    list-style: none;
+    display: flex;
+    flex-direction: column;
+    gap: 0.6rem;
+}
+
+.gap-item {
+    padding: 0.7rem 0.85rem;
+    border: 1px solid var(--border-color);
+    border-left: 4px solid var(--warning-color);
+    border-radius: 0 10px 10px 0;
+    background: var(--surface-color);
+}
+
+.gap-item-head {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 0.5rem;
+    margin-bottom: 0.35rem;
+}
+
+.gap-item-id {
+    font-size: 0.72rem;
+    font-weight: 700;
+    color: var(--text-secondary);
+}
+
+.gap-item-type {
+    font-size: 0.68rem;
+    font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+    color: var(--text-secondary);
+    opacity: 0.8;
+}
+
+.gap-item-text {
+    font-size: 0.83rem;
+    line-height: 1.4;
+    color: var(--text-primary);
+    margin-bottom: 0.45rem;
+}
+
+.gap-item-issues {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.35rem;
+}
+
+.gap-issue {
+    font-size: 0.7rem;
+    font-weight: 600;
+    padding: 0.2rem 0.5rem;
+    border-radius: 999px;
+    color: var(--error-color);
+    background: color-mix(in srgb, var(--error-color) 14%, transparent);
+}
+
+@media (max-width: 480px) {
+    .gap-item-head {
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 0.15rem;
+    }
+}
