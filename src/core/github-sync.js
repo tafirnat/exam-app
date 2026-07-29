@@ -118,7 +118,7 @@ async function handleOAuthCallback() {
     sessionStorage.removeItem('github_oauth_state');
 
     if (!savedState || !state || state !== savedState) {
-        showAlert(t('github_sync_error') + ': Invalid OAuth state', t('error_title') || 'Error');
+        showAlert(t('github_sync_error') + ': Invalid OAuth state', t('error_title'));
         return false;
     }
 
@@ -156,7 +156,7 @@ async function handleOAuthCallback() {
         return true;
     } catch (err) {
         console.error('OAuth callback failed:', err);
-        showAlert(t('github_sync_error') + ': ' + err.message, t('error_title') || 'Error');
+        showAlert(t('github_sync_error') + ': ' + err.message, t('error_title'));
         return false;
     } finally {
         setSyncingState(false);
@@ -168,7 +168,7 @@ async function handleOAuthCallback() {
  */
 export async function loginWithToken(token) {
     if (!token || !token.trim()) {
-        showAlert(t('github_invalid_token'), t('error_title') || 'Error');
+        showAlert(t('github_invalid_token'), t('error_title'));
         return false;
     }
 
@@ -181,7 +181,7 @@ export async function loginWithToken(token) {
         return true;
     } catch (err) {
         console.error('GitHub token login error:', err);
-        showAlert(err.message || t('github_sync_error'), t('error_title') || 'Error');
+        showAlert(err.message || t('github_sync_error'), t('error_title'));
         return false;
     } finally {
         setSyncingState(false);

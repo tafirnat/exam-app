@@ -196,7 +196,7 @@ function renderEditorModal() {
                                 ${renderTagChips()}
                             </div>
                             <div class="tag-add-row">
-                                <input type="text" id="new-tag-input" class="editor-field" placeholder="${t('tags_placeholder') || 'Yeni tag...'}" style="flex:1; margin:0;">
+                                <input type="text" id="new-tag-input" class="editor-field" placeholder="${t('tags_placeholder')}" style="flex:1; margin:0;">
                                 <button type="button" id="add-tag-btn" class="btn btn-primary">+</button>
                             </div>
                             <div class="tag-suggestions" id="tag-suggestions-container">
@@ -283,9 +283,9 @@ function renderOptionsList() {
         const inputType = isMultiple ? 'checkbox' : 'radio';
 
         const correctIndicator = isChoice ? `
-            <label class="opt-correct-label ${isCorrect ? 'is-correct' : ''}" title="Doğru cevap olarak işaretle">
+            <label class="opt-correct-label ${isCorrect ? 'is-correct' : ''}" title="${t('mark_correct_title')}">
                 <input type="${inputType}" name="correct-answer" class="answer-option-input" value="${opt.id}" ${isCorrect ? 'checked' : ''}>
-                <span>${isCorrect ? '✓ Doğru' : 'Doğru değil'}</span>
+                <span>${isCorrect ? t('option_is_correct') : t('option_not_correct')}</span>
             </label>` : '';
 
         return `
@@ -324,11 +324,11 @@ function renderOptionsList() {
 
 function renderTagChips() {
     const tags = currentEditingQuestion?.tags || [];
-    if (tags.length === 0) return '<span style="font-size:0.78rem; color:var(--text-secondary); padding:2px 4px;">Henüz tag yok</span>';
+    if (tags.length === 0) return `<span class="tag-empty">${t('no_tags_yet')}</span>`;
     return tags.map((tag, idx) => `
-        <span class="tag-chip" data-idx="${idx}" title="Çift tıklayarak düzenle">
+        <span class="tag-chip" data-idx="${idx}" title="${t('tag_edit_hint')}">
             <span class="tag-chip-text">${tag}</span>
-            <button type="button" class="tag-chip-delete" data-idx="${idx}" title="Sil">×</button>
+            <button type="button" class="tag-chip-delete" data-idx="${idx}" title="${t('delete_tag')}">×</button>
         </span>
     `).join('');
 }
@@ -344,7 +344,7 @@ function setupOptionCorrectListeners() {
             });
             overlay.querySelectorAll('.opt-correct-label').forEach(lbl => {
                 lbl.classList.remove('is-correct');
-                lbl.querySelector('span').textContent = 'Doğru değil';
+                lbl.querySelector('span').textContent = t('option_not_correct');
             });
             const checked = [...overlay.querySelectorAll('.answer-option-input:checked')];
             checked.forEach(el => {
@@ -353,7 +353,7 @@ function setupOptionCorrectListeners() {
                 if (card) card.classList.add('is-correct-card');
                 if (label) {
                     label.classList.add('is-correct');
-                    label.querySelector('span').textContent = '✓ Doğru';
+                    label.querySelector('span').textContent = t('option_is_correct');
                 }
             });
         };
@@ -479,7 +479,7 @@ function renderAnswerSection() {
     return `
         <div class="editor-input-group">
             <label>${t('accepted_texts_label')}</label>
-            <textarea class="editor-field" id="edit-accepted-texts" style="min-height: 90px;" placeholder="Her satıra bir kabul edilen cevap...">${acceptedTexts}</textarea>
+            <textarea class="editor-field" id="edit-accepted-texts" style="min-height: 90px;" placeholder="${t('accepted_texts_placeholder')}">${acceptedTexts}</textarea>
         </div>
         <div style="display: flex; align-items: center; gap: 0.75rem; padding: 0.25rem 0 0.5rem;">
             <input type="checkbox" id="edit-case-sensitive" ${q.answer?.caseSensitive ? 'checked' : ''} style="width: 18px; height: 18px; flex-shrink: 0;">
