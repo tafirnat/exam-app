@@ -141,7 +141,7 @@ const initApp = () => {
                 const windowHeight = window.innerHeight;
                 const bodyHeight = document.documentElement.scrollHeight;
 
-                const isNearBottom = (windowHeight + currentScrollY) >= (bodyHeight - 70);
+                const isNearBottom = (windowHeight + currentScrollY) >= (bodyHeight - 140);
 
                 if (isNearBottom || currentScrollY <= 40) {
                     bottomNav.classList.remove('nav-hidden');

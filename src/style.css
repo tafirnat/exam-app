@@ -568,8 +568,14 @@ textarea {
     flex-direction: column;
     position: relative;
     padding-top: 1.5rem;
-    padding-bottom: 140px;
+    padding-bottom: 280px;
     min-height: 100%;
+}
+
+@media (max-width: 600px) {
+    #testView {
+        padding-bottom: 300px;
+    }
 }
 
 .indicators-bar {
@@ -991,6 +997,8 @@ pre code {
 
 .note-area {
     margin-top: 1rem;
+    margin-bottom: 2rem;
+    padding-bottom: 1rem;
     display: none;
     animation: fadeIn 0.3s ease;
 }
