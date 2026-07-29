@@ -390,18 +390,18 @@ function renderNormalized(rawText) {
         if (calloutMatch) {
             const rawType = calloutMatch[1];
             const titleText = calloutMatch[2].trim();
+            /* A blank line ends the callout, as in Obsidian. Continuing across
+               one — which the first version did whenever the next line also
+               began with `>` — merged two adjacent callouts into one and left
+               the second one's `[!type] Title` sitting in the first one's body
+               as literal text. To break a paragraph *inside* a callout, the
+               empty line carries its own `>`, which the branch below already
+               handles. */
             const bodyLines = [];
             i++;
-            while (i < lines.length) {
-                if (lines[i].startsWith('>')) {
-                    bodyLines.push(lines[i].replace(/^>\s?/, ''));
-                    i++;
-                } else if (lines[i].trim() === '' && i + 1 < lines.length && lines[i + 1].startsWith('>')) {
-                    bodyLines.push('');
-                    i++;
-                } else {
-                    break;
-                }
+            while (i < lines.length && lines[i].startsWith('>')) {
+                bodyLines.push(lines[i].replace(/^>\s?/, ''));
+                i++;
             }
             blocks.push({
                 type: 'callout',

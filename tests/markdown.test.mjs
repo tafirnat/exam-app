@@ -333,3 +333,26 @@ test('audit: heading clamp is a pure function, testable on its own', () => {
     assert.equal(clampHeadingLevel(6, 1), 6, 'capped at h6');
     assert.equal(clampHeadingLevel(1, -1), 2, 'never shallower than h2');
 });
+
+test('audit: adjacent callouts stay separate', () => {
+    // Continuing a callout across a blank line merged two of them and left the
+    // second one's [!type] Title as literal text in the first one's body.
+    const html = renderMarkdown('> [!tip] First\n> body one\n\n> [!warning] Second\n> body two');
+    assert.equal(html.includes('md-callout-tip'), true);
+    assert.equal(html.includes('md-callout-warning'), true);
+    assert.equal(html.includes('[!warning]'), false, 'the second marker must not leak as text');
+    assert.match(html, /First<\/div><div class="md-callout-body"><p>body one<\/p><\/div><\/div><div class="md-callout md-callout-warning"/);
+});
+
+test('audit: a callout paragraph break uses > on the empty line', () => {
+    // This is Obsidian's way to keep one callout with two paragraphs, and it is
+    // what makes the blank-line rule above safe.
+    const html = renderMarkdown('> [!tip] Title\n> para one\n>\n> para two');
+    assert.equal((html.match(/md-callout /g) || []).length, 1, 'still one callout');
+    assert.match(html, /<p>para one<\/p><p>para two<\/p>/);
+});
+
+test('audit: a callout is ended by a blank line, not by the next block', () => {
+    const html = renderMarkdown('> [!note] Note\n> body\n\nPlain paragraph.');
+    assert.match(html, /<\/div><\/div><p>Plain paragraph\.<\/p>/);
+});
