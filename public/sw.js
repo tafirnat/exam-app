@@ -1,14 +1,19 @@
 // Bump on every release: the activate handler deletes any cache whose name no
 // longer matches, and an unchanged name is also what stops the browser from
 // noticing this file changed at all.
-const CACHE_NAME = 'focus-app-v17';
+const CACHE_NAME = 'focus-app-v18';
+// cache.addAll rejects as a whole if any one entry 404s, which would leave the
+// install with no cache at all — so this list has to track the files that
+// actually ship. All three samples are precached because the language is only
+// known at runtime and a first run may already be offline.
 const ASSETS_TO_CACHE = [
     './',
     './index.html',
     './manifest.webmanifest?v=2',
     './app-icon.png?v=2',
-    './examples/standard-exam.json',
-    './examples/ihk-fisi-flashcards.json'
+    './examples/sample-tr.json',
+    './examples/sample-en.json',
+    './examples/sample-de.json'
 ];
 
 // Installaion: Cache files and skip waiting

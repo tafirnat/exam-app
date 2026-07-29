@@ -1,0 +1,136 @@
+{
+  "exam_metadata": {
+    "title": "Başlangıç — Soru Tipleri",
+    "id": "sample_tr",
+    "description": "Desteklenen her tipten bir soru. Her biri anlattığı şeyin kendisi olarak duruyor.",
+    "category": "Rehber"
+  },
+  "questions": [
+    {
+      "id": "sample_reading",
+      "type": "reading",
+      "category": "Genel Bakış",
+      "tags": ["rehber", "buradan-basla"],
+      "starred": true,
+      "content": {
+        "text": "<h3>Hoş geldiniz</h3><p>Bu kaynakta uygulamanın desteklediği her tipten bir soru var. Bir kez baştan sona gezerseniz bir JSON dosyasının içerebileceği her şeyi görmüş olursunuz.</p><h4>Sekiz tip</h4><ul><li><strong>reading</strong> ve <strong>topic_review</strong> — cevabı olmayan okuma kartları. Okur, konuyu ne kadar bildiğinizi kendiniz puanlarsınız.</li><li><strong>single_choice</strong>, <strong>multiple_choice</strong>, <strong>true_false</strong> — bir veya birden fazla şıkkı doğru işaretlenmiş seçenek listeleri.</li><li><strong>short_answer</strong> — cevabı siz yazarsınız, kabul edilen yazımlarla karşılaştırılır.</li><li><strong>fill_in_the_blank</strong> — cevap cümlenin içinde durur.</li><li><strong>flashcard</strong> — ön ve arka yüz; puanlanmazsınız, kendinizi puanlarsınız.</li></ul><blockquote><p>Herhangi bir soruyu düzenleyicide açıp nasıl kurulduğuna bakın, sonra bu dosyayı kendi dosyanız için şablon olarak kullanın.</p></blockquote>"
+      },
+      "answer": {
+        "explanation": "Okuma kartlarının cevabı yoktur. Konuyu test etmeden önce okumak için vardırlar."
+      }
+    },
+    {
+      "id": "sample_single_choice",
+      "type": "single_choice",
+      "category": "Doğa",
+      "tags": ["medya", "örnek"],
+      "difficulty": 1.5,
+      "content": {
+        "text": "Fotoğraftaki hayvan ne yiyor?",
+        "media": [
+          {
+            "type": "image",
+            "url": "https://images.pexels.com/photos/35536100/pexels-photo-35536100/free-photo-of-close-up-of-giant-panda-eating-bamboo-in-forest.jpeg?auto=compress&w=1260&h=750&dpr=2",
+            "position": "above"
+          }
+        ]
+      },
+      "options": [
+        { "id": 1, "text": "Bambu" },
+        { "id": 2, "text": "Okaliptüs yaprağı" },
+        { "id": 3, "text": "Balık" },
+        { "id": 4, "text": "Akasya kabuğu" }
+      ],
+      "answer": {
+        "correct_ids": [1],
+        "explanation": "Dev pandalar neredeyse yalnızca bambu yer. Bu soru aynı zamanda görselin nasıl ekleneceğini gösteriyor: içeriğe bir media kaydı koyun ve position değerini above ya da below yapın."
+      }
+    },
+    {
+      "id": "sample_multiple_choice",
+      "type": "multiple_choice",
+      "tags": ["soru-tipleri"],
+      "difficulty": 3,
+      "content": {
+        "text": "Hangi soru tipleri seçenek listesi gerektirir?"
+      },
+      "options": [
+        { "id": 1, "text": "single_choice" },
+        { "id": 2, "text": "multiple_choice" },
+        { "id": 3, "text": "short_answer" },
+        { "id": 4, "text": "flashcard" },
+        { "id": 5, "text": "true_false" }
+      ],
+      "answer": {
+        "correct_ids": [1, 2, 5],
+        "explanation": "Seçenek listesini yalnızca üç şıklı tip kullanır. Bir multiple_choice sorusunda en az iki şık doğru işaretlenmelidir — tek işaretlerseniz uygulama sorunun kendi tipiyle çeliştiğini söyler."
+      }
+    },
+    {
+      "id": "sample_true_false",
+      "type": "true_false",
+      "category": "Soru Tipleri",
+      "difficulty": 2,
+      "content": {
+        "text": "Bir true_false sorusuna üçüncü bir şık eklenebilir."
+      },
+      "options": [
+        { "id": 1, "text": "Doğru" },
+        { "id": 2, "text": "Yanlış" }
+      ],
+      "answer": {
+        "correct_ids": [2]
+      }
+    },
+    {
+      "id": "sample_short_answer",
+      "type": "short_answer",
+      "tags": ["yazarak-cevap", "örnek"],
+      "difficulty": 2.5,
+      "content": {
+        "text": "Türkiye'nin başkenti hangi şehirdir?"
+      },
+      "answer": {
+        "accepted_texts": ["Ankara", "Ankara ili"],
+        "explanation": "Kabul etmeye razı olduğunuz her yazımı listeleyin. caseSensitive değerini true yapmadıkça büyük/küçük harf ve baştaki sondaki boşluklar dikkate alınmaz."
+      }
+    },
+    {
+      "id": "sample_fill_in_the_blank",
+      "type": "fill_in_the_blank",
+      "category": "Ağ Teknolojileri",
+      "difficulty": 3.5,
+      "content": {
+        "text": "HTTP {{80}} portunu, HTTPS {{443}} portunu, DNS ise {{53|Port 53}} portunu kullanır."
+      },
+      "answer": {
+        "explanation": "Cevaplar çift süslü parantez içinde cümlenin kendisinde durur, dolayısıyla ayrıca güncel tutulacak bir accepted_texts listesi olmaz. Dikey çizgi alternatif yazım ekler: ilki doğru cevap olarak gösterilir, diğerleri yalnızca kabul edilir."
+      }
+    },
+    {
+      "id": "sample_flashcard",
+      "type": "flashcard",
+      "tags": ["aralikli-tekrar"],
+      "starred": true,
+      "content": {
+        "text": "Bilgi kartını diğer bütün soru tiplerinden ayıran şey nedir?"
+      },
+      "answer": {
+        "back": "Hiçbir şey puanlanmaz. Arka yüzü açar, kendinizi Tekrar / Zor / Normal / Kolay diye değerlendirirsiniz; kartın ne zaman geri geleceğine o değerlendirme karar verir."
+      }
+    },
+    {
+      "id": "sample_topic_review",
+      "type": "topic_review",
+      "category": "Başvuru",
+      "tags": ["kopya-kagidi", "sema"],
+      "flagged": true,
+      "content": {
+        "text": "<h3>Alan başvurusu</h3><p>Yalnızca <code>id</code>, <code>type</code> ve soru metni zorunludur. Aşağıdakilerin hepsi isteğe bağlıdır — bu dosya bazılarını bilerek boş bırakıyor ki en sade sorunun nasıl göründüğünü görebilesiniz.</p><ul><li><code>category</code> — gruplama etiketi</li><li><code>tags</code> — dizi hâlinde etiketler; aranabilir ve filtrelenebilir</li><li><code>difficulty</code> — 1 ile 5 arası, tekrar algoritmasını besler</li><li><code>starred</code> / <code>flagged</code> — sorunun üstünde görünen iki işaret</li><li><code>answer.explanation</code> — kontrol sonrası gösterilir, her tipte çalışır</li><li><code>content.media</code> — metnin üstüne ya da altına yerleşen görsel veya video</li></ul><h4>Tipe göre cevap alanı</h4><ul><li>şıklı tipler → <code>answer.correct_ids</code></li><li>short_answer → <code>answer.accepted_texts</code></li><li>fill_in_the_blank → metnin içindeki <code>{{işaretler}}</code></li><li>flashcard → <code>answer.back</code></li><li>reading / topic_review → hiç cevap yok</li></ul>"
+      },
+      "answer": {
+        "explanation": "İlk dosyanızı yazarken bu kartı bayraklı bırakın, şemaya alıştıktan sonra bayrağı kaldırın."
+      }
+    }
+  ]
+}

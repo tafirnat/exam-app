@@ -1,4 +1,4 @@
-import { AppState, saveStats, saveSources, saveCurrentSource, saveCustomAIPrompt, saveAiProviders, DEFAULT_AI_PROVIDERS, saveActiveTest, clearActiveTest, clearLocalStudyData } from './core/state.js';
+import { AppState, saveStats, saveSources, saveCurrentSource, saveCustomAIPrompt, saveAiProviders, DEFAULT_AI_PROVIDERS, saveActiveTest, clearActiveTest, clearLocalStudyData, SAMPLE_LOADED_KEY } from './core/state.js';
 import { initTheme, toggleTheme } from './core/theme.js';
 import { updateStaticTranslations, t, targetLanguages, translations } from './core/i18n.js';
 import { showToast, showConfirm, getCorrectAnswers, highlightText, escapeHTML } from './core/utils.js';
@@ -262,24 +262,16 @@ const initApp = () => {
 
         console.log('App initialized v1.2.3');
 
-        // One-time auto-load logic for new users: Add default template but don't force select it
-        const templateAdded = localStorage.getItem('focus_app_template_added');
-        if (!templateAdded) {
-            console.log('Adding default exam template...');
-            loadFromUrl('./examples/standard-exam.json', { active: false, silent: true }).then(source => {
+        // A new library — or one just reset to factory state — gets the sample
+        // source in the reader's own language. The flag is cleared by
+        // clearLocalStudyData(), so a reset brings it back rather than leaving
+        // someone staring at an empty app.
+        if (!localStorage.getItem(SAMPLE_LOADED_KEY)) {
+            const lang = ['tr', 'en', 'de'].includes(AppState.language) ? AppState.language : 'en';
+            loadFromUrl(`./examples/sample-${lang}.json`, { active: true, silent: true }).then(source => {
                 if (source) renderSourcesList();
             });
-            localStorage.setItem('focus_app_template_added', 'true');
-        }
-
-        // One-time: Add IHK FISI flashcard demo for all users (new + existing)
-        const flashcardDemoAdded = localStorage.getItem('focus_app_flashcard_demo_added');
-        if (!flashcardDemoAdded) {
-            console.log('Adding IHK FISI flashcard demo...');
-            loadFromUrl('./examples/ihk-fisi-flashcards.json', { active: false, silent: true }).then(source => {
-                if (source) renderSourcesList();
-            });
-            localStorage.setItem('focus_app_flashcard_demo_added', 'true');
+            localStorage.setItem(SAMPLE_LOADED_KEY, lang);
         }
 
         // Fix: If we have active sources but no questions loaded (e.g. after refresh), load them
