@@ -967,20 +967,21 @@ pre code {
 .preview-actions-bar {
     margin: 1.5rem 0;
     display: flex;
+    flex-direction: row;
     align-items: center;
     justify-content: center;
-    position: relative;
     width: 100%;
     gap: 1rem;
 }
 
 .preview-back-btn,
 #previewBackBtn {
+    order: 1;
     display: inline-flex;
     align-items: center;
     justify-content: center;
     gap: 0.6rem;
-    padding: 0.65rem 1.75rem;
+    padding: 0.7rem 1.75rem;
     background: var(--surface-hover);
     backdrop-filter: blur(10px);
     -webkit-backdrop-filter: blur(10px);
@@ -997,7 +998,7 @@ pre code {
     max-width: fit-content;
     text-decoration: none;
     box-shadow: var(--shadow-sm);
-    margin: 0 auto;
+    margin: 0;
 }
 
 .preview-back-btn:hover,
@@ -1022,18 +1023,19 @@ pre code {
 }
 
 .btn-edit-preview {
-    position: absolute;
-    right: 0;
+    order: 2;
+    position: static;
     display: inline-flex;
     align-items: center;
     justify-content: center;
-    gap: 0.5rem;
-    padding: 0.65rem 1.4rem;
+    gap: 0.6rem;
+    padding: 0.7rem 1.75rem;
     font-size: 0.9rem;
     font-weight: 700;
     border-radius: 50px;
     box-shadow: var(--shadow-sm);
     transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    margin: 0;
 }
 
 .btn-edit-preview:hover {
@@ -1047,12 +1049,19 @@ pre code {
         gap: 0.75rem;
     }
 
-    .preview-back-btn,
-    #previewBackBtn,
     .btn-edit-preview {
-        position: static !important;
+        order: 1 !important;
         width: 100% !important;
         min-width: 0 !important;
+        margin: 0 !important;
+    }
+
+    .preview-back-btn,
+    #previewBackBtn {
+        order: 2 !important;
+        width: 100% !important;
+        min-width: 0 !important;
+        max-width: 100% !important;
         margin: 0 !important;
     }
 }
