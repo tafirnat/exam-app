@@ -95,44 +95,46 @@
     --code-text: #0f172a;
     --highlight-bg: rgba(254, 240, 138, 0.9);
     --highlight-text: #1e293b;
+    --search-highlight-bg: rgba(255, 193, 7, 0.6);
+    --search-highlight-ring: rgba(255, 193, 7, 0.3);
 
-    --callout-note-border: #3b82f6;
+    --callout-note-border: #2563eb;
     --callout-note-bg: rgba(59, 130, 246, 0.08);
 
-    --callout-abstract-border: #06b6d4;
+    --callout-abstract-border: #0e7490;
     --callout-abstract-bg: rgba(6, 182, 212, 0.08);
 
-    --callout-info-border: #2563eb;
+    --callout-info-border: #0369a1;
     --callout-info-bg: rgba(37, 99, 235, 0.08);
 
-    --callout-todo-border: #6366f1;
+    --callout-todo-border: #4f46e5;
     --callout-todo-bg: rgba(99, 102, 241, 0.08);
 
-    --callout-tip-border: #10b981;
+    --callout-tip-border: #047857;
     --callout-tip-bg: rgba(16, 185, 129, 0.08);
 
-    --callout-success-border: #22c55e;
+    --callout-success-border: #166534;
     --callout-success-bg: rgba(34, 197, 94, 0.08);
 
-    --callout-question-border: #8b5cf6;
+    --callout-question-border: #7c3aed;
     --callout-question-bg: rgba(139, 92, 246, 0.08);
 
-    --callout-warning-border: #f59e0b;
+    --callout-warning-border: #b45309;
     --callout-warning-bg: rgba(245, 158, 11, 0.08);
 
-    --callout-failure-border: #f43f5e;
+    --callout-failure-border: #be123c;
     --callout-failure-bg: rgba(244, 63, 94, 0.08);
 
-    --callout-danger-border: #ef4444;
+    --callout-danger-border: #b91c1c;
     --callout-danger-bg: rgba(239, 68, 68, 0.08);
 
-    --callout-bug-border: #d97706;
+    --callout-bug-border: #854d0e;
     --callout-bug-bg: rgba(217, 119, 6, 0.08);
 
-    --callout-example-border: #a855f7;
+    --callout-example-border: #9333ea;
     --callout-example-bg: rgba(168, 85, 247, 0.08);
 
-    --callout-quote-border: #64748b;
+    --callout-quote-border: #475569;
     --callout-quote-bg: rgba(100, 116, 139, 0.08);
 }
 
@@ -185,6 +187,60 @@
     --btn-soft-alpha: 0.16;
     --btn-soft-alpha-hover: 0.26;
     --btn-soft-border-alpha: 0.35;
+
+    /* Markdown & Callout Tokens (Dark Theme)
+       The light set is tuned for ink on paper: near-black code text on a dark
+       6%-alpha wash. Both of those collapse on --bg-color: #0b1120, so the
+       whole set is restated here rather than inherited. Code flips to light
+       ink on a light wash; every callout hue steps up to its 400-level tint
+       (the same move --primary-color makes above) because the 500/600-level
+       hues used in light mode fall below 4.5:1 as title text on dark, and the
+       0.08 surface alphas read as flat black. */
+    --code-bg: rgba(148, 163, 184, 0.14);
+    --code-text: #e2e8f0;
+    --highlight-bg: rgba(250, 204, 21, 0.30);
+    --highlight-text: #f8fafc;
+    --search-highlight-bg: rgba(255, 193, 7, 0.45);
+    --search-highlight-ring: rgba(255, 193, 7, 0.2);
+
+    --callout-note-border: #60a5fa;
+    --callout-note-bg: rgba(96, 165, 250, 0.14);
+
+    --callout-abstract-border: #22d3ee;
+    --callout-abstract-bg: rgba(34, 211, 238, 0.14);
+
+    --callout-info-border: #38bdf8;
+    --callout-info-bg: rgba(56, 189, 248, 0.14);
+
+    --callout-todo-border: #818cf8;
+    --callout-todo-bg: rgba(129, 140, 248, 0.14);
+
+    --callout-tip-border: #34d399;
+    --callout-tip-bg: rgba(52, 211, 153, 0.14);
+
+    --callout-success-border: #4ade80;
+    --callout-success-bg: rgba(74, 222, 128, 0.14);
+
+    --callout-question-border: #a78bfa;
+    --callout-question-bg: rgba(167, 139, 250, 0.14);
+
+    --callout-warning-border: #fbbf24;
+    --callout-warning-bg: rgba(251, 191, 36, 0.14);
+
+    --callout-failure-border: #fb7185;
+    --callout-failure-bg: rgba(251, 113, 133, 0.14);
+
+    --callout-danger-border: #f87171;
+    --callout-danger-bg: rgba(248, 113, 113, 0.14);
+
+    --callout-bug-border: #f59e0b;
+    --callout-bug-bg: rgba(245, 158, 11, 0.14);
+
+    --callout-example-border: #c084fc;
+    --callout-example-bg: rgba(192, 132, 252, 0.14);
+
+    --callout-quote-border: #94a3b8;
+    --callout-quote-bg: rgba(148, 163, 184, 0.14);
 }
 
 html,
@@ -3233,17 +3289,16 @@ input:checked+.slider-small:before {
     }
 }
 
+/* Tokenised so markdown.css can reach the ring colour when a search hit lands
+   inside an author ==highlight== without restating a literal. The former
+   [data-theme="light"] override is folded into the token pair; the theme now
+   lives on <html>, so the :root value is the light value. */
 .search-highlight {
-    background: rgba(255, 193, 7, 0.45);
+    background: var(--search-highlight-bg);
     color: inherit;
     border-radius: 2px;
     padding: 0 2px;
-    box-shadow: 0 0 0 1px rgba(255, 193, 7, 0.2);
-}
-
-[data-theme="light"] .search-highlight {
-    background: rgba(255, 193, 7, 0.6);
-    box-shadow: 0 0 0 1px rgba(255, 193, 7, 0.3);
+    box-shadow: 0 0 0 1px var(--search-highlight-ring);
 }
 
 

@@ -1,12 +1,20 @@
 /* ==========================================================================
    MARKDOWN SCOPED STYLESHEET (.md-content)
    ---------------------------------------------------------------------------
-   Provides theme-aware, responsive typography and Obsidian callout styling.
-   All rules are strictly scoped under .md-content to avoid leaking into chrome.
+   Every rule here is scoped under .md-content, the single wrapper renderMarkdown
+   emits. Nothing in this file may match app chrome: the renderer is the only
+   producer of these elements, so an unscoped `code` or `table` selector would
+   silently restyle the whole application (which is exactly what the retired
+   global block in style.css did).
+
+   Colour never appears literally here. Every value resolves through a custom
+   property that style.css defines in both :root and [data-theme="dark"], so a
+   missing fallback is a bug to fix in the token table, not to paper over with
+   a hex literal that would only be right in one theme.
    ========================================================================== */
 
 .md-content {
-    color: var(--text-primary, var(--text-color));
+    color: var(--text-primary);
     line-height: 1.6;
     font-weight: 400;
     font-size: 1rem;
@@ -80,31 +88,43 @@
     opacity: 0.75;
 }
 
-/* Highlight ==text== */
+/* Highlight ==text== — a flat fill, deliberately ring-less so that a nested
+   .search-highlight (which is a ring) stays distinguishable. See below. */
 .md-content mark {
-    background-color: var(--highlight-bg, rgba(254, 240, 138, 0.9));
-    color: var(--highlight-text, #1e293b);
+    background-color: var(--highlight-bg);
+    color: var(--highlight-text);
     padding: 0.12em 0.35em;
-    border-radius: var(--radius-sm, 4px);
+    border-radius: var(--radius-sm);
+}
+
+/* A search hit landing inside an author highlight is the one case where the two
+   yellows would stack into mud. The author's fill wins; the search hit drops its
+   own fill and becomes a ring plus weight, so both remain readable in either
+   theme. */
+.md-content mark .search-highlight {
+    background: transparent;
+    box-shadow: 0 0 0 2px var(--search-highlight-ring);
+    color: var(--highlight-text);
+    font-weight: 700;
 }
 
 /* Inline Code & Fenced Code Blocks */
 .md-content code {
     font-family: 'JetBrains Mono', 'Fira Code', 'Courier New', monospace;
     font-size: 0.88em;
-    background-color: var(--code-bg, rgba(15, 23, 42, 0.06));
-    color: var(--code-text, #0f172a);
+    background-color: var(--code-bg);
+    color: var(--code-text);
     padding: 0.15em 0.35em;
-    border-radius: 4px;
-    border: 1px solid var(--border-color, rgba(0, 0, 0, 0.1));
+    border-radius: var(--radius-sm);
+    border: 1px solid var(--border-color);
 }
 
 .md-content pre {
-    background-color: var(--code-bg, rgba(15, 23, 42, 0.06));
-    color: var(--code-text, #0f172a);
+    background-color: var(--code-bg);
+    color: var(--code-text);
     padding: 0.85rem 1rem;
-    border-radius: var(--radius-md, 8px);
-    border: 1px solid var(--border-color, rgba(0, 0, 0, 0.1));
+    border-radius: var(--radius-md);
+    border: 1px solid var(--border-color);
     overflow-x: auto;
     max-width: 100%;
     white-space: pre;
@@ -122,7 +142,7 @@
 
 /* External Links & Internal Wikilinks */
 .md-content a {
-    color: var(--primary-color, #3b82f6);
+    color: var(--primary-color);
     text-decoration: underline;
     text-underline-offset: 2px;
 }
@@ -132,21 +152,21 @@
 }
 
 .md-content .md-wikilink {
-    color: var(--primary-color, #3b82f6);
+    color: var(--primary-color);
     font-weight: 500;
-    background: var(--surface-hover, rgba(0, 0, 0, 0.04));
+    background: var(--surface-hover);
     padding: 0.1em 0.35em;
-    border-radius: 4px;
-    border-bottom: 1px dashed var(--primary-color, #3b82f6);
+    border-radius: var(--radius-sm);
+    border-bottom: 1px dashed var(--primary-color);
 }
 
 .md-content .md-embed-missing {
-    color: var(--text-secondary, #64748b);
+    color: var(--text-secondary);
     opacity: 0.75;
     font-style: italic;
-    background: var(--surface-hover, rgba(0, 0, 0, 0.04));
+    background: var(--surface-hover);
     padding: 0.1em 0.35em;
-    border-radius: 4px;
+    border-radius: var(--radius-sm);
 }
 
 /* Lists & Task Items */
@@ -161,23 +181,32 @@
     line-height: 1.5;
 }
 
-.md-content ul ul,
-.md-content ol ol,
-.md-content ul ol,
-.md-content ol ul {
+/* Nested levels tighten up and lose the outer block's vertical rhythm, so an
+   indented sub-list reads as part of its parent item rather than a new block. */
+.md-content li > ul,
+.md-content li > ol {
     margin: 0.2rem 0;
 }
 
+/* flex-wrap is what lets a task item hold a sub-list: without it the nested
+   list is laid out beside the label instead of under it. */
 .md-content .md-task {
     list-style: none;
     margin-left: -1.2rem;
     display: flex;
     align-items: baseline;
+    flex-wrap: wrap;
     gap: 0.45rem;
 }
 
+.md-content .md-task > ul,
+.md-content .md-task > ol {
+    flex-basis: 100%;
+    margin-left: 1.2rem;
+}
+
 .md-content .md-task input[type="checkbox"] {
-    accent-color: var(--primary-color, #3b82f6);
+    accent-color: var(--primary-color);
     margin: 0;
     vertical-align: middle;
     cursor: default;
@@ -185,24 +214,24 @@
 
 /* Blockquotes & Callouts */
 .md-content blockquote {
-    border-left: 4px solid var(--border-color, #cbd5e1);
+    border-left: 4px solid var(--border-color);
     margin: 0.75rem 0;
     padding: 0.5rem 0 0.5rem 1rem;
-    color: var(--text-secondary, #64748b);
-    background: var(--surface-hover, rgba(0, 0, 0, 0.03));
-    border-radius: 0 var(--radius-sm, 4px) var(--radius-sm, 4px) 0;
+    color: var(--text-secondary);
+    background: var(--surface-hover);
+    border-radius: 0 var(--radius-sm) var(--radius-sm) 0;
 }
 
-.md-callout {
+.md-content .md-callout {
     margin: 0.85rem 0;
     padding: 0.85rem 1rem;
-    border-radius: var(--radius-md, 8px);
-    border-left: 4px solid var(--callout-border, var(--primary-color));
-    background-color: var(--callout-bg, rgba(59, 130, 246, 0.08));
+    border-radius: var(--radius-md);
+    border-left: 4px solid var(--callout-border);
+    background-color: var(--callout-bg);
     color: var(--text-primary);
 }
 
-.md-callout-title {
+.md-content .md-callout-title {
     font-weight: 650;
     font-size: 0.98rem;
     margin-bottom: 0.4rem;
@@ -212,27 +241,34 @@
     color: var(--callout-border);
 }
 
-.md-callout-body {
+.md-content .md-callout-title:empty {
+    display: none;
+}
+
+.md-content .md-callout-body {
     font-size: 0.95rem;
     line-height: 1.55;
 }
 
-/* Per-callout type variable bindings */
-.md-callout-note { --callout-border: var(--callout-note-border); --callout-bg: var(--callout-note-bg); }
-.md-callout-abstract { --callout-border: var(--callout-abstract-border); --callout-bg: var(--callout-abstract-bg); }
-.md-callout-info { --callout-border: var(--callout-info-border); --callout-bg: var(--callout-info-bg); }
-.md-callout-todo { --callout-border: var(--callout-todo-border); --callout-bg: var(--callout-todo-bg); }
-.md-callout-tip { --callout-border: var(--callout-tip-border); --callout-bg: var(--callout-tip-bg); }
-.md-callout-success { --callout-border: var(--callout-success-border); --callout-bg: var(--callout-success-bg); }
-.md-callout-question { --callout-border: var(--callout-question-border); --callout-bg: var(--callout-question-bg); }
-.md-callout-warning { --callout-border: var(--callout-warning-border); --callout-bg: var(--callout-warning-bg); }
-.md-callout-failure { --callout-border: var(--callout-failure-border); --callout-bg: var(--callout-failure-bg); }
-.md-callout-danger { --callout-border: var(--callout-danger-border); --callout-bg: var(--callout-danger-bg); }
-.md-callout-bug { --callout-border: var(--callout-bug-border); --callout-bg: var(--callout-bug-bg); }
-.md-callout-example { --callout-border: var(--callout-example-border); --callout-bg: var(--callout-example-bg); }
-.md-callout-quote { --callout-border: var(--callout-quote-border); --callout-bg: var(--callout-quote-bg); }
+/* Per-callout type variable bindings. The renderer always emits one of these
+   alongside .md-callout, and normalizes unknown types to note, so
+   --callout-border/--callout-bg are never unresolved. */
+.md-content .md-callout-note { --callout-border: var(--callout-note-border); --callout-bg: var(--callout-note-bg); }
+.md-content .md-callout-abstract { --callout-border: var(--callout-abstract-border); --callout-bg: var(--callout-abstract-bg); }
+.md-content .md-callout-info { --callout-border: var(--callout-info-border); --callout-bg: var(--callout-info-bg); }
+.md-content .md-callout-todo { --callout-border: var(--callout-todo-border); --callout-bg: var(--callout-todo-bg); }
+.md-content .md-callout-tip { --callout-border: var(--callout-tip-border); --callout-bg: var(--callout-tip-bg); }
+.md-content .md-callout-success { --callout-border: var(--callout-success-border); --callout-bg: var(--callout-success-bg); }
+.md-content .md-callout-question { --callout-border: var(--callout-question-border); --callout-bg: var(--callout-question-bg); }
+.md-content .md-callout-warning { --callout-border: var(--callout-warning-border); --callout-bg: var(--callout-warning-bg); }
+.md-content .md-callout-failure { --callout-border: var(--callout-failure-border); --callout-bg: var(--callout-failure-bg); }
+.md-content .md-callout-danger { --callout-border: var(--callout-danger-border); --callout-bg: var(--callout-danger-bg); }
+.md-content .md-callout-bug { --callout-border: var(--callout-bug-border); --callout-bg: var(--callout-bug-bg); }
+.md-content .md-callout-example { --callout-border: var(--callout-example-border); --callout-bg: var(--callout-example-bg); }
+.md-content .md-callout-quote { --callout-border: var(--callout-quote-border); --callout-bg: var(--callout-quote-bg); }
 
-/* Tables */
+/* Tables — display:block is what makes overflow-x actually apply to a table, so
+   a wide table scrolls inside the card instead of widening the page. */
 .md-content table {
     width: 100%;
     border-collapse: collapse;
@@ -244,19 +280,19 @@
 
 .md-content th,
 .md-content td {
-    border: 1px solid var(--border-color, #cbd5e1);
+    border: 1px solid var(--border-color);
     padding: 0.5rem 0.75rem;
     text-align: left;
 }
 
 .md-content th {
-    background-color: var(--surface-hover, rgba(0, 0, 0, 0.04));
+    background-color: var(--surface-hover);
     font-weight: 600;
 }
 
 /* Horizontal Rule */
 .md-content hr {
     border: none;
-    border-top: 1px solid var(--border-color, #cbd5e1);
+    border-top: 1px solid var(--border-color);
     margin: 1.25rem 0;
 }
