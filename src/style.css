@@ -963,19 +963,82 @@ pre code {
     margin-right: 4px;
 }
 
+/* --- Question Stats Preview Actions Bar --- */
 .preview-actions-bar {
     margin: 1.5rem 0;
     display: flex;
     align-items: center;
     justify-content: center;
-    gap: 1rem;
     position: relative;
     width: 100%;
+    gap: 1rem;
+}
+
+.preview-back-btn,
+#previewBackBtn {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.6rem;
+    padding: 0.65rem 1.75rem;
+    background: var(--surface-hover);
+    backdrop-filter: blur(10px);
+    -webkit-backdrop-filter: blur(10px);
+    border: 1px solid var(--border-color);
+    cursor: pointer;
+    color: var(--text-primary);
+    border-radius: 50px;
+    font-size: 0.9rem;
+    font-weight: 700;
+    letter-spacing: 0.3px;
+    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    width: auto !important;
+    min-width: 180px;
+    max-width: fit-content;
+    text-decoration: none;
+    box-shadow: var(--shadow-sm);
+    margin: 0 auto;
+}
+
+.preview-back-btn:hover,
+#previewBackBtn:hover {
+    background: var(--surface-color);
+    border-color: var(--primary-color);
+    color: var(--primary-color);
+    transform: translateY(-2px);
+    box-shadow: 0 6px 16px -2px rgba(var(--primary-rgb), 0.25);
+}
+
+.preview-back-btn:active,
+#previewBackBtn:active {
+    transform: translateY(0);
+}
+
+.preview-back-btn svg,
+#previewBackBtn svg {
+    width: 18px;
+    height: 18px;
+    stroke-width: 2.5;
 }
 
 .btn-edit-preview {
     position: absolute;
     right: 0;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.5rem;
+    padding: 0.65rem 1.4rem;
+    font-size: 0.9rem;
+    font-weight: 700;
+    border-radius: 50px;
+    box-shadow: var(--shadow-sm);
+    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.btn-edit-preview:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 6px 16px -2px rgba(var(--primary-rgb), 0.3);
 }
 
 @media (max-width: 600px) {
@@ -984,9 +1047,13 @@ pre code {
         gap: 0.75rem;
     }
 
+    .preview-back-btn,
+    #previewBackBtn,
     .btn-edit-preview {
-        position: static;
-        width: 100%;
+        position: static !important;
+        width: 100% !important;
+        min-width: 0 !important;
+        margin: 0 !important;
     }
 }
 
@@ -2527,41 +2594,7 @@ input:checked+.slider-small:before {
     transform: translateX(-2px);
 }
 
-.preview-back-btn {
-    display: inline-flex;
-    align-items: center;
-    justify-content: center;
-    gap: 0.6rem;
-    padding: 0.8rem 2.5rem;
-    background: rgba(var(--surface-color-rgb), 0.6);
-    backdrop-filter: blur(10px);
-    -webkit-backdrop-filter: blur(10px);
-    border: 1px solid var(--border-color);
-    cursor: pointer;
-    color: var(--text-primary);
-    border-radius: 50px;
-    font-size: 0.95rem;
-    font-weight: 700;
-    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
-    width: auto;
-    min-width: 200px;
-    text-decoration: none;
-    box-shadow: var(--shadow-md);
-    margin: 0 auto;
-}
 
-.preview-back-btn:hover {
-    background: rgba(var(--primary-rgb), 0.15);
-    border-color: var(--primary-color);
-    transform: translateY(-2px);
-    box-shadow: 0 10px 20px -5px rgba(0, 0, 0, 0.3);
-}
-
-.preview-back-btn svg {
-    width: 18px;
-    height: 18px;
-    stroke-width: 3;
-}
 
 .stats-header-main {
     display: flex;
@@ -3153,34 +3186,7 @@ input:checked+.slider-small:before {
     background: var(--selected-bg);
 }
 
-/* Stats Preview UI Refinements */
-#previewBackBtn {
-    width: inherit;
-    padding: .5rem;
-    font-size: .75rem;
-    font-weight: 700;
-    letter-spacing: 0.5px;
-    border-radius: var(--radius-lg);
-    background: var(--surface-hover);
-    color: var(--text-primary);
-    border: 2px solid var(--border-color);
-    box-shadow: var(--shadow-md);
-    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
-    display: flex;
-    align-items: center;
-    justify-content: center;
-}
 
-#previewBackBtn:hover {
-    background: var(--surface-color);
-    border-color: var(--primary-color);
-    transform: translateY(-2px);
-    box-shadow: 0 10px 15px -3px rgba(var(--primary-rgb), 0.2);
-}
-
-#previewBackBtn:active {
-    transform: translateY(0);
-}
 
 .test-summary-section {
     display: none;
