@@ -1,0 +1,61 @@
+{
+  "exam_metadata": {
+    "id": "reading_feature_guide",
+    "title": "Reading & Topic Review Feature Guide",
+    "category": "Documentation",
+    "author": "Exam App Core Team",
+    "date": "2026-07-29",
+    "description": "Comprehensive reference guide and sample dataset demonstrating HTML-formatted Reading Cards, Code Block rendering, and Mixed-Mode dataset integration in Exam App."
+  },
+  "questions": [
+    {
+      "id": "read_001",
+      "type": "reading",
+      "category": "Feature Overview",
+      "tags": ["guide", "reading-mode", "overview"],
+      "starred": true,
+      "flagged": false,
+      "content": {
+        "text": "<h3>📖 Reading & Topic Review Content in Exam App</h3><p>The <strong>Reading Content</strong> feature enables structured, HTML-formatted study passages, cheat sheets, and topic summaries directly inside Exam App. Unlike traditional question-and-answer items, reading cards provide an immersive, distraction-free environment for initial learning and rapid revision.</p><h4>Key Characteristics:</h4><ul><li><strong>HTML & Rich Formatting:</strong> Seamlessly renders headings, bold emphasis, bullet points, blockquotes, and inline code elements.</li><li><strong>Seamless Feature Compatibility:</strong> Fully supports native <em>Text-to-Speech (TTS)</em>, <em>Google Translation</em>, <em>Text Highlighting</em>, and <em>Personal Note Taking</em>.</li><li><strong>Spaced Repetition (FSRS):</strong> Evaluated using confidence ratings (e.g., <em>Hard / Good / Easy</em>) to automatically schedule future topic reviews based on retention stability.</li><li><strong>Auto-Hiding Navigation:</strong> On mobile devices, scrolling down smoothly hides the bottom navigation bar to maximize dikey reading space.</li></ul><blockquote><p><mark>Note:</mark> Reading cards can be used as standalone study modules or mixed directly into existing exam question banks.</p></blockquote>"
+      },
+      "answer": {
+        "explanation": "This card provides an overview of the Reading Content feature. You can star or flag this card for quick access during revision."
+      }
+    },
+    {
+      "id": "read_002",
+      "type": "reading",
+      "category": "Best Practices",
+      "tags": ["use-cases", "json-schema", "code-blocks"],
+      "starred": false,
+      "flagged": true,
+      "content": {
+        "text": "<h3>💡 Suitable Use Cases & Schema Structure</h3><p>Reading cards are ideal for technical concepts, legal/medical summaries, system architecture overviews, and formula cheat sheets that require contextual reading before test-taking.</p><h4>When to Use Reading Cards:</h4><ul><li><strong>Core Concept Revision:</strong> High-level topic summaries before answering practice exams.</li><li><strong>Technical Code Walkthroughs:</strong> Explaining code snippets, syntax rules, and algorithm steps.</li><li><strong>Formula & Reference Sheets:</strong> Quick lookup tables and key definitions.</li></ul><h4>Example JSON Schema Structure:</h4><pre><code class=\"language-json\">{\n  \"id\": \"topic_101\",\n  \"type\": \"reading\",\n  \"category\": \"System Architecture\",\n  \"tags\": [\"networking\", \"tcp-ip\"],\n  \"starred\": true,\n  \"content\": {\n    \"text\": \"&lt;h3&gt;TCP/IP Model Overview&lt;/h3&gt;&lt;p&gt;The TCP/IP suite consists of four abstraction layers...&lt;/p&gt;\"\n  },\n  \"answer\": {\n    \"explanation\": \"Key reference sheet for OSI vs TCP/IP layer comparisons.\"\n  }\n}</code></pre><p>This structure ensures 100% compatibility with the <em>Obsidian ExamApp Sync</em> plugin and GitHub Gist cross-device backups.</p>"
+      },
+      "answer": {
+        "explanation": "Example of a technical reading card containing code blocks and JSON schema usage guidance."
+      }
+    },
+    {
+      "id": "quiz_001",
+      "type": "single_choice",
+      "category": "Knowledge Check",
+      "tags": ["verification", "mixed-mode"],
+      "starred": false,
+      "flagged": false,
+      "content": {
+        "text": "How do Reading Cards integrate with Exam App's Spaced Repetition (FSRS) engine?"
+      },
+      "options": [
+        { "id": 1, "text": "They are excluded from FSRS completely." },
+        { "id": 2, "text": "They use confidence buttons (Hard / Good / Easy) to schedule future review intervals based on retention stability." },
+        { "id": 3, "text": "They automatically mark all topics as learned on first view." },
+        { "id": 4, "text": "They require typing the entire passage from memory." }
+      ],
+      "answer": {
+        "correct_ids": [2],
+        "explanation": "Reading Cards utilize FSRS confidence feedback (Hard/Good/Easy) to determine retrievability and schedule future reviews optimal for long-term memory retention."
+      }
+    }
+  ]
+}
