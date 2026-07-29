@@ -138,6 +138,8 @@ export function renderQuestion(isRefresh = false) {
     const stat = AppState.stats[statKey] || { difficulty: 5.0, note: '' };
     const isChecked = AppState.isAnswerChecked[qIndex];
 
+    document.getElementById('progressText').innerText = `${t('question_label')} ${qIndex + 1} / ${AppState.currentTest.length}`;
+    const qTextEl = document.getElementById('questionText');
     const rawQText = q.content?.text || q.text || '';
     const isFormattedContent = q.type === 'reading' || q.type === 'topic_review' || q.format === 'html' || /<[a-z][\s\S]*>/i.test(rawQText);
     qTextEl.innerHTML = isFormattedContent ? rawQText : escapeHTML(rawQText);
