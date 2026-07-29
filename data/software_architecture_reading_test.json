@@ -1,0 +1,66 @@
+{
+  "exam_metadata": {
+    "id": "software_architecture_reading_test",
+    "title": "Distributed Systems & System Design Masterclass",
+    "category": "Software Architecture",
+    "author": "Exam App Test Suite",
+    "date": "2026-07-29",
+    "description": "Richly structured technical reading module for testing HTML parsing, code rendering, table formatting, and complex markdown/HTML elements in Exam App."
+  },
+  "questions": [
+    {
+      "id": "arch_read_001",
+      "type": "flashcard",
+      "category": "Distributed Systems",
+      "tags": ["distributed-systems", "cap-theorem", "pacelc", "consensus", "raft"],
+      "difficulty": 3.5,
+      "starred": true,
+      "flagged": false,
+      "content": {
+        "text": "<h3>🏗️ Distributed Systems Trade-offs: CAP & PACELC Theorems</h3><p>In distributed database engineering, system design is fundamentally constrained by network physics and hardware partitioning. System architects must choose trade-offs based on business SLAs and data consistency guarantees.</p><h4>1. CAP Theorem Breakdown</h4><p>Formulated by Eric Brewer in 2000, the CAP theorem states that a distributed data store can simultaneously provide at most <strong>two out of three</strong> guarantees when network partitions occur:</p><ul><li><strong>Consistency (C):</strong> Every read receives the most recent write or an error.</li><li><strong>Availability (A):</strong> Every non-failing node returns a non-error response without guarantee that it contains the latest write.</li><li><strong>Partition Tolerance (P):</strong> The system continues to operate despite network messages being dropped or delayed between nodes.</li></ul><blockquote><p><mark>Key Axiom:</mark> Because network networks are inherently unreliable (network partitions <strong>P</strong> are inevitable), distributed systems must trade off between <strong>CP (Consistency over Availability)</strong> and <strong>AP (Availability over Consistency)</strong>.</p></blockquote><h4>2. Beyond CAP: The PACELC Theorem</h4><p>Proposed by Daniel Abadi, PACELC extends CAP by describing system behavior under normal (non-partitioned) operations:</p><ul><li><strong>If there is a Partition (P):</strong> How does the system trade off <strong>Availability (A)</strong> vs <strong>Consistency (C)</strong>?</li><li><strong>Else (E) under normal operations:</strong> How does the system trade off <strong>Latency (L)</strong> vs <strong>Consistency (C)</strong>?</li></ul><h4>3. Database Engines PACELC Classification Table</h4><table><thead><tr><th>Database System</th><th>CAP Class</th><th>PACELC Classification</th><th>Primary Architectural Focus</th></tr></thead><tbody><tr><td><strong>Apache Cassandra</strong></td><td>AP</td><td>PA / EL</td><td>High write throughput, eventual consistency</td></tr><tr><td><strong>MongoDB (Majority Write)</strong></td><td>CP</td><td>PC / EC</td><td>Strong consistency on primary node replica set</td></tr><tr><td><strong>Amazon DynamoDB</strong></td><td>AP / CP Configurable</td><td>PA / EL (Default)</td><td>Low-latency key-value key distribution</td></tr><tr><td><strong>Google Spanner</strong></td><td>CP</td><td>PC / EC</td><td>External consistency via Atomic TrueTime GPS clocks</td></tr></tbody></table>"
+      },
+      "answer": {
+        "back": "<h4>CAP vs PACELC Özet</h4><ul><li><strong>CAP:</strong> Network Partition (P) anında Consistency (C) mi, Availability (A) mı seçilecek?</li><li><strong>PACELC:</strong> Normal durumda Latency (L) mi, Consistency (C) mi feda edilecek?</li></ul>",
+        "explanation": "Technical reading card explaining CAP and PACELC trade-offs with comparison table and architectural breakdown."
+      }
+    },
+    {
+      "id": "arch_read_002",
+      "type": "text",
+      "category": "Database Engineering",
+      "tags": ["database", "indexing", "btree", "lsm-tree", "storage-engines"],
+      "difficulty": 4.0,
+      "starred": false,
+      "flagged": true,
+      "content": {
+        "text": "<h3>💾 Database Storage Engines: B-Trees vs. LSM-Trees</h3><p>Modern database engines store disk-bound data using distinct data structures optimized for either read-heavy or write-heavy workload patterns.</p><h4>1. B-Tree Storage Engines (e.g., PostgreSQL, MySQL InnoDB)</h4><p>B-Trees organize data into fixed-size pages (typically 4KB to 16KB) structured as a balanced search tree on disk. Writes update pages in-place.</p><ul><li><strong>Read Performance:</strong> <span style=\"color:#27ae60;\">O(log N)</span> point lookups with predictable disk seek costs.</li><li><strong>Write Overhead:</strong> In-place updates require random disk I/O and Write-Ahead Logging (WAL) for durability.</li></ul><h4>2. Log-Structured Merge-Trees (LSM-Trees, e.g., RocksDB, Cassandra)</h4><p>LSM-Trees convert random write operations into sequential disk access by buffering writes in an in-memory <strong>MemTable</strong> and appending updates to a Write-Ahead Log (WAL).</p><pre><code class=\"language-sql\">-- SQL Schema Definition Example: Order Transactions\nCREATE TABLE order_ledger (\n    order_id UUID PRIMARY KEY DEFAULT gen_random_uuid(),\n    user_id UUID NOT NULL,\n    amount DECIMAL(12, 2) NOT NULL,\n    currency VARCHAR(3) DEFAULT 'USD',\n    status VARCHAR(20) CHECK (status IN ('PENDING', 'COMPLETED', 'REFUNDED')),\n    created_at TIMESTAMPTZ DEFAULT CURRENT_TIMESTAMP\n);\n\n-- Create B-Tree index for composite filtering\nCREATE INDEX idx_user_orders ON order_ledger (user_id, created_at DESC);</code></pre><h4>3. Microservices Resiliency: Circuit Breaker Pattern</h4><p>To prevent cascading failures across microservices, the <strong>Circuit Breaker</strong> pattern monitors remote service health and trips state transitions when error rates exceed defined thresholds:</p><ol><li><strong>Closed State:</strong> Requests pass through normally. Successes reset error counters.</li><li><strong>Open State:</strong> Requests immediately fail fast with a fallback response without calling downstream services.</li><li><strong>Half-Open State:</strong> A limited probe rate of trial requests is allowed through to test downstream recovery.</li></ol><blockquote><p><em>\"Fail fast, isolate faults, and prevent resource exhaustion across system boundaries.\"</em></p></blockquote>"
+      },
+      "answer": {
+        "accepted_texts": ["okudum", "ok", "anladım"],
+        "explanation": "Detailed storage engine comparison (B-Trees vs LSM-Trees), SQL schema sample, and Circuit Breaker microservices resilience pattern."
+      }
+    },
+    {
+      "id": "arch_quiz_001",
+      "type": "multiple_choice",
+      "category": "Verification Quiz",
+      "tags": ["database", "lsm-tree"],
+      "difficulty": 3.0,
+      "starred": false,
+      "flagged": false,
+      "content": {
+        "text": "Which of the following characteristics apply to LSM-Tree (Log-Structured Merge-Tree) storage engines? (Select all that apply)"
+      },
+      "options": [
+        { "id": 1, "text": "Writes are initially buffered in memory using a MemTable." },
+        { "id": 2, "text": "Random disk writes are transformed into high-throughput sequential disk writes." },
+        { "id": 3, "text": "Pages on disk are updated in-place without write-ahead logs." },
+        { "id": 4, "text": "Background compaction processes merge and deduplicate SSTables." }
+      ],
+      "answer": {
+        "correct_ids": [1, 2, 4],
+        "explanation": "LSM-Trees buffer writes in memory (MemTable), convert writes to sequential disk I/O, and continuously run background SSTable compaction. In-place page updates are a characteristic of B-Trees, not LSM-Trees."
+      }
+    }
+  ]
+}

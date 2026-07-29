@@ -50,12 +50,14 @@ const TTS = {
 
     _play(text) {
         if (!text) { this.state = 'IDLE'; return; }
+        const cleanText = text.replace(/<[^>]*>/g, ' ').replace(/\s+/g, ' ').trim();
+        if (!cleanText) { this.state = 'IDLE'; return; }
         const lang = AppState.language === 'tr' ? 'tr' : (AppState.language === 'de' ? 'de' : 'en');
         const voicePrefix = lang === 'tr' ? 'tr-TR-Wavenet-' : (lang === 'de' ? 'de-DE-Wavenet-' : 'en-US-Wavenet-');
         const voice = AppState.currentTtsVoice || 'A';
         const speed = AppState.ttsSpeed || 0.5;
         const baseUrl = 'https://www.google.com/speech-api/v1/synthesize';
-        const params = new URLSearchParams({ enc: 'mpeg', lang, speed, client: 'lr-language-tts', use_google_only_voices: '1', name: voicePrefix + voice, text });
+        const params = new URLSearchParams({ enc: 'mpeg', lang, speed, client: 'lr-language-tts', use_google_only_voices: '1', name: voicePrefix + voice, text: cleanText });
         const url = `${baseUrl}?${params.toString()}`;
 
         this.audio = new Audio(url);
@@ -284,10 +286,14 @@ export function renderQuestion(isRefresh = false) {
 
     if (q.type === 'flashcard') {
         if (isChecked) {
+            const rawBack = q.answer?.back || '';
+            const isBackHtml = q.format === 'html' || /<[a-z][\s\S]*>/i.test(rawBack);
+            const backContentHtml = isBackHtml ? rawBack : escapeHTML(rawBack);
+
             container.innerHTML = `
                 <div class="flashcard-face flashcard-back">
                     <span class="flashcard-label">${t('flashcard_back')}</span>
-                    <div class="flashcard-text" id="flashcardBackText">${escapeHTML(q.answer?.back || '')}</div>
+                    <div class="flashcard-text" id="flashcardBackText">${backContentHtml}</div>
                     <div class="translation-text" id="trans_flashcardBackText" style="display:none;"></div>
                 </div>
             `;

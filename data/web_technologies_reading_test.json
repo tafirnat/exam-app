@@ -1,0 +1,66 @@
+{
+  "exam_metadata": {
+    "id": "web_technologies_reading_test",
+    "title": "Modern Web Technologies & Browser Rendering Deep Dive",
+    "category": "Web Development",
+    "author": "Exam App Test Suite",
+    "date": "2026-07-29",
+    "description": "Comprehensive HTML-formatted test dataset containing rich text structures, tables, nested lists, code blocks, and long-scroll technical reading content."
+  },
+  "questions": [
+    {
+      "id": "web_read_001",
+      "type": "flashcard",
+      "category": "Browser Internals",
+      "tags": ["browser", "rendering", "dom", "cssom", "performance"],
+      "difficulty": 3.0,
+      "starred": true,
+      "flagged": false,
+      "content": {
+        "text": "<h3>🌐 Modern Browser Rendering Engine & Critical Rendering Path</h3><p>Understanding how modern browsers convert raw HTML, CSS, and JavaScript into interactive pixel frames on screen is essential for web performance engineering. The process follows a sequence of deterministic steps known as the <strong>Critical Rendering Path (CRP)</strong>.</p><h4>1. The Five Stages of Critical Rendering</h4><ol><li><strong>DOM Construction (Document Object Model):</strong> The browser parses raw HTML bytes, converts them into characters based on encoding (e.g., UTF-8), identifies tokens, turns tokens into nodes, and builds the tree structure.</li><li><strong>CSSOM Construction (CSS Object Model):</strong> In parallel or sequentially, external and inline CSS stylesheets are parsed into a tree structure mapping selectors to calculated style properties.</li><li><strong>Render Tree Creation:</strong> The DOM and CSSOM trees are merged to form the Render Tree. Elements with <code>display: none</code> are excluded, whereas elements with <code>visibility: hidden</code> are included.</li><li><strong>Layout (Reflow):</strong> The browser calculates the exact geometric coordinates and dimensions of each Render Tree node relative to the viewport.</li><li><strong>Paint (Repaint) & Compositing:</strong> Individual visual layers are rasterized into pixels on GPU textures and composited onto the final display canvas.</li></ol><blockquote><p><mark>Pro Tip:</mark> Triggering <strong>Layout (Reflow)</strong> frequently in animation loops causes severe frame drops (jank). Prefer animating GPU-accelerated CSS properties like <code>transform</code> and <code>opacity</code> which skip Layout and Paint phases entirely!</p></blockquote><h4>2. Comparative Analysis of Render Steps</h4><table><thead><tr><th>Phase</th><th>Triggers</th><th>Performance Cost</th><th>Optimized CSS Properties</th></tr></thead><tbody><tr><td><strong>Reflow (Layout)</strong></td><td>Changing geometry (width, height, margin, fontSize)</td><td><span style=\"color:#e74c3c; font-weight:bold;\">Very High</span></td><td>Avoid in keyframe animations</td></tr><tr><td><strong>Repaint (Paint)</strong></td><td>Changing visual styles (color, background, box-shadow)</td><td><span style=\"color:#f39c12; font-weight:bold;\">Medium</span></td><td>Use CSS variables efficiently</td></tr><tr><td><strong>Composite</strong></td><td>Layer position/opacity adjustments</td><td><span style=\"color:#27ae60; font-weight:bold;\">Low (GPU)</span></td><td><code>transform</code>, <code>opacity</code>, <code>will-change</code></td></tr></tbody></table><h4>3. Code Demonstration: Measuring FPS Drops & Forced Synchronous Layout</h4><p>The code snippet below illustrates how querying layout dimensions right after mutating inline styles forces immediate browser reflows (forced reflow layout thrashing):</p><pre><code class=\"language-javascript\">// Bad Practice: Layout Thrashing inside animation loop\nfunction updateBoxWidths(elements) {\n  for (let i = 0; i &lt; elements.length; i++) {\n    // READ operation immediately following a WRITE causes forced reflow!\n    const currentWidth = elements[i].offsetWidth; \n    elements[i].style.width = (currentWidth + 10) + 'px'; // WRITE\n  }\n}\n\n// Good Practice: Batch Reads before Writes\nfunction updateBoxWidthsOptimized(elements) {\n  const widths = elements.map(el =&gt; el.offsetWidth); // Batch READ\n  elements.forEach((el, index) =&gt; {\n    el.style.width = (widths[index] + 10) + 'px'; // Batch WRITE\n  });\n}</code></pre>"
+      },
+      "answer": {
+        "back": "<h4>Özet & Anahtar Çıkarımlar</h4><ul><li><strong>DOM + CSSOM = Render Tree:</strong> <code>display: none</code> olan elemanlar Render Tree'ye dahil edilmez.</li><li><strong>Reflow vs Repaint:</strong> Geometri değişiklikleri Reflow (pahalı), renk değişiklikleri Repaint tetikler.</li><li><strong>GPU Hızlandırma:</strong> Animasyonlarda <code>transform</code> ve <code>opacity</code> kullanın.</li></ul>",
+        "explanation": "Deep dive passage covering browser rendering, critical rendering path phases, reflow vs repaint, layout thrashing code patterns, and HTML table styling."
+      }
+    },
+    {
+      "id": "web_read_002",
+      "type": "text",
+      "category": "JavaScript Runtime",
+      "tags": ["javascript", "event-loop", "async", "microtasks", "v8"],
+      "difficulty": 3.5,
+      "starred": false,
+      "flagged": false,
+      "content": {
+        "text": "<h3>⚡ JavaScript Event Loop, Call Stack & Async Execution</h3><p>JavaScript is a single-threaded runtime with a non-blocking, asynchronous event-driven concurrency model powered by the <strong>Event Loop</strong>. Understanding how task queues are prioritized guarantees predictable application state management.</p><h4>1. Architectural Components of the V8 / Browser Runtime</h4><ul><li><strong>Call Stack:</strong> A LIFO (Last-In-First-Out) data structure that keeps track of the currently executing function context.</li><li><strong>Heap Memory:</strong> Unstructured memory region used for object allocation and dynamic variables.</li><li><strong>Microtask Queue:</strong> High-priority execution queue reserved for <code>Promise.then()</code>, <code>catch()</code>, <code>finally()</code>, <code>async/await</code>, and <code>queueMicrotask()</code> callbacks.</li><li><strong>Macrotask Queue (Task Queue):</strong> Standard queue for <code>setTimeout()</code>, <code>setInterval()</code>, <code>setImmediate()</code>, and I/O event callbacks.</li></ul><blockquote><p><strong>Execution Priority Rule:</strong> After every call stack execution context clears, the Event Loop drains <em>the entire Microtask Queue</em> before processing a single item from the Macrotask Queue!</p></blockquote><h4>2. Interactive Code Trace</h4><p>Consider the execution sequence of the following asynchronous JavaScript block:</p><pre><code class=\"language-javascript\">console.log('1: Sync Code Start');\n\nsetTimeout(() =&gt; {\n  console.log('2: Macrotask Timeout');\n}, 0);\n\nPromise.resolve().then(() =&gt; {\n  console.log('3: Microtask Promise 1');\n}).then(() =&gt; {\n  console.log('4: Microtask Promise 2');\n});\n\nqueueMicrotask(() =&gt; {\n  console.log('5: Explicit Microtask');\n});\n\nconsole.log('6: Sync Code End');\n\n/* Expected Console Output:\n * 1: Sync Code Start\n * 6: Sync Code End\n * 3: Microtask Promise 1\n * 5: Explicit Microtask\n * 4: Microtask Promise 2\n * 2: Macrotask Timeout\n */</code></pre><h4>3. Web Security Principles for Front-End Engineers</h4><p>When rendering user-generated HTML in applications, developers must defend against injection vulnerabilities:</p><ul><li><strong>Cross-Site Scripting (XSS):</strong> Always sanitize untrusted HTML string content using libraries like <code>DOMPurify</code> before assigning to <code>innerHTML</code>.</li><li><strong>Content Security Policy (CSP):</strong> Enforce strict HTTP headers restricting script origins and disabling inline script execution (<code>unsafe-inline</code>).</li><li><strong>SameSite Cookie Attribute:</strong> Mitigate Cross-Site Request Forgery (CSRF) by setting cookies to <code>SameSite=Strict</code> or <code>SameSite=Lax</code>.</li></ul>"
+      },
+      "answer": {
+        "accepted_texts": ["okudum", "ok", "anladım"],
+        "explanation": "Comprehensive reference text covering V8 event loop mechanics, task queue prioritization, code execution order, and web application security hygiene."
+      }
+    },
+    {
+      "id": "web_quiz_001",
+      "type": "single_choice",
+      "category": "Verification Quiz",
+      "tags": ["event-loop", "javascript"],
+      "difficulty": 2.0,
+      "starred": false,
+      "flagged": false,
+      "content": {
+        "text": "In modern browser JavaScript engines, which callback queue has higher priority when the main call stack empties?"
+      },
+      "options": [
+        { "id": 1, "text": "Macrotask Queue (setTimeout, setInterval)" },
+        { "id": 2, "text": "Microtask Queue (Promises, queueMicrotask)" },
+        { "id": 3, "text": "Animation Frame Queue (requestAnimationFrame)" },
+        { "id": 4, "text": "RequestIdleCallback Queue" }
+      ],
+      "answer": {
+        "correct_ids": [2],
+        "explanation": "The Event Loop always drains all pending tasks in the Microtask Queue before yielding execution to the Macrotask queue or render repaint cycles."
+      }
+    }
+  ]
+}
