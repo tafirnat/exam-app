@@ -39,7 +39,7 @@ This is a **critical** key for the application's learning algorithm.
 
 ### `explanation` (String)
 - **Location**: Must be placed inside the `answer` object.
-- **Usage**: Provides context or reasoning for the correct answer. Fully supports rendering HTML tags (e.g. `<b>`, `<i>`, `<code>`, `<a href="..." target="_blank">` hyperlinks, etc.) in the UI.
+- **Usage**: Provides context or reasoning for the correct answer. Fully supports rendering Obsidian Markdown (e.g. **bold**, *italic*, `code`, [links](url), callouts, tables, etc.) in the UI.
 
 ---
 
@@ -91,8 +91,8 @@ The answers live inside the sentence, in double braces. There is no
 - Nothing is graded. The reader self-rates, and that rating drives scheduling.
 
 ### Reading — `reading`
-Prose cards with no answer and no options. `content.text` is rendered as HTML,
-so headings, lists, `<code>` and `<pre>` blocks all work. Use `explanation` for
+Prose cards with no answer and no options. `content.text` is rendered as Obsidian Markdown,
+so headings (`#`), lists (`-`), `code`, ```pre```, tables, callouts, and wikilinks work. Use `explanation` for
 a note shown alongside. (The legacy spelling `topic_review` is converted to `reading` on import).
 
 ---
@@ -102,7 +102,7 @@ a note shown alongside. (The legacy spelling `topic_review` is converted to `rea
   - `type`: "image"
   - `url`: Full URL to the image.
   - `position`: "above" (default) or "below" the question text.
-- **Rich Text**: The `text` fields support basic HTML (e.g., `<b>`, `<i>`, `<code>`, `<pre>`).
+- **Rich Text**: The `text` fields support Obsidian-compatible Markdown (e.g., **bold**, *italic*, `code`, ==highlight==, tables, callouts).
 
 ## Example Template
 ```json
