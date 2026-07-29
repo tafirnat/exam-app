@@ -756,6 +756,28 @@ export function showProgressCharts() {
     _drawWeeklyTrend(document.getElementById('chartWeekly'));
 }
 
+/**
+ * Live palette for the canvas charts.
+ * Canvas can't use CSS custom properties, so we read them off :root once per
+ * draw. data-theme lives on <html>, not <body> — reading document.body here is
+ * what silently pinned every chart to the light palette.
+ */
+function _chartPalette() {
+    const cs = getComputedStyle(document.documentElement);
+    const v = (name, fallback) => cs.getPropertyValue(name).trim() || fallback;
+    const isDark = document.documentElement.dataset.theme === 'dark';
+    return {
+        isDark,
+        surface: v('--surface-color', '#ffffff'),   // the panel the charts sit on
+        text:    v('--text-primary', '#0f172a'),
+        muted:   v('--text-secondary', '#64748b'),
+        border:  v('--border-color', '#e2e8f0'),
+        track:   v('--surface-hover', '#e2e8f0'),   // unfilled / unsolved fill
+        grid:    isDark ? 'rgba(255,255,255,0.08)' : 'rgba(0,0,0,0.06)',
+        hairline: isDark ? 'rgba(255,255,255,0.18)' : 'rgba(0,0,0,0.12)',
+    };
+}
+
 /** Draws a stacked horizontal bar chart with canvas */
 function _drawStackedBar(canvas, legendEl, segments, total) {
     if (!canvas) return;
@@ -775,8 +797,8 @@ function _drawStackedBar(canvas, legendEl, segments, total) {
     const barY = (H - barH) / 2 - 8;
     const radius = barH / 2;
 
-    // Background pill
-    _roundRect(ctx, 0, barY, W, barH, radius, '#1e293b');
+    // Background pill (the unfilled track)
+    _roundRect(ctx, 0, barY, W, barH, radius, _chartPalette().track);
 
     let x = 0;
     segments.forEach((seg, i) => {
@@ -849,9 +871,13 @@ function _drawDonut(canvas, legendEl, segments, total) {
     const innerR = outerR * 0.60;
     let startAngle = -Math.PI / 2;
 
-    const isDark = document.body.dataset.theme === 'dark';
-    const bgColor = isDark ? '#0b1120' : '#f8fafc';
-    const greyColor = isDark ? '#334155' : '#e2e8f0';
+    const pal = _chartPalette();
+    // The separator slivers have to match the panel behind the ring, not the
+    // page background — the chart panel is --surface-color.
+    const bgColor = pal.surface;
+    // --border-color is #e2e8f0 / #334155 — the two greys this ring was always
+    // meant to use, now actually resolved per theme.
+    const greyColor = pal.border;
 
     // We want to show difficulty segments ONLY for solved questions, 
     // and the rest of the ring should be grey (unsolved).
@@ -862,7 +888,9 @@ function _drawDonut(canvas, legendEl, segments, total) {
     // Create a new segments array for the donut: [Solved Diff 1, Solved Diff 2, ..., Unsolved (Grey)]
     const finalSegments = [...solvedSegments];
     if (unsolvedCount > 0) {
-        finalSegments.push({ label: t('stat_not_solved'), value: unsolvedCount, color: greyColor, emoji: '⚫' });
+        // No emoji here: ⚫ is a fixed near-black glyph that disappears on the
+        // dark panel. A dot painted with the segment's own colour tracks both themes.
+        finalSegments.push({ label: t('stat_not_solved'), value: unsolvedCount, color: greyColor });
     }
 
     if (total === 0) {
@@ -900,10 +928,10 @@ function _drawDonut(canvas, legendEl, segments, total) {
     ctx.textAlign = 'center';
     ctx.textBaseline = 'middle';
     ctx.font = `bold ${Math.round(size * 0.14)}px Inter, sans-serif`;
-    ctx.fillStyle = isDark ? '#f8fafc' : '#0f172a';
+    ctx.fillStyle = pal.text;
     ctx.fillText(total, cx, cy - size * 0.04);
     ctx.font = `${Math.round(size * 0.09)}px Inter, sans-serif`;
-    ctx.fillStyle = '#64748b';
+    ctx.fillStyle = pal.muted;
     ctx.fillText(t('charts_question'), cx, cy + size * 0.1);
 
     // Legend
@@ -912,8 +940,8 @@ function _drawDonut(canvas, legendEl, segments, total) {
             .map(s => {
                 const pct = total > 0 ? Math.round(s.value / total * 100) : 0;
                 // Use emoji if provided, otherwise fallback to dot
-                const icon = s.emoji ? `<span style="font-size:0.9rem; line-height:1;">${s.emoji}</span>` 
-                             : `<span class="cl-dot" style="background-color:${s.color}; border:1px solid rgba(0,0,0,0.1)"></span>`;
+                const icon = s.emoji ? `<span style="font-size:0.9rem; line-height:1;">${s.emoji}</span>`
+                             : `<span class="cl-dot" style="background-color:${s.color}; border:1px solid ${pal.hairline}"></span>`;
                 return `<span>${icon} ${s.label}: ${s.value} (${pct}%)</span>`;
             }).join('');
     }
@@ -963,9 +991,10 @@ function _drawWeeklyTrend(canvas) {
         }
     });
 
-    const isDark = document.body.dataset.theme === 'dark';
-    const gridColor = isDark ? 'rgba(255,255,255,0.08)' : 'rgba(0,0,0,0.06)';
-    const textColor = isDark ? '#94a3b8' : '#64748b';
+    const pal = _chartPalette();
+    const isDark = pal.isDark;
+    const gridColor = pal.grid;
+    const textColor = pal.muted;
     const skippedColor = isDark ? '#64748b' : '#cbd5e1';
 
     // Calculate nice intervals for Y-axis based on total (incl. unanswered)
@@ -1019,7 +1048,7 @@ function _drawWeeklyTrend(canvas) {
 
         if (dayTotal === 0) {
             // Empty state placeholder
-            _roundRect(ctx, x, baseY - 2, barW, 2, 1, isDark ? '#1e293b' : '#f1f5f9');
+            _roundRect(ctx, x, baseY - 2, barW, 2, 1, pal.border);
             return;
         }
 
@@ -1069,7 +1098,7 @@ function _drawWeeklyTrend(canvas) {
         }
 
         // Count above bar
-        ctx.fillStyle = isDark ? '#f8fafc' : '#0f172a';
+        ctx.fillStyle = pal.text;
         ctx.font = 'bold 10px Inter, sans-serif';
         ctx.textBaseline = 'bottom';
         ctx.fillText(dayTotal, x + barW / 2, baseY - totalHeight_px - 4);
@@ -1122,7 +1151,8 @@ function _showDayPopup(canvas, dayIndex, layout, mouseEvent) {
     const uniqueCount = uniqueIds.size;
     const totalAnswers = day.correct + day.wrong + unanswered;
 
-    const isDark = document.body.dataset.theme === 'dark';
+    const pal = _chartPalette();
+    const isDark = pal.isDark;
 
     // --- Popup element ---
     const popup = document.createElement('div');
