@@ -568,14 +568,8 @@ textarea {
     flex-direction: column;
     position: relative;
     padding-top: 1.5rem;
-    padding-bottom: 280px;
+    padding-bottom: 1.5rem;
     min-height: 100%;
-}
-
-@media (max-width: 600px) {
-    #testView {
-        padding-bottom: 300px;
-    }
 }
 
 .indicators-bar {
