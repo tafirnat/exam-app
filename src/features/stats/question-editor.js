@@ -46,6 +46,10 @@ function normalizeForType() {
             const maxId = q.options.reduce((max, o) => Math.max(max, parseInt(o.id) || 0), 0);
             q.options.push({ id: maxId + 1, text: '', media: [] });
         }
+        // true_false is a closed pair: coming from a type that allowed more,
+        // drop the surplus rather than leaving a third choice on a yes/no.
+        if (q.type === 'true_false') q.options = q.options.slice(0, 2);
+
         // Keep only marks that still point at a live option, and collapse to a
         // single answer when the type no longer allows several.
         const liveIds = q.options.map(o => String(o.id));
@@ -118,16 +122,22 @@ function renderEditorModal() {
                     ${t('group_options')}
                 </button>` : '';
 
+    // true_false has a fixed pair of options, so it gets no way to add a third.
+    const isFixedPair = currentEditingQuestion.type === 'true_false';
+    const addOptionBtn = isFixedPair ? `
+                    <div class="code-info-box">${t('true_false_fixed_info')}</div>` : `
+                    <button class="btn btn-subtle btn-block add-opt-btn" id="add-option-btn">
+                        <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="12" y1="5" x2="12" y2="19"></line><line x1="5" y1="12" x2="19" y2="12"></line></svg>
+                        ${t('add_option')}
+                    </button>`;
+
     const optionsSection = isChoice ? `
                 <div class="edit-section ${activeGroup === 'options' ? 'active' : ''}" id="section-options">
                     <div class="code-info-box">${t('code_usage_info')}</div>
                     <div id="editor-options-list">
                         ${renderOptionsList()}
                     </div>
-                    <button class="btn btn-subtle btn-block add-opt-btn" id="add-option-btn">
-                        <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="12" y1="5" x2="12" y2="19"></line><line x1="5" y1="12" x2="19" y2="12"></line></svg>
-                        ${t('add_option')}
-                    </button>
+                    ${addOptionBtn}
                 </div>` : '';
 
     const flashcardSection = isFlashcard ? `
@@ -276,6 +286,9 @@ function renderOptionsList() {
     // multiple_choice takes checkboxes so several answers can be marked;
     // single_choice and true_false take radios, which enforce exactly one.
     const isMultiple = type === 'multiple_choice';
+    // Deleting from a true_false pair would leave a single-answer question with
+    // nothing to choose against, so the pair is not breakable from here either.
+    const isFixedPair = type === 'true_false';
     const correctIds = (currentEditingQuestion.answer?.correct_ids || []).map(String);
 
     return options.map((opt, idx) => {
@@ -293,9 +306,10 @@ function renderOptionsList() {
             <div class="option-edit-header">
                 <span class="option-id-badge">ID: ${opt.id}</span>
                 ${correctIndicator}
+                ${isFixedPair ? '' : `
                 <button class="delete-opt-btn" data-idx="${idx}" title="${t('delete_option')}">
                     <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2"><polyline points="3 6 5 6 21 6"></polyline><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path></svg>
-                </button>
+                </button>`}
             </div>
             <div class="label-row" style="margin-bottom: 4px;">
                 <label style="font-size: 0.7rem;">${t('text_label')}</label>

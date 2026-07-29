@@ -39,6 +39,18 @@ test('single_choice and true_false need exactly one correct option', () => {
     assert.deepEqual(codes(choice({ type: 'true_false', answer: { correct_ids: [2] } })), []);
 });
 
+test('true_false is a closed pair — not two-or-more', () => {
+    const tf = (options) => codes(choice({ type: 'true_false', options, answer: { correct_ids: [1] } }));
+
+    assert.deepEqual(tf([{ id: 1, text: 'T' }, { id: 2, text: 'F' }]), [], 'exactly two is the only valid shape');
+    assert.deepEqual(tf([{ id: 1, text: 'T' }, { id: 2, text: 'F' }, { id: 3, text: 'Maybe' }]),
+        ['true_false_options'], 'a third option is rejected, unlike single_choice');
+    assert.deepEqual(tf([{ id: 1, text: 'T' }]), ['true_false_options']);
+
+    // The extra option is only an error for true_false.
+    assert.deepEqual(codes(choice({ options: [{ id: 1, text: 'a' }, { id: 2, text: 'b' }, { id: 3, text: 'c' }] })), []);
+});
+
 test('multiple_choice needs at least two correct options', () => {
     assert.deepEqual(codes(choice({ type: 'multiple_choice' })), ['multi_correct']);
     assert.deepEqual(codes(choice({ type: 'multiple_choice', answer: { correct_ids: [1, 2] } })), []);

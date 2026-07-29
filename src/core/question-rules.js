@@ -83,7 +83,11 @@ export function findQuestionIssues(q) {
 
     if (category === 'choice') {
         const options = Array.isArray(q?.options) ? q.options : [];
-        if (options.length < 2) {
+        // true_false is a closed pair — a third option is not a harder question,
+        // it is a broken one. Every other choice type only has a floor.
+        if (q?.type === 'true_false' && options.length !== 2) {
+            issues.push({ code: 'true_false_options', group: 'options' });
+        } else if (options.length < 2) {
             issues.push({ code: 'min_options', group: 'options' });
         } else if (options.some(o => !filled(o?.text) && !filled(o?.media?.[0]?.url))) {
             issues.push({ code: 'empty_option', group: 'options' });

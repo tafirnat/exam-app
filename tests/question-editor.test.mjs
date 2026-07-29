@@ -98,6 +98,39 @@ test('an unrecognised type is preserved rather than coerced', () => {
     assert.equal(typeEl().value, 'weird_type');
 });
 
+const openChoice = (type, options) => openQuestionEditor({
+    id: 'c1', sourceId: 's1', type, content: { text: 'q' },
+    options, answer: { correct_ids: [1] }
+});
+const optionCards = () => document.querySelectorAll('.option-edit-card').length;
+
+test('true_false offers no way to add or remove an option', () => {
+    openChoice('true_false', [{ id: 1, text: 'True' }, { id: 2, text: 'False' }]);
+    document.querySelector('[data-group="options"]').click();
+
+    assert.equal(optionCards(), 2);
+    assert.equal(document.getElementById('add-option-btn'), null, 'no Add Option button');
+    assert.equal(document.querySelectorAll('.delete-opt-btn').length, 0, 'no per-option delete');
+});
+
+test('the other choice types keep both controls', () => {
+    openChoice('single_choice', [{ id: 1, text: 'a' }, { id: 2, text: 'b' }]);
+    document.querySelector('[data-group="options"]').click();
+
+    assert.ok(document.getElementById('add-option-btn'));
+    assert.equal(document.querySelectorAll('.delete-opt-btn').length, 2);
+});
+
+test('switching to true_false drops any option beyond the pair', () => {
+    openChoice('single_choice', [{ id: 1, text: 'a' }, { id: 2, text: 'b' }, { id: 3, text: 'c' }]);
+    document.querySelector('[data-group="options"]').click();
+    assert.equal(optionCards(), 3);
+
+    setType('true_false');
+    document.querySelector('[data-group="options"]').click();
+    assert.equal(optionCards(), 2, 'the surplus option is removed, not left hidden');
+});
+
 /* A toast cannot be seen above the editor overlay, so a refused save has to say
    why inside the modal or it looks like the button is simply dead. */
 const save = () => document.getElementById('editor-save-btn').click();
