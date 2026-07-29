@@ -10,21 +10,27 @@
       "id": "sample_reading",
       "type": "reading",
       "category": "Genel Bakış",
-      "tags": ["rehber", "buradan-basla"],
+      "tags": [
+        "rehber",
+        "buradan-basla"
+      ],
       "starred": true,
       "flagged": true,
       "content": {
-        "text": "# Hoş geldiniz\n\nBu kaynakta uygulamanın desteklediği her tipten bir soru var. Bir kez baştan sona gezerseniz bir JSON dosyasının içerebileceği her şeyi görmüş olursunuz.\n\n## Yedi tip\n\n- **reading** — cevabı olmayan okuma kartları. Okur, konuyu ne kadar bildiğinizi kendiniz puanlarsınız.\n- **single_choice**, **multiple_choice**, **true_false** — bir veya birden fazla şıkkı doğru işaretlenmiş seçenek listeleri.\n- **short_answer** — cevabı siz yazarsınız, kabul edilen yazımlarla karşılaştırılır.\n- **fill_in_the_blank** — cevap cümlenin içinde durur.\n- **flashcard** — ön ve arka yüz; puanlanmazsınız, kendinizi puanlarsınız.\n\n## Alan başvurusu\n\nYalnızca `id`, `type` ve soru metni zorunludur. Aşağıdakilerin hepsi isteğe bağlıdır — bu dosya bazılarını bilerek boş bırakıyor ki en sade sorunun nasıl göründüğünü görebilesiniz.\n\n- `category` — gruplama etiketi\n- `tags` — dizi hâlinde etiketler; aranabilir ve filtrelenebilir\n- `difficulty` — 1 ile 5 arası, tekrar algoritmasını besler\n- `starred` / `flagged` — sorunun üstünde görünen iki işaret\n- `answer.explanation` — kontrol sonrası gösterilir, her tipte çalışır\n- `content.media` — metnin üstüne ya da altına yerleşen görsel veya video\n\n## Tipe göre cevap alanı\n\n| Tip | Cevap Alanı |\n| :--- | :--- |\n| şıklı tipler | `answer.correct_ids` |\n| short_answer | `answer.accepted_texts` |\n| fill_in_the_blank | metnin içindeki `{{işaretler}}` |\n| flashcard | `answer.back` |\n| reading | hiç cevap yok |\n\n> [!tip] Şablon Kullanımı\n> Herhangi bir soruyu düzenleyicide açıp nasıl kurulduğuna bakın, sonra bu dosyayı kendi dosyanız için ==şablon== olarak kullanın."
+        "text": "# Hoş geldiniz\n\nBu kaynak, uygulamanın desteklediği her soru tipinden birer örnek taşır ve kendi sorularınızda kullanacağınız Obsidian Markdown ile yazılmıştır. Bir kez baştan sona geçin; hem şemayı hem biçimlendirmeyi görmüş olacaksınız.\n\n## Yedi tip\n\n- **reading** — cevabı olmayan okuma kartları. Okursunuz ve konuyu ne kadar bildiğinizi kendiniz puanlarsınız.\n- Seçeneklerden değerlendirilenler:\n    - **single_choice** — tam olarak bir seçenek doğru işaretlenir\n    - **multiple_choice** — en az iki seçenek doğru işaretlenir\n    - **true_false** — kapalı bir ikili, asla üçüncü bir seçenek olmaz\n- Metinden değerlendirilenler:\n    - **short_answer** — yazarsınız, kabul edilen yazımlarla karşılaştırılır\n    - **fill_in_the_blank** — cevap cümlenin içinde durur\n- **flashcard** — bir ön ve bir arka yüz; puanlanmak yerine kendinizi değerlendirirsiniz.\n\n## Alan referansı\n\nYalnızca `id`, `type` ve soru metni zorunludur. Geri kalan her şey isteğe bağlıdır; bu dosya birkaçını bilerek boş bırakır, böylece en yalın soru da görünür.\n\n- `category` — gruplama için bir etiket\n- `tags` — dizi halinde etiketler, aranabilir ve filtrelenebilir\n- `difficulty` — 1 ile 5 arası, tekrar algoritmasını besler\n- `starred` / `flagged` — sorunun üstünde görünen iki işaret\n- `answer.explanation` — cevap kontrol edildikten sonra her tipte gösterilir\n- `content.media` — metnin `above` (üstünde) ya da `below` (altında) konumlanan görsel veya video\n\n## Tipe göre cevaplar\n\n| Tip | Cevap alanı | Puanlanır |\n| :--- | :--- | :---: |\n| single_choice, true_false | `answer.correct_ids` (bir tane) | evet |\n| multiple_choice | `answer.correct_ids` (iki veya daha fazla) | evet |\n| short_answer | `answer.accepted_texts` | evet |\n| fill_in_the_blank | metnin kendi içindeki `{{işaretler}}` | evet |\n| flashcard | `answer.back` | kendiniz |\n| reading | hiç yok | hayır |\n\n---\n\n## Biçimlendirme\n\nHer metin alanı Obsidian Markdown'dır; kasanızdaki bir notu olduğu gibi yapıştırabilirsiniz. Ham HTML desteklenmez: açılı parantezler kaçırılır ve okuyucuya düz metin olarak ulaşır.\n\n| Şunu yazarsınız | Şunu görürsünüz |\n| :--- | :--- |\n| `**kalın**` | **kalın** |\n| `*eğik*` | *eğik* |\n| `***ikisi birlikte***` | ***ikisi birlikte*** |\n| `~~üstü çizili~~` | ~~üstü çizili~~ |\n| `==vurgulu==` | ==vurgulu== |\n| \\`kod\\` | `kod` |\n| `[etiket](adres)` | [Obsidian](https://obsidian.md) |\n| `[[Not adı]]` | [[Not adı]] |\n| `\\*kaçırılmış\\*` | \\*kaçırılmış\\* |\n\nTek bir satır sonu gerçek bir satır sonudur,\ntıpkı bunun gibi.\n\nBoş satır yeni bir paragraf başlatır.\n\n### Listeler girintiyle iç içe geçer\n\n1. Birinci adım\n2. İkinci adım\n    - bir ayrıntı\n    - bir ayrıntı daha\n        - daha da derini\n3. Üçüncü adım\n\n### Görev listeleri salt okunur görünür\n\n- [x] Soruları yaz\n- [x] Açıklamaları ekle\n- [ ] Başka bir dile çevir\n\n### Kod blokları içeriğini aynen korur\n\n```json\n{\n  \"type\": \"short_answer\",\n  \"content\": { \"text\": \"Türkiye'nin başkenti hangi şehirdir?\" },\n  \"answer\": { \"accepted_texts\": [\"Ankara\"] }\n}\n```\n\n> Bir şeyi öne çıkarmak için değil, bir kaynağı alıntılamak için düz alıntı bloğu.\n\n### Callout'lar\n\n> [!tip] Düzenleyiciyi kullanın\n> Herhangi bir soruyu düzenleyicide açıp nasıl kurulduğunu görün, sonra bu dosyayı kendi sorularınız için ==şablon== olarak kullanın.\n\n> [!warning] Her tipten birer tane olması zorunlu değil\n> Bu örnek tesadüfen her tipten bir soru taşıyor, ama gerçek bir kaynak istediğiniz karışımı içerebilir.\n\n> [!example] Takma adlar da kabul edilir\n> Obsidian'ın takma ad kümeleri burada da çalışır: `summary`, `hint`, `error` ve diğerlerinin hepsi kanonik tipine normalleştirilir.\n\nObsidian'ın desteklediği ama bu uygulamanın işlemediği her şey — matematik, dipnotlar, satır içi etiketler, `![[gömmeler]]` — kartı bozmak yerine düz metin olarak kalır. Tam liste `docs/MARKDOWN_SPEC.md` içinde."
       },
       "answer": {
-        "explanation": "Okuma kartlarının cevabı yoktur. Konuyu test etmeden önce okumak için vardırlar."
+        "explanation": "Okuma kartlarının cevabı yoktur. Kendinizi test etmeden önce okunmak için vardırlar; puanlanmak yerine konuyu ne kadar bildiğinizi kendiniz değerlendirirsiniz.\n\nAz önce kaydırdığınız her şey `content.text` içindeki ==tek bir JSON dizesi==."
       }
     },
     {
       "id": "sample_single_choice",
       "type": "single_choice",
       "category": "Doğa",
-      "tags": ["medya", "örnek"],
+      "tags": [
+        "medya",
+        "örnek"
+      ],
       "difficulty": 1.5,
       "content": {
         "text": "Fotoğraftaki hayvan ne yiyor?",
@@ -43,28 +49,36 @@
         { "id": 4, "text": "Akasya kabuğu" }
       ],
       "answer": {
-        "correct_ids": [1],
-        "explanation": "Dev pandalar neredeyse yalnızca bambu yer. Bu soru aynı zamanda görselin nasıl ekleneceğini gösteriyor: içeriğe bir media kaydı koyun ve position değerini above ya da below yapın."
+        "correct_ids": [
+          1
+        ],
+        "explanation": "Dev pandalar bambu dışında neredeyse hiçbir şey yemez.\n\n> [!info] Medya eklemek\n> `content` üzerine bir `media` girdisi koyun ve `position` değerini `above` ya da `below` yapın. Görsel de video da çalışır; bir soru metinle birlikte değil, metin *yerine* de medya taşıyabilir."
       }
     },
     {
       "id": "sample_multiple_choice",
       "type": "multiple_choice",
-      "tags": ["soru-tipleri"],
+      "tags": [
+        "soru-tipleri"
+      ],
       "difficulty": 3,
       "content": {
         "text": "Hangi soru tipleri seçenek listesi gerektirir?"
       },
       "options": [
-        { "id": 1, "text": "single_choice" },
-        { "id": 2, "text": "multiple_choice" },
-        { "id": 3, "text": "short_answer" },
-        { "id": 4, "text": "flashcard" },
-        { "id": 5, "text": "true_false" }
+        { "id": 1, "text": "`single_choice`" },
+        { "id": 2, "text": "`multiple_choice`" },
+        { "id": 3, "text": "`short_answer`" },
+        { "id": 4, "text": "`flashcard`" },
+        { "id": 5, "text": "`true_false`" }
       ],
       "answer": {
-        "correct_ids": [1, 2, 5],
-        "explanation": "Seçenek listesini yalnızca üç şıklı tip kullanır. Bir multiple_choice sorusunda en az iki şık doğru işaretlenmelidir — tek işaretlerseniz uygulama sorunun kendi tipiyle çeliştiğini söyler."
+        "correct_ids": [
+          1,
+          2,
+          5
+        ],
+        "explanation": "Seçenek listesini yalnızca üç seçim tipi kullanır.\n\n> [!warning] En az iki tane işaretleyin\n> Bir `multiple_choice` sorusunun **iki veya daha fazla** doğru seçeneği olmalıdır. Yalnızca birini işaretlerseniz uygulama, sorunun kendi tipiyle çeliştiğini bildirir.\n\nYukarıdaki seçenekler aynı zamanda kendi başına bir gösterim: seçenek metni de Markdown olarak işlenir, tip adlarının satır içi kod görünmesinin nedeni bu."
       }
     },
     {
@@ -80,20 +94,28 @@
         { "id": 2, "text": "Yanlış" }
       ],
       "answer": {
-        "correct_ids": [2]
+        "correct_ids": [
+          2
+        ]
       }
     },
     {
       "id": "sample_short_answer",
       "type": "short_answer",
-      "tags": ["yazarak-cevap", "örnek"],
+      "tags": [
+        "yazarak-cevap",
+        "örnek"
+      ],
       "difficulty": 2.5,
       "content": {
         "text": "Türkiye'nin başkenti hangi şehirdir?"
       },
       "answer": {
-        "accepted_texts": ["Ankara", "Ankara ili"],
-        "explanation": "Kabul etmeye razı olduğunuz her yazımı listeleyin. caseSensitive değerini true yapmadıkça büyük/küçük harf ve baştaki sondaki boşluklar dikkate alınmaz."
+        "accepted_texts": [
+          "Ankara",
+          "Ankara ili"
+        ],
+        "explanation": "Kabul etmeye razı olduğunuz her yazımı listeleyin. `caseSensitive` değerini `true` yapmadığınız sürece eşleştirme büyük/küçük harfi ve baştaki sondaki boşlukları yok sayar.\n\nYani `ankara` ve `  Ankara  ` geçer, ~~Ankara şehri~~ ise geçmez — çünkü listede yoktur."
       }
     },
     {
@@ -105,19 +127,21 @@
         "text": "HTTP {{80}} portunu, HTTPS {{443}} portunu, DNS ise {{53|Port 53}} portunu kullanır."
       },
       "answer": {
-        "explanation": "Cevaplar çift süslü parantez içinde cümlenin kendisinde durur, dolayısıyla ayrıca güncel tutulacak bir accepted_texts listesi olmaz. Dikey çizgi alternatif yazım ekler: ilki doğru cevap olarak gösterilir, diğerleri yalnızca kabul edilir."
+        "explanation": "Cevaplar çift süslü parantez içinde cümlenin kendisinde durur, dolayısıyla eşzamanlı tutulacak bir `accepted_texts` listesi yoktur. Dikey çizgi alternatif ekler: ilki doğru cevap olarak gösterilir, geri kalanlar yalnızca kabul edilir.\n\n```\nHTTP {{80}} portunu, DNS ise {{53|Port 53}} portunu kullanır.\n```\n\n> [!note] Kod içindeki işaretler boşluk değildir\n> Yukarıdaki blok, iki boşluk daha oluşturmadan sözdizimini gösteriyor. Satır içi kodun ya da kod bloğunun içindeki bir `{{işaret}}` boşluk değil belgelemedir — işleyici ile değerlendirici bu konuda aynı fikirdedir."
       }
     },
     {
       "id": "sample_flashcard",
       "type": "flashcard",
-      "tags": ["aralikli-tekrar"],
+      "tags": [
+        "aralikli-tekrar"
+      ],
       "starred": true,
       "content": {
         "text": "Bilgi kartını diğer bütün soru tiplerinden ayıran şey nedir?"
       },
       "answer": {
-        "back": "Hiçbir şey puanlanmaz. Arka yüzü açar, kendinizi Tekrar / Zor / Normal / Kolay diye değerlendirirsiniz; kartın ne zaman geri geleceğine o değerlendirme karar verir."
+        "back": "Hiçbir şey puanlanmaz. Arka yüzü açın, kendinizi **Tekrar** / **Zor** / **İyi** / **Kolay** olarak değerlendirin; kartın ne zaman geri döneceğine bu değerlendirme karar verir.\n\n- [x] yazılacak seçenek yok\n- [x] bakımı yapılacak kabul edilen cevap yok\n- [ ] yine de dürüst bir öz değerlendirme gerekiyor"
       }
     }
   ]

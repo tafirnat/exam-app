@@ -10,21 +10,27 @@
       "id": "sample_reading",
       "type": "reading",
       "category": "Überblick",
-      "tags": ["anleitung", "hier-starten"],
+      "tags": [
+        "anleitung",
+        "hier-starten"
+      ],
       "starred": true,
       "flagged": true,
       "content": {
-        "text": "# Willkommen\n\nDiese Quelle enthält je eine Frage von jedem Typ, den die App unterstützt. Einmal durchgearbeitet haben Sie alles gesehen, was in einer JSON-Datei stehen kann.\n\n## Die sieben Typen\n\n- **reading** — Lesekarten ohne Antwort. Sie lesen und bewerten selbst, wie sicher Sie im Stoff waren.\n- **single_choice**, **multiple_choice**, **true_false** — Optionen, von denen eine oder mehere als richtig markiert sind.\n- **short_answer** — Sie tippen die Antwort, sie wird mit einer Liste akzeptierter Schreibweisen verglichen.\n- **fill_in_the_blank** — die Antwort steht im Satz selbst.\n- **flashcard** — Vorder- und Rückseite; nichts wird bewertet, Sie bewerten sich selbst.\n\n## Feldreferenz\n\nPflicht sind nur `id`, `type` und der Fragetext. Alles Folgende ist optional — diese Datei lässt einiges davon bewusst weg, damit Sie sehen, wie eine minimale Frage aussieht.\n\n- `category` — Bezeichnung zur Gruppierung\n- `tags` — Array von Schlagwörtern, durchsuchbar und filterbar\n- `difficulty` — 1 bis 5, fließt in den Wiederholungsalgorithmus ein\n- `starred` / `flagged` — die beiden Markierungen über der Frage\n- `answer.explanation` — nach dem Prüfen sichtbar, bei jedem Typ\n- `content.media` — Bild oder Video, ober- oder unterhalb des Textes\n\n## Antwortfeld nach Typ\n\n| Typ | Antwortfeld |\n| :--- | :--- |\n| Auswahltypen | `answer.correct_ids` |\n| short_answer | `answer.accepted_texts` |\n| fill_in_the_blank | `{{Markierungen}}` im Text selbst |\n| flashcard | `answer.back` |\n| reading | gar keine Antwort |\n\n> [!tip] Vorlagennutzung\n> Öffnen Sie eine beliebige Frage im Editor, um ihren Aufbau zu sehen, und nutzen Sie diese Datei dann als ==Vorlage== für Ihre eigene."
+        "text": "# Willkommen\n\nDiese Quelle enthält je eine Frage pro unterstütztem Typ und ist in demselben Obsidian-Markdown geschrieben, das Sie für eigene Fragen verwenden werden. Arbeiten Sie sie einmal durch, dann haben Sie sowohl das Schema als auch die Formatierung gesehen.\n\n## Die sieben Typen\n\n- **reading** — Textkarten ohne Antwort. Sie lesen sie und bewerten selbst, wie gut Sie den Stoff kannten.\n- Aus Optionen bewertet:\n    - **single_choice** — genau eine Option ist als richtig markiert\n    - **multiple_choice** — mindestens zwei sind als richtig markiert\n    - **true_false** — ein geschlossenes Paar, niemals eine dritte Option\n- Aus Text bewertet:\n    - **short_answer** — Sie tippen sie ein, und sie wird mit akzeptierten Schreibweisen verglichen\n    - **fill_in_the_blank** — die Antwort steht im Satz selbst\n- **flashcard** — eine Vorder- und eine Rückseite; Sie bewerten sich selbst, statt bewertet zu werden.\n\n## Feldreferenz\n\nErforderlich sind nur `id`, `type` und der Fragetext. Alles andere ist optional, und diese Datei lässt einiges absichtlich weg, damit auch eine minimale Frage sichtbar ist.\n\n- `category` — eine Bezeichnung zur Gruppierung\n- `tags` — ein Array von Zeichenketten, durchsuchbar und filterbar\n- `difficulty` — 1 bis 5, fließt in den Wiederholungsalgorithmus ein\n- `starred` / `flagged` — die beiden Markierungen über der Frage\n- `answer.explanation` — wird nach dem Prüfen bei jedem Typ angezeigt\n- `content.media` — ein Bild oder Video, `above` (über) oder `below` (unter) dem Text positioniert\n\n## Antworten nach Typ\n\n| Typ | Antwortfeld | Bewertet |\n| :--- | :--- | :---: |\n| single_choice, true_false | `answer.correct_ids` (eine) | ja |\n| multiple_choice | `answer.correct_ids` (zwei oder mehr) | ja |\n| short_answer | `answer.accepted_texts` | ja |\n| fill_in_the_blank | `{{Markierungen}}` im Text selbst | ja |\n| flashcard | `answer.back` | selbst |\n| reading | gar keins | nein |\n\n---\n\n## Formatierung\n\nJedes Textfeld ist Obsidian-Markdown, eine Notiz aus Ihrem Vault lässt sich also unverändert einfügen. Rohes HTML wird nicht unterstützt: spitze Klammern werden maskiert und erreichen den Leser als wörtlicher Text.\n\n| Sie schreiben | Sie erhalten |\n| :--- | :--- |\n| `**fett**` | **fett** |\n| `*kursiv*` | *kursiv* |\n| `***beides***` | ***beides*** |\n| `~~durchgestrichen~~` | ~~durchgestrichen~~ |\n| `==hervorgehoben==` | ==hervorgehoben== |\n| \\`Code\\` | `Code` |\n| `[Bezeichnung](Adresse)` | [Obsidian](https://obsidian.md) |\n| `[[Notizname]]` | [[Notizname]] |\n| `\\*maskiert\\*` | \\*maskiert\\* |\n\nEin einzelner Zeilenumbruch ist ein echter Umbruch,\nso wie dieser hier.\n\nEine Leerzeile beginnt einen neuen Absatz.\n\n### Listen verschachteln sich über die Einrückung\n\n1. Erster Schritt\n2. Zweiter Schritt\n    - ein Detail\n    - noch ein Detail\n        - und noch tiefer\n3. Dritter Schritt\n\n### Aufgabenlisten werden schreibgeschützt dargestellt\n\n- [x] Die Fragen schreiben\n- [x] Die Erklärungen ergänzen\n- [ ] In eine weitere Sprache übersetzen\n\n### Codeblöcke bewahren ihren Inhalt wörtlich\n\n```json\n{\n  \"type\": \"short_answer\",\n  \"content\": { \"text\": \"Welche Stadt ist die Hauptstadt der Türkei?\" },\n  \"answer\": { \"accepted_texts\": [\"Ankara\"] }\n}\n```\n\n> Ein einfaches Zitat, um eine Quelle wiederzugeben, statt etwas hervorzuheben.\n\n### Callouts\n\n> [!tip] Nutzen Sie den Editor\n> Öffnen Sie eine beliebige Frage im Editor, um zu sehen, wie sie aufgebaut ist, und verwenden Sie diese Datei dann als ==Vorlage== für eigene.\n\n> [!warning] Je eines pro Typ ist keine Vorgabe\n> Dieses Beispiel enthält zufällig eine Frage pro Typ, eine echte Quelle darf jede Mischung enthalten.\n\n> [!example] Aliasse werden akzeptiert\n> Obsidians Alias-Mengen funktionieren auch hier: `summary`, `hint`, `error` und die übrigen werden alle auf ihren kanonischen Typ normalisiert.\n\nAlles, was Obsidian unterstützt, diese App aber nicht darstellt — Mathematik, Fußnoten, Inline-Tags, `![[Einbettungen]]` — bleibt einfacher Text, statt die Karte zu zerstören. Die vollständige Liste steht in `docs/MARKDOWN_SPEC.md`."
       },
       "answer": {
-        "explanation": "Lesekarten haben keine Antwort. Sie sind dazu da, den Stoff zu lesen, bevor Sie sich abfragen."
+        "explanation": "Lesekarten haben keine Antwort. Sie sind dazu da, gelesen zu werden, bevor Sie sich selbst prüfen; statt bewertet zu werden, beurteilen Sie selbst, wie gut Sie den Stoff kannten.\n\nAlles, was Sie gerade durchgescrollt haben, ist ==eine einzige JSON-Zeichenkette== in `content.text`."
       }
     },
     {
       "id": "sample_single_choice",
       "type": "single_choice",
       "category": "Tierwelt",
-      "tags": ["medien", "beispiel"],
+      "tags": [
+        "medien",
+        "beispiel"
+      ],
       "difficulty": 1.5,
       "content": {
         "text": "Was frisst das Tier auf dem Foto?",
@@ -43,28 +49,36 @@
         { "id": 4, "text": "Akazienrinde" }
       ],
       "answer": {
-        "correct_ids": [1],
-        "explanation": "Große Pandas fressen fast ausschließlich Bambus. Diese Frage zeigt zugleich, wie ein Bild eingebunden wird: einen media-Eintrag am content anlegen und position auf above oder below setzen."
+        "correct_ids": [
+          1
+        ],
+        "explanation": "Große Pandas fressen so gut wie nichts außer Bambus.\n\n> [!info] Medien anhängen\n> Setzen Sie einen `media`-Eintrag auf `content` und `position` auf `above` oder `below`. Bild und Video funktionieren beide, und eine Frage kann Medien auch *anstelle* von Text tragen."
       }
     },
     {
       "id": "sample_multiple_choice",
       "type": "multiple_choice",
-      "tags": ["fragetypen"],
+      "tags": [
+        "fragetypen"
+      ],
       "difficulty": 3,
       "content": {
         "text": "Welche Fragetypen brauchen eine Optionsliste?"
       },
       "options": [
-        { "id": 1, "text": "single_choice" },
-        { "id": 2, "text": "multiple_choice" },
-        { "id": 3, "text": "short_answer" },
-        { "id": 4, "text": "flashcard" },
-        { "id": 5, "text": "true_false" }
+        { "id": 1, "text": "`single_choice`" },
+        { "id": 2, "text": "`multiple_choice`" },
+        { "id": 3, "text": "`short_answer`" },
+        { "id": 4, "text": "`flashcard`" },
+        { "id": 5, "text": "`true_false`" }
       ],
       "answer": {
-        "correct_ids": [1, 2, 5],
-        "explanation": "Nur die drei Auswahltypen nutzen Optionen. Eine multiple_choice-Frage muss mindestens zwei richtige Optionen haben — markieren Sie nur eine, meldet die App, dass die Frage ihrem eigenen Typ widerspricht."
+        "correct_ids": [
+          1,
+          2,
+          5
+        ],
+        "explanation": "Nur die drei Auswahltypen verwenden Optionen.\n\n> [!warning] Markieren Sie mindestens zwei\n> Eine `multiple_choice`-Frage braucht **zwei oder mehr** richtige Optionen. Markieren Sie nur eine, meldet die App, dass die Frage ihrem eigenen Typ widerspricht.\n\nDie Optionen oben sind zugleich selbst eine Demonstration: auch Optionstext wird als Markdown dargestellt, deshalb erscheinen die Typnamen als Inline-Code."
       }
     },
     {
@@ -80,20 +94,28 @@
         { "id": 2, "text": "Falsch" }
       ],
       "answer": {
-        "correct_ids": [2]
+        "correct_ids": [
+          2
+        ]
       }
     },
     {
       "id": "sample_short_answer",
       "type": "short_answer",
-      "tags": ["tippen", "beispiel"],
+      "tags": [
+        "tippen",
+        "beispiel"
+      ],
       "difficulty": 2.5,
       "content": {
         "text": "Welche Stadt ist die Hauptstadt der Türkei?"
       },
       "answer": {
-        "accepted_texts": ["Ankara", "Ankara, Türkei"],
-        "explanation": "Listen Sie jede Schreibweise auf, die Sie gelten lassen wollen. Groß- und Kleinschreibung sowie umgebende Leerzeichen werden ignoriert, solange caseSensitive nicht auf true steht."
+        "accepted_texts": [
+          "Ankara",
+          "Ankara, Türkei"
+        ],
+        "explanation": "Führen Sie jede Schreibweise auf, die Sie akzeptieren wollen. Der Vergleich ignoriert Groß- und Kleinschreibung sowie umgebende Leerzeichen, solange Sie `caseSensitive` nicht auf `true` setzen.\n\n`ankara` und `  Ankara  ` gehen damit durch, ~~Stadt Ankara~~ hingegen nicht — es steht einfach nicht auf der Liste."
       }
     },
     {
@@ -105,19 +127,21 @@
         "text": "HTTP nutzt Port {{80}}, HTTPS nutzt Port {{443}} und DNS nutzt Port {{53|Port 53}}."
       },
       "answer": {
-        "explanation": "Die Antworten stehen in doppelten geschweiften Klammern im Satz selbst, es gibt also keine accepted_texts-Liste, die man synchron halten müsste. Ein senkrechter Strich ergänzt alternative Schreibweisen: die erste wird als richtige Antwort angezeigt, die übrigen werden lediglich akzeptiert."
+        "explanation": "Die Antworten stehen in doppelten geschweiften Klammern im Satz selbst, es gibt also keine `accepted_texts`-Liste, die synchron gehalten werden müsste. Ein senkrechter Strich ergänzt Alternativen: die erste wird als richtige Antwort angezeigt, die übrigen werden lediglich akzeptiert.\n\n```\nHTTP nutzt Port {{80}}, und DNS nutzt Port {{53|Port 53}}.\n```\n\n> [!note] Markierungen in Code sind keine Lücken\n> Der Block oben zeigt die Syntax, ohne zwei weitere Lücken zu erzeugen. Eine `{{Markierung}}` in Inline-Code oder in einem Codeblock ist Dokumentation, keine Lücke — Renderer und Bewertung sind sich darin einig."
       }
     },
     {
       "id": "sample_flashcard",
       "type": "flashcard",
-      "tags": ["verteiltes-lernen"],
+      "tags": [
+        "verteiltes-lernen"
+      ],
       "starred": true,
       "content": {
         "text": "Was unterscheidet eine Lernkarte von allen anderen Fragetypen?"
       },
       "answer": {
-        "back": "Es wird nichts bewertet. Sie decken die Rückseite auf, beurteilen sich selbst mit Nochmal / Schwer / Normal / Einfach, und diese Bewertung entscheidet, wann die Karte wiederkommt."
+        "back": "Nichts wird bewertet. Öffnen Sie die Rückseite und bewerten Sie sich selbst mit **Nochmal** / **Schwer** / **Gut** / **Einfach**; diese Bewertung entscheidet, wann die Karte wiederkommt.\n\n- [x] keine Optionen zu schreiben\n- [x] keine akzeptierten Antworten zu pflegen\n- [ ] eine ehrliche Selbsteinschätzung ist trotzdem nötig"
       }
     }
   ]

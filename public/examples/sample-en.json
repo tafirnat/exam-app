@@ -10,21 +10,27 @@
       "id": "sample_reading",
       "type": "reading",
       "category": "Overview",
-      "tags": ["guide", "start-here"],
+      "tags": [
+        "guide",
+        "start-here"
+      ],
       "starred": true,
       "flagged": true,
       "content": {
-        "text": "# Welcome\n\nThis source holds one question of every type the app supports. Work through it once and you will have seen everything a JSON file can contain.\n\n## The seven types\n\n- **reading** — prose cards with no answer. You read them and rate how well you knew the material.\n- **single_choice**, **multiple_choice**, **true_false** — options with one or more marked correct.\n- **short_answer** — you type the answer and it is compared to a list of accepted spellings.\n- **fill_in_the_blank** — the answer sits inside the sentence.\n- **flashcard** — a front and a back; you rate yourself instead of being graded.\n\n## Field reference\n\nOnly `id`, `type` and the question text are required. Everything below is optional — this file leaves several of them out on purpose so you can see what a minimal question looks like.\n\n- `category` — a label for grouping\n- `tags` — an array of strings, searchable and filterable\n- `difficulty` — 1 to 5, feeds the scheduling algorithm\n- `starred` / `flagged` — the two markers shown above the question\n- `answer.explanation` — shown after checking, on every type\n- `content.media` — an image or video, positioned above or below the text\n\n## Answers by type\n\n| Type | Answer Field |\n| :--- | :--- |\n| choice types | `answer.correct_ids` |\n| short_answer | `answer.accepted_texts` |\n| fill_in_the_blank | `{{markers}}` in the text itself |\n| flashcard | `answer.back` |\n| reading | no answer at all |\n\n> [!tip] Template Usage\n> Open any question in the editor to see how it is built, then use this file as a ==template== for your own."
+        "text": "# Welcome\n\nThis source holds one question of every type the app supports, and it is written in the same Obsidian Markdown you will use for your own. Work through it once and you will have seen both the schema and the formatting.\n\n## The seven types\n\n- **reading** — prose cards with no answer. You read them and rate how well you knew the material.\n- Graded from options:\n    - **single_choice** — exactly one option marked correct\n    - **multiple_choice** — at least two marked correct\n    - **true_false** — a closed pair, never a third option\n- Graded from text:\n    - **short_answer** — you type it, and it is matched against accepted spellings\n    - **fill_in_the_blank** — the answer sits inside the sentence\n- **flashcard** — a front and a back; you rate yourself instead of being graded.\n\n## Field reference\n\nOnly `id`, `type` and the question text are required. Everything else is optional, and this file leaves several out on purpose so a minimal question is visible too.\n\n- `category` — a label for grouping\n- `tags` — an array of strings, searchable and filterable\n- `difficulty` — 1 to 5, feeds the scheduling algorithm\n- `starred` / `flagged` — the two markers shown above the question\n- `answer.explanation` — shown after checking, on every type\n- `content.media` — an image or video, positioned `above` or `below` the text\n\n## Answers by type\n\n| Type | Answer field | Graded |\n| :--- | :--- | :---: |\n| single_choice, true_false | `answer.correct_ids` (one) | yes |\n| multiple_choice | `answer.correct_ids` (two or more) | yes |\n| short_answer | `answer.accepted_texts` | yes |\n| fill_in_the_blank | `{{markers}}` in the text itself | yes |\n| flashcard | `answer.back` | self-rated |\n| reading | none at all | no |\n\n---\n\n## Formatting\n\nEvery text field is Obsidian Markdown, so a note from your vault can be pasted in as it is. Raw HTML is not supported: angle brackets are escaped and reach the reader as literal text.\n\n| You write | You get |\n| :--- | :--- |\n| `**bold**` | **bold** |\n| `*italic*` | *italic* |\n| `***both***` | ***both*** |\n| `~~struck out~~` | ~~struck out~~ |\n| `==highlight==` | ==highlight== |\n| \\`code\\` | `code` |\n| `[label](address)` | [Obsidian](https://obsidian.md) |\n| `[[Note name]]` | [[Note name]] |\n| `\\*escaped\\*` | \\*escaped\\* |\n\nA single newline is a real line break,\nlike this one.\n\nA blank line starts a new paragraph.\n\n### Lists nest by indentation\n\n1. First step\n2. Second step\n    - a detail\n    - another detail\n        - deeper still\n3. Third step\n\n### Task lists render read-only\n\n- [x] Write the questions\n- [x] Add the explanations\n- [ ] Translate into another language\n\n### Code blocks keep their contents verbatim\n\n```json\n{\n  \"type\": \"short_answer\",\n  \"content\": { \"text\": \"Which city is the capital of Turkey?\" },\n  \"answer\": { \"accepted_texts\": [\"Ankara\"] }\n}\n```\n\n> A plain blockquote, for quoting a source rather than calling something out.\n\n### Callouts\n\n> [!tip] Use the editor\n> Open any question in the editor to see how it is built, then use this file as a ==template== for your own.\n\n> [!warning] One of each is not a requirement\n> This sample happens to carry one question per type, but a real source can hold any mix.\n\n> [!example] Aliases are accepted\n> Obsidian's alias sets work here too: `summary`, `hint`, `error` and the rest all normalise to their canonical type.\n\nAnything Obsidian supports but this app does not render — math, footnotes, inline tags, `![[embeds]]` — stays as plain text instead of breaking the card. The full list is in `docs/MARKDOWN_SPEC.md`."
       },
       "answer": {
-        "explanation": "Reading cards carry no answer. They exist to be read before you test yourself on the material."
+        "explanation": "Reading cards carry no answer. They exist to be read before you test yourself, and you rate how well you knew the material rather than being graded.\n\nEverything you just scrolled through is ==one single JSON string== in `content.text`."
       }
     },
     {
       "id": "sample_single_choice",
       "type": "single_choice",
       "category": "Wildlife",
-      "tags": ["media", "example"],
+      "tags": [
+        "media",
+        "example"
+      ],
       "difficulty": 1.5,
       "content": {
         "text": "What is the animal in the photograph eating?",
@@ -43,28 +49,36 @@
         { "id": 4, "text": "Acacia bark" }
       ],
       "answer": {
-        "correct_ids": [1],
-        "explanation": "Giant pandas eat almost nothing but bamboo. This question also shows how to attach an image: put a media entry on the content and set position to above or below."
+        "correct_ids": [
+          1
+        ],
+        "explanation": "Giant pandas eat almost nothing but bamboo.\n\n> [!info] Attaching media\n> Put a `media` entry on `content` and set `position` to `above` or `below`. Images and video both work, and a question may carry media *instead of* text rather than alongside it."
       }
     },
     {
       "id": "sample_multiple_choice",
       "type": "multiple_choice",
-      "tags": ["question-types"],
+      "tags": [
+        "question-types"
+      ],
       "difficulty": 3,
       "content": {
         "text": "Which question types need an options list?"
       },
       "options": [
-        { "id": 1, "text": "single_choice" },
-        { "id": 2, "text": "multiple_choice" },
-        { "id": 3, "text": "short_answer" },
-        { "id": 4, "text": "flashcard" },
-        { "id": 5, "text": "true_false" }
+        { "id": 1, "text": "`single_choice`" },
+        { "id": 2, "text": "`multiple_choice`" },
+        { "id": 3, "text": "`short_answer`" },
+        { "id": 4, "text": "`flashcard`" },
+        { "id": 5, "text": "`true_false`" }
       ],
       "answer": {
-        "correct_ids": [1, 2, 5],
-        "explanation": "Only the three choice types use options. A multiple_choice question must have at least two options marked correct — mark just one and the app will tell you the question contradicts its own type."
+        "correct_ids": [
+          1,
+          2,
+          5
+        ],
+        "explanation": "Only the three choice types use options.\n\n> [!warning] Mark at least two\n> A `multiple_choice` question needs **two or more** correct options. Mark just one and the app will report that the question contradicts its own type.\n\nThe options above are also a demonstration in themselves: option text is rendered as Markdown, which is why the type names appear as inline code."
       }
     },
     {
@@ -80,20 +94,28 @@
         { "id": 2, "text": "False" }
       ],
       "answer": {
-        "correct_ids": [2]
+        "correct_ids": [
+          2
+        ]
       }
     },
     {
       "id": "sample_short_answer",
       "type": "short_answer",
-      "tags": ["typing", "example"],
+      "tags": [
+        "typing",
+        "example"
+      ],
       "difficulty": 2.5,
       "content": {
         "text": "Which city is the capital of Turkey?"
       },
       "answer": {
-        "accepted_texts": ["Ankara", "Ankara, Turkey"],
-        "explanation": "List every spelling you are willing to accept. Matching ignores case and surrounding spaces unless you set caseSensitive to true."
+        "accepted_texts": [
+          "Ankara",
+          "Ankara, Turkey"
+        ],
+        "explanation": "List every spelling you are willing to accept. Matching ignores case and surrounding spaces unless you set `caseSensitive` to `true`.\n\nSo `ankara` and `  Ankara  ` both pass, while ~~Ankara City~~ does not — it simply is not on the list."
       }
     },
     {
@@ -105,19 +127,21 @@
         "text": "HTTP uses port {{80}}, HTTPS uses port {{443}}, and DNS uses port {{53|Port 53}}."
       },
       "answer": {
-        "explanation": "The answers live inside the sentence in double braces, so there is no accepted_texts list to keep in sync. A pipe adds alternative spellings: the first one is shown as the correct answer, the rest are simply accepted."
+        "explanation": "The answers live inside the sentence in double braces, so there is no `accepted_texts` list to keep in sync. A pipe adds alternatives: the first is shown as the correct answer, the rest are merely accepted.\n\n```\nHTTP uses port {{80}}, and DNS uses port {{53|Port 53}}.\n```\n\n> [!note] Markers inside code are not blanks\n> The block above shows the syntax without creating two more gaps. A `{{marker}}` inside inline code or a fenced block is documentation, not a blank — the renderer and the grader agree on that."
       }
     },
     {
       "id": "sample_flashcard",
       "type": "flashcard",
-      "tags": ["spaced-repetition"],
+      "tags": [
+        "spaced-repetition"
+      ],
       "starred": true,
       "content": {
         "text": "What makes a flashcard different from every other question type?"
       },
       "answer": {
-        "back": "Nothing is graded. Open the back, rate yourself Again / Hard / Good / Easy; that rating decides when the card returns."
+        "back": "Nothing is graded. Open the back, rate yourself **Again** / **Hard** / **Good** / **Easy**; that rating decides when the card comes back.\n\n- [x] no options to write\n- [x] no accepted answers to maintain\n- [ ] still needs an honest self-rating"
       }
     }
   ]

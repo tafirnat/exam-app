@@ -8,6 +8,8 @@ import { readFileSync, readdirSync } from 'node:fs';
 import { fileURLToPath } from 'node:url';
 import { dirname, join } from 'node:path';
 import { findContentGaps, canonicalType, KNOWN_TYPES } from '../src/core/question-rules.js';
+import { renderMarkdown, renderInlineMarkdown, SENTINEL } from '../src/core/markdown.js';
+import { parseCloze, clozeMarkup } from '../src/core/cloze.js';
 
 const root = join(dirname(fileURLToPath(import.meta.url)), '..');
 const dir = join(root, 'public/examples');
@@ -101,5 +103,96 @@ test('all shipped JSON files in data/ and public/examples/ are 100% free of raw 
         const content = readFileSync(filePath, 'utf8');
         const match = content.match(htmlTagRegex);
         assert.equal(match, null, `File ${filePath} contains raw HTML tag: ${match?.[0]}`);
+    }
+});
+
+/* The samples are the app's worked example of the content format, so they have
+   to demonstrate it, not merely comply with it. These assert against the
+   rendered output rather than the source, which is what catches a construct
+   that is written but silently not rendered. */
+test('every sample renders every construct the format supports', () => {
+    const required = {
+        'h2 heading': /<h2>/,
+        'h3 heading': /<h3>/,
+        'h4 heading': /<h4>/,
+        bold: /<strong>/,
+        italic: /<em>/,
+        'bold italic': /<strong><em>/,
+        strikethrough: /<del>/,
+        highlight: /<mark>/,
+        'inline code': /<code>/,
+        'fenced code with a language': /<pre><code class="language-json">/,
+        'fenced code without one': /<pre><code>/,
+        'external link': /<a href="https:\/\/[^"]+" target="_blank" rel="noopener noreferrer">/,
+        wikilink: /class="md-wikilink"/,
+        'unordered list': /<ul>/,
+        'ordered list': /<ol>/,
+        'nested list': /<li>[^<]*<(?:ul|ol)>/,
+        'checked task': /class="md-task"><input type="checkbox" disabled checked>/,
+        'unchecked task': /class="md-task"><input type="checkbox" disabled>/,
+        blockquote: /<blockquote>/,
+        'thematic break': /<hr>/,
+        'soft line break': /<br>/,
+        table: /<table>/,
+        'table left alignment': /text-align: left/,
+        'table centre alignment': /text-align: center/
+    };
+    // Enough distinct callout types that the per-type token bindings are exercised.
+    for (const type of ['tip', 'warning', 'example', 'info', 'note']) {
+        required[`${type} callout`] = new RegExp(`md-callout-${type}\\b`);
+    }
+
+    for (const lang of LANGUAGES) {
+        const html = load(lang).questions.flatMap(q => [
+            q.content?.text, q.answer?.explanation, q.answer?.back,
+            ...(q.options ?? []).map(o => o.text)
+        ]).filter(s => typeof s === 'string').map(renderMarkdown).join('\n');
+
+        const missing = Object.entries(required).filter(([, re]) => !re.test(html)).map(([name]) => name);
+        assert.deepEqual(missing, [], `sample-${lang} never renders: ${missing.join(', ')}`);
+    }
+});
+
+test('sample option text is rendered as Markdown, not shown raw', () => {
+    for (const lang of LANGUAGES) {
+        const mc = load(lang).questions.find(q => q.type === 'multiple_choice');
+        const formatted = mc.options.filter(o => /[*`=~]/.test(o.text));
+        assert.ok(formatted.length > 0, `sample-${lang} should show that options carry formatting`);
+        for (const option of formatted) {
+            const html = renderInlineMarkdown(option.text);
+            assert.match(html, /<(code|strong|em|mark|del)>/, `option ${option.id} should render an element`);
+            // Inline rendering only: an option is a single line, never a block.
+            assert.doesNotMatch(html, /<(p|h[2-6]|ul|ol|div)\b/, 'options must stay inline');
+        }
+    }
+});
+
+test('the samples never emit an escaped tag or leak a parser placeholder', () => {
+    for (const lang of LANGUAGES) {
+        for (const q of load(lang).questions) {
+            const strings = [q.content?.text, q.answer?.explanation, q.answer?.back,
+                             ...(q.options ?? []).map(o => o.text)].filter(s => typeof s === 'string');
+            for (const source of strings) {
+                const html = renderMarkdown(source);
+                assert.doesNotMatch(html, /&lt;\/?[a-z]/i,
+                    `${lang}/${q.id} contains HTML that would show as literal text`);
+                assert.equal(html.includes(SENTINEL), false, `${lang}/${q.id} leaked a placeholder`);
+            }
+        }
+    }
+});
+
+test('a cloze example shown inside a code fence creates no blanks', () => {
+    // The fill_in_the_blank explanation prints the marker syntax. If that counted
+    // as blanks, the explanation would silently change the question's answer key.
+    for (const lang of LANGUAGES) {
+        const cloze = load(lang).questions.find(q => q.type === 'fill_in_the_blank');
+        assert.match(cloze.answer.explanation, /\{\{.+?\}\}/, 'it should show the syntax');
+        assert.equal(parseCloze(cloze.answer.explanation).blanks.length, 0,
+            'but inside a fence it is documentation, not blanks');
+
+        const gaps = [...clozeMarkup(cloze.content.text).matchAll(/data-blank="(\d+)"/g)].map(m => Number(m[1]));
+        assert.deepEqual(gaps, [...Array(parseCloze(cloze.content.text).blanks.length).keys()],
+            'and the question itself still numbers its gaps in order');
     }
 });

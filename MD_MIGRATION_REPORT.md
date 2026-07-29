@@ -209,7 +209,7 @@ Stated plainly rather than claimed:
 
 - **No browser walkthrough was performed.** The directive's Step 9 asks for one question of every type in both themes, observed in a running app. I did not run one, and no screenshots exist. What replaces it is partial and mechanical: the corpus render (5.3) proves every shipped string parses and renders without error or HTML leakage, and the contrast maths (5.4) settles the specific "is it legible in both themes" question that Round 1 got wrong by eye. Layout, spacing, focus order and scroll behaviour under a real engine remain unobserved.
 - **Round 1's own Step 9 claim was unsupported.** Its report asserted the suite and build were green — true, and re-confirmed — but presented no per-type/per-theme observation, and the dark-mode defect in 3.1 would have been caught by the walkthrough it claimed.
-- **`task`, `link`, `wikilink`, `strike` and `hr` appear in no shipped content.** They are covered by unit tests, so the renderer is verified; their CSS is not exercised by real content. Step 7's requirement (one callout, one highlight, one task *or* table) is met via table. Adding a task list and a nested list to `data/reading_feature_guide.json` would close this and is the obvious next content change.
+- **Round 3 closed the content-coverage gap.** Round 2 shipped with `task`, `link`, `wikilink`, `strike` and `hr` present in no shipped content, so their CSS was unexercised. The three samples were rewritten to demonstrate the format they document; every construct now appears in real content in all three languages, asserted against the *rendered* output by `samples.test.mjs`. See section 8.
 - **Deployment.** Recorded in section 6 at push time; live behaviour after deploy is not verified here.
 
 ---
@@ -234,4 +234,63 @@ Hard-coded `#38bdf8` / `#0f172a` / `#e2e8f0` from the retired block are now toke
 
 ## 7. Round 2 commits
 
-Recorded at push time; see `git log`.
+`151ca25` theme tokens and contrast · `8fbdf07` renderer defects · `5e3529f` docs · `72e5c5f` this report.
+
+---
+
+## 8. Round 3 — the samples demonstrate the format
+
+Round 2 left the samples merely *compliant* with the format. They are the app's worked example and the file a reader copies, so they should also *show* it.
+
+The samples tests assert exactly one question per type, so nothing was added: the existing questions were enriched instead. The reading card became the formatting reference, and each explanation now demonstrates a construct in the course of saying something useful. Structure is untouched — same ids, types, order, correct answers, option counts, and the same optional fields deliberately left out, verified identical across `tr`/`en`/`de`.
+
+What the samples now render, in every language:
+
+- the full inline set — bold, italic, bold+italic, strikethrough, highlight, inline code, external link, wikilink, and a backslash escape
+- headings at three depths, ordered and unordered lists nested three levels deep, a task list with both states, a blockquote, a thematic break, a soft line break, a fenced block with and without a language, and a table using left and centre alignment
+- five distinct callout types, which exercises the per-type token bindings
+- a "You write / You get" table that puts the syntax and its result side by side, so the card is simultaneously the documentation and the demonstration
+
+Two things worth noting:
+
+- **Option text now carries formatting.** The `multiple_choice` options are inline code, which demonstrates the improvement Step 4 introduced — options render inline Markdown rather than being blanket-escaped. A test asserts they render an element and that no block element leaks into an option.
+- **The cloze explanation prints the marker syntax inside a fence.** That only works because a `{{marker}}` in code is documentation rather than a blank; the explanation would otherwise change the question's answer key. Asserted directly.
+
+### 8.1 A bug this content found
+
+Writing three callouts in a row exposed a defect no test had covered: the callout body loop continued across a blank line whenever the following line also began with `>`. Two adjacent callouts therefore **merged into one**, with the second one's `[!type] Title` left sitting in the first one's body as literal text.
+
+```
+in : "> [!tip] First\n> body one\n\n> [!warning] Second\n> body two"
+out: one tip callout whose body reads "body one" then "[!warning] Second"
+```
+
+A blank line now ends a callout, which is Obsidian's rule. Nothing is lost by it: a paragraph break *inside* a callout is written with `>` on the empty line, which the normal branch already handled. Three tests cover the three cases.
+
+This is worth recording as a method note. The defect was not found by reading the renderer or by adding more unit tests to it — it was found by writing real content that used the feature normally. The showcase samples are now load-bearing for exactly that reason.
+
+### 8.2 Verification
+
+```
+# tests 125
+# pass 125
+# fail 0
+```
+
+Whole-corpus render, all 7 shipped JSON files:
+
+```
+files: 7  questions: 34  strings rendered: 120
+constructs exercised by real content: heading, callout, highlight, bold, italic,
+  list, quote, fence, inlineCode, table, task, link, wikilink, strike, hr
+constructs NOT present in corpus: (none)
+render errors: none
+HTML leaks: none
+cloze gap/blank mismatches: none
+```
+
+The showcase test was confirmed to have teeth by removing the task list and the `example` callout from `sample-en.json` and observing it fail before restoring.
+
+Still unverified, unchanged from 5.5: **no browser walkthrough.** The samples are asserted against rendered HTML, not against a screenshot, so the reading card's length and rhythm on a real screen remain unobserved. It is now a long card — that is a deliberate trade for having one page that shows everything, but it is the first thing to look at in a browser.
+
+`data/reading_feature_guide.json` was left alone. It is compliant and renders clean, but it does not showcase the newer constructs; folding the demonstration into it would duplicate what the samples now do.
