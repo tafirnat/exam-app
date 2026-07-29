@@ -23,6 +23,128 @@ export const DEFAULT_AI_PROVIDERS = [
     { id: 'deepseek', name: 'DeepSeek', url: 'https://chat.deepseek.com/?q={PROMPT}', domain: 'deepseek.com' }
 ];
 
+export function getDefaultSampleSources() {
+    return [
+        {
+            id: 'reading_feature_guide',
+            name: 'Reading & Topic Review Feature Guide',
+            folderId: 'default-folder',
+            questionCount: 3,
+            lastUsed: Date.now(),
+            active: true,
+            order: 0,
+            questions: [
+                {
+                    id: 'read_001',
+                    type: 'reading',
+                    category: 'Feature Overview',
+                    tags: ['guide', 'reading-mode', 'overview'],
+                    starred: true,
+                    flagged: false,
+                    content: {
+                        text: '<h3>📖 Reading & Topic Review Content in Exam App</h3><p>The <strong>Reading Content</strong> feature enables structured, HTML-formatted study passages, cheat sheets, and topic summaries directly inside Exam App. Unlike traditional question-and-answer items, reading cards provide an immersive, distraction-free environment for initial learning and rapid revision.</p><h4>Key Characteristics:</h4><ul><li><strong>HTML & Rich Formatting:</strong> Seamlessly renders headings, bold emphasis, bullet points, blockquotes, and inline code elements.</li><li><strong>Seamless Feature Compatibility:</strong> Fully supports native <em>Text-to-Speech (TTS)</em>, <em>Google Translation</em>, <em>Text Highlighting</em>, and <em>Personal Note Taking</em>.</li><li><strong>Spaced Repetition (FSRS):</strong> Evaluated using confidence ratings (e.g., <em>Hard / Good / Easy</em>) to automatically schedule future topic reviews based on retention stability.</li><li><strong>Auto-Hiding Navigation:</strong> On mobile devices, scrolling down smoothly hides the bottom navigation bar to maximize vertical reading space.</li></ul><blockquote><p><mark>Note:</mark> Reading cards can be used as standalone study modules or mixed directly into existing exam question banks.</p></blockquote>'
+                    },
+                    answer: {
+                        explanation: 'This card provides an overview of the Reading Content feature. You can star or flag this card for quick access during revision.'
+                    }
+                },
+                {
+                    id: 'read_002',
+                    type: 'reading',
+                    category: 'Best Practices',
+                    tags: ['use-cases', 'json-schema', 'code-blocks'],
+                    starred: false,
+                    flagged: true,
+                    content: {
+                        text: '<h3>💡 Suitable Use Cases & Schema Structure</h3><p>Reading cards are ideal for technical concepts, legal/medical summaries, system architecture overviews, and formula cheat sheets that require contextual reading before test-taking.</p><h4>When to Use Reading Cards:</h4><ul><li><strong>Core Concept Revision:</strong> High-level topic summaries before answering practice exams.</li><li><strong>Technical Code Walkthroughs:</strong> Explaining code snippets, syntax rules, and algorithm steps.</li><li><strong>Formula & Reference Sheets:</strong> Quick lookup tables and key definitions.</li></ul><h4>Example JSON Schema Structure:</h4><pre><code class="language-json">{\n  "id": "topic_101",\n  "type": "reading",\n  "category": "System Architecture",\n  "tags": ["networking", "tcp-ip"],\n  "starred": true,\n  "content": {\n    "text": "&lt;h3&gt;TCP/IP Model Overview&lt;/h3&gt;&lt;p&gt;The TCP/IP suite consists of four abstraction layers...&lt;/p&gt;"\n  },\n  "answer": {\n    "explanation": "Key reference sheet for OSI vs TCP/IP layer comparisons."\n  }\n}</code></pre><p>This structure ensures 100% compatibility with the <em>Obsidian ExamApp Sync</em> plugin and GitHub Gist cross-device backups.</p>'
+                    },
+                    answer: {
+                        explanation: 'Example of a technical reading card containing code blocks and JSON schema usage guidance.'
+                    }
+                },
+                {
+                    id: 'quiz_001',
+                    type: 'single_choice',
+                    category: 'Knowledge Check',
+                    tags: ['verification', 'mixed-mode'],
+                    starred: false,
+                    flagged: false,
+                    content: {
+                        text: 'How do Reading Cards integrate with Exam App\'s Spaced Repetition (FSRS) engine?'
+                    },
+                    options: [
+                        { id: 1, text: 'They are excluded from FSRS completely.' },
+                        { id: 2, text: 'They use confidence buttons (Hard / Good / Easy) to schedule future review intervals based on retention stability.' },
+                        { id: 3, text: 'They automatically mark all topics as learned on first view.' },
+                        { id: 4, text: 'They require typing the entire passage from memory.' }
+                    ],
+                    answer: {
+                        correct_ids: [2],
+                        explanation: 'Reading Cards utilize FSRS confidence feedback (Hard/Good/Easy) to determine retrievability and schedule future reviews optimal for long-term memory retention.'
+                    }
+                }
+            ]
+        },
+        {
+            id: 'example_questions',
+            name: 'Sample Quiz (Beispiel Test)',
+            folderId: null,
+            questionCount: 3,
+            lastUsed: Date.now(),
+            active: true,
+            order: 0,
+            questions: [
+                {
+                    id: 'q1',
+                    type: 'single_choice',
+                    category: 'Allgemein',
+                    tags: ['genel-bilgi', 'coğrafya'],
+                    content: { text: 'Was ist die Hauptstadt von Deutschland?' },
+                    options: [
+                        { id: 1, text: 'Berlin' },
+                        { id: 2, text: 'München' },
+                        { id: 3, text: 'Hamburg' },
+                        { id: 4, text: 'Frankfurt' }
+                    ],
+                    answer: {
+                        correct_ids: [1],
+                        explanation: 'Berlin ist seit 1990 die Hauptstadt Deutschlands.'
+                    }
+                },
+                {
+                    id: 'q2',
+                    type: 'multiple_choice',
+                    category: 'Geographie',
+                    tags: ['coğrafya', 'avrupa'],
+                    content: { text: 'Welche dieser Länder liegen in Europa?' },
+                    options: [
+                        { id: 1, text: 'Frankreich' },
+                        { id: 2, text: 'Japan' },
+                        { id: 3, text: 'Spanien' },
+                        { id: 4, text: 'Brasilien' }
+                    ],
+                    answer: {
+                        correct_ids: [1, 3],
+                        explanation: 'Frankreich und Spanien liegen in Europa.'
+                    }
+                },
+                {
+                    id: 'q3',
+                    type: 'text_input',
+                    category: 'Mathe',
+                    tags: ['matematik', 'temel'],
+                    content: { text: 'Wieviel ist 5 + 5?' },
+                    answer: {
+                        accepted_texts: ['10', 'zehn'],
+                        caseSensitive: false,
+                        explanation: '5 + 5 = 10'
+                    }
+                }
+            ]
+        }
+    ];
+}
+
 export const AppState = {
     rawQuestions: [],
     currentTest: [],
@@ -33,7 +155,7 @@ export const AppState = {
     stats: safeJSONParse('focus_app_stats_local', {}),
     folders: (() => {
         let folders = safeJSONParse('focus_app_folders', null);
-        if (folders === null) {
+        if (folders === null || (Array.isArray(folders) && folders.length === 0)) {
             // Create a default folder for sample templates
             folders = [
                 { id: 'default-folder', name: 'Sample Folder', color: '#0098fe', description: 'Varsayılan örnek klasör', order: 0 }
@@ -43,8 +165,11 @@ export const AppState = {
         return Array.isArray(folders) ? folders : [];
     })(),
     sources: (() => {
-        const sources = safeJSONParse('focus_app_sources', []);
-        // Cleanup: remove any sources without questions (leftovers from previous broken logic)
+        let sources = safeJSONParse('focus_app_sources', null);
+        if (sources === null || (Array.isArray(sources) && sources.length === 0)) {
+            sources = getDefaultSampleSources();
+            try { localStorage.setItem('focus_app_sources', JSON.stringify(sources)); } catch(e){}
+        }
         return Array.isArray(sources) ? sources.filter(s => s && s.questions && Array.isArray(s.questions)) : [];
     })(),
     totalStats: safeJSONParse('focus_app_stats_global', {}),
@@ -113,8 +238,10 @@ export function touch(record) {
 }
 
 export function clearLocalStudyData() {
-    AppState.sources = [];
-    AppState.folders = [];
+    AppState.folders = [
+        { id: 'default-folder', name: 'Sample Folder', color: '#0098fe', description: 'Varsayılan örnek klasör', order: 0 }
+    ];
+    AppState.sources = getDefaultSampleSources();
     AppState.stats = {};
     AppState.totalStats = {};
     AppState.recentTests = [];
@@ -122,8 +249,8 @@ export function clearLocalStudyData() {
     AppState.deletedFolderIds = [];
     AppState.currentSourceKey = null;
 
-    localStorage.removeItem('focus_app_sources');
-    localStorage.removeItem('focus_app_folders');
+    localStorage.setItem('focus_app_folders', JSON.stringify(AppState.folders));
+    localStorage.setItem('focus_app_sources', JSON.stringify(AppState.sources));
     localStorage.removeItem('focus_app_stats_local');
     localStorage.removeItem('focus_app_stats_global');
     localStorage.removeItem('focus_app_recent_tests');
