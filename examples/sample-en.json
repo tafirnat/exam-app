@@ -1,0 +1,136 @@
+{
+  "exam_metadata": {
+    "title": "Getting Started — Question Types",
+    "id": "sample_en",
+    "description": "One question of every supported type. Each one explains itself while being an example of what it describes.",
+    "category": "Guide"
+  },
+  "questions": [
+    {
+      "id": "sample_reading",
+      "type": "reading",
+      "category": "Overview",
+      "tags": ["guide", "start-here"],
+      "starred": true,
+      "content": {
+        "text": "<h3>Welcome</h3><p>This source holds one question of every type the app supports. Work through it once and you will have seen everything a JSON file can contain.</p><h4>The eight types</h4><ul><li><strong>reading</strong> and <strong>topic_review</strong> — prose cards with no answer. You read them and rate how well you knew the material.</li><li><strong>single_choice</strong>, <strong>multiple_choice</strong>, <strong>true_false</strong> — options with one or more marked correct.</li><li><strong>short_answer</strong> — you type the answer and it is compared to a list of accepted spellings.</li><li><strong>fill_in_the_blank</strong> — the answer sits inside the sentence.</li><li><strong>flashcard</strong> — a front and a back; you rate yourself instead of being graded.</li></ul><blockquote><p>Open any question in the editor to see how it is built, then use this file as a template for your own.</p></blockquote>"
+      },
+      "answer": {
+        "explanation": "Reading cards carry no answer. They exist to be read before you test yourself on the material."
+      }
+    },
+    {
+      "id": "sample_single_choice",
+      "type": "single_choice",
+      "category": "Wildlife",
+      "tags": ["media", "example"],
+      "difficulty": 1.5,
+      "content": {
+        "text": "What is the animal in the photograph eating?",
+        "media": [
+          {
+            "type": "image",
+            "url": "https://images.pexels.com/photos/35536100/pexels-photo-35536100/free-photo-of-close-up-of-giant-panda-eating-bamboo-in-forest.jpeg?auto=compress&w=1260&h=750&dpr=2",
+            "position": "above"
+          }
+        ]
+      },
+      "options": [
+        { "id": 1, "text": "Bamboo" },
+        { "id": 2, "text": "Eucalyptus leaves" },
+        { "id": 3, "text": "Fish" },
+        { "id": 4, "text": "Acacia bark" }
+      ],
+      "answer": {
+        "correct_ids": [1],
+        "explanation": "Giant pandas eat almost nothing but bamboo. This question also shows how to attach an image: put a media entry on the content and set position to above or below."
+      }
+    },
+    {
+      "id": "sample_multiple_choice",
+      "type": "multiple_choice",
+      "tags": ["question-types"],
+      "difficulty": 3,
+      "content": {
+        "text": "Which question types need an options list?"
+      },
+      "options": [
+        { "id": 1, "text": "single_choice" },
+        { "id": 2, "text": "multiple_choice" },
+        { "id": 3, "text": "short_answer" },
+        { "id": 4, "text": "flashcard" },
+        { "id": 5, "text": "true_false" }
+      ],
+      "answer": {
+        "correct_ids": [1, 2, 5],
+        "explanation": "Only the three choice types use options. A multiple_choice question must have at least two options marked correct — mark just one and the app will tell you the question contradicts its own type."
+      }
+    },
+    {
+      "id": "sample_true_false",
+      "type": "true_false",
+      "category": "Question Types",
+      "difficulty": 2,
+      "content": {
+        "text": "A true_false question may have a third option."
+      },
+      "options": [
+        { "id": 1, "text": "True" },
+        { "id": 2, "text": "False" }
+      ],
+      "answer": {
+        "correct_ids": [2]
+      }
+    },
+    {
+      "id": "sample_short_answer",
+      "type": "short_answer",
+      "tags": ["typing", "example"],
+      "difficulty": 2.5,
+      "content": {
+        "text": "Which city is the capital of Turkey?"
+      },
+      "answer": {
+        "accepted_texts": ["Ankara", "Ankara, Turkey"],
+        "explanation": "List every spelling you are willing to accept. Matching ignores case and surrounding spaces unless you set caseSensitive to true."
+      }
+    },
+    {
+      "id": "sample_fill_in_the_blank",
+      "type": "fill_in_the_blank",
+      "category": "Networking",
+      "difficulty": 3.5,
+      "content": {
+        "text": "HTTP uses port {{80}}, HTTPS uses port {{443}}, and DNS uses port {{53|Port 53}}."
+      },
+      "answer": {
+        "explanation": "The answers live inside the sentence in double braces, so there is no accepted_texts list to keep in sync. A pipe adds alternative spellings: the first one is shown as the correct answer, the rest are simply accepted."
+      }
+    },
+    {
+      "id": "sample_flashcard",
+      "type": "flashcard",
+      "tags": ["spaced-repetition"],
+      "starred": true,
+      "content": {
+        "text": "What makes a flashcard different from every other question type?"
+      },
+      "answer": {
+        "back": "Nothing is graded. You reveal the back, judge yourself with Again / Hard / Normal / Easy, and that rating decides when the card comes back."
+      }
+    },
+    {
+      "id": "sample_topic_review",
+      "type": "topic_review",
+      "category": "Reference",
+      "tags": ["cheat-sheet", "schema"],
+      "flagged": true,
+      "content": {
+        "text": "<h3>Field reference</h3><p>Only <code>id</code>, <code>type</code> and the question text are required. Everything below is optional — this file leaves several of them out on purpose so you can see what a minimal question looks like.</p><ul><li><code>category</code> — a label for grouping</li><li><code>tags</code> — an array of strings, searchable and filterable</li><li><code>difficulty</code> — 1 to 5, feeds the scheduling algorithm</li><li><code>starred</code> / <code>flagged</code> — the two markers shown above the question</li><li><code>answer.explanation</code> — shown after checking, on every type</li><li><code>content.media</code> — an image or video, positioned above or below the text</li></ul><h4>Answers by type</h4><ul><li>choice types → <code>answer.correct_ids</code></li><li>short_answer → <code>answer.accepted_texts</code></li><li>fill_in_the_blank → <code>{{markers}}</code> in the text itself</li><li>flashcard → <code>answer.back</code></li><li>reading / topic_review → no answer at all</li></ul>"
+      },
+      "answer": {
+        "explanation": "Keep this card flagged while you write your first file, then unflag it once the schema is familiar."
+      }
+    }
+  ]
+}

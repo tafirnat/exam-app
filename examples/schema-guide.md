@@ -44,26 +44,55 @@ This is a **critical** key for the application's learning algorithm.
 
 ## 3. Question Types
 
-### Single Choice (`single_choice`)
-Standard radio-button selection.
-- `type`: "single_choice"
-- `options`: Array of objects with `id` and `text`.
-- `answer.correct_ids`: Array containing exactly one ID.
+Eight types, in four families. The type decides which fields the question must
+carry — the app refuses to save, and reports on import, anything that
+contradicts its own type.
 
-### Multiple Choice (`multiple_choice`)
-Checkbox selection (multi-select).
-- `type`: "multiple_choice"
-- `answer.correct_ids`: Array containing one or more IDs.
+### Choice — `single_choice`, `multiple_choice`, `true_false`
+- `options`: array of objects with a numeric `id` and `text`. At least two.
+- `answer.correct_ids`: array of the ids that are correct.
+  - `single_choice` — exactly one.
+  - `multiple_choice` — at least two. One correct answer means you wanted
+    `single_choice`.
+  - `true_false` — exactly two options (conventionally `id: 1` true, `id: 2`
+    false) and exactly one correct. A third option is rejected.
 
-### True / False (`true_false`)
-- `type`: "true_false"
-- `options`: Usually `id: 1` for True, `id: 2` for False.
+### Short answer — `short_answer`
+The reader types the answer.
+- `answer.accepted_texts`: array of strings that count as correct.
+- `answer.caseSensitive`: (Boolean, optional) exact case required when `true`.
+  Otherwise case and surrounding whitespace are ignored.
 
-### Text Input (`text_input`)
-Open-ended text entry.
-- `type`: "text_input"
-- `answer.accepted_texts`: Array of strings considered correct.
-- `answer.caseSensitive`: (Boolean) If `true`, requires exact match.
+> `text`, `text_input` and `open_ended` were earlier names for this type. Files
+> using them still import — they are rewritten to `short_answer` on the way in —
+> but write new files with the current name.
+
+### Fill in the blank — `fill_in_the_blank`
+The answers live inside the sentence, in double braces. There is no
+`accepted_texts` list.
+
+```json
+{
+  "id": "q_ports",
+  "type": "fill_in_the_blank",
+  "content": { "text": "HTTP uses port {{80}} and DNS uses port {{53|Port 53}}." }
+}
+```
+
+- Each `{{...}}` becomes one numbered blank, in reading order.
+- A pipe lists alternatives. The first is the canonical answer shown in
+  feedback; the rest are only accepted on input.
+- Every blank must be answered correctly for the question to count.
+
+### Flashcard — `flashcard`
+- `content.text`: the front.
+- `answer.back`: the back.
+- Nothing is graded. The reader self-rates, and that rating drives scheduling.
+
+### Reading — `reading`, `topic_review`
+Prose cards with no answer and no options. `content.text` is rendered as HTML,
+so headings, lists, `<code>` and `<pre>` blocks all work. Use `explanation` for
+a note shown alongside.
 
 ---
 
