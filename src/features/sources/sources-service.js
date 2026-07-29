@@ -65,6 +65,7 @@ export function normalizeQuestions(questions) {
         // text / text_input / open_ended all described the same behaviour; store
         // the one name so nothing downstream has to know about the other three.
         if (q.type) q.type = canonicalType(q.type);
+        delete q.format;
 
         // Ensure correctOptionIds is consistently populated
         const answers = getCorrectAnswers(q);

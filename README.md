@@ -40,7 +40,7 @@ Experience the application live: **[https://exam.rifatarslan.dev/](https://exam.
   - **Symmetric Progression:** Starts from a 1.5 baseline, moving toward 0.1 (Easy) or 3.0 (Hard).
   - **Learned Threshold:** Autonomously marks questions as "Learned" (🎓) based on retention stability.
   - **Intuitive Feedback:** Seamless "Hard" / "Easy" mapping that harmonizes with the algorithmic interval calculation.
-- **Interactive Explanations**: Native support for HTML-formatted explanation rendering (supporting bold text, line breaks, and hyperlinks) in the note area. These pre-populate automatically on question load (allowing viewing via the note icon) and display automatically upon checking the answer.
+- **Interactive Explanations**: Native support for Obsidian Markdown-formatted explanation rendering (supporting headings, callouts, code blocks, bold text, highlights, and hyperlinks) in the note area. These pre-populate automatically on question load (allowing viewing via the note icon) and display automatically upon checking the answer.
 - **Dynamic Internationalization**: Native support for **Turkish**, **English**, and **German** with automatic detection.
 - **Multilingual Translations**: Integrated Google Translate API supporting over 10 target languages for questions and options.
 - **Custom AI Provider Hub & Localized Prompts**: Add, manage, and one-click query your favorite AI services (ChatGPT, Claude, Gemini, DeepSeek, Kimi, etc.) with prompt templates automatically localized to your UI language.

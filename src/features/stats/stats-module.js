@@ -2,6 +2,7 @@ import { AppState, liveSources } from '../../core/state.js';
 import { t } from '../../core/i18n.js';
 import { showConfirm, escapeHTML } from '../../core/utils.js';
 import { calculateRetrievability } from '../test/test-engine.js';
+import { plainText } from '../../core/markdown.js';
 
 
 export function renderStatsList(filter = 'all', searchKeyword = '') {
@@ -222,7 +223,7 @@ export function renderStatsList(filter = 'all', searchKeyword = '') {
         const item = document.createElement('div');
         item.className = 'stats-list-item';
         const rawQText = q.content?.text || q.text || t('untitled_question');
-        const qText = escapeHTML(rawQText);
+        const qText = escapeHTML(plainText(rawQText));
         const safeSourceName = q.sourceName ? escapeHTML(q.sourceName) : '';
 
         const isLearned = !!s.learned;

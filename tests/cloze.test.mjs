@@ -63,12 +63,54 @@ test('grading requires every blank, not just one', () => {
     assert.equal(gradeCloze('no markers here', []), false, 'nothing to grade is not a pass');
 });
 
-test('the sentence renders with numbered gaps, escaping only the literal text', () => {
-    const markup = clozeMarkup(SENTENCE, (s) => s.replace(/</g, '&lt;'));
-    assert.match(markup, /^Ankara <span class="cloze-gap" data-blank="0">1<\/span> başkentidir\.$/);
+test('the sentence renders with numbered gaps inside Markdown', () => {
+    const markup = clozeMarkup(SENTENCE);
+    assert.equal(markup, '<div class="md-content"><p>Ankara <span class="cloze-gap" data-blank="0">1</span> başkentidir.</p></div>');
 
-    const risky = clozeMarkup('<script>x</script> {{a}}', (s) => s.replace(/</g, '&lt;'));
-    assert.ok(!risky.includes('<script>'), 'the escape hook is applied to literal text');
+    const risky = clozeMarkup('<script>x</script> {{a}}');
+    assert.ok(!risky.includes('<script>'), 'XSS tags are escaped before rendering');
+});
+
+test('Step 3 (a): cloze sentence with bold formatting around a blank', () => {
+    const markdownCloze = '**Ankara** {{Türkiye\'nin}} başkentidir.';
+    const html = clozeMarkup(markdownCloze);
+    assert.equal(html.includes('<strong>Ankara</strong>'), true);
+    assert.equal(html.includes('<span class="cloze-gap" data-blank="0">1</span>'), true);
+});
+
+test('Step 3 (b): {{x}} inside inline code or fenced code is NOT a gap', () => {
+    const inlineCodeCloze = 'Code `{{var}}` is raw';
+    const { blanks: inlineBlanks } = parseCloze(inlineCodeCloze);
+    assert.equal(inlineBlanks.length, 0);
+    const inlineHtml = clozeMarkup(inlineCodeCloze);
+    assert.equal(inlineHtml.includes('class="cloze-gap"'), false);
+    assert.equal(inlineHtml.includes('<code>{{var}}</code>'), true);
+
+    const fencedCodeCloze = '```js\nfunction test() { return "{{val}}"; }\n```';
+    const { blanks: fencedBlanks } = parseCloze(fencedCodeCloze);
+    assert.equal(fencedBlanks.length, 0);
+    const fencedHtml = clozeMarkup(fencedCodeCloze);
+    assert.equal(fencedHtml.includes('class="cloze-gap"'), false);
+});
+
+test('Step 3 (c): corpus gap count and order parity with parseCloze', () => {
+    const corpus = [
+        'Plain {{one}} and {{two}} gaps.',
+        'Heading\n\n- List {{item1}}\n- List {{item2}}',
+        'Callout > [!note]\n> Body {{answer1}} and {{answer2}}',
+        'Table | H1 | H2 |\n|---|---|\n| {{a}} | {{b}} |'
+    ];
+
+    for (const text of corpus) {
+        const { blanks } = parseCloze(text);
+        const html = clozeMarkup(text);
+        const gapMatches = [...html.matchAll(/class="cloze-gap" data-blank="(\d+)"/g)];
+        
+        assert.equal(gapMatches.length, blanks.length, `Gap count mismatch for text: ${text}`);
+        for (let i = 0; i < blanks.length; i++) {
+            assert.equal(Number(gapMatches[i][1]), blanks[i].index, `Index mismatch at position ${i}`);
+        }
+    }
 });
 
 test('filling in shows the solved sentence', () => {

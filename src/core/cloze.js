@@ -16,10 +16,31 @@
    importer validate that a fill_in_the_blank question actually has any.
    ========================================================================== */
 
+import { renderMarkdown } from './markdown.js';
+
 const MARKER = /\{\{([^{}]*)\}\}/g;
 
 /**
+ * Finds index intervals of code fences and inline code where cloze markers must be ignored.
+ * @param {string} text
+ * @returns {Array<[number, number]>}
+ */
+function getCodeIntervals(text) {
+    const intervals = [];
+    // Fenced code blocks ```...```
+    for (const match of text.matchAll(/```[\s\S]*?```/g)) {
+        intervals.push([match.index, match.index + match[0].length]);
+    }
+    // Inline code `...`
+    for (const match of text.matchAll(/`[^`]+`/g)) {
+        intervals.push([match.index, match.index + match[0].length]);
+    }
+    return intervals;
+}
+
+/**
  * Split a cloze sentence into its literal text and its blanks.
+ * Markers inside fenced code blocks or inline code are treated as literal text.
  * @returns {{segments: {type: 'text'|'blank', value?: string, index?: number,
  *            answers?: string[]}[], blanks: {index: number, answers: string[]}[]}}
  *          `blanks` is index-aligned with the user's answer array.
@@ -30,7 +51,15 @@ export function parseCloze(text) {
     const blanks = [];
     let cursor = 0;
 
+    const codeIntervals = getCodeIntervals(source);
+    const isInsideCode = (index) => codeIntervals.some(([start, end]) => index >= start && index < end);
+
     for (const match of source.matchAll(MARKER)) {
+        // Ignore markers inside code blocks or inline code
+        if (isInsideCode(match.index)) {
+            continue;
+        }
+
         if (match.index > cursor) {
             segments.push({ type: 'text', value: source.slice(cursor, match.index) });
         }
@@ -73,16 +102,33 @@ export function clozeAnswers(text) {
 }
 
 /**
- * The sentence as HTML with each marker turned into a numbered gap.
- * @param {(s: string) => string} escape applied to the literal text only, so
- *        the caller decides whether the sentence may carry its own markup.
+ * The sentence as HTML with each marker turned into a numbered gap, processed through Markdown.
+ * @param {string} text
+ * @returns {string} HTML string with gaps inside .md-content
  */
-export function clozeMarkup(text, escape = (s) => s) {
-    return parseCloze(text).segments.map(seg =>
-        seg.type === 'text'
-            ? escape(seg.value)
-            : `<span class="cloze-gap" data-blank="${seg.index}">${seg.index + 1}</span>`
-    ).join('');
+export function clozeMarkup(text) {
+    const { segments, blanks } = parseCloze(text);
+    if (blanks.length === 0) {
+        return renderMarkdown(text);
+    }
+
+    let tempText = '';
+    for (const seg of segments) {
+        if (seg.type === 'text') {
+            tempText += seg.value;
+        } else if (seg.type === 'blank') {
+            tempText += `__CLOZE_GAP_SENTINEL_${seg.index}__`;
+        }
+    }
+
+    let html = renderMarkdown(tempText);
+
+    for (const b of blanks) {
+        const gapSpan = `<span class="cloze-gap" data-blank="${b.index}">${b.index + 1}</span>`;
+        html = html.replace(`__CLOZE_GAP_SENTINEL_${b.index}__`, gapSpan);
+    }
+
+    return html;
 }
 
 /**

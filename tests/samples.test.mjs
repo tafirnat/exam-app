@@ -85,3 +85,21 @@ test('the cloze sample actually contains markers', () => {
         assert.match(text, /\{\{[^}]*\|[^}]*\}\}/, 'and demonstrate the alternatives pipe');
     }
 });
+
+test('all shipped JSON files in data/ and public/examples/ are 100% free of raw HTML tags', () => {
+    const dataDir = join(root, 'data');
+    const examplesDir = join(root, 'public/examples');
+
+    const jsonFiles = [
+        ...readdirSync(dataDir).filter(f => f.endsWith('.json')).map(f => join(dataDir, f)),
+        ...readdirSync(examplesDir).filter(f => f.endsWith('.json')).map(f => join(examplesDir, f))
+    ];
+
+    const htmlTagRegex = /<\/?(h[1-6]|p|div|span|strong|em|b|i|u|code|pre|ul|ol|li|blockquote|table|thead|tbody|tr|th|td|mark|a)\b[^>]*>/i;
+
+    for (const filePath of jsonFiles) {
+        const content = readFileSync(filePath, 'utf8');
+        const match = content.match(htmlTagRegex);
+        assert.equal(match, null, `File ${filePath} contains raw HTML tag: ${match?.[0]}`);
+    }
+});

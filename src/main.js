@@ -13,6 +13,7 @@ import { renderStatsList, updateHomeStats, setupStatsEventListeners } from './fe
 import { openQuestionEditor, closeQuestionEditor } from './features/stats/question-editor.js';
 import { initTimer, stopTimer } from './features/test/timer-module.js';
 import { initSync, syncToGist } from './core/github-sync.js';
+import { renderMarkdown, renderInlineMarkdown, plainText, applySearchHighlight } from './core/markdown.js';
 
 
 
@@ -370,8 +371,7 @@ window.renderQuestionPreview = (q, stats = null, source = null) => {
     const kw = AppState.searchKeyword || '';
     const qTextEl = document.getElementById('previewQuestionText');
     const rawQText = q.content?.text || q.text || '';
-    const isFormattedContent = getQuestionCategory(q.type) === 'reading' || q.format === 'html' || /<[a-z][\s\S]*>/i.test(rawQText);
-    qTextEl.innerHTML = isFormattedContent ? rawQText : highlightText(rawQText, kw);
+    qTextEl.innerHTML = applySearchHighlight(renderMarkdown(rawQText), kw);
 
     // Handle Media (Images)
     const card = qTextEl.closest('.question-card');
@@ -437,8 +437,7 @@ window.renderQuestionPreview = (q, stats = null, source = null) => {
 
     if (q.type === 'flashcard') {
         const rawBack = q.answer?.back || '';
-        const isBackHtml = q.format === 'html' || /<[a-z][\s\S]*>/i.test(rawBack);
-        const backContentHtml = isBackHtml ? rawBack : escapeHTML(rawBack);
+        const backContentHtml = renderMarkdown(rawBack);
 
         container.innerHTML = `
             <div class="flashcard-face flashcard-back" style="width: 100%;">
@@ -480,8 +479,7 @@ window.renderQuestionPreview = (q, stats = null, source = null) => {
             const content = document.createElement('div');
             content.className = 'option-content';
             content.id = `previewOptText_${opt.id}`;
-            const isOptHtml = /<[a-z][\s\S]*>/i.test(opt.text || '');
-            content.innerHTML = isOptHtml ? opt.text : highlightText(opt.text, kw);
+            content.innerHTML = applySearchHighlight(renderInlineMarkdown(opt.text || ''), kw);
 
             const trans = document.createElement('div');
             trans.className = 'translation-text';
@@ -635,8 +633,7 @@ window.renderQuestionPreview = (q, stats = null, source = null) => {
             }
             previewNoteArea.classList.remove('visible');
         } else if (hasExplanation) {
-            const isExpHtml = /<[a-z][\s\S]*>/i.test(q.answer.explanation || '');
-            previewInputEl.innerHTML = isExpHtml ? q.answer.explanation : escapeHTML(q.answer.explanation);
+            previewInputEl.innerHTML = renderMarkdown(q.answer.explanation || '');
             if (previewLabelEl) {
                 previewLabelEl.removeAttribute('data-i18n');
                 previewLabelEl.innerText = t('explanation_label') || 'Explanation:';

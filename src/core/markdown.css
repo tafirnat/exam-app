@@ -1,0 +1,262 @@
+/* ==========================================================================
+   MARKDOWN SCOPED STYLESHEET (.md-content)
+   ---------------------------------------------------------------------------
+   Provides theme-aware, responsive typography and Obsidian callout styling.
+   All rules are strictly scoped under .md-content to avoid leaking into chrome.
+   ========================================================================== */
+
+.md-content {
+    color: var(--text-primary, var(--text-color));
+    line-height: 1.6;
+    font-weight: 400;
+    font-size: 1rem;
+    word-break: break-word;
+}
+
+/* Margin collapsing for outer card alignment */
+.md-content > *:first-child {
+    margin-top: 0 !important;
+}
+
+.md-content > *:last-child {
+    margin-bottom: 0 !important;
+}
+
+/* Restrained Heading Type Scale (Clamped h2..h6) */
+.md-content h2 {
+    font-size: 1.3rem;
+    font-weight: 700;
+    margin: 1.25rem 0 0.5rem 0;
+    color: var(--text-primary);
+    line-height: 1.3;
+}
+
+.md-content h3 {
+    font-size: 1.15rem;
+    font-weight: 650;
+    margin: 1rem 0 0.4rem 0;
+    color: var(--text-primary);
+    line-height: 1.35;
+}
+
+.md-content h4 {
+    font-size: 1.05rem;
+    font-weight: 600;
+    margin: 0.85rem 0 0.35rem 0;
+    color: var(--text-primary);
+}
+
+.md-content h5 {
+    font-size: 0.95rem;
+    font-weight: 600;
+    margin: 0.75rem 0 0.3rem 0;
+    color: var(--text-primary);
+}
+
+.md-content h6 {
+    font-size: 0.9rem;
+    font-weight: 600;
+    margin: 0.75rem 0 0.3rem 0;
+    color: var(--text-secondary);
+}
+
+/* Paragraphs & Text Elements */
+.md-content p {
+    margin: 0.5rem 0;
+    line-height: 1.6;
+}
+
+.md-content strong {
+    font-weight: 700;
+    color: var(--text-primary);
+}
+
+.md-content em {
+    font-style: italic;
+}
+
+.md-content del {
+    text-decoration: line-through;
+    opacity: 0.75;
+}
+
+/* Highlight ==text== */
+.md-content mark {
+    background-color: var(--highlight-bg, rgba(254, 240, 138, 0.9));
+    color: var(--highlight-text, #1e293b);
+    padding: 0.12em 0.35em;
+    border-radius: var(--radius-sm, 4px);
+}
+
+/* Inline Code & Fenced Code Blocks */
+.md-content code {
+    font-family: 'JetBrains Mono', 'Fira Code', 'Courier New', monospace;
+    font-size: 0.88em;
+    background-color: var(--code-bg, rgba(15, 23, 42, 0.06));
+    color: var(--code-text, #0f172a);
+    padding: 0.15em 0.35em;
+    border-radius: 4px;
+    border: 1px solid var(--border-color, rgba(0, 0, 0, 0.1));
+}
+
+.md-content pre {
+    background-color: var(--code-bg, rgba(15, 23, 42, 0.06));
+    color: var(--code-text, #0f172a);
+    padding: 0.85rem 1rem;
+    border-radius: var(--radius-md, 8px);
+    border: 1px solid var(--border-color, rgba(0, 0, 0, 0.1));
+    overflow-x: auto;
+    max-width: 100%;
+    white-space: pre;
+    margin: 0.75rem 0;
+}
+
+.md-content pre code {
+    background: transparent;
+    padding: 0;
+    border: none;
+    font-size: 0.9em;
+    color: inherit;
+    border-radius: 0;
+}
+
+/* External Links & Internal Wikilinks */
+.md-content a {
+    color: var(--primary-color, #3b82f6);
+    text-decoration: underline;
+    text-underline-offset: 2px;
+}
+
+.md-content a:hover {
+    opacity: 0.85;
+}
+
+.md-content .md-wikilink {
+    color: var(--primary-color, #3b82f6);
+    font-weight: 500;
+    background: var(--surface-hover, rgba(0, 0, 0, 0.04));
+    padding: 0.1em 0.35em;
+    border-radius: 4px;
+    border-bottom: 1px dashed var(--primary-color, #3b82f6);
+}
+
+.md-content .md-embed-missing {
+    color: var(--text-secondary, #64748b);
+    opacity: 0.75;
+    font-style: italic;
+    background: var(--surface-hover, rgba(0, 0, 0, 0.04));
+    padding: 0.1em 0.35em;
+    border-radius: 4px;
+}
+
+/* Lists & Task Items */
+.md-content ul,
+.md-content ol {
+    padding-left: 1.5rem;
+    margin: 0.5rem 0;
+}
+
+.md-content li {
+    margin: 0.25rem 0;
+    line-height: 1.5;
+}
+
+.md-content ul ul,
+.md-content ol ol,
+.md-content ul ol,
+.md-content ol ul {
+    margin: 0.2rem 0;
+}
+
+.md-content .md-task {
+    list-style: none;
+    margin-left: -1.2rem;
+    display: flex;
+    align-items: baseline;
+    gap: 0.45rem;
+}
+
+.md-content .md-task input[type="checkbox"] {
+    accent-color: var(--primary-color, #3b82f6);
+    margin: 0;
+    vertical-align: middle;
+    cursor: default;
+}
+
+/* Blockquotes & Callouts */
+.md-content blockquote {
+    border-left: 4px solid var(--border-color, #cbd5e1);
+    margin: 0.75rem 0;
+    padding: 0.5rem 0 0.5rem 1rem;
+    color: var(--text-secondary, #64748b);
+    background: var(--surface-hover, rgba(0, 0, 0, 0.03));
+    border-radius: 0 var(--radius-sm, 4px) var(--radius-sm, 4px) 0;
+}
+
+.md-callout {
+    margin: 0.85rem 0;
+    padding: 0.85rem 1rem;
+    border-radius: var(--radius-md, 8px);
+    border-left: 4px solid var(--callout-border, var(--primary-color));
+    background-color: var(--callout-bg, rgba(59, 130, 246, 0.08));
+    color: var(--text-primary);
+}
+
+.md-callout-title {
+    font-weight: 650;
+    font-size: 0.98rem;
+    margin-bottom: 0.4rem;
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    color: var(--callout-border);
+}
+
+.md-callout-body {
+    font-size: 0.95rem;
+    line-height: 1.55;
+}
+
+/* Per-callout type variable bindings */
+.md-callout-note { --callout-border: var(--callout-note-border); --callout-bg: var(--callout-note-bg); }
+.md-callout-abstract { --callout-border: var(--callout-abstract-border); --callout-bg: var(--callout-abstract-bg); }
+.md-callout-info { --callout-border: var(--callout-info-border); --callout-bg: var(--callout-info-bg); }
+.md-callout-todo { --callout-border: var(--callout-todo-border); --callout-bg: var(--callout-todo-bg); }
+.md-callout-tip { --callout-border: var(--callout-tip-border); --callout-bg: var(--callout-tip-bg); }
+.md-callout-success { --callout-border: var(--callout-success-border); --callout-bg: var(--callout-success-bg); }
+.md-callout-question { --callout-border: var(--callout-question-border); --callout-bg: var(--callout-question-bg); }
+.md-callout-warning { --callout-border: var(--callout-warning-border); --callout-bg: var(--callout-warning-bg); }
+.md-callout-failure { --callout-border: var(--callout-failure-border); --callout-bg: var(--callout-failure-bg); }
+.md-callout-danger { --callout-border: var(--callout-danger-border); --callout-bg: var(--callout-danger-bg); }
+.md-callout-bug { --callout-border: var(--callout-bug-border); --callout-bg: var(--callout-bug-bg); }
+.md-callout-example { --callout-border: var(--callout-example-border); --callout-bg: var(--callout-example-bg); }
+.md-callout-quote { --callout-border: var(--callout-quote-border); --callout-bg: var(--callout-quote-bg); }
+
+/* Tables */
+.md-content table {
+    width: 100%;
+    border-collapse: collapse;
+    margin: 0.75rem 0;
+    font-size: 0.95rem;
+    overflow-x: auto;
+    display: block;
+}
+
+.md-content th,
+.md-content td {
+    border: 1px solid var(--border-color, #cbd5e1);
+    padding: 0.5rem 0.75rem;
+    text-align: left;
+}
+
+.md-content th {
+    background-color: var(--surface-hover, rgba(0, 0, 0, 0.04));
+    font-weight: 600;
+}
+
+/* Horizontal Rule */
+.md-content hr {
+    border: none;
+    border-top: 1px solid var(--border-color, #cbd5e1);
+    margin: 1.25rem 0;
+}

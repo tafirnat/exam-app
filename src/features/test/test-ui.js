@@ -6,6 +6,7 @@ import { evaluateAnswer, updateStats, updateFlashcardStats, finishTest, calculat
 import { resetTimerForNewQuestion, stopTimer } from './timer-module.js';
 import { getQuestionCategory } from '../../core/question-rules.js';
 import { parseCloze, clozeMarkup, matchesBlank } from '../../core/cloze.js';
+import { renderMarkdown, renderInlineMarkdown, plainText } from '../../core/markdown.js';
 
 // --- TTS State Machine ---
 // States: 'IDLE' | 'SCHEDULED' | 'PLAYING'
@@ -146,13 +147,10 @@ export function renderQuestion(isRefresh = false) {
     document.getElementById('progressText').innerText = `${t('question_label')} ${qIndex + 1} / ${AppState.currentTest.length}`;
     const qTextEl = document.getElementById('questionText');
     const rawQText = q.content?.text || q.text || '';
-    const isFormattedContent = getQuestionCategory(q.type) === 'reading' || q.format === 'html' || /<[a-z][\s\S]*>/i.test(rawQText);
     if (getQuestionCategory(q.type) === 'cloze') {
-        // The sentence is the question: show each {{marker}} as a numbered gap,
-        // and collect the answers underneath in matching order.
-        qTextEl.innerHTML = clozeMarkup(rawQText, isFormattedContent ? (s) => s : escapeHTML);
+        qTextEl.innerHTML = clozeMarkup(rawQText);
     } else {
-        qTextEl.innerHTML = isFormattedContent ? rawQText : escapeHTML(rawQText);
+        qTextEl.innerHTML = renderMarkdown(rawQText);
     }
 
     // Handle Media (Images)
@@ -266,8 +264,7 @@ export function renderQuestion(isRefresh = false) {
                 noteAreaEl.classList.remove('visible');
             }
         } else if (hasExplanation) {
-            const isExpHtml = /<[a-z][\s\S]*>/i.test(q.answer.explanation || '');
-            noteInputEl.innerHTML = isExpHtml ? q.answer.explanation : escapeHTML(q.answer.explanation);
+            noteInputEl.innerHTML = renderMarkdown(q.answer.explanation || '');
             if (noteLabelEl) {
                 noteLabelEl.removeAttribute('data-i18n');
                 noteLabelEl.innerText = t('explanation_label') || 'Explanation:';
@@ -295,8 +292,7 @@ export function renderQuestion(isRefresh = false) {
     if (q.type === 'flashcard') {
         if (isChecked) {
             const rawBack = q.answer?.back || '';
-            const isBackHtml = q.format === 'html' || /<[a-z][\s\S]*>/i.test(rawBack);
-            const backContentHtml = isBackHtml ? rawBack : escapeHTML(rawBack);
+            const backContentHtml = renderMarkdown(rawBack);
 
             container.innerHTML = `
                 <div class="flashcard-face flashcard-back">
@@ -402,7 +398,7 @@ export function renderQuestion(isRefresh = false) {
             const content = document.createElement('div');
             content.className = 'option-content';
             content.id = `optText_${opt.id}`;
-            content.innerHTML = escapeHTML(opt.text);
+            content.innerHTML = renderInlineMarkdown(opt.text);
 
             const trans = document.createElement('div');
             trans.className = 'translation-text';

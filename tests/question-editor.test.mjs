@@ -5,7 +5,7 @@ import test, { before } from 'node:test';
 import assert from 'node:assert/strict';
 import { JSDOM } from 'jsdom';
 
-let dom, openQuestionEditor;
+let dom, openQuestionEditor, wrapSelection;
 
 before(async () => {
     dom = new JSDOM('<!doctype html><html><body><div id="toast"></div></body></html>',
@@ -16,7 +16,7 @@ before(async () => {
     global.localStorage = dom.window.localStorage;
     Object.defineProperty(global, 'navigator', { value: dom.window.navigator, configurable: true });
 
-    ({ openQuestionEditor } = await import('../src/features/stats/question-editor.js'));
+    ({ openQuestionEditor, wrapSelection } = await import('../src/features/stats/question-editor.js'));
 });
 
 const tabs = () => [...document.querySelectorAll('.editor-group-nav .group-btn')].map(b => b.dataset.group);
@@ -216,4 +216,30 @@ test('a sound question saves without an error ever appearing', () => {
     openQuestionEditor({ id: 'e4', sourceId: 's1', type: 'reading', content: { text: 'prose' } });
     save();
     assert.equal(errorText(), null);
+});
+
+test('wrapSelection wraps text selection and positions caret correctly', () => {
+    const textarea = document.createElement('textarea');
+    textarea.value = 'hello world';
+    document.body.appendChild(textarea);
+
+    textarea.selectionStart = 0;
+    textarea.selectionEnd = 5;
+    wrapSelection(textarea, '**', '**');
+    assert.equal(textarea.value, '**hello** world');
+
+    textarea.value = 'hello';
+    textarea.selectionStart = 5;
+    textarea.selectionEnd = 5;
+    wrapSelection(textarea, '==', '==');
+    assert.equal(textarea.value, 'hello====');
+    assert.equal(textarea.selectionStart, 7);
+    assert.equal(textarea.selectionEnd, 7);
+});
+
+test('editor contains Markdown toolbars and live preview box', () => {
+    openReading();
+    document.querySelector('[data-group="content"]').click();
+    assert.ok(document.querySelector('.md-editor-toolbar'), 'toolbar present');
+    assert.ok(document.getElementById('preview-edit-text'), 'live preview box present');
 });
