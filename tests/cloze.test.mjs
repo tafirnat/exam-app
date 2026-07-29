@@ -8,6 +8,7 @@ import {
     parseCloze, hasBlanks, countEmptyBlanks, clozeAnswers, fillCloze,
     clozeMarkup, matchesBlank, gradeCloze
 } from '../src/core/cloze.js';
+import { SENTINEL } from '../src/core/markdown.js';
 
 const SENTENCE = "Ankara {{Türkiye'nin}} başkentidir.";
 
@@ -122,4 +123,40 @@ test('junk input does not throw', () => {
     assert.deepEqual(parseCloze(null).blanks, []);
     assert.deepEqual(parseCloze(undefined).segments, []);
     assert.equal(hasBlanks(''), false);
+});
+
+test('audit: a forged cloze placeholder cannot manufacture a gap', () => {
+    // parseCloze is the sole authority on what a blank is. An author who writes
+    // the renderer's internal placeholder must not create a gap the grader has
+    // no answer for, which would make the question ungradeable.
+    const forged = `Ankara ${SENTINEL}cloze0${SENTINEL} baskentidir.`;
+    assert.equal(parseCloze(forged).blanks.length, 0);
+
+    const html = clozeMarkup(forged);
+    assert.equal(html.includes('cloze-gap'), false);
+    assert.equal(html.includes(SENTINEL), false, 'placeholder delimiter must not reach the output');
+    assert.equal(html.includes('Ankara'), true);
+    assert.equal(html.includes('baskentidir'), true);
+});
+
+test('audit: gaps survive inside every block construct', () => {
+    // Each case renders its blank through a different code path — list item,
+    // callout body, table cell, heading, nested list — and all of them must
+    // still agree with parseCloze on how many gaps there are and in what order.
+    const cases = [
+        '- item {{a}}\n- item {{b}}',
+        '> [!note] Title\n> body {{z}}',
+        '| head | value |\n| --- | --- |\n| row | {{cell}} |',
+        '## Heading {{h}}\n\nBody text.',
+        '- parent {{p}}\n  - child {{c}}'
+    ];
+    for (const source of cases) {
+        const expected = parseCloze(source).blanks.length;
+        assert.ok(expected > 0, `fixture should have blanks: ${source}`);
+
+        const html = clozeMarkup(source);
+        const found = [...html.matchAll(/class="cloze-gap" data-blank="(\d+)"/g)].map(m => Number(m[1]));
+        assert.equal(found.length, expected, `gap count for: ${source}`);
+        assert.deepEqual(found, [...Array(expected).keys()], `gap order for: ${source}`);
+    }
 });

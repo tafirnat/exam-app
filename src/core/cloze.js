@@ -16,27 +16,9 @@
    importer validate that a fill_in_the_blank question actually has any.
    ========================================================================== */
 
-import { renderMarkdown } from './markdown.js';
+import { renderMarkdown, renderNormalizedMarkdown, normalizeInput, codeSpans, SENTINEL } from './markdown.js';
 
 const MARKER = /\{\{([^{}]*)\}\}/g;
-
-/**
- * Finds index intervals of code fences and inline code where cloze markers must be ignored.
- * @param {string} text
- * @returns {Array<[number, number]>}
- */
-function getCodeIntervals(text) {
-    const intervals = [];
-    // Fenced code blocks ```...```
-    for (const match of text.matchAll(/```[\s\S]*?```/g)) {
-        intervals.push([match.index, match.index + match[0].length]);
-    }
-    // Inline code `...`
-    for (const match of text.matchAll(/`[^`]+`/g)) {
-        intervals.push([match.index, match.index + match[0].length]);
-    }
-    return intervals;
-}
 
 /**
  * Split a cloze sentence into its literal text and its blanks.
@@ -51,7 +33,9 @@ export function parseCloze(text) {
     const blanks = [];
     let cursor = 0;
 
-    const codeIntervals = getCodeIntervals(source);
+    // Shared with the renderer so both agree on what counts as code: a marker
+    // shown as an example in a snippet must not become a gradeable blank.
+    const codeIntervals = codeSpans(source);
     const isInsideCode = (index) => codeIntervals.some(([start, end]) => index >= start && index < end);
 
     for (const match of source.matchAll(MARKER)) {
@@ -107,25 +91,34 @@ export function clozeAnswers(text) {
  * @returns {string} HTML string with gaps inside .md-content
  */
 export function clozeMarkup(text) {
-    const { segments, blanks } = parseCloze(text);
+    // Normalize up front so the placeholders inserted below are the only ones in
+    // the string, then hand the result to the renderer's already-normalized entry
+    // point so they survive the parse.
+    const source = normalizeInput(String(text ?? ''));
+    const { segments, blanks } = parseCloze(source);
     if (blanks.length === 0) {
-        return renderMarkdown(text);
+        return renderMarkdown(source);
     }
 
+    /* Each marker is swapped for a placeholder, the sentence is rendered as
+       ordinary Markdown, then the numbered gaps go back in. The marker contents
+       never reach the renderer, so an answer containing `*` or `_` cannot turn
+       into emphasis and shift what the reader is asked to fill in.
+
+       The placeholder is delimited by SENTINEL (NUL), which normalizeInput
+       strips from author text: a question that literally spells out the
+       placeholder cannot manufacture a gap the grader does not know about, and
+       parseCloze stays the sole authority on what a blank is. */
     let tempText = '';
     for (const seg of segments) {
-        if (seg.type === 'text') {
-            tempText += seg.value;
-        } else if (seg.type === 'blank') {
-            tempText += `__CLOZE_GAP_SENTINEL_${seg.index}__`;
-        }
+        tempText += seg.type === 'text' ? seg.value : `${SENTINEL}cloze${seg.index}${SENTINEL}`;
     }
 
-    let html = renderMarkdown(tempText);
+    let html = renderNormalizedMarkdown(tempText);
 
     for (const b of blanks) {
         const gapSpan = `<span class="cloze-gap" data-blank="${b.index}">${b.index + 1}</span>`;
-        html = html.replace(`__CLOZE_GAP_SENTINEL_${b.index}__`, gapSpan);
+        html = html.replace(`${SENTINEL}cloze${b.index}${SENTINEL}`, gapSpan);
     }
 
     return html;

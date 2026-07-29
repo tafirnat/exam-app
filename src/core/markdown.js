@@ -33,6 +33,45 @@ export function escapeHTML(str) {
         .replace(/'/g, '&#039;');
 }
 
+/* Every protection pass below (inline code, escapes, embeds, cloze gaps) parks
+   content in a placeholder and substitutes it back afterwards. If an author
+   could type a placeholder themselves, their text would be deleted or, worse,
+   swapped for someone else's — so the placeholders are delimited by NUL, and
+   NUL is stripped out of every input before parsing begins. That makes them
+   unforgeable rather than merely unlikely. */
+export const SENTINEL = '\u0000';
+
+/**
+ * Removes control characters that would otherwise let author text forge a
+ * parser placeholder. Tab and newline are structural and kept.
+ * @param {string} text
+ * @returns {string}
+ */
+export function normalizeInput(text) {
+    return text.replace(/[\u0000-\u0008\u000B\u000C\u000E-\u001F]/g, '');
+}
+
+/**
+ * Index ranges covered by fenced code blocks and inline code spans.
+ *
+ * Exported because cloze.js needs the identical notion of "inside code" — a
+ * `{{marker}}` shown as an example in a code block is documentation, not a
+ * blank, and the grader and the renderer have to agree on that.
+ * @param {string} text
+ * @returns {Array<[number, number]>}
+ */
+export function codeSpans(text) {
+    const source = String(text ?? '');
+    const spans = [];
+    for (const match of source.matchAll(/```[\s\S]*?```/g)) {
+        spans.push([match.index, match.index + match[0].length]);
+    }
+    for (const match of source.matchAll(/`[^`\n]+`/g)) {
+        spans.push([match.index, match.index + match[0].length]);
+    }
+    return spans;
+}
+
 // Callout type normalization mapping
 const CALLOUT_ALIASES = {
     note: 'note',
@@ -99,7 +138,12 @@ function stripFrontmatter(text) {
  */
 function stripComments(text) {
     if (!text || typeof text !== 'string') return '';
-    return text.replace(/%%[\s\S]*?%%/g, '');
+    const spans = codeSpans(text);
+    if (spans.length === 0) return text.replace(/%%[\s\S]*?%%/g, '');
+    // A %% pair inside code is sample text, not an author comment: code content
+    // is emitted verbatim, so stripping there would delete part of the snippet.
+    const insideCode = (index) => spans.some(([start, end]) => index >= start && index < end);
+    return text.replace(/%%[\s\S]*?%%/g, (match, offset) => (insideCode(offset) ? match : ''));
 }
 
 /**
@@ -110,29 +154,55 @@ function stripComments(text) {
 function parseInlineMarkup(escapedText) {
     if (!escapedText) return '';
 
-    // 1. Tokenize inline code `code` first so formatting inside code is ignored
-    const codeTokens = [];
-    let text = escapedText.replace(/`([^`]+)`/g, (match, codeContent) => {
-        const token = `__MD_CODE_TOKEN_${codeTokens.length}__`;
-        codeTokens.push(`<code>${codeContent}</code>`);
-        return token;
-    });
+    const parked = [];
+    const park = (html) => `${SENTINEL}${parked.push(html) - 1}${SENTINEL}`;
 
-    // 2. Tokenize escapes: \* \_ \= \~ \` \[ \] \\ so escaped characters won't trigger markup
-    const escapeTokens = [];
-    text = text.replace(/\\([*_~=`\[\]\\])/g, (match, char) => {
-        const token = `__MD_ESC_TOKEN_${escapeTokens.length}__`;
-        escapeTokens.push(char);
-        return token;
-    });
+    // 1. Inline code, scanned rather than matched, because a backslash-escaped
+    //    backtick is not a delimiter — `\`` has to stay literal text. A regex
+    //    over the whole string cannot see that distinction. Backslash pairs
+    //    inside the span are left alone: Obsidian does not process escapes
+    //    inside code.
+    let text = '';
+    for (let i = 0; i < escapedText.length; i++) {
+        const char = escapedText[i];
+        if (char === '\\' && i + 1 < escapedText.length) {
+            text += char + escapedText[i + 1];
+            i++;
+            continue;
+        }
+        if (char === '`') {
+            let scan = i + 1;
+            let content = '';
+            let closed = false;
+            while (scan < escapedText.length) {
+                if (escapedText[scan] === '\\' && scan + 1 < escapedText.length) {
+                    content += escapedText[scan] + escapedText[scan + 1];
+                    scan += 2;
+                    continue;
+                }
+                if (escapedText[scan] === '`') {
+                    closed = true;
+                    break;
+                }
+                content += escapedText[scan];
+                scan++;
+            }
+            if (closed && content.length > 0) {
+                text += park(`<code>${content}</code>`);
+                i = scan;
+                continue;
+            }
+        }
+        text += char;
+    }
 
-    // 3. Embedded missing note markers ![[Embed]] (tokenized to protect inner [[ ]])
-    const embedTokens = [];
-    text = text.replace(/!\[\[([^\]]+)\]\]/g, (match, embedTarget) => {
-        const token = `__MD_EMBED_TOKEN_${embedTokens.length}__`;
-        embedTokens.push(`<span class="md-embed-missing">[[${embedTarget}]]</span>`);
-        return token;
-    });
+    // 2. Escapes: \* \_ \= \~ \` \[ \] \\ — parked so the character cannot go on
+    //    to act as a delimiter.
+    text = text.replace(/\\([*_~=`\[\]\\])/g, (match, char) => park(char));
+
+    // 3. Embeds ![[target]] — parked before wikilinks so the inner [[ ]] survives.
+    text = text.replace(/!\[\[([^\]]+)\]\]/g, (match, target) =>
+        park(`<span class="md-embed-missing">[[${target}]]</span>`));
 
     // 4. Internal wikilinks [[Note]] or [[Note|Alias]]
     text = text.replace(/\[\[([^\]|]+)(?:\|([^\]]+))?\]\]/g, (match, target, alias) => {
@@ -149,55 +219,92 @@ function parseInlineMarkup(escapedText) {
         return match;
     });
 
-    // 6. Strikethrough ~~text~~
-    text = text.replace(/~~([^~]+)~~/g, '<del>$1</del>');
+    /* Emphasis runs outermost-first, and each pattern is lazy with a
+       (?=\S) / (?<=\S) pair on the delimiters. Two things fall out of that:
+       nesting works in both directions (`**bold with *italic* inside**` no
+       longer needs the inner run to be absent), and an arithmetic `2 * 3 * 4`
+       stays literal because a delimiter followed by a space is not an opener —
+       which is Obsidian's rule too. */
+    text = text.replace(/~~(?=\S)([\s\S]*?)(?<=\S)~~/g, '<del>$1</del>');
+    text = text.replace(/==(?=\S)([\s\S]*?)(?<=\S)==/g, '<mark>$1</mark>');
+    text = text.replace(/\*\*\*(?=\S)([\s\S]*?)(?<=\S)\*\*\*/g, '<strong><em>$1</em></strong>');
+    text = text.replace(/\*\*(?=\S)([\s\S]*?)(?<=\S)\*\*/g, '<strong>$1</strong>');
+    text = text.replace(/\*(?=\S)([\s\S]*?)(?<=\S)\*/g, '<em>$1</em>');
+    // Underscore emphasis additionally requires a non-word boundary on both
+    // ends, so an intra-word run like snake_case_name is not emphasis. A
+    // standalone __init__ still bolds — that is Obsidian's behaviour too, and
+    // an author who means the identifier writes it as `__init__`.
+    text = text.replace(/(?<=^|\W)__(?=\S)([\s\S]*?)(?<=\S)__(?=\W|$)/g, '<strong>$1</strong>');
+    text = text.replace(/(?<=^|\W)_(?=\S)([\s\S]*?)(?<=\S)_(?=\W|$)/g, '<em>$1</em>');
 
-    // 7. Highlight ==text==
-    text = text.replace(/==([^=]+)==/g, '<mark>$1</mark>');
+    // Unpark innermost-last: a parked <code> may sit inside emphasis we just
+    // emitted, so this has to run after all delimiter passes.
+    return text.replace(
+        new RegExp(`${SENTINEL}(\\d+)${SENTINEL}`, 'g'),
+        (match, index) => parked[Number(index)] ?? ''
+    );
+}
 
-    // 8. Bold + Italic ***text***
-    text = text.replace(/\*\*\*([^*]+)\*\*\*/g, '<strong><em>$1</em></strong>');
+/** A list item: `- `, `* ` or `1. `, at any indent. */
+const LIST_ITEM = /^[ \t]*(?:[*-]|\d+\.)[ \t]+/;
 
-    // 9. Bold **text** or __text__
-    text = text.replace(/\*\*([^*]+)\*\*/g, '<strong>$1</strong>');
-    text = text.replace(/(?<=^|\W)__([^_]+)__(?=\W|$)/g, '<strong>$1</strong>');
-
-    // 10. Italic *text* or _text_ (strictly requiring non-word boundaries for _ to avoid snake_case)
-    text = text.replace(/\*([^*]+)\*/g, '<em>$1</em>');
-    text = text.replace(/(?<=^|\W)_([^_]+)_(?=\W|$)/g, '<em>$1</em>');
-
-    // Restore embed tokens
-    text = text.replace(/__MD_EMBED_TOKEN_(\d+)__/g, (match, index) => {
-        return embedTokens[Number(index)] || '';
-    });
-
-    // Restore escape tokens
-    text = text.replace(/__MD_ESC_TOKEN_(\d+)__/g, (match, index) => {
-        return escapeTokens[Number(index)] || '';
-    });
-
-    // Restore inline code tokens
-    text = text.replace(/__MD_CODE_TOKEN_(\d+)__/g, (match, index) => {
-        return codeTokens[Number(index)] || '';
-    });
-
-    return text;
+/**
+ * True for a table's alignment row — every cell is dashes with optional colons.
+ * Requiring this is what keeps an ordinary sentence containing a pipe from
+ * being mistaken for a table.
+ * @param {string|undefined} line
+ * @returns {boolean}
+ */
+function isTableDelimiterRow(line) {
+    if (typeof line !== 'string') return false;
+    let inner = line.trim();
+    if (!inner.includes('-')) return false;
+    if (inner.startsWith('|')) inner = inner.slice(1);
+    if (inner.endsWith('|')) inner = inner.slice(0, -1);
+    const cells = inner.split('|');
+    return cells.length > 0 && cells.every(cell => /^\s*:?-+:?\s*$/.test(cell));
 }
 
 /**
- * Calculates heading clamp shift so the shallowest heading maps to h2 and max h6.
- * @param {Array<{level: number}>} blocks
- * @returns {number} Delta shift
+ * True when a line opens a new block, and so ends the paragraph above it.
+ * Lists and tables belong in this set: Obsidian starts a list on `- item`
+ * directly under a line of prose, it does not fold it into the paragraph.
+ * @param {string} line
+ * @param {string|undefined} nextLine Needed to recognise a table header
+ * @returns {boolean}
  */
-function calculateHeadingDelta(blocks) {
+function startsBlock(line, nextLine) {
+    const trimmed = line.trim();
+    return trimmed.startsWith('```')
+        || line.startsWith('>')
+        || /^(#{1,6})\s+/.test(line)
+        || /^(---|\*\*\*)\s*$/.test(trimmed)
+        || LIST_ITEM.test(line)
+        || (line.includes('|') && isTableDelimiterRow(nextLine));
+}
+
+/**
+ * The shift that moves a document's shallowest heading onto h2, so a note's
+ * own `#` cannot compete with the question card's title while its internal
+ * hierarchy is preserved.
+ *
+ * Exported and taking plain levels rather than blocks so the clamp is testable
+ * on its own, without going through the parser.
+ * @param {number[]} levels Heading levels as authored, in document order
+ * @returns {number} Delta to add to every level before capping at 6
+ */
+export function headingDelta(levels) {
     let minLevel = 7;
-    for (const b of blocks) {
-        if (b.type === 'heading' && b.level < minLevel) {
-            minLevel = b.level;
-        }
+    for (const level of levels) {
+        if (typeof level === 'number' && level >= 1 && level < minLevel) minLevel = level;
     }
     if (minLevel > 6) return 0; // No headings found
     return 2 - minLevel;
+}
+
+/** Applies {@link headingDelta} to one level and caps the result at h6. */
+export function clampHeadingLevel(level, delta) {
+    return Math.min(6, Math.max(2, level + delta));
 }
 
 /**
@@ -208,7 +315,7 @@ function calculateHeadingDelta(blocks) {
  */
 export function renderInlineMarkdown(rawText) {
     if (!rawText || typeof rawText !== 'string') return '';
-    const cleaned = stripComments(rawText);
+    const cleaned = stripComments(normalizeInput(rawText));
     const escaped = escapeHTML(cleaned);
     return parseInlineMarkup(escaped);
 }
@@ -220,7 +327,33 @@ export function renderInlineMarkdown(rawText) {
  */
 export function renderMarkdown(rawText) {
     if (!rawText || typeof rawText !== 'string') return '';
+    return renderNormalized(normalizeInput(rawText));
+}
 
+/**
+ * renderMarkdown for a caller that has already normalized its input and is
+ * deliberately carrying {@link SENTINEL} placeholders through the parse —
+ * currently only cloze.js, which swaps its markers for placeholders before
+ * rendering and substitutes the numbered gaps back afterwards.
+ *
+ * Normalizing in the public entry point rather than here is what keeps
+ * placeholders unforgeable: author text always loses its control characters on
+ * the way in, so only an internal caller that injected placeholders after that
+ * point can have them.
+ * @param {string} text Already-normalized Markdown
+ * @returns {string}
+ */
+export function renderNormalizedMarkdown(text) {
+    if (!text || typeof text !== 'string') return '';
+    return renderNormalized(text);
+}
+
+/**
+ * The block parser proper. Assumes normalized input.
+ * @param {string} rawText
+ * @returns {string}
+ */
+function renderNormalized(rawText) {
     let text = stripFrontmatter(rawText);
     text = stripComments(text);
     if (!text.trim()) return '';
@@ -312,27 +445,29 @@ export function renderMarkdown(rawText) {
             continue;
         }
 
-        // 6. Pipe Table: line contains | and next line contains delimiter row (e.g. |---|)
-        if (line.trim().startsWith('|') || (line.includes('|') && i + 1 < lines.length && /^\|?\s*:?---/.test(lines[i + 1].trim()))) {
-            const tableLines = [];
-            while (i < lines.length && lines[i].includes('|') && lines[i].trim() !== '') {
-                tableLines.push(lines[i].trim());
-                i++;
+        /* 6. Pipe Table. A delimiter row directly under the header is what makes
+           a table a table, so it is required before any line is consumed. The
+           previous shape committed to a table on a leading `|` alone, advanced
+           the cursor, and then fell through when the row count came up short —
+           which deleted the line it had already eaten. Nothing is consumed here
+           unless the whole block is accepted. */
+        if (line.includes('|') && isTableDelimiterRow(lines[i + 1])) {
+            const tableLines = [line.trim(), lines[i + 1].trim()];
+            let scan = i + 2;
+            while (scan < lines.length && lines[scan].includes('|') && lines[scan].trim() !== '') {
+                tableLines.push(lines[scan].trim());
+                scan++;
             }
-            if (tableLines.length >= 2) {
-                blocks.push({
-                    type: 'table',
-                    lines: tableLines
-                });
-                continue;
-            }
-            // If invalid table, fall through to paragraph
+            i = scan;
+            blocks.push({ type: 'table', lines: tableLines });
+            continue;
         }
 
-        // 7. Unordered / Task / Ordered List
-        if (/^\s*([*-]|\d+\.)\s+/.test(line)) {
+        // 7. Unordered / Task / Ordered List. Indented continuation lines are
+        //    pulled in too so renderListBlock can rebuild the nesting.
+        if (LIST_ITEM.test(line)) {
             const listLines = [];
-            while (i < lines.length && (/^\s*([*-]|\d+\.)\s+/.test(lines[i]) || (lines[i].startsWith('  ') && listLines.length > 0))) {
+            while (i < lines.length && (LIST_ITEM.test(lines[i]) || (/^[ \t]/.test(lines[i]) && lines[i].trim() !== '' && listLines.length > 0))) {
                 listLines.push(lines[i]);
                 i++;
             }
@@ -354,9 +489,7 @@ export function renderMarkdown(rawText) {
         while (i < lines.length) {
             const l = lines[i];
             if (!l.trim()) break;
-            if (l.trim().startsWith('```') || l.startsWith('>') || /^(#{1,6})\s+/.test(l) || /^(---|\*\*\*)\s*$/.test(l.trim())) {
-                break;
-            }
+            if (startsBlock(l, lines[i + 1])) break;
             paraLines.push(l);
             i++;
         }
@@ -369,7 +502,7 @@ export function renderMarkdown(rawText) {
     }
 
     // Heading level clamping delta
-    const headingDelta = calculateHeadingDelta(blocks);
+    const delta = headingDelta(blocks.filter(b => b.type === 'heading').map(b => b.level));
 
     // Build block HTML
     const htmlParts = [];
@@ -403,7 +536,7 @@ export function renderMarkdown(rawText) {
             }
 
             case 'heading': {
-                const clampedLevel = Math.min(6, Math.max(2, block.level + headingDelta));
+                const clampedLevel = clampHeadingLevel(block.level, delta);
                 const textHtml = parseInlineMarkup(escapeHTML(block.text));
                 htmlParts.push(`<h${clampedLevel}>${textHtml}</h${clampedLevel}>`);
                 break;
@@ -446,7 +579,10 @@ export function renderMarkdown(rawText) {
  * @returns {string}
  */
 function renderMarkdownBody(bodyText) {
-    const full = renderMarkdown(bodyText);
+    // renderNormalized, not renderMarkdown: the outer call already normalized,
+    // and re-normalizing here would strip placeholders a caller like cloze.js
+    // legitimately placed inside a callout or blockquote body.
+    const full = renderNormalized(bodyText);
     // Strip leading <div class="md-content"> and trailing </div>
     return full.replace(/^<div class="md-content">/, '').replace(/<\/div>$/, '');
 }
@@ -500,41 +636,82 @@ function renderTableBlock(lines) {
 }
 
 /**
- * Renders list lines into HTML <ul> or <ol>, handling task checkboxes.
+ * Rebuilds the nesting a list block's indentation describes.
+ *
+ * Indentation, not marker type, decides depth — a deeper item becomes a child
+ * of the last item at the level above it. An unindented continuation line is
+ * lazy wrapping and joins the item it follows, which is what stops a wrapped
+ * bullet from turning into a phantom empty item.
+ * @param {string[]} lines
+ * @returns {Array<{text: string, ordered: boolean, children: Array}>}
+ */
+function buildListTree(lines) {
+    const roots = [];
+    const stack = [{ indent: -1, items: roots }];
+
+    for (const line of lines) {
+        const match = line.match(/^([ \t]*)(?:([*-])|(\d+)\.)[ \t]+([\s\S]*)$/);
+        if (!match) {
+            const current = stack[stack.length - 1].items;
+            const last = current[current.length - 1];
+            if (last) last.text += ` ${line.trim()}`;
+            continue;
+        }
+
+        // Tabs count as four columns so tab- and space-indented notes nest alike.
+        const indent = match[1].replace(/\t/g, '    ').length;
+        const item = { text: match[4], ordered: match[3] !== undefined, children: [] };
+
+        while (stack.length > 1 && indent < stack[stack.length - 1].indent) stack.pop();
+        const top = stack[stack.length - 1];
+
+        if (indent > top.indent && top.items.length > 0) {
+            const parent = top.items[top.items.length - 1];
+            stack.push({ indent, items: parent.children });
+            parent.children.push(item);
+        } else {
+            if (top.indent === -1) top.indent = indent;
+            top.items.push(item);
+        }
+    }
+
+    return roots;
+}
+
+/**
+ * Renders a list tree into nested <ul>/<ol>, handling task checkboxes.
+ * The list's own marker type comes from its first item.
+ * @param {Array<{text: string, ordered: boolean, children: Array}>} items
+ * @returns {string}
+ */
+function renderListItems(items) {
+    if (items.length === 0) return '';
+    const tag = items[0].ordered ? 'ol' : 'ul';
+
+    const html = items.map(item => {
+        let itemText = item.text;
+        // The trailing text is optional: `- [x]` on its own is a valid done task.
+        const taskMatch = itemText.match(/^\[([ xX])\](?:[ \t]+([\s\S]*))?$/);
+        const children = renderListItems(item.children);
+
+        if (taskMatch) {
+            const checkedAttr = taskMatch[1].toLowerCase() === 'x' ? ' checked' : '';
+            const inlineHtml = parseInlineMarkup(escapeHTML(taskMatch[2] || ''));
+            return `<li class="md-task"><input type="checkbox" disabled${checkedAttr}> ${inlineHtml}${children}</li>`;
+        }
+        return `<li>${parseInlineMarkup(escapeHTML(itemText))}${children}</li>`;
+    }).join('');
+
+    return `<${tag}>${html}</${tag}>`;
+}
+
+/**
+ * Renders list lines into HTML <ul> or <ol>, handling nesting and task checkboxes.
  * @param {string[]} lines
  * @returns {string}
  */
 function renderListBlock(lines) {
-    const isOrdered = /^\s*\d+\.\s+/.test(lines[0]);
-    const tag = isOrdered ? 'ol' : 'ul';
-    const items = [];
-
-    for (const line of lines) {
-        const match = line.match(/^\s*(?:[*-]|\d+\.)\s+(.*)$/);
-        if (!match) continue;
-
-        let itemText = match[1];
-        let isTask = false;
-        let isChecked = false;
-
-        const taskMatch = itemText.match(/^\[([ xX])\]\s+(.*)$/);
-        if (taskMatch) {
-            isTask = true;
-            isChecked = taskMatch[1].toLowerCase() === 'x';
-            itemText = taskMatch[2];
-        }
-
-        const inlineHtml = parseInlineMarkup(escapeHTML(itemText));
-
-        if (isTask) {
-            const checkedAttr = isChecked ? ' checked' : '';
-            items.push(`<li class="md-task"><input type="checkbox" disabled${checkedAttr}> ${inlineHtml}</li>`);
-        } else {
-            items.push(`<li>${inlineHtml}</li>`);
-        }
-    }
-
-    return `<${tag}>${items.join('')}</${tag}>`;
+    return renderListItems(buildListTree(lines));
 }
 
 /**
@@ -546,7 +723,7 @@ function renderListBlock(lines) {
 export function plainText(rawText) {
     if (!rawText || typeof rawText !== 'string') return '';
 
-    let text = stripFrontmatter(rawText);
+    let text = stripFrontmatter(normalizeInput(rawText));
     text = stripComments(text);
 
     // Code blocks & inline code: keep content, drop markers
@@ -565,14 +742,16 @@ export function plainText(rawText) {
     text = text.replace(/\[\[([^\]|]+)(?:\|([^\]]+))?\]\]/g, (m, target, alias) => alias || target);
     text = text.replace(/\[([^\]]+)\]\([^)]+\)/g, '$1');
 
-    // Inline formatting: bold, italic, strikethrough, highlight
-    text = text.replace(/~~([^~]+)~~/g, '$1');
-    text = text.replace(/==([^=]+)==/g, '$1');
-    text = text.replace(/\*\*\*([^*]+)\*\*\*/g, '$1');
-    text = text.replace(/\*\*([^*]+)\*\*/g, '$1');
-    text = text.replace(/\*([^*]+)\*/g, '$1');
-    text = text.replace(/(?<=^|\W)__([^_]+)__(?=\W|$)/g, '$1');
-    text = text.replace(/(?<=^|\W)_([^_]+)_(?=\W|$)/g, '$1');
+    // Inline formatting: bold, italic, strikethrough, highlight. Same delimiter
+    // rules as parseInlineMarkup, so a stripped string and a rendered one agree
+    // on what was ever markup — search matches the text the reader sees.
+    text = text.replace(/~~(?=\S)([\s\S]*?)(?<=\S)~~/g, '$1');
+    text = text.replace(/==(?=\S)([\s\S]*?)(?<=\S)==/g, '$1');
+    text = text.replace(/\*\*\*(?=\S)([\s\S]*?)(?<=\S)\*\*\*/g, '$1');
+    text = text.replace(/\*\*(?=\S)([\s\S]*?)(?<=\S)\*\*/g, '$1');
+    text = text.replace(/\*(?=\S)([\s\S]*?)(?<=\S)\*/g, '$1');
+    text = text.replace(/(?<=^|\W)__(?=\S)([\s\S]*?)(?<=\S)__(?=\W|$)/g, '$1');
+    text = text.replace(/(?<=^|\W)_(?=\S)([\s\S]*?)(?<=\S)_(?=\W|$)/g, '$1');
 
     // Task list markers
     text = text.replace(/^\s*([*-]|\d+\.)\s+\[[ xX]\]\s+/gm, '');

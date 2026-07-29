@@ -1,6 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { renderMarkdown, renderInlineMarkdown, plainText } from '../src/core/markdown.js';
+import { renderMarkdown, renderInlineMarkdown, plainText, headingDelta, clampHeadingLevel } from '../src/core/markdown.js';
 
 test('1. Escape first security requirement - XSS payload escaping', () => {
     const input = '<script>alert(1)</script><iframe src="javascript:alert(2)"></iframe>';
@@ -166,4 +166,170 @@ test('9. Never throw on malformed input & fuzzing fragments', () => {
             plainText(frag);
         });
     }
+});
+
+/* ---------------------------------------------------------------------------
+   Regression tests from the migration audit. Each covers a defect found in the
+   first implementation, so they are named for the failure they prevent rather
+   than for the spec section they belong to.
+   --------------------------------------------------------------------------- */
+
+test('audit: a line the table detector rejects is still rendered, not swallowed', () => {
+    // The detector used to consume lines before deciding, then fall through to
+    // paragraph with the cursor already advanced — deleting the line silently.
+    const html = renderMarkdown('Intro paragraph\n\n| orphan pipe line\n\nAfter paragraph');
+    assert.equal(html.includes('| orphan pipe line'), true);
+    assert.equal(html.includes('Intro paragraph'), true);
+    assert.equal(html.includes('After paragraph'), true);
+});
+
+test('audit: pipe rows without a delimiter row stay text, losing no row', () => {
+    const html = renderMarkdown('| a | b |\n| c | d |');
+    assert.equal(html.includes('<table>'), false);
+    assert.equal(html.includes('| a | b |'), true);
+    assert.equal(html.includes('| c | d |'), true);
+});
+
+test('audit: prose containing a pipe is not a table', () => {
+    const html = renderMarkdown('Use the | character to separate cloze alternatives.');
+    assert.equal(html.includes('<table>'), false);
+    assert.equal(
+        html,
+        '<div class="md-content"><p>Use the | character to separate cloze alternatives.</p></div>'
+    );
+});
+
+test('audit: lists nest by indentation', () => {
+    assert.equal(
+        renderMarkdown('- a\n  - a1\n  - a2\n- b'),
+        '<div class="md-content"><ul><li>a<ul><li>a1</li><li>a2</li></ul></li><li>b</li></ul></div>'
+    );
+    assert.equal(
+        renderMarkdown('- a\n  - b\n    - c'),
+        '<div class="md-content"><ul><li>a<ul><li>b<ul><li>c</li></ul></li></ul></li></ul></div>'
+    );
+    // A tab indent counts the same as spaces.
+    assert.equal(
+        renderMarkdown('- a\n\t- b'),
+        '<div class="md-content"><ul><li>a<ul><li>b</li></ul></li></ul></div>'
+    );
+    // Each level takes its tag from its own first item.
+    assert.equal(
+        renderMarkdown('- a\n  1. one\n  2. two'),
+        '<div class="md-content"><ul><li>a<ol><li>one</li><li>two</li></ol></li></ul></div>'
+    );
+});
+
+test('audit: nested and bare task items', () => {
+    const html = renderMarkdown('- [ ] parent\n  - [x] child');
+    assert.equal(html.includes('<input type="checkbox" disabled> parent<ul>'), true);
+    assert.equal(html.includes('<input type="checkbox" disabled checked> child'), true);
+    // `- [x]` with no trailing text is still a completed task, not a literal.
+    assert.equal(renderMarkdown('- [x]').includes('disabled checked>'), true);
+});
+
+test('audit: an indented continuation line joins its item instead of vanishing', () => {
+    assert.equal(
+        renderMarkdown('- first line\n  continued here\n- second'),
+        '<div class="md-content"><ul><li>first line continued here</li><li>second</li></ul></div>'
+    );
+});
+
+test('audit: a list or table directly under prose starts its own block', () => {
+    assert.equal(
+        renderMarkdown('Intro line\n- one\n- two'),
+        '<div class="md-content"><p>Intro line</p><ul><li>one</li><li>two</li></ul></div>'
+    );
+    const table = renderMarkdown('Intro line\n| a | b |\n| --- | --- |\n| 1 | 2 |');
+    assert.equal(table.includes('<p>Intro line</p><table>'), true);
+});
+
+test('audit: emphasis nests in both directions', () => {
+    assert.equal(
+        renderMarkdown('x **bold with *italic* inside** y'),
+        '<div class="md-content"><p>x <strong>bold with <em>italic</em> inside</strong> y</p></div>'
+    );
+    assert.equal(
+        renderMarkdown('x *italic with **bold** inside* y'),
+        '<div class="md-content"><p>x <em>italic with <strong>bold</strong> inside</em> y</p></div>'
+    );
+    assert.equal(
+        renderInlineMarkdown('==highlight with *italic*=='),
+        '<mark>highlight with <em>italic</em></mark>'
+    );
+    assert.equal(
+        renderInlineMarkdown('**bold with `code`**'),
+        '<strong>bold with <code>code</code></strong>'
+    );
+});
+
+test('audit: a delimiter followed by a space does not open emphasis', () => {
+    // Arithmetic must survive; Obsidian applies the same rule.
+    assert.equal(
+        renderMarkdown('2 * 3 and 4 * 5'),
+        '<div class="md-content"><p>2 * 3 and 4 * 5</p></div>'
+    );
+    assert.equal(
+        renderMarkdown('a _ b _ c'),
+        '<div class="md-content"><p>a _ b _ c</p></div>'
+    );
+    assert.equal(plainText('2 * 3 and **bold**'), '2 * 3 and bold');
+});
+
+test('audit: %% inside code is content, not a comment', () => {
+    const fenced = renderMarkdown('```js\nlet a = 1; %%keep me%%\n```');
+    assert.equal(fenced.includes('%%keep me%%'), true);
+    const inline = renderMarkdown('run `x %%keep%% y` now');
+    assert.equal(inline.includes('%%keep%%'), true);
+    // Outside code it is still stripped.
+    assert.equal(renderMarkdown('visible %%hidden%% tail').includes('hidden'), false);
+});
+
+test('audit: escaped backtick does not open a code span', () => {
+    assert.equal(
+        renderMarkdown('literal \\`not code\\` here'),
+        '<div class="md-content"><p>literal `not code` here</p></div>'
+    );
+    // Escapes are not processed inside code, so the backslash shows.
+    assert.equal(renderInlineMarkdown('`a\\*b`'), '<code>a\\*b</code>');
+});
+
+test('audit: every escape in the spec table yields its literal character', () => {
+    const cases = [
+        ['a \\*x\\* b', 'a *x* b'],
+        ['a \\_x\\_ b', 'a _x_ b'],
+        ['a \\=\\=x\\=\\= b', 'a ==x== b'],
+        ['a \\~\\~x\\~\\~ b', 'a ~~x~~ b'],
+        ['a \\[x\\](y) b', 'a [x](y) b'],
+        ['C:\\\\temp', 'C:\\temp']
+    ];
+    for (const [input, expected] of cases) {
+        assert.equal(renderInlineMarkdown(input), expected);
+    }
+});
+
+test('audit: author text cannot forge a parser placeholder', () => {
+    // Control characters are stripped on the way in, so the NUL-delimited
+    // placeholders used internally are unforgeable — an author who writes one
+    // must not have their text deleted or substituted.
+    for (const forged of ['text \u00000\u0000 more', 'text \u0000cloze0\u0000 more']) {
+        const html = renderMarkdown(forged);
+        assert.equal(html.includes('text'), true, forged);
+        assert.equal(html.includes('more'), true, forged);
+        assert.equal(html.includes('cloze-gap'), false, forged);
+        assert.equal(html.includes('\u0000'), false, forged);
+    }
+    // The pre-fix placeholder shape was plain text and must survive as text.
+    assert.equal(renderMarkdown('text __MD_CODE_TOKEN_0__ more').includes('MD_CODE_TOKEN_0'), true);
+});
+
+test('audit: heading clamp is a pure function, testable on its own', () => {
+    assert.equal(headingDelta([3, 4, 2]), 0, 'shallowest is already h2');
+    assert.equal(headingDelta([3, 4]), -1, 'h3 shifts up to h2');
+    assert.equal(headingDelta([1]), 1, 'h1 shifts down to h2');
+    assert.equal(headingDelta([]), 0, 'no headings, no shift');
+
+    assert.equal(clampHeadingLevel(1, 1), 2);
+    assert.equal(clampHeadingLevel(6, 1), 6, 'capped at h6');
+    assert.equal(clampHeadingLevel(1, -1), 2, 'never shallower than h2');
 });
