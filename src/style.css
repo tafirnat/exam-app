@@ -568,7 +568,7 @@ textarea {
     flex-direction: column;
     position: relative;
     padding-top: 1.5rem;
-    padding-bottom: 80px;
+    padding-bottom: 140px;
     min-height: 100%;
 }
 
@@ -925,6 +925,8 @@ pre code {
     align-items: center; /* Align items centered vertically */
     gap: 0.75rem;
     margin-top: 1.5rem;
+    margin-bottom: 1.5rem;
+    padding-bottom: 0.5rem;
 }
 
 .footer-tags {
@@ -1468,7 +1470,14 @@ pre code {
     padding: 1rem 1.5rem;
     display: flex;
     justify-content: center;
-    z-index: 10;
+    z-index: 100;
+    transition: transform 0.35s cubic-bezier(0.4, 0, 0.2, 1), opacity 0.35s ease;
+}
+
+.bottom-nav.nav-hidden {
+    transform: translateY(120%);
+    opacity: 0;
+    pointer-events: none;
 }
 
 .nav-container {

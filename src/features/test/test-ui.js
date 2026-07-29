@@ -124,15 +124,16 @@ export function renderQuestion(isRefresh = false) {
         const questionText = AppState.questionMap?.[AppState.currentTest?.[qIndex]]?.content?.text || '';
         TTS.onNewQuestion(qIndex, questionText);
 
-        // Reset countdown timer if applicable
-        resetTimerForNewQuestion();
-
         const summaryEl = document.getElementById('testSummarySection');
         if (summaryEl) {
             summaryEl.dataset.autoShown = 'false';
             summaryEl.dataset.manuallyToggled = 'false';
         }
     }
+
+    const bottomNav = document.getElementById('bottomNav');
+    if (bottomNav) bottomNav.classList.remove('nav-hidden');
+
     const q = AppState.questionMap[AppState.currentTest[qIndex]];
     const statKey = `${q.sourceId}_${q.id}`;
     const stat = AppState.stats[statKey] || { difficulty: 5.0, note: '' };

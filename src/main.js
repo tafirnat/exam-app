@@ -121,6 +121,43 @@ const initApp = () => {
     setupTranslateBtn('noteTranslateBtn', 'noteInput', 'trans_noteInput');
     setupTranslateBtn('previewNoteTranslateBtn', 'previewNoteInput', 'trans_previewNoteInput');
 
+    // Auto-hiding scroll listener for bottom navigation bar
+    let lastScrollY = window.scrollY || document.documentElement.scrollTop;
+    let isTicking = false;
+
+    window.addEventListener('scroll', () => {
+        if (!isTicking) {
+            window.requestAnimationFrame(() => {
+                const bottomNav = document.getElementById('bottomNav');
+                const testView = document.getElementById('testView');
+                
+                if (!bottomNav || !testView || testView.style.display === 'none') {
+                    lastScrollY = window.scrollY || document.documentElement.scrollTop;
+                    isTicking = false;
+                    return;
+                }
+
+                const currentScrollY = window.scrollY || document.documentElement.scrollTop;
+                const windowHeight = window.innerHeight;
+                const bodyHeight = document.documentElement.scrollHeight;
+
+                const isNearBottom = (windowHeight + currentScrollY) >= (bodyHeight - 70);
+
+                if (isNearBottom || currentScrollY <= 40) {
+                    bottomNav.classList.remove('nav-hidden');
+                } else if (currentScrollY > lastScrollY && (currentScrollY - lastScrollY > 6)) {
+                    bottomNav.classList.add('nav-hidden');
+                } else if (currentScrollY < lastScrollY && (lastScrollY - currentScrollY > 6)) {
+                    bottomNav.classList.remove('nav-hidden');
+                }
+
+                lastScrollY = currentScrollY;
+                isTicking = false;
+            });
+            isTicking = true;
+        }
+    }, { passive: true });
+
     checkActiveTest();
 
     try {
@@ -1405,7 +1442,11 @@ function switchView(view, isBack = false) {
 
     document.getElementById('resultsView').style.display = view === 'results' ? 'flex' : 'none';
 
-    document.getElementById('bottomNav').style.display = view === 'test' ? 'flex' : 'none';
+    const bottomNav = document.getElementById('bottomNav');
+    if (bottomNav) {
+        bottomNav.style.display = view === 'test' ? 'flex' : 'none';
+        if (view === 'test') bottomNav.classList.remove('nav-hidden');
+    }
 
     // Hide header entirely if not on home
     const header = document.querySelector('header');
