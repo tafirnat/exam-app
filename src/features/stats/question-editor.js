@@ -5,10 +5,107 @@ import { showToast } from '../../core/utils.js';
 let currentEditingQuestion = null;
 let activeGroup = 'general';
 
+// The question type is the single source of truth for this editor: it decides
+// which tabs exist, which fields render, and what a valid question looks like.
+// Grouped by category so that adding a type only means putting it in the right
+// bucket here.
+const CHOICE_TYPES = ['single_choice', 'multiple_choice', 'true_false'];
+const TEXT_TYPES = ['text_input', 'text', 'open_ended', 'fill_in_the_blank'];
+const READING_TYPES = ['reading', 'topic_review'];
+const FLASHCARD_TYPES = ['flashcard'];
+
+// The type <select> must list every one of these: an unlisted type makes the
+// browser fall back to the first option, and the next syncDataFromInputs()
+// would silently rewrite the question's type.
+const KNOWN_TYPES = [...CHOICE_TYPES, ...TEXT_TYPES, ...FLASHCARD_TYPES, ...READING_TYPES];
+
 function getQuestionCategory(type) {
-    if (['single_choice', 'multiple_choice', 'true_false'].includes(type)) return 'choice';
-    if (type === 'flashcard') return 'flashcard';
+    if (CHOICE_TYPES.includes(type)) return 'choice';
+    if (FLASHCARD_TYPES.includes(type)) return 'flashcard';
+    // Reading/topic cards are prose only — no options and no answer to check.
+    if (READING_TYPES.includes(type)) return 'reading';
     return 'text';
+}
+
+// Tab order is fixed; only membership varies by category, so a tab never moves
+// position between question types.
+function getGroupsForCategory(category) {
+    if (category === 'flashcard') return ['general', 'flashcard'];
+    if (category === 'choice') return ['general', 'content', 'options', 'answer'];
+    return ['general', 'content', 'answer'];
+}
+
+/* Bring the question's shape in line with its type. Called when the user
+   changes the type — not on open, so merely viewing a question never discards
+   anything. Fields belonging to other categories are dropped so a saved
+   question can't carry contradictory leftovers (options on a reading card,
+   accepted_texts on a multiple choice). */
+function normalizeForType() {
+    const q = currentEditingQuestion;
+    const category = getQuestionCategory(q.type || '');
+    if (!q.answer) q.answer = {};
+
+    if (category !== 'choice') delete q.answer.correct_ids;
+    if (category !== 'text') delete q.answer.accepted_texts;
+    if (category !== 'text') delete q.answer.caseSensitive;
+    if (category !== 'flashcard') delete q.answer.back;
+    if (category !== 'choice') q.options = [];
+
+    if (category === 'choice') {
+        if (!Array.isArray(q.options)) q.options = [];
+        // A choice question is meaningless below two options — seed them so the
+        // Options tab opens ready to fill in rather than empty.
+        while (q.options.length < 2) {
+            const maxId = q.options.reduce((max, o) => Math.max(max, parseInt(o.id) || 0), 0);
+            q.options.push({ id: maxId + 1, text: '', media: [] });
+        }
+        // Keep only marks that still point at a live option, and collapse to a
+        // single answer when the type no longer allows several.
+        const liveIds = q.options.map(o => String(o.id));
+        let correct = (q.answer.correct_ids || []).map(String).filter(id => liveIds.includes(id));
+        if (q.type !== 'multiple_choice') correct = correct.slice(0, 1);
+        q.answer.correct_ids = correct.map(Number);
+    }
+}
+
+/* What the type demands before the question can be saved. Returns the offending
+   tab plus a message, or null when the question is consistent. */
+function validateQuestion() {
+    const q = currentEditingQuestion;
+    const category = getQuestionCategory(q.type || '');
+    const filled = (value) => String(value || '').trim() !== '';
+
+    if (category === 'flashcard') {
+        if (!filled(q.content?.text)) return { group: 'flashcard', message: t('validation_front_required') };
+        if (!filled(q.answer?.back)) return { group: 'flashcard', message: t('validation_back_required') };
+        return null;
+    }
+
+    // Media-only content is legitimate, so either one satisfies the requirement.
+    if (!filled(q.content?.text) && !filled(q.content?.media?.[0]?.url)) {
+        return { group: 'content', message: t('validation_text_required') };
+    }
+
+    if (category === 'choice') {
+        const options = q.options || [];
+        if (options.length < 2) return { group: 'options', message: t('validation_min_options') };
+        if (options.some(o => !filled(o.text) && !filled(o.media?.[0]?.url))) {
+            return { group: 'options', message: t('validation_empty_option') };
+        }
+
+        const correct = q.answer?.correct_ids || [];
+        if (q.type === 'multiple_choice') {
+            if (correct.length < 2) return { group: 'options', message: t('validation_multi_correct') };
+        } else if (correct.length !== 1) {
+            return { group: 'options', message: t('validation_single_correct') };
+        }
+    }
+
+    if (category === 'text' && (q.answer?.accepted_texts || []).length === 0) {
+        return { group: 'answer', message: t('validation_accepted_required') };
+    }
+
+    return null;
 }
 
 export function closeQuestionEditor() {
@@ -36,13 +133,9 @@ export function openQuestionEditor(question) {
 function renderEditorModal() {
     const category = getQuestionCategory(currentEditingQuestion.type || 'single_choice');
 
-    // Validate activeGroup based on category
-    if (category === 'text' && activeGroup === 'options') {
-        activeGroup = 'general';
-    }
-    if (category === 'flashcard' && (activeGroup === 'options' || activeGroup === 'answer' || activeGroup === 'content')) {
-        activeGroup = 'general';
-    }
+    // A tab the current type does not have cannot stay selected.
+    const groups = getGroupsForCategory(category);
+    if (!groups.includes(activeGroup)) activeGroup = 'general';
 
     let overlay = document.getElementById('questionEditorOverlay');
     if (!overlay) {
@@ -55,10 +148,12 @@ function renderEditorModal() {
 
     const isChoice = category === 'choice';
     const isFlashcard = category === 'flashcard';
-    // Choice: 4 tabs (2×2 grid) | Text: 3 tabs | Flashcard: 2 tabs (1fr 1fr)
-    let navStyle = isChoice ? '' : 'grid-template-columns: 1fr 1fr 1fr;';
-    if (isFlashcard) navStyle = 'grid-template-columns: 1fr 1fr;';
-    const answerTabLabel = isChoice ? t('group_explanation') : t('group_answer');
+    // The tab strip's layout follows the tab count via .btn-row — never style
+    // it here. choice 4 (2×2) · text/reading 3 (one row) · flashcard 2.
+    const tabCount = groups.length;
+    // Only the text category edits an answer next to the explanation; for
+    // choice the answer lives in Options, and reading cards have none at all.
+    const answerTabLabel = category === 'text' ? t('group_answer') : t('group_explanation');
 
     const optionsTab = isChoice ? `
                 <button class="btn btn-secondary group-btn ${activeGroup === 'options' ? 'active' : ''}" data-group="options">
@@ -97,7 +192,7 @@ function renderEditorModal() {
                 <div style="font-size: 0.75rem; color: var(--text-secondary);">ID: ${currentEditingQuestion.id}</div>
             </div>
 
-            <div class="editor-group-nav" style="${navStyle}">
+            <div class="btn-row editor-group-nav" data-count="${tabCount}">
                 <button class="btn btn-secondary group-btn ${activeGroup === 'general' ? 'active' : ''}" data-group="general">
                     <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"></circle><line x1="12" y1="16" x2="12" y2="12"></line><line x1="12" y1="8" x2="12.01" y2="8"></line></svg>
                     ${t('group_general')}
@@ -123,11 +218,7 @@ function renderEditorModal() {
                     <div class="editor-input-group">
                         <label>${t('type_label')}</label>
                         <select class="editor-field" id="edit-type">
-                            <option value="single_choice" ${currentEditingQuestion.type === 'single_choice' ? 'selected' : ''}>single_choice</option>
-                            <option value="multiple_choice" ${currentEditingQuestion.type === 'multiple_choice' ? 'selected' : ''}>multiple_choice</option>
-                            <option value="true_false" ${currentEditingQuestion.type === 'true_false' ? 'selected' : ''}>true_false</option>
-                            <option value="text_input" ${currentEditingQuestion.type === 'text_input' ? 'selected' : ''}>text_input</option>
-                            <option value="flashcard" ${currentEditingQuestion.type === 'flashcard' ? 'selected' : ''}>flashcard</option>
+                            ${renderTypeOptions()}
                         </select>
                     </div>
                     <div class="editor-input-group">
@@ -201,10 +292,25 @@ function renderEditorModal() {
     setupEditorListeners();
 }
 
+function renderTypeOptions() {
+    const current = currentEditingQuestion.type || '';
+    // Keep an unrecognised type in the list so it stays selectable and round-trips
+    // through a save untouched instead of being coerced to the first entry.
+    const types = KNOWN_TYPES.includes(current) || !current
+        ? KNOWN_TYPES
+        : [...KNOWN_TYPES, current];
+
+    return types.map(type =>
+        `<option value="${type}" ${current === type ? 'selected' : ''}>${type}</option>`
+    ).join('');
+}
+
 function renderOptionsList() {
     const options = currentEditingQuestion.options || [];
     const type = currentEditingQuestion.type || '';
-    const isChoice = ['single_choice', 'multiple_choice', 'true_false'].includes(type);
+    const isChoice = getQuestionCategory(type) === 'choice';
+    // multiple_choice takes checkboxes so several answers can be marked;
+    // single_choice and true_false take radios, which enforce exactly one.
     const isMultiple = type === 'multiple_choice';
     const correctIds = (currentEditingQuestion.answer?.correct_ids || []).map(String);
 
@@ -387,8 +493,7 @@ function setupTagChipListeners() {
 
 function renderAnswerSection() {
     const q = currentEditingQuestion;
-    const type = q.type || '';
-    const isChoice = ['single_choice', 'multiple_choice', 'true_false'].includes(type);
+    const category = getQuestionCategory(q.type || '');
 
     const explanationBlock = `
         <div class="editor-input-group">
@@ -399,9 +504,10 @@ function renderAnswerSection() {
             <textarea class="editor-field code-font" id="edit-explanation" style="min-height: 120px;">${q.answer?.explanation || ''}</textarea>
         </div>`;
 
-    if (isChoice) {
-        // Correct answer selection is handled in the Options tab
-        return `${explanationBlock}`;
+    // Choice: the correct answer is marked in the Options tab.
+    // Reading/topic: prose card, there is nothing to answer.
+    if (category !== 'text') {
+        return explanationBlock;
     }
 
     // Text-based: accepted answers + case sensitivity + explanation
@@ -454,6 +560,18 @@ function setupEditorListeners() {
             renderEditorModal();
         };
     });
+
+    // Changing the type reshapes the question immediately: the tab strip, the
+    // sections and the answer controls all follow from it, so redraw at once
+    // instead of waiting for the next tab click.
+    const typeSelect = document.getElementById('edit-type');
+    if (typeSelect) {
+        typeSelect.onchange = () => {
+            syncDataFromInputs();
+            normalizeForType();
+            renderEditorModal();
+        };
+    }
 
     // New tag input: Enter key or + button
     const newTagInput = document.getElementById('new-tag-input');
@@ -538,6 +656,15 @@ function setupEditorListeners() {
     // Save
     document.getElementById('editor-save-btn').onclick = () => {
         syncDataFromInputs();
+        // Refuse to persist a question that contradicts its own type, and land
+        // the user on the tab that needs fixing rather than just complaining.
+        const problem = validateQuestion();
+        if (problem) {
+            activeGroup = problem.group;
+            renderEditorModal();
+            showToast(problem.message);
+            return;
+        }
         applyChangesToState();
     };
 
@@ -567,10 +694,14 @@ function wrapCodeSelection(textarea) {
 function syncDataFromInputs() {
     if (!currentEditingQuestion) return;
 
+    // The fields on screen were rendered for the type the question currently
+    // holds, so read them against that — the <select> may already show a newer
+    // type the DOM has not been rebuilt for yet. The new type is adopted last.
+    const renderedCategory = getQuestionCategory(currentEditingQuestion.type || '');
+
     // General
     const type = document.getElementById('edit-type');
     const diff = document.getElementById('edit-difficulty');
-    if (type) currentEditingQuestion.type = type.value;
     if (diff) currentEditingQuestion.difficulty = parseFloat(diff.value) || 1.5;
     // Tags are managed directly in currentEditingQuestion.tags via chip UI — no sync needed here
 
@@ -605,7 +736,7 @@ function syncDataFromInputs() {
     const optMediaUrls = document.querySelectorAll('.opt-media-url');
 
     optFields.forEach((field, idx) => {
-        if (currentEditingQuestion.options[idx]) {
+        if (currentEditingQuestion.options?.[idx]) {
             currentEditingQuestion.options[idx].text = field.value;
             
             const mType = optMediaTypes[idx]?.value;
@@ -623,10 +754,7 @@ function syncDataFromInputs() {
         }
     });
 
-    const qType = currentEditingQuestion.type || '';
-    const isChoice = ['single_choice', 'multiple_choice', 'true_false'].includes(qType);
-
-    if (qType === 'flashcard') {
+    if (renderedCategory === 'flashcard') {
         const front = document.getElementById('edit-fc-front');
         const back = document.getElementById('edit-fc-back');
         if (front) { currentEditingQuestion.content = { text: front.value }; }
@@ -634,6 +762,7 @@ function syncDataFromInputs() {
             if (!currentEditingQuestion.answer) currentEditingQuestion.answer = {};
             currentEditingQuestion.answer.back = back.value;
         }
+        if (type) currentEditingQuestion.type = type.value;
         return;
     }
 
@@ -643,7 +772,7 @@ function syncDataFromInputs() {
     const expl = document.getElementById('edit-explanation');
     if (expl) currentEditingQuestion.answer.explanation = expl.value;
 
-    if (isChoice) {
+    if (renderedCategory === 'choice') {
         // Doğru cevap(lar) radio/checkbox seçiminden okunur
         const checked = [...document.querySelectorAll('.answer-option-input:checked')];
         currentEditingQuestion.answer.correct_ids = checked.map(el => parseInt(el.value));
@@ -657,6 +786,8 @@ function syncDataFromInputs() {
         }
         if (caseSensitive) currentEditingQuestion.answer.caseSensitive = caseSensitive.checked;
     }
+
+    if (type) currentEditingQuestion.type = type.value;
 }
 
 function applyChangesToState() {

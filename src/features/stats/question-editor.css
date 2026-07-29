@@ -53,10 +53,10 @@
     -webkit-text-fill-color: transparent;
 }
 
+/* `.btn-row` in markup — the column count comes from data-count, so the tab
+   strip wraps at the same threshold as every other button group. Only the
+   spacing below it is local. */
 .editor-group-nav {
-    display: grid;
-    grid-template-columns: 1fr 1fr;
-    gap: 0.75rem;
     margin-bottom: 1.5rem;
 }
 
@@ -395,7 +395,6 @@ select.editor-field {
         max-height: 100vh;
         border-radius: 0;
     }
-    .editor-group-nav {
-        grid-template-columns: 1fr;
-    }
+    /* The tab strip's narrow-phone collapse lives with .btn-row in style.css
+       so every button group in the app breaks at the same point. */
 }

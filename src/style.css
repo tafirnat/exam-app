@@ -565,6 +565,8 @@ textarea {
               chips inline inside a text row — never to shrink a normal button.
    Layout:    btn-block (full width) · btn-flex (equal share of a flex row) ·
               btn-pill (fully rounded) · btn-auto-h (multi-line content)
+   Groups:    btn-row + data-count="N" — N equal buttons; 1-3 stay on one
+              row, 4+ wrap to a 2-up grid. Never set the columns inline.
 
    To add a new button type: pick a variant + size here. Do not re-declare
    padding, radius, weight or transitions on the consuming class.
@@ -650,6 +652,41 @@ textarea {
     padding-top: 0.6rem;
     padding-bottom: 0.6rem;
     white-space: normal;
+}
+
+/* --- Button rows -------------------------------------------------------
+   A group of equal-weight buttons. The wrap point is a property of the
+   group, not of the screen it happens to be on: at most three buttons fit
+   one row on a phone, so four or more always break into a 2-up grid.
+
+       <div class="btn-row" data-count="4"> … </div>
+
+   Set data-count to the number of buttons actually rendered. Callers must
+   not override grid-template-columns inline — that is exactly the drift
+   this rule exists to prevent. */
+.btn-row {
+    display: grid;
+    grid-template-columns: repeat(var(--btn-row-cols, 2), minmax(0, 1fr));
+    gap: var(--btn-row-gap, 0.75rem);
+}
+
+/* Grid items default to min-width:auto, so a nowrap label would spill past
+   its own track instead of shrinking with it. */
+.btn-row > .btn {
+    min-width: 0;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.btn-row[data-count="1"] { --btn-row-cols: 1; }
+.btn-row[data-count="2"] { --btn-row-cols: 2; }
+.btn-row[data-count="3"] { --btn-row-cols: 3; }
+/* 4+ → 2-up. The rows stay even because every button is --btn-h tall. */
+
+/* Narrow phones cannot hold three full-width labels side by side; a
+   three-up row is the only case that needs to collapse further. */
+@media (max-width: 480px) {
+    .btn-row[data-count="3"] { --btn-row-cols: 1; }
 }
 
 /* --- Solid variants ----------------------------------------------------
