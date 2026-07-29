@@ -925,8 +925,7 @@ pre code {
     align-items: center; /* Align items centered vertically */
     gap: 0.75rem;
     margin-top: 1.5rem;
-    margin-bottom: 1.5rem;
-    padding-bottom: 0.5rem;
+    margin-bottom: 0.5rem;
 }
 
 .footer-tags {
@@ -2178,8 +2177,8 @@ input:checked + .slider-small:before {
 
 /* Per-Question Stats Info */
 .question-stats-info {
-    margin-top: 2rem;
-    padding: 0.5rem 1.5rem;
+    margin-top: 0.5rem;
+    padding: 0.5rem 0.5rem;
     margin-bottom: 0.5rem;
     font-size: 0.75rem;
     color: var(--text-secondary);
@@ -2187,7 +2186,7 @@ input:checked + .slider-small:before {
     justify-content: space-between;
     align-items: center;
     background: transparent;
-    opacity: 0.7;
+    opacity: 0.75;
     user-select: none;
     -webkit-user-select: none;
 }
