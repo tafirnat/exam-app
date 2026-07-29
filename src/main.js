@@ -634,6 +634,67 @@ function updateIndicatorsPreview() {
     document.getElementById('previewIndNote').classList.toggle('active-note', !!(hasExplanation || hasNote));
 }
 
+const RESET_VERIFICATION_WORDS = ['BERLIN', 'PARIS', 'LONDON', 'MADRID', 'ROME', 'VIENNA', 'AMSTERDAM', 'PRAGUE', 'ISTANBUL', 'WARSAW'];
+let currentResetWord = 'BERLIN';
+
+function openResetAppModal() {
+    if (typeof menuActive !== 'undefined' && menuActive) {
+        toggleMenu(); // Close side menu if open
+    }
+    const modal = document.getElementById('resetAppModalOverlay');
+    const input = document.getElementById('resetAppConfirmInput');
+    const display = document.getElementById('resetAppWordDisplay');
+    const confirmBtn = document.getElementById('resetAppConfirmBtn');
+
+    if (!modal) return;
+
+    // Pick random verification word
+    currentResetWord = RESET_VERIFICATION_WORDS[Math.floor(Math.random() * RESET_VERIFICATION_WORDS.length)];
+    if (display) display.textContent = currentResetWord;
+
+    if (input) {
+        input.value = '';
+        input.classList.remove('valid');
+    }
+    if (confirmBtn) {
+        confirmBtn.disabled = true;
+        confirmBtn.style.opacity = '0.5';
+        confirmBtn.style.cursor = 'not-allowed';
+    }
+
+    modal.style.display = 'flex';
+}
+
+function closeResetAppModal() {
+    const modal = document.getElementById('resetAppModalOverlay');
+    if (modal) modal.style.display = 'none';
+}
+
+function handleResetInputChange(e) {
+    const typed = e.target.value.trim().toUpperCase();
+    const input = e.target;
+    const confirmBtn = document.getElementById('resetAppConfirmBtn');
+
+    const isValid = typed === currentResetWord.toUpperCase();
+    input.classList.toggle('valid', isValid);
+
+    if (confirmBtn) {
+        confirmBtn.disabled = !isValid;
+        confirmBtn.style.opacity = isValid ? '1' : '0.5';
+        confirmBtn.style.cursor = isValid ? 'pointer' : 'not-allowed';
+    }
+}
+
+function executeFactoryReset() {
+    try {
+        localStorage.clear();
+        window.location.reload();
+    } catch (err) {
+        console.error('Failed to reset app:', err);
+        showToast('Error resetting application');
+    }
+}
+
 function setupEventListeners() {
     // Safe event listener binding helper
     const setClick = (id, handler) => {
@@ -645,11 +706,22 @@ function setupEventListeners() {
     setClick('menuToggleBtn', toggleMenu);
     setClick('menuTheme', toggleTheme);
     setClick('menuExit', confirmExit);
+    setClick('menuResetApp', openResetAppModal);
+    setClick('resetAppCloseBtn', closeResetAppModal);
+    setClick('resetAppCancelBtn', closeResetAppModal);
+    setClick('resetAppConfirmBtn', executeFactoryReset);
+
+    const resetInput = document.getElementById('resetAppConfirmInput');
+    if (resetInput) {
+        resetInput.oninput = handleResetInputChange;
+    }
+
     setClick('menuStar', toggleStar);
     setClick('menuFlag', toggleFlag);
     setClick('menuNote', toggleNoteArea);
     setClick('menuTranslateAll', translateAll);
     setClick('menuCopyAI', () => copyAIPrompt(false));
+
 
     // Language selection
     // Language selection

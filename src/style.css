@@ -4450,3 +4450,50 @@ body.dnd-active {
     -ms-overflow-style: none;  /* IE and Edge */
     scrollbar-width: none;  /* Firefox */
 }
+
+/* Factory Reset Modal Styling */
+.reset-word-badge {
+    background-color: rgba(239, 68, 68, 0.15);
+    color: #ef4444;
+    padding: 0.15rem 0.5rem;
+    border-radius: 4px;
+    border: 1px solid rgba(239, 68, 68, 0.3);
+    font-family: monospace;
+    font-size: 0.95rem;
+    letter-spacing: 0.5px;
+}
+
+.reset-input-field {
+    width: 100%;
+    padding: 0.65rem 0.85rem;
+    border: 1px solid var(--border-color);
+    border-radius: var(--radius-sm, 6px);
+    background-color: var(--bg-color);
+    color: var(--text-primary);
+    font-size: 0.9rem;
+    outline: none;
+    transition: border-color 0.2s, box-shadow 0.2s;
+}
+
+.reset-input-field:focus {
+    border-color: #ef4444;
+    box-shadow: 0 0 0 3px rgba(239, 68, 68, 0.2);
+}
+
+.reset-input-field.valid {
+    border-color: #22c55e;
+    box-shadow: 0 0 0 3px rgba(34, 197, 94, 0.2);
+}
+
+.btn.danger-btn-solid:not(:disabled) {
+    background-color: #ef4444 !important;
+    color: #ffffff !important;
+    opacity: 1 !important;
+    cursor: pointer !important;
+    box-shadow: 0 2px 8px rgba(239, 68, 68, 0.35);
+}
+
+.btn.danger-btn-solid:not(:disabled):hover {
+    background-color: #dc2626 !important;
+}
+
