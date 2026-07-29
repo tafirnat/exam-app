@@ -863,22 +863,22 @@ ${f}`);n(b?"replace":"merge");return}const m=l.innerText,g=c.innerText;r.innerTe
                 <span>Source Code (GitHub)</span>
             </a>
 
-            <button class="menu-side-item danger-item" id="menuResetApp" style="color: #ef4444; margin-top: 0.5rem;">
+            <button class="menu-side-item" id="menuExit" style="color: var(--text-secondary); margin-top: 0.25rem;">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="color: inherit;" width="18" height="18">
+                    <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"></path>
+                    <polyline points="16 17 21 12 16 7"></polyline>
+                    <line x1="21" y1="12" x2="9" y2="12"></line>
+                </svg>
+                <span data-i18n="exit">Beenden</span>
+            </button>
+
+            <button class="menu-side-item" id="menuResetApp" style="color: var(--text-secondary); margin-top: auto; opacity: 0.85;">
                 <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="color: inherit;" width="18" height="18">
                     <path d="M3 6h18M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path>
                     <line x1="10" y1="11" x2="10" y2="17"></line>
                     <line x1="14" y1="11" x2="14" y2="17"></line>
                 </svg>
                 <span data-i18n="reset_app_btn_label">Hesabı Sıfırla</span>
-            </button>
-
-            <button class="menu-side-item" id="menuExit" style="color: var(--error-color); margin-top: auto;">
-                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" style="color: inherit;">
-                    <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"></path>
-                    <polyline points="16 17 21 12 16 7"></polyline>
-                    <line x1="21" y1="12" x2="9" y2="12"></line>
-                </svg>
-                <span data-i18n="exit">Beenden</span>
             </button>
         </div>
     </div>
