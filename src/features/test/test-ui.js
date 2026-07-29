@@ -588,7 +588,7 @@ function renderSummarySection() {
 
     summaryEl.innerHTML = `
         ${unansweredHtml}
-        <button class="btn btn-danger btn-lg btn-block" id="finishTestBtn" style="margin-top: 1rem;">
+        <button class="btn btn-danger btn-block" id="finishTestBtn" style="margin-top: 1rem;">
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" style="width: 20px; height: 20px;"><polyline points="20 6 9 17 4 12"></polyline></svg>
             ${t('finish_test')}
         </button>

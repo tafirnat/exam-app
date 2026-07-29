@@ -142,7 +142,7 @@ function renderEditorModal() {
                             </div>
                             <div class="tag-add-row">
                                 <input type="text" id="new-tag-input" class="editor-field" placeholder="${t('tags_placeholder') || 'Yeni tag...'}" style="flex:1; margin:0;">
-                                <button type="button" id="add-tag-btn" class="btn btn-primary btn-sm">+</button>
+                                <button type="button" id="add-tag-btn" class="btn btn-primary">+</button>
                             </div>
                             <div class="tag-suggestions" id="tag-suggestions-container">
                                 ${renderTagSuggestions()}
@@ -192,8 +192,8 @@ function renderEditorModal() {
             </div>
 
             <div class="editor-footer">
-                <button class="btn btn-secondary btn-lg btn-flex" id="editor-cancel-btn">${t('cancel')}</button>
-                <button class="btn btn-primary btn-lg btn-flex" id="editor-save-btn">${t('save_changes')}</button>
+                <button class="btn btn-secondary btn-flex" id="editor-cancel-btn">${t('cancel')}</button>
+                <button class="btn btn-primary btn-flex" id="editor-save-btn">${t('save_changes')}</button>
             </div>
         </div>
     `;

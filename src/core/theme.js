@@ -1,14 +1,18 @@
 
+// The attribute goes on <html>, not <body>: :root-level custom properties that
+// reference other theme variables are substituted on the element that declares
+// them, so a theme flag below :root leaves those tokens stuck on the light
+// palette. See the comment above <html> in index.html.
 export function initTheme() {
     const theme = localStorage.getItem('focus_theme') || 'dark';
-    document.body.setAttribute('data-theme', theme);
+    document.documentElement.setAttribute('data-theme', theme);
     updateThemeUI(theme);
 }
 
 export function toggleTheme() {
-    const current = document.body.getAttribute('data-theme');
+    const current = document.documentElement.getAttribute('data-theme');
     const next = current === 'dark' ? 'light' : 'dark';
-    document.body.setAttribute('data-theme', next);
+    document.documentElement.setAttribute('data-theme', next);
     localStorage.setItem('focus_theme', next);
     updateThemeUI(next);
 }

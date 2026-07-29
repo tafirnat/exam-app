@@ -1,5 +1,9 @@
 <!DOCTYPE html>
-<html lang="de">
+<!-- data-theme lives on <html> so that :root sees it. Custom properties whose
+     value references another theme variable are substituted on the element
+     that declares them; with the attribute on <body>, every :root-level token
+     resolved against the light palette and stayed light in dark mode. -->
+<html lang="de" data-theme="dark">
 
 <head>
     <meta charset="UTF-8">
@@ -24,7 +28,7 @@
     <link rel="stylesheet" href="/src/features/stats/question-editor.css">
 </head>
 
-<body data-theme="dark">
+<body>
 
     <header>
         <button class="icon-btn" id="menuToggleBtn" data-i18n-title="menu">
@@ -51,13 +55,13 @@
                     <div class="github-dropdown-status" id="githubDropdownLastSync">-</div>
                 </div>
                 <div class="github-dropdown-actions">
-                    <button class="btn btn-subtle btn-sm btn-block github-dropdown-btn" id="githubDropdownSyncNow">
+                    <button class="btn btn-subtle btn-block github-dropdown-btn" id="githubDropdownSyncNow">
                         <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2">
                             <path d="M21.5 2v6h-6M2.5 22v-6h6M2 11.5a10 10 0 0 1 18.8-4.3M22 12.5a10 10 0 0 1-18.8 4.2"/>
                         </svg>
                         <span data-i18n="github_sync_now">Şimdi Eşitle</span>
                     </button>
-                    <button class="btn btn-subtle btn-sm btn-block github-dropdown-btn danger" id="githubDropdownLogout">
+                    <button class="btn btn-subtle btn-block github-dropdown-btn danger" id="githubDropdownLogout">
                         <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2">
                             <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4M16 17l5-5-5-5M21 12H9"/>
                         </svg>
@@ -107,9 +111,9 @@
                 </div>
                 <div class="menu-section-content" id="section-lang">
                     <div class="lang-selector">
-                        <button class="btn btn-secondary btn-sm btn-flex lang-btn" data-lang="de">DE</button>
-                        <button class="btn btn-secondary btn-sm btn-flex lang-btn" data-lang="en">EN</button>
-                        <button class="btn btn-secondary btn-sm btn-flex lang-btn" data-lang="tr">TR</button>
+                        <button class="btn btn-secondary btn-flex lang-btn" data-lang="de">DE</button>
+                        <button class="btn btn-secondary btn-flex lang-btn" data-lang="en">EN</button>
+                        <button class="btn btn-secondary btn-flex lang-btn" data-lang="tr">TR</button>
                     </div>
                 </div>
             </div>
@@ -424,15 +428,15 @@
                         </select>
                     </div>
                     <div id="startBtnContainer" style="display: flex; gap: 0.75rem; flex-direction: column;">
-                        <button class="btn btn-warning btn-lg btn-block" id="resumeBtn" style="display: none;"
+                        <button class="btn btn-warning btn-block" id="resumeBtn" style="display: none;"
                             data-i18n="resume_test">Devam Et</button>
-                        <button class="btn btn-primary btn-lg btn-block" id="startBtn" data-i18n="start_test">Başla</button>
+                        <button class="btn btn-primary btn-block" id="startBtn" data-i18n="start_test">Başla</button>
                     </div>
                 </div>
             </div>
 
             <div class="card" id="startPanel" style="display: none; opacity: 1; pointer-events: all;">
-                <button class="btn btn-stats btn-lg btn-block" id="homeStatsBtn">
+                <button class="btn btn-stats btn-block" id="homeStatsBtn">
                     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"
                         stroke-linejoin="round">
                         <line x1="18" y1="20" x2="18" y2="10"></line>
@@ -444,7 +448,7 @@
                 </button>
 
                 <div style="display: flex; gap: 0.5rem; margin-top: 0.5rem;">
-                    <button class="btn btn-secondary btn-sm btn-flex" id="homeExportBtn">
+                    <button class="btn btn-secondary btn-flex" id="homeExportBtn">
                         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"
                             stroke-linecap="round" stroke-linejoin="round">
                             <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
@@ -453,7 +457,7 @@
                         </svg>
                         <span data-i18n="export">Export</span>
                     </button>
-                    <button class="btn btn-secondary btn-sm btn-flex" id="homeImportBtn">
+                    <button class="btn btn-secondary btn-flex" id="homeImportBtn">
                         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"
                             stroke-linecap="round" stroke-linejoin="round">
                             <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
@@ -578,14 +582,14 @@
             </div>
 
             <div class="results-actions">
-                <button class="btn btn-secondary btn-lg" id="resRetakeBtn">
+                <button class="btn btn-secondary" id="resRetakeBtn">
                     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
                         <path d="M23 4v6h-6"></path>
                         <path d="M20.49 15a9 9 0 1 1-2.12-9.36L23 10"></path>
                     </svg>
                     <span data-i18n="retake_all">Yeniden Çöz</span>
                 </button>
-                <button class="btn btn-primary btn-lg" id="resHomeBtn">
+                <button class="btn btn-primary" id="resHomeBtn">
                     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
                         <path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"></path>
                         <polyline points="9 22 9 12 15 12 15 22"></polyline>
@@ -986,7 +990,7 @@
             <div class="question-stats-info visible" id="previewStatsInfo"></div>
 
             <div class="preview-actions-bar">
-                <button class="btn btn-secondary btn-lg btn-pill preview-back-btn" id="previewBackBtn">
+                <button class="btn btn-secondary btn-pill preview-back-btn" id="previewBackBtn">
                     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"
                         stroke-linejoin="round" style="width: 16px; height: 16px;">
                         <line x1="19" y1="12" x2="5" y2="12"></line>
@@ -994,7 +998,7 @@
                     </svg>
                     <span id="previewBackBtnText" data-i18n="back_to_stats">İstatistiklere Dön</span>
                 </button>
-                <button class="btn btn-primary btn-lg btn-pill btn-edit-preview" id="statsPreviewEditBtn">
+                <button class="btn btn-primary btn-pill btn-edit-preview" id="statsPreviewEditBtn">
                     <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
                         <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"></path>
                         <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"></path>
@@ -1007,13 +1011,13 @@
 
     <div class="bottom-nav" id="bottomNav" style="display: none;">
         <div class="nav-container">
-            <button class="btn btn-glass btn-lg nav-btn" id="prevBtn">
+            <button class="btn btn-glass nav-btn" id="prevBtn">
                 <svg viewBox="0 0 24 24" fill="none" stroke="currentColor">
                     <polyline points="15 18 9 12 15 6"></polyline>
                 </svg>
                 <span class="nav-btn-text" data-i18n="prev">Vorherige</span>
             </button>
-            <button class="btn btn-glass btn-lg check-btn" id="checkBtn">
+            <button class="btn btn-glass check-btn" id="checkBtn">
                 <svg viewBox="0 0 24 24" fill="none" stroke="currentColor"
                     style="width: 20px; height: 20px; margin-right: 4px; display: none;" id="checkIcon">
                     <polyline points="20 6 9 17 4 12"></polyline>
@@ -1021,18 +1025,18 @@
                 <span id="checkBtnText" data-i18n="check">Prüfen</span>
             </button>
             <div class="difficulty-pill" id="difficultyPill" style="display: none;">
-                <button class="btn btn-lg btn-danger-soft difficulty-btn difficulty-hard" id="diffHardBtn" data-i18n="difficulty_hard">Zor</button>
+                <button class="btn btn-danger-soft difficulty-btn difficulty-hard" id="diffHardBtn" data-i18n="difficulty_hard">Zor</button>
                 <div class="difficulty-divider"></div>
-                <button class="btn btn-lg btn-success-soft difficulty-btn difficulty-easy" id="diffEasyBtn"
+                <button class="btn btn-success-soft difficulty-btn difficulty-easy" id="diffEasyBtn"
                     data-i18n="difficulty_easy">Kolay</button>
             </div>
             <div class="flashcard-rating-bar" id="flashcardRatingBar" style="display: none;">
-                <button class="btn btn-lg btn-flex btn-danger fc-rating-btn fc-again" onclick="window.handleFlashcardRating('again')" data-i18n="rating_again">Tekrar</button>
-                <button class="btn btn-lg btn-flex btn-warning fc-rating-btn fc-hard" onclick="window.handleFlashcardRating('hard')" data-i18n="rating_hard">Zor</button>
-                <button class="btn btn-lg btn-flex fc-rating-btn fc-normal" onclick="window.handleFlashcardRating('normal')" data-i18n="rating_normal">Normal</button>
-                <button class="btn btn-lg btn-flex btn-success fc-rating-btn fc-easy" onclick="window.handleFlashcardRating('easy')" data-i18n="rating_easy">Kolay</button>
+                <button class="btn btn-flex btn-danger fc-rating-btn fc-again" onclick="window.handleFlashcardRating('again')" data-i18n="rating_again">Tekrar</button>
+                <button class="btn btn-flex btn-warning fc-rating-btn fc-hard" onclick="window.handleFlashcardRating('hard')" data-i18n="rating_hard">Zor</button>
+                <button class="btn btn-flex fc-rating-btn fc-normal" onclick="window.handleFlashcardRating('normal')" data-i18n="rating_normal">Normal</button>
+                <button class="btn btn-flex btn-success fc-rating-btn fc-easy" onclick="window.handleFlashcardRating('easy')" data-i18n="rating_easy">Kolay</button>
             </div>
-            <button class="btn btn-glass btn-lg nav-btn" id="nextBtn">
+            <button class="btn btn-glass nav-btn" id="nextBtn">
                 <span class="nav-btn-text" data-i18n="next">Nächste</span>
                 <svg viewBox="0 0 24 24" fill="none" stroke="currentColor">
                     <polyline points="9 18 15 12 9 6"></polyline>
@@ -1104,7 +1108,7 @@
             </div>
             <div class="modal-body" style="display: flex; flex-direction: column; gap: 0.5rem; margin: 1rem 0;">
                 <!-- Edit button at the top -->
-                <button class="btn btn-secondary btn-lg btn-block modal-action-btn" id="modalEditMetadataBtn">
+                <button class="btn btn-secondary btn-block modal-action-btn" id="modalEditMetadataBtn">
                     <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
                         <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"></path>
                         <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"></path>
@@ -1112,23 +1116,23 @@
                     <span data-i18n="edit_metadata">Meta Verileri Düzenle</span>
                 </button>
 
-                <button class="btn btn-secondary btn-lg btn-block modal-action-btn" id="modalDownloadBtn">
+                <button class="btn btn-secondary btn-block modal-action-btn" id="modalDownloadBtn">
                     <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path><polyline points="7 10 12 15 17 10"></polyline><line x1="12" y1="15" x2="12" y2="3"></line></svg>
                     <span data-i18n="download">İndir</span>
                 </button>
                 
-                <button class="btn btn-secondary btn-lg btn-block modal-action-btn" id="modalShareBtn">
+                <button class="btn btn-secondary btn-block modal-action-btn" id="modalShareBtn">
                     <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="18" cy="5" r="3"></circle><circle cx="6" cy="12" r="3"></circle><circle cx="18" cy="19" r="3"></circle><line x1="8.59" y1="13.51" x2="15.42" y2="17.49"></line><line x1="15.41" y1="6.51" x2="8.59" y2="10.49"></line></svg>
                     <span data-i18n="share_source">Paylaş</span>
                 </button>
 
                 <!-- Reset button with default background and gold text -->
-                <button class="btn btn-warning-soft btn-lg btn-block modal-action-btn" id="modalResetBtn">
+                <button class="btn btn-warning-soft btn-block modal-action-btn" id="modalResetBtn">
                     <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M23 4v6h-6"></path><path d="M20.49 15a9 9 0 1 1-2.12-9.36L23 10"></path></svg>
                     <span data-i18n="reset">Sıfırla</span>
                 </button>
 
-                <button class="btn btn-secondary btn-lg btn-block modal-action-btn" id="modalArchiveBtn">
+                <button class="btn btn-secondary btn-block modal-action-btn" id="modalArchiveBtn">
                     <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
                         <polyline points="21 8 21 21 3 21 3 8"></polyline>
                         <rect x="1" y="3" width="22" height="5"></rect>
@@ -1138,7 +1142,7 @@
                 </button>
 
                 <!-- Delete button with themed error background and white text -->
-                <button class="btn btn-danger btn-lg btn-block modal-action-btn" id="modalDeleteBtn">
+                <button class="btn btn-danger btn-block modal-action-btn" id="modalDeleteBtn">
                     <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="3 6 5 6 21 6"></polyline><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path></svg>
                     <span data-i18n="delete">Sil</span>
                 </button>
@@ -1164,19 +1168,19 @@
                 </div>
 
                 <!-- Option 1: Copy to Clipboard -->
-                <button class="btn btn-secondary btn-lg btn-block modal-action-btn" id="shareCopyClipboardBtn">
+                <button class="btn btn-secondary btn-block modal-action-btn" id="shareCopyClipboardBtn">
                     <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path></svg>
                     <span data-i18n="share_copy_clipboard">Panoya Kopyala</span>
                 </button>
 
                 <!-- Option 2: Share as Text -->
-                <button class="btn btn-secondary btn-lg btn-block modal-action-btn" id="shareAsTextBtn">
+                <button class="btn btn-secondary btn-block modal-action-btn" id="shareAsTextBtn">
                     <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"></path></svg>
                     <span data-i18n="share_as_text">Metin Olarak Paylaş</span>
                 </button>
 
                 <!-- Option 3: Share as JSON File -->
-                <button class="btn btn-secondary btn-lg btn-block modal-action-btn" id="shareAsFileBtn">
+                <button class="btn btn-secondary btn-block modal-action-btn" id="shareAsFileBtn">
                     <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path><polyline points="14 2 14 8 20 8"></polyline></svg>
                     <span data-i18n="share_as_file">JSON Dosyası Paylaş</span>
                 </button>
@@ -1298,7 +1302,7 @@
                 GitHub hesabınızla giriş yaparak tüm cihazlarınızdaki soru ve istatistikleri senkronize edin.
             </p>
 
-            <button class="btn btn-primary btn-lg btn-block" id="githubOAuthLoginBtn" style="margin-bottom: 1rem;">
+            <button class="btn btn-primary btn-block" id="githubOAuthLoginBtn" style="margin-bottom: 1rem;">
                 <svg viewBox="0 0 24 24" width="20" height="20" fill="currentColor">
                     <path d="M12 0C5.37 0 0 5.37 0 12c0 5.31 3.435 9.795 8.205 11.385.6.105.825-.255.825-.57 0-.285-.015-1.23-.015-2.235-3.015.555-3.795-.735-4.035-1.41-.135-.345-.72-1.41-1.23-1.695-.42-.225-1.02-.78-.015-.795.945-.015 1.62.87 1.845 1.23 1.08 1.815 2.805 1.305 3.495.99.105-.78.42-1.305.765-1.605-2.67-.3-5.46-1.335-5.46-5.925 0-1.305.465-2.385 1.23-3.225-.12-.3-.54-1.53.12-3.18 0 0 1.005-.315 3.3 1.23.96-.27 1.98-.405 3-.405s2.04.135 3 .405c2.295-1.56 3.3-1.23 3.3-1.23.66 1.65.24 2.88.12 3.18.765.84 1.23 1.905 1.23 3.225 0 4.605-2.805 5.625-5.475 5.925.435.375.81 1.095.81 2.22 0 1.605-.015 2.895-.015 3.3 0 .315.225.69.825.57A12.02 12.02 0 0024 12c0-6.63-5.37-12-12-12z"/>
                 </svg>
@@ -1315,7 +1319,7 @@
             <div id="githubPatSection" style="display: none; margin-top: 0.75rem; padding-top: 0.75rem; border-top: 1px dashed var(--border-color);">
                 <label style="display: block; font-size: 0.8rem; font-weight: 600; margin-bottom: 0.4rem;" data-i18n="github_token_label">Personal Access Token (PAT)</label>
                 <input type="password" id="githubTokenInput" class="menu-select" style="width: 100%; padding: 0.6rem 0.8rem; font-family: monospace; margin-bottom: 0.75rem;" data-i18n-placeholder="github_token_placeholder" placeholder="ghp_ veya github_pat_...">
-                <button class="btn btn-secondary btn-sm btn-block" id="githubConnectPatBtn" data-i18n="github_connect">Token ile Bağlan</button>
+                <button class="btn btn-secondary btn-block" id="githubConnectPatBtn" data-i18n="github_connect">Token ile Bağlan</button>
             </div>
         </div>
     </div>

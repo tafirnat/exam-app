@@ -44,24 +44,27 @@
        variant class — never by re-declaring padding/radius/weight locally.
        ========================================================================== */
 
-    /* Geometry — four heights cover every surface we have today */
+    /* Geometry — ONE height for every button in the app. There is deliberately
+       no small/large scale: a screen that mixes 34px and 48px buttons reads as
+       two different components. The only exception is --btn-h-xs, reserved for
+       chips that sit *inline inside a text row* (e.g. a label's "wrap in code"
+       affordance), where a full-height button would break the line box. */
+    --btn-h: 48px;
     --btn-h-xs: 24px;
-    --btn-h-sm: 34px;
-    --btn-h-md: 42px;
-    --btn-h-lg: 48px;
+    --btn-pad: 0 1.25rem;
     --btn-pad-xs: 0 0.5rem;
-    --btn-pad-sm: 0 0.7rem;
-    --btn-pad-md: 0 1.1rem;
-    --btn-pad-lg: 0 1.5rem;
     --btn-radius: var(--radius-md);
     --btn-radius-pill: 999px;
     --btn-gap: 0.5rem;
 
+    /* Toolbar chips (stats filter / sort rows) — a separate control with its
+       own single height, see the .filter-btn comment for why it is not --btn-h. */
+    --chip-h: 34px;
+    --chip-font: 0.8rem;
+
     /* Typography */
+    --btn-font: 0.9rem;
     --btn-font-xs: 0.7rem;
-    --btn-font-sm: 0.8rem;
-    --btn-font-md: 0.9rem;
-    --btn-font-lg: 0.95rem;
     --btn-weight: 600;
 
     /* Motion & state — one press, one hover lift, one disabled level */
@@ -74,10 +77,12 @@
 
     /* Variant surfaces — solid variants derive from the semantic palette.
        *-soft is the tinted (low-emphasis) treatment of the same hue. */
+    /* Ink on solid fills. Each solid variant picks one of these into --btn-ink,
+       because "white on colour" only works while the fill is dark enough:
+       amber (≈2:1) and green (≈2.3:1) never are, in either theme. */
     --btn-on-solid: #ffffff;
-    /* Amber is far too light to carry white text (≈2:1). Solid warning buttons
-       get dark ink instead; every other solid variant stays white-on-colour. */
     --btn-on-warning: #3b2a05;
+    --btn-on-success: #052e16;
     --btn-neutral-bg: var(--surface-hover);
     --btn-neutral-bg-hover: var(--border-color);
     --btn-accent-color: var(--note-color);
@@ -123,6 +128,12 @@
     /* Button system — dark overrides. Geometry/typography/motion are theme
        independent, so only the surfaces are restated here. */
     --btn-shadow-hover: 0 4px 12px -2px rgba(0, 0, 0, 0.5);
+    /* Dark mode lightens the whole semantic palette (primary becomes #7fa4e6,
+       success #4caf78), so white labels on those fills wash out at ~2.4:1 —
+       this is what made the Start and Edit buttons look faded. Solid buttons
+       flip to dark ink here; the tinted (-soft) variants are unaffected. */
+    --btn-on-solid: var(--bg-color);
+    --btn-on-success: var(--bg-color);
     /* --surface-hover and --border-color are the same value in dark mode, so
        the shared neutral hover would have been a no-op; step up one level. */
     --btn-neutral-bg-hover: #475569;
@@ -540,7 +551,7 @@ textarea {
    size / layout modifier):
 
        <button class="btn btn-primary">Kaydet</button>
-       <button class="btn btn-danger btn-sm">Sil</button>
+       <button class="btn btn-danger btn-pill">Sil</button>
        <button class="btn btn-secondary btn-block">İptal</button>
 
    Variants:  Solid    — btn-primary · btn-danger · btn-success · btn-warning ·
@@ -550,7 +561,8 @@ textarea {
                          btn-warning-soft · btn-accent-soft (tinted, low emphasis)
               Special  — btn-link (text only) · btn-glass (frosted, bottom nav) ·
                          btn-stats (accent CTA)
-   Sizes:     btn-xs (24px) · btn-sm (34px) · default (42px) · btn-lg (48px)
+   Size:      one height for every button (--btn-h). btn-xs exists only for
+              chips inline inside a text row — never to shrink a normal button.
    Layout:    btn-block (full width) · btn-flex (equal share of a flex row) ·
               btn-pill (fully rounded) · btn-auto-h (multi-line content)
 
@@ -563,12 +575,13 @@ textarea {
     align-items: center;
     justify-content: center;
     gap: var(--btn-gap);
-    height: var(--btn-h-md);
-    padding: var(--btn-pad-md);
+    height: var(--btn-h);
+    flex-shrink: 0;
+    padding: var(--btn-pad);
     border-radius: var(--btn-radius);
     font-family: inherit;
     font-weight: var(--btn-weight);
-    font-size: var(--btn-font-md);
+    font-size: var(--btn-font);
     line-height: 1;
     white-space: nowrap;
     cursor: pointer;
@@ -594,7 +607,10 @@ textarea {
     flex-shrink: 0;
 }
 
-/* --- Sizes --- */
+/* --- Size ---
+   Only one, and it is the default. `.btn-xs` exists solely for chips embedded
+   in a line of text; do not reach for it to make a button "fit better" — if a
+   button feels too tall for its container, the container is the thing to fix. */
 .btn-xs {
     height: var(--btn-h-xs);
     padding: var(--btn-pad-xs);
@@ -606,28 +622,6 @@ textarea {
 .btn-xs svg {
     width: 13px;
     height: 13px;
-}
-
-.btn-sm {
-    height: var(--btn-h-sm);
-    padding: var(--btn-pad-sm);
-    font-size: var(--btn-font-sm);
-}
-
-.btn-sm svg {
-    width: 15px;
-    height: 15px;
-}
-
-.btn-lg {
-    height: var(--btn-h-lg);
-    padding: var(--btn-pad-lg);
-    font-size: var(--btn-font-lg);
-}
-
-.btn-lg svg {
-    width: 20px;
-    height: 20px;
 }
 
 /* --- Layout modifiers --- */
@@ -648,16 +642,20 @@ textarea {
    opt out of the fixed height instead of fighting it with inline padding. */
 .btn-auto-h {
     height: auto;
-    min-height: var(--btn-h-md);
+    min-height: var(--btn-h);
     padding-top: 0.6rem;
     padding-bottom: 0.6rem;
     white-space: normal;
 }
 
-/* --- Solid variants ---------------------------------------------------- */
+/* --- Solid variants ----------------------------------------------------
+   Each declares its own --btn-ink so that anything promoting a tint to a solid
+   fill later (the selected difficulty pill, an active toggle) can just say
+   `color: var(--btn-ink)` and get the right contrast without repeating this. */
 .btn-primary {
+    --btn-ink: var(--btn-on-solid);
     background-color: var(--primary-color);
-    color: var(--btn-on-solid);
+    color: var(--btn-ink);
 }
 
 .btn-primary:hover:not(:disabled) {
@@ -669,23 +667,27 @@ textarea {
    inline style, which painted white text onto the pale pink tint --error-bg is meant
    for (surfaces, not buttons) and left the label unreadable in light mode. */
 .btn-danger {
+    --btn-ink: var(--btn-on-solid);
     background-color: var(--error-color);
-    color: var(--btn-on-solid);
+    color: var(--btn-ink);
 }
 
 .btn-success {
+    --btn-ink: var(--btn-on-success);
     background-color: var(--success-color);
-    color: var(--btn-on-solid);
+    color: var(--btn-ink);
 }
 
 .btn-warning {
+    --btn-ink: var(--btn-on-warning);
     background-color: var(--warning-color);
-    color: var(--btn-on-warning);
+    color: var(--btn-ink);
 }
 
 .btn-accent {
+    --btn-ink: var(--btn-on-solid);
     background-color: var(--btn-accent-color);
-    color: var(--btn-on-solid);
+    color: var(--btn-ink);
 }
 
 .btn-danger:hover:not(:disabled),
@@ -763,22 +765,27 @@ textarea {
 
 .btn-primary-soft {
     --btn-soft-hue: var(--primary-color);
+    --btn-ink: var(--btn-on-solid);
 }
 
 .btn-danger-soft {
     --btn-soft-hue: var(--error-color);
+    --btn-ink: var(--btn-on-solid);
 }
 
 .btn-success-soft {
     --btn-soft-hue: var(--success-color);
+    --btn-ink: var(--btn-on-success);
 }
 
 .btn-warning-soft {
     --btn-soft-hue: var(--warning-color);
+    --btn-ink: var(--btn-on-warning);
 }
 
 .btn-accent-soft {
     --btn-soft-hue: var(--btn-accent-color);
+    --btn-ink: var(--btn-on-solid);
 }
 
 /* --- Glass variant -----------------------------------------------------
@@ -1237,11 +1244,14 @@ pre code {
     gap: 1rem;
 }
 
-/* Both buttons in this bar are plain `.btn` + variant + `.btn-pill`; only the
-   ordering and the shared minimum width live here. */
+/* Both buttons in this bar are plain `.btn` + variant + `.btn-pill`. They split
+   the row evenly — `flex: 1 1 0` with `min-width: 0` so the basis is the shared
+   free space rather than each label's intrinsic width, which is what made
+   "Back to Statistics" and "Edit" come out at different widths. */
 .preview-back-btn,
 .btn-edit-preview {
-    min-width: 180px;
+    flex: 1 1 0;
+    min-width: 0;
     box-shadow: var(--btn-shadow);
     margin: 0;
 }
@@ -1276,7 +1286,6 @@ pre code {
     .preview-back-btn,
     .btn-edit-preview {
         width: 100%;
-        min-width: 0;
     }
 }
 
@@ -1784,7 +1793,7 @@ pre code {
     align-items: center;
 }
 
-/* Bottom bar buttons are `.btn.btn-glass.btn-lg` in markup; only their share
+/* Bottom bar buttons are `.btn.btn-glass` in markup; only their share
    of the row and the icon size differ from the base. */
 .nav-btn {
     flex: 1;
@@ -1801,7 +1810,7 @@ pre code {
 .nav-btn-text {
     display: none;
     /* Hidden on mobile */
-    font-size: var(--btn-font-md);
+    font-size: var(--btn-font);
     font-weight: var(--btn-weight);
 }
 
@@ -1813,7 +1822,7 @@ pre code {
 /* --- Difficulty Pill (Zor / Kolay) --- */
 .difficulty-pill {
     flex: 2;
-    height: var(--btn-h-lg);
+    height: var(--btn-h);
     background: var(--glass-bg);
     border-radius: var(--btn-radius);
     display: flex;
@@ -1843,11 +1852,12 @@ pre code {
     border-radius: 0 var(--btn-radius) var(--btn-radius) 0;
 }
 
-/* Selected state promotes the soft tint to the solid fill of the same hue. */
+/* Selected state promotes the soft tint to the solid fill of the same hue,
+   picking up the ink that hue declared. */
 .difficulty-btn.active {
     background-color: var(--btn-soft-hue);
     border-color: var(--btn-soft-hue);
-    color: var(--btn-on-solid);
+    color: var(--btn-ink);
     box-shadow: 0 4px 12px color-mix(in srgb, var(--btn-soft-hue) 30%, transparent);
 }
 
@@ -2167,7 +2177,7 @@ input:checked+.slider-small:before {
     gap: 0.5rem;
 }
 
-/* `.btn.btn-secondary.btn-sm.btn-flex` in markup; the active language is
+/* `.btn.btn-secondary.btn-flex` in markup; the active language is
    promoted to the primary fill. */
 .lang-btn.lang-active {
     background-color: var(--primary-color);
@@ -2491,21 +2501,23 @@ input:checked+.slider-small:before {
     padding: 0;
 }
 
-/* Toolbar chips. They keep their own compact box (they collapse to icon-only
-   on narrow screens) but inherit the system's radius, type scale, motion and
-   press feedback so they sit in the same family as the sort chips below. */
+/* Filter / sort chips are a toolbar control, not buttons: they collapse to
+   icon-only on narrow screens and stack two rows deep inside a sticky header,
+   where the 48px button height would eat the viewport. They therefore have
+   their own single height (--chip-h) — but only one, and they share the button
+   system's radius, weight, motion and press feedback. */
 .filter-btn {
     display: flex;
     align-items: center;
     gap: 0.6rem;
-    height: var(--btn-h-sm);
+    height: var(--chip-h);
     padding: 0 0.7rem;
     border-radius: var(--btn-radius-pill);
     border: 1px solid var(--border-color);
     background: var(--surface-color);
     color: var(--text-secondary);
     font-family: inherit;
-    font-size: var(--btn-font-sm);
+    font-size: var(--chip-font);
     font-weight: var(--btn-weight);
     cursor: pointer;
     transition: var(--btn-transition);
@@ -2545,26 +2557,20 @@ input:checked+.slider-small:before {
 }
 
 .filter-btn[data-filter="incorrect"] svg {
-    color: #f59e0b;
-    /* Amber */
+    color: var(--warning-color);
 }
 
+/* Amber fill carried white text at roughly 2:1 in light mode and a separate
+   hardcoded brown in dark mode; both are replaced by the palette hue plus the
+   ink token that already solves this for .btn-warning. */
 .filter-btn[data-filter="incorrect"].active {
-    background: #f59e0b;
-    border-color: #d97706;
-    /* Softer Amber Border */
-    color: #ffffff;
-}
-
-[data-theme="dark"] .filter-btn[data-filter="incorrect"].active {
-    background: #5d3e0a;
-    border-color: #b45309;
-    /* Deep Amber Border for Dark Mode */
-    color: #ffffff;
+    background: var(--warning-color);
+    border-color: var(--warning-color);
+    color: var(--btn-on-warning);
 }
 
 .filter-btn[data-filter="incorrect"].active svg {
-    color: #ffffff;
+    color: var(--btn-on-warning);
 }
 
 /* On medium and small screens, hide inactive filter text to prevent wrapping */
@@ -2612,14 +2618,14 @@ input:checked+.slider-small:before {
     display: flex;
     align-items: center;
     gap: 0.5rem;
-    height: var(--btn-h-sm);
+    height: var(--chip-h);
     padding: 0 0.7rem;
     border-radius: var(--btn-radius-pill);
     border: 1px solid var(--border-color);
     background: transparent;
     color: var(--text-secondary);
     font-family: inherit;
-    font-size: var(--btn-font-sm);
+    font-size: var(--chip-font);
     font-weight: var(--btn-weight);
     cursor: pointer;
     transition: var(--btn-transition);
@@ -3532,7 +3538,7 @@ input:checked+.slider-small:before {
 
 /* Sidebar cloud-account row buttons. Previously referenced --bg-secondary /
    --bg-hover, which are not defined anywhere, so they rendered transparent and
-   the hover was a no-op. Now `.btn.btn-secondary.btn-sm.btn-block` in markup —
+   the hover was a no-op. Now `.btn.btn-secondary.btn-block` in markup —
    only the left alignment and stacking margin are local. */
 .menu-btn-small {
     justify-content: flex-start;
@@ -4002,7 +4008,7 @@ input:checked+.slider-small:before {
 }
 
 /* Stacked action rows in the source/share modals: `.btn` + variant +
-   `.btn-lg.btn-block`. Only the wider icon gap and the hover lift are local. */
+   `.btn-block`. Only the wider icon gap and the hover lift are local. */
 .modal-action-btn {
     gap: 0.75rem;
 }
@@ -4224,7 +4230,7 @@ input:checked+.slider-small:before {
     /* Force single line */
 }
 
-/* The two result actions share the row equally; sizing comes from .btn-lg. */
+/* The two result actions share the row equally. */
 .results-actions .btn {
     flex: 1;
     min-width: 0;
@@ -4341,7 +4347,7 @@ input:checked+.slider-small:before {
     width: 100%;
 }
 
-/* Rating buttons are `.btn.btn-lg.btn-flex` + a solid semantic variant
+/* Rating buttons are `.btn.btn-flex` + a solid semantic variant
    (danger / warning / secondary / success). Only the tighter four-up padding
    is local — the hues now come from the palette and follow the theme. */
 .fc-rating-btn {
@@ -4367,9 +4373,10 @@ input:checked+.slider-small:before {
         gap: 0.5rem;
     }
 
+    /* Four labels in one row need the smaller type on narrow screens, but the
+       height stays --btn-h like every other button. */
     .fc-rating-btn {
-        height: 52px;
-        font-size: var(--btn-font-md);
+        font-size: var(--btn-font);
     }
 }
 
@@ -4488,7 +4495,7 @@ input:checked+.slider-small:before {
     gap: 0.4rem;
 }
 
-/* Menu rows inside the sync dropdown: `.btn.btn-subtle.btn-sm.btn-block`,
+/* Menu rows inside the sync dropdown: `.btn.btn-subtle.btn-block`,
    left-aligned. The destructive row swaps the text hue only — it stays a menu
    row rather than becoming a filled danger button. */
 .github-dropdown-btn {
