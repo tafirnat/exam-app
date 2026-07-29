@@ -1630,6 +1630,64 @@ pre code {
     padding: 1rem;
 }
 
+/* --- Cloze (fill in the blank) ---
+   The sentence keeps a numbered marker where each answer belongs, and the
+   inputs below repeat that number, so several blanks stay unambiguous without
+   putting editable fields inside the question text. */
+.cloze-gap {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    min-width: 1.6em;
+    height: 1.6em;
+    padding: 0 0.4em;
+    margin: 0 0.15em;
+    border-radius: 6px;
+    background: color-mix(in srgb, var(--primary-color) 18%, transparent);
+    border: 1px dashed var(--primary-color);
+    color: var(--primary-color);
+    font-size: 0.85em;
+    font-weight: 700;
+    vertical-align: baseline;
+}
+
+.cloze-answer-list {
+    display: flex;
+    flex-direction: column;
+    gap: 0.6rem;
+    margin-top: 0.5rem;
+}
+
+.cloze-answer-row {
+    display: flex;
+    align-items: center;
+    gap: 0.6rem;
+}
+
+.cloze-answer-row .cloze-gap {
+    flex-shrink: 0;
+}
+
+.cloze-input {
+    flex: 1;
+    min-width: 0;
+    font-size: 1.05rem;
+    padding: 0.85rem 1rem;
+}
+
+/* Shown beside a blank the reader got wrong, so the correction sits next to
+   the attempt rather than in a separate feedback block. */
+.cloze-expected {
+    flex-shrink: 0;
+    font-size: 0.85rem;
+    font-weight: 600;
+    color: var(--success-color);
+    max-width: 40%;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
 /* --- Modal --- */
 .modal-overlay {
     position: fixed;
@@ -1731,12 +1789,14 @@ pre code {
     margin-top: 2rem;
 }
 
-.text-input-wrapper input.correct {
+.text-input-wrapper input.correct,
+.cloze-input.correct {
     border-color: var(--success-color) !important;
     background-color: var(--success-bg) !important;
 }
 
-.text-input-wrapper input.wrong {
+.text-input-wrapper input.wrong,
+.cloze-input.wrong {
     border-color: var(--error-color) !important;
     background-color: var(--error-bg) !important;
 }

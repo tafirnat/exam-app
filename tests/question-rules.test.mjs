@@ -1,6 +1,8 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { findQuestionIssues, findContentGaps } from '../src/core/question-rules.js';
+import {
+    findQuestionIssues, findContentGaps, canonicalType, getQuestionCategory
+} from '../src/core/question-rules.js';
 
 const codes = q => findQuestionIssues(q).map(i => i.code);
 
@@ -60,8 +62,42 @@ test('a mark pointing at a missing option does not count', () => {
     assert.deepEqual(codes(choice({ answer: { correct_ids: [99] } })), ['single_correct']);
 });
 
-test('text questions need an accepted answer', () => {
-    assert.deepEqual(codes({ type: 'text_input', content: { text: 'q' }, answer: {} }), ['accepted_required']);
+test('short_answer questions need an accepted answer', () => {
+    assert.deepEqual(codes({ type: 'short_answer', content: { text: 'q' }, answer: {} }), ['accepted_required']);
+    assert.deepEqual(codes({ type: 'short_answer', content: { text: 'q' }, answer: { accepted_texts: ['a'] } }), []);
+});
+
+test('the retired text spellings still resolve to short_answer', () => {
+    for (const legacy of ['text', 'text_input', 'open_ended']) {
+        assert.equal(canonicalType(legacy), 'short_answer', `${legacy} maps to the surviving name`);
+        assert.equal(getQuestionCategory(legacy), 'text', `${legacy} is still gradeable`);
+        assert.deepEqual(
+            codes({ type: legacy, content: { text: 'q' }, answer: { accepted_texts: ['a'] } }), [],
+            `a file written with ${legacy} is not reported as broken`
+        );
+    }
+    assert.equal(canonicalType('short_answer'), 'short_answer', 'and the canonical name is left alone');
+    assert.equal(canonicalType('flashcard'), 'flashcard');
+});
+
+test('fill_in_the_blank is graded from its markers, not accepted_texts', () => {
+    const cloze = (text) => codes({ type: 'fill_in_the_blank', content: { text } });
+
+    assert.deepEqual(cloze("Ankara {{Türkiye'nin}} başkentidir."), []);
+    assert.deepEqual(cloze('HTTP {{80}} ve HTTPS {{443}}.'), [], 'several blanks are fine');
+    assert.deepEqual(cloze('Ankara başkenttir.'), ['cloze_required'], 'a sentence with no gap is not a question');
+    assert.deepEqual(cloze('Ankara {{}} başkentidir.'), ['cloze_empty_blank'], 'an empty marker is caught');
+
+    // accepted_texts is irrelevant here — the sentence is the answer key.
+    assert.deepEqual(
+        codes({ type: 'fill_in_the_blank', content: { text: 'no gap' }, answer: { accepted_texts: ['x'] } }),
+        ['cloze_required']
+    );
+});
+
+test('a cloze issue points at Question Content, where the sentence is edited', () => {
+    const [issue] = findQuestionIssues({ type: 'fill_in_the_blank', content: { text: 'no gap' } });
+    assert.equal(issue.group, 'content');
 });
 
 test('a flashcard needs both sides', () => {

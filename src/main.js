@@ -3,6 +3,7 @@ import { initTheme, toggleTheme } from './core/theme.js';
 import { updateStaticTranslations, t, targetLanguages, translations } from './core/i18n.js';
 import { showToast, showConfirm, getCorrectAnswers, highlightText, escapeHTML } from './core/utils.js';
 import { migrateOldData, migrateFolderColors } from './core/migration.js';
+import { getQuestionCategory } from './core/question-rules.js';
 import { processJSON, loadFromUrl, loadFromFile, normalizeQuestions, mergeSources } from './features/sources/sources-service.js';
 import { renderSourcesList, showMergeModal, closeAllSourcesModals } from './features/sources/sources-ui.js';
 import { initArchiveUI } from './features/sources/archive.js';
@@ -439,7 +440,7 @@ window.renderQuestionPreview = (q, stats = null, source = null) => {
     const container = document.getElementById('previewOptionsContainer');
     container.innerHTML = '';
 
-    const isTextQuestion = ['text', 'text_input', 'open_ended', 'fill_in_the_blank'].includes(q.type);
+    const isTextQuestion = ['text', 'cloze'].includes(getQuestionCategory(q.type));
     const hasUserAnswer = q.userAnswer !== undefined && q.userAnswer !== null;
 
     if (q.type === 'flashcard') {

@@ -1,5 +1,7 @@
 import { AppState, saveStats, saveRecentTests, saveActiveTest, clearActiveTest, saveSources } from '../../core/state.js';
 import { shuffleArray, getCorrectAnswers } from '../../core/utils.js';
+import { getQuestionCategory } from '../../core/question-rules.js';
+import { gradeCloze } from '../../core/cloze.js';
 
 // FSRS v4.5 Simplified Constants
 export const FSRS_W = [0.4, 0.9, 2.3, 10.9, 4.93, 0.94, 0.86, 0.01, 1.49, 0.14, 0.94, 2.18, 0.05, 0.34, 1.26, 0.26, 2.05];
@@ -353,8 +355,15 @@ export function evaluateAnswer(questionIndex, userAnswer) {
     const q = AppState.questionMap[AppState.currentTest[questionIndex]];
     let isCorrect = false;
 
-    if (q.type === 'text' || q.type === 'text_input' || q.type === 'open_ended' || q.type === 'fill_in_the_blank') {
-        const isCaseSensitive = q.answer?.caseSensitive || q.caseSensitive || false;
+    const category = getQuestionCategory(q.type);
+    const isCaseSensitive = q.answer?.caseSensitive || q.caseSensitive || false;
+
+    if (category === 'cloze') {
+        // Every blank must be right; the expected values live in the sentence.
+        return gradeCloze(q.content?.text || q.text || '', userAnswer || [], isCaseSensitive);
+    }
+
+    if (category === 'text') {
         let val = (userAnswer[0] || '').toString().trim();
         if (!isCaseSensitive) val = val.toLowerCase();
 

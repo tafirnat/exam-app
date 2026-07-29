@@ -248,6 +248,29 @@ select.editor-field {
     min-height: 28px;
 }
 
+/* What the {{markers}} in the sentence currently resolve to. Read-only: the
+   sentence in Question Content is where these are actually edited. */
+.cloze-derived-list {
+    margin: 0;
+    padding-left: 1.4rem;
+    display: flex;
+    flex-direction: column;
+    gap: 0.4rem;
+    font-size: 0.85rem;
+    color: var(--text-primary);
+}
+
+.cloze-derived-answer {
+    font-weight: 600;
+}
+
+/* Extra spellings accepted for the same blank. */
+.cloze-derived-alts {
+    margin-left: 0.5rem;
+    font-size: 0.78rem;
+    color: var(--text-secondary);
+}
+
 /* Stand-in shown while the question carries no tags yet. */
 .tag-empty {
     font-size: 0.78rem;

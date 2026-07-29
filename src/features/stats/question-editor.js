@@ -1,11 +1,12 @@
 import { AppState, saveSources, saveStats } from '../../core/state.js';
 import { t } from '../../core/i18n.js';
-import { showToast } from '../../core/utils.js';
+import { showToast, escapeHTML } from '../../core/utils.js';
 // The question type is the single source of truth for this editor: it decides
 // which tabs exist, which fields render, and what a valid question looks like.
 // The rules themselves live in core so the importer applies exactly the same
 // ones — see question-rules.js.
 import { KNOWN_TYPES, getQuestionCategory, findQuestionIssues } from '../../core/question-rules.js';
+import { parseCloze } from '../../core/cloze.js';
 
 let currentEditingQuestion = null;
 let activeGroup = 'general';
@@ -20,6 +21,32 @@ function getGroupsForCategory(category) {
     if (category === 'flashcard') return ['general', 'flashcard'];
     if (category === 'choice') return ['general', 'content', 'options', 'answer'];
     return ['general', 'content', 'answer'];
+}
+
+/* A cloze question's answers live inside its sentence, so the Answer tab shows
+   what the markers currently yield rather than a field to type them into —
+   editing happens in Question Content, where the sentence is. */
+function renderClozePreview() {
+    const text = currentEditingQuestion.content?.text || currentEditingQuestion.text || '';
+    const { blanks } = parseCloze(text);
+
+    if (blanks.length === 0) {
+        return `<div class="code-info-box">${t('cloze_syntax_info')}</div>`;
+    }
+
+    return `
+        <div class="code-info-box">${t('cloze_syntax_info')}</div>
+        <div class="editor-input-group">
+            <label>${t('cloze_derived_label')}</label>
+            <ol class="cloze-derived-list">
+                ${blanks.map(b => `
+                    <li>
+                        <span class="cloze-derived-answer">${escapeHTML(b.answers[0] || '')}</span>
+                        ${b.answers.length > 1 ? `
+                            <span class="cloze-derived-alts">${escapeHTML(b.answers.slice(1).join(' · '))}</span>` : ''}
+                    </li>`).join('')}
+            </ol>
+        </div>`;
 }
 
 /* Bring the question's shape in line with its type. Called when the user
@@ -112,9 +139,12 @@ function renderEditorModal() {
     // The tab strip's layout follows the tab count via .btn-row — never style
     // it here. choice 4 (2×2) · text/reading 3 (2 + 1 full width) · flashcard 2.
     const tabCount = groups.length;
-    // Only the text category edits an answer next to the explanation; for
-    // choice the answer lives in Options, and reading cards have none at all.
-    const answerTabLabel = category === 'text' ? t('group_answer') : t('group_explanation');
+    // Text and cloze show an answer next to the explanation — typed for one,
+    // derived from the sentence for the other. Choice keeps its answer in
+    // Options, and reading cards have none at all.
+    const answerTabLabel = ['text', 'cloze'].includes(category)
+        ? t('group_answer')
+        : t('group_explanation');
 
     const optionsTab = isChoice ? `
                 <button class="btn btn-secondary group-btn ${activeGroup === 'options' ? 'active' : ''}" data-group="options">
@@ -481,6 +511,11 @@ function renderAnswerSection() {
             </div>
             <textarea class="editor-field code-font" id="edit-explanation" style="min-height: 120px;">${q.answer?.explanation || ''}</textarea>
         </div>`;
+
+    // Cloze: the answers are the markers in the sentence, shown read-only.
+    if (category === 'cloze') {
+        return `${renderClozePreview()}${explanationBlock}`;
+    }
 
     // Choice: the correct answer is marked in the Options tab.
     // Reading/topic: prose card, there is nothing to answer.

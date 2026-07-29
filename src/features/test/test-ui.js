@@ -4,6 +4,8 @@ import { translateText, showToast, showConfirm, getCorrectAnswers, escapeHTML } 
 import { t, targetLanguages } from '../../core/i18n.js';
 import { evaluateAnswer, updateStats, updateFlashcardStats, finishTest, calculateRetrievability } from './test-engine.js';
 import { resetTimerForNewQuestion, stopTimer } from './timer-module.js';
+import { getQuestionCategory } from '../../core/question-rules.js';
+import { parseCloze, clozeMarkup, matchesBlank } from '../../core/cloze.js';
 
 // --- TTS State Machine ---
 // States: 'IDLE' | 'SCHEDULED' | 'PLAYING'
@@ -145,7 +147,13 @@ export function renderQuestion(isRefresh = false) {
     const qTextEl = document.getElementById('questionText');
     const rawQText = q.content?.text || q.text || '';
     const isFormattedContent = q.type === 'reading' || q.type === 'topic_review' || q.format === 'html' || /<[a-z][\s\S]*>/i.test(rawQText);
-    qTextEl.innerHTML = isFormattedContent ? rawQText : escapeHTML(rawQText);
+    if (getQuestionCategory(q.type) === 'cloze') {
+        // The sentence is the question: show each {{marker}} as a numbered gap,
+        // and collect the answers underneath in matching order.
+        qTextEl.innerHTML = clozeMarkup(rawQText, isFormattedContent ? (s) => s : escapeHTML);
+    } else {
+        qTextEl.innerHTML = isFormattedContent ? rawQText : escapeHTML(rawQText);
+    }
 
     // Handle Media (Images)
     const card = qTextEl.closest('.question-card');
@@ -316,7 +324,9 @@ export function renderQuestion(isRefresh = false) {
             transBtn.onclick = () => handleTranslation(transBtn, 'flashcardBackText', 'trans_flashcardBackText');
             backFace.appendChild(transBtn);
         }
-    } else if (q.type === 'text' || q.type === 'text_input' || q.type === 'open_ended' || q.type === 'fill_in_the_blank') {
+    } else if (getQuestionCategory(q.type) === 'cloze') {
+        renderClozeAnswer(container, q, qIndex, isChecked);
+    } else if (getQuestionCategory(q.type) === 'text') {
         const val = AppState.userAnswers[qIndex]?.[0] || '';
         const isCorrect = isChecked ? evaluateAnswer(qIndex, [val]) : false;
 
@@ -684,6 +694,56 @@ function renderSummarySection() {
     };
 }
 
+/* One input per blank, numbered to match the gaps shown in the sentence above.
+   Answers are stored positionally, so userAnswers[qIndex][n] belongs to blank n
+   and the grader can check each one against its own marker. */
+function renderClozeAnswer(container, q, qIndex, isChecked) {
+    const text = q.content?.text || q.text || '';
+    const { blanks } = parseCloze(text);
+    const given = AppState.userAnswers[qIndex] || [];
+    const caseSensitive = q.answer?.caseSensitive || q.caseSensitive || false;
+
+    container.innerHTML = `
+        <div class="cloze-answer-list">
+            ${blanks.map(blank => {
+                const value = given[blank.index] ?? '';
+                const ok = isChecked && matchesBlank(blank, value, caseSensitive);
+                const state = isChecked ? (ok ? 'correct' : 'wrong') : '';
+                return `
+                <div class="cloze-answer-row">
+                    <span class="cloze-gap">${blank.index + 1}</span>
+                    <input type="text" class="cloze-input ${state}" data-blank="${blank.index}"
+                        value="${escapeHTML(String(value))}" placeholder="${t('answer_placeholder')}"
+                        ${isChecked ? 'disabled' : ''}
+                        oninput="window.syncClozeInput(${blank.index}, this.value)">
+                    ${isChecked && !ok ? `
+                        <span class="cloze-expected">${escapeHTML(blank.answers[0] || '')}</span>` : ''}
+                </div>`;
+            }).join('')}
+        </div>`;
+
+    if (!isChecked) {
+        container.querySelectorAll('.cloze-input').forEach(input => {
+            input.onkeydown = (e) => {
+                if (e.key === 'Enter') window.handleCheckAnswer();
+            };
+        });
+        container.querySelector('.cloze-input')?.focus();
+    }
+}
+
+window.syncClozeInput = (blankIndex, val) => {
+    const current = AppState.userAnswers[AppState.currentIndex];
+    // Keep it a dense array: a hole would read as "unanswered" for later blanks.
+    const answers = Array.isArray(current) ? [...current] : [];
+    const q = AppState.questionMap[AppState.currentTest[AppState.currentIndex]];
+    const total = parseCloze(q?.content?.text || q?.text || '').blanks.length;
+    while (answers.length < total) answers.push('');
+
+    answers[blankIndex] = val;
+    AppState.userAnswers[AppState.currentIndex] = answers;
+};
+
 window.syncTextInput = (val) => {
     AppState.userAnswers[AppState.currentIndex] = [val];
     // We don't call renderQuestion here to avoid losing focus/cursor pos,
@@ -768,7 +828,17 @@ export const handleCheckAnswer = (forceCheck = false) => {
         return;
     }
 
-    if (q.type === 'text' || q.type === 'text_input' || q.type === 'open_ended' || q.type === 'fill_in_the_blank') {
+    const answerCategory = getQuestionCategory(q.type);
+
+    if (answerCategory === 'cloze') {
+        const inputs = [...document.querySelectorAll('.cloze-input')];
+        if (inputs.length) {
+            userAnswer = inputs.map(i => i.value.trim());
+            // Checking with every blank still empty is almost always a misclick.
+            if (userAnswer.every(v => v === '') && !forceCheck) return;
+            AppState.userAnswers[qIndex] = userAnswer;
+        }
+    } else if (answerCategory === 'text') {
         const input = document.getElementById('textAnswerInput');
         if (input) {
             const val = input.value.trim();

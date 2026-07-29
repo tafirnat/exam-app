@@ -1,10 +1,12 @@
 import { AppState, saveSources } from '../../core/state.js';
 import { getCorrectAnswers, showAlert } from '../../core/utils.js';
 import { t } from '../../core/i18n.js';
-import { KNOWN_TYPES, findContentGaps } from '../../core/question-rules.js';
+import { KNOWN_TYPES, LEGACY_TYPE_ALIASES, canonicalType, findContentGaps } from '../../core/question-rules.js';
 import { showImportReport } from './import-report.js';
 
-const VALID_TYPES = new Set(KNOWN_TYPES);
+// Files written against the old text-type names stay importable; normalizeQuestions
+// rewrites them to short_answer so only one spelling ever reaches storage.
+const VALID_TYPES = new Set([...KNOWN_TYPES, ...Object.keys(LEGACY_TYPE_ALIASES)]);
 
 /* Structural validation only: a file that fails here cannot be read at all, so
    the import is refused outright. Whether the questions are *answerable* is a
@@ -60,6 +62,10 @@ export function validateExamSchema(data) {
 
 export function normalizeQuestions(questions) {
     return questions.map(q => {
+        // text / text_input / open_ended all described the same behaviour; store
+        // the one name so nothing downstream has to know about the other three.
+        if (q.type) q.type = canonicalType(q.type);
+
         // Ensure correctOptionIds is consistently populated
         const answers = getCorrectAnswers(q);
         if (answers.length > 0) {

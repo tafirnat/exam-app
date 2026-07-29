@@ -66,12 +66,46 @@ test('choosing flashcard collapses to two tabs and swaps in the card fields', ()
     assert.ok(document.getElementById('edit-fc-back'));
 });
 
-test('choosing a text type brings back the accepted-answers field', () => {
+test('choosing short_answer brings back the accepted-answers field', () => {
     openReading();
-    setType('text_input');
+    setType('short_answer');
     assert.deepEqual(tabs(), ['general', 'content', 'answer']);
     document.querySelector('[data-group="answer"]').click();
     assert.ok(document.getElementById('edit-accepted-texts'));
+});
+
+test('the retired text spellings are gone from the picker', () => {
+    openReading();
+    const offered = [...typeEl().options].map(o => o.value);
+    for (const retired of ['text', 'text_input', 'open_ended']) {
+        assert.ok(!offered.includes(retired), `${retired} should no longer be offered`);
+    }
+    assert.ok(offered.includes('short_answer'));
+    assert.ok(offered.includes('fill_in_the_blank'));
+});
+
+test('a question stored under a legacy spelling still opens as short answer', () => {
+    openQuestionEditor({
+        id: 'legacy1', sourceId: 's1', type: 'open_ended',
+        content: { text: 'q' }, answer: { accepted_texts: ['a'] }
+    });
+    assert.deepEqual(tabs(), ['general', 'content', 'answer'], 'treated as a text question');
+    document.querySelector('[data-group="answer"]').click();
+    assert.ok(document.getElementById('edit-accepted-texts'));
+    assert.equal(typeEl().value, 'open_ended', 'and the old value is kept until the user changes it');
+});
+
+test('fill_in_the_blank derives its answers from the sentence', () => {
+    openQuestionEditor({
+        id: 'cloze1', sourceId: 's1', type: 'fill_in_the_blank',
+        content: { text: "Ankara {{Türkiye'nin}} başkentidir." }, answer: {}
+    });
+    document.querySelector('[data-group="answer"]').click();
+
+    assert.equal(document.getElementById('edit-accepted-texts'), null,
+        'answers come from the markers, so there is nothing to type here');
+    const derived = [...document.querySelectorAll('.cloze-derived-answer')].map(e => e.textContent);
+    assert.deepEqual(derived, ["Türkiye'nin"]);
 });
 
 test('a tab that the new type does not have cannot stay selected', () => {

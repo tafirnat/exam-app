@@ -14,18 +14,41 @@
    Issue codes double as i18n key suffixes: `validation_<code>`.
    ========================================================================== */
 
+import { hasBlanks, countEmptyBlanks } from './cloze.js';
+
 export const CHOICE_TYPES = ['single_choice', 'multiple_choice', 'true_false'];
-export const TEXT_TYPES = ['text_input', 'text', 'open_ended', 'fill_in_the_blank'];
+export const TEXT_TYPES = ['short_answer'];
+export const CLOZE_TYPES = ['fill_in_the_blank'];
 export const READING_TYPES = ['reading', 'topic_review'];
 export const FLASHCARD_TYPES = ['flashcard'];
 
-export const KNOWN_TYPES = [...CHOICE_TYPES, ...TEXT_TYPES, ...FLASHCARD_TYPES, ...READING_TYPES];
+export const KNOWN_TYPES = [
+    ...CHOICE_TYPES, ...TEXT_TYPES, ...CLOZE_TYPES, ...FLASHCARD_TYPES, ...READING_TYPES
+];
+
+/* text, text_input and open_ended were three names for one behaviour: type an
+   answer, compare it to accepted_texts. They are now spellings of short_answer,
+   accepted on import and rewritten, so files written against the old names keep
+   working while the editor offers a single, honest choice. */
+export const LEGACY_TYPE_ALIASES = {
+    text: 'short_answer',
+    text_input: 'short_answer',
+    open_ended: 'short_answer'
+};
+
+/** The type this question should be stored as, resolving any legacy spelling. */
+export function canonicalType(type) {
+    return LEGACY_TYPE_ALIASES[type] || type;
+}
 
 export function getQuestionCategory(type) {
-    if (CHOICE_TYPES.includes(type)) return 'choice';
-    if (FLASHCARD_TYPES.includes(type)) return 'flashcard';
+    const canonical = canonicalType(type);
+    if (CHOICE_TYPES.includes(canonical)) return 'choice';
+    if (FLASHCARD_TYPES.includes(canonical)) return 'flashcard';
     // Reading/topic cards are prose only — no options and no answer to check.
-    if (READING_TYPES.includes(type)) return 'reading';
+    if (READING_TYPES.includes(canonical)) return 'reading';
+    // Cloze carries its answers inside the sentence, not in accepted_texts.
+    if (CLOZE_TYPES.includes(canonical)) return 'cloze';
     return 'text';
 }
 
@@ -106,6 +129,19 @@ export function findQuestionIssues(q) {
 
     if (category === 'text' && readAcceptedTexts(q).length === 0) {
         issues.push({ code: 'accepted_required', group: 'answer' });
+    }
+
+    if (category === 'cloze') {
+        // The sentence is the question and the answer key at once. An empty
+        // marker is the more specific diagnosis and must be reported as such —
+        // "there are no markers" would be a confusing thing to say about
+        // "Ankara {{}} başkentidir.", where the marker is right there.
+        const text = getText(q);
+        if (countEmptyBlanks(text) > 0) {
+            issues.push({ code: 'cloze_empty_blank', group: 'content' });
+        } else if (!hasBlanks(text)) {
+            issues.push({ code: 'cloze_required', group: 'content' });
+        }
     }
 
     return issues;
