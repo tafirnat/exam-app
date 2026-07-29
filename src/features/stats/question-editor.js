@@ -106,7 +106,7 @@ function renderEditorModal() {
     const isChoice = category === 'choice';
     const isFlashcard = category === 'flashcard';
     // The tab strip's layout follows the tab count via .btn-row — never style
-    // it here. choice 4 (2×2) · text/reading 3 (one row) · flashcard 2.
+    // it here. choice 4 (2×2) · text/reading 3 (2 + 1 full width) · flashcard 2.
     const tabCount = groups.length;
     // Only the text category edits an answer next to the explanation; for
     // choice the answer lives in Options, and reading cards have none at all.

@@ -565,8 +565,9 @@ textarea {
               chips inline inside a text row — never to shrink a normal button.
    Layout:    btn-block (full width) · btn-flex (equal share of a flex row) ·
               btn-pill (fully rounded) · btn-auto-h (multi-line content)
-   Groups:    btn-row + data-count="N" — N equal buttons; 1-3 stay on one
-              row, 4+ wrap to a 2-up grid. Never set the columns inline.
+   Groups:    btn-row + data-count="N" — N equal buttons; at most two share a
+              row, 3+ wrap to a 2-up grid and an odd last button spans full
+              width. Never set the columns inline.
 
    To add a new button type: pick a variant + size here. Do not re-declare
    padding, radius, weight or transitions on the consuming class.
@@ -656,14 +657,21 @@ textarea {
 
 /* --- Button rows -------------------------------------------------------
    A group of equal-weight buttons. The wrap point is a property of the
-   group, not of the screen it happens to be on: at most three buttons fit
-   one row on a phone, so four or more always break into a 2-up grid.
+   group, not of the screen it happens to be on: two full labels are what
+   fits a modal column, so three or more always break into a 2-up grid.
 
-       <div class="btn-row" data-count="4"> … </div>
+       <div class="btn-row" data-count="3"> … </div>
+
+           [ A ][ B ]
+           [   C    ]
 
    Set data-count to the number of buttons actually rendered. Callers must
    not override grid-template-columns inline — that is exactly the drift
-   this rule exists to prevent. */
+   this rule exists to prevent.
+
+   Three-up was the earlier rule and it did not survive contact: at the 600px
+   editor width "Answer & Explanation" was clipped mid-word in its third of
+   the row. A label that cannot be read is not a button. */
 .btn-row {
     display: grid;
     grid-template-columns: repeat(var(--btn-row-cols, 2), minmax(0, 1fr));
@@ -675,18 +683,15 @@ textarea {
 .btn-row > .btn {
     min-width: 0;
     overflow: hidden;
-    text-overflow: ellipsis;
 }
 
 .btn-row[data-count="1"] { --btn-row-cols: 1; }
-.btn-row[data-count="2"] { --btn-row-cols: 2; }
-.btn-row[data-count="3"] { --btn-row-cols: 3; }
-/* 4+ → 2-up. The rows stay even because every button is --btn-h tall. */
+/* 2+ → 2-up. The rows stay even because every button is --btn-h tall. */
 
-/* Narrow phones cannot hold three full-width labels side by side; a
-   three-up row is the only case that needs to collapse further. */
-@media (max-width: 480px) {
-    .btn-row[data-count="3"] { --btn-row-cols: 1; }
+/* An odd count leaves a single button on the last row; let it take the full
+   width so the row reads as deliberate rather than as a gap. */
+.btn-row > .btn:nth-child(odd):last-child {
+    grid-column: 1 / -1;
 }
 
 /* --- Solid variants ----------------------------------------------------

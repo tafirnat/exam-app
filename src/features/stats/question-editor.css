@@ -66,8 +66,8 @@
 }
 
 /* `.btn-row` in markup — the column count comes from data-count, so the tab
-   strip wraps at the same threshold as every other button group. Only the
-   spacing below it is local. */
+   strip wraps at the same threshold as every other button group: two per row,
+   and a lone third tab spans the width below them. Only the spacing is local. */
 .editor-group-nav {
     margin-bottom: 1.5rem;
 }
