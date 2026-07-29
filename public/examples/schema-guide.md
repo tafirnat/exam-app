@@ -1,6 +1,7 @@
 # AI Exam Generation Guide (JSON Schema)
 
 This guide provides the necessary technical details for an AI to generate valid JSON files compatible with the Exam App.
+For a complete, copy-pasteable system prompt directive tailored for AI models (ChatGPT, Claude, Gemini, DeepSeek), see **[AI_AGENT_PROMPT.md](../../AI_AGENT_PROMPT.md)**.
 
 ## Root Structure
 The JSON must be a single object containing two main keys:

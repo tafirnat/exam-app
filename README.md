@@ -164,7 +164,14 @@ The application reads exam data through a standard JSON structure. You can follo
   ]
 }
 ```
-*Full template available in [public/examples/standard-exam.json](./public/examples/standard-exam.json).*
+*Full schema and prompt guide for external AI models available in [AI_AGENT_PROMPT.md](./AI_AGENT_PROMPT.md) and [schema-guide.md](./public/examples/schema-guide.md).*
+
+## 🤖 Generating Content with AI Agents
+
+To generate compatible JSON question sets using external AI services (ChatGPT, Claude, Gemini, DeepSeek, etc.):
+1. Point your AI agent to or copy the contents of **[AI_AGENT_PROMPT.md](./AI_AGENT_PROMPT.md)**.
+2. Provide your learning materials, raw texts, or repository link.
+3. The AI agent will produce 100% schema-compliant JSON ready for instant import or sync in Exam App.
 
 ## 🤖 Development & Transparency
 
