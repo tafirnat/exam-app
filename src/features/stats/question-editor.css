@@ -36,11 +36,23 @@
     border: 1px solid rgba(255, 255, 255, 0.1);
 }
 
+/* The header stacks: the title row, and under it the validation message when a
+   save is refused. */
 .editor-header {
     margin-bottom: 1.5rem;
+}
+
+.editor-header-row {
     display: flex;
     align-items: center;
     justify-content: space-between;
+    gap: 0.75rem;
+}
+
+.editor-id {
+    font-size: 0.75rem;
+    color: var(--text-secondary);
+    white-space: nowrap;
 }
 
 .editor-title {
@@ -188,14 +200,39 @@ select.editor-field {
     gap: 1rem;
 }
 
-.code-info-box {
-    background: rgba(56, 189, 248, 0.1);
-    border-left: 4px solid var(--primary-color);
+/* Notice boxes in the editor share one shape; only the hue carries the meaning.
+   .code-info-box explains, .editor-error blocks. */
+.code-info-box,
+.editor-error {
+    border-left: 4px solid;
     padding: 0.75rem;
     border-radius: 0 8px 8px 0;
     font-size: 0.8rem;
-    color: var(--text-primary);
     line-height: 1.4;
+}
+
+.code-info-box {
+    background: rgba(56, 189, 248, 0.1);
+    border-left-color: var(--primary-color);
+    color: var(--text-primary);
+}
+
+/* Same tint strength as the issue chips in the import report, so "something is
+   wrong here" reads identically wherever it appears. */
+.editor-error {
+    display: flex;
+    align-items: flex-start;
+    gap: 0.5rem;
+    margin-top: 0.85rem;
+    background: color-mix(in srgb, var(--error-color) 14%, transparent);
+    border-left-color: var(--error-color);
+    color: var(--error-color);
+    font-weight: 600;
+}
+
+.editor-error svg {
+    flex-shrink: 0;
+    margin-top: 1px;
 }
 
 .tag-manager {

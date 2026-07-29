@@ -97,3 +97,46 @@ test('an unrecognised type is preserved rather than coerced', () => {
     openQuestionEditor({ id: 'x1', sourceId: 's1', type: 'weird_type', content: { text: 'hi' } });
     assert.equal(typeEl().value, 'weird_type');
 });
+
+/* A toast cannot be seen above the editor overlay, so a refused save has to say
+   why inside the modal or it looks like the button is simply dead. */
+const save = () => document.getElementById('editor-save-btn').click();
+const errorText = () => document.querySelector('.editor-header .editor-error')?.textContent.trim() ?? null;
+
+test('a refused save explains itself in the header', () => {
+    openQuestionEditor({ id: 'e1', sourceId: 's1', type: 'reading', content: { text: '' } });
+    assert.equal(errorText(), null, 'nothing is shown before the first attempt');
+
+    save();
+    assert.ok(errorText(), 'the header carries a reason, not silence');
+    assert.ok(document.getElementById('section-content').classList.contains('active'),
+        'and lands on the tab that fixes it');
+});
+
+test('the message names the actual problem', () => {
+    openQuestionEditor({
+        id: 'e2', sourceId: 's1', type: 'single_choice',
+        content: { text: 'q' }, options: [{ id: 1, text: 'a' }, { id: 2, text: 'b' }], answer: {}
+    });
+    save();
+    assert.match(errorText(), /correct/i, 'no correct option marked');
+    assert.ok(document.getElementById('section-options').classList.contains('active'));
+});
+
+test('acting on the message retires it', () => {
+    openQuestionEditor({ id: 'e3', sourceId: 's1', type: 'reading', content: { text: '' } });
+    save();
+    assert.ok(errorText());
+
+    document.querySelector('[data-group="general"]').click();
+    assert.equal(errorText(), null, 'navigating dismisses it');
+
+    save();
+    assert.ok(errorText(), 'and the next attempt raises it again while still true');
+});
+
+test('a sound question saves without an error ever appearing', () => {
+    openQuestionEditor({ id: 'e4', sourceId: 's1', type: 'reading', content: { text: 'prose' } });
+    save();
+    assert.equal(errorText(), null);
+});

@@ -9,6 +9,10 @@ import { KNOWN_TYPES, getQuestionCategory, findQuestionIssues } from '../../core
 
 let currentEditingQuestion = null;
 let activeGroup = 'general';
+/* Why a save was refused, shown in the editor header. It has to live inside the
+   modal: showToast() paints at z-index 1000, well under the editor overlay's
+   10005, so a toast raised from here would never be seen. */
+let editorError = null;
 
 // Tab order is fixed; only membership varies by category, so a tab never moves
 // position between question types.
@@ -79,6 +83,7 @@ export function openQuestionEditor(question) {
     }
 
     activeGroup = 'general';
+    editorError = null;
     renderEditorModal();
 }
 
@@ -140,8 +145,15 @@ function renderEditorModal() {
     overlay.innerHTML = `
         <div class="editor-card">
             <div class="editor-header">
-                <h3 class="editor-title">${t('edit_question_title')}</h3>
-                <div style="font-size: 0.75rem; color: var(--text-secondary);">ID: ${currentEditingQuestion.id}</div>
+                <div class="editor-header-row">
+                    <h3 class="editor-title">${t('edit_question_title')}</h3>
+                    <div class="editor-id">ID: ${currentEditingQuestion.id}</div>
+                </div>
+                ${editorError ? `
+                <div class="editor-error" role="alert">
+                    <svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" stroke-width="2.2"><circle cx="12" cy="12" r="10"></circle><line x1="12" y1="8" x2="12" y2="12"></line><line x1="12" y1="16" x2="12.01" y2="16"></line></svg>
+                    <span>${editorError}</span>
+                </div>` : ''}
             </div>
 
             <div class="btn-row editor-group-nav" data-count="${tabCount}">
@@ -504,11 +516,16 @@ function renderTagSuggestions() {
 function setupEditorListeners() {
     const overlay = document.getElementById('questionEditorOverlay');
     
+    // The message reports why the last save was refused, so any move the user
+    // makes in response retires it; the next save re-raises it if still true.
+    const dismissError = () => { editorError = null; };
+
     // Group navigation
     overlay.querySelectorAll('.group-btn').forEach(btn => {
         btn.onclick = () => {
             syncDataFromInputs(); // Sync before switching
             activeGroup = btn.dataset.group;
+            dismissError();
             renderEditorModal();
         };
     });
@@ -521,6 +538,7 @@ function setupEditorListeners() {
         typeSelect.onchange = () => {
             syncDataFromInputs();
             normalizeForType();
+            dismissError();
             renderEditorModal();
         };
     }
@@ -588,6 +606,7 @@ function setupEditorListeners() {
                 text: '',
                 media: []
             });
+            dismissError();
             renderEditorModal();
         };
     }
@@ -598,6 +617,7 @@ function setupEditorListeners() {
             syncDataFromInputs();
             const idx = parseInt(btn.dataset.idx);
             currentEditingQuestion.options.splice(idx, 1);
+            dismissError();
             renderEditorModal();
         };
     });
@@ -609,12 +629,14 @@ function setupEditorListeners() {
     document.getElementById('editor-save-btn').onclick = () => {
         syncDataFromInputs();
         // Refuse to persist a question that contradicts its own type, and land
-        // the user on the tab that needs fixing rather than just complaining.
+        // the user on the tab that needs fixing with the reason in the header —
+        // previously this failed silently, since a toast cannot show above the
+        // editor overlay.
         const problem = validateQuestion();
         if (problem) {
             activeGroup = problem.group;
+            editorError = problem.message;
             renderEditorModal();
-            showToast(problem.message);
             return;
         }
         applyChangesToState();
