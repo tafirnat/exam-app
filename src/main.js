@@ -376,7 +376,9 @@ window.renderQuestionPreview = (q, stats = null, source = null) => {
 
     const kw = AppState.searchKeyword || '';
     const qTextEl = document.getElementById('previewQuestionText');
-    qTextEl.innerHTML = highlightText(q.content?.text || q.text || '', kw);
+    const rawQText = q.content?.text || q.text || '';
+    const isFormattedContent = q.type === 'reading' || q.type === 'topic_review' || q.format === 'html' || /<[a-z][\s\S]*>/i.test(rawQText);
+    qTextEl.innerHTML = isFormattedContent ? rawQText : highlightText(rawQText, kw);
 
     // Handle Media (Images)
     const card = qTextEl.closest('.question-card');
@@ -440,7 +442,26 @@ window.renderQuestionPreview = (q, stats = null, source = null) => {
     const isTextQuestion = ['text', 'text_input', 'open_ended', 'fill_in_the_blank'].includes(q.type);
     const hasUserAnswer = q.userAnswer !== undefined && q.userAnswer !== null;
 
-    if (q.options && q.options.length > 0 && !isTextQuestion) {
+    if (q.type === 'flashcard') {
+        const rawBack = q.answer?.back || '';
+        const isBackHtml = q.format === 'html' || /<[a-z][\s\S]*>/i.test(rawBack);
+        const backContentHtml = isBackHtml ? rawBack : escapeHTML(rawBack);
+
+        container.innerHTML = `
+            <div class="flashcard-face flashcard-back" style="width: 100%;">
+                <span class="flashcard-label">${t('flashcard_back')}</span>
+                <div class="flashcard-text" id="previewFlashcardBackText">${backContentHtml}</div>
+                <div class="translation-text" id="trans_previewFlashcardBackText" style="display:none;"></div>
+            </div>
+        `;
+
+        const backFace = container.querySelector('.flashcard-back');
+        const transBtn = document.createElement('button');
+        transBtn.className = 'corner-translate-btn';
+        transBtn.innerHTML = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M5 8l6 6"></path><path d="M4 14l6-6 2-3"></path><path d="M2 5h12"></path><path d="M7 2h1"></path><path d="M22 22l-5-10-5 10"></path><path d="M14 18h6"></path></svg>';
+        transBtn.onclick = () => handleTranslation(transBtn, 'previewFlashcardBackText', 'trans_previewFlashcardBackText');
+        backFace.appendChild(transBtn);
+    } else if (q.options && q.options.length > 0 && !isTextQuestion) {
         const userSelection = hasUserAnswer ? (Array.isArray(q.userAnswer) ? q.userAnswer.map(String) : [String(q.userAnswer)]) : [];
         const correctAnswers = getCorrectAnswers(q).map(String);
 
@@ -466,7 +487,8 @@ window.renderQuestionPreview = (q, stats = null, source = null) => {
             const content = document.createElement('div');
             content.className = 'option-content';
             content.id = `previewOptText_${opt.id}`;
-            content.innerHTML = highlightText(opt.text, kw);
+            const isOptHtml = /<[a-z][\s\S]*>/i.test(opt.text || '');
+            content.innerHTML = isOptHtml ? opt.text : highlightText(opt.text, kw);
 
             const trans = document.createElement('div');
             trans.className = 'translation-text';
@@ -620,7 +642,8 @@ window.renderQuestionPreview = (q, stats = null, source = null) => {
             }
             previewNoteArea.classList.remove('visible');
         } else if (hasExplanation) {
-            previewInputEl.innerHTML = q.answer.explanation;
+            const isExpHtml = /<[a-z][\s\S]*>/i.test(q.answer.explanation || '');
+            previewInputEl.innerHTML = isExpHtml ? q.answer.explanation : escapeHTML(q.answer.explanation);
             if (previewLabelEl) {
                 previewLabelEl.removeAttribute('data-i18n');
                 previewLabelEl.innerText = t('explanation_label') || 'Explanation:';
