@@ -1040,7 +1040,8 @@ function setupEventListeners() {
         const { question, stats, source } = e.detail;
         AppState.previewQuestionId = question.id;
         AppState.previewQuestion = question;
-        switchView('statsPreview');
+        // renderQuestionPreview switches the view itself; calling it here too
+        // was the second of the duplicated history entries.
         renderQuestionPreview(question, stats, source);
     });
 
@@ -1418,7 +1419,14 @@ function switchView(view, isBack = false) {
 
     // History API integration
     if (!isBack) {
-        history.pushState({ view }, '', `#${view}`);
+        // Only push when the view actually changes. Re-rendering the current
+        // view calls switchView again (the TTS refresh, saving in the question
+        // editor, the show-stats-preview listener), and each of those used to
+        // stack another identical entry — so the first Back press moved between
+        // two states that render the same screen and the button looked dead.
+        if (history.state?.view !== view) {
+            history.pushState({ view }, '', `#${view}`);
+        }
 
         // Update AppState view history (avoid consecutive duplicates)
         if (AppState.viewHistory[0]?.view !== view) {
