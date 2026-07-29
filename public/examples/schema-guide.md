@@ -90,10 +90,10 @@ The answers live inside the sentence, in double braces. There is no
 - `answer.back`: the back.
 - Nothing is graded. The reader self-rates, and that rating drives scheduling.
 
-### Reading — `reading`, `topic_review`
+### Reading — `reading`
 Prose cards with no answer and no options. `content.text` is rendered as HTML,
 so headings, lists, `<code>` and `<pre>` blocks all work. Use `explanation` for
-a note shown alongside.
+a note shown alongside. (The legacy spelling `topic_review` is converted to `reading` on import).
 
 ---
 

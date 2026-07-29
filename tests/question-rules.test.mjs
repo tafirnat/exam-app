@@ -1,7 +1,7 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import {
-    findQuestionIssues, findContentGaps, canonicalType, getQuestionCategory
+    findQuestionIssues, findContentGaps, canonicalType, getQuestionCategory, KNOWN_TYPES
 } from '../src/core/question-rules.js';
 
 const codes = q => findQuestionIssues(q).map(i => i.code);
@@ -67,7 +67,7 @@ test('short_answer questions need an accepted answer', () => {
     assert.deepEqual(codes({ type: 'short_answer', content: { text: 'q' }, answer: { accepted_texts: ['a'] } }), []);
 });
 
-test('the retired text spellings still resolve to short_answer', () => {
+test('the retired type spellings still resolve to canonical types', () => {
     for (const legacy of ['text', 'text_input', 'open_ended']) {
         assert.equal(canonicalType(legacy), 'short_answer', `${legacy} maps to the surviving name`);
         assert.equal(getQuestionCategory(legacy), 'text', `${legacy} is still gradeable`);
@@ -76,6 +76,9 @@ test('the retired text spellings still resolve to short_answer', () => {
             `a file written with ${legacy} is not reported as broken`
         );
     }
+    assert.equal(canonicalType('topic_review'), 'reading', 'topic_review maps to reading');
+    assert.equal(getQuestionCategory('topic_review'), 'reading', 'topic_review is treated as prose card');
+    assert.ok(!KNOWN_TYPES.includes('topic_review'), 'topic_review is no longer in KNOWN_TYPES');
     assert.equal(canonicalType('short_answer'), 'short_answer', 'and the canonical name is left alone');
     assert.equal(canonicalType('flashcard'), 'flashcard');
 });

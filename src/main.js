@@ -370,7 +370,7 @@ window.renderQuestionPreview = (q, stats = null, source = null) => {
     const kw = AppState.searchKeyword || '';
     const qTextEl = document.getElementById('previewQuestionText');
     const rawQText = q.content?.text || q.text || '';
-    const isFormattedContent = q.type === 'reading' || q.type === 'topic_review' || q.format === 'html' || /<[a-z][\s\S]*>/i.test(rawQText);
+    const isFormattedContent = getQuestionCategory(q.type) === 'reading' || q.format === 'html' || /<[a-z][\s\S]*>/i.test(rawQText);
     qTextEl.innerHTML = isFormattedContent ? rawQText : highlightText(rawQText, kw);
 
     // Handle Media (Images)

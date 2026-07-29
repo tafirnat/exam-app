@@ -19,21 +19,22 @@ import { hasBlanks, countEmptyBlanks } from './cloze.js';
 export const CHOICE_TYPES = ['single_choice', 'multiple_choice', 'true_false'];
 export const TEXT_TYPES = ['short_answer'];
 export const CLOZE_TYPES = ['fill_in_the_blank'];
-export const READING_TYPES = ['reading', 'topic_review'];
+export const READING_TYPES = ['reading'];
 export const FLASHCARD_TYPES = ['flashcard'];
 
 export const KNOWN_TYPES = [
     ...CHOICE_TYPES, ...TEXT_TYPES, ...CLOZE_TYPES, ...FLASHCARD_TYPES, ...READING_TYPES
 ];
 
-/* text, text_input and open_ended were three names for one behaviour: type an
-   answer, compare it to accepted_texts. They are now spellings of short_answer,
-   accepted on import and rewritten, so files written against the old names keep
-   working while the editor offers a single, honest choice. */
+/* Legacy type names accepted on import and rewritten to canonical spellings,
+   so files written against old names keep working while the editor offers a
+   single, honest choice. text/text_input/open_ended retired to short_answer;
+   topic_review retired to reading as two names described one behaviour. */
 export const LEGACY_TYPE_ALIASES = {
     text: 'short_answer',
     text_input: 'short_answer',
-    open_ended: 'short_answer'
+    open_ended: 'short_answer',
+    topic_review: 'reading'
 };
 
 /** The type this question should be stored as, resolving any legacy spelling. */

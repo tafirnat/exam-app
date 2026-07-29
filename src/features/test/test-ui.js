@@ -146,7 +146,7 @@ export function renderQuestion(isRefresh = false) {
     document.getElementById('progressText').innerText = `${t('question_label')} ${qIndex + 1} / ${AppState.currentTest.length}`;
     const qTextEl = document.getElementById('questionText');
     const rawQText = q.content?.text || q.text || '';
-    const isFormattedContent = q.type === 'reading' || q.type === 'topic_review' || q.format === 'html' || /<[a-z][\s\S]*>/i.test(rawQText);
+    const isFormattedContent = getQuestionCategory(q.type) === 'reading' || q.format === 'html' || /<[a-z][\s\S]*>/i.test(rawQText);
     if (getQuestionCategory(q.type) === 'cloze') {
         // The sentence is the question: show each {{marker}} as a numbered gap,
         // and collect the answers underneath in matching order.

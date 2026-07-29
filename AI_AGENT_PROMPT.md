@@ -194,7 +194,7 @@ Answers are embedded directly inside `content.text` using double braces `{{ ... 
 
 ---
 
-### Family D: Flashcard (`flashcard`) & Reading (`reading` / `topic_review`)
+### Family D: Flashcard (`flashcard`) & Reading (`reading`)
 
 Self-rated or prose items for review.
 
@@ -217,8 +217,8 @@ Self-rated or prose items for review.
 }
 ```
 
-#### 2. `reading` (or `topic_review`)
-- Educational text or summary note without graded questions.
+#### 2. `reading`
+- Educational text or summary note without graded questions (the legacy spelling `topic_review` is also accepted on import and converted to `reading`).
 - `content.text`: Formatted HTML prose block.
 
 ```json

@@ -74,14 +74,15 @@ test('choosing short_answer brings back the accepted-answers field', () => {
     assert.ok(document.getElementById('edit-accepted-texts'));
 });
 
-test('the retired text spellings are gone from the picker', () => {
+test('the retired type spellings are gone from the picker', () => {
     openReading();
     const offered = [...typeEl().options].map(o => o.value);
-    for (const retired of ['text', 'text_input', 'open_ended']) {
+    for (const retired of ['text', 'text_input', 'open_ended', 'topic_review']) {
         assert.ok(!offered.includes(retired), `${retired} should no longer be offered`);
     }
     assert.ok(offered.includes('short_answer'));
     assert.ok(offered.includes('fill_in_the_blank'));
+    assert.ok(offered.includes('reading'));
 });
 
 test('a question stored under a legacy spelling still opens as short answer', () => {
@@ -93,6 +94,15 @@ test('a question stored under a legacy spelling still opens as short answer', ()
     document.querySelector('[data-group="answer"]').click();
     assert.ok(document.getElementById('edit-accepted-texts'));
     assert.equal(typeEl().value, 'open_ended', 'and the old value is kept until the user changes it');
+});
+
+test('a question stored under topic_review still opens as reading', () => {
+    openQuestionEditor({
+        id: 'legacy_topic', sourceId: 's1', type: 'topic_review',
+        content: { text: 'prose' }, answer: { explanation: 'e' }
+    });
+    assert.deepEqual(tabs(), ['general', 'content', 'answer'], 'treated as a reading question');
+    assert.equal(typeEl().value, 'topic_review', 'and the old value is kept until the user changes it');
 });
 
 test('fill_in_the_blank derives its answers from the sentence', () => {

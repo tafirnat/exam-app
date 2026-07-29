@@ -12,8 +12,9 @@
       "category": "Genel Bakış",
       "tags": ["rehber", "buradan-basla"],
       "starred": true,
+      "flagged": true,
       "content": {
-        "text": "<h3>Hoş geldiniz</h3><p>Bu kaynakta uygulamanın desteklediği her tipten bir soru var. Bir kez baştan sona gezerseniz bir JSON dosyasının içerebileceği her şeyi görmüş olursunuz.</p><h4>Sekiz tip</h4><ul><li><strong>reading</strong> ve <strong>topic_review</strong> — cevabı olmayan okuma kartları. Okur, konuyu ne kadar bildiğinizi kendiniz puanlarsınız.</li><li><strong>single_choice</strong>, <strong>multiple_choice</strong>, <strong>true_false</strong> — bir veya birden fazla şıkkı doğru işaretlenmiş seçenek listeleri.</li><li><strong>short_answer</strong> — cevabı siz yazarsınız, kabul edilen yazımlarla karşılaştırılır.</li><li><strong>fill_in_the_blank</strong> — cevap cümlenin içinde durur.</li><li><strong>flashcard</strong> — ön ve arka yüz; puanlanmazsınız, kendinizi puanlarsınız.</li></ul><blockquote><p>Herhangi bir soruyu düzenleyicide açıp nasıl kurulduğuna bakın, sonra bu dosyayı kendi dosyanız için şablon olarak kullanın.</p></blockquote>"
+        "text": "<h3>Hoş geldiniz</h3><p>Bu kaynakta uygulamanın desteklediği her tipten bir soru var. Bir kez baştan sona gezerseniz bir JSON dosyasının içerebileceği her şeyi görmüş olursunuz.</p><h4>Yedi tip</h4><ul><li><strong>reading</strong> — cevabı olmayan okuma kartları. Okur, konuyu ne kadar bildiğinizi kendiniz puanlarsınız.</li><li><strong>single_choice</strong>, <strong>multiple_choice</strong>, <strong>true_false</strong> — bir veya birden fazla şıkkı doğru işaretlenmiş seçenek listeleri.</li><li><strong>short_answer</strong> — cevabı siz yazarsınız, kabul edilen yazımlarla karşılaştırılır.</li><li><strong>fill_in_the_blank</strong> — cevap cümlenin içinde durur.</li><li><strong>flashcard</strong> — ön ve arka yüz; puanlanmazsınız, kendinizi puanlarsınız.</li></ul><h4>Alan başvurusu</h4><p>Yalnızca <code>id</code>, <code>type</code> ve soru metni zorunludur. Aşağıdakilerin hepsi isteğe bağlıdır — bu dosya bazılarını bilerek boş bırakıyor ki en sade sorunun nasıl göründüğünü görebilesiniz.</p><ul><li><code>category</code> — gruplama etiketi</li><li><code>tags</code> — dizi hâlinde etiketler; aranabilir ve filtrelenebilir</li><li><code>difficulty</code> — 1 ile 5 arası, tekrar algoritmasını besler</li><li><code>starred</code> / <code>flagged</code> — sorunun üstünde görünen iki işaret</li><li><code>answer.explanation</code> — kontrol sonrası gösterilir, her tipte çalışır</li><li><code>content.media</code> — metnin üstüne ya da altına yerleşen görsel veya video</li></ul><h4>Tipe göre cevap alanı</h4><ul><li>şıklı tipler → <code>answer.correct_ids</code></li><li>short_answer → <code>answer.accepted_texts</code></li><li>fill_in_the_blank → metnin içindeki <code>{{işaretler}}</code></li><li>flashcard → <code>answer.back</code></li><li>reading → hiç cevap yok</li></ul><blockquote><p>Herhangi bir soruyu düzenleyicide açıp nasıl kurulduğuna bakın, sonra bu dosyayı kendi dosyanız için şablon olarak kullanın.</p></blockquote>"
       },
       "answer": {
         "explanation": "Okuma kartlarının cevabı yoktur. Konuyu test etmeden önce okumak için vardırlar."
@@ -117,19 +118,6 @@
       },
       "answer": {
         "back": "Hiçbir şey puanlanmaz. Arka yüzü açar, kendinizi Tekrar / Zor / Normal / Kolay diye değerlendirirsiniz; kartın ne zaman geri geleceğine o değerlendirme karar verir."
-      }
-    },
-    {
-      "id": "sample_topic_review",
-      "type": "topic_review",
-      "category": "Başvuru",
-      "tags": ["kopya-kagidi", "sema"],
-      "flagged": true,
-      "content": {
-        "text": "<h3>Alan başvurusu</h3><p>Yalnızca <code>id</code>, <code>type</code> ve soru metni zorunludur. Aşağıdakilerin hepsi isteğe bağlıdır — bu dosya bazılarını bilerek boş bırakıyor ki en sade sorunun nasıl göründüğünü görebilesiniz.</p><ul><li><code>category</code> — gruplama etiketi</li><li><code>tags</code> — dizi hâlinde etiketler; aranabilir ve filtrelenebilir</li><li><code>difficulty</code> — 1 ile 5 arası, tekrar algoritmasını besler</li><li><code>starred</code> / <code>flagged</code> — sorunun üstünde görünen iki işaret</li><li><code>answer.explanation</code> — kontrol sonrası gösterilir, her tipte çalışır</li><li><code>content.media</code> — metnin üstüne ya da altına yerleşen görsel veya video</li></ul><h4>Tipe göre cevap alanı</h4><ul><li>şıklı tipler → <code>answer.correct_ids</code></li><li>short_answer → <code>answer.accepted_texts</code></li><li>fill_in_the_blank → metnin içindeki <code>{{işaretler}}</code></li><li>flashcard → <code>answer.back</code></li><li>reading / topic_review → hiç cevap yok</li></ul>"
-      },
-      "answer": {
-        "explanation": "İlk dosyanızı yazarken bu kartı bayraklı bırakın, şemaya alıştıktan sonra bayrağı kaldırın."
       }
     }
   ]

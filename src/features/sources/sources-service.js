@@ -4,8 +4,8 @@ import { t } from '../../core/i18n.js';
 import { KNOWN_TYPES, LEGACY_TYPE_ALIASES, canonicalType, findContentGaps } from '../../core/question-rules.js';
 import { showImportReport } from './import-report.js';
 
-// Files written against the old text-type names stay importable; normalizeQuestions
-// rewrites them to short_answer so only one spelling ever reaches storage.
+// Files written against legacy type names stay importable; normalizeQuestions
+// rewrites them to their canonical spellings so only honest types reach storage.
 const VALID_TYPES = new Set([...KNOWN_TYPES, ...Object.keys(LEGACY_TYPE_ALIASES)]);
 
 /* Structural validation only: a file that fails here cannot be read at all, so
