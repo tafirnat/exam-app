@@ -1,4 +1,4 @@
-import { AppState, saveStats, saveSources, saveCurrentSource, saveCustomAIPrompt, saveAiProviders, DEFAULT_AI_PROVIDERS, saveActiveTest, clearActiveTest } from './core/state.js';
+import { AppState, saveStats, saveSources, saveCurrentSource, saveCustomAIPrompt, saveAiProviders, DEFAULT_AI_PROVIDERS, saveActiveTest, clearActiveTest, clearLocalStudyData } from './core/state.js';
 import { initTheme, toggleTheme } from './core/theme.js';
 import { updateStaticTranslations, t, targetLanguages, translations } from './core/i18n.js';
 import { showToast, showConfirm, getCorrectAnswers, highlightText } from './core/utils.js';
@@ -11,7 +11,7 @@ import { renderQuestion, handleCheckAnswer, updateIndicators, handleTranslation,
 import { renderStatsList, updateHomeStats, setupStatsEventListeners } from './features/stats/stats-module.js';
 import { openQuestionEditor, closeQuestionEditor } from './features/stats/question-editor.js';
 import { initTimer, stopTimer } from './features/test/timer-module.js';
-import { initSync } from './core/github-sync.js';
+import { initSync, syncToGist } from './core/github-sync.js';
 
 
 
@@ -685,9 +685,15 @@ function handleResetInputChange(e) {
     }
 }
 
-function executeFactoryReset() {
+async function executeFactoryReset() {
     try {
-        localStorage.clear();
+        clearLocalStudyData();
+
+        // If GitHub sync is connected, push clean payload to GitHub Gist as well
+        if (AppState.githubToken && AppState.githubGistId) {
+            await syncToGist({ silent: true });
+        }
+
         window.location.reload();
     } catch (err) {
         console.error('Failed to reset app:', err);
