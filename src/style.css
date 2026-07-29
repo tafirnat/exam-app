@@ -576,6 +576,9 @@ textarea {
     justify-content: center;
     gap: var(--btn-gap);
     height: var(--btn-h);
+    /* min-height, not just height: a button placed in a column flex container
+       can otherwise be squashed below --btn-h by an inherited flex-basis. */
+    min-height: var(--btn-h);
     flex-shrink: 0;
     padding: var(--btn-pad);
     border-radius: var(--btn-radius);
@@ -613,6 +616,7 @@ textarea {
    button feels too tall for its container, the container is the thing to fix. */
 .btn-xs {
     height: var(--btn-h-xs);
+    min-height: var(--btn-h-xs);
     padding: var(--btn-pad-xs);
     font-size: var(--btn-font-xs);
     border-radius: var(--radius-sm);
@@ -1283,8 +1287,13 @@ pre code {
         order: 2;
     }
 
+    /* The bar turns into a column here, so the main axis is vertical and the
+       row-splitting `flex: 1 1 0` would apply its zero basis to the height —
+       collapsing both buttons below --btn-h. Stacked, they simply fill the
+       width and keep their natural height. */
     .preview-back-btn,
     .btn-edit-preview {
+        flex: none;
         width: 100%;
     }
 }
