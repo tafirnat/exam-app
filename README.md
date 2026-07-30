@@ -1,11 +1,13 @@
-# 🎓 Exam App - Minimalist Learning Platform
+# 🎓 Exam App - Minimalist Learning & Active Recall Platform
 
 [![Live Demo](https://img.shields.io/badge/Demo-Online-brightgreen.svg)](https://exam.rifatarslan.dev/)
 [![Deploy to GitHub Pages](https://github.com/tafirnat/exam-app/actions/workflows/deploy.yml/badge.svg)](https://github.com/tafirnat/exam-app/actions/workflows/deploy.yml)
-![Lizenz](https://img.shields.io/badge/Lizenz-MIT-blue.svg)
-![Technologien](https://img.shields.io/badge/Tech-HTML5%20%7C%20CSS3%20%7C%20JS-orange)
+![License](https://img.shields.io/badge/License-MIT-blue.svg)
+![Tech Stack](https://img.shields.io/badge/Tech-HTML5%20%7C%20CSS3%20%7C%20JS-orange)
 
-A professional, modular, and high-performance examination application designed for seamless learning. Built with modern web technologies and a focus on visual excellence.
+A professional, modular, privacy-first, and high-performance examination web application designed for active recall, spaced repetition, and markdown-based study.
+
+---
 
 ## 🌐 Live Demo
 
@@ -13,181 +15,181 @@ Experience the application live: **[https://exam.rifatarslan.dev/](https://exam.
 
 ---
 
-- **GitHub Gist Cross-Device Sync**:
-  - **Zero Server Costs ($0)**: Seamlessly sync study resources (JSON question banks), the folder structure, question statistics, notes, stars, flags, test history, and preferences across devices using GitHub Gists.
-  - **Privacy First**: Data is stored securely in a private Gist (`exam_app_backup.json`) directly on your GitHub account without third-party servers.
-  - **Background Auto-Sync**: Debounced automatic sync saves your progress in the background as you solve questions.
-  - **Offline-First & Auto-Sync**: Fully functional offline via `localStorage`. Automatically fetches and merges the latest cloud data when online.
-  - **Smart Merge Engine**: Intelligently resolves conflicts and merges study statistics from multiple devices.
-  - **Account Switch Safeguard**: Interactive prompts to safely merge or reset local data when changing accounts or logging out.
-- **Archive**:
-  - Park a single source or a whole folder (with its contents) out of the active study set without deleting it. Archived items are excluded from tests, statistics and counters, but keep their history for when they come back.
-  - **Kept on GitHub, not on the device**: archived questions move to a separate file in the same Gist (`exam_app_archive.json`), so they stop travelling with every routine sync. They leave the device only after GitHub confirms that write — with no connection, archiving still works and the questions simply stay local.
-  - **Folder memory**: restoring returns an item to its original folder by id, so renaming a folder in the meantime changes nothing. If the folder was deleted, the item lands in the root.
-  - **Direct access**: preview an archived source in place, download it as JSON, or open the Gist on GitHub. Items leave the archive only from the archive screen.
-- **PWA Support**: Installable on mobile and desktop for a full-screen, app-like experience with offline support.
-- **Flexible 3-Way Data Sharing**:
-  - **Clipboard Copy**: One-click copying of raw JSON datasets for seamless pasting and importing.
-  - **Web Share & File Export**: Native text or `.json` file sharing across apps (WhatsApp, Telegram, Mail, Files).
-  - **Smart Length Recommendations**: Context-aware guidance recommending file export for large datasets (>500 characters) to prevent text truncation.
-- **Modular Architecture**: Clean, separate logic for state management, UI rendering, and test engines.
-- **FS-Algorithm (Spaced Repetition)**: 
-  - Implementation of the **FSRS v4.5** algorithm for scientifically optimized study intervals.
-  - Prioritizes questions based on **Retrievability (R)**, ensuring you review exactly when you are about to forget.
-  - **Memory Stability (S):** Tracks how well you know each question.
-- **Smart Adaptive Engine**: 
-  - Intelligent question selection prioritizing "Overdue" items ($R < 0.9$).
-  - **Symmetric Progression:** Starts from a 1.5 baseline, moving toward 0.1 (Easy) or 3.0 (Hard).
-  - **Learned Threshold:** Autonomously marks questions as "Learned" (🎓) based on retention stability.
-  - **Intuitive Feedback:** Seamless "Hard" / "Easy" mapping that harmonizes with the algorithmic interval calculation.
-- **Interactive Explanations**: Native support for Obsidian Markdown-formatted explanation rendering (supporting headings, callouts, code blocks, bold text, highlights, and hyperlinks) in the note area. These pre-populate automatically on question load (allowing viewing via the note icon) and display automatically upon checking the answer.
-- **Dynamic Internationalization**: Native support for **Turkish**, **English**, and **German** with automatic detection.
-- **Multilingual Translations**: Integrated Google Translate API supporting over 10 target languages for questions and options.
-- **Custom AI Provider Hub & Localized Prompts**: Add, manage, and one-click query your favorite AI services (ChatGPT, Claude, Gemini, DeepSeek, Kimi, etc.) with prompt templates automatically localized to your UI language.
-- **Premium UI/UX**: Modern dark mode, glassmorphism elements, and smooth micro-animations. Folder colours come from a palette solved for contrast against both the light and dark surface, so a colour stays legible after a theme switch and no two folders read alike.
-- **Single-File Distribution**: Optimized build process that generates a perfectly standalone `index.html` file for easy hosting Anywhere.
-- **Custom Data Sources**: Load your exams from local JSON files or remote URLs.
-- **Advanced Text-to-Speech (TTS)**:
-  - **Manual Playback**: Tap the speaker icon to read questions aloud.
-  - **Autoplay Mode**: Automatically reads each new question upon navigation.
-  - **Speed Control**: Adjustable speed range from **x0.7 to x1.3** with a smooth, interactive slider.
-  - **Premium UI**: Floating labels and a professional, minimalist control interface.
-  - **Language Sync**: Automatically uses the UI language for speech synthesis.
+## 📌 What is Exam App & Why Was It Built?
 
-## 🛠️ Tech Stack
+### The Problem
+Traditional exam preparation tools and flashcard apps often lock your study data behind proprietary servers, require monthly subscriptions, lack native Markdown support (or mangle formatting), and force online connectivity. Students and self-learners who manage their knowledge in tools like [Obsidian](https://obsidian.md/) often struggle to turn their personal notes and question banks into an interactive, distraction-free study tool without compromising privacy.
 
-- **Vite**: Ultra-fast build tool and dev server.
-- **Tailwind-free CSS**: Custom, high-performance vanilla CSS for maximum control.
-- **ES Modules**: Modern JavaScript for better maintainability.
-- **vite-plugin-singlefile**: To bundle everything into one portable file.
+### The Purpose
+**Exam App** was built to solve these issues. It is a completely free, open-source, serverless, offline-first web application that empowers users to create, practice, and track custom exams and flashcards using standard JSON datasets formatted in rich **Obsidian Markdown**.
 
-## 📥 Getting Started
+### Core Philosophy
+- 🔒 **100% Data Privacy & Zero Backend ($0 Cost)**: No central servers, no user accounts to register. Your study progress and datasets remain on your local device or sync securely to your private GitHub Gist.
+- 🧠 **Scientific Learning Engine**: Employs the **FSRS v4.5 (Free Spaced Repetition Scheduler)** algorithm to optimize review intervals based on memory stability and retrievability.
+- 📝 **Obsidian Native Content**: Paste notes directly from your Obsidian vault into question cards—headings, callouts (`> [!tip]`), code blocks, pipe tables, task lists, and highlights render natively.
+- 📱 **Offline-First & Mobile Ready**: Fully operational without internet. Can be installed as a PWA (Progressive Web App) on smartphones and desktops.
+
+---
+
+## 🧩 Supported Question Types & Study Modes
+
+Exam App supports **7 canonical question types** categorized into 4 family structures to accommodate all study material:
+
+### 1. 🔘 Single Choice (`single_choice`)
+Standard multiple-choice format with exactly one correct option. Ideal for targeted concept testing.
+
+### 2. ☑️ Multiple Choice (`multiple_choice`)
+Questions requiring two or more correct selections. Ensures deep comprehension of complex topics.
+
+### 3. ☯️ True / False (`true_false`)
+Binary statement verification with predefined True/False choices. Great for rapid-fire recall checks.
+
+### 4. ✍️ Short Answer (`short_answer` / `text_input`)
+Free-form text input where learners type the exact answer. Supports multiple accepted answer variations and optional case-sensitivity.
+
+### 5. 📝 Fill in the Blank (`fill_in_the_blank`)
+Sentences with missing keywords embedded via double braces (`{{blank}}` or `{{canonical|alternative}}`). Learners fill in blanks directly within the body text.
+
+### 6. 🎴 Flashcard (`flashcard`)
+Classic front/back flashcards for active recall. Learners flip the card to reveal the answer and self-rate their retention.
+
+### 7. 📖 Reading / Study Material (`reading`)
+Rich markdown prose blocks and summary cards for reviewing key concepts before or during exams without auto-grading pressure. *(Legacy alias: `topic_review`)*.
+
+---
+
+## 🔥 Key Features & Capabilities
+
+- 🧠 **FSRS v4.5 Spaced Repetition**: Scientifically prioritizes "Overdue" questions ($R < 0.9$). Adaptively calculates review intervals based on learner feedback (*Hard* vs *Easy*).
+- 📁 **Folder & Archive Management**: Organize question sources into custom folder hierarchies. Archive individual sources or entire folders out of active study sets without losing test history. Archived items sync separately (`exam_app_archive.json`) to keep routine sync light.
+- 🔊 **Advanced Text-to-Speech (TTS)**: Reads questions and reading cards aloud using native speech synthesis. Supports adjustable playback speed (x0.7 to x1.3), autoplay on navigation, and floating playback controls.
+- 🌐 **Multilingual Interface & AI Translation**: Full native UI in **English**, **Turkish**, and **German**. Includes integrated Google Translate support for translating content into over 10 languages.
+- 🤖 **Custom AI Provider Hub**: One-click integration to send question contexts or custom prompt templates to AI services (ChatGPT, Claude, Gemini, DeepSeek, Kimi, etc.) in your active UI language.
+- 📤 **Flexible Data Sharing**: Copy raw JSON datasets to clipboard, share natively via Web Share / File export, with context-aware length guidance for large files.
+- 🎨 **Visual Excellence**: Sleek dark mode, glassmorphism UI components, smooth micro-animations, and contrast-guaranteed folder color palettes.
+
+---
+
+## ⚙️ How Is It Built? Technical Architecture
+
+Now that you know **what** Exam App does and **why** it exists, here is **how** it was crafted under the hood:
+
+### 🛠️ Tech Stack & Philosophy
+- **Vanilla Modern JS & HTML5**: Core logic is built with modular ES Modules for ultra-fast startup and execution.
+- **Custom Tailwind-Free CSS**: Tailored design system with CSS custom properties (variables) for fine-tuned glassmorphic visuals without framework overhead.
+- **Vite & Single-File Bundler**: Uses `vite-plugin-singlefile` to generate a 100% standalone, single `index.html` output containing all JavaScript, CSS, and assets.
+- **Client-Side Storage & Sync**: Relies on browser `localStorage` for offline state and GitHub Gist REST API for cross-device synchronization.
+
+---
+
+## ☁️ Cross-Device Sync (GitHub Gist)
+
+Sync all your question banks, test progress, statistics, stars, notes, and preferences across devices without third-party servers:
+
+1. **Generate GitHub Token:**
+   - Go to [GitHub Token Settings](https://github.com/settings/tokens?type=beta).
+   - Create a Fine-grained token with **Gists: Read and Write** permissions.
+2. **Connect in App:**
+   - Open Exam App, click the **GitHub ↗** icon in the header, paste your token, and click **Connect & Sync**.
+3. **Automated Background Sync:**
+   - The app automatically creates a secret Gist (`exam_app_backup.json`) and syncs progress in the background.
+   - Archived items are offloaded to a secondary file (`exam_app_archive.json`) inside the same Gist.
+
+### 🔗 Companion Obsidian Plugin
+If you draft questions in Obsidian, use the companion plugin **[Obsidian ExamApp Gist Sync](https://github.com/tafirnat/Obsidian-ExamApp-Sync)** to sync your Obsidian Vault directly with Exam App via Gist.
+
+---
+
+## 📊 Data Structure & JSON Schema
+
+Exam App parses exams using a clean, human-readable JSON schema consisting of `exam_metadata` and a `questions` array.
+
+### Example JSON
+```json
+{
+  "exam_metadata": {
+    "title": "Computer Networking 101",
+    "id": "exam_net_101",
+    "category": "Computer Science",
+    "description": "Foundational networking protocols and concepts."
+  },
+  "questions": [
+    {
+      "id": "q1",
+      "type": "single_choice",
+      "difficulty": 2.0,
+      "tags": ["web", "protocols"],
+      "content": { "text": "Which HTTP status code signifies **Not Found**?" },
+      "options": [
+        { "id": 1, "text": "200 OK" },
+        { "id": 2, "text": "404 Not Found" },
+        { "id": 3, "text": "500 Internal Server Error" }
+      ],
+      "answer": {
+        "correct_ids": [2],
+        "explanation": "The `404 Not Found` status code indicates the server cannot locate the requested resource."
+      }
+    }
+  ]
+}
+```
+
+*For complete schema specifications and prompt instructions for external AI models, see **[AI_AGENT_PROMPT.md](./AI_AGENT_PROMPT.md)** and **[schema-guide.md](./public/examples/schema-guide.md)**.*
+
+---
+
+## 🤖 Generating Question Sets with AI
+
+You can turn any textbook, article, or lecture note into Exam App JSON datasets using AI:
+1. Open **[AI_AGENT_PROMPT.md](./AI_AGENT_PROMPT.md)** and copy its instructions.
+2. Paste the prompt along with your study material into ChatGPT, Claude, Gemini, or DeepSeek.
+3. Import the generated JSON directly into Exam App.
+
+---
+
+## 📥 Getting Started & Development
+
+### Prerequisites
+- Node.js (v18 or higher)
+- npm
 
 ### Installation
-
 ```bash
 git clone https://github.com/tafirnat/exam-app.git
 cd exam-app
 npm install
 ```
 
-### Development
-
+### Local Development
 ```bash
 npm run dev
 ```
 
-### Build (Stand-alone File)
-
+### Build Single-File Production App
 ```bash
 npm run build
 ```
-The result will be available in `dist/index.html`.
+The compiled, standalone static file will be generated at `dist/index.html`.
+
+---
 
 ## 🚀 CI/CD & Automated Deployment
 
-This repository includes continuous integration and deployment configured via **GitHub Actions**:
-- **Workflow Path**: [.github/workflows/deploy.yml](.github/workflows/deploy.yml)
-- **Automatic Deployment**: Every push to the `main` branch automatically triggers the build process via Vite and deploys the generated output (`dist/index.html`) to the `gh-pages` branch.
-- **Single-File Bundle**: Uses `vite-plugin-singlefile` to ensure all assets (HTML, CSS, JS) are bundled into a portable static application served directly on GitHub Pages.
+This repository uses **GitHub Actions** for automated building and deployment:
+- **Workflow**: [.github/workflows/deploy.yml](.github/workflows/deploy.yml)
+- **Behavior**: Every commit pushed to `main` triggers a Vite single-file build and automatically deploys the resulting `dist/index.html` to **GitHub Pages** (`gh-pages` branch).
 
+---
 
-## 🔄 Setting Up Cross-Device Sync (GitHub Gist)
+## 🤖 Development Transparency & Credits
 
-To sync your study progress, JSON question sources, notes, and stats across devices without any backend:
+This application was designed and developed by leveraging advanced AI coding assistants (**Antigravity** & **Claude**). While rigorous testing and optimization have been performed across all components, feedback and issue reports are always welcome!
 
-1. **Create a GitHub Token:**
-   - Go to [GitHub Settings > Personal Access Tokens (Fine-grained)](https://github.com/settings/tokens?type=beta).
-   - Click **Generate new token**.
-   - Under **User permissions**, set **Gists** to **Read and write**. (No other permissions required).
-2. **Connect in Exam App:**
-   - Click the **GitHub ↗** button in the header.
-   - Paste your token and click **Connect & Sync**.
-3. **Enjoy Automatic Sync:**
-   - Exam App creates a secret Gist (`exam_app_backup.json`) under your GitHub account.
-   - Any progress, new JSON resources, or stats updated on one device will automatically sync across all your devices!
-   - If you archive anything, a second file (`exam_app_archive.json`) appears in the same Gist. A Gist update only touches the files it names, so routine syncs never rewrite the archive.
-
-### 📡 Offline-First & Online Synchronization
-
-- **Offline-First Storage**: All question banks, test progress, and FSRS metrics are saved locally in your browser (`localStorage`). The app remains fully functional without an active internet connection.
-- **Automatic Online Sync**: When online, Exam App automatically fetches the latest data from your private GitHub Gist upon startup or reconnection.
-- **Smart Data Merging**: Uses a bi-directional merging engine (`mergeSyncData`) that compares revision timestamps, question attempt counters, and tombstone deletion markers (`deletedSourceIds`, `deletedFolderIds`) to keep all your devices up to date without data loss.
-- **Archive-Aware Merging**: An offloaded archive entry is a record without questions, which is also what a half-synced source looks like. The merge resolves those by revision timestamp instead, so an item archived on one device is never brought back by another device still holding the old copy.
-
-### 🔗 Obsidian Integration (Community Plugin)
-
-If you use [Obsidian](https://obsidian.md/) to write and manage your test questions in JSON format, you can use the companion plugin:
-**[Obsidian ExamApp Gist Sync](https://github.com/tafirnat/Obsidian-ExamApp-Sync)**
-
-This plugin allows you to synchronize your local Obsidian Vault questions directly with your Exam App web data via GitHub Gists—without any external dependencies or scripts.
-- **Two-way Sync**: Push your local changes to the cloud or pull the latest test data from your Exam App.
-- **Safe Merging**: Intelligently preserves your test statistics, recent tests, and user settings while updating your question pools.
-
-## 📊 Data Structure (JSON)
-
-The application reads exam data through a standard JSON structure. You can follow the schema below to create your own exams.
-
-### Data Schema Structure
-
-1.  **`exam_metadata` (Exam Info):** Holds general information about the exam (Title, category, date, etc.).
-2.  **`questions` (Questions):** A list of all questions in the exam.
-    *   `type`: `single_choice`, `multiple_choice`, `true_false`, `text_input`.
-    *   `answer`: Correct option IDs (`correct_ids`) or accepted texts (`accepted_texts`).
-
-### Content Format: Obsidian Markdown
-
-Every text field a learner reads — question bodies, options, explanations, flashcard backs, reading cards — is **Obsidian Markdown**. Not a subset with a different flavour, and not HTML: `&`, `<` and `>` are escaped before rendering, so a stray tag shows up as literal text rather than markup.
-
-The practical upshot is that **a note from your Obsidian vault can be pasted into a question as-is**. Headings, `**bold**`, `==highlights==`, `> [!tip]` callouts, pipe tables, task lists, nested lists, fenced code, `[[wikilinks]]` and `[external links](https://obsidian.md/)` all survive the trip with no translation step. YAML frontmatter and `%%author comments%%` are stripped automatically, and headings are shifted so the note's top level never collides with the question card's own title.
-
-Constructs Obsidian supports but the app deliberately does not render — LaTeX math, footnotes, inline `#tags`, `![[embeds]]` — appear as plain text instead of breaking the card. The complete list is in [docs/MARKDOWN_SPEC.md](./docs/MARKDOWN_SPEC.md).
-
-### Example JSON
-
-```json
-{
-  "exam_metadata": {
-    "title": "Exam Title",
-    "id": "module_101",
-    "category": "Category",
-    "total_questions": 4,
-    "date":"2026-03-26",
-    "source":"Question source info"
-  },
-  "questions": [
-    {
-      "id": 101,
-      "type": "single_choice",
-      "content": { "text": "Question text?" },
-      "options": [
-        { "id": 1, "text": "Option A" },
-        { "id": 2, "text": "Option B" }
-      ],
-      "answer": {
-        "correct_ids": [1],
-        "explanation": "Explanation of the solution in Obsidian Markdown — **bold text**, `code`, ==highlights==, and [hyperlinks](https://example.com)."
-      }
-    }
-  ]
-}
-```
-*Full schema and prompt guide for external AI models available in [AI_AGENT_PROMPT.md](./AI_AGENT_PROMPT.md) and [schema-guide.md](./public/examples/schema-guide.md).*
-
-## 🤖 Generating Content with AI Agents
-
-To generate compatible JSON question sets using external AI services (ChatGPT, Claude, Gemini, DeepSeek, etc.):
-1. Point your AI agent to or copy the contents of **[AI_AGENT_PROMPT.md](./AI_AGENT_PROMPT.md)**.
-2. Provide your learning materials, raw texts, or repository link.
-3. The AI agent will produce 100% schema-compliant JSON ready for instant import or sync in Exam App.
-
-## 🤖 Development & Transparency
-
-This project was created and developed by the author leveraging advanced AI coding assistants (**Antigravity** & **Claude**). While continuous testing and optimization have been performed across all modules, minor edge-case inconsistencies or oversights might occasionally exist. Feedback, contributions, and issue reports are warmly welcomed!
+---
 
 ## 📄 License
 
-This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
+Distributed under the **MIT License**. See [LICENSE](LICENSE) for details.
 
 ---
 Developed with ❤️ by [tafirnat](https://github.com/tafirnat)
