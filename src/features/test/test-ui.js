@@ -1155,47 +1155,57 @@ export function updateQuestionStatsInfo(sourceId, qid) {
         const r = calculateRetrievability(s.stability, s.lastReview);
         const rPercent = r > 0 ? Math.round(r * 100) : null;
 
+        // Check if any question has been answered/checked in the active test session
+        let hasInteraction = false;
+        if (AppState.currentTest && Array.isArray(AppState.currentTest)) {
+            AppState.currentTest.forEach((_, idx) => {
+                if (AppState.isAnswerChecked[idx]) hasInteraction = true;
+                const ua = AppState.userAnswers[idx];
+                if (ua && ua.length > 0 && ua.some(v => v !== null && v !== undefined && String(v).trim() !== '')) hasInteraction = true;
+            });
+        }
+
         infoEl.innerHTML = `
             ${rPercent !== null ? `<span class="stats-item-retrievability ${r <= 0.9 ? 'overdue' : ''}" title="Retrievability: ${rPercent}%" style="margin-right: 8px;">🧠 ${rPercent}%</span>` : ''}
             <span>${t('correct')}: <b>${s.correct}</b></span>
             <span>${t('wrong')}: <b>${s.wrong}</b></span>
             <span>${t('success_percent', { percent })}</span>
             <span>${t('difficulty_label')} <b>${(s.difficulty / 2).toFixed(1)}</b></span>
-            <span id="scrollSummaryBtn" style="
-                display: flex;
-                align-items: center;
-                justify-content: center;
-                width: 28px;
-                height: 28px;
-                color: #ef4444;
-                background: #ef444415;
-                border: 1.5px solid #ef444440;
-                border-radius: 8px;
-                cursor: pointer;
-                transition: all 0.2s ease;
-            ">
-                <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
-                    <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"></path>
-                    <polyline points="16 17 21 12 16 7"></polyline>
-                    <line x1="21" y1="12" x2="9" y2="12"></line>
-                </svg>
-            </span>
+            <div class="test-bottom-actions">
+                <button type="button" class="test-action-btn home-btn" id="testHomeBtn" title="${t('go_home') || 'Ana Sayfa'}">
+                    <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+                        <path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"></path>
+                        <polyline points="9 22 9 12 15 12 15 22"></polyline>
+                    </svg>
+                </button>
+                <button type="button" class="test-action-btn exit-btn" id="scrollSummaryBtn" title="${t('exit') || 'Testi Bitir'}" style="display: ${hasInteraction ? 'inline-flex' : 'none'};">
+                    <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+                        <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"></path>
+                        <polyline points="16 17 21 12 16 7"></polyline>
+                        <line x1="21" y1="12" x2="9" y2="12"></line>
+                    </svg>
+                </button>
+            </div>
         `;
         infoEl.classList.add('visible');
 
+        const homeBtn = document.getElementById('testHomeBtn');
+        if (homeBtn) {
+            homeBtn.onclick = (e) => {
+                e.stopPropagation();
+                if (window.goHome) {
+                    window.goHome();
+                } else if (window.switchView) {
+                    window.switchView('home');
+                }
+            };
+        }
+
         const scrollBtn = document.getElementById('scrollSummaryBtn');
         if (scrollBtn) {
-            scrollBtn.onclick = () => {
-                // Efficiency check: If totally empty, just exit to home
-                let hasInteraction = false;
-                AppState.currentTest.forEach((_, idx) => {
-                    if (AppState.isAnswerChecked[idx]) hasInteraction = true;
-                    const ua = AppState.userAnswers[idx];
-                    if (ua && ua.length > 0 && ua.some(v => v !== null && v !== undefined && String(v).trim() !== '')) hasInteraction = true;
-                });
-
+            scrollBtn.onclick = (e) => {
+                e.stopPropagation();
                 if (!hasInteraction) {
-                    // Navigate home directly (triggering the finish button logic for consistency)
                     const finishBtn = document.getElementById('finishTestBtn');
                     if (finishBtn) finishBtn.click();
                     return;
