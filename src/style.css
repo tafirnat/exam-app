@@ -3592,63 +3592,6 @@ input:checked+.slider-small:before {
     }
 }
 
-/* --- History List --- */
-.history-list-container {
-    padding: 0 0.5rem 0.5rem 0.5rem;
-    max-height: 250px;
-    overflow-y: auto;
-    display: flex;
-    flex-direction: column;
-    gap: 0.25rem;
-}
-
-.history-item {
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    padding: 0.6rem 0.75rem;
-    border-radius: 8px;
-    background-color: transparent;
-    border: 1px solid transparent;
-    color: var(--text-primary);
-    cursor: pointer;
-    text-align: left;
-    transition: all 0.2s;
-    width: 100%;
-}
-
-.history-item:hover {
-    background-color: var(--surface-hover);
-}
-
-.history-item.active {
-    background-color: rgba(var(--primary-rgb), 0.1);
-    border-color: rgba(var(--primary-rgb), 0.2);
-}
-
-.history-item-info {
-    display: flex;
-    flex-direction: column;
-    gap: 2px;
-}
-
-.history-item-label {
-    font-size: 0.85rem;
-    font-weight: 600;
-}
-
-.history-item-time {
-    font-size: 0.7rem;
-    color: var(--text-secondary);
-}
-
-.history-item svg {
-    width: 14px;
-    height: 14px;
-    color: var(--text-secondary);
-    opacity: 0.5;
-}
-
 /* Cloud Sync UI */
 .cloud-status-row {
     display: flex;

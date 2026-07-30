@@ -88,14 +88,16 @@ test('the cloze sample actually contains markers', () => {
     }
 });
 
-test('all shipped JSON files in data/ and public/examples/ are 100% free of raw HTML tags', () => {
-    const dataDir = join(root, 'data');
-    const examplesDir = join(root, 'public/examples');
+test('every shipped JSON file is free of raw HTML tags', () => {
+    // public/examples is now the only place shipped content lives: it is the
+    // only content directory Vite copies into dist, so anything outside it was
+    // unreachable from the app. The guard walks the directory rather than a
+    // fixed list, so a new file cannot be added without being covered.
+    const jsonFiles = readdirSync(dir)
+        .filter(name => name.endsWith('.json'))
+        .map(name => join(dir, name));
 
-    const jsonFiles = [
-        ...readdirSync(dataDir).filter(f => f.endsWith('.json')).map(f => join(dataDir, f)),
-        ...readdirSync(examplesDir).filter(f => f.endsWith('.json')).map(f => join(examplesDir, f))
-    ];
+    assert.ok(jsonFiles.length > 0, 'the guard must actually have files to check');
 
     const htmlTagRegex = /<\/?(h[1-6]|p|div|span|strong|em|b|i|u|code|pre|ul|ol|li|blockquote|table|thead|tbody|tr|th|td|mark|a)\b[^>]*>/i;
 

@@ -1019,9 +1019,6 @@ function setupEventListeners() {
     // Sidebar Close Button & Overlay
     const closeBtn = document.getElementById('menuCloseBtn');
     if (closeBtn) closeBtn.onclick = toggleMenu;
-    
-    const overlay = document.getElementById('menuOverlay');
-    if (overlay) overlay.onclick = toggleMenu;
 
     // Premium Theme Switch in Sidebar
     // Theme is toggled via clicking the menu item directly now.
@@ -1418,16 +1415,6 @@ function switchView(view, isBack = false) {
             history.pushState({ view }, '', `#${view}`);
         }
 
-        // Update AppState view history (avoid consecutive duplicates)
-        if (AppState.viewHistory[0]?.view !== view) {
-            AppState.viewHistory.unshift({
-                view,
-                time: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
-                label: t(`view_${view}`)
-            });
-            if (AppState.viewHistory.length > 10) AppState.viewHistory.pop();
-            renderHistoryList();
-        }
     }
 
     if (view === 'test') {
@@ -1494,43 +1481,12 @@ function goBack() {
     window.history.back();
 }
 
-function renderHistoryList() {
-    const list = document.getElementById('historyList');
-    if (!list) return;
-
-    list.innerHTML = '';
-
-    // We only show the last 5-10 visits (excluding the current one usually if we want "recently visited")
-    // For this implementation, we show all in viewHistory
-    AppState.viewHistory.forEach((item, index) => {
-        // Skip current view if it's the first one? No, let's show all, but maybe highlight the current.
-        const el = document.createElement('button');
-        el.className = 'history-item';
-        if (index === 0) el.classList.add('active');
-
-        el.innerHTML = `
-            <div class="history-item-info">
-                <span class="history-item-label">${item.label}</span>
-                <span class="history-item-time">${item.time}</span>
-            </div>
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><polyline points="9 18 15 12 9 6"></polyline></svg>
-        `;
-        el.onclick = () => {
-            switchView(item.view);
-            if (menuActive) toggleMenu();
-        };
-        list.appendChild(el);
-    });
-}
-
 function toggleMenu() {
     menuActive = !menuActive;
     const menu = document.getElementById('actionMenu');
-    const overlay = document.getElementById('menuOverlay');
-    
+
     if (menu) menu.classList.toggle('active', menuActive);
-    if (overlay) overlay.classList.toggle('active', menuActive);
-    
+
     if (menuActive) {
         updateLangUI();
         // Theme toggle state is now handled solely via click.

@@ -82,7 +82,6 @@ export const AppState = {
     timerCountdownLimit: parseInt(localStorage.getItem('focus_app_timer_limit') || '59', 10),
     timerAutoCheckEnabled: safeJSONParse('focus_app_timer_auto_check', true), // Default to true
     currentTtsVoice: null, // Randomly selected at test start
-    viewHistory: [], // Stack to track last 10 visited screens
     navigationSourceView: null, // View to return to from Tag Mode
     activeTagFilter: null, // Currently active tag Filter for stats view
     questionMap: {}, // composite key (sourceId_questionId) → question object
