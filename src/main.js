@@ -1051,11 +1051,22 @@ function setupEventListeners() {
     document.getElementById('diffHardBtn').onclick = () => handleDifficultyRating('hard');
     document.getElementById('diffEasyBtn').onclick = () => handleDifficultyRating('easy');
     window.handleFlashcardRating = handleFlashcardRating;
-    document.getElementById('homeStatsBtn').onclick = () => {
+    const openStatsView = () => {
         const lastFilter = AppState.activeStatsFilter || 'all';
         switchView('stats');
         renderStatsList(lastFilter.startsWith('tag:') ? 'all' : lastFilter);
     };
+
+    const homeStatsBtn = document.getElementById('homeStatsBtn');
+    if (homeStatsBtn) homeStatsBtn.onclick = openStatsView;
+
+    const menuStatsBtn = document.getElementById('menuStatsBtn');
+    if (menuStatsBtn) {
+        menuStatsBtn.onclick = () => {
+            if (menuActive) toggleMenu();
+            openStatsView();
+        };
+    }
 
     // Results View
     document.getElementById('resHomeBtn').onclick = goHome;
@@ -1179,7 +1190,7 @@ function setupEventListeners() {
     };
 
     // Export Buttons
-    const exportBtns = ['exportBtn', 'homeExportBtn'];
+    const exportBtns = ['exportBtn', 'homeExportBtn', 'menuExportBtn'];
     exportBtns.forEach(id => {
         const btn = document.getElementById(id);
         if (btn) btn.onclick = handleExport;
@@ -1188,7 +1199,8 @@ function setupEventListeners() {
     // Import Buttons
     const importConfigs = [
         { btn: 'importBtn', input: 'importFileInput' },
-        { btn: 'homeImportBtn', input: 'importFileInput' } // Reuse same hidden input
+        { btn: 'homeImportBtn', input: 'importFileInput' },
+        { btn: 'menuImportBtn', input: 'importFileInput' } // Reuse same hidden input
     ];
 
     importConfigs.forEach(cfg => {
