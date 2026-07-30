@@ -114,11 +114,24 @@ export function generateAutoName() {
 export function addCurrentAsPreset() {
     const activeIds = (AppState.sources || [])
         .filter(s => s.active && !s.archived)
-        .map(s => s.id);
+        .map(s => s.id)
+        .sort();
     if (activeIds.length === 0) {
         showAlert(t('qs_no_active'), t('warning_title'));
         return null;
     }
+
+    const isDuplicate = (AppState.quickPresets || []).some(p => {
+        if (!p.sourceIds || p.sourceIds.length !== activeIds.length) return false;
+        const pSorted = [...p.sourceIds].sort();
+        return pSorted.every((id, idx) => id === activeIds[idx]);
+    });
+
+    if (isDuplicate) {
+        showAlert(t('qs_duplicate_warning') || 'Bu kaynak grubu zaten Hızlı Erişim\'de kayıtlı', t('warning_title'));
+        return null;
+    }
+
     const newPreset = {
         id: 'qp_' + Date.now() + '_' + Math.random().toString(36).substr(2, 4),
         name: generateAutoName(),

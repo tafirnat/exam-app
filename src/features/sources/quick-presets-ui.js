@@ -1,5 +1,6 @@
 import { AppState, saveSources, saveQuickPresets, trackDeletedQuickPreset } from '../../core/state.js';
 import { t } from '../../core/i18n.js';
+import { showConfirm } from '../../core/utils.js';
 import { applySwatch, applyPresetBar, addCurrentAsPreset } from './quick-presets.js';
 
 export function updateQuickSourcesDot() {
@@ -52,12 +53,13 @@ export function applyPreset(preset) {
     updateQuickSourcesDot();
 }
 
-export function showQuickPresetsManageModal() {
-    const overlay = document.getElementById('quickPresetsManageOverlay');
+function updateAddCurrentButtonState() {
     const addLabel = document.getElementById('qsAddCurrentLabel');
-    if (!overlay) return;
+    const addBtn = document.getElementById('qsAddCurrentBtn');
+    if (!addBtn) return;
 
-    const activeCount = (AppState.sources || []).filter(s => s.active && !s.archived).length;
+    const activeSources = (AppState.sources || []).filter(s => s.active && !s.archived);
+    const activeCount = activeSources.length;
 
     if (addLabel) {
         if (activeCount > 1) {
@@ -67,6 +69,32 @@ export function showQuickPresetsManageModal() {
         }
     }
 
+    const activeIds = activeSources.map(s => s.id).sort();
+    if (activeIds.length === 0) {
+        addBtn.disabled = true;
+        addBtn.title = t('qs_no_active') || 'Aktif kaynak yok';
+    } else {
+        const isDuplicate = (AppState.quickPresets || []).some(p => {
+            if (!p.sourceIds || p.sourceIds.length !== activeIds.length) return false;
+            const pSorted = [...p.sourceIds].sort();
+            return pSorted.every((id, idx) => id === activeIds[idx]);
+        });
+
+        if (isDuplicate) {
+            addBtn.disabled = true;
+            addBtn.title = t('qs_duplicate_warning') || 'Bu kaynak kombinasyonu zaten Hızlı Erişim\'de kayıtlı';
+        } else {
+            addBtn.disabled = false;
+            addBtn.removeAttribute('title');
+        }
+    }
+}
+
+export function showQuickPresetsManageModal() {
+    const overlay = document.getElementById('quickPresetsManageOverlay');
+    if (!overlay) return;
+
+    updateAddCurrentButtonState();
     renderManageList();
     overlay.classList.add('active');
 }
@@ -80,6 +108,7 @@ function renderManageList() {
     const container = document.getElementById('qpmPresetsList');
     if (!container) return;
 
+    updateAddCurrentButtonState();
     container.innerHTML = '';
     const presets = AppState.quickPresets || [];
 
@@ -117,6 +146,14 @@ function renderManageList() {
         nameSpan.setAttribute('title', 'Tıkla & Uygula / İki kere tıkla ve Düzenle');
         nameSpan.contentEditable = 'false';
         nameSpan.spellcheck = false;
+
+        // Count questions in non-archived sources included in preset
+        const presetSources = (AppState.sources || []).filter(s => preset.sourceIds.includes(s.id) && !s.archived);
+        const questionCount = presetSources.reduce((acc, s) => acc + (s.questions ? s.questions.length : 0), 0);
+
+        const countSpan = document.createElement('span');
+        countSpan.className = 'qs-count';
+        countSpan.textContent = questionCount;
 
         const barSpan = document.createElement('div');
         barSpan.className = 'qpm-proportional-bar';
@@ -187,16 +224,9 @@ function renderManageList() {
         });
 
         nameWrapper.appendChild(nameSpan);
+        nameWrapper.appendChild(countSpan);
         mainContent.appendChild(nameWrapper);
         mainContent.appendChild(barSpan);
-
-        // Count questions in non-archived sources included in preset
-        const presetSources = (AppState.sources || []).filter(s => preset.sourceIds.includes(s.id) && !s.archived);
-        const questionCount = presetSources.reduce((acc, s) => acc + (s.questions ? s.questions.length : 0), 0);
-
-        const countSpan = document.createElement('span');
-        countSpan.className = 'qs-count';
-        countSpan.textContent = questionCount;
 
         const actions = document.createElement('div');
         actions.className = 'qpm-actions';
@@ -206,7 +236,7 @@ function renderManageList() {
         editBtn.className = 'icon-btn qpm-edit-btn';
         editBtn.setAttribute('title', t('qs_edit_preset'));
         editBtn.innerHTML = `
-            <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <svg viewBox="0 0 24 24" width="13" height="13" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
                 <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"></path>
                 <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"></path>
             </svg>
@@ -221,15 +251,21 @@ function renderManageList() {
         deleteBtn.className = 'icon-btn qpm-delete-btn';
         deleteBtn.setAttribute('title', t('qs_delete_preset'));
         deleteBtn.innerHTML = `
-            <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <svg viewBox="0 0 24 24" width="13" height="13" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
                 <polyline points="3 6 5 6 21 6"></polyline>
                 <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path>
             </svg>
         `;
-        deleteBtn.addEventListener('click', (e) => {
+        deleteBtn.addEventListener('click', async (e) => {
             e.stopPropagation();
-            deletePreset(preset.id);
-            renderManageList();
+            const confirmed = await showConfirm(
+                t('qs_delete_confirm') || 'Bu hızlı erişim ögesi kaldırılacak. Onaylıyor musunuz?',
+                t('qs_delete_title') || 'Hızlı Erişimden Kaldır'
+            );
+            if (confirmed) {
+                deletePreset(preset.id);
+                renderManageList();
+            }
         });
 
         actions.appendChild(editBtn);
@@ -237,7 +273,6 @@ function renderManageList() {
 
         row.appendChild(handle);
         row.appendChild(mainContent);
-        row.appendChild(countSpan);
         row.appendChild(actions);
 
         // Drag and drop events
