@@ -33,7 +33,7 @@ export const translations = {
         solved_count: "Çözülen: {solved} / {total}",
         question_count_label: "Soru Sayısı",
         start_test: "Başla",
-        home_test_title: "Eğitim Merkezi",
+        home_test_title: "Soru & Test Özeti",
         show_stats: "Soruları İncele",
         chart_title: "İlerleme Detayları",
         search_label: "Ara",

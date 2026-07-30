@@ -598,10 +598,12 @@ window.renderQuestionPreview = (q, stats = null, source = null) => {
     const total = s.correct + s.wrong;
     const percent = total > 0 ? Math.round((s.correct / total) * 100) : 0;
     document.getElementById('previewStatsInfo').innerHTML = `
-        <span>${t('correct')}: <b>${s.correct}</b></span>
-        <span>${t('wrong')}: <b>${s.wrong}</b></span>
-        <span>${t('success_percent', { percent })}</span>
-        <span>${t('difficulty_label')} <b>${(s.difficulty / 2).toFixed(1)}</b></span>
+        <div class="question-stats-left">
+            <span>${t('correct')}: <b>${s.correct}</b></span>
+            <span>${t('wrong')}: <b>${s.wrong}</b></span>
+            <span>${t('success_percent', { percent })}</span>
+            <span>${t('difficulty_label')} <b>${(s.difficulty / 2).toFixed(1)}</b></span>
+        </div>
     `;
     const previewInputEl = document.getElementById('previewNoteInput');
     const previewNoteArea = document.getElementById('previewNoteArea');
