@@ -87,20 +87,7 @@
         </div>
 
         <div class="menu-items">
-            <!-- Soruları İncele -->
-            <div class="menu-section">
-                <div class="menu-section-header no-accordion" id="menuStatsBtn">
-                    <div class="menu-section-title">
-                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="section-icon">
-                            <line x1="18" y1="20" x2="18" y2="10"></line>
-                            <line x1="12" y1="20" x2="12" y2="4"></line>
-                            <line x1="6" y1="20" x2="6" y2="14"></line>
-                            <path d="M2 20h20"></path>
-                        </svg>
-                        <span data-i18n="show_stats">Soruları İncele</span>
-                    </div>
-                </div>
-            </div>
+
 
             <!-- Kaynakları Yönet -->
             <div class="menu-section">
@@ -496,13 +483,24 @@
 
 
             <div class="card" id="homeManageSourcesCard" style="margin-top: 1rem;">
-                <button class="btn btn-secondary btn-block btn-flex" id="homeSourcesBtn" style="padding: 0.85rem 1rem; font-size: 0.95rem; font-weight: 600; justify-content: center; gap: 0.6rem;">
-                    <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
-                        <path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"></path>
-                    </svg>
-                    <span data-i18n="manage_sources">Kaynakları Yönet</span>
-                    <span id="homeSourcesBadge" class="badge" style="margin-left: auto; font-size: 0.75rem; background: var(--surface-hover); color: var(--text-secondary); padding: 0.2rem 0.6rem; border-radius: 12px;"></span>
-                </button>
+                <div style="display: flex; gap: 0.75rem; flex-direction: column;">
+                    <button class="btn btn-secondary btn-block btn-flex" id="homeSourcesBtn" style="padding: 0.85rem 1rem; font-size: 0.95rem; font-weight: 600; justify-content: center; gap: 0.6rem;">
+                        <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+                            <path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"></path>
+                        </svg>
+                        <span data-i18n="manage_sources">Kaynakları Yönet</span>
+                        <span id="homeSourcesBadge" class="badge" style="margin-left: auto; font-size: 0.75rem; background: var(--surface-hover); color: var(--text-secondary); padding: 0.2rem 0.6rem; border-radius: 12px;"></span>
+                    </button>
+                    <button class="btn btn-secondary btn-block btn-flex" id="homeStatsBtn" style="padding: 0.85rem 1rem; font-size: 0.95rem; font-weight: 600; justify-content: center; gap: 0.6rem;">
+                        <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+                            <line x1="18" y1="20" x2="18" y2="10"></line>
+                            <line x1="12" y1="20" x2="12" y2="4"></line>
+                            <line x1="6" y1="20" x2="6" y2="14"></line>
+                            <path d="M2 20h20"></path>
+                        </svg>
+                        <span data-i18n="show_stats">Soru Detayları</span>
+                    </button>
+                </div>
             </div>
         </div>
 
@@ -698,7 +696,7 @@
                                     <path d="M2 20h20"></path>
                                 </svg>
                             </div>
-                            <h2 class="stats-title-text" id="statsTitleText" data-i18n="show_stats">Soruları İncele</h2>
+                            <h2 class="stats-title-text" id="statsTitleText" data-i18n="show_stats">Soru Detayları</h2>
                         </div>
                         <div class="stats-header-global-toggle" id="statsGlobalToggleWrapper">
                             <span data-i18n="all_sources_stats" style="font-size: 0.72rem; color: var(--text-secondary); font-weight: 500;">Tüm Kaynaklar</span>

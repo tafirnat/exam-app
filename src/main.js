@@ -1536,7 +1536,7 @@ function switchView(view, isBack = false) {
         document.getElementById('headerTitle').innerText = titleText;
         renderSourcesList();
     } else if (view === 'stats') {
-        const titleText = (typeof getI18nText === 'function' ? getI18nText('show_stats') : '') || 'Soruları İncele';
+        const titleText = (typeof getI18nText === 'function' ? getI18nText('show_stats') : '') || 'Soru Detayları';
         document.getElementById('headerTitle').innerText = titleText;
     }
 }
