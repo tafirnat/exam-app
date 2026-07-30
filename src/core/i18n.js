@@ -1213,6 +1213,10 @@ export function detectTranslationTarget() {
 }
 
 export function updateStaticTranslations() {
+    if (document.documentElement) {
+        document.documentElement.lang = AppState.language || 'tr';
+    }
+
     document.querySelectorAll('[data-i18n]').forEach(el => {
         const key = el.getAttribute('data-i18n');
         el.innerText = t(key);

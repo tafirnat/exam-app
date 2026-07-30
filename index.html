@@ -3,7 +3,7 @@
      value references another theme variable are substituted on the element
      that declares them; with the attribute on <body>, every :root-level token
      resolved against the light palette and stayed light in dark mode. -->
-<html lang="de" data-theme="dark">
+<html lang="tr" data-theme="dark">
 
 <head>
     <meta charset="UTF-8">
@@ -106,7 +106,7 @@
                 <div class="menu-section-header no-accordion" id="menuTheme">
                     <div class="menu-section-title">
                         <svg id="menuThemeIcon" viewBox="0 0 24 24" fill="none" stroke="currentColor" class="section-icon"></svg>
-                        <span id="menuThemeText" data-i18n="theme_change">Design ändern</span>
+                        <span id="menuThemeText" data-i18n="theme_change">Görünümü Değiştir</span>
                     </div>
                 </div>
             </div>
@@ -356,20 +356,20 @@
                     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor">
                         <polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"></polygon>
                     </svg>
-                    <span id="menuStarText" data-i18n="star">Markieren</span>
+                    <span id="menuStarText" data-i18n="star">Yıldızla</span>
                 </button>
                 <button class="menu-side-item" id="menuFlag">
                     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor">
                         <path d="M4 15s1-1 4-1 5 2 8 2 4-1 4-1V3s-1 1-4 1-5-2-8-2-4 1-4 1z"></path>
                         <line x1="4" y1="22" x2="4" y2="15"></line>
                     </svg>
-                    <span id="menuFlagText" data-i18n="flag">Flaggen</span>
+                    <span id="menuFlagText" data-i18n="flag">Bayrakla</span>
                 </button>
                 <button class="menu-side-item" id="menuNote">
                     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor">
                         <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"></path>
                     </svg>
-                    <span data-i18n="note">Notiz</span>
+                    <span data-i18n="note">Not</span>
                 </button>
                 <button class="menu-side-item" id="menuTranslateAll">
                     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor">
@@ -380,13 +380,13 @@
                         <path d="M22 22l-5-10-5 10"></path>
                         <path d="M14 18h6"></path>
                     </svg>
-                    <span data-i18n="translate_all">Alles übersetzen</span>
+                    <span data-i18n="translate_all">Tümünü Çevir</span>
                 </button>
                 <button class="menu-side-item" id="menuCopyAI">
                     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor">
                         <path d="M12 2l3 6 6 3-6 3-3 6-3-6-6-3 6-3z"></path>
                     </svg>
-                    <span data-i18n="copy_ai">KI Prompt kopieren</span>
+                    <span data-i18n="copy_ai">Yapay Zeka Komutunu Kopyala</span>
                 </button>
                 <div class="dropdown-divider"></div>
             </div>
@@ -427,7 +427,7 @@
                 <div class="stats-grid">
                     <div class="stat-box">
                         <div class="stat-value" id="homeStatTotal">0</div>
-                        <div class="stat-label" data-i18n="total_questions">Fragen gesamt</div>
+                        <div class="stat-label" data-i18n="total_questions">Toplam Soru</div>
                     </div>
                     <div class="stat-box">
                         <div class="stat-value" id="homeStatAvg">0.0</div>
@@ -437,7 +437,7 @@
                 <div class="progress-section" id="homeProgressSection" style="margin-top: 0.75rem;">
                     <div style="display: flex; justify-content: space-between; margin-bottom: 0.5rem;">
                         <span style="font-size: 0.85rem; color: var(--text-secondary);"
-                            data-i18n="progress">Lernfortschritt</span>
+                            data-i18n="progress">Öğrenme İlerlemesi</span>
                         <span style="font-size: 0.85rem; font-weight: 600;" id="homeProgressPercent">0%</span>
                     </div>
                     <div class="progress-bar-track progress-bar-clickable" id="homeProgressBarTrack" title="Grafik görünümü">
@@ -464,12 +464,12 @@
 
                 <div style="margin-top: 1.5rem; padding-top: 1rem; border-top: 1px solid var(--border-color);">
                     <div class="input-group">
-                        <label data-i18n="question_count_label">Anzahl der Fragen</label>
+                        <label data-i18n="question_count_label">Soru Sayısı</label>
                         <select id="questionCount">
-                            <option value="10" data-i18n="q_count_10">10 Fragen</option>
-                            <option value="15" data-i18n="q_count_15">15 Fragen</option>
-                            <option value="20" data-i18n="q_count_20">20 Fragen</option>
-                            <option value="40" data-i18n="q_count_40">40 Fragen</option>
+                            <option value="10" data-i18n="q_count_10">10 Soru</option>
+                            <option value="15" data-i18n="q_count_15">15 Soru</option>
+                            <option value="20" data-i18n="q_count_20">20 Soru</option>
+                            <option value="40" data-i18n="q_count_40">40 Soru</option>
                         </select>
                     </div>
                     <div id="startBtnContainer" style="display: flex; gap: 0.75rem; flex-direction: column;">
@@ -485,7 +485,7 @@
             <div class="card" id="sourcesCard">
                 <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1rem;">
                     <div>
-                        <h2 style="font-size: 1.1rem; margin: 0;" data-i18n="saved_sources">Gespeicherte Quellen</h2>
+                        <h2 style="font-size: 1.1rem; margin: 0;" data-i18n="saved_sources">Kayıtlı Kaynaklar</h2>
                         <span id="sourcesCount"
                             style="font-size: 0.72rem; color: var(--text-secondary); opacity: 0.7; display: block; margin-top: 2px;"></span>
                     </div>
@@ -523,17 +523,17 @@
                 <div id="addSourcePanel"
                     style="display: none; margin-bottom: 1rem; padding-bottom: 1rem; border-bottom: 1px solid var(--border-color);">
                     <div class="input-group">
-                        <label data-i18n="load_url">Über URL laden</label>
+                        <label data-i18n="load_url">URL ile Yükle</label>
                         <div style="display: flex; gap: 0.5rem;">
                             <input type="text" id="urlInput" data-i18n-placeholder="ph_url" placeholder="https://.../questions.json">
-                            <button class="btn btn-primary" id="loadUrlBtn" data-i18n="load">Laden</button>
+                            <button class="btn btn-primary" id="loadUrlBtn" data-i18n="load">Yükle</button>
                         </div>
                     </div>
                     <div
                         style="text-align: center; margin: 0.75rem 0; color: var(--text-secondary); font-size: 0.85rem;">
                         -</div>
                     <div class="input-group" style="margin-bottom: 1rem;">
-                        <label data-i18n="load_file">Aus Datei laden (.json)</label>
+                        <label data-i18n="load_file">Dosyadan Yükle (.json)</label>
                         <input type="file" id="fileInput" accept=".json">
                     </div>
                     <div
@@ -614,7 +614,7 @@
 
         <div id="testView" class="view-container">
             <div class="indicators-bar" id="indicatorsBar">
-                <span id="progressText">Frage 1 / 20</span>
+                <span id="progressText">Soru 1 / 20</span>
                 
                 <span id="timerDisplay" style="display: none; align-items: center; gap: 4px; font-variant-numeric: tabular-nums; font-weight: 600; font-size: 0.9rem; margin-left: 0.75rem; color: var(--text-secondary);">
                     <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2">
@@ -764,7 +764,7 @@
                                 <rect x="14" y="14" width="7" height="7"></rect>
                                 <rect x="3" y="14" width="7" height="7"></rect>
                             </svg>
-                            <span class="filter-btn-text" data-i18n="filter_all">Alle</span>
+                            <span class="filter-btn-text" data-i18n="filter_all">Tümü</span>
                         </button>
                         <button class="filter-btn" data-filter="recent">
                             <svg viewBox="0 0 284 248" fill="currentColor">
@@ -799,7 +799,7 @@
                                     points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2">
                                 </polygon>
                             </svg>
-                            <span class="filter-btn-text" data-i18n="filter_starred">Markiert</span>
+                            <span class="filter-btn-text" data-i18n="filter_starred">Yıldızlı</span>
                         </button>
                         <button class="filter-btn" data-filter="flagged">
                             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"
@@ -807,14 +807,14 @@
                                 <path d="M4 15s1-1 4-1 5 2 8 2 4-1 4-1V3s-1 1-4 1-5-2-8-2-4 1-4 1z"></path>
                                 <line x1="4" y1="22" x2="4" y2="15"></line>
                             </svg>
-                            <span class="filter-btn-text" data-i18n="filter_flagged">Geflaggt</span>
+                            <span class="filter-btn-text" data-i18n="filter_flagged">Bayraklı</span>
                         </button>
                         <button class="filter-btn" data-filter="noted">
                             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"
                                 stroke-linecap="round" stroke-linejoin="round">
                                 <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"></path>
                             </svg>
-                            <span class="filter-btn-text" data-i18n="filter_noted">Mit Notiz</span>
+                            <span class="filter-btn-text" data-i18n="filter_noted">Notlu</span>
                         </button>
                     </div>
 
@@ -980,12 +980,12 @@
             <div class="note-area" id="previewNoteArea">
                 <div class="note-header-row" style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.5rem;">
                     <label id="previewNoteLabel" style="font-size: 0.85rem; color: var(--text-secondary); margin: 0; display: block;"
-                        data-i18n="note_label">Ihre Notiz:</label>
+                        data-i18n="note_label">Notunuz:</label>
                 </div>
                 <div class="note-input-wrapper" id="previewNoteInputWrapper">
                     <div class="note-input-scroll-container">
                         <div id="previewNoteInput" contenteditable="false" data-i18n-placeholder="note_placeholder"
-                            placeholder="Ihre Notiz hier eingeben..." class="note-input-content"></div>
+                            placeholder="Notunuzu buraya yazın..." class="note-input-content"></div>
                         <div class="translation-text" id="trans_previewNoteInput" style="display:none;"></div>
                     </div>
                     <button class="note-edit-btn" id="previewNoteEditBtn" title="Düzenle">
@@ -1029,14 +1029,14 @@
                 <svg viewBox="0 0 24 24" fill="none" stroke="currentColor">
                     <polyline points="15 18 9 12 15 6"></polyline>
                 </svg>
-                <span class="nav-btn-text" data-i18n="prev">Vorherige</span>
+                <span class="nav-btn-text" data-i18n="prev">Önceki</span>
             </button>
             <button class="btn btn-glass check-btn" id="checkBtn">
                 <svg viewBox="0 0 24 24" fill="none" stroke="currentColor"
                     style="width: 20px; height: 20px; margin-right: 4px; display: none;" id="checkIcon">
                     <polyline points="20 6 9 17 4 12"></polyline>
                 </svg>
-                <span id="checkBtnText" data-i18n="check">Prüfen</span>
+                <span id="checkBtnText" data-i18n="check">Kontrol Et</span>
             </button>
             <div class="difficulty-pill" id="difficultyPill" style="display: none;">
                 <button class="btn btn-danger-soft difficulty-btn difficulty-hard" id="diffHardBtn" data-i18n="difficulty_hard">Zor</button>
@@ -1051,7 +1051,7 @@
                 <button class="btn btn-flex btn-success fc-rating-btn fc-easy" onclick="window.handleFlashcardRating('easy')" data-i18n="rating_easy">Kolay</button>
             </div>
             <button class="btn btn-glass nav-btn" id="nextBtn">
-                <span class="nav-btn-text" data-i18n="next">Nächste</span>
+                <span class="nav-btn-text" data-i18n="next">Sonraki</span>
                 <svg viewBox="0 0 24 24" fill="none" stroke="currentColor">
                     <polyline points="9 18 15 12 9 6"></polyline>
                 </svg>
@@ -1107,8 +1107,8 @@
                 <p id="modalMessage" style="margin: 0; line-height: 1.6;"></p>
             </div>
             <div id="modalFooter" class="modal-footer" style="display: flex; gap: 0.75rem; justify-content: flex-end;">
-                <button class="btn btn-secondary" id="modalCancelBtn" data-i18n="cancel">Abbrechen</button>
-                <button class="btn btn-primary" id="modalConfirmBtn" data-i18n="confirm">Bestätigen</button>
+                <button class="btn btn-secondary" id="modalCancelBtn" data-i18n="cancel">Vazgeç</button>
+                <button class="btn btn-primary" id="modalConfirmBtn" data-i18n="confirm">Onayla</button>
             </div>
         </div>
     </div>
@@ -1226,7 +1226,7 @@
                 </div>
             </div>
             <div class="modal-footer" style="display: flex; gap: 0.75rem;">
-                <button class="btn btn-secondary btn-flex" id="editMetaCancelBtn" data-i18n="cancel">Abbrechen</button>
+                <button class="btn btn-secondary btn-flex" id="editMetaCancelBtn" data-i18n="cancel">Vazgeç</button>
                 <button class="btn btn-primary btn-flex" id="editMetaSaveBtn" data-i18n="save">Kaydet</button>
             </div>
         </div>
@@ -1245,7 +1245,7 @@
                 </div>
             </div>
             <div class="modal-footer" style="display: flex; gap: 0.75rem;">
-                <button class="btn btn-secondary btn-flex" id="mergeSourcesCancelBtn" data-i18n="cancel">Abbrechen</button>
+                <button class="btn btn-secondary btn-flex" id="mergeSourcesCancelBtn" data-i18n="cancel">Vazgeç</button>
                 <button class="btn btn-primary btn-flex" id="mergeSourcesConfirmBtn" data-i18n="merge" disabled>Birleştir</button>
             </div>
         </div>

@@ -798,6 +798,7 @@ function setupEventListeners() {
 
             try {
                 updateStaticTranslations();
+                renderSourcesList();
                 renderQuestion();
                 renderStatsList();
                 updateHomeStats();

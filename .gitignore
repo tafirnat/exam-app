@@ -1,16 +1,51 @@
-node_modules
-dist
-.DS_Store
-*.local
+# Dependencies
+node_modules/
+
+# Production & Build outputs
+dist/
+dist-ssr/
+*.lcov
+*.zip
+*.tar.gz
+
+# Environment & Secrets
 .env
 .env.local
 .env.*.local
+*.local
 .npmrc
 
-# Logs & Debug files
+# Logs, Debug & Temporary Artifacts
 *.log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+*.tmp
+*.temp
+*.bak
+*.swp
 diff.txt
 findstr_output.txt
 verification_test.json
+checkIDs.cjs
+output.txt
+build_error.log
+test_results*.json
 
+# Agent & Local Tools
+.agents/
 
+# Ignored Feature Ideas & Drafts
+EKLENECEK_OZELLIKLER.md
+eklenecek_ozellikler.md
+
+# IDE & OS System Files
+.DS_Store
+Thumbs.db
+.vscode/
+!.vscode/extensions.json
+.idea/
+*.suo
+*.ntvs*
+*.njsproj
+*.sln
