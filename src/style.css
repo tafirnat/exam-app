@@ -2041,11 +2041,53 @@ textarea {
 
 /* --- Stats Card Enhancement --- */
 .stats-card-header {
-    display: flex;
+    display: grid;
+    grid-template-columns: auto 1fr auto;
     align-items: center;
     gap: 0.75rem;
     margin-bottom: 1rem;
-    flex-wrap: wrap;
+    width: 100%;
+}
+
+.stats-header-main {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.6rem;
+    text-align: center;
+}
+
+.stats-title-text {
+    margin: 0;
+    font-size: 1.2rem;
+    font-weight: 700;
+}
+
+.home-back-btn {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.45rem;
+    padding: 0.45rem 0.85rem;
+    background: var(--surface-hover);
+    border: 1px solid var(--border-color);
+    border-radius: var(--radius-md, 10px);
+    color: var(--text-primary);
+    font-weight: 600;
+    font-size: 0.85rem;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    text-decoration: none;
+    line-height: 1;
+}
+
+.home-back-btn:hover {
+    background: var(--border-color);
+    color: var(--primary-color);
+    transform: translateY(-1px);
+}
+
+.home-back-btn svg {
+    flex-shrink: 0;
 }
 
 .stats-header-global-toggle {
