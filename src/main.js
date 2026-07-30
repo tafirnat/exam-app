@@ -1070,28 +1070,12 @@ function setupEventListeners() {
     const homeStatsBtn = document.getElementById('homeStatsBtn');
     if (homeStatsBtn) homeStatsBtn.onclick = openStatsView;
 
-    const menuStatsBtn = document.getElementById('menuStatsBtn');
-    if (menuStatsBtn) {
-        menuStatsBtn.onclick = () => {
-            if (menuActive) toggleMenu();
-            openStatsView();
-        };
-    }
-
     const openSourcesView = () => {
         switchView('sources');
     };
 
     const homeSourcesBtn = document.getElementById('homeSourcesBtn');
     if (homeSourcesBtn) homeSourcesBtn.onclick = openSourcesView;
-
-    const menuSourcesBtn = document.getElementById('menuSourcesBtn');
-    if (menuSourcesBtn) {
-        menuSourcesBtn.onclick = () => {
-            if (menuActive) toggleMenu();
-            openSourcesView();
-        };
-    }
 
     // Results View
     document.getElementById('resHomeBtn').onclick = goHome;
