@@ -100,15 +100,10 @@ function renderManageList() {
         row.draggable = true;
 
         const handle = document.createElement('div');
-        handle.className = 'qpm-drag-handle';
+        handle.className = 'drag-handle';
+        handle.setAttribute('aria-label', 'Sürükle Sırala');
         handle.setAttribute('title', 'Sürükle Sırala');
-        handle.innerHTML = `
-            <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2">
-                <line x1="8" y1="6" x2="16" y2="6"></line>
-                <line x1="8" y1="12" x2="16" y2="12"></line>
-                <line x1="8" y1="18" x2="16" y2="18"></line>
-            </svg>
-        `;
+        handle.innerHTML = `<svg width="16" height="24" viewBox="0 0 16 24" fill="currentColor"><circle cx="6" cy="6" r="1.5"/><circle cx="10" cy="6" r="1.5"/><circle cx="6" cy="12" r="1.5"/><circle cx="10" cy="12" r="1.5"/><circle cx="6" cy="18" r="1.5"/><circle cx="10" cy="18" r="1.5"/></svg>`;
 
         const mainContent = document.createElement('div');
         mainContent.className = 'qpm-main-content';

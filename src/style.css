@@ -4917,8 +4917,8 @@ input:checked+.slider-small:before {
     display: flex;
     align-items: center;
     flex-shrink: 0;
-    margin-right: 0.25rem;
-    padding: 0 0.15rem;
+    margin-right: 0.125rem;
+    padding: 0 2px;
     color: var(--text-secondary);
     opacity: 0.6;
     cursor: grab;
@@ -4926,12 +4926,13 @@ input:checked+.slider-small:before {
     touch-action: none;
     user-select: none;
     -webkit-user-select: none;
-    transition: opacity 0.15s ease, background 0.15s ease;
+    transition: opacity 0.15s ease, background 0.15s ease, color 0.15s ease;
 }
 
 .drag-handle:hover {
     opacity: 1;
     background: var(--surface-hover);
+    color: var(--text-primary);
 }
 
 .drag-handle:active {
@@ -5131,24 +5132,6 @@ body.dnd-active {
 
 .qpm-row.dragging {
     opacity: 0.4;
-}
-
-.qpm-drag-handle {
-    cursor: grab;
-    color: var(--text-secondary);
-    display: flex;
-    align-items: center;
-    padding: 2px;
-    opacity: 0.6;
-}
-
-.qpm-drag-handle:hover {
-    opacity: 1;
-    color: var(--text-primary);
-}
-
-.qpm-drag-handle:active {
-    cursor: grabbing;
 }
 
 .qpm-main-content {
