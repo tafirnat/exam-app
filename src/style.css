@@ -2332,20 +2332,34 @@ textarea {
     transition: var(--btn-transition);
 }
 
-/* Resume Button ("Devam Et"): Modern Success Emerald / Soft Green variant matching active theme */
+/* Resume Button ("Devam Et"): Soft Pastel Gold / Warm Amber variant */
 #startBtnContainer #resumeBtn {
-    background-color: color-mix(in srgb, var(--success-color) 16%, var(--surface-color));
-    color: var(--success-color);
-    border: 1px solid color-mix(in srgb, var(--success-color) 40%, transparent);
-    box-shadow: 0 2px 8px color-mix(in srgb, var(--success-color) 15%, transparent);
+    background-color: color-mix(in srgb, #bd9b00 16%, var(--surface-color));
+    color: #d97706;
+    border: 1px solid color-mix(in srgb, #bd9b00 45%, transparent);
+    box-shadow: 0 2px 8px color-mix(in srgb, #bd9b00 18%, transparent);
+}
+
+[data-theme="dark"] #startBtnContainer #resumeBtn {
+    background-color: color-mix(in srgb, #bd9b00 22%, var(--surface-color));
+    color: #fbbf24;
+    border: 1px solid color-mix(in srgb, #facc15 40%, transparent);
+    box-shadow: 0 2px 8px color-mix(in srgb, #facc15 20%, transparent);
 }
 
 #startBtnContainer #resumeBtn:hover:not(:disabled) {
-    background-color: color-mix(in srgb, var(--success-color) 26%, var(--surface-color));
-    color: var(--success-color);
-    border-color: var(--success-color);
+    background-color: color-mix(in srgb, #bd9b00 28%, var(--surface-color));
+    color: #b45309;
+    border-color: color-mix(in srgb, #bd9b00 65%, transparent);
     transform: var(--btn-lift);
-    box-shadow: 0 4px 14px color-mix(in srgb, var(--success-color) 30%, transparent);
+    box-shadow: 0 4px 14px color-mix(in srgb, #bd9b00 35%, transparent);
+}
+
+[data-theme="dark"] #startBtnContainer #resumeBtn:hover:not(:disabled) {
+    background-color: color-mix(in srgb, #facc15 30%, var(--surface-color));
+    color: #fef08a;
+    border-color: #facc15;
+    box-shadow: 0 4px 14px color-mix(in srgb, #facc15 40%, transparent);
 }
 
 /* Start / New Test Button ("Başla" / "Yeni Test"): Vibrant Theme Primary Solid button */
