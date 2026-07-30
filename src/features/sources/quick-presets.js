@@ -43,6 +43,48 @@ export function resolvePresetColor(preset) {
     return { type: 'conic', value: `conic-gradient(${stops.join(', ')})` };
 }
 
+export function resolvePresetLinearBar(preset) {
+    if (!preset) return DEFAULT_FOLDER_COLOR;
+    if (preset.color) return preset.color;
+
+    const sources = (AppState.sources || []).filter(s => preset.sourceIds && preset.sourceIds.includes(s.id) && !s.archived);
+    if (sources.length === 0) return DEFAULT_FOLDER_COLOR;
+
+    const folderIds = [...new Set(sources.map(s => s.folderId || null))];
+
+    if (folderIds.length === 1) {
+        const fid = folderIds[0];
+        if (fid === null) return DEFAULT_FOLDER_COLOR;
+        const folder = liveFolders().find(f => f.id === fid);
+        return folder?.color || DEFAULT_FOLDER_COLOR;
+    }
+
+    // Proportional question count per folder
+    const buckets = new Map();
+    let totalQuestions = 0;
+    sources.forEach(s => {
+        const fid = s.folderId || '__root__';
+        const qCount = s.questions ? s.questions.length : 1;
+        buckets.set(fid, (buckets.get(fid) || 0) + qCount);
+        totalQuestions += qCount;
+    });
+
+    if (totalQuestions === 0) return DEFAULT_FOLDER_COLOR;
+
+    let accPct = 0;
+    const stops = [];
+    for (const [fid, count] of buckets) {
+        const color = fid === '__root__'
+            ? DEFAULT_FOLDER_COLOR
+            : (liveFolders().find(f => f.id === fid)?.color || DEFAULT_FOLDER_COLOR);
+        const pct = (count / totalQuestions) * 100;
+        stops.push(`${color} ${accPct.toFixed(2)}% ${(accPct + pct).toFixed(2)}%`);
+        accPct += pct;
+    }
+
+    return `linear-gradient(to right, ${stops.join(', ')})`;
+}
+
 export function applySwatch(el, preset) {
     if (!el) return;
     const c = resolvePresetColor(preset);
@@ -53,6 +95,12 @@ export function applySwatch(el, preset) {
         el.style.background = 'none';
         el.style.backgroundImage = c.value;
     }
+}
+
+export function applyPresetBar(el, preset) {
+    if (!el) return;
+    const bg = resolvePresetLinearBar(preset);
+    el.style.background = bg;
 }
 
 export function generateAutoName() {

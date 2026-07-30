@@ -1,6 +1,6 @@
 import { AppState, saveSources, saveQuickPresets, trackDeletedQuickPreset } from '../../core/state.js';
 import { t } from '../../core/i18n.js';
-import { applySwatch, addCurrentAsPreset } from './quick-presets.js';
+import { applySwatch, applyPresetBar, addCurrentAsPreset } from './quick-presets.js';
 
 const PALETTE_COLORS = [
     '#ff0053', '#f75a00', '#ca8400', '#929b00', '#27ac00', '#00a97a',
@@ -68,9 +68,9 @@ export function showQuickPresetsManageModal() {
 
     if (addLabel) {
         if (activeCount > 1) {
-            addLabel.textContent = t('qs_add_current_multiple') || 'Seçili Kaynakları Hızlı Erişime Ekle';
+            addLabel.textContent = t('qs_add_current_multiple') || 'Kullanılan Kaynakları Ekle';
         } else {
-            addLabel.textContent = t('qs_add_current_single') || 'Seçili Kaynağı Hızlı Erişime Ekle';
+            addLabel.textContent = t('qs_add_current_single') || 'Kullanılan Kaynağı Ekle';
         }
     }
 
@@ -110,22 +110,33 @@ function renderManageList() {
         handle.className = 'qpm-drag-handle';
         handle.setAttribute('title', 'Sürükle Sırala');
         handle.innerHTML = `
-            <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2">
+            <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2">
                 <line x1="8" y1="6" x2="16" y2="6"></line>
                 <line x1="8" y1="12" x2="16" y2="12"></line>
                 <line x1="8" y1="18" x2="16" y2="18"></line>
             </svg>
         `;
 
-        const swatch = document.createElement('span');
-        swatch.className = 'qs-swatch';
-        applySwatch(swatch, preset);
+        const mainContent = document.createElement('div');
+        mainContent.className = 'qpm-main-content';
 
         const nameBtn = document.createElement('button');
         nameBtn.type = 'button';
         nameBtn.className = 'qpm-name-btn';
         nameBtn.textContent = preset.name;
         nameBtn.setAttribute('title', 'Kaynakları Seç & Uygula');
+
+        const barSpan = document.createElement('div');
+        barSpan.className = 'qpm-proportional-bar';
+        applyPresetBar(barSpan, preset);
+
+        nameBtn.addEventListener('click', () => {
+            applyPreset(preset);
+            closeQuickPresetsManageModal();
+        });
+
+        mainContent.appendChild(nameBtn);
+        mainContent.appendChild(barSpan);
 
         // Count questions in non-archived sources included in preset
         const presetSources = (AppState.sources || []).filter(s => preset.sourceIds.includes(s.id) && !s.archived);
@@ -135,20 +146,15 @@ function renderManageList() {
         countSpan.className = 'qs-count';
         countSpan.textContent = questionCount;
 
-        nameBtn.addEventListener('click', () => {
-            applyPreset(preset);
-            closeQuickPresetsManageModal();
-        });
-
         const actions = document.createElement('div');
         actions.className = 'qpm-actions';
 
         const editBtn = document.createElement('button');
         editBtn.type = 'button';
-        editBtn.className = 'icon-btn';
+        editBtn.className = 'icon-btn qpm-edit-btn';
         editBtn.setAttribute('title', t('qs_edit_preset'));
         editBtn.innerHTML = `
-            <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
                 <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"></path>
                 <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"></path>
             </svg>
@@ -161,10 +167,10 @@ function renderManageList() {
 
         const deleteBtn = document.createElement('button');
         deleteBtn.type = 'button';
-        deleteBtn.className = 'icon-btn btn-danger';
+        deleteBtn.className = 'icon-btn qpm-delete-btn';
         deleteBtn.setAttribute('title', t('qs_delete_preset'));
         deleteBtn.innerHTML = `
-            <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+            <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
                 <polyline points="3 6 5 6 21 6"></polyline>
                 <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path>
             </svg>
@@ -179,8 +185,7 @@ function renderManageList() {
         actions.appendChild(deleteBtn);
 
         row.appendChild(handle);
-        row.appendChild(swatch);
-        row.appendChild(nameBtn);
+        row.appendChild(mainContent);
         row.appendChild(countSpan);
         row.appendChild(actions);
 
