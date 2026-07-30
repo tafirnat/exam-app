@@ -2324,34 +2324,43 @@ textarea {
     background-color: var(--error-color);
 }
 
-/* Start / Resume Button Container high contrast theme styling */
+/* Start / Resume Button Container theme-harmonious styling */
 #startBtnContainer .btn {
     font-weight: 700;
     letter-spacing: 0.01em;
-    box-shadow: 0 2px 6px rgba(0, 0, 0, 0.12);
+    border-radius: var(--radius-md);
     transition: var(--btn-transition);
 }
 
+/* Resume Button ("Devam Et"): Modern Success Emerald / Soft Green variant matching active theme */
 #startBtnContainer #resumeBtn {
-    background-color: var(--warning-color);
-    color: #09090b;
-    border: 1px solid color-mix(in srgb, var(--warning-color) 80%, #000);
+    background-color: color-mix(in srgb, var(--success-color) 16%, var(--surface-color));
+    color: var(--success-color);
+    border: 1px solid color-mix(in srgb, var(--success-color) 40%, transparent);
+    box-shadow: 0 2px 8px color-mix(in srgb, var(--success-color) 15%, transparent);
 }
 
 #startBtnContainer #resumeBtn:hover:not(:disabled) {
-    filter: brightness(1.08);
-    box-shadow: 0 4px 14px color-mix(in srgb, var(--warning-color) 45%, transparent);
+    background-color: color-mix(in srgb, var(--success-color) 26%, var(--surface-color));
+    color: var(--success-color);
+    border-color: var(--success-color);
+    transform: var(--btn-lift);
+    box-shadow: 0 4px 14px color-mix(in srgb, var(--success-color) 30%, transparent);
 }
 
+/* Start / New Test Button ("Başla" / "Yeni Test"): Vibrant Theme Primary Solid button */
 #startBtnContainer #startBtn {
-    background-color: var(--primary-hover);
-    color: #ffffff;
-    border: none;
+    background-color: var(--primary-color);
+    color: var(--btn-on-solid, #ffffff);
+    border: 1px solid transparent;
+    box-shadow: 0 4px 12px color-mix(in srgb, var(--primary-color) 30%, transparent);
 }
 
 #startBtnContainer #startBtn:hover:not(:disabled) {
-    filter: brightness(1.08);
-    box-shadow: 0 4px 14px color-mix(in srgb, var(--primary-hover) 45%, transparent);
+    background-color: var(--primary-hover);
+    color: var(--btn-on-solid, #ffffff);
+    transform: var(--btn-lift);
+    box-shadow: 0 6px 18px color-mix(in srgb, var(--primary-color) 42%, transparent);
 }
 
 .menu-sub-item {

@@ -1569,9 +1569,6 @@ function checkActiveTest() {
             startBtn.setAttribute('data-i18n', 'new_test');
             startBtn.style.width = 'auto';
             startBtn.style.flex = '1';
-            startBtn.style.backgroundColor = 'var(--primary-hover)';
-            startBtn.style.color = '#ffffff';
-            startBtn.style.border = 'none';
         }
         if (startBtnContainer) {
             startBtnContainer.style.flexDirection = 'row';
@@ -1583,9 +1580,7 @@ function checkActiveTest() {
             startBtn.innerText = t('start_test');
             startBtn.setAttribute('data-i18n', 'start_test');
             startBtn.style.width = '100%';
-            startBtn.style.backgroundColor = 'var(--primary-hover)';
-            startBtn.style.color = '#ffffff';
-            startBtn.style.border = 'none';
+            startBtn.style.flex = '';
         }
         if (startBtnContainer) {
             startBtnContainer.style.flexDirection = 'column';
