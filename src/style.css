@@ -2072,24 +2072,28 @@ textarea {
 .home-back-btn {
     display: inline-flex;
     align-items: center;
-    gap: 0.45rem;
-    padding: 0.45rem 0.85rem;
-    background: var(--surface-hover);
-    border: 1px solid var(--border-color);
+    justify-content: center;
+    width: 60px;
+    height: 38px;
+    padding: 0;
+    background: rgba(var(--primary-rgb), 0.12);
+    border: 1px solid color-mix(in srgb, var(--primary-color) 60%, #ffffff);
     border-radius: var(--radius-md, 10px);
-    color: var(--text-primary);
+    color: var(--primary-color);
     font-weight: 600;
     font-size: 0.85rem;
     cursor: pointer;
     transition: all 0.2s ease;
     text-decoration: none;
     line-height: 1;
+    box-sizing: border-box;
 }
 
 .home-back-btn:hover {
-    background: var(--border-color);
-    color: var(--primary-color);
+    background: var(--primary-color);
+    color: var(--btn-on-solid, #ffffff);
     transform: translateY(-1px);
+    box-shadow: 0 4px 12px rgba(var(--primary-rgb), 0.35);
 }
 
 .home-back-btn svg {
@@ -2703,14 +2707,14 @@ input:checked+.slider-small:before {
     display: inline-flex;
     align-items: center;
     justify-content: center;
-    width: 38px;
+    width: 60px;
     height: 38px;
     border-radius: 10px;
     cursor: pointer;
     transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
     outline: none;
     box-sizing: border-box;
-    padding: 8px;
+    padding: 0;
 }
 
 .test-action-btn:active {
@@ -2720,7 +2724,7 @@ input:checked+.slider-small:before {
 .test-action-btn.home-btn {
     color: var(--primary-color);
     background: rgba(var(--primary-rgb), 0.12);
-    border: 1.5px solid rgba(var(--primary-rgb), 0.3);
+    border: 1px solid color-mix(in srgb, var(--primary-color) 60%, #ffffff);
 }
 
 .test-action-btn.home-btn:hover {
@@ -2731,13 +2735,13 @@ input:checked+.slider-small:before {
 }
 
 .test-action-btn.exit-btn {
-    color: #ef4444;
+    color: var(--error-color, #ef4444);
     background: rgba(239, 68, 68, 0.15);
-    border: 1.5px solid rgba(239, 68, 68, 0.4);
+    border: 1px solid color-mix(in srgb, var(--error-color, #ef4444) 60%, #ffffff);
 }
 
 .test-action-btn.exit-btn:hover {
-    background: #ef4444;
+    background: var(--error-color, #ef4444);
     color: #ffffff;
     transform: translateY(-1px);
     box-shadow: 0 4px 12px rgba(239, 68, 68, 0.45);
