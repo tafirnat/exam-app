@@ -2,13 +2,6 @@ import { AppState, saveSources, saveQuickPresets, trackDeletedQuickPreset } from
 import { t } from '../../core/i18n.js';
 import { applySwatch, applyPresetBar, addCurrentAsPreset } from './quick-presets.js';
 
-const PALETTE_COLORS = [
-    '#ff0053', '#f75a00', '#ca8400', '#929b00', '#27ac00', '#00a97a',
-    '#00a2b9', '#0098fe', '#0667ff', '#8a43ff', '#d200fe', '#ff00b7'
-];
-
-let activeEditingPreset = null;
-
 export function updateQuickSourcesDot() {
     const dot = document.getElementById('quickSourcesDot');
     const btn = document.getElementById('quickSourcesBtn');
@@ -120,22 +113,86 @@ function renderManageList() {
         const mainContent = document.createElement('div');
         mainContent.className = 'qpm-main-content';
 
-        const nameBtn = document.createElement('button');
-        nameBtn.type = 'button';
-        nameBtn.className = 'qpm-name-btn';
-        nameBtn.textContent = preset.name;
-        nameBtn.setAttribute('title', 'Kaynakları Seç & Uygula');
+        const nameWrapper = document.createElement('div');
+        nameWrapper.className = 'qpm-name-wrapper';
+
+        const nameSpan = document.createElement('span');
+        nameSpan.className = 'qpm-name-text';
+        nameSpan.textContent = preset.name;
+        nameSpan.setAttribute('title', 'Tıkla & Uygula / İki kere tıkla ve Düzenle');
+        nameSpan.contentEditable = 'false';
+        nameSpan.spellcheck = false;
 
         const barSpan = document.createElement('div');
         barSpan.className = 'qpm-proportional-bar';
         applyPresetBar(barSpan, preset);
 
-        nameBtn.addEventListener('click', () => {
+        // Helper to trigger inline editing
+        const startInlineEdit = () => {
+            nameSpan.contentEditable = 'true';
+            nameSpan.classList.add('editing');
+            nameSpan.focus();
+            try {
+                const range = document.createRange();
+                range.selectNodeContents(nameSpan);
+                const sel = window.getSelection();
+                sel.removeAllRanges();
+                sel.addRange(range);
+            } catch (err) {
+                // Ignore selection fallback
+            }
+        };
+
+        const finishInlineEdit = (saveChanges) => {
+            if (!nameSpan.classList.contains('editing')) return;
+            nameSpan.classList.remove('editing');
+            nameSpan.contentEditable = 'false';
+
+            if (saveChanges) {
+                const newName = nameSpan.textContent.trim();
+                if (newName && newName !== preset.name) {
+                    preset.name = newName;
+                    preset.updatedAt = Date.now();
+                    saveQuickPresets();
+                } else {
+                    nameSpan.textContent = preset.name;
+                }
+            } else {
+                nameSpan.textContent = preset.name;
+            }
+        };
+
+        nameSpan.addEventListener('dblclick', (e) => {
+            e.stopPropagation();
+            startInlineEdit();
+        });
+
+        nameSpan.addEventListener('click', (e) => {
+            if (nameSpan.classList.contains('editing')) {
+                e.stopPropagation();
+                return;
+            }
             applyPreset(preset);
             closeQuickPresetsManageModal();
         });
 
-        mainContent.appendChild(nameBtn);
+        nameSpan.addEventListener('keydown', (e) => {
+            if (!nameSpan.classList.contains('editing')) return;
+            if (e.key === 'Enter') {
+                e.preventDefault();
+                nameSpan.blur();
+            } else if (e.key === 'Escape') {
+                e.preventDefault();
+                finishInlineEdit(false);
+            }
+        });
+
+        nameSpan.addEventListener('blur', () => {
+            finishInlineEdit(true);
+        });
+
+        nameWrapper.appendChild(nameSpan);
+        mainContent.appendChild(nameWrapper);
         mainContent.appendChild(barSpan);
 
         // Count questions in non-archived sources included in preset
@@ -161,8 +218,7 @@ function renderManageList() {
         `;
         editBtn.addEventListener('click', (e) => {
             e.stopPropagation();
-            closeQuickPresetsManageModal();
-            showQuickPresetEditModal(preset);
+            startInlineEdit();
         });
 
         const deleteBtn = document.createElement('button');
@@ -235,111 +291,6 @@ function deletePreset(id) {
     updateQuickSourcesDot();
 }
 
-export function showQuickPresetEditModal(preset) {
-    activeEditingPreset = preset;
-    const overlay = document.getElementById('quickPresetEditOverlay');
-    const nameInput = document.getElementById('qpeNameInput');
-    const colorPicker = document.getElementById('qpeColorPicker');
-    const colorInput = document.getElementById('qpeColorInput');
-    const autoMixContainer = document.getElementById('qpeAutoMixContainer');
-    const singleInfo = document.getElementById('qpeSingleInfo');
-    const modeAuto = document.getElementById('qpeModeAuto');
-    const modeCustom = document.getElementById('qpeModeCustom');
-
-    if (!overlay || !nameInput || !colorPicker || !colorInput) return;
-
-    const sources = (AppState.sources || []).filter(s => preset.sourceIds.includes(s.id));
-    const folderIds = [...new Set(sources.map(s => s.folderId || null))];
-    const isSingle = preset.sourceIds.length === 1;
-    const isMixed = folderIds.length > 1;
-
-    // Set Name
-    if (isSingle && sources.length > 0) {
-        nameInput.value = sources[0].name;
-        nameInput.disabled = true;
-    } else {
-        nameInput.value = preset.name || '';
-        nameInput.disabled = false;
-    }
-
-    // Configure Color Mode Controls
-    let selectedColor = preset.color || null;
-
-    const renderPalette = (enabled, currentColor) => {
-        colorPicker.innerHTML = '';
-        colorPicker.style.opacity = enabled ? '1' : '0.4';
-        colorPicker.style.pointerEvents = enabled ? 'auto' : 'none';
-
-        PALETTE_COLORS.forEach(hex => {
-            const swatch = document.createElement('button');
-            swatch.type = 'button';
-            swatch.className = 'color-swatch-btn' + (currentColor === hex ? ' selected' : '');
-            swatch.style.backgroundColor = hex;
-            swatch.dataset.color = hex;
-
-            if (enabled) {
-                swatch.addEventListener('click', () => {
-                    colorInput.value = hex;
-                    selectedColor = hex;
-                    colorPicker.querySelectorAll('.color-swatch-btn').forEach(b => b.classList.remove('selected'));
-                    swatch.classList.add('selected');
-                });
-            }
-
-            colorPicker.appendChild(swatch);
-        });
-    };
-
-    if (isSingle) {
-        if (autoMixContainer) autoMixContainer.style.display = 'none';
-        if (singleInfo) singleInfo.style.display = 'block';
-        colorInput.value = '';
-        renderPalette(false, null);
-    } else if (isMixed) {
-        if (singleInfo) singleInfo.style.display = 'none';
-        if (autoMixContainer) autoMixContainer.style.display = 'flex';
-
-        if (!preset.color) {
-            if (modeAuto) modeAuto.checked = true;
-            colorInput.value = '';
-            renderPalette(false, null);
-        } else {
-            if (modeCustom) modeCustom.checked = true;
-            colorInput.value = preset.color;
-            renderPalette(true, preset.color);
-        }
-
-        const handleModeChange = () => {
-            if (modeAuto && modeAuto.checked) {
-                selectedColor = null;
-                colorInput.value = '';
-                renderPalette(false, null);
-            } else {
-                selectedColor = colorInput.value || PALETTE_COLORS[0];
-                colorInput.value = selectedColor;
-                renderPalette(true, selectedColor);
-            }
-        };
-
-        if (modeAuto) modeAuto.onchange = handleModeChange;
-        if (modeCustom) modeCustom.onchange = handleModeChange;
-    } else {
-        // Multi-source, single folder
-        if (autoMixContainer) autoMixContainer.style.display = 'none';
-        if (singleInfo) singleInfo.style.display = 'none';
-        colorInput.value = preset.color || '';
-        renderPalette(true, preset.color);
-    }
-
-    overlay.classList.add('active');
-}
-
-export function closeQuickPresetEditModal() {
-    const overlay = document.getElementById('quickPresetEditOverlay');
-    if (overlay) overlay.classList.remove('active');
-    activeEditingPreset = null;
-}
-
 export function setupQuickPresets() {
     const btn = document.getElementById('quickSourcesBtn');
     const addBtn = document.getElementById('qsAddCurrentBtn');
@@ -373,60 +324,6 @@ export function setupQuickPresets() {
             }
         }
     });
-
-    // Edit modal listeners
-    const qpeClose = document.getElementById('qpeCloseBtn');
-    const qpeCancel = document.getElementById('qpeCancelBtn');
-    const qpeSave = document.getElementById('qpeSaveBtn');
-    const qpeDelete = document.getElementById('qpeDeleteBtn');
-
-    if (qpeClose) qpeClose.addEventListener('click', () => {
-        closeQuickPresetEditModal();
-        showQuickPresetsManageModal();
-    });
-    if (qpeCancel) qpeCancel.addEventListener('click', () => {
-        closeQuickPresetEditModal();
-        showQuickPresetsManageModal();
-    });
-
-    if (qpeSave) {
-        qpeSave.addEventListener('click', () => {
-            if (!activeEditingPreset) return;
-            const nameInput = document.getElementById('qpeNameInput');
-            const colorInput = document.getElementById('qpeColorInput');
-            const modeAuto = document.getElementById('qpeModeAuto');
-
-            const isSingle = activeEditingPreset.sourceIds.length === 1;
-
-            if (!isSingle && nameInput && nameInput.value.trim()) {
-                activeEditingPreset.name = nameInput.value.trim();
-            }
-
-            if (isSingle) {
-                activeEditingPreset.color = null;
-            } else if (modeAuto && modeAuto.checked) {
-                activeEditingPreset.color = null;
-            } else if (colorInput) {
-                activeEditingPreset.color = colorInput.value || null;
-            }
-
-            activeEditingPreset.updatedAt = Date.now();
-            saveQuickPresets();
-            closeQuickPresetEditModal();
-            showQuickPresetsManageModal();
-            updateQuickSourcesDot();
-        });
-    }
-
-    if (qpeDelete) {
-        qpeDelete.addEventListener('click', () => {
-            if (!activeEditingPreset) return;
-            const id = activeEditingPreset.id;
-            closeQuickPresetEditModal();
-            deletePreset(id);
-            showQuickPresetsManageModal();
-        });
-    }
 
     // Manage modal listeners
     const qpmClose = document.getElementById('qpmCloseBtn');

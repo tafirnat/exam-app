@@ -1528,55 +1528,6 @@
 
     <input type="file" id="importFileInput" style="display: none;" accept=".json">
 
-    <!-- Quick Preset Edit Modal -->
-    <div id="quickPresetEditOverlay" class="modal-overlay">
-        <div class="modal-card">
-            <div class="modal-header" style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1rem;">
-                <h3 id="qpeModalTitle" data-i18n="qs_edit_preset" style="margin: 0;">Hızlı Erişim Düzenle</h3>
-                <button class="icon-btn" id="qpeCloseBtn">
-                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="18" height="18">
-                        <line x1="18" y1="6" x2="6" y2="18"></line>
-                        <line x1="6" y1="6" x2="18" y2="18"></line>
-                    </svg>
-                </button>
-            </div>
-            <div class="modal-body">
-                <div class="input-group">
-                    <label data-i18n="folder_name">Ad</label>
-                    <input type="text" id="qpeNameInput" placeholder="Preset Adı">
-                </div>
-                <div class="input-group" id="qpeColorGroup">
-                    <label data-i18n="folder_color">Renk</label>
-                    <div id="qpeAutoMixContainer" style="display: none; margin-bottom: 0.5rem; font-size: 0.85rem; gap: 1rem; align-items: center;">
-                        <label style="display: inline-flex; align-items: center; gap: 0.35rem; cursor: pointer;">
-                            <input type="radio" name="qpeColorMode" id="qpeModeAuto" value="auto">
-                            <span data-i18n="qs_auto_mix">Otomatik karıştır</span>
-                        </label>
-                        <label style="display: inline-flex; align-items: center; gap: 0.35rem; cursor: pointer;">
-                            <input type="radio" name="qpeColorMode" id="qpeModeCustom" value="custom">
-                            <span data-i18n="qs_pick_color">Renk seç</span>
-                        </label>
-                    </div>
-                    <div id="qpeSingleInfo" style="display: none; font-size: 0.85rem; color: var(--text-secondary); margin-bottom: 0.5rem;" data-i18n="qs_color_locked_single">
-                        Renk kaynağın klasörüne bağlı
-                    </div>
-                    <div style="display: flex; flex-wrap: nowrap; justify-content: space-between; overflow-x: auto; gap: 0.35rem; margin-top: 0.25rem; padding-bottom: 0.25rem; scrollbar-width: none; -ms-overflow-style: none; -webkit-overflow-scrolling: touch;" id="qpeColorPicker" class="hide-scrollbar">
-                        <!-- Swatch options generated via JS -->
-                    </div>
-                    <input type="hidden" id="qpeColorInput" value="">
-                </div>
-            </div>
-            <div class="modal-footer modal-footer-grid">
-                <button class="btn btn-danger" id="qpeDeleteBtn">
-                    <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 6 5 6 21 6"></polyline><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path></svg>
-                    <span data-i18n="delete">Sil</span>
-                </button>
-                <button class="btn btn-subtle" id="qpeCancelBtn" data-i18n="cancel">İptal</button>
-                <button class="btn btn-primary" id="qpeSaveBtn" data-i18n="save_folder">Kaydet</button>
-            </div>
-        </div>
-    </div>
-
     <!-- Quick Presets Manage Modal -->
     <div id="quickPresetsManageOverlay" class="modal-overlay">
         <div class="modal-card">

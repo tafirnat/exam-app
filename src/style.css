@@ -5159,10 +5159,15 @@ body.dnd-active {
     gap: 3px;
 }
 
-.qpm-name-btn {
+.qpm-name-wrapper {
+    display: flex;
+    align-items: center;
     width: 100%;
-    border: none;
-    background: transparent;
+}
+
+.qpm-name-text {
+    display: inline-block;
+    max-width: 100%;
     color: var(--text-primary);
     font-family: inherit;
     font-size: 0.88rem;
@@ -5172,11 +5177,23 @@ body.dnd-active {
     overflow: hidden;
     text-overflow: ellipsis;
     white-space: nowrap;
-    padding: 0;
+    padding: 1px 4px;
+    border-radius: 4px;
+    transition: background 0.15s ease, box-shadow 0.15s ease, color 0.15s ease;
 }
 
-.qpm-name-btn:hover {
+.qpm-name-text:hover:not(.editing) {
     color: var(--primary-color);
+}
+
+.qpm-name-text.editing {
+    outline: none;
+    cursor: text;
+    white-space: normal;
+    word-break: break-word;
+    background: color-mix(in srgb, var(--primary-color, #3b82f6) 18%, transparent);
+    box-shadow: 0 0 0 2px color-mix(in srgb, var(--primary-color, #3b82f6) 45%, transparent);
+    color: var(--text-primary);
 }
 
 .qpm-proportional-bar {
