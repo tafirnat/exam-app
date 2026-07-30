@@ -1167,11 +1167,15 @@ export function updateQuestionStatsInfo(sourceId, qid) {
 
         infoEl.innerHTML = `
             <div class="question-stats-left">
-                ${rPercent !== null ? `<span class="stats-item-retrievability ${r <= 0.9 ? 'overdue' : ''}" title="Retrievability: ${rPercent}%">🧠 ${rPercent}%</span>` : ''}
-                <span>${t('correct')}: <b>${s.correct}</b></span>
-                <span>${t('wrong')}: <b>${s.wrong}</b></span>
-                <span>${t('success_percent', { percent })}</span>
-                <span>${t('difficulty_label')} <b>${(s.difficulty / 2).toFixed(1)}</b></span>
+                <div class="stats-row">
+                    ${rPercent !== null ? `<span class="stats-item-retrievability ${r <= 0.9 ? 'overdue' : ''}" title="Retrievability: ${rPercent}%">🧠 ${rPercent}%</span>` : ''}
+                    <span>${t('correct')}: <b>${s.correct}</b></span>
+                    <span>${t('wrong')}: <b>${s.wrong}</b></span>
+                </div>
+                <div class="stats-row">
+                    <span>${t('success_percent', { percent })}</span>
+                    <span>${t('difficulty_label')} <b>${(s.difficulty / 2).toFixed(1)}</b></span>
+                </div>
             </div>
             <div class="test-bottom-actions">
                 <button type="button" class="test-action-btn home-btn" id="testHomeBtn" title="${t('go_home') || 'Ana Sayfa'}">
