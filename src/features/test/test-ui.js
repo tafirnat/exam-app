@@ -15,6 +15,11 @@ const TTS = {
     audio: null,
     timerId: null,
     lastQIndex: -1,
+    /* Which reading section is being spoken, or null when the target is a whole
+       card. Every state change re-renders the question, which rebuilds the
+       heading buttons from nothing, so this is what tells the rebuilt ones
+       which single button should look like it is playing. */
+    sectionKey: null,
 
     get isPlaying() { return this.state === 'PLAYING'; },
     get wasInterrupted() { return this.state === 'SCHEDULED' || this.state === 'PLAYING'; },
@@ -35,6 +40,7 @@ const TTS = {
         }
         const wasActive = this.state !== 'IDLE';
         this.state = 'IDLE';
+        this.sectionKey = null;
         if (!silent && wasActive) renderQuestion(true);
     },
 
@@ -51,10 +57,10 @@ const TTS = {
         }, delay);
     },
 
-    _play(text) {
-        if (!text) { this.state = 'IDLE'; return; }
+    _play(text, sectionKey = null) {
+        if (!text) { this.state = 'IDLE'; this.sectionKey = null; return; }
         const cleanText = text.replace(/<[^>]*>/g, ' ').replace(/\s+/g, ' ').trim();
-        if (!cleanText) { this.state = 'IDLE'; return; }
+        if (!cleanText) { this.state = 'IDLE'; this.sectionKey = null; return; }
         const lang = AppState.language === 'tr' ? 'tr' : (AppState.language === 'de' ? 'de' : 'en');
         const voicePrefix = lang === 'tr' ? 'tr-TR-Wavenet-' : (lang === 'de' ? 'de-DE-Wavenet-' : 'en-US-Wavenet-');
         const voice = AppState.currentTtsVoice || 'A';
@@ -65,29 +71,34 @@ const TTS = {
 
         this.audio = new Audio(url);
         this.state = 'PLAYING';
+        this.sectionKey = sectionKey;
         renderQuestion(true);
 
         this.audio.play().catch(err => {
             console.error('TTS Playback failed:', err);
             this.audio = null;
             this.state = 'IDLE';
+            this.sectionKey = null;
             renderQuestion(true);
         });
 
         this.audio.onended = () => {
             this.audio = null;
             this.state = 'IDLE';
+            this.sectionKey = null;
             renderQuestion(true);
         };
     },
 
-    toggle(text) {
-        if (this.state === 'PLAYING') {
+    /* A second click on whatever is currently speaking stops it; a click on any
+       other target replaces it. That is what keeps the card button and the
+       per-section buttons from ever playing over each other. */
+    toggle(text, sectionKey = null) {
+        if (this.state === 'PLAYING' && this.sectionKey === sectionKey) {
             this.stop(false);
         } else {
-            this._cancelSchedule();
-            this.state = 'IDLE';
-            this._play(text);
+            this.stop(true);
+            this._play(text, sectionKey);
         }
     },
 
@@ -107,12 +118,240 @@ const TTS = {
     }
 };
 
+/**
+ * Whether the whole card is being spoken — false while a single reading section
+ * is, since that is the heading button's state to show and the card button is
+ * still an offer to read the whole text.
+ */
 export function getIsAudioPlaying() {
-    return TTS.isPlaying;
+    return TTS.isPlaying && TTS.sectionKey === null;
 }
 
 export function stopAudio(silent = false) {
     TTS.stop(silent);
+}
+
+/* ---------------------------------------------------------------------------
+   READING SECTIONS
+   ---------------------------------------------------------------------------
+   A reading passage runs long enough that speaking or translating the whole of
+   it in one go is no use to anyone. Every heading in a reading card therefore
+   carries its own pair of controls, and each acts on exactly the text from that
+   heading down to the next heading of any level: the passage's own structure
+   decides the chunks, so a reader can work through it a section at a time.
+
+   Only the reading category gets them. Everywhere else the text is short enough
+   that the card-level buttons are the whole story, and the spec is explicit
+   that those keep their existing reach over the full text.
+   --------------------------------------------------------------------------- */
+
+const SECTION_ICON_SPEAK = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5"></polygon><path d="M19.07 4.93a10 10 0 0 1 0 14.14M15.54 8.46a5 5 0 0 1 0 7.07"></path></svg>';
+const SECTION_ICON_STOP = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><rect x="6" y="4" width="4" height="16"></rect><rect x="14" y="4" width="4" height="16"></rect></svg>';
+const SECTION_ICON_TRANSLATE = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M5 8l6 6"></path><path d="M4 14l6-6 2-3"></path><path d="M2 5h12"></path><path d="M7 2h1"></path><path d="M22 22l-5-10-5 10"></path><path d="M14 18h6"></path></svg>';
+
+const isHeadingEl = (el) => /^H[1-6]$/.test(el.tagName);
+
+/* BR counts: the renderer joins the lines of one paragraph with it, so it is a
+   real break in the prose and not decoration. */
+const BLOCK_TAGS = /^(P|DIV|UL|OL|LI|TABLE|THEAD|TBODY|TR|TH|TD|BLOCKQUOTE|PRE|HR|BR|H[1-6])$/;
+
+/**
+ * The readable text of one block, with a line break wherever the markup starts a
+ * new block. The renderer joins its output with no whitespace at all, so a flat
+ * textContent read would hand the speech API "Punkt einsPunkt zwei" as a single
+ * unpronounceable word; inline markup, by contrast, must not break the sentence
+ * it sits in.
+ * @param {Node} node
+ * @returns {string}
+ */
+function readBlockText(node) {
+    const parts = [];
+    let inline = '';
+
+    for (const child of node.childNodes) {
+        if (child.nodeType === Node.TEXT_NODE) {
+            inline += child.textContent;
+            continue;
+        }
+        if (child.nodeType !== Node.ELEMENT_NODE) continue;
+        // Our own additions are not part of the passage.
+        if (child.classList.contains('heading-tools') || child.classList.contains('md-section-translation')) continue;
+
+        if (BLOCK_TAGS.test(child.tagName)) {
+            if (inline.trim()) parts.push(inline.trim());
+            inline = '';
+            const nested = readBlockText(child);
+            if (nested) parts.push(nested);
+        } else {
+            inline += child.textContent;
+        }
+    }
+
+    if (inline.trim()) parts.push(inline.trim());
+    return parts.join('\n');
+}
+
+const currentTranslationTarget = () => AppState.translationTarget || 'tr';
+
+/* A translation the reader opened outlives the re-render that every TTS play
+   and stop triggers, so a section they opened does not blink shut while the
+   passage is being spoken. Held per scope, keyed by question: moving to another
+   question drops the previous one's entries. */
+const sectionTranslations = new Map(); // scope -> { cacheKey, entries: Map }
+
+function sectionTranslationEntries(scope, cacheKey) {
+    const held = sectionTranslations.get(scope);
+    if (held && held.cacheKey === cacheKey) return held.entries;
+    const entries = new Map();
+    sectionTranslations.set(scope, { cacheKey, entries });
+    return entries;
+}
+
+/**
+ * The heading-led sections of a rendered body, in document order.
+ * @param {Element} rootEl The .md-content wrapper.
+ * @returns {{heading: Element, next: Element|null, text: string, translationEl: Element|null}[]}
+ */
+function collectReadingSections(rootEl) {
+    const blocks = Array.from(rootEl.children);
+    const sections = [];
+
+    blocks.forEach((block, start) => {
+        if (!isHeadingEl(block)) return;
+        let end = start + 1;
+        while (end < blocks.length && !isHeadingEl(blocks[end])) end++;
+
+        sections.push({
+            heading: block,
+            next: blocks[end] || null,
+            text: blocks.slice(start, end)
+                .filter(b => !b.classList.contains('md-section-translation'))
+                .map(readBlockText)
+                .filter(Boolean)
+                .join('\n'),
+            translationEl: null
+        });
+    });
+
+    return sections;
+}
+
+/**
+ * Gives every heading of a rendered reading passage its own speak and translate
+ * control. Safe to call on every render: it reads the live TTS state and the
+ * open-translation cache, so a rebuilt body comes back in the state it left.
+ *
+ * @param {Element} hostEl Element whose innerHTML was just set from renderMarkdown.
+ * @param {Object} options
+ * @param {string} options.scope Namespaces the buttons so the test view and the
+ *        preview can never claim each other's playing state.
+ * @param {string} options.cacheKey Identifies the question, so open translations
+ *        are dropped when a different question is drawn.
+ * @param {(() => void)|null} [options.onRefresh] Preview only: how to redraw
+ *        when playback ends, since the preview is not what renderQuestion draws.
+ */
+export function decorateReadingSections(hostEl, { scope, cacheKey, onRefresh = null } = {}) {
+    if (!hostEl) return;
+    const rootEl = hostEl.querySelector('.md-content') || hostEl;
+    /* Idempotent: callers normally hand over a body they have just rebuilt, but
+       one that decorates the same DOM twice must not get two sets of icons. */
+    rootEl.querySelectorAll('.heading-tools, .md-section-translation').forEach(el => el.remove());
+    const sections = collectReadingSections(rootEl);
+    if (sections.length === 0) return;
+
+    const entries = sectionTranslationEntries(scope, cacheKey);
+
+    sections.forEach((section, index) => {
+        const sectionKey = `${scope}:${index}`;
+        const tools = document.createElement('span');
+        tools.className = 'heading-tools';
+
+        // The speech control follows the Text-to-Speech setting, exactly as the
+        // card-level button does: switching it off leaves no speech anywhere.
+        if (AppState.ttsEnabled) {
+            const speaking = TTS.isPlaying && TTS.sectionKey === sectionKey;
+            const speakBtn = document.createElement('button');
+            speakBtn.type = 'button';
+            speakBtn.className = 'heading-tool-btn heading-tts-btn';
+            if (speaking) speakBtn.classList.add('playing');
+            speakBtn.title = t(speaking ? 'section_stop' : 'section_listen');
+            speakBtn.setAttribute('aria-label', speakBtn.title);
+            speakBtn.innerHTML = speaking ? SECTION_ICON_STOP : SECTION_ICON_SPEAK;
+            speakBtn.onclick = (e) => {
+                e.stopPropagation();
+                handleTtsToggle(section.text, onRefresh, sectionKey);
+            };
+            tools.appendChild(speakBtn);
+        }
+
+        const transBtn = document.createElement('button');
+        transBtn.type = 'button';
+        transBtn.className = 'heading-tool-btn heading-translate-btn';
+        transBtn.title = t('section_translate');
+        transBtn.setAttribute('aria-label', transBtn.title);
+        transBtn.innerHTML = SECTION_ICON_TRANSLATE;
+        transBtn.onclick = (e) => {
+            e.stopPropagation();
+            toggleSectionTranslation(rootEl, section, entries, sectionKey, transBtn);
+        };
+        tools.appendChild(transBtn);
+
+        section.heading.appendChild(tools);
+
+        const held = entries.get(sectionKey);
+        if (held && held.visible && held.lang === currentTranslationTarget()) {
+            showSectionTranslation(rootEl, section, held, transBtn);
+        }
+    });
+}
+
+async function toggleSectionTranslation(rootEl, section, entries, sectionKey, btn) {
+    const lang = currentTranslationTarget();
+    const held = entries.get(sectionKey);
+
+    // Already fetched for the language now selected: this is a show/hide only.
+    if (held && held.lang === lang) {
+        held.visible = !held.visible;
+        if (held.visible) showSectionTranslation(rootEl, section, held, btn);
+        else hideSectionTranslation(section, btn);
+        return;
+    }
+
+    btn.classList.add('loading');
+    try {
+        const translated = await translateText(section.text, lang);
+        if (!translated) return;
+        const entry = { lang, text: translated, visible: true };
+        entries.set(sectionKey, entry);
+        /* A TTS state change may have rebuilt the body while the request was in
+           flight, leaving these nodes detached. The cache entry is enough — the
+           next decorate pass puts the translation back where it belongs. */
+        if (!rootEl.isConnected) return;
+        showSectionTranslation(rootEl, section, entry, btn);
+    } finally {
+        btn.classList.remove('loading');
+    }
+}
+
+/** Places the translation at the end of its section, before the next heading. */
+function showSectionTranslation(rootEl, section, entry, btn) {
+    if (!section.translationEl) {
+        const el = document.createElement('div');
+        el.className = 'md-section-translation';
+        if (section.next && section.next.parentNode === rootEl) rootEl.insertBefore(el, section.next);
+        else rootEl.appendChild(el);
+        section.translationEl = el;
+    }
+    section.translationEl.textContent = entry.text;
+    btn.classList.add('active');
+}
+
+function hideSectionTranslation(section, btn) {
+    if (section.translationEl) {
+        section.translationEl.remove();
+        section.translationEl = null;
+    }
+    btn.classList.remove('active');
 }
 
 export function renderQuestion(isRefresh = false) {
@@ -191,7 +430,7 @@ export function renderQuestion(isRefresh = false) {
     // Remove existing TTS elements
     card.querySelectorAll('.tts-btn').forEach(c => c.remove());
     if (AppState.ttsEnabled) {
-        const playing = TTS.isPlaying;
+        const playing = getIsAudioPlaying();
         const tBtn = document.createElement('button');
         tBtn.className = 'tts-btn';
         if (playing) tBtn.classList.add('playing');
@@ -201,6 +440,12 @@ export function renderQuestion(isRefresh = false) {
         tBtn.onclick = () => TTS.toggle(q.content?.text || q.text || '');
         card.appendChild(tBtn);
         // Autoplay is now handled by TTS.onNewQuestion() called above
+    }
+
+    // Long passages are worked through a section at a time, so each heading of a
+    // reading card gets its own speak and translate control.
+    if (getQuestionCategory(q.type) === 'reading') {
+        decorateReadingSections(qTextEl, { scope: 'test', cacheKey: `${q.sourceId}_${q.id}` });
     }
 
     // Reset translation state for new question
@@ -1169,14 +1414,15 @@ window.showQuestionResult = (testId, questionId) => {
 };
 
 // handleTtsToggle: preview bağlamı için onRefresh callback desteğiyle TTS toggle
-export function handleTtsToggle(text, onRefresh = null) {
+export function handleTtsToggle(text, onRefresh = null, sectionKey = null) {
     if (onRefresh) {
         // Preview context: use a custom refresh callback via a one-shot wrapper
-        if (TTS.isPlaying) {
+        if (TTS.isPlaying && TTS.sectionKey === sectionKey) {
             TTS.stop(true);
             onRefresh();
         } else {
-            TTS._play(text);
+            TTS.stop(true);
+            TTS._play(text, sectionKey);
             if (TTS.audio) {
                 const origOnEnded = TTS.audio.onended;
                 TTS.audio.onended = () => {
@@ -1187,7 +1433,7 @@ export function handleTtsToggle(text, onRefresh = null) {
             onRefresh();
         }
     } else {
-        TTS.toggle(text);
+        TTS.toggle(text, sectionKey);
     }
 }
 

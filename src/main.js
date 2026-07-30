@@ -8,7 +8,7 @@ import { processJSON, loadFromUrl, loadFromFile, normalizeQuestions, mergeSource
 import { renderSourcesList, showMergeModal, closeAllSourcesModals } from './features/sources/sources-ui.js';
 import { initArchiveUI } from './features/sources/archive.js';
 import { prepareTest, finishTest, prepareRetake } from './features/test/test-engine.js';
-import { renderQuestion, handleCheckAnswer, updateIndicators, handleTranslation, handleDifficultyRating, handleFlashcardRating, renderTestResults, handleTtsToggle, getIsAudioPlaying, stopAudio } from './features/test/test-ui.js';
+import { renderQuestion, handleCheckAnswer, updateIndicators, handleTranslation, handleDifficultyRating, handleFlashcardRating, renderTestResults, handleTtsToggle, getIsAudioPlaying, stopAudio, decorateReadingSections } from './features/test/test-ui.js';
 import { renderStatsList, updateHomeStats, setupStatsEventListeners } from './features/stats/stats-module.js';
 import { openQuestionEditor, closeQuestionEditor } from './features/stats/question-editor.js';
 import { initTimer, stopTimer } from './features/test/timer-module.js';
@@ -415,6 +415,15 @@ window.renderQuestionPreview = (q, stats = null, source = null) => {
             });
         };
         card.appendChild(tBtn);
+    }
+
+    // Same per-heading controls as the test view, refreshed through this render.
+    if (getQuestionCategory(q.type) === 'reading') {
+        decorateReadingSections(qTextEl, {
+            scope: 'preview',
+            cacheKey: `${q.sourceId}_${q.id}`,
+            onRefresh: () => renderQuestionPreview(q, stats, AppState.currentPreviewSource)
+        });
     }
 
     // Reset translation state for new question

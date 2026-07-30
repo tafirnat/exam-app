@@ -3888,6 +3888,104 @@ input:checked+.slider-small:before {
     color: var(--primary-color);
 }
 
+/* Reading section tools
+   ---------------------------------------------------------------------------
+   The speak/translate pair that trails every heading of a reading passage.
+   They are meant to read as part of the heading rather than as controls parked
+   next to it: no label, no background, no border, and sized in em so each pair
+   shrinks along with its own heading level. */
+.heading-tools {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.1em;
+    margin-left: 0.45em;
+    vertical-align: middle;
+    font-size: 0.75em;
+    font-weight: 400;
+    user-select: none;
+    -webkit-user-select: none;
+}
+
+.heading-tool-btn {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 1.5em;
+    height: 1.5em;
+    padding: 0;
+    background: none;
+    border: none;
+    border-radius: var(--radius-sm);
+    color: var(--text-secondary);
+    opacity: 0.4;
+    cursor: pointer;
+    transition: opacity 0.2s ease, color 0.2s ease;
+    -webkit-tap-highlight-color: transparent;
+}
+
+.heading-tool-btn svg {
+    display: block;
+    width: 1em;
+    height: 1em;
+}
+
+.heading-tool-btn:hover,
+.heading-tool-btn:focus-visible,
+.heading-tool-btn.active,
+.heading-tool-btn.playing {
+    opacity: 1;
+    color: var(--primary-color);
+}
+
+.heading-tool-btn.loading {
+    opacity: 1;
+    color: var(--primary-color);
+    pointer-events: none;
+}
+
+.heading-tool-btn.loading svg {
+    animation: spin 1s linear infinite;
+}
+
+/* Without a background to tint, the playing state has to be the icon itself. */
+.heading-tts-btn.playing {
+    animation: heading-tts-pulse 1.4s ease-in-out infinite;
+}
+
+@keyframes heading-tts-pulse {
+
+    0%,
+    100% {
+        opacity: 1;
+    }
+
+    50% {
+        opacity: 0.45;
+    }
+}
+
+/* No hover to reveal them on touch, so they start closer to legible there. */
+@media (hover: none) {
+    .heading-tool-btn {
+        opacity: 0.65;
+    }
+}
+
+.md-section-translation {
+    margin: 0.5rem 0 1.25rem 0;
+    padding: 0.6rem 0.8rem;
+    font-size: 0.95rem;
+    font-weight: 400;
+    line-height: 1.6;
+    color: var(--text-secondary);
+    background-color: var(--surface-hover);
+    border-left: 2px dashed var(--border-color);
+    border-radius: var(--radius-sm);
+    /* The section is translated whole, so its paragraph breaks come back as
+       newlines in one text node. */
+    white-space: pre-line;
+}
+
 @keyframes pulse-border {
     0% {
         box-shadow: 0 0 0 0 rgba(var(--primary-rgb), 0.4);
