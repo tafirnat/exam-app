@@ -106,10 +106,18 @@ function normalizeCalloutType(rawType) {
  * @param {string} url
  * @returns {boolean}
  */
-function isSafeUrl(url) {
-    if (!url) return false;
+export function isSafeUrl(url) {
+    if (!url || typeof url !== 'string') return false;
     const trimmed = url.trim().toLowerCase();
-    return trimmed.startsWith('http://') || trimmed.startsWith('https://') || trimmed.startsWith('mailto:');
+    if (trimmed.startsWith('javascript:') || trimmed.startsWith('vbscript:') || trimmed.startsWith('data:')) {
+        return false;
+    }
+    return trimmed.startsWith('http://') ||
+           trimmed.startsWith('https://') ||
+           trimmed.startsWith('mailto:') ||
+           trimmed.startsWith('file://') ||
+           trimmed.startsWith('/') ||
+           trimmed.startsWith('#');
 }
 
 /**

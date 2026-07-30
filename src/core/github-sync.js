@@ -191,7 +191,10 @@ export async function loginWithToken(token) {
 /**
  * Helper to fetch user details, setup Gist, and initialize sync.
  */
-async function completeLoginWithToken(token) {
+async function completeLoginWithToken(rawToken) {
+    const token = (rawToken || '').replace(/[\x00-\x1F\x7F-\x9F\s]/g, '');
+    if (!token) throw new Error(t('github_invalid_token'));
+
     // 1. Fetch user profile
     const userRes = await fetch(`${GITHUB_API_BASE}/user`, {
         headers: {

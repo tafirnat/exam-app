@@ -80,7 +80,31 @@ export function normalizeQuestions(questions) {
     });
 }
 
-export function processJSON(data, name, options = {}) {
+/**
+ * Recursively strips dangerous object keys (__proto__, constructor, prototype)
+ * to prevent Prototype Pollution attacks from untrusted JSON inputs.
+ * @param {any} input
+ * @returns {any}
+ */
+export function sanitizeImportedData(input) {
+    if (input === null || typeof input !== 'object') {
+        return input;
+    }
+    if (Array.isArray(input)) {
+        return input.map(sanitizeImportedData);
+    }
+    const sanitized = {};
+    for (const key of Object.keys(input)) {
+        if (key === '__proto__' || key === 'constructor' || key === 'prototype') {
+            continue;
+        }
+        sanitized[key] = sanitizeImportedData(input[key]);
+    }
+    return sanitized;
+}
+
+export function processJSON(rawData, name, options = {}) {
+    const data = sanitizeImportedData(rawData);
     const validation = validateExamSchema(data);
     if (!validation.valid) {
         const errorList = validation.errors.slice(0, 5).join('\n• ');
