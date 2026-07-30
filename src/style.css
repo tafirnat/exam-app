@@ -2332,34 +2332,34 @@ textarea {
     transition: var(--btn-transition);
 }
 
-/* Resume Button ("Devam Et"): Soft Pastel Gold / Warm Amber variant */
+/* Resume Button ("Devam Et"): Custom Amber Olive mix with black text */
 #startBtnContainer #resumeBtn {
-    background-color: color-mix(in srgb, #bd9b00 16%, var(--surface-color));
-    color: #d97706;
-    border: 1px solid color-mix(in srgb, #bd9b00 45%, transparent);
-    box-shadow: 0 2px 8px color-mix(in srgb, #bd9b00 18%, transparent);
+    background-color: color-mix(in srgb, #ffd101 22%, #615a1b);
+    color: #000000;
+    border: 1px solid color-mix(in srgb, #ffd101 45%, transparent);
+    box-shadow: 0 2px 8px color-mix(in srgb, #ffd101 18%, transparent);
 }
 
 [data-theme="dark"] #startBtnContainer #resumeBtn {
-    background-color: color-mix(in srgb, #bd9b00 22%, var(--surface-color));
-    color: #fbbf24;
-    border: 1px solid color-mix(in srgb, #facc15 40%, transparent);
-    box-shadow: 0 2px 8px color-mix(in srgb, #facc15 20%, transparent);
+    background-color: color-mix(in srgb, #ffd101 22%, #615a1b);
+    color: #000000;
+    border: 1px solid color-mix(in srgb, #ffd101 40%, transparent);
+    box-shadow: 0 2px 8px color-mix(in srgb, #ffd101 20%, transparent);
 }
 
 #startBtnContainer #resumeBtn:hover:not(:disabled) {
-    background-color: color-mix(in srgb, #bd9b00 28%, var(--surface-color));
-    color: #b45309;
-    border-color: color-mix(in srgb, #bd9b00 65%, transparent);
+    background-color: color-mix(in srgb, #ffd101 32%, #615a1b);
+    color: #000000;
+    border-color: color-mix(in srgb, #ffd101 65%, transparent);
     transform: var(--btn-lift);
-    box-shadow: 0 4px 14px color-mix(in srgb, #bd9b00 35%, transparent);
+    box-shadow: 0 4px 14px color-mix(in srgb, #ffd101 35%, transparent);
 }
 
 [data-theme="dark"] #startBtnContainer #resumeBtn:hover:not(:disabled) {
-    background-color: color-mix(in srgb, #facc15 30%, var(--surface-color));
-    color: #fef08a;
-    border-color: #facc15;
-    box-shadow: 0 4px 14px color-mix(in srgb, #facc15 40%, transparent);
+    background-color: color-mix(in srgb, #ffd101 35%, #615a1b);
+    color: #000000;
+    border-color: #ffd101;
+    box-shadow: 0 4px 14px color-mix(in srgb, #ffd101 40%, transparent);
 }
 
 /* Start / New Test Button ("Başla" / "Yeni Test"): Vibrant Theme Primary Solid button */
