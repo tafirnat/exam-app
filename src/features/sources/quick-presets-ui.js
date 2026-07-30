@@ -1,7 +1,6 @@
-import { AppState, saveSources, saveQuickPresets, trackDeletedQuickPreset, liveFolders } from '../../core/state.js';
-import { escapeHTML, showAlert } from '../../core/utils.js';
+import { AppState, saveSources, saveQuickPresets, trackDeletedQuickPreset } from '../../core/state.js';
 import { t } from '../../core/i18n.js';
-import { applySwatch, addCurrentAsPreset, resolvePresetColor } from './quick-presets.js';
+import { applySwatch, addCurrentAsPreset } from './quick-presets.js';
 
 const PALETTE_COLORS = [
     '#ff0053', '#f75a00', '#ca8400', '#929b00', '#27ac00', '#00a97a',
@@ -37,93 +36,13 @@ export function updateQuickSourcesDot() {
     }
 }
 
-export function renderQuickSourcesMenu() {
-    const listEl = document.getElementById('quickSourcesPresetList');
-    if (!listEl) return;
-
-    listEl.innerHTML = '';
-
-    const presets = AppState.quickPresets || [];
-
-    if (presets.length === 0) {
-        const emptyDiv = document.createElement('div');
-        emptyDiv.className = 'quick-sources-empty';
-        emptyDiv.setAttribute('data-i18n', 'qs_empty');
-        emptyDiv.textContent = t('qs_empty');
-        listEl.appendChild(emptyDiv);
-    } else {
-        // Sort by order or createdAt
-        const sorted = [...presets].sort((a, b) => (a.order ?? 0) - (b.order ?? 0));
-
-        sorted.forEach(preset => {
-            const itemBtn = document.createElement('button');
-            itemBtn.className = 'dropdown-item quick-sources-item';
-            itemBtn.setAttribute('role', 'menuitem');
-            itemBtn.setAttribute('data-preset-id', preset.id);
-
-            const swatchSpan = document.createElement('span');
-            swatchSpan.className = 'qs-swatch';
-            applySwatch(swatchSpan, preset);
-
-            const nameSpan = document.createElement('span');
-            nameSpan.className = 'qs-name';
-            nameSpan.textContent = preset.name;
-
-            // Count questions in non-archived sources included in preset
-            const presetSources = (AppState.sources || []).filter(s => preset.sourceIds.includes(s.id) && !s.archived);
-            const questionCount = presetSources.reduce((acc, s) => acc + (s.questions ? s.questions.length : 0), 0);
-
-            const countSpan = document.createElement('span');
-            countSpan.className = 'qs-count';
-            countSpan.textContent = questionCount;
-
-            const editBtn = document.createElement('button');
-            editBtn.className = 'icon-btn qs-edit';
-            editBtn.setAttribute('data-edit-id', preset.id);
-            editBtn.setAttribute('aria-label', t('qs_edit_preset'));
-            editBtn.setAttribute('title', t('qs_edit_preset'));
-            editBtn.innerHTML = `
-                <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                    <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"></path>
-                    <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"></path>
-                </svg>
-            `;
-
-            editBtn.addEventListener('click', (e) => {
-                e.stopPropagation();
-                closeQuickSourcesMenu();
-                showQuickPresetEditModal(preset);
-            });
-
-            itemBtn.appendChild(swatchSpan);
-            itemBtn.appendChild(nameSpan);
-            itemBtn.appendChild(countSpan);
-            itemBtn.appendChild(editBtn);
-
-            itemBtn.addEventListener('click', () => {
-                applyPreset(preset);
-                closeQuickSourcesMenu();
-            });
-
-            listEl.appendChild(itemBtn);
-        });
-    }
-
-    updateQuickSourcesDot();
-}
-
 export function applyPreset(preset) {
     if (!preset || !preset.sourceIds) return;
     const targetSet = new Set(preset.sourceIds);
 
-    let changed = false;
     (AppState.sources || []).forEach(s => {
         if (s.archived) return;
-        const shouldBeActive = targetSet.has(s.id);
-        if (s.active !== shouldBeActive) {
-            s.active = shouldBeActive;
-            changed = true;
-        }
+        s.active = targetSet.has(s.id);
     });
 
     if (preset.sourceIds.length > 0) {
@@ -140,38 +59,175 @@ export function applyPreset(preset) {
     updateQuickSourcesDot();
 }
 
-export function openQuickSourcesMenu() {
-    const menu = document.getElementById('quickSourcesMenu');
-    const btn = document.getElementById('quickSourcesBtn');
-    if (!menu || !btn) return;
+export function showQuickPresetsManageModal() {
+    const overlay = document.getElementById('quickPresetsManageOverlay');
+    const addLabel = document.getElementById('qsAddCurrentLabel');
+    if (!overlay) return;
 
-    renderQuickSourcesMenu();
-    menu.removeAttribute('hidden');
-    menu.classList.add('active');
-    btn.setAttribute('aria-expanded', 'true');
+    const activeCount = (AppState.sources || []).filter(s => s.active && !s.archived).length;
 
-    // Focus first menu item
-    const firstItem = menu.querySelector('[role="menuitem"]');
-    if (firstItem) firstItem.focus();
-}
-
-export function closeQuickSourcesMenu() {
-    const menu = document.getElementById('quickSourcesMenu');
-    const btn = document.getElementById('quickSourcesBtn');
-    if (!menu || !btn) return;
-
-    menu.setAttribute('hidden', '');
-    menu.classList.remove('active');
-    btn.setAttribute('aria-expanded', 'false');
-}
-
-export function toggleQuickSourcesMenu() {
-    const menu = document.getElementById('quickSourcesMenu');
-    if (menu && menu.hasAttribute('hidden')) {
-        openQuickSourcesMenu();
-    } else {
-        closeQuickSourcesMenu();
+    if (addLabel) {
+        if (activeCount > 1) {
+            addLabel.textContent = t('qs_add_current_multiple') || 'Seçili Kaynakları Hızlı Erişime Ekle';
+        } else {
+            addLabel.textContent = t('qs_add_current_single') || 'Seçili Kaynağı Hızlı Erişime Ekle';
+        }
     }
+
+    renderManageList();
+    overlay.classList.add('active');
+}
+
+export function closeQuickPresetsManageModal() {
+    const overlay = document.getElementById('quickPresetsManageOverlay');
+    if (overlay) overlay.classList.remove('active');
+}
+
+function renderManageList() {
+    const container = document.getElementById('qpmPresetsList');
+    if (!container) return;
+
+    container.innerHTML = '';
+    const presets = AppState.quickPresets || [];
+
+    if (presets.length === 0) {
+        const emptyDiv = document.createElement('div');
+        emptyDiv.className = 'quick-sources-empty';
+        emptyDiv.textContent = t('qs_empty');
+        container.appendChild(emptyDiv);
+        return;
+    }
+
+    const sorted = [...presets].sort((a, b) => (a.order ?? 0) - (b.order ?? 0));
+
+    sorted.forEach((preset, index) => {
+        const row = document.createElement('div');
+        row.className = 'qpm-row';
+        row.dataset.presetId = preset.id;
+        row.draggable = true;
+
+        const handle = document.createElement('div');
+        handle.className = 'qpm-drag-handle';
+        handle.setAttribute('title', 'Sürükle Sırala');
+        handle.innerHTML = `
+            <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2">
+                <line x1="8" y1="6" x2="16" y2="6"></line>
+                <line x1="8" y1="12" x2="16" y2="12"></line>
+                <line x1="8" y1="18" x2="16" y2="18"></line>
+            </svg>
+        `;
+
+        const swatch = document.createElement('span');
+        swatch.className = 'qs-swatch';
+        applySwatch(swatch, preset);
+
+        const nameBtn = document.createElement('button');
+        nameBtn.type = 'button';
+        nameBtn.className = 'qpm-name-btn';
+        nameBtn.textContent = preset.name;
+        nameBtn.setAttribute('title', 'Kaynakları Seç & Uygula');
+
+        // Count questions in non-archived sources included in preset
+        const presetSources = (AppState.sources || []).filter(s => preset.sourceIds.includes(s.id) && !s.archived);
+        const questionCount = presetSources.reduce((acc, s) => acc + (s.questions ? s.questions.length : 0), 0);
+
+        const countSpan = document.createElement('span');
+        countSpan.className = 'qs-count';
+        countSpan.textContent = questionCount;
+
+        nameBtn.addEventListener('click', () => {
+            applyPreset(preset);
+            closeQuickPresetsManageModal();
+        });
+
+        const actions = document.createElement('div');
+        actions.className = 'qpm-actions';
+
+        const editBtn = document.createElement('button');
+        editBtn.type = 'button';
+        editBtn.className = 'icon-btn';
+        editBtn.setAttribute('title', t('qs_edit_preset'));
+        editBtn.innerHTML = `
+            <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"></path>
+                <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"></path>
+            </svg>
+        `;
+        editBtn.addEventListener('click', (e) => {
+            e.stopPropagation();
+            closeQuickPresetsManageModal();
+            showQuickPresetEditModal(preset);
+        });
+
+        const deleteBtn = document.createElement('button');
+        deleteBtn.type = 'button';
+        deleteBtn.className = 'icon-btn btn-danger';
+        deleteBtn.setAttribute('title', t('qs_delete_preset'));
+        deleteBtn.innerHTML = `
+            <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+                <polyline points="3 6 5 6 21 6"></polyline>
+                <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path>
+            </svg>
+        `;
+        deleteBtn.addEventListener('click', (e) => {
+            e.stopPropagation();
+            deletePreset(preset.id);
+            renderManageList();
+        });
+
+        actions.appendChild(editBtn);
+        actions.appendChild(deleteBtn);
+
+        row.appendChild(handle);
+        row.appendChild(swatch);
+        row.appendChild(nameBtn);
+        row.appendChild(countSpan);
+        row.appendChild(actions);
+
+        // Drag and drop events
+        row.addEventListener('dragstart', (e) => {
+            row.classList.add('dragging');
+            e.dataTransfer.setData('text/plain', index.toString());
+        });
+
+        row.addEventListener('dragend', () => {
+            row.classList.remove('dragging');
+        });
+
+        row.addEventListener('dragover', (e) => {
+            e.preventDefault();
+            const draggingRow = container.querySelector('.dragging');
+            if (draggingRow && draggingRow !== row) {
+                const rect = row.getBoundingClientRect();
+                const next = (e.clientY - rect.top) / (rect.bottom - rect.top) > 0.5;
+                container.insertBefore(draggingRow, next ? row.nextSibling : row);
+            }
+        });
+
+        row.addEventListener('drop', (e) => {
+            e.preventDefault();
+            const rows = [...container.querySelectorAll('.qpm-row')];
+            rows.forEach((r, idx) => {
+                const pid = r.dataset.presetId;
+                const p = (AppState.quickPresets || []).find(item => item.id === pid);
+                if (p) {
+                    p.order = idx;
+                    p.updatedAt = Date.now();
+                }
+            });
+            saveQuickPresets();
+        });
+
+        container.appendChild(row);
+    });
+}
+
+function deletePreset(id) {
+    if (!id) return;
+    AppState.quickPresets = (AppState.quickPresets || []).filter(p => p.id !== id);
+    trackDeletedQuickPreset(id);
+    saveQuickPresets();
+    updateQuickSourcesDot();
 }
 
 export function showQuickPresetEditModal(preset) {
@@ -279,192 +335,35 @@ export function closeQuickPresetEditModal() {
     activeEditingPreset = null;
 }
 
-export function showQuickPresetsManageModal() {
-    const overlay = document.getElementById('quickPresetsManageOverlay');
-    if (!overlay) return;
-    renderManageList();
-    overlay.classList.add('active');
-}
-
-export function closeQuickPresetsManageModal() {
-    const overlay = document.getElementById('quickPresetsManageOverlay');
-    if (overlay) overlay.classList.remove('active');
-}
-
-function renderManageList() {
-    const container = document.getElementById('qpmPresetsList');
-    if (!container) return;
-
-    container.innerHTML = '';
-    const presets = AppState.quickPresets || [];
-
-    if (presets.length === 0) {
-        const emptyDiv = document.createElement('div');
-        emptyDiv.className = 'quick-sources-empty';
-        emptyDiv.textContent = t('qs_empty');
-        container.appendChild(emptyDiv);
-        return;
-    }
-
-    const sorted = [...presets].sort((a, b) => (a.order ?? 0) - (b.order ?? 0));
-
-    sorted.forEach((preset, index) => {
-        const row = document.createElement('div');
-        row.className = 'qpm-row';
-        row.dataset.presetId = preset.id;
-        row.draggable = true;
-
-        const handle = document.createElement('div');
-        handle.className = 'qpm-drag-handle';
-        handle.innerHTML = `
-            <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2">
-                <line x1="8" y1="6" x2="16" y2="6"></line>
-                <line x1="8" y1="12" x2="16" y2="12"></line>
-                <line x1="8" y1="18" x2="16" y2="18"></line>
-            </svg>
-        `;
-
-        const swatch = document.createElement('span');
-        swatch.className = 'qs-swatch';
-        applySwatch(swatch, preset);
-
-        const nameSpan = document.createElement('span');
-        nameSpan.className = 'qpm-name';
-        nameSpan.textContent = preset.name;
-
-        const actions = document.createElement('div');
-        actions.className = 'qpm-actions';
-
-        const editBtn = document.createElement('button');
-        editBtn.className = 'icon-btn';
-        editBtn.setAttribute('title', t('qs_edit_preset'));
-        editBtn.innerHTML = `
-            <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"></path>
-                <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"></path>
-            </svg>
-        `;
-        editBtn.addEventListener('click', () => {
-            closeQuickPresetsManageModal();
-            showQuickPresetEditModal(preset);
-        });
-
-        const deleteBtn = document.createElement('button');
-        deleteBtn.className = 'icon-btn btn-danger';
-        deleteBtn.setAttribute('title', t('qs_delete_preset'));
-        deleteBtn.innerHTML = `
-            <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
-                <polyline points="3 6 5 6 21 6"></polyline>
-                <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path>
-            </svg>
-        `;
-        deleteBtn.addEventListener('click', () => {
-            deletePreset(preset.id);
-            renderManageList();
-            renderQuickSourcesMenu();
-        });
-
-        actions.appendChild(editBtn);
-        actions.appendChild(deleteBtn);
-
-        row.appendChild(handle);
-        row.appendChild(swatch);
-        row.appendChild(nameSpan);
-        row.appendChild(actions);
-
-        // Drag and drop events
-        row.addEventListener('dragstart', (e) => {
-            row.classList.add('dragging');
-            e.dataTransfer.setData('text/plain', index.toString());
-        });
-
-        row.addEventListener('dragend', () => {
-            row.classList.remove('dragging');
-        });
-
-        row.addEventListener('dragover', (e) => {
-            e.preventDefault();
-            const draggingRow = container.querySelector('.dragging');
-            if (draggingRow && draggingRow !== row) {
-                const rect = row.getBoundingClientRect();
-                const next = (e.clientY - rect.top) / (rect.bottom - rect.top) > 0.5;
-                container.insertBefore(draggingRow, next ? row.nextSibling : row);
-            }
-        });
-
-        row.addEventListener('drop', (e) => {
-            e.preventDefault();
-            const rows = [...container.querySelectorAll('.qpm-row')];
-            rows.forEach((r, idx) => {
-                const pid = r.dataset.presetId;
-                const p = (AppState.quickPresets || []).find(item => item.id === pid);
-                if (p) {
-                    p.order = idx;
-                    p.updatedAt = Date.now();
-                }
-            });
-            saveQuickPresets();
-            renderQuickSourcesMenu();
-        });
-
-        container.appendChild(row);
-    });
-}
-
-function deletePreset(id) {
-    if (!id) return;
-    AppState.quickPresets = (AppState.quickPresets || []).filter(p => p.id !== id);
-    trackDeletedQuickPreset(id);
-    saveQuickPresets();
-    renderQuickSourcesMenu();
-    updateQuickSourcesDot();
-}
-
 export function setupQuickPresets() {
     const btn = document.getElementById('quickSourcesBtn');
-    const menu = document.getElementById('quickSourcesMenu');
     const addBtn = document.getElementById('qsAddCurrentBtn');
-    const manageBtn = document.getElementById('qsManageBtn');
 
-    // Button Toggle
+    // Clicking quickSourcesBtn directly opens the modal popup overlay
     if (btn) {
         btn.addEventListener('click', (e) => {
             e.stopPropagation();
-            toggleQuickSourcesMenu();
-        });
-    }
-
-    // Add current selection
-    if (addBtn) {
-        addBtn.addEventListener('click', () => {
-            closeQuickSourcesMenu();
-            addCurrentAsPreset();
-            renderQuickSourcesMenu();
-        });
-    }
-
-    // Manage presets modal
-    if (manageBtn) {
-        manageBtn.addEventListener('click', () => {
-            closeQuickSourcesMenu();
             showQuickPresetsManageModal();
         });
     }
 
-    // Close on outside click
-    document.addEventListener('click', (e) => {
-        if (menu && !menu.hasAttribute('hidden')) {
-            if (!menu.contains(e.target) && !btn.contains(e.target)) {
-                closeQuickSourcesMenu();
+    // Add current selection inside manage modal
+    if (addBtn) {
+        addBtn.addEventListener('click', () => {
+            const newPreset = addCurrentAsPreset();
+            if (newPreset) {
+                renderManageList();
+                updateQuickSourcesDot();
             }
-        }
-    });
+        });
+    }
 
-    // Close on Escape key
+    // Close modal on Escape key
     document.addEventListener('keydown', (e) => {
         if (e.key === 'Escape') {
-            if (menu && !menu.hasAttribute('hidden')) {
-                closeQuickSourcesMenu();
+            const manageOverlay = document.getElementById('quickPresetsManageOverlay');
+            if (manageOverlay && manageOverlay.classList.contains('active')) {
+                closeQuickPresetsManageModal();
                 if (btn) btn.focus();
             }
         }
@@ -476,8 +375,14 @@ export function setupQuickPresets() {
     const qpeSave = document.getElementById('qpeSaveBtn');
     const qpeDelete = document.getElementById('qpeDeleteBtn');
 
-    if (qpeClose) qpeClose.addEventListener('click', closeQuickPresetEditModal);
-    if (qpeCancel) qpeCancel.addEventListener('click', closeQuickPresetEditModal);
+    if (qpeClose) qpeClose.addEventListener('click', () => {
+        closeQuickPresetEditModal();
+        showQuickPresetsManageModal();
+    });
+    if (qpeCancel) qpeCancel.addEventListener('click', () => {
+        closeQuickPresetEditModal();
+        showQuickPresetsManageModal();
+    });
 
     if (qpeSave) {
         qpeSave.addEventListener('click', () => {
@@ -503,7 +408,7 @@ export function setupQuickPresets() {
             activeEditingPreset.updatedAt = Date.now();
             saveQuickPresets();
             closeQuickPresetEditModal();
-            renderQuickSourcesMenu();
+            showQuickPresetsManageModal();
             updateQuickSourcesDot();
         });
     }
@@ -514,6 +419,7 @@ export function setupQuickPresets() {
             const id = activeEditingPreset.id;
             closeQuickPresetEditModal();
             deletePreset(id);
+            showQuickPresetsManageModal();
         });
     }
 
@@ -524,6 +430,6 @@ export function setupQuickPresets() {
     if (qpmClose) qpmClose.addEventListener('click', closeQuickPresetsManageModal);
     if (qpmDone) qpmDone.addEventListener('click', closeQuickPresetsManageModal);
 
-    // Initial render & dot status
+    // Initial dot status
     updateQuickSourcesDot();
 }

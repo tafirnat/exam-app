@@ -5043,6 +5043,7 @@ body.dnd-active {
     position: relative;
     display: inline-flex;
     align-items: center;
+    margin-left: auto;
     justify-self: end;
 }
 
@@ -5082,94 +5083,11 @@ body.dnd-active {
     display: block;
 }
 
-.quick-sources-menu {
-    position: absolute;
-    top: calc(100% + 6px);
-    right: 0;
-    min-width: 250px;
-    max-width: 320px;
-    max-height: 60vh;
-    overflow-y: auto;
-    z-index: 1050;
-    background: var(--surface-color, #1e293b);
-    border: 1px solid var(--glass-border, rgba(255, 255, 255, 0.12));
-    border-radius: var(--radius-md, 10px);
-    box-shadow: 0 10px 30px -5px rgba(0, 0, 0, 0.4), 0 4px 12px rgba(0, 0, 0, 0.25);
-    backdrop-filter: blur(16px);
-    -webkit-backdrop-filter: blur(16px);
-    padding: 0.4rem;
-    box-sizing: border-box;
-}
-
-.quick-sources-menu[hidden] {
-    display: none !important;
-}
-
-.dropdown-header {
-    font-size: 0.75rem;
-    font-weight: 700;
-    text-transform: uppercase;
-    letter-spacing: 0.06em;
-    color: var(--text-secondary);
-    padding: 0.4rem 0.6rem 0.25rem;
-}
-
-.dropdown-divider {
-    height: 1px;
-    background: var(--glass-border, rgba(255, 255, 255, 0.1));
-    margin: 0.35rem 0;
-}
-
-.dropdown-item,
-.quick-sources-item {
-    display: flex;
-    align-items: center;
-    gap: 0.6rem;
-    width: 100%;
-    padding: 0.5rem 0.75rem;
-    border: none;
-    outline: none;
-    background: transparent;
-    color: var(--text-primary);
-    font-family: inherit;
-    font-size: 0.86rem;
-    font-weight: 500;
-    text-align: left;
-    cursor: pointer;
-    border-radius: var(--radius-sm, 6px);
-    transition: background 0.15s ease, color 0.15s ease;
-    box-sizing: border-box;
-}
-
-.dropdown-item:hover,
-.quick-sources-item:hover {
-    background: var(--bg-hover, rgba(255, 255, 255, 0.08));
-    color: var(--text-primary);
-}
-
-.dropdown-item svg,
-.quick-sources-item svg {
-    flex-shrink: 0;
-    color: var(--text-secondary);
-}
-
-.dropdown-item:hover svg,
-.quick-sources-item:hover svg {
-    color: var(--text-primary);
-}
-
 .qs-swatch {
     width: 12px;
     height: 12px;
     border-radius: 50%;
     flex-shrink: 0;
-}
-
-.qs-name {
-    flex: 1;
-    overflow: hidden;
-    text-overflow: ellipsis;
-    white-space: nowrap;
 }
 
 .qs-count {
@@ -5181,26 +5099,9 @@ body.dnd-active {
     font-weight: 600;
 }
 
-.qs-edit {
-    opacity: 0.5;
-    padding: 3px;
-    margin-left: 0.2rem;
-    border-radius: 4px;
-    background: transparent;
-    border: none;
-    color: var(--text-secondary);
-    cursor: pointer;
-}
-
-.qs-edit:hover {
-    opacity: 1;
-    background: rgba(255, 255, 255, 0.1);
-    color: var(--text-primary);
-}
-
 .quick-sources-empty {
-    padding: 0.75rem;
-    font-size: 0.84rem;
+    padding: 1rem;
+    font-size: 0.88rem;
     color: var(--text-secondary);
     text-align: center;
 }
@@ -5216,10 +5117,16 @@ body.dnd-active {
     align-items: center;
     gap: 0.6rem;
     padding: 0.55rem 0.75rem;
-    background: var(--surface-color);
-    border: 1px solid var(--glass-border);
+    background: var(--surface-color, rgba(255, 255, 255, 0.03));
+    border: 1px solid var(--glass-border, rgba(255, 255, 255, 0.1));
     border-radius: var(--radius-sm, 6px);
     user-select: none;
+    transition: background-color 0.15s ease, border-color 0.15s ease;
+}
+
+.qpm-row:hover {
+    background: var(--bg-hover, rgba(255, 255, 255, 0.06));
+    border-color: color-mix(in srgb, var(--primary-color) 40%, transparent);
 }
 
 .qpm-row.dragging {
@@ -5231,12 +5138,31 @@ body.dnd-active {
     color: var(--text-secondary);
     display: flex;
     align-items: center;
+    padding: 2px;
 }
 
-.qpm-name {
+.qpm-drag-handle:active {
+    cursor: grabbing;
+}
+
+.qpm-name-btn {
     flex: 1;
-    font-size: 0.9rem;
+    border: none;
+    background: transparent;
+    color: var(--text-primary);
+    font-family: inherit;
+    font-size: 0.88rem;
     font-weight: 500;
+    text-align: left;
+    cursor: pointer;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    padding: 0;
+}
+
+.qpm-name-btn:hover {
+    color: var(--primary-color);
 }
 
 .qpm-actions {
