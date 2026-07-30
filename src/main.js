@@ -765,7 +765,6 @@ function setupEventListeners() {
     // Menu
     setClick('menuToggleBtn', toggleMenu);
     setClick('menuTheme', toggleTheme);
-    setClick('menuExit', confirmExit);
     setClick('menuResetApp', openResetAppModal);
     setClick('resetAppCloseBtn', closeResetAppModal);
     setClick('resetAppCancelBtn', closeResetAppModal);
@@ -1695,12 +1694,6 @@ function toggleAddSourcePanel() {
     btn.style.transition = 'transform 0.2s';
 }
 
-async function confirmExit() {
-    if (await showConfirm(t('confirm_exit'))) {
-        switchView('home');
-    }
-    toggleMenu();
-}
 
 async function translateAll() {
     const isPreview = document.getElementById('statsPreviewView').offsetParent !== null;

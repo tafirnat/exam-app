@@ -2294,34 +2294,17 @@ textarea {
     color: var(--text-secondary);
 }
 
-#menuExit {
-    color: var(--error-color);
-}
-
-#menuExit svg {
-    color: var(--error-color);
-}
-
-#menuExit:hover {
-    background-color: color-mix(in srgb, var(--error-color) 12%, transparent);
-}
-
 #menuResetApp {
-    background-color: var(--error-color);
-    color: var(--btn-on-solid);
-    border-radius: var(--radius-md);
+    color: var(--error-color);
     margin-top: auto;
-    font-weight: 600;
-    transition: var(--btn-transition);
 }
 
 #menuResetApp svg {
-    color: inherit;
+    color: var(--error-color);
 }
 
 #menuResetApp:hover {
-    filter: brightness(0.92);
-    background-color: var(--error-color);
+    background-color: color-mix(in srgb, var(--error-color) 12%, transparent);
 }
 
 /* Start / Resume Button Container theme-harmonious styling */
