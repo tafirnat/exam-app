@@ -2246,6 +2246,66 @@ textarea {
     color: var(--text-secondary);
 }
 
+#menuExit {
+    color: var(--error-color);
+}
+
+#menuExit svg {
+    color: var(--error-color);
+}
+
+#menuExit:hover {
+    background-color: color-mix(in srgb, var(--error-color) 12%, transparent);
+}
+
+#menuResetApp {
+    background-color: var(--error-color);
+    color: var(--btn-on-solid);
+    border-radius: var(--radius-md);
+    margin-top: auto;
+    font-weight: 600;
+    transition: var(--btn-transition);
+}
+
+#menuResetApp svg {
+    color: inherit;
+}
+
+#menuResetApp:hover {
+    filter: brightness(0.92);
+    background-color: var(--error-color);
+}
+
+/* Start / Resume Button Container high contrast theme styling */
+#startBtnContainer .btn {
+    font-weight: 700;
+    letter-spacing: 0.01em;
+    box-shadow: 0 2px 6px rgba(0, 0, 0, 0.12);
+    transition: var(--btn-transition);
+}
+
+#startBtnContainer #resumeBtn {
+    background-color: var(--warning-color);
+    color: #09090b;
+    border: 1px solid color-mix(in srgb, var(--warning-color) 80%, #000);
+}
+
+#startBtnContainer #resumeBtn:hover:not(:disabled) {
+    filter: brightness(1.08);
+    box-shadow: 0 4px 14px color-mix(in srgb, var(--warning-color) 45%, transparent);
+}
+
+#startBtnContainer #startBtn {
+    background-color: var(--primary-hover);
+    color: #ffffff;
+    border: none;
+}
+
+#startBtnContainer #startBtn:hover:not(:disabled) {
+    filter: brightness(1.08);
+    box-shadow: 0 4px 14px color-mix(in srgb, var(--primary-hover) 45%, transparent);
+}
+
 .menu-sub-item {
     display: flex;
     align-items: center;
