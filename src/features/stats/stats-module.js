@@ -543,6 +543,11 @@ export function updateHomeStats() {
     const totalSources = liveSources().length;
     const hasActiveSource = liveSources().some(s => s.active);
 
+    const sourcesBadge = document.getElementById('homeSourcesBadge');
+    if (sourcesBadge) {
+        sourcesBadge.innerText = `${activeSources.length}/${totalSources}`;
+    }
+
     console.log(`[DEBUG] updateHomeStats: totalQuestions=${total}, totalSources=${totalSources}, hasActive=${hasActiveSource}`);
 
     if (onboarding) {

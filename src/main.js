@@ -322,7 +322,11 @@ const initApp = () => {
 
         // Initialize first state
         if (!history.state) {
-            history.replaceState({ view: 'home' }, '', '#home');
+            const initialView = window.location.hash.replace('#', '') || 'home';
+            const validViews = ['home', 'test', 'stats', 'sources', 'statsPreview', 'results'];
+            const startView = validViews.includes(initialView) ? initialView : 'home';
+            history.replaceState({ view: startView }, '', `#${startView}`);
+            if (startView !== 'home') switchView(startView, true);
         }
     } catch (err) {
         console.error('CRITICAL INITIALIZATION ERROR:', err);
@@ -1074,12 +1078,32 @@ function setupEventListeners() {
         };
     }
 
+    const openSourcesView = () => {
+        switchView('sources');
+    };
+
+    const homeSourcesBtn = document.getElementById('homeSourcesBtn');
+    if (homeSourcesBtn) homeSourcesBtn.onclick = openSourcesView;
+
+    const menuSourcesBtn = document.getElementById('menuSourcesBtn');
+    if (menuSourcesBtn) {
+        menuSourcesBtn.onclick = () => {
+            if (menuActive) toggleMenu();
+            openSourcesView();
+        };
+    }
+
     // Results View
     document.getElementById('resHomeBtn').onclick = goHome;
     document.getElementById('resRetakeBtn').onclick = retakeSession;
     const scBackBtn = document.getElementById('statsBackBtn');
     if (scBackBtn) {
         scBackBtn.onclick = goHome;
+    }
+
+    const sourcesBackBtn = document.getElementById('sourcesBackBtn');
+    if (sourcesBackBtn) {
+        sourcesBackBtn.onclick = goHome;
     }
 
     // Sources
@@ -1461,6 +1485,12 @@ function switchView(view, isBack = false) {
     } else {
         document.getElementById('statsView').style.display = 'none';
     }
+
+    const sourcesViewEl = document.getElementById('sourcesView');
+    if (sourcesViewEl) {
+        sourcesViewEl.style.display = view === 'sources' ? 'block' : 'none';
+    }
+
     document.getElementById('statsPreviewView').style.display = view === 'statsPreview' ? 'flex' : 'none';
 
     if (view === 'statsPreview') {
@@ -1476,21 +1506,21 @@ function switchView(view, isBack = false) {
         if (view === 'test') bottomNav.classList.remove('nav-hidden');
     }
 
-    // Hide header entirely if not on home
+    // Hide header entirely if not on home/stats/sources
     const header = document.querySelector('header');
     if (header) {
-        header.style.display = view === 'home' ? 'flex' : 'none';
+        header.style.display = (view === 'home' || view === 'stats' || view === 'sources') ? 'flex' : 'none';
     }
 
-    document.getElementById('menuToggleBtn').style.display = (view === 'home' || view === 'test') ? 'flex' : 'none';
-    document.getElementById('headerBackBtn').style.display = (view === 'stats' || view === 'statsPreview') ? 'flex' : 'none';
+    document.getElementById('menuToggleBtn').style.display = (view === 'home' || view === 'test' || view === 'sources') ? 'flex' : 'none';
+    document.getElementById('headerBackBtn').style.display = (view === 'stats' || view === 'statsPreview' || view === 'sources') ? 'flex' : 'none';
 
     // In preview mode, the inline icons are visible, so we don't need them in the burger menu.
     // Also hide when in home to keep it clean, but mainly for test and statsPreview redundancy.
     const isTestOrPreview = view === 'test' || view === 'statsPreview';
     document.getElementById('testOnlyMenuItems').style.display = isTestOrPreview ? 'none' : (view === 'home' ? 'none' : 'block');
 
-    if (view === 'home' || view === 'stats') {
+    if (view === 'home' || view === 'stats' || view === 'sources') {
         const qn = document.getElementById('quickNavContainer');
         if (qn) qn.classList.remove('visible');
         const qo = document.getElementById('quickNavOverlay');
@@ -1501,6 +1531,13 @@ function switchView(view, isBack = false) {
         document.getElementById('headerTitle').innerText = 'Exam App';
         updateHomeStats();
         checkActiveTest();
+    } else if (view === 'sources') {
+        const titleText = (typeof getI18nText === 'function' ? getI18nText('saved_sources') : '') || 'Kayıtlı Kaynaklar';
+        document.getElementById('headerTitle').innerText = titleText;
+        renderSourcesList();
+    } else if (view === 'stats') {
+        const titleText = (typeof getI18nText === 'function' ? getI18nText('show_stats') : '') || 'Soruları İncele';
+        document.getElementById('headerTitle').innerText = titleText;
     }
 }
 

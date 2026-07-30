@@ -102,6 +102,18 @@
                 </div>
             </div>
 
+            <!-- Kaynakları Yönet -->
+            <div class="menu-section">
+                <div class="menu-section-header no-accordion" id="menuSourcesBtn">
+                    <div class="menu-section-title">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="section-icon">
+                            <path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"></path>
+                        </svg>
+                        <span data-i18n="manage_sources">Kaynakları Yönet</span>
+                    </div>
+                </div>
+            </div>
+
             <!-- Mod Seçimi (Theme) -->
             <div class="menu-section">
                 <div class="menu-section-header no-accordion" id="menuTheme">
@@ -483,74 +495,14 @@
 
 
 
-            <div class="card" id="sourcesCard">
-                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1rem;">
-                    <div>
-                        <h2 style="font-size: 1.1rem; margin: 0;" data-i18n="saved_sources">Kayıtlı Kaynaklar</h2>
-                        <span id="sourcesCount"
-                            style="font-size: 0.72rem; color: var(--text-secondary); opacity: 0.7; display: block; margin-top: 2px;"></span>
-                    </div>
-                    <div style="display: flex; gap: 0.25rem;">
-                        <button class="icon-btn" id="addFolderBtn" data-i18n-title="add_folder">
-                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
-                                <path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"></path>
-                                <line x1="12" y1="11" x2="12" y2="17"></line>
-                                <line x1="9" y1="14" x2="15" y2="14"></line>
-                            </svg>
-                        </button>
-                        <button class="icon-btn" id="archiveBtn" data-i18n-title="archive_title">
-                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
-                                <polyline points="21 8 21 21 3 21 3 8"></polyline>
-                                <rect x="1" y="3" width="22" height="5"></rect>
-                                <line x1="10" y1="12" x2="14" y2="12"></line>
-                            </svg>
-                        </button>
-                        <button class="icon-btn" id="mergeSourcesBtn" data-i18n-title="merge_sources">
-                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
-                                <path d="M3 6h4c2 0 4 6 8 6h5"></path>
-                                <path d="M3 18h4c2 0 4-6 8-6"></path>
-                                <polyline points="17 9 20 12 17 15"></polyline>
-                            </svg>
-                        </button>
-                        <button class="icon-btn" id="toggleAddSourceBtn" data-i18n-title="add_source">
-                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round"
-                                stroke-width="2.5">
-                                <line x1="12" y1="5" x2="12" y2="19"></line>
-                                <line x1="5" y1="12" x2="19" y2="12"></line>
-                            </svg>
-                        </button>
-                    </div>
-                </div>
-                <div id="addSourcePanel"
-                    style="display: none; margin-bottom: 1rem; padding-bottom: 1rem; border-bottom: 1px solid var(--border-color);">
-                    <div class="input-group">
-                        <label data-i18n="load_url">URL ile Yükle</label>
-                        <div style="display: flex; gap: 0.5rem;">
-                            <input type="text" id="urlInput" data-i18n-placeholder="ph_url" placeholder="https://.../questions.json">
-                            <button class="btn btn-primary" id="loadUrlBtn" data-i18n="load">Yükle</button>
-                        </div>
-                    </div>
-                    <div
-                        style="text-align: center; margin: 0.75rem 0; color: var(--text-secondary); font-size: 0.85rem;">
-                        -</div>
-                    <div class="input-group" style="margin-bottom: 1rem;">
-                        <label data-i18n="load_file">Dosyadan Yükle (.json)</label>
-                        <input type="file" id="fileInput" accept=".json">
-                    </div>
-                    <div
-                        style="text-align: center; margin: 0.75rem 0; color: var(--text-secondary); font-size: 0.85rem;">
-                        -</div>
-                    <div class="input-group" style="margin-bottom: 0;">
-                        <button class="btn btn-secondary btn-block" id="loadClipboardBtn">
-                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
-                                <path d="M16 4h2a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h2"></path>
-                                <rect x="8" y="2" width="8" height="4" rx="1" ry="1"></rect>
-                            </svg>
-                            <span data-i18n="load_clipboard">Panodan Al</span>
-                        </button>
-                    </div>
-                </div>
-                <div id="sourcesList"></div>
+            <div class="card" id="homeManageSourcesCard" style="margin-top: 1rem;">
+                <button class="btn btn-secondary btn-block btn-flex" id="homeSourcesBtn" style="padding: 0.85rem 1rem; font-size: 0.95rem; font-weight: 600; justify-content: center; gap: 0.6rem;">
+                    <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+                        <path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"></path>
+                    </svg>
+                    <span data-i18n="manage_sources">Kaynakları Yönet</span>
+                    <span id="homeSourcesBadge" class="badge" style="margin-left: auto; font-size: 0.75rem; background: var(--surface-hover); color: var(--text-secondary); padding: 0.2rem 0.6rem; border-radius: 12px;"></span>
+                </button>
             </div>
         </div>
 
@@ -899,6 +851,86 @@
                 <div class="stats-footer-mask">
                     <div class="stats-footer" id="statsFooter"></div>
                 </div>
+            </div>
+        </div>
+
+        <div id="sourcesView" style="display: none;">
+            <div class="card" id="sourcesCard">
+                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1rem;">
+                    <div style="display: flex; align-items: center; gap: 0.75rem;">
+                        <button class="back-btn home-back-btn" id="sourcesBackBtn" data-i18n-title="go_home" title="Ana Sayfa">
+                            <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                <path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"></path>
+                                <polyline points="9 22 9 12 15 12 15 22"></polyline>
+                            </svg>
+                        </button>
+                        <div>
+                            <h2 style="font-size: 1.1rem; margin: 0;" data-i18n="saved_sources">Kayıtlı Kaynaklar</h2>
+                            <span id="sourcesCount"
+                                style="font-size: 0.72rem; color: var(--text-secondary); opacity: 0.7; display: block; margin-top: 2px;"></span>
+                        </div>
+                    </div>
+                    <div style="display: flex; gap: 0.25rem;">
+                        <button class="icon-btn" id="addFolderBtn" data-i18n-title="add_folder">
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+                                <path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"></path>
+                                <line x1="12" y1="11" x2="12" y2="17"></line>
+                                <line x1="9" y1="14" x2="15" y2="14"></line>
+                            </svg>
+                        </button>
+                        <button class="icon-btn" id="archiveBtn" data-i18n-title="archive_title">
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+                                <polyline points="21 8 21 21 3 21 3 8"></polyline>
+                                <rect x="1" y="3" width="22" height="5"></rect>
+                                <line x1="10" y1="12" x2="14" y2="12"></line>
+                            </svg>
+                        </button>
+                        <button class="icon-btn" id="mergeSourcesBtn" data-i18n-title="merge_sources">
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+                                <path d="M3 6h4c2 0 4 6 8 6h5"></path>
+                                <path d="M3 18h4c2 0 4-6 8-6"></path>
+                                <polyline points="17 9 20 12 17 15"></polyline>
+                            </svg>
+                        </button>
+                        <button class="icon-btn" id="toggleAddSourceBtn" data-i18n-title="add_source">
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round"
+                                stroke-width="2.5">
+                                <line x1="12" y1="5" x2="12" y2="19"></line>
+                                <line x1="5" y1="12" x2="19" y2="12"></line>
+                            </svg>
+                        </button>
+                    </div>
+                </div>
+                <div id="addSourcePanel"
+                    style="display: none; margin-bottom: 1rem; padding-bottom: 1rem; border-bottom: 1px solid var(--border-color);">
+                    <div class="input-group">
+                        <label data-i18n="load_url">URL ile Yükle</label>
+                        <div style="display: flex; gap: 0.5rem;">
+                            <input type="text" id="urlInput" data-i18n-placeholder="ph_url" placeholder="https://.../questions.json">
+                            <button class="btn btn-primary" id="loadUrlBtn" data-i18n="load">Yükle</button>
+                        </div>
+                    </div>
+                    <div
+                        style="text-align: center; margin: 0.75rem 0; color: var(--text-secondary); font-size: 0.85rem;">
+                        -</div>
+                    <div class="input-group" style="margin-bottom: 1rem;">
+                        <label data-i18n="load_file">Dosyadan Yükle (.json)</label>
+                        <input type="file" id="fileInput" accept=".json">
+                    </div>
+                    <div
+                        style="text-align: center; margin: 0.75rem 0; color: var(--text-secondary); font-size: 0.85rem;">
+                        -</div>
+                    <div class="input-group" style="margin-bottom: 0;">
+                        <button class="btn btn-secondary btn-block" id="loadClipboardBtn">
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+                                <path d="M16 4h2a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h2"></path>
+                                <rect x="8" y="2" width="8" height="4" rx="1" ry="1"></rect>
+                            </svg>
+                            <span data-i18n="load_clipboard">Panodan Al</span>
+                        </button>
+                    </div>
+                </div>
+                <div id="sourcesList"></div>
             </div>
         </div>
 
