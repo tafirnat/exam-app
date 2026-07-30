@@ -43,15 +43,21 @@ Use these and nothing else. The full specification, including the deliberately u
 | Callout | `> [!note] Title` then `> body` | any styled `<div>` |
 | Table | pipe table with a `\| --- \|` row | `<table>` |
 | Link | `[label](https://…)` | `<a href="…">` |
+| Wikilink | `[[Note]]` or `[[Note\|Alias]]` | standard HTML links or non-Obsidian link syntax |
 | Line break | a single newline | `<br>` |
 | Horizontal rule | `---` | `<hr>` |
 
 Callout types available: `note`, `abstract`, `info`, `todo`, `tip`, `success`, `question`, `warning`, `failure`, `danger`, `bug`, `example`, `quote` (Obsidian's aliases such as `summary`, `hint`, `error` are accepted too).
 
-Two behaviours worth knowing when you write JSON strings:
+Key Obsidian Markdown behaviors when writing JSON content strings:
 
-- A single `\n` is a real line break, and a blank line (`\n\n`) starts a new paragraph.
-- Headings are normalised: whatever you use, the shallowest heading in a string is rendered as `<h2>` so it never competes with the question card's own title. Relative hierarchy is preserved, so `#`/`##` and `##`/`###` behave identically.
+- **Soft Line Breaks**: A single `\n` is a real line break (emitting `<br>`), and a blank line (`\n\n`) starts a new paragraph.
+- **Headings Normalization**: Headings are normalised: whatever you use (`#`...`######`), the shallowest heading in a string is rendered as `<h2>` so it never competes with the question card's own title. Relative hierarchy is preserved (`#`/`##` and `##`/`###` behave identically).
+- **Intra-word Underscores**: Intra-word underscores (e.g., `snake_case_variable`) do NOT trigger italics, matching Obsidian's behavior.
+- **Character Escaping**: Backslash escapes (`\*`, `\_`, `\=`, `\~`, `` \` ``, `\[`, `\\`) render literal characters.
+- **Comment & Frontmatter Stripping**: Comments (`%%comment text%%`) and YAML frontmatter (`---` top blocks) are automatically stripped outside code blocks.
+- **Code Fence Immutability**: Code blocks and inline code are never reinterpreted — formatting markers, cloze blanks `{{...}}`, comment stripping, and backslash escapes are suppressed inside code.
+- **Out-of-Scope (Literal Text)**: LaTeX Math (`$...$`, `$$...$$`), footnotes (`[^1]`), tags (`#tag`), and raw HTML tags are unsupported and will render as literal unparsed text (HTML tags are escaped for safety).
 
 ---
 
@@ -82,7 +88,7 @@ The JSON structure consists of a root object with two primary keys: `exam_metada
 | Key | Type | Required | Description |
 | :--- | :--- | :--- | :--- |
 | `id` | String / Number | **Yes** | Unique question identifier (e.g., `q1`, `q102`). |
-| `type` | String | **Yes** | One of the 8 supported question types (see below). |
+| `type` | String | **Yes** | One of the 7 canonical supported question types (see below). |
 | `difficulty` | Float / Int | **Yes** | Baseline difficulty from `1.0` (Very Easy) to `5.0` (Expert). |
 | `tags` | Array of Strings | No | Descriptive keywords (e.g., `["networking", "dns"]`). |
 | `content` | Object | **Yes** | Contains `text` string, and optional `media` array. |
@@ -99,7 +105,7 @@ The JSON structure consists of a root object with two primary keys: `exam_metada
 
 ## 🧩 Supported Question Types & Rules
 
-The Exam App supports **8 distinct question types** categorized into **4 families**:
+The Exam App supports **7 canonical question types** (plus legacy aliases) categorized into **4 families**:
 
 ### Family A: Choice Questions (`single_choice`, `multiple_choice`, `true_false`)
 
