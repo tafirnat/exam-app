@@ -1446,7 +1446,7 @@ function switchView(view, isBack = false) {
         stopTimer();
     }
 
-    document.getElementById('homeView').style.display = view === 'home' ? 'block' : 'none';
+    document.getElementById('homeView').style.display = view === 'home' ? 'flex' : 'none';
     document.getElementById('testView').style.display = view === 'test' ? 'flex' : 'none';
     if (view === 'stats') {
         document.getElementById('statsView').style.display = 'block';

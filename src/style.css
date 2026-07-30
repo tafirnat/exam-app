@@ -393,6 +393,12 @@ main {
 
 #homeView.empty-state {
     justify-content: center;
+    justify-content: safe center;
+}
+
+#homeView.empty-state > .card {
+    margin-top: auto;
+    margin-bottom: auto;
 }
 
 .card {
