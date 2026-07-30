@@ -14,6 +14,7 @@ import { openQuestionEditor, closeQuestionEditor } from './features/stats/questi
 import { initTimer, stopTimer } from './features/test/timer-module.js';
 import { initSync, syncToGist } from './core/github-sync.js';
 import { renderMarkdown, renderInlineMarkdown, plainText, applySearchHighlight } from './core/markdown.js';
+import { setupQuickPresets, renderQuickSourcesMenu, updateQuickSourcesDot } from './features/sources/quick-presets-ui.js';
 
 
 
@@ -37,6 +38,11 @@ window.goHome = goHome;
 window.copyAIPrompt = copyAIPrompt;
 window.executeAiSearch = executeAiSearch;
 window.copyQuestionText = copyQuestionText;
+window.renderQuickSourcesMenu = renderQuickSourcesMenu;
+window.onSourcesUpdated = () => {
+    updateQuickSourcesDot();
+    renderQuickSourcesMenu();
+};
 
 
 // --- Initialize ---
@@ -254,6 +260,9 @@ const initApp = () => {
 
         console.log('Updating translation UI...');
         updateTranslationUI();
+
+        console.log('Setting up Quick Presets...');
+        setupQuickPresets();
 
         initSync();
 

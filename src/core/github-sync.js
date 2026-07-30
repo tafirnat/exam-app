@@ -1,4 +1,4 @@
-import { AppState, saveSources, saveStats, saveRecentTests, saveFolders, clearLocalStudyData } from './state.js';
+import { AppState, saveSources, saveStats, saveRecentTests, saveFolders, saveQuickPresets, clearLocalStudyData } from './state.js';
 import { showToast, showAlert } from './utils.js';
 import { t } from './i18n.js';
 import { migrateFolderColors } from './migration.js';
@@ -32,8 +32,10 @@ export function getSyncPayload() {
             s.archived && s.offloaded ? { ...s, questions: [] } : s
         )),
         folders: AppState.folders || [],
+        quickPresets: AppState.quickPresets || [],
         deletedSourceIds: AppState.deletedSourceIds || [],
         deletedFolderIds: AppState.deletedFolderIds || [],
+        deletedQuickPresetIds: AppState.deletedQuickPresetIds || [],
         stats: AppState.stats || {},
         totalStats: AppState.totalStats || {},
         recentTests: AppState.recentTests || [],
@@ -648,6 +650,16 @@ export async function syncFromGist(options = {}) {
                 localStorage.setItem('focus_app_deleted_folders', JSON.stringify(merged.deletedFolderIds));
             }
 
+            if (Array.isArray(merged.quickPresets)) {
+                AppState.quickPresets = merged.quickPresets;
+                saveQuickPresets();
+            }
+
+            if (Array.isArray(merged.deletedQuickPresetIds)) {
+                AppState.deletedQuickPresetIds = merged.deletedQuickPresetIds;
+                localStorage.setItem('focus_app_deleted_quick_presets', JSON.stringify(merged.deletedQuickPresetIds));
+            }
+
             // Apply merged stats
             if (merged.stats && typeof merged.stats === 'object') {
                 AppState.stats = merged.stats;
@@ -717,6 +729,13 @@ export function mergeSyncData(local, remote) {
         ...(remote.deletedFolderIds || []),
         ...(local.deletedFolderIds || []),
         ...(AppState.deletedFolderIds || [])
+    ]));
+
+    // 0c. Combine Quick Preset Tombstones
+    const mergedDeletedQuickPresetIds = Array.from(new Set([
+        ...(remote.deletedQuickPresetIds || []),
+        ...(local.deletedQuickPresetIds || []),
+        ...(AppState.deletedQuickPresetIds || [])
     ]));
 
     const revisionOf = (r) => r.updatedAt || r.lastUsed || 0;
@@ -845,14 +864,38 @@ export function mergeSyncData(local, remote) {
         .sort((a, b) => (b.timestamp || 0) - (a.timestamp || 0))
         .slice(0, 10);
 
+    // 4. Merge Quick Presets (by ID, respecting Quick Preset Tombstones)
+    const quickPresetsMap = new Map();
+    (remote.quickPresets || []).forEach(p => {
+        if (p && p.id && !mergedDeletedQuickPresetIds.includes(p.id)) {
+            quickPresetsMap.set(p.id, p);
+        }
+    });
+
+    (local.quickPresets || []).forEach(p => {
+        if (!p || !p.id || mergedDeletedQuickPresetIds.includes(p.id)) return;
+        const existing = quickPresetsMap.get(p.id);
+        if (!existing) {
+            quickPresetsMap.set(p.id, p);
+            hasLocalChanges = true;
+        } else if ((p.updatedAt || 0) > (existing.updatedAt || 0)) {
+            quickPresetsMap.set(p.id, p);
+            hasLocalChanges = true;
+        }
+    });
+
+    const mergedQuickPresets = Array.from(quickPresetsMap.values());
+
     return {
         sources: mergedSources,
         folders: mergedFolders,
+        quickPresets: mergedQuickPresets,
         stats: mergedStats,
         totalStats: remote.totalStats || local.totalStats,
         recentTests: mergedRecentTests,
         deletedSourceIds: mergedDeletedIds,
         deletedFolderIds: mergedDeletedFolderIds,
+        deletedQuickPresetIds: mergedDeletedQuickPresetIds,
         hasLocalChanges
     };
 }

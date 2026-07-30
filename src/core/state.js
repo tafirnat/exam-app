@@ -92,6 +92,8 @@ export const AppState = {
     lastSyncTime: parseInt(localStorage.getItem('focus_app_last_sync') || '0', 10),
     deletedSourceIds: safeJSONParse('focus_app_deleted_sources', []),
     deletedFolderIds: safeJSONParse('focus_app_deleted_folders', []),
+    quickPresets: safeJSONParse('focus_app_quick_presets', []),
+    deletedQuickPresetIds: safeJSONParse('focus_app_deleted_quick_presets', []),
     githubGistUrl: localStorage.getItem('focus_app_github_gist_url') || null
 };
 
@@ -132,6 +134,8 @@ export function clearLocalStudyData() {
     AppState.recentTests = [];
     AppState.deletedSourceIds = [];
     AppState.deletedFolderIds = [];
+    AppState.quickPresets = [];
+    AppState.deletedQuickPresetIds = [];
     AppState.currentSourceKey = null;
 
     localStorage.setItem('focus_app_folders', JSON.stringify(AppState.folders));
@@ -141,6 +145,8 @@ export function clearLocalStudyData() {
     localStorage.removeItem('focus_app_recent_tests');
     localStorage.removeItem('focus_app_deleted_sources');
     localStorage.removeItem('focus_app_deleted_folders');
+    localStorage.removeItem('focus_app_quick_presets');
+    localStorage.removeItem('focus_app_deleted_quick_presets');
     localStorage.removeItem('focus_app_current_source');
     localStorage.removeItem('focus_app_active_test');
     // Let the next boot hand the empty library its starter sample back, in
@@ -164,6 +170,19 @@ export function trackDeletedFolder(id) {
         AppState.deletedFolderIds.push(id);
         localStorage.setItem('focus_app_deleted_folders', JSON.stringify(AppState.deletedFolderIds));
     }
+}
+
+export function trackDeletedQuickPreset(id) {
+    if (!id) return;
+    if (!AppState.deletedQuickPresetIds.includes(id)) {
+        AppState.deletedQuickPresetIds.push(id);
+        localStorage.setItem('focus_app_deleted_quick_presets', JSON.stringify(AppState.deletedQuickPresetIds));
+    }
+}
+
+export function saveQuickPresets() {
+    localStorage.setItem('focus_app_quick_presets', JSON.stringify(AppState.quickPresets));
+    import('./github-sync.js').then(m => m.scheduleSync(300)).catch(() => {});
 }
 
 export function saveStats() {
