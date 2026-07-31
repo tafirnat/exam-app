@@ -91,8 +91,16 @@ function renderGlobalSlide(liveQ) {
         `• 14 Gün Seri + %80 FSRS: ${stats14.rate}% (${stats14.streakSustained ? 'Seri OK' : 'Seri Yok'})`;
 
     for (let i = 0; i < freezeTokens.total; i++) {
-        const svg = createTokenSvg(i < freezeTokens.remaining);
+        const svg = createTokenSvg(i, i < freezeTokens.remaining);
         tokensEl.appendChild(svg);
+    }
+
+    if (!tokensEl.dataset.bound) {
+        tokensEl.dataset.bound = 'true';
+        tokensEl.addEventListener('click', (e) => {
+            e.stopPropagation();
+            showFreezeTokenModal('global');
+        });
     }
 }
 
@@ -144,37 +152,82 @@ function renderFocusSlide() {
         `• 14 Gün Odak Seri (Joker): ${stats14.streakSustained ? 'Tamam' : 'Eksik'}`;
 
     for (let i = 0; i < focusTokens.total; i++) {
-        const svg = createTokenSvg(i < focusTokens.remaining);
+        const svg = createTokenSvg(i, i < focusTokens.remaining);
         tokensEl.appendChild(svg);
+    }
+
+    if (!tokensEl.dataset.bound) {
+        tokensEl.dataset.bound = 'true';
+        tokensEl.addEventListener('click', (e) => {
+            e.stopPropagation();
+            showFreezeTokenModal('focus');
+        });
     }
 }
 
-function createTokenSvg(active) {
+function createTokenSvg(tokenIndex, active) {
     const svg = document.createElementNS('http://www.w3.org/2000/svg', 'svg');
     svg.setAttribute('viewBox', '0 0 24 24');
-    svg.setAttribute('width', '18');
-    svg.setAttribute('height', '18');
     svg.setAttribute('fill', 'none');
-    const color = active ? 'var(--ice-blue, #7dd3fc)' : 'var(--text-secondary)';
-    svg.setAttribute('stroke', color);
-    svg.setAttribute('stroke-width', '1.8');
-    svg.setAttribute('stroke-linecap', 'round');
-    svg.setAttribute('stroke-linejoin', 'round');
-    svg.style.opacity = active ? '1' : '0.25';
     svg.style.flexShrink = '0';
-    if (active) {
-        svg.style.filter = 'drop-shadow(0 0 3px rgba(125, 211, 252, 0.75))';
+    svg.style.transition = 'all 0.2s ease';
+
+    if (tokenIndex === 0) {
+        // Token 1: Snowflake (Kar Tanesi - Normal Dondurma Jetonu)
+        svg.setAttribute('width', '18');
+        svg.setAttribute('height', '18');
+        const color = active ? 'var(--ice-blue, #38bdf8)' : 'var(--text-secondary)';
+        svg.setAttribute('stroke', color);
+        svg.setAttribute('stroke-width', '1.8');
+        svg.setAttribute('stroke-linecap', 'round');
+        svg.setAttribute('stroke-linejoin', 'round');
+        svg.style.opacity = active ? '1' : '0.25';
+        if (active) {
+            svg.style.filter = 'drop-shadow(0 0 3px rgba(56, 189, 248, 0.75))';
+        }
+        svg.innerHTML = `
+            <line x1="12" y1="2" x2="12" y2="22"></line>
+            <line x1="3.34" y1="7" x2="20.66" y2="17"></line>
+            <line x1="3.34" y1="17" x2="20.66" y2="7"></line>
+            <path d="M9.5 4.5L12 7L14.5 4.5"></path>
+            <path d="M9.5 19.5L12 17L14.5 19.5"></path>
+            <path d="M5 8.5L8 11.5"></path>
+            <path d="M19 15.5L16 12.5"></path>
+            <path d="M5 15.5L8 12.5"></path>
+            <path d="M19 8.5L16 11.5"></path>
+        `;
+    } else {
+        // Token 2: Super / Joker Token (Kar Tanesi + Alev)
+        svg.setAttribute('width', '20');
+        svg.setAttribute('height', '20');
+        svg.style.opacity = active ? '1' : '0.25';
+        if (active) {
+            svg.style.filter = 'drop-shadow(0 0 4px rgba(249, 115, 22, 0.6))';
+        }
+        const snowColor = active ? 'var(--ice-blue, #38bdf8)' : 'var(--text-secondary)';
+        const flameColor = active ? '#ef4444' : 'var(--text-secondary)';
+
+        svg.innerHTML = `
+            <!-- Flame (Alev) Top-Left -->
+            <path d="M8.5 1.5C8.5 1.5 5 4.8 5 8.2C5 10.5 6.4 12 7.8 12.4C6.8 11 7.3 9.2 8.6 8.2C9.5 9.7 11 10.1 11.4 8.7C12.4 10.7 11.4 12.5 9.8 13.5" fill="${active ? 'url(#flameGrad)' : 'none'}" stroke="${flameColor}" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"></path>
+            
+            <defs>
+                <linearGradient id="flameGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+                    <stop offset="0%" stop-color="#ef4444" />
+                    <stop offset="100%" stop-color="#f97316" />
+                </linearGradient>
+            </defs>
+
+            <!-- Tilted Snowflake (Kar Tanesi) Bottom-Right -->
+            <line x1="9" y1="21" x2="21" y2="9" stroke="${snowColor}" stroke-width="1.8" stroke-linecap="round"></line>
+            <line x1="10" y1="10" x2="20" y2="20" stroke="${snowColor}" stroke-width="1.8" stroke-linecap="round"></line>
+            <line x1="8.5" y1="15" x2="21.5" y2="15" stroke="${snowColor}" stroke-width="1.8" stroke-linecap="round"></line>
+            <line x1="15" y1="8.5" x2="15" y2="21.5" stroke="${snowColor}" stroke-width="1.8" stroke-linecap="round"></line>
+            <path d="M17 11L19 9L21 11" stroke="${snowColor}" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"></path>
+            <path d="M13 19L11 21L9 19" stroke="${snowColor}" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"></path>
+        `;
     }
-    svg.innerHTML = `
-        <line x1="12" y1="2" x2="12" y2="22"></line>
-        <line x1="2" y1="12" x2="22" y2="12"></line>
-        <line x1="4.93" y1="4.93" x2="19.07" y2="19.07"></line>
-        <line x1="19.07" y1="4.93" x2="4.93" y2="19.07"></line>
-        <path d="M9 5l3-3 3 3"></path>
-        <path d="M9 19l3 3 3-3"></path>
-        <path d="M5 9l-3 3 3 3"></path>
-        <path d="M19 9l3 3-3 3"></path>
-    `;
+
     return svg;
 }
 
@@ -792,13 +845,33 @@ function renderActivityCharts() {
     });
 }
 
+function openInfoPopupModal(title, htmlContent) {
+    const overlay = document.getElementById('infoPopupOverlay');
+    const titleEl = document.getElementById('infoPopupTitle');
+    const bodyEl = document.getElementById('infoPopupBody');
+    if (!overlay || !titleEl || !bodyEl) return;
+
+    titleEl.innerHTML = title;
+    bodyEl.innerHTML = htmlContent;
+    overlay.style.display = 'flex';
+
+    if (!overlay.dataset.bound) {
+        overlay.dataset.bound = 'true';
+        overlay.addEventListener('click', (e) => {
+            if (e.target === overlay) {
+                overlay.style.display = 'none';
+            }
+        });
+    }
+}
+
 export function showContinuityInfoModal(type) {
     if (type === 'global') {
-        const title = '⚡ Genel FSRS Serisi Nedir & Nasıl Çalışır?';
+        const title = '⚡ Genel FSRS Serisi';
         const html = `
             <div style="font-size: 0.88rem; color: var(--text-primary); text-align: left; display: flex; flex-direction: column; gap: 0.85rem;">
                 <div style="background: var(--bg-hover, rgba(59,130,246,0.06)); padding: 0.75rem 0.9rem; border-radius: 8px; border-left: 3px solid var(--primary-color);">
-                    <strong style="color: var(--primary-color); font-size: 0.92rem;">📌 Bu Kart Nedir?</strong>
+                    <strong style="color: var(--primary-color); font-size: 0.92rem;">📌 Genel Seri Nedir?</strong>
                     <p style="margin: 0.25rem 0 0 0; color: var(--text-secondary); line-height: 1.45;">
                         Genel Seri, tüm soru bankanız genelinde FSRS (Spaced Repetition) sistemine göre vadesi gelen soruları çözerek çalışma sürekliliğinizi korumanızı sağlar.
                     </p>
@@ -806,7 +879,7 @@ export function showContinuityInfoModal(type) {
 
                 <div>
                     <strong style="display: flex; align-items: center; gap: 0.35rem; margin-bottom: 0.35rem;">
-                        <span>🔄</span> Günlük Hedef & Seri Mantığı:
+                        <span>🔄</span> Günlük Hedef & Çalışma Disiplini:
                     </strong>
                     <ul style="margin: 0; padding-left: 1.2rem; color: var(--text-secondary); line-height: 1.5;">
                         <li>Her gün sistem FSRS algoritmik vadesi gelen soru hedefini belirler.</li>
@@ -814,29 +887,15 @@ export function showContinuityInfoModal(type) {
                         <li>Vadesi gelen soru olmadığında seriniz otomatik olarak korunur.</li>
                     </ul>
                 </div>
-
-                <div>
-                    <strong style="display: flex; align-items: center; gap: 0.35rem; margin-bottom: 0.35rem; color: var(--ice-blue, #38bdf8);">
-                        <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="2" x2="12" y2="22"></line><line x1="2" y1="12" x2="22" y2="12"></line><line x1="4.93" y1="4.93" x2="19.07" y2="19.07"></line><line x1="19.07" y1="4.93" x2="4.93" y2="19.07"></line><path d="M9 5l3-3 3 3"></path><path d="M9 19l3 3 3-3"></path><path d="M5 9l-3 3 3 3"></path><path d="M19 9l3 3-3 3"></path></svg>
-                        ❄️ Dondurma Jetonları (Seri Koruma):
-                    </strong>
-                    <p style="margin: 0 0 0.4rem 0; color: var(--text-secondary); line-height: 1.45;">
-                        Soru çözemediğiniz günlerde dondurma jetonunuz varsa otomatik olarak kullanılır ve seriniz sıfırlanmaz.
-                    </p>
-                    <ul style="margin: 0; padding-left: 1.2rem; color: var(--text-secondary); line-height: 1.5; font-size: 0.84rem;">
-                        <li><strong>1. Jeton:</strong> Son 7 günde kesintisiz seri + %70 FSRS başarısı ile kazanılır.</li>
-                        <li><strong>2. Jeton:</strong> Son 14 günde kesintisiz seri + %80 FSRS başarısı ile kazanılır.</li>
-                    </ul>
-                </div>
             </div>
         `;
-        showAlert(html, title);
+        openInfoPopupModal(title, html);
     } else {
-        const title = '🎯 Özel Odak Serisi Nedir & Nasıl Çalışır?';
+        const title = '🎯 Özel Odak Serisi';
         const html = `
             <div style="font-size: 0.88rem; color: var(--text-primary); text-align: left; display: flex; flex-direction: column; gap: 0.85rem;">
                 <div style="background: var(--bg-hover, rgba(59,130,246,0.06)); padding: 0.75rem 0.9rem; border-radius: 8px; border-left: 3px solid var(--info-color, #3b82f6);">
-                    <strong style="color: var(--info-color, #3b82f6); font-size: 0.92rem;">📌 Bu Kart Nedir?</strong>
+                    <strong style="color: var(--info-color, #3b82f6); font-size: 0.92rem;">📌 Özel Odak Serisi Nedir?</strong>
                     <p style="margin: 0.25rem 0 0 0; color: var(--text-secondary); line-height: 1.45;">
                         Özel Odak Serisi, seçtiğiniz özel kaynaklara (en fazla 3 kaynak) odaklanarak özelleştirilmiş günlük çalışma disiplini sürdürmenizi sağlar.
                     </p>
@@ -851,22 +910,72 @@ export function showContinuityInfoModal(type) {
                         <li>Seçilen kaynaklardan günlük vadesi gelen sorular çözüldüğünde <strong>Odak Serisi (+1)</strong> artar.</li>
                     </ul>
                 </div>
+            </div>
+        `;
+        openInfoPopupModal(title, html);
+    }
+}
+
+export function showFreezeTokenModal(type) {
+    if (type === 'global') {
+        const title = '❄️ Genel Seri Dondurma Jetonları';
+        const html = `
+            <div style="font-size: 0.88rem; color: var(--text-primary); text-align: left; display: flex; flex-direction: column; gap: 0.85rem;">
+                <div style="background: rgba(56, 189, 248, 0.08); padding: 0.75rem 0.9rem; border-radius: 8px; border-left: 3px solid var(--ice-blue, #38bdf8);">
+                    <strong style="color: var(--ice-blue, #38bdf8); font-size: 0.92rem;">❄️ 1. Jeton (Kar Tanesi - Hediye Jeton)</strong>
+                    <p style="margin: 0.25rem 0 0 0; color: var(--text-secondary); line-height: 1.45;">
+                        İlk dondurma jetonunuz uygulamaya başlarken <strong>bir kereliğe mahsus hediye</strong> olarak verilir. Soru çözemediğiniz bir günde serinizi sıfırlanmaktan korur.
+                    </p>
+                </div>
+
+                <div style="background: rgba(249, 115, 22, 0.08); padding: 0.75rem 0.9rem; border-radius: 8px; border-left: 3px solid #f97316;">
+                    <strong style="color: #f97316; font-size: 0.92rem;">🔥 2. Jeton (Süper / Joker Jeton - Kar Tanesi & Alev)</strong>
+                    <p style="margin: 0.25rem 0 0 0; color: var(--text-secondary); line-height: 1.45;">
+                        İkinci jeton bir <strong>Joker Jeton</strong>'dur. Hem normal serinizde hem de özel odak serinizde seri koruma hakkı olarak kullanılabilir!
+                    </p>
+                </div>
 
                 <div>
-                    <strong style="display: flex; align-items: center; gap: 0.35rem; margin-bottom: 0.35rem; color: var(--ice-blue, #38bdf8);">
-                        <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="2" x2="12" y2="22"></line><line x1="2" y1="12" x2="22" y2="12"></line><line x1="4.93" y1="4.93" x2="19.07" y2="19.07"></line><line x1="19.07" y1="4.93" x2="4.93" y2="19.07"></line><path d="M9 5l3-3 3 3"></path><path d="M9 19l3 3 3-3"></path><path d="M5 9l-3 3 3 3"></path><path d="M19 9l3 3-3 3"></path></svg>
-                        ❄️ Odak Dondurma Jetonları:
+                    <strong style="display: flex; align-items: center; gap: 0.35rem; margin-bottom: 0.35rem;">
+                        🏆 Genel Seri Jeton Kazanım Şartları:
                     </strong>
-                    <p style="margin: 0 0 0.4rem 0; color: var(--text-secondary); line-height: 1.45;">
-                        Seçili kaynaklardan soru çözülmeyen günlerde Odak Dondurma jetonunuz serinizi korur.
-                    </p>
                     <ul style="margin: 0; padding-left: 1.2rem; color: var(--text-secondary); line-height: 1.5; font-size: 0.84rem;">
-                        <li><strong>1. Odak Jetonu:</strong> Son 7 günde kesintisiz Odak Serisi ile kazanılır.</li>
-                        <li><strong>2. Joker Jeton:</strong> Son 14 günde kesintisiz Odak Serisi ile kazanılır.</li>
+                        <li><strong>1. Jeton (Kar Tanesi):</strong> Başlangıçta 1 defalık hediye (Tüketilirse: 7 gün seri + %70 FSRS başarısı ile tekrar kazanılır).</li>
+                        <li><strong>2. Jeton (Süper / Joker):</strong> Son 14 günde kesintisiz seri + %80 FSRS başarısı ile kazanılır.</li>
                     </ul>
                 </div>
             </div>
         `;
-        showAlert(html, title);
+        openInfoPopupModal(title, html);
+    } else {
+        const title = '❄️ Odak Serisi Dondurma Jetonları';
+        const html = `
+            <div style="font-size: 0.88rem; color: var(--text-primary); text-align: left; display: flex; flex-direction: column; gap: 0.85rem;">
+                <div style="background: rgba(56, 189, 248, 0.08); padding: 0.75rem 0.9rem; border-radius: 8px; border-left: 3px solid var(--ice-blue, #38bdf8);">
+                    <strong style="color: var(--ice-blue, #38bdf8); font-size: 0.92rem;">❄️ 1. Odak Jetonu (Kar Tanesi - Hediye Jeton)</strong>
+                    <p style="margin: 0.25rem 0 0 0; color: var(--text-secondary); line-height: 1.45;">
+                        İlk odak dondurma jetonunuz <strong>bir kereliğe mahsus hediye</strong> olarak verilir. Seçili odak kaynaklarınızdan soru çözemediğiniz bir günde odak serinizi korur.
+                    </p>
+                </div>
+
+                <div style="background: rgba(249, 115, 22, 0.08); padding: 0.75rem 0.9rem; border-radius: 8px; border-left: 3px solid #f97316;">
+                    <strong style="color: #f97316; font-size: 0.92rem;">🔥 2. Odak Jetonu (Süper / Joker Jeton - Kar Tanesi & Alev)</strong>
+                    <p style="margin: 0.25rem 0 0 0; color: var(--text-secondary); line-height: 1.45;">
+                        İkinci odak jetonunuz bir <strong>Joker Jeton</strong>'dur. Hem özel odak serinizde hem de normal serinizde ortak seri koruma hakkı olarak kullanılabilir!
+                    </p>
+                </div>
+
+                <div>
+                    <strong style="display: flex; align-items: center; gap: 0.35rem; margin-bottom: 0.35rem;">
+                        🏆 Odak Serisi Jeton Kazanım Şartları:
+                    </strong>
+                    <ul style="margin: 0; padding-left: 1.2rem; color: var(--text-secondary); line-height: 1.5; font-size: 0.84rem;">
+                        <li><strong>1. Jeton (Kar Tanesi):</strong> Başlangıçta 1 defalık hediye (Tüketilirse: 7 gün kesintisiz Odak Serisi ile tekrar kazanılır).</li>
+                        <li><strong>2. Jeton (Süper / Joker):</strong> Son 14 günde kesintisiz Odak Serisi tamamlanarak kazanılır.</li>
+                    </ul>
+                </div>
+            </div>
+        `;
+        openInfoPopupModal(title, html);
     }
 }

@@ -5588,17 +5588,16 @@ body.dnd-active {
     opacity: 1;
 }
 
-/* Continuity Icon Button (Bottom-Right, Touch-Friendly) */
+/* Continuity Icon Button (Pure Icon, No Border/Background) */
 .continuity-icon-btn {
     display: inline-flex;
     align-items: center;
     justify-content: center;
-    width: 32px;
-    height: 32px;
-    padding: 0;
-    background: var(--surface-hover, rgba(241, 245, 249, 0.7));
-    border: 1px solid var(--border-color, rgba(226, 232, 240, 0.8));
-    border-radius: 8px;
+    padding: 2px 4px;
+    background: transparent !important;
+    border: none !important;
+    box-shadow: none !important;
+    outline: none !important;
     color: var(--text-secondary);
     cursor: pointer;
     transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
@@ -5620,7 +5619,59 @@ body.dnd-active {
 .continuity-icon-btn:hover,
 .continuity-icon-btn:active {
     color: var(--primary-color);
-    border-color: var(--primary-color);
-    background: var(--bg-hover, rgba(59, 130, 246, 0.12));
-    transform: translateY(-1px);
+    background: transparent !important;
+    border: none !important;
+    box-shadow: none !important;
+    transform: scale(1.15);
+}
+
+/* Pure Italic 'i' Info Icon (No Circle) */
+.info-italic-icon {
+    font-family: 'Georgia', 'Times New Roman', serif;
+    font-style: italic;
+    font-weight: 700;
+    font-size: 1.15rem;
+    line-height: 1;
+    display: inline-block;
+    color: var(--text-secondary);
+    transition: color 0.15s ease, transform 0.15s ease;
+    user-select: none;
+}
+
+.continuity-icon-btn:hover .info-italic-icon {
+    color: var(--primary-color);
+}
+
+/* Interactive Freeze Tokens Top-Right */
+#continuityTokens,
+#focusContinuityTokens {
+    cursor: pointer;
+    transition: transform 0.15s ease, opacity 0.15s ease;
+    padding: 2px 4px;
+    border-radius: 6px;
+}
+
+#continuityTokens:hover,
+#focusContinuityTokens:hover {
+    transform: scale(1.08);
+    background: rgba(125, 211, 252, 0.1);
+}
+
+/* Info Popup Overlay (Buttonless) */
+.info-popup-card {
+    border-radius: var(--radius-lg, 12px);
+    background-color: var(--surface-color);
+    box-shadow: 0 20px 40px rgba(0, 0, 0, 0.3);
+    animation: popupFadeIn 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+@keyframes popupFadeIn {
+    from {
+        opacity: 0;
+        transform: scale(0.95) translateY(10px);
+    }
+    to {
+        opacity: 1;
+        transform: scale(1) translateY(0);
+    }
 }

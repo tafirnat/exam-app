@@ -432,10 +432,7 @@
                                 <!-- Bottom Row: Italic Info Button Bottom-Right -->
                                 <div style="display: flex; justify-content: flex-end; align-items: center; margin-top: 0.4rem;">
                                     <button id="continuityInfoBtn" class="continuity-icon-btn" title="Genel Seri Hakkında Bilgi">
-                                        <svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                                            <circle cx="12" cy="12" r="10"></circle>
-                                            <path d="M10 16h3.5m-1.5 0l2-5m-1.5-3.5h.01"></path>
-                                        </svg>
+                                        <span class="info-italic-icon">i</span>
                                     </button>
                                 </div>
                             </div>
@@ -477,10 +474,7 @@
                                     </button>
 
                                     <button id="focusContinuityInfoBtn" class="continuity-icon-btn" title="Özel Odak Serisi Hakkında Bilgi">
-                                        <svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                                            <circle cx="12" cy="12" r="10"></circle>
-                                            <path d="M10 16h3.5m-1.5 0l2-5m-1.5-3.5h.01"></path>
-                                        </svg>
+                                        <span class="info-italic-icon">i</span>
                                     </button>
                                 </div>
                             </div>
@@ -1799,6 +1793,18 @@
             <div class="modal-footer" style="display: flex; justify-content: flex-end; margin-top: 1rem;">
                 <button class="btn btn-subtle" id="qpmDoneBtn" data-i18n="close">Kapat</button>
             </div>
+    <!-- Info & Freeze Popup Modal (No buttons, Backdrop click to close) -->
+    <div id="infoPopupOverlay" class="modal-overlay" style="display: none; z-index: 10010;">
+        <div class="modal-card info-popup-card" style="max-width: 440px; width: 90%; position: relative; padding: 1.25rem;">
+            <div class="modal-header" style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.75rem; border-bottom: 1px solid var(--border-color); padding-bottom: 0.5rem;">
+                <h3 id="infoPopupTitle" style="margin: 0; font-size: 1.05rem; font-weight: 700; color: var(--text-primary);"></h3>
+            </div>
+            <div id="infoPopupBody" class="modal-body" style="padding: 0.25rem 0;">
+                <!-- Content injected dynamically -->
+            </div>
+        </div>
+    </div>
+
     <!-- Special Focus Sources Modal -->
     <div class="modal" id="focusSourceModal" aria-hidden="true" style="display: none;">
         <div class="modal-content card" style="max-width: 480px; width: 90%;">
