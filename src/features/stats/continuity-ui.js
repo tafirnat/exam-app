@@ -189,11 +189,22 @@ function createTokenSvg(active) {
 
 let isAnimating = false;
 
+const CAROUSEL_INTERVAL_MS = 5000;
+
+// Read the slide duration from CSS so timing lives in one place.
+function getSlideDuration(carousel) {
+    const raw = getComputedStyle(carousel).getPropertyValue('--carousel-duration').trim();
+    if (raw.endsWith('ms')) return parseFloat(raw) || 600;
+    if (raw.endsWith('s')) return (parseFloat(raw) || 0.6) * 1000;
+    return 600;
+}
+
 function initCarouselEvents() {
     const wrapper = document.getElementById('continuityCarouselWrapper');
     if (!wrapper || wrapper.dataset.carouselInited) return;
     wrapper.dataset.carouselInited = 'true';
 
+    const carousel = wrapper.querySelector('.continuity-carousel');
     const slides = wrapper.querySelectorAll('.continuity-slide');
     const dots = wrapper.querySelectorAll('.continuity-dots .dot');
     if (!slides.length) return;
@@ -235,7 +246,7 @@ function initCarouselEvents() {
                 s.classList.toggle('active', idx === targetIndex);
             });
             isAnimating = false;
-        }, 410);
+        }, getSlideDuration(carousel || wrapper) + 40);
     }
 
     function startTimer() {
@@ -243,7 +254,7 @@ function initCarouselEvents() {
         carouselTimer = setInterval(() => {
             const nextIdx = (currentSlideIndex + 1) % slides.length;
             goToSlide(nextIdx, 'next');
-        }, 4000);
+        }, CAROUSEL_INTERVAL_MS);
     }
 
     function stopTimer() {

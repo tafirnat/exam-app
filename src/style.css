@@ -5454,6 +5454,10 @@ body.dnd-active {
 
 /* Continuity Carousel Styles */
 .continuity-carousel {
+    /* Single source of truth for the slide timing (JS reads this value) */
+    --carousel-duration: 600ms;
+    /* Smooth "settle" easing: quick start, long gentle deceleration, no overshoot */
+    --carousel-ease: cubic-bezier(0.32, 0.72, 0, 1);
     position: relative;
     width: 100%;
     display: grid;
@@ -5470,49 +5474,78 @@ body.dnd-active {
     opacity: 0;
     visibility: hidden;
     pointer-events: none;
-    transform: translateX(100%);
-    transition: transform 0.4s cubic-bezier(0.25, 1, 0.5, 1), opacity 0.4s ease, visibility 0.4s ease;
+    transform: translate3d(100%, 0, 0);
+    transition:
+        transform var(--carousel-duration) var(--carousel-ease),
+        opacity var(--carousel-duration) var(--carousel-ease),
+        visibility var(--carousel-duration) var(--carousel-ease);
     will-change: transform, opacity;
+    backface-visibility: hidden;
 }
 
 .continuity-slide.active {
     opacity: 1;
     visibility: visible;
     pointer-events: auto;
-    transform: translateX(0);
+    transform: translate3d(0, 0, 0);
     z-index: 2;
 }
 
-/* Directional Slide Transition Animations */
+/* Directional Slide Transition Animations.
+   The outgoing slide travels a shorter distance than the incoming one,
+   which produces a subtle parallax depth instead of a flat swap. */
 .continuity-slide.slide-out-left {
-    transform: translateX(-100%) !important;
+    transform: translate3d(-32%, 0, 0) scale(0.96) !important;
     opacity: 0 !important;
     z-index: 1;
 }
 
 .continuity-slide.slide-out-right {
-    transform: translateX(100%) !important;
+    transform: translate3d(32%, 0, 0) scale(0.96) !important;
     opacity: 0 !important;
     z-index: 1;
 }
 
 .continuity-slide.slide-in-right {
-    transform: translateX(100%);
+    transform: translate3d(100%, 0, 0);
     opacity: 0;
     visibility: visible;
     z-index: 2;
 }
 
 .continuity-slide.slide-in-left {
-    transform: translateX(-100%);
+    transform: translate3d(-100%, 0, 0);
     opacity: 0;
     visibility: visible;
     z-index: 2;
 }
 
 .continuity-slide.slide-in-active {
-    transform: translateX(0) !important;
+    transform: translate3d(0, 0, 0) !important;
     opacity: 1 !important;
+}
+
+/* The outgoing slide should fade out early so the incoming card reads as the
+   one in focus for most of the travel. */
+.continuity-slide.slide-out-left,
+.continuity-slide.slide-out-right {
+    transition:
+        transform var(--carousel-duration) var(--carousel-ease),
+        opacity calc(var(--carousel-duration) * 0.65) ease-out,
+        visibility var(--carousel-duration) var(--carousel-ease);
+}
+
+@media (prefers-reduced-motion: reduce) {
+    .continuity-carousel {
+        --carousel-duration: 200ms;
+    }
+
+    .continuity-slide,
+    .continuity-slide.slide-out-left,
+    .continuity-slide.slide-out-right {
+        transition: opacity var(--carousel-duration) ease, visibility var(--carousel-duration) ease;
+        transform: none !important;
+    }
 }
 
 .continuity-dots {
