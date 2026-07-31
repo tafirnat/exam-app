@@ -128,3 +128,42 @@ test('resolvePresetColor gracefully handles missing or deleted sources', () => {
     const res = resolvePresetColor(preset);
     assert.deepEqual(res, { type: 'solid', value: '#ff0053' });
 });
+
+test('showSourceQuickPresetsModal renders presets and toggles source inclusion', async () => {
+    document.body.innerHTML = `
+        <div id="sourceQuickPresetsOverlay" class="modal-overlay">
+            <h3 id="sourceQuickPresetsTitle"></h3>
+            <p id="sourceQuickPresetsSub"></p>
+            <div id="sourceQuickPresetsList"></div>
+            <button id="sourceQuickPresetsCloseXBtn"></button>
+            <button id="sourceQuickPresetsDoneBtn"></button>
+            <button id="sourceQuickPresetsCreateNewBtn"></button>
+        </div>
+    `;
+
+    const { showSourceQuickPresetsModal } = await import('../src/features/sources/quick-presets-ui.js');
+
+    const testSource = { id: 'src_test_1', name: 'Test Source 1' };
+    AppState.sources = [testSource];
+    AppState.quickPresets = [
+        { id: 'qp_1', name: 'Preset Alpha', sourceIds: [], order: 0 },
+        { id: 'qp_2', name: 'Preset Beta', sourceIds: ['src_test_1'], order: 1 }
+    ];
+
+    showSourceQuickPresetsModal(testSource);
+
+    const list = document.getElementById('sourceQuickPresetsList');
+    assert.equal(list.children.length, 2);
+
+    const rows = list.querySelectorAll('.sqp-preset-row');
+    assert.equal(rows[0].classList.contains('active'), false);
+    assert.equal(rows[1].classList.contains('active'), true);
+
+    // Click first row to add source
+    rows[0].click();
+    assert.ok(AppState.quickPresets[0].sourceIds.includes('src_test_1'));
+
+    // Click second row to remove source
+    rows[1].click();
+    assert.ok(!AppState.quickPresets[1].sourceIds.includes('src_test_1'));
+});

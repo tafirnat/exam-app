@@ -311,9 +311,8 @@ export function showSourceActions(source) {
     const toggleQaBtn = document.getElementById('modalToggleQuickAccessBtn');
     const toggleQaLabel = document.getElementById('modalToggleQuickAccessLabel');
 
-    const existingPreset = (AppState.quickPresets || []).find(p => p.sourceIds && p.sourceIds.length === 1 && p.sourceIds[0] === source.id);
     if (toggleQaLabel) {
-        toggleQaLabel.textContent = existingPreset ? t('qs_toggle_remove') : t('qs_toggle_add');
+        toggleQaLabel.textContent = t('qs_manage_for_source') || 'Hızlı Erişim Yönetimi';
     }
 
     const closeActions = () => {
@@ -330,28 +329,8 @@ export function showSourceActions(source) {
     if (toggleQaBtn) {
         toggleQaBtn.onclick = async () => {
             closeActions();
-            const { saveQuickPresets, trackDeletedQuickPreset } = await import('../../core/state.js');
-            const { updateQuickSourcesDot } = await import('./quick-presets-ui.js');
-
-            const isExisting = (AppState.quickPresets || []).find(p => p.sourceIds && p.sourceIds.length === 1 && p.sourceIds[0] === source.id);
-            if (isExisting) {
-                AppState.quickPresets = AppState.quickPresets.filter(p => p.id !== isExisting.id);
-                trackDeletedQuickPreset(isExisting.id);
-            } else {
-                const newPreset = {
-                    id: 'qp_' + Date.now() + '_' + Math.random().toString(36).substr(2, 4),
-                    name: source.name || t('untitled_source'),
-                    sourceIds: [source.id],
-                    color: null,
-                    order: AppState.quickPresets.length,
-                    createdAt: Date.now(),
-                    updatedAt: Date.now()
-                };
-                AppState.quickPresets.push(newPreset);
-            }
-            saveQuickPresets();
-            updateQuickSourcesDot();
-            if (typeof window.updateHomeStats === 'function') window.updateHomeStats();
+            const { showSourceQuickPresetsModal } = await import('./quick-presets-ui.js');
+            showSourceQuickPresetsModal(source);
         };
     }
 
@@ -457,7 +436,7 @@ export function renderHomeActiveSources() {
 export function showSourceOptionsModal(sourceId) {
     const source = AppState.sources.find(s => s.id === sourceId);
     if (source) {
-        showEditMetadata(source);
+        showSourceActions(source);
     }
 }
 

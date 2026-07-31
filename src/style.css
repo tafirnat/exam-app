@@ -5370,3 +5370,68 @@ body.dnd-active {
     grid-template-columns: 1fr 1fr;
     gap: 0.5rem;
 }
+
+/* Source Quick Access Presets Selection Modal */
+.sqp-preset-row {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 0.65rem 0.85rem;
+    background: var(--surface-color, rgba(255, 255, 255, 0.03));
+    border: 1.5px solid var(--glass-border, rgba(255, 255, 255, 0.1));
+    border-radius: var(--radius-md, 8px);
+    cursor: pointer;
+    user-select: none;
+    transition: all 0.18s ease;
+}
+
+.sqp-preset-row:hover {
+    background: var(--bg-hover, rgba(255, 255, 255, 0.07));
+    border-color: color-mix(in srgb, var(--primary-color) 50%, transparent);
+}
+
+.sqp-preset-row.active {
+    background: color-mix(in srgb, var(--primary-color) 12%, transparent);
+    border-color: var(--primary-color);
+}
+
+.sqp-preset-info {
+    display: flex;
+    align-items: center;
+    gap: 0.6rem;
+    flex: 1;
+    min-width: 0;
+}
+
+.sqp-preset-name {
+    font-size: 0.88rem;
+    font-weight: 500;
+    color: var(--text-primary);
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.sqp-preset-row.active .sqp-preset-name {
+    color: var(--primary-color);
+    font-weight: 600;
+}
+
+.sqp-check-icon {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 22px;
+    height: 22px;
+    border-radius: 50%;
+    border: 1.5px solid var(--border-color, rgba(255, 255, 255, 0.2));
+    color: transparent;
+    transition: all 0.15s ease;
+    flex-shrink: 0;
+}
+
+.sqp-preset-row.active .sqp-check-icon {
+    background: var(--primary-color);
+    border-color: var(--primary-color);
+    color: #ffffff;
+}

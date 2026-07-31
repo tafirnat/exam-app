@@ -418,3 +418,122 @@ export function setupQuickPresets() {
     // Initial dot status
     updateQuickSourcesDot();
 }
+
+export function showSourceQuickPresetsModal(source) {
+    if (!source) return;
+    const overlay = document.getElementById('sourceQuickPresetsOverlay');
+    const subTitle = document.getElementById('sourceQuickPresetsSub');
+    const listContainer = document.getElementById('sourceQuickPresetsList');
+    const closeXBtn = document.getElementById('sourceQuickPresetsCloseXBtn');
+    const doneBtn = document.getElementById('sourceQuickPresetsDoneBtn');
+    const createBtn = document.getElementById('sourceQuickPresetsCreateNewBtn');
+
+    if (!overlay || !listContainer) return;
+
+    if (subTitle) {
+        subTitle.textContent = source.name || t('untitled_source');
+    }
+
+    const closeSelf = () => {
+        overlay.classList.remove('active');
+        if (closeXBtn) closeXBtn.onclick = null;
+        if (doneBtn) doneBtn.onclick = null;
+        if (createBtn) createBtn.onclick = null;
+        overlay.onclick = null;
+    };
+
+    const renderList = () => {
+        listContainer.innerHTML = '';
+        const presets = [...(AppState.quickPresets || [])].sort((a, b) => (a.order ?? 0) - (b.order ?? 0));
+
+        if (presets.length === 0) {
+            const emptyDiv = document.createElement('div');
+            emptyDiv.className = 'quick-sources-empty';
+            emptyDiv.style.padding = '1.5rem 1rem';
+            emptyDiv.style.textAlign = 'center';
+            emptyDiv.style.color = 'var(--text-secondary)';
+            emptyDiv.style.fontSize = '0.9rem';
+            emptyDiv.textContent = t('qs_empty');
+            listContainer.appendChild(emptyDiv);
+            return;
+        }
+
+        presets.forEach(preset => {
+            const isIncluded = (preset.sourceIds || []).includes(source.id);
+
+            const row = document.createElement('div');
+            row.className = `sqp-preset-row ${isIncluded ? 'active' : ''}`;
+
+            const infoDiv = document.createElement('div');
+            infoDiv.className = 'sqp-preset-info';
+
+            const barSpan = document.createElement('div');
+            barSpan.className = 'qpm-proportional-bar';
+            barSpan.style.width = '28px';
+            barSpan.style.height = '14px';
+            barSpan.style.borderRadius = '3px';
+            barSpan.style.flexShrink = '0';
+            applyPresetBar(barSpan, preset);
+
+            const nameSpan = document.createElement('span');
+            nameSpan.className = 'sqp-preset-name';
+            nameSpan.textContent = preset.name;
+
+            infoDiv.appendChild(barSpan);
+            infoDiv.appendChild(nameSpan);
+
+            const checkDiv = document.createElement('div');
+            checkDiv.className = 'sqp-check-icon';
+            checkDiv.innerHTML = `<svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"></polyline></svg>`;
+
+            row.appendChild(infoDiv);
+            row.appendChild(checkDiv);
+
+            row.onclick = () => {
+                let currentSourceIds = preset.sourceIds || [];
+                if (currentSourceIds.includes(source.id)) {
+                    preset.sourceIds = currentSourceIds.filter(id => id !== source.id);
+                } else {
+                    preset.sourceIds = [...currentSourceIds, source.id];
+                }
+                preset.updatedAt = Date.now();
+                saveQuickPresets();
+                updateQuickSourcesDot();
+                if (typeof window.updateHomeStats === 'function') window.updateHomeStats();
+                renderList();
+            };
+
+            listContainer.appendChild(row);
+        });
+    };
+
+    renderList();
+    overlay.classList.add('active');
+
+    if (closeXBtn) closeXBtn.onclick = closeSelf;
+    if (doneBtn) doneBtn.onclick = closeSelf;
+    overlay.onclick = (e) => {
+        if (e.target === overlay) closeSelf();
+    };
+
+    if (createBtn) {
+        createBtn.onclick = () => {
+            const newPreset = {
+                id: 'qp_' + Date.now() + '_' + Math.random().toString(36).substr(2, 4),
+                name: source.name || t('untitled_source'),
+                sourceIds: [source.id],
+                color: null,
+                order: (AppState.quickPresets || []).length,
+                createdAt: Date.now(),
+                updatedAt: Date.now()
+            };
+            AppState.quickPresets = AppState.quickPresets || [];
+            AppState.quickPresets.push(newPreset);
+            saveQuickPresets();
+            updateQuickSourcesDot();
+            if (typeof window.updateHomeStats === 'function') window.updateHomeStats();
+            renderList();
+        };
+    }
+}
+
