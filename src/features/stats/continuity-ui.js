@@ -4,6 +4,8 @@ import { buildQuestionPool } from '../test/test-engine.js';
 import { showToast } from '../../core/utils.js';
 
 export function renderContinuityBlock() {
+    renderGlobalCharts();
+    
     const card = document.getElementById('continuityCard');
     if (!card) return;
     
@@ -224,4 +226,225 @@ export function showDailyMotivationToast() {
             showToast(`Hadi! Bugün ${remaining} soru eksiğin var! Devamlılık senin elinde, tempoyu koru!`, 'info');
         }
     }
+}
+
+export function renderGlobalCharts() {
+    const container = document.getElementById('homeGlobalStatsCard');
+    if (!container) return;
+
+    const statsKeys = Object.keys(AppState.stats || {});
+    if (statsKeys.length === 0 && (!AppState.studyActivity || Object.keys(AppState.studyActivity).length === 0)) {
+        container.style.display = 'none';
+        return;
+    }
+    
+    container.style.display = 'block';
+
+    // 1. Difficulty Donut Chart
+    let diffCounts = { easy: 0, medium: 0, hard: 0, veryHard: 0, unsolved: 0 };
+    let totalQuestions = 0;
+    
+    const allQuestions = [];
+    (AppState.sources || []).forEach(s => {
+        if (s.questions) {
+            s.questions.forEach(q => allQuestions.push(`${s.id}_${q.id}`));
+        }
+    });
+    totalQuestions = allQuestions.length;
+
+    let solvedCount = 0;
+    allQuestions.forEach(key => {
+        const s = AppState.stats[key];
+        if (!s || (s.correct === 0 && s.wrong === 0)) {
+            diffCounts.unsolved++;
+        } else {
+            solvedCount++;
+            const d = s.difficulty || 5;
+            if (d <= 4) diffCounts.easy++;
+            else if (d <= 6) diffCounts.medium++;
+            else if (d <= 8) diffCounts.hard++;
+            else diffCounts.veryHard++;
+        }
+    });
+
+    const diffData = [
+        { label: 'Kolay', count: diffCounts.easy, color: '#22c55e' },
+        { label: 'Orta', count: diffCounts.medium, color: '#eab308' },
+        { label: 'Zor', count: diffCounts.hard, color: '#f97316' },
+        { label: 'Çok Zor', count: diffCounts.veryHard, color: '#ef4444' },
+        { label: 'Çözülmedi', count: diffCounts.unsolved, color: 'var(--text-secondary)' }
+    ];
+
+    let currentDegree = 0;
+    let gradientParts = [];
+    diffData.forEach(d => {
+        if (d.count > 0) {
+            const percentage = (d.count / totalQuestions) * 360;
+            gradientParts.push(`${d.color} ${currentDegree}deg ${currentDegree + percentage}deg`);
+            currentDegree += percentage;
+        }
+    });
+
+    const donutEl = document.getElementById('difficultyDonutChart');
+    if (donutEl) {
+        if (gradientParts.length > 0) {
+            donutEl.style.background = `conic-gradient(${gradientParts.join(', ')})`;
+        } else {
+            donutEl.style.background = 'var(--surface-hover)';
+        }
+    }
+    const countEl = document.getElementById('donutTotalCount');
+    if (countEl) countEl.textContent = totalQuestions;
+
+    const legendEl = document.getElementById('difficultyLegend');
+    if (legendEl) {
+        legendEl.innerHTML = '';
+        diffData.forEach(d => {
+            const perc = totalQuestions > 0 ? Math.round((d.count / totalQuestions) * 100) : 0;
+            const row = document.createElement('div');
+            row.style.display = 'flex';
+            row.style.alignItems = 'center';
+            row.style.gap = '8px';
+            row.innerHTML = `
+                <div style="width:12px; height:12px; border-radius:50%; background:${d.color};"></div>
+                <span>${d.label}: ${d.count} (${perc}%)</span>
+            `;
+            legendEl.appendChild(row);
+        });
+    }
+
+    // 2. Weekly Study Trend
+    const activities = AppState.studyActivity || {};
+    const yAxisEl = document.getElementById('trendYAxis');
+    const barsEl = document.getElementById('trendBars');
+    const xAxisEl = document.getElementById('trendXAxis');
+    
+    if (!yAxisEl || !barsEl || !xAxisEl) return;
+    
+    yAxisEl.innerHTML = '';
+    barsEl.innerHTML = '';
+    xAxisEl.innerHTML = '';
+
+    const numDays = 7;
+    let currentDate = new Date();
+    currentDate.setDate(currentDate.getDate() - numDays + 1);
+    
+    const lang = document.documentElement.lang || 'tr';
+    const isTr = lang.startsWith('tr');
+    const isDe = lang.startsWith('de');
+    const daysArr = [];
+    let maxCount = 0;
+    
+    for (let i = 0; i < numDays; i++) {
+        const dateStr = getLocalDateStr(currentDate);
+        const act = activities[dateStr];
+        
+        const dayLabels = isTr ? ['Paz', 'Pzt', 'Sal', 'Çar', 'Per', 'Cum', 'Cmt'] : 
+                          isDe ? ['So', 'Mo', 'Di', 'Mi', 'Do', 'Fr', 'Sa'] : 
+                                 ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
+        
+        const dayLabel = dayLabels[currentDate.getDay()];
+        
+        let c = 0, w = 0, u = 0, t = 0;
+        if (act && act.studied) {
+            c = act.correctCount || 0;
+            w = act.wrongCount || 0;
+            u = act.unansweredCount || 0;
+            t = act.questionCount || 0;
+            
+            if (t > 0 && c === 0 && w === 0 && u === 0) {
+                u = t;
+            }
+        }
+        
+        if (t > maxCount) maxCount = t;
+        
+        daysArr.push({ label: dayLabel, correct: c, wrong: w, empty: u, total: t });
+        currentDate.setDate(currentDate.getDate() + 1);
+    }
+    
+    const topLimit = Math.max(10, Math.ceil(maxCount / 5) * 5);
+    for (let i = 0; i <= 5; i++) {
+        const val = Math.round((topLimit / 5) * i);
+        const line = document.createElement('div');
+        line.style.display = 'flex';
+        line.style.alignItems = 'center';
+        line.style.fontSize = '0.7rem';
+        line.style.color = 'var(--text-secondary)';
+        line.style.width = '100%';
+        line.innerHTML = `<span style="width:20px; text-align:right; margin-right:5px;">${val}</span><div style="flex:1; height:1px; background:var(--border-color); opacity:0.5;"></div>`;
+        yAxisEl.appendChild(line);
+    }
+
+    daysArr.forEach(d => {
+        const xLbl = document.createElement('div');
+        xLbl.textContent = d.label;
+        xLbl.style.flex = '1';
+        xLbl.style.textAlign = 'center';
+        xAxisEl.appendChild(xLbl);
+        
+        const barWrap = document.createElement('div');
+        barWrap.style.flex = '1';
+        barWrap.style.height = '100%';
+        barWrap.style.display = 'flex';
+        barWrap.style.flexDirection = 'column-reverse';
+        barWrap.style.alignItems = 'center';
+        barWrap.style.padding = '0 8px';
+        
+        const barInner = document.createElement('div');
+        barInner.style.width = '100%';
+        barInner.style.maxWidth = '24px';
+        barInner.style.height = '100%';
+        barInner.style.display = 'flex';
+        barInner.style.flexDirection = 'column-reverse';
+        barInner.style.position = 'relative';
+        
+        if (d.total > 0) {
+            const hPerc = (d.total / topLimit) * 100;
+            barInner.style.height = `${hPerc}%`;
+            
+            const wPerc = (d.wrong / d.total) * 100;
+            const uPerc = (d.empty / d.total) * 100;
+            const cPerc = (d.correct / d.total) * 100;
+            
+            if (wPerc > 0) {
+                const wDiv = document.createElement('div');
+                wDiv.style.height = `${wPerc}%`;
+                wDiv.style.background = '#ef4444';
+                wDiv.style.width = '100%';
+                if (uPerc === 0 && cPerc === 0) wDiv.style.borderRadius = '4px 4px 0 0';
+                barInner.appendChild(wDiv);
+            }
+            if (uPerc > 0) {
+                const uDiv = document.createElement('div');
+                uDiv.style.height = `${uPerc}%`;
+                uDiv.style.background = '#64748b';
+                uDiv.style.width = '100%';
+                if (cPerc === 0) uDiv.style.borderRadius = '4px 4px 0 0';
+                barInner.appendChild(uDiv);
+            }
+            if (cPerc > 0) {
+                const cDiv = document.createElement('div');
+                cDiv.style.height = `${cPerc}%`;
+                cDiv.style.background = '#22c55e';
+                cDiv.style.width = '100%';
+                cDiv.style.borderRadius = '4px 4px 0 0';
+                barInner.appendChild(cDiv);
+            }
+            
+            const topLbl = document.createElement('span');
+            topLbl.textContent = d.total;
+            topLbl.style.position = 'absolute';
+            topLbl.style.top = '-16px';
+            topLbl.style.width = '100%';
+            topLbl.style.textAlign = 'center';
+            topLbl.style.fontSize = '0.7rem';
+            topLbl.style.fontWeight = 'bold';
+            topLbl.style.color = 'var(--text-primary)';
+            barInner.appendChild(topLbl);
+        }
+        
+        barWrap.appendChild(barInner);
+        barsEl.appendChild(barWrap);
+    });
 }

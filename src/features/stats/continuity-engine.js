@@ -122,10 +122,13 @@ export function calculateGlobalStreak() {
     return streak;
 }
 
-export function recordTestFinished(questionCount) {
+export function recordTestFinished(questionCount, correctCount = 0, wrongCount = 0, unansweredCount = 0) {
     const activity = initTodayActivity();
     activity.studied = true;
     activity.questionCount += questionCount;
+    activity.correctCount = (activity.correctCount || 0) + correctCount;
+    activity.wrongCount = (activity.wrongCount || 0) + wrongCount;
+    activity.unansweredCount = (activity.unansweredCount || 0) + unansweredCount;
     saveStudyActivity();
 }
 

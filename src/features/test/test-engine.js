@@ -307,7 +307,7 @@ export async function finishTest() {
 
         // Record for continuity / streak layer
         if (total > 0) {
-            recordTestFinished(total);
+            recordTestFinished(total, correctCount, wrongCount, unansweredCount);
         }
 
         if (!Array.isArray(AppState.recentTests)) AppState.recentTests = [];
