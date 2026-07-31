@@ -402,7 +402,7 @@
 
     <main>
         <div id="homeView">
-            <div class="card" id="homeStatsCard" style="display: none; margin-bottom: 1rem;">
+            <div class="card" id="homeStatsCard" style="margin-bottom: 1rem;">
                 <div class="stats-card-header">
                     <div class="stats-header-icon">
                         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"
@@ -424,64 +424,87 @@
                     </div>
                 </div>
 
-                <div class="stats-grid">
-                    <div class="stat-box">
-                        <div class="stat-value" id="homeStatTotal">0</div>
-                        <div class="stat-label" data-i18n="total_questions">Toplam Soru</div>
+                <div id="homeStatsActiveBody">
+                    <div class="stats-grid">
+                        <div class="stat-box">
+                            <div class="stat-value" id="homeStatTotal">0</div>
+                            <div class="stat-label" data-i18n="total_questions">Toplam Soru</div>
+                        </div>
+                        <div class="stat-box">
+                            <div class="stat-value" id="homeStatAvg">0.0</div>
+                            <div class="stat-label" data-i18n="avg_diff">Ort. Zorluk</div>
+                        </div>
                     </div>
-                    <div class="stat-box">
-                        <div class="stat-value" id="homeStatAvg">0.0</div>
-                        <div class="stat-label" data-i18n="avg_diff">Ort. Zorluk</div>
+                    <div class="progress-section" id="homeProgressSection" style="margin-top: 0.75rem;">
+                        <div style="display: flex; justify-content: space-between; margin-bottom: 0.5rem;">
+                            <span style="font-size: 0.85rem; color: var(--text-secondary);"
+                                data-i18n="progress">Öğrenme İlerlemesi</span>
+                            <span style="font-size: 0.85rem; font-weight: 600;" id="homeProgressPercent">0%</span>
+                        </div>
+                        <div class="progress-bar-track progress-bar-clickable" id="homeProgressBarTrack" title="Grafik görünümü">
+                            <div class="progress-bar-segment seg-learned" id="pbSegLearned" style="width:0%"></div>
+                            <div class="progress-bar-segment seg-solved" id="pbSegSolved" style="width:0%"></div>
+                            <div class="progress-bar-segment seg-not-solved" id="pbSegNotSolved" style="width:100%"></div>
+                        </div>
+                        <div class="progress-legend" style="margin-top: 0.5rem; display: flex; align-items: center;">
+                            <span class="legend-item">
+                                <span class="legend-dot dot-learned"></span>
+                                <span class="legend-count" id="legendLearnedCount"></span>
+                            </span>
+                            <span class="legend-item">
+                                <span class="legend-dot dot-solved"></span>
+                                <span class="legend-count" id="legendSolvedCount"></span>
+                            </span>
+                            <span class="legend-item">
+                                <span class="legend-dot dot-not-solved"></span>
+                                <span class="legend-count" id="legendNotSolvedCount"></span>
+                            </span>
+                            <div id="homeProgressDetail" style="font-size: 0.72rem; color: var(--text-secondary); margin-left: auto; font-weight: 500;"></div>
+                        </div>
                     </div>
-                </div>
-                <div class="progress-section" id="homeProgressSection" style="margin-top: 0.75rem;">
-                    <div style="display: flex; justify-content: space-between; margin-bottom: 0.5rem;">
-                        <span style="font-size: 0.85rem; color: var(--text-secondary);"
-                            data-i18n="progress">Öğrenme İlerlemesi</span>
-                        <span style="font-size: 0.85rem; font-weight: 600;" id="homeProgressPercent">0%</span>
-                    </div>
-                    <div class="progress-bar-track progress-bar-clickable" id="homeProgressBarTrack" title="Grafik görünümü">
-                        <div class="progress-bar-segment seg-learned" id="pbSegLearned" style="width:0%"></div>
-                        <div class="progress-bar-segment seg-solved" id="pbSegSolved" style="width:0%"></div>
-                        <div class="progress-bar-segment seg-not-solved" id="pbSegNotSolved" style="width:100%"></div>
-                    </div>
-                    <div class="progress-legend" style="margin-top: 0.5rem; display: flex; align-items: center;">
-                        <span class="legend-item">
-                            <span class="legend-dot dot-learned"></span>
-                            <span class="legend-count" id="legendLearnedCount"></span>
-                        </span>
-                        <span class="legend-item">
-                            <span class="legend-dot dot-solved"></span>
-                            <span class="legend-count" id="legendSolvedCount"></span>
-                        </span>
-                        <span class="legend-item">
-                            <span class="legend-dot dot-not-solved"></span>
-                            <span class="legend-count" id="legendNotSolvedCount"></span>
-                        </span>
-                        <div id="homeProgressDetail" style="font-size: 0.72rem; color: var(--text-secondary); margin-left: auto; font-weight: 500;"></div>
+
+                    <div style="margin-top: 1.5rem; padding-top: 1rem; border-top: 1px solid var(--border-color);">
+                        <div class="input-group">
+                            <label data-i18n="question_count_label">Soru Sayısı</label>
+                            <select id="questionCount">
+                                <option value="10" data-i18n="q_count_10">10 Soru</option>
+                                <option value="15" data-i18n="q_count_15">15 Soru</option>
+                                <option value="20" data-i18n="q_count_20">20 Soru</option>
+                                <option value="40" data-i18n="q_count_40">40 Soru</option>
+                            </select>
+                        </div>
+                        <div id="startBtnContainer" style="display: flex; gap: 0.75rem; flex-direction: column;">
+                            <button class="btn btn-warning btn-block" id="resumeBtn" style="display: none;"
+                                data-i18n="resume_test">Devam Et</button>
+                            <button class="btn btn-primary btn-block" id="startBtn" data-i18n="start_test">Başla</button>
+                        </div>
+
+                        <div id="homeActiveSourcesSection" style="margin-top: 1.25rem; padding-top: 1rem; border-top: 1px solid var(--border-color); display: none;">
+                            <div style="font-size: 0.82rem; font-weight: 600; color: var(--text-secondary); margin-bottom: 0.6rem; letter-spacing: 0.04em;" data-i18n="active_sources_title">Kullanılan Kaynaklar</div>
+                            <div id="homeActiveSourcesList" style="display: flex; flex-direction: column; gap: 0.4rem;"></div>
+                        </div>
                     </div>
                 </div>
 
-                <div style="margin-top: 1.5rem; padding-top: 1rem; border-top: 1px solid var(--border-color);">
-                    <div class="input-group">
-                        <label data-i18n="question_count_label">Soru Sayısı</label>
-                        <select id="questionCount">
-                            <option value="10" data-i18n="q_count_10">10 Soru</option>
-                            <option value="15" data-i18n="q_count_15">15 Soru</option>
-                            <option value="20" data-i18n="q_count_20">20 Soru</option>
-                            <option value="40" data-i18n="q_count_40">40 Soru</option>
-                        </select>
+                <div id="homeStatsEmptyState" class="home-stats-empty" style="display: none;">
+                    <div class="home-empty-icon">
+                        <svg viewBox="0 0 24 24" width="26" height="26" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                            <path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"></path>
+                            <path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"></path>
+                            <line x1="12" y1="9" x2="12" y2="13"></line>
+                            <circle cx="12" cy="16" r="0.5" fill="currentColor"></circle>
+                        </svg>
                     </div>
-                    <div id="startBtnContainer" style="display: flex; gap: 0.75rem; flex-direction: column;">
-                        <button class="btn btn-warning btn-block" id="resumeBtn" style="display: none;"
-                            data-i18n="resume_test">Devam Et</button>
-                        <button class="btn btn-primary btn-block" id="startBtn" data-i18n="start_test">Başla</button>
-                    </div>
-
-                    <div id="homeActiveSourcesSection" style="margin-top: 1.25rem; padding-top: 1rem; border-top: 1px solid var(--border-color); display: none;">
-                        <div style="font-size: 0.82rem; font-weight: 600; color: var(--text-secondary); margin-bottom: 0.6rem; letter-spacing: 0.04em;" data-i18n="active_sources_title">Kullanılan Kaynaklar</div>
-                        <div id="homeActiveSourcesList" style="display: flex; flex-direction: column; gap: 0.4rem;"></div>
-                    </div>
+                    <h3 class="home-empty-title" data-i18n="home_empty_title">Henüz Kaynak Seçilmedi</h3>
+                    <p class="home-empty-desc" data-i18n="home_empty_desc">
+                        Soru çözümüne başlamak için Kaynakları Yönet kısmından çalışmak istediğiniz bir veya daha fazla kaynağı seçin.
+                    </p>
+                    <button id="homeEmptySelectSourcesBtn" class="btn btn-secondary home-empty-btn">
+                        <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+                            <path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"></path>
+                        </svg>
+                        <span data-i18n="manage_sources">Kaynakları Yönet</span>
+                    </button>
                 </div>
             </div>
 

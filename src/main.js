@@ -5,7 +5,7 @@ import { showToast, showConfirm, getCorrectAnswers, highlightText, escapeHTML } 
 import { migrateOldData, migrateFolderColors } from './core/migration.js';
 import { getQuestionCategory } from './core/question-rules.js';
 import { processJSON, loadFromUrl, loadFromFile, normalizeQuestions, mergeSources } from './features/sources/sources-service.js';
-import { renderSourcesList, showMergeModal, closeAllSourcesModals } from './features/sources/sources-ui.js';
+import { renderSourcesList, showMergeModal, closeAllSourcesModals, showSourceOptionsModal, renderHomeActiveSources } from './features/sources/sources-ui.js';
 import { initArchiveUI } from './features/sources/archive.js';
 import { prepareTest, finishTest, prepareRetake } from './features/test/test-engine.js';
 import { renderQuestion, handleCheckAnswer, updateIndicators, handleTranslation, handleDifficultyRating, handleFlashcardRating, renderTestResults, handleTtsToggle, getIsAudioPlaying, stopAudio, decorateReadingSections } from './features/test/test-ui.js';
@@ -15,6 +15,10 @@ import { initTimer, stopTimer } from './features/test/timer-module.js';
 import { initSync, syncToGist } from './core/github-sync.js';
 import { renderMarkdown, renderInlineMarkdown, plainText, applySearchHighlight } from './core/markdown.js';
 import { setupQuickPresets, updateQuickSourcesDot } from './features/sources/quick-presets-ui.js';
+
+// Expose functions globally for dynamic/inline invocation and window compatibility
+window.showSourceOptionsModal = showSourceOptionsModal;
+window.renderHomeActiveSources = renderHomeActiveSources;
 
 
 
@@ -1086,6 +1090,9 @@ function setupEventListeners() {
 
     const homeSourcesBtn = document.getElementById('homeSourcesBtn');
     if (homeSourcesBtn) homeSourcesBtn.onclick = openSourcesView;
+
+    const homeEmptySelectSourcesBtn = document.getElementById('homeEmptySelectSourcesBtn');
+    if (homeEmptySelectSourcesBtn) homeEmptySelectSourcesBtn.onclick = openSourcesView;
 
     // Results View
     document.getElementById('resHomeBtn').onclick = goHome;

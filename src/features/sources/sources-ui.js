@@ -453,6 +453,14 @@ export function renderHomeActiveSources() {
         container.appendChild(row);
     });
 }
+
+export function showSourceOptionsModal(sourceId) {
+    const source = AppState.sources.find(s => s.id === sourceId);
+    if (source) {
+        showEditMetadata(source);
+    }
+}
+
 window.renderHomeActiveSources = renderHomeActiveSources;
 window.showSourceOptionsModal = showSourceOptionsModal;
 export function showEditMetadata(source) {

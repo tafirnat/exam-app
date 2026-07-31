@@ -567,12 +567,19 @@ export function updateHomeStats() {
     }
 
     const homeView = document.getElementById('homeView');
+    const activeBody = document.getElementById('homeStatsActiveBody');
+    const emptyState = document.getElementById('homeStatsEmptyState');
+
+    if (statsCard) statsCard.style.display = 'block';
+
     if (totalSources === 0 || !hasActiveSource) {
-        if (statsCard) statsCard.style.display = 'none';
+        if (activeBody) activeBody.style.display = 'none';
+        if (emptyState) emptyState.style.display = 'flex';
         if (startPanel) startPanel.style.display = 'none';
-        if (homeView) homeView.classList.add('empty-state');
+        if (homeView) homeView.classList.remove('empty-state');
     } else {
-        if (statsCard) statsCard.style.display = 'block';
+        if (activeBody) activeBody.style.display = 'block';
+        if (emptyState) emptyState.style.display = 'none';
         if (startPanel) {
             startPanel.style.display = 'block';
             startPanel.style.opacity = '1';
