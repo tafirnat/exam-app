@@ -154,6 +154,14 @@ function renderHeatmapYearly() {
         heatmapEl.appendChild(rect);
     }
     
+    const isDark = document.documentElement.getAttribute('data-theme') === 'dark';
+    const colorLevel1 = isDark ? '#0e4429' : '#9be9a8';
+    const colorLevel2 = isDark ? '#006d32' : '#40c463';
+    const colorLevel3 = isDark ? '#26a641' : '#30a14e';
+    const colorLevel4 = isDark ? '#39d353' : '#216e39';
+    const colorEmpty  = isDark ? 'rgba(255, 255, 255, 0.05)' : '#ebedf0';
+    const colorFrozen = isDark ? '#38bdf8' : '#3b82f6';
+    
     for (let i = 0; i < numDays; i++) {
         if (i === 0 || currentDate.getDate() === 1) {
             const currentCol = Math.floor((i + paddingDays) / 7);
@@ -173,21 +181,22 @@ function renderHeatmapYearly() {
         const rect = document.createElement('div');
         rect.style.borderRadius = '2px';
         rect.title = dateStr;
-        rect.style.width = '100%';
-        rect.style.height = '100%';
+        rect.style.width = '10px'; // strictly 10px to avoid flex stretching
+        rect.style.height = '10px';
         
         if (act) {
             if (act.studied) {
-                if (act.questionCount > 50) rect.style.backgroundColor = 'var(--success-color, #10b981)';
-                else if (act.questionCount > 20) rect.style.backgroundColor = 'color-mix(in srgb, var(--success-color, #10b981) 70%, transparent)';
-                else rect.style.backgroundColor = 'color-mix(in srgb, var(--success-color, #10b981) 40%, transparent)';
+                if (act.questionCount > 40) rect.style.backgroundColor = colorLevel4;
+                else if (act.questionCount > 20) rect.style.backgroundColor = colorLevel3;
+                else if (act.questionCount > 10) rect.style.backgroundColor = colorLevel2;
+                else rect.style.backgroundColor = colorLevel1;
             } else if (act.frozen) {
-                rect.style.backgroundColor = 'var(--info-color, #3b82f6)';
+                rect.style.backgroundColor = colorFrozen;
             } else {
-                rect.style.backgroundColor = 'var(--surface-hover)';
+                rect.style.backgroundColor = colorEmpty;
             }
         } else {
-            rect.style.backgroundColor = 'var(--surface-hover)';
+            rect.style.backgroundColor = colorEmpty;
         }
         
         heatmapEl.appendChild(rect);
