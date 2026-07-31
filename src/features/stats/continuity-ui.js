@@ -1,5 +1,5 @@
 import { AppState } from '../../core/state.js';
-import { calculateGlobalStreak, getLocalDateStr, getDailyOverdueSnapshot, initTodayActivity } from './continuity-engine.js';
+import { calculateGlobalStreak, getLocalDateStr, getDailyOverdueSnapshot, initTodayActivity, getDailyRequirement, isActivityRequirementMet, getFsrsStatsForRange } from './continuity-engine.js';
 import { buildQuestionPool } from '../test/test-engine.js';
 import { showToast } from '../../core/utils.js';
 
@@ -26,34 +26,42 @@ export function renderContinuityBlock() {
     const ring = document.getElementById('continuityRing');
     const todayAct = initTodayActivity();
     const overdueCount = getDailyOverdueSnapshot(liveQ);
+    const req = getDailyRequirement(overdueCount);
+    const solved = todayAct.questionCount || 0;
     
-    // Overdue text
+    // Overdue text & Progress Ring
     const textEl = document.getElementById('continuityOverdueText');
-    if (todayAct.studied) {
-        textEl.textContent = 'Günün hedefi tamamlandı 🎉';
+    if (isActivityRequirementMet(todayAct)) {
+        textEl.textContent = 'Günün serisi korundu 🎉';
         textEl.style.color = 'var(--success-color, #10b981)';
         ring.style.stroke = 'var(--success-color, #10b981)';
         ring.setAttribute('stroke-dasharray', '100, 100');
     } else {
+        const progress = Math.min(100, Math.round((solved / req) * 100));
+        ring.setAttribute('stroke-dasharray', `${progress}, 100`);
+        ring.style.stroke = 'var(--primary-color)';
+        textEl.style.color = 'var(--text-secondary)';
+
         if (overdueCount === 0) {
-            textEl.textContent = 'Bugün tekrar bekleyen soru yok 👍';
-            ring.setAttribute('stroke-dasharray', '100, 100');
-            ring.style.stroke = 'var(--primary-color)';
+            textEl.textContent = `Seri için: ${solved}/15 soru`;
+        } else if (overdueCount > 15) {
+            textEl.textContent = `Seri için: ${solved}/15 soru (FSRS: ${overdueCount})`;
         } else {
-            textEl.textContent = `Günün hedefi: ${overdueCount} soru`;
-            textEl.style.color = 'var(--text-secondary)';
-            // calculate progress (we don't track how many of the *specific* overdue questions were answered, 
-            // but we track total questionCount studied today.
-            const progress = Math.min(100, (todayAct.questionCount / overdueCount) * 100);
-            ring.setAttribute('stroke-dasharray', `${progress}, 100`);
-            ring.style.stroke = 'var(--primary-color)';
+            textEl.textContent = `Seri için: ${solved}/${overdueCount} FSRS sorusu`;
         }
     }
     
     // Tokens
     const tokensEl = document.getElementById('continuityTokens');
     tokensEl.innerHTML = '';
-    const freezeTokens = AppState.continuityConfig?.freezeTokens || { remaining: 2, total: 2 };
+    const freezeTokens = AppState.continuityConfig?.freezeTokens || { remaining: 1, total: 1 };
+    
+    const stats7 = getFsrsStatsForRange(7);
+    const stats14 = getFsrsStatsForRange(14);
+
+    tokensEl.title = `Kalan Dondurma: ${freezeTokens.remaining}/${freezeTokens.total}\n` +
+        `• 7 Gün Seri + %70 FSRS: ${stats7.rate}% (${stats7.streakSustained ? 'Seri OK' : 'Seri Yok'})\n` +
+        `• 14 Gün Seri + %80 FSRS: ${stats14.rate}% (${stats14.streakSustained ? 'Seri OK' : 'Seri Yok'})`;
     
     const tokenLabel = document.createElement('span');
     tokenLabel.style.fontSize = '0.7rem';
