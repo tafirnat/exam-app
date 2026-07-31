@@ -1,5 +1,5 @@
 
-import { AppState, saveSources, saveStats, saveCurrentSource, saveFolders, touch } from './state.js';
+import { AppState, saveSources, saveStats, saveCurrentSource, saveFolders, saveStudyActivity, touch } from './state.js';
 
 // Folders store their colour, so replacing the picker's palette left existing
 // folders on the retired colours - several of which wash out on the light
@@ -41,6 +41,88 @@ export function migrateFolderColors({ force = false } = {}) {
     if (changed > 0) saveFolders();
     localStorage.setItem(FOLDER_PALETTE_FLAG, '1');
     return changed;
+}
+
+/* A single day's counters used to be summed on every Gist merge, so one day's
+   questionCount doubled per sync until it reached billions - which blew up the
+   weekly trend axis and the streak logic with it. Nobody answers this many
+   questions in a day, so anything past this line is merge damage rather than
+   an unusually long study session. */
+const CORRUPT_DAILY_COUNT = 500;
+
+/* Mirrors getDailyRequirement()'s ceiling in continuity-engine.js. Kept as a
+   literal so this module stays free of feature imports. */
+const DAILY_TARGET_CAP = 15;
+
+/**
+ * Returns a repaired copy of one studyActivity day. Non-finite and negative
+ * counters collapse to 0, and an inflated total is pulled back to the answer
+ * breakdown when one was recorded - otherwise to the day's own target, which is
+ * the only thing still knowable about it once the breakdown is gone.
+ */
+export function sanitizeActivityRecord(act) {
+    if (!act || typeof act !== 'object') return act;
+
+    const num = (v) => (Number.isFinite(v) && v > 0 ? Math.floor(v) : 0);
+    const snapshot = (v) => (Number.isFinite(v) && v >= 0 ? Math.min(Math.floor(v), CORRUPT_DAILY_COUNT) : null);
+
+    const correctCount = num(act.correctCount);
+    const wrongCount = num(act.wrongCount);
+    const unansweredCount = num(act.unansweredCount);
+    const breakdown = correctCount + wrongCount + unansweredCount;
+    const overdueSnapshot = snapshot(act.overdueSnapshot);
+
+    let questionCount = num(act.questionCount);
+    if (breakdown > 0) {
+        // The breakdown is the only trustworthy total once it has been recorded.
+        questionCount = Math.min(questionCount, breakdown);
+    } else if (questionCount > CORRUPT_DAILY_COUNT) {
+        // Days written before the answer breakdown existed - or stripped of it by
+        // the old merge - leave nothing to reconstruct from. Restoring the day's
+        // target keeps an earned streak earned without inventing a real figure.
+        questionCount = overdueSnapshot > 0 ? Math.min(overdueSnapshot, DAILY_TARGET_CAP) : DAILY_TARGET_CAP;
+    }
+
+    const focusQuestionCount = Math.min(num(act.focusQuestionCount), questionCount);
+
+    return {
+        ...act,
+        studied: !!act.studied,
+        questionCount,
+        correctCount,
+        wrongCount,
+        unansweredCount,
+        frozen: !!act.frozen,
+        overdueSnapshot,
+        focusStudied: !!act.focusStudied,
+        focusQuestionCount,
+        focusFrozen: !!act.focusFrozen,
+        focusOverdueSnapshot: snapshot(act.focusOverdueSnapshot)
+    };
+}
+
+/**
+ * Repairs every day already stored locally. Runs on every boot rather than
+ * behind a one-time flag, because a device still on the additive build can push
+ * inflated numbers back into the Gist at any point.
+ */
+export function sanitizeStudyActivity() {
+    const activities = AppState.studyActivity;
+    if (!activities || typeof activities !== 'object') return 0;
+
+    let repaired = 0;
+    Object.keys(activities).forEach(dateKey => {
+        const before = activities[dateKey];
+        const after = sanitizeActivityRecord(before);
+        if (!after) return;
+        if (JSON.stringify(before) !== JSON.stringify(after)) {
+            activities[dateKey] = after;
+            repaired++;
+        }
+    });
+
+    if (repaired > 0) saveStudyActivity();
+    return repaired;
 }
 
 export function migrateOldData() {

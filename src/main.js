@@ -2,7 +2,7 @@ import { AppState, saveStats, saveSources, saveCurrentSource, saveCustomAIPrompt
 import { initTheme, toggleTheme } from './core/theme.js';
 import { updateStaticTranslations, t, targetLanguages, translations } from './core/i18n.js';
 import { showToast, showConfirm, getCorrectAnswers, highlightText, escapeHTML } from './core/utils.js';
-import { migrateOldData, migrateFolderColors } from './core/migration.js';
+import { migrateOldData, migrateFolderColors, sanitizeStudyActivity } from './core/migration.js';
 import { getQuestionCategory } from './core/question-rules.js';
 import { processJSON, loadFromUrl, loadFromFile, normalizeQuestions, mergeSources } from './features/sources/sources-service.js';
 import { renderSourcesList, showMergeModal, closeAllSourcesModals, showSourceOptionsModal, renderHomeActiveSources } from './features/sources/sources-ui.js';
@@ -183,6 +183,14 @@ const initApp = () => {
         migrateOldData();
         migrateFolderColors();
 
+        // Runs before anything reads studyActivity: the additive Gist merge left
+        // inflated daily counters behind, and every streak, ring and chart on the
+        // home screen is derived from them.
+        const repairedDays = sanitizeStudyActivity();
+        if (repairedDays > 0) {
+            console.log(`Repaired ${repairedDays} inflated study activity records.`);
+        }
+
         console.log('Initializing theme...');
         initTheme();
 
@@ -273,11 +281,6 @@ const initApp = () => {
 
         console.log('Setting up Quick Presets...');
         setupQuickPresets();
-
-        initSync();
-
-
-
 
 
         console.log('App initialized v1.2.3');

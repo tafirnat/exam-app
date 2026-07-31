@@ -1,7 +1,7 @@
 import { AppState, saveSources, saveStats, saveRecentTests, saveFolders, saveQuickPresets, clearLocalStudyData, saveStudyActivity, saveContinuityConfig } from './state.js';
 import { showToast, showAlert } from './utils.js';
 import { t } from './i18n.js';
-import { migrateFolderColors } from './migration.js';
+import { migrateFolderColors, sanitizeActivityRecord } from './migration.js';
 
 const GIST_FILENAME = 'exam_app_backup.json';
 // The archive lives in its own file inside the same Gist. A Gist PATCH only
@@ -357,7 +357,11 @@ async function pullRemoteGistOnly(token, gistId) {
             }
 
             if (remotePayload.studyActivity && typeof remotePayload.studyActivity === 'object') {
-                AppState.studyActivity = remotePayload.studyActivity;
+                const cleaned = {};
+                Object.keys(remotePayload.studyActivity).forEach(dateKey => {
+                    cleaned[dateKey] = sanitizeActivityRecord(remotePayload.studyActivity[dateKey]);
+                });
+                AppState.studyActivity = cleaned;
                 saveStudyActivity();
             }
 
@@ -735,6 +739,34 @@ export async function syncFromGist(options = {}) {
 }
 
 /**
+ * Daily snapshots are taken once per day and then frozen, so `null` means "not
+ * measured yet" while `0` is a real answer. A real number always beats null.
+ */
+function pickSnapshot(a, b) {
+    const aNum = Number.isFinite(a) ? a : null;
+    const bNum = Number.isFinite(b) ? b : null;
+    if (aNum === null) return bNum;
+    if (bNum === null) return aNum;
+    return Math.max(aNum, bNum);
+}
+
+/**
+ * `lastReview` is an ISO date string. Math.max() on two strings returns NaN,
+ * which wiped the review date of every question that existed on both sides -
+ * and a NaN date makes calculateRetrievability() return NaN, so FSRS stopped
+ * seeing anything as due. Compare as timestamps, keep the original value.
+ */
+function pickLastReview(a, b) {
+    const aTime = a ? new Date(a).getTime() : 0;
+    const bTime = b ? new Date(b).getTime() : 0;
+    const aValid = Number.isFinite(aTime) && aTime > 0;
+    const bValid = Number.isFinite(bTime) && bTime > 0;
+    if (!aValid) return bValid ? b : undefined;
+    if (!bValid) return a;
+    return aTime >= bTime ? a : b;
+}
+
+/**
  * Intelligent merger for two AppState sync payloads (local vs remote).
  */
 export function mergeSyncData(local, remote) {
@@ -852,17 +884,22 @@ export function mergeSyncData(local, remote) {
             mergedStats[qid] = lStat;
             hasLocalChanges = true;
         } else {
+            const localIsNewer = ((lStat.correct || 0) + (lStat.wrong || 0)) >= ((rStat.correct || 0) + (rStat.wrong || 0));
+            const difficulty = localIsNewer ? (lStat.difficulty ?? rStat.difficulty) : (rStat.difficulty ?? lStat.difficulty);
             const mergedItem = {
                 correct: Math.max(lStat.correct || 0, rStat.correct || 0),
                 wrong: Math.max(lStat.wrong || 0, rStat.wrong || 0),
-                difficulty: (lStat.correct + lStat.wrong) >= (rStat.correct + rStat.wrong) ? (lStat.difficulty ?? rStat.difficulty) : (rStat.difficulty ?? lStat.difficulty),
+                difficulty,
+                // Kept in step with difficulty: the stats list sorts on coeff, and
+                // dropping it here made every synced question read as average.
+                coeff: Number.isFinite(difficulty) ? difficulty / 2 : (localIsNewer ? lStat.coeff : rStat.coeff),
                 note: lStat.note && lStat.note.trim() ? lStat.note : rStat.note,
                 starred: !!(lStat.starred || rStat.starred),
                 flagged: !!(lStat.flagged || rStat.flagged),
                 learned: !!(lStat.learned || rStat.learned),
                 streak: Math.max(lStat.streak || 0, rStat.streak || 0),
                 stability: Math.max(lStat.stability || 0, rStat.stability || 0),
-                lastReview: Math.max(lStat.lastReview || 0, rStat.lastReview || 0)
+                lastReview: pickLastReview(lStat.lastReview, rStat.lastReview)
             };
             mergedStats[qid] = mergedItem;
         }
@@ -916,15 +953,38 @@ export function mergeSyncData(local, remote) {
         const lAct = localStudyActivity[dateKey];
         const rAct = mergedStudyActivity[dateKey];
         if (!rAct) {
-            mergedStudyActivity[dateKey] = lAct;
+            mergedStudyActivity[dateKey] = sanitizeActivityRecord(lAct);
             hasLocalChanges = true;
         } else {
-            mergedStudyActivity[dateKey] = {
+            // Both sides count the same day, so the counters are two views of one
+            // total - never two totals to add up. Summing them doubled today's
+            // count on every single sync, which compounds into millions within a
+            // few page loads and drags the streak, the ring and the weekly chart
+            // along with it. The higher view wins instead.
+            mergedStudyActivity[dateKey] = sanitizeActivityRecord({
                 studied: lAct.studied || rAct.studied,
-                questionCount: (lAct.questionCount || 0) + (rAct.questionCount || 0),
+                questionCount: Math.max(lAct.questionCount || 0, rAct.questionCount || 0),
+                correctCount: Math.max(lAct.correctCount || 0, rAct.correctCount || 0),
+                wrongCount: Math.max(lAct.wrongCount || 0, rAct.wrongCount || 0),
+                unansweredCount: Math.max(lAct.unansweredCount || 0, rAct.unansweredCount || 0),
                 frozen: lAct.frozen || rAct.frozen,
-                overdueSnapshot: Math.max(lAct.overdueSnapshot || 0, rAct.overdueSnapshot || 0)
-            };
+                overdueSnapshot: pickSnapshot(lAct.overdueSnapshot, rAct.overdueSnapshot),
+                // The focus track lived only on whichever device wrote it last
+                // until now: dropping these keys reset the custom focus streak
+                // to zero after every sync.
+                focusStudied: lAct.focusStudied || rAct.focusStudied,
+                focusQuestionCount: Math.max(lAct.focusQuestionCount || 0, rAct.focusQuestionCount || 0),
+                focusFrozen: lAct.focusFrozen || rAct.focusFrozen,
+                focusOverdueSnapshot: pickSnapshot(lAct.focusOverdueSnapshot, rAct.focusOverdueSnapshot)
+            });
+        }
+    });
+
+    // Days only the remote knows about still travel through the old additive
+    // build on other devices, so they get cleaned on the way in as well.
+    Object.keys(mergedStudyActivity).forEach(dateKey => {
+        if (!localStudyActivity[dateKey]) {
+            mergedStudyActivity[dateKey] = sanitizeActivityRecord(mergedStudyActivity[dateKey]);
         }
     });
 

@@ -321,8 +321,17 @@ function saveFocusSourceSelection() {
     saveContinuityConfig();
 }
 
+/**
+ * Single entry point for every chart on the home screen. The heatmap card and
+ * the difficulty/trend card render independently: an empty stats set hides the
+ * latter but the heatmap still has a year of activity to draw.
+ */
 export function renderGlobalCharts() {
-    // Heatmap (Last 10 days)
+    renderHeatmapCard();
+    renderActivityCharts();
+}
+
+function renderHeatmapCard() {
     // Heatmap (Moved to bottom of page, default 365 days, lazy loaded)
     const heatmapCard = document.getElementById('homeHeatmapCard');
     if (heatmapCard) {
@@ -442,9 +451,10 @@ function renderHeatmapYearly() {
         currentDate.setDate(currentDate.getDate() + 1);
     }
     
-    placeholder.style.display = 'none';
+    if (placeholder) placeholder.style.display = 'none';
+    if (!wrapper) return;
     wrapper.style.display = 'block';
-    
+
     setTimeout(() => {
         wrapper.scrollLeft = wrapper.scrollWidth;
     }, 10);
@@ -465,7 +475,7 @@ export function showDailyMotivationToast() {
     }
 }
 
-export function renderGlobalCharts() {
+function renderActivityCharts() {
     const container = document.getElementById('homeGlobalStatsCard');
     if (!container) return;
 
