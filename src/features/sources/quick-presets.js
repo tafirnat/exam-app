@@ -2,7 +2,7 @@ import { AppState, liveFolders, saveQuickPresets } from '../../core/state.js';
 import { showAlert } from '../../core/utils.js';
 import { t } from '../../core/i18n.js';
 
-export const DEFAULT_FOLDER_COLOR = '#0098fe';
+export const DEFAULT_FOLDER_COLOR = '#8a99ad';
 
 export function resolvePresetColor(preset) {
     if (!preset) return { type: 'solid', value: DEFAULT_FOLDER_COLOR };

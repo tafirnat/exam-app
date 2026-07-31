@@ -439,8 +439,8 @@ export function initFolderManagement() {
     if(addBtn) addBtn.onclick = () => showFolderManageModal(null);
 }
 
-// Blue slot of the folder palette; used for folders saved before colours existed.
-export const DEFAULT_FOLDER_COLOR = '#0098fe';
+// Soft gray tone used for uncategorized sources and folders saved before colors existed.
+export const DEFAULT_FOLDER_COLOR = '#8a99ad';
 
 const ROOT_KEY = '__root__';
 const byOrder = (a, b) => (a.order ?? 0) - (b.order ?? 0);
