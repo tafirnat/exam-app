@@ -1,4 +1,4 @@
-import { AppState, saveStats, saveRecentTests, saveActiveTest, clearActiveTest, saveSources } from '../../core/state.js';
+import { AppState, saveStats, saveRecentTests, saveActiveTest, clearActiveTest, saveSources, clearPresetSessionData, findMatchingPresetId } from '../../core/state.js';
 import { shuffleArray, getCorrectAnswers } from '../../core/utils.js';
 import { getQuestionCategory } from '../../core/question-rules.js';
 import { gradeCloze } from '../../core/cloze.js';
@@ -78,6 +78,10 @@ export function prepareTest(count) {
     const rawQuestions = buildQuestionPool();
     if (rawQuestions.length === 0) return null;
 
+    const matchedPresetId = findMatchingPresetId();
+    if (matchedPresetId) {
+        clearPresetSessionData(matchedPresetId);
+    }
     clearActiveTest();
 
     // FSRS Selection logic: Prioritize Overdue (R <= 0.9), then use Smart Selection
@@ -347,6 +351,10 @@ export async function finishTest() {
         console.error("Critical error in finishTest:", err);
     } finally {
         AppState.testTracking = null;
+        const matchedPresetId = findMatchingPresetId();
+        if (matchedPresetId) {
+            clearPresetSessionData(matchedPresetId);
+        }
         clearActiveTest();
     }
 }

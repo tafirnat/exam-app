@@ -1,4 +1,4 @@
-import { AppState, saveStats, saveSources, saveCurrentSource, saveCustomAIPrompt, saveAiProviders, DEFAULT_AI_PROVIDERS, saveActiveTest, clearActiveTest, clearLocalStudyData, SAMPLE_LOADED_KEY } from './core/state.js';
+import { AppState, saveStats, saveSources, saveCurrentSource, saveCustomAIPrompt, saveAiProviders, DEFAULT_AI_PROVIDERS, saveActiveTest, clearActiveTest, clearLocalStudyData, SAMPLE_LOADED_KEY, findMatchingPresetId } from './core/state.js';
 import { initTheme, toggleTheme } from './core/theme.js';
 import { updateStaticTranslations, t, targetLanguages, translations } from './core/i18n.js';
 import { showToast, showConfirm, getCorrectAnswers, highlightText, escapeHTML } from './core/utils.js';
@@ -38,8 +38,11 @@ window.goHome = goHome;
 window.copyAIPrompt = copyAIPrompt;
 window.executeAiSearch = executeAiSearch;
 window.copyQuestionText = copyQuestionText;
+window.checkActiveTest = checkActiveTest;
+window.renderQuestion = renderQuestion;
 window.onSourcesUpdated = () => {
     updateQuickSourcesDot();
+    checkActiveTest();
 };
 
 
@@ -1586,7 +1589,15 @@ function startTest() {
 }
 
 function checkActiveTest() {
-    const activeData = JSON.parse(localStorage.getItem('focus_app_active_test') || 'null');
+    const matchedPresetId = findMatchingPresetId();
+    let activeData = null;
+    if (matchedPresetId && AppState.presetSessions && AppState.presetSessions[matchedPresetId]) {
+        activeData = AppState.presetSessions[matchedPresetId];
+        localStorage.setItem('focus_app_active_test', JSON.stringify(activeData));
+    } else {
+        activeData = JSON.parse(localStorage.getItem('focus_app_active_test') || 'null');
+    }
+
     const resumeBtn = document.getElementById('resumeBtn');
     const startBtn = document.getElementById('startBtn');
     const startBtnContainer = document.getElementById('startBtnContainer');

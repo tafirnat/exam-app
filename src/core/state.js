@@ -94,7 +94,9 @@ export const AppState = {
     deletedFolderIds: safeJSONParse('focus_app_deleted_folders', []),
     quickPresets: safeJSONParse('focus_app_quick_presets', []),
     deletedQuickPresetIds: safeJSONParse('focus_app_deleted_quick_presets', []),
-    githubGistUrl: localStorage.getItem('focus_app_github_gist_url') || null
+    githubGistUrl: localStorage.getItem('focus_app_github_gist_url') || null,
+    presetSessions: safeJSONParse('focus_app_preset_sessions', {}),
+    activePresetId: null
 };
 
 /**
@@ -137,7 +139,8 @@ export function clearLocalStudyData() {
     AppState.quickPresets = [];
     AppState.deletedQuickPresetIds = [];
     AppState.currentSourceKey = null;
-
+    AppState.presetSessions = {};
+    localStorage.removeItem('focus_app_preset_sessions');
     localStorage.setItem('focus_app_folders', JSON.stringify(AppState.folders));
     localStorage.setItem('focus_app_sources', JSON.stringify(AppState.sources));
     localStorage.removeItem('focus_app_stats_local');
@@ -154,6 +157,35 @@ export function clearLocalStudyData() {
     localStorage.removeItem(SAMPLE_LOADED_KEY);
 
     clearActiveTest();
+}
+
+export function savePresetSessions() {
+    localStorage.setItem('focus_app_preset_sessions', JSON.stringify(AppState.presetSessions || {}));
+}
+
+export function savePresetSessionData(presetId, sessionData) {
+    if (!presetId) return;
+    if (!AppState.presetSessions) AppState.presetSessions = {};
+    AppState.presetSessions[presetId] = sessionData;
+    savePresetSessions();
+}
+
+export function clearPresetSessionData(presetId) {
+    if (!presetId || !AppState.presetSessions) return;
+    delete AppState.presetSessions[presetId];
+    savePresetSessions();
+}
+
+export function findMatchingPresetId() {
+    const activeSources = (AppState.sources || []).filter(s => s.active && !s.archived);
+    const activeIds = activeSources.map(s => s.id).sort();
+    if (activeIds.length === 0) return null;
+    const preset = (AppState.quickPresets || []).find(p => {
+        if (!p.sourceIds || p.sourceIds.length !== activeIds.length) return false;
+        const pSorted = [...p.sourceIds].sort();
+        return pSorted.every((id, idx) => id === activeIds[idx]);
+    });
+    return preset ? preset.id : null;
 }
 
 export function trackDeletedSource(id) {
@@ -187,6 +219,7 @@ export function saveQuickPresets() {
 
 export function saveStats() {
     localStorage.setItem('focus_app_stats_local', JSON.stringify(AppState.stats));
+    localStorage.setItem('focus_app_stats_global', JSON.stringify(AppState.totalStats));
     import('./github-sync.js').then(m => m.scheduleSync(1500)).catch(() => {});
 }
 
@@ -245,6 +278,13 @@ export function saveActiveTest() {
             testTracking: AppState.testTracking,
         };
         localStorage.setItem('focus_app_active_test', JSON.stringify(activeData));
+
+        const matchedPresetId = findMatchingPresetId();
+        if (matchedPresetId) {
+            if (activeData.currentTest && activeData.currentTest.length > 0) {
+                savePresetSessionData(matchedPresetId, activeData);
+            }
+        }
     }, 300);
 }
 

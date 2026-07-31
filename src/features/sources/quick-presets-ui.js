@@ -1,11 +1,13 @@
-import { AppState, saveSources, saveQuickPresets, trackDeletedQuickPreset } from '../../core/state.js';
+import { AppState, saveSources, saveQuickPresets, trackDeletedQuickPreset, savePresetSessionData, clearPresetSessionData, findMatchingPresetId, clearActiveTest } from '../../core/state.js';
 import { t } from '../../core/i18n.js';
 import { showConfirm } from '../../core/utils.js';
 import { applySwatch, applyPresetBar, addCurrentAsPreset } from './quick-presets.js';
+import { buildQuestionPool } from '../test/test-engine.js';
 
 export function updateQuickSourcesDot() {
     const dot = document.getElementById('quickSourcesDot');
     const btn = document.getElementById('quickSourcesBtn');
+    const nameLabel = document.getElementById('quickSourcesActiveName');
     if (!dot || !btn) return;
 
     const activeSources = (AppState.sources || []).filter(s => s.active && !s.archived);
@@ -13,6 +15,10 @@ export function updateQuickSourcesDot() {
 
     if (activeIds.length === 0) {
         btn.dataset.hasPreset = 'false';
+        if (nameLabel) {
+            nameLabel.textContent = '';
+            nameLabel.style.display = 'none';
+        }
         return;
     }
 
@@ -25,15 +31,38 @@ export function updateQuickSourcesDot() {
     if (matchedPreset) {
         btn.dataset.hasPreset = 'true';
         applySwatch(dot, matchedPreset);
+        if (nameLabel) {
+            nameLabel.textContent = matchedPreset.name;
+            nameLabel.title = matchedPreset.name;
+            nameLabel.style.display = 'inline-block';
+        }
     } else {
         btn.dataset.hasPreset = 'false';
+        if (nameLabel) {
+            nameLabel.textContent = '';
+            nameLabel.style.display = 'none';
+        }
     }
 }
 
 export function applyPreset(preset) {
     if (!preset || !preset.sourceIds) return;
-    const targetSet = new Set(preset.sourceIds);
 
+    // 1. Freeze & save current workspace environment if active sources match a preset
+    const currentPresetId = findMatchingPresetId();
+    if (currentPresetId && AppState.currentTest && AppState.currentTest.length > 0) {
+        savePresetSessionData(currentPresetId, {
+            currentTest: AppState.currentTest,
+            currentIndex: AppState.currentIndex,
+            userAnswers: AppState.userAnswers,
+            isAnswerChecked: AppState.isAnswerChecked,
+            shuffledOptionsMap: AppState.shuffledOptionsMap,
+            testTracking: AppState.testTracking
+        });
+    }
+
+    // 2. Set new active sources
+    const targetSet = new Set(preset.sourceIds);
     (AppState.sources || []).forEach(s => {
         if (s.archived) return;
         s.active = targetSet.has(s.id);
@@ -45,6 +74,34 @@ export function applyPreset(preset) {
     }
 
     saveSources();
+
+    // 3. Restore or Reset session
+    const savedSession = AppState.presetSessions ? AppState.presetSessions[preset.id] : null;
+    if (savedSession && savedSession.currentTest && savedSession.currentTest.length > 0) {
+        AppState.currentTest = savedSession.currentTest;
+        AppState.currentIndex = savedSession.currentIndex || 0;
+        AppState.userAnswers = savedSession.userAnswers || {};
+        AppState.isAnswerChecked = savedSession.isAnswerChecked || {};
+        AppState.shuffledOptionsMap = savedSession.shuffledOptionsMap || {};
+        AppState.testTracking = savedSession.testTracking || null;
+        localStorage.setItem('focus_app_active_test', JSON.stringify(savedSession));
+
+        buildQuestionPool();
+
+        if (typeof window.switchView === 'function') window.switchView('test');
+        if (typeof window.renderQuestion === 'function') window.renderQuestion();
+    } else {
+        AppState.currentTest = [];
+        AppState.currentIndex = 0;
+        AppState.userAnswers = {};
+        AppState.isAnswerChecked = {};
+        AppState.shuffledOptionsMap = {};
+        AppState.testTracking = null;
+        clearActiveTest();
+
+        if (typeof window.switchView === 'function') window.switchView('home');
+        if (typeof window.checkActiveTest === 'function') window.checkActiveTest();
+    }
 
     if (typeof window.updateHomeStats === 'function') window.updateHomeStats();
     if (typeof window.renderSourcesList === 'function') window.renderSourcesList();
@@ -317,6 +374,7 @@ function deletePreset(id) {
     if (!id) return;
     AppState.quickPresets = (AppState.quickPresets || []).filter(p => p.id !== id);
     trackDeletedQuickPreset(id);
+    clearPresetSessionData(id);
     saveQuickPresets();
     updateQuickSourcesDot();
 }

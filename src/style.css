@@ -5249,3 +5249,24 @@ body.dnd-active {
     cursor: not-allowed;
     pointer-events: auto;
 }
+
+/* Quick Sources Header & Active Name Label */
+.quick-sources-wrapper {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    margin-left: auto;
+}
+
+.quick-sources-active-name {
+    font-size: 0.78rem;
+    font-weight: 500;
+    color: var(--text-muted, var(--text-secondary));
+    max-width: 150px;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    opacity: 0.8;
+    letter-spacing: 0.01em;
+    user-select: none;
+}
