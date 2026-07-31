@@ -324,6 +324,8 @@ export function showSourceActions(source) {
         closeBtn.onclick = null;
         if (archiveBtn) archiveBtn.onclick = null;
         if (toggleQaBtn) toggleQaBtn.onclick = null;
+        const fpBtn = document.getElementById('modalFocusPoolBtn');
+        if (fpBtn) fpBtn.onclick = null;
     };
 
     if (toggleQaBtn) {
@@ -331,6 +333,15 @@ export function showSourceActions(source) {
             closeActions();
             const { showSourceQuickPresetsModal } = await import('./quick-presets-ui.js');
             showSourceQuickPresetsModal(source);
+        };
+    }
+
+    const focusPoolBtn = document.getElementById('modalFocusPoolBtn');
+    if (focusPoolBtn) {
+        focusPoolBtn.onclick = async () => {
+            closeActions();
+            const { showFocusPoolModal } = await import('./focus-pools-ui.js');
+            showFocusPoolModal({ id: source.id, name: source.name, type: 'source' });
         };
     }
 
@@ -1100,6 +1111,20 @@ export function showFolderManageModal(folder = null) {
             };
         } else {
             deleteBtn.style.display = 'none';
+        }
+    }
+
+    const focusPoolBtn = document.getElementById('folderFocusPoolBtn');
+    if (focusPoolBtn) {
+        if (folder) {
+            focusPoolBtn.style.display = 'block';
+            focusPoolBtn.onclick = async () => {
+                overlay.classList.remove('active');
+                const { showFocusPoolModal } = await import('./focus-pools-ui.js');
+                showFocusPoolModal({ id: folder.id, name: folder.name, type: 'folder' });
+            };
+        } else {
+            focusPoolBtn.style.display = 'none';
         }
     }
 

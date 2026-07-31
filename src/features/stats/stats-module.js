@@ -3,6 +3,7 @@ import { t } from '../../core/i18n.js';
 import { showConfirm, escapeHTML } from '../../core/utils.js';
 import { calculateRetrievability } from '../test/test-engine.js';
 import { plainText } from '../../core/markdown.js';
+import { renderContinuityBlock } from './continuity-ui.js';
 
 
 export function renderStatsList(filter = 'all', searchKeyword = '') {
@@ -592,6 +593,8 @@ export function updateHomeStats() {
 
     // Bind chart overlay once
     _bindChartOverlay();
+
+    renderContinuityBlock();
 }
 
 function updateSortUI() {

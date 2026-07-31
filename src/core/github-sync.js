@@ -1,4 +1,4 @@
-import { AppState, saveSources, saveStats, saveRecentTests, saveFolders, saveQuickPresets, clearLocalStudyData } from './state.js';
+import { AppState, saveSources, saveStats, saveRecentTests, saveFolders, saveQuickPresets, clearLocalStudyData, saveStudyActivity, saveContinuityConfig } from './state.js';
 import { showToast, showAlert } from './utils.js';
 import { t } from './i18n.js';
 import { migrateFolderColors } from './migration.js';
@@ -39,6 +39,8 @@ export function getSyncPayload() {
         stats: AppState.stats || {},
         totalStats: AppState.totalStats || {},
         recentTests: AppState.recentTests || [],
+        studyActivity: AppState.studyActivity || {},
+        continuityConfig: AppState.continuityConfig || {},
         settings: {
             language: AppState.language,
             translationTarget: AppState.translationTarget,
@@ -352,6 +354,16 @@ async function pullRemoteGistOnly(token, gistId) {
             if (Array.isArray(remotePayload.recentTests)) {
                 AppState.recentTests = remotePayload.recentTests.slice(0, 10);
                 saveRecentTests();
+            }
+
+            if (remotePayload.studyActivity && typeof remotePayload.studyActivity === 'object') {
+                AppState.studyActivity = remotePayload.studyActivity;
+                saveStudyActivity();
+            }
+
+            if (remotePayload.continuityConfig && typeof remotePayload.continuityConfig === 'object') {
+                AppState.continuityConfig = remotePayload.continuityConfig;
+                saveContinuityConfig();
             }
 
             AppState.lastSyncTime = Date.now();
@@ -677,6 +689,17 @@ export async function syncFromGist(options = {}) {
                 saveRecentTests();
             }
 
+            // Apply merged study activity
+            if (merged.studyActivity && typeof merged.studyActivity === 'object') {
+                AppState.studyActivity = merged.studyActivity;
+                saveStudyActivity();
+            }
+
+            if (merged.continuityConfig && typeof merged.continuityConfig === 'object') {
+                AppState.continuityConfig = merged.continuityConfig;
+                saveContinuityConfig();
+            }
+
             // Push merged state back to Gist if local had newer changes
             if (merged.hasLocalChanges) {
                 await syncToGist({ silent: true });
@@ -886,6 +909,31 @@ export function mergeSyncData(local, remote) {
 
     const mergedQuickPresets = Array.from(quickPresetsMap.values());
 
+    // 5. Merge Study Activity (Union by date key)
+    const mergedStudyActivity = { ...(remote.studyActivity || {}) };
+    const localStudyActivity = local.studyActivity || {};
+    Object.keys(localStudyActivity).forEach(dateKey => {
+        const lAct = localStudyActivity[dateKey];
+        const rAct = mergedStudyActivity[dateKey];
+        if (!rAct) {
+            mergedStudyActivity[dateKey] = lAct;
+            hasLocalChanges = true;
+        } else {
+            mergedStudyActivity[dateKey] = {
+                studied: lAct.studied || rAct.studied,
+                questionCount: (lAct.questionCount || 0) + (rAct.questionCount || 0),
+                frozen: lAct.frozen || rAct.frozen,
+                overdueSnapshot: Math.max(lAct.overdueSnapshot || 0, rAct.overdueSnapshot || 0)
+            };
+        }
+    });
+
+    // 6. Merge Continuity Config
+    // Last writer wins (prefer remote as base, or keep local if remote is missing)
+    const mergedContinuityConfig = remote.continuityConfig && Object.keys(remote.continuityConfig).length > 0 
+        ? remote.continuityConfig 
+        : local.continuityConfig;
+
     return {
         sources: mergedSources,
         folders: mergedFolders,
@@ -893,6 +941,8 @@ export function mergeSyncData(local, remote) {
         stats: mergedStats,
         totalStats: remote.totalStats || local.totalStats,
         recentTests: mergedRecentTests,
+        studyActivity: mergedStudyActivity,
+        continuityConfig: mergedContinuityConfig,
         deletedSourceIds: mergedDeletedIds,
         deletedFolderIds: mergedDeletedFolderIds,
         deletedQuickPresetIds: mergedDeletedQuickPresetIds,

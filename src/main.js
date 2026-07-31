@@ -6,6 +6,7 @@ import { migrateOldData, migrateFolderColors } from './core/migration.js';
 import { getQuestionCategory } from './core/question-rules.js';
 import { processJSON, loadFromUrl, loadFromFile, normalizeQuestions, mergeSources } from './features/sources/sources-service.js';
 import { renderSourcesList, showMergeModal, closeAllSourcesModals, showSourceOptionsModal, renderHomeActiveSources } from './features/sources/sources-ui.js';
+import { renderContinuityBlock, showDailyMotivationToast } from './features/stats/continuity-ui.js';
 import { initArchiveUI } from './features/sources/archive.js';
 import { prepareTest, finishTest, prepareRetake } from './features/test/test-engine.js';
 import { renderQuestion, handleCheckAnswer, updateIndicators, handleTranslation, handleDifficultyRating, handleFlashcardRating, renderTestResults, handleTtsToggle, getIsAudioPlaying, stopAudio, decorateReadingSections } from './features/test/test-ui.js';
@@ -1591,6 +1592,7 @@ function startTest() {
     if (prepareTest(count)) {
         switchView('test');
         renderQuestion();
+        showDailyMotivationToast();
     } else {
         showToast(t('no_questions_available'));
     }

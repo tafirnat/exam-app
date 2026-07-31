@@ -2,6 +2,7 @@ import { AppState, saveStats, saveRecentTests, saveActiveTest, clearActiveTest, 
 import { shuffleArray, getCorrectAnswers } from '../../core/utils.js';
 import { getQuestionCategory } from '../../core/question-rules.js';
 import { gradeCloze } from '../../core/cloze.js';
+import { getDailyOverdueSnapshot, applyFocusPools, recordTestFinished } from '../stats/continuity-engine.js';
 
 // FSRS v4.5 Simplified Constants
 export const FSRS_W = [0.4, 0.9, 2.3, 10.9, 4.93, 0.94, 0.86, 0.01, 1.49, 0.14, 0.94, 2.18, 0.05, 0.34, 1.26, 0.26, 2.05];
@@ -83,6 +84,9 @@ export function prepareTest(count) {
         clearPresetSessionData(matchedPresetId);
     }
     clearActiveTest();
+    
+    // Ensure daily overdue snapshot is taken before starting the test
+    getDailyOverdueSnapshot(rawQuestions);
 
     // FSRS Selection logic: Prioritize Overdue (R <= 0.9), then use Smart Selection
     let qs = rawQuestions.map((q, idx) => {
@@ -140,6 +144,9 @@ export function prepareTest(count) {
             take(p3, n3 + rem);
         }
     }
+
+    // Apply Focus Pools (Silent Fallback)
+    selectedObjects = applyFocusPools(selectedObjects, nonLearned);
 
     selectedObjects = shuffleArray(selectedObjects);
 
@@ -297,6 +304,11 @@ export async function finishTest() {
             }, 0) / total : 2.0,
             questions: sessionQuestions
         };
+
+        // Record for continuity / streak layer
+        if (total > 0) {
+            recordTestFinished(total);
+        }
 
         if (!Array.isArray(AppState.recentTests)) AppState.recentTests = [];
         AppState.recentTests.unshift(historyEntry);

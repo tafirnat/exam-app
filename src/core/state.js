@@ -122,7 +122,13 @@ export const AppState = {
     deletedQuickPresetIds: safeJSONParse('focus_app_deleted_quick_presets', []),
     githubGistUrl: localStorage.getItem('focus_app_github_gist_url') || null,
     presetSessions: safeJSONParse('focus_app_preset_sessions', {}),
-    activePresetId: null
+    activePresetId: null,
+    continuityConfig: safeJSONParse('focus_app_continuity_config', {
+        freezeTokens: { total: 2, remaining: 2, weekStart: null },
+        focusPools: [],
+        notificationSettings: { enabled: false, quietHoursStart: "22:00", quietHoursEnd: "08:00", lastNotifiedDate: null }
+    }),
+    studyActivity: safeJSONParse('focus_app_study_activity', {})
 };
 
 /**
@@ -164,6 +170,12 @@ export function clearLocalStudyData() {
     AppState.deletedQuickPresetIds = [];
     AppState.currentSourceKey = null;
     AppState.presetSessions = {};
+    AppState.continuityConfig = {
+        freezeTokens: { total: 2, remaining: 2, weekStart: null },
+        focusPools: [],
+        notificationSettings: { enabled: false, quietHoursStart: "22:00", quietHoursEnd: "08:00", lastNotifiedDate: null }
+    };
+    AppState.studyActivity = {};
     localStorage.removeItem('focus_app_preset_sessions');
     localStorage.setItem('focus_app_folders', JSON.stringify(AppState.folders));
     localStorage.setItem('focus_app_sources', JSON.stringify(AppState.sources));
@@ -176,6 +188,8 @@ export function clearLocalStudyData() {
     localStorage.removeItem('focus_app_deleted_quick_presets');
     localStorage.removeItem('focus_app_current_source');
     localStorage.removeItem('focus_app_active_test');
+    localStorage.removeItem('focus_app_continuity_config');
+    localStorage.removeItem('focus_app_study_activity');
     // Let the next boot hand the empty library its starter sample back, in
     // whatever language is selected by then.
     localStorage.removeItem(SAMPLE_LOADED_KEY);
@@ -238,6 +252,16 @@ export function trackDeletedQuickPreset(id) {
 
 export function saveQuickPresets() {
     localStorage.setItem('focus_app_quick_presets', JSON.stringify(AppState.quickPresets));
+    import('./github-sync.js').then(m => m.scheduleSync(300)).catch(() => {});
+}
+
+export function saveContinuityConfig() {
+    localStorage.setItem('focus_app_continuity_config', JSON.stringify(AppState.continuityConfig));
+    import('./github-sync.js').then(m => m.scheduleSync(300)).catch(() => {});
+}
+
+export function saveStudyActivity() {
+    localStorage.setItem('focus_app_study_activity', JSON.stringify(AppState.studyActivity));
     import('./github-sync.js').then(m => m.scheduleSync(300)).catch(() => {});
 }
 

@@ -402,6 +402,35 @@
 
     <main>
         <div id="homeView">
+            <div class="card" id="continuityCard" style="margin-bottom: 1rem; display: none;">
+                <div style="display: flex; gap: 1rem; align-items: center;">
+                    <div style="position: relative; width: 60px; height: 60px; flex-shrink: 0;">
+                        <svg viewBox="0 0 36 36" style="width:100%; height:100%; transform: rotate(-90deg);">
+                            <path class="ring-bg" d="M18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831 a 15.9155 15.9155 0 0 1 0 -31.831" fill="none" stroke="var(--border-color)" stroke-width="3" />
+                            <path id="continuityRing" class="ring-fg" d="M18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831 a 15.9155 15.9155 0 0 1 0 -31.831" fill="none" stroke="var(--primary-color)" stroke-width="3" stroke-dasharray="0, 100" />
+                        </svg>
+                        <div style="position:absolute; top:0; left:0; right:0; bottom:0; display:flex; align-items:center; justify-content:center; flex-direction:column;">
+                            <span id="continuityStreakCount" style="font-weight:900; font-size:1.1rem; line-height:1;">0</span>
+                            <span style="font-size:0.6rem; color:var(--text-secondary); line-height:1; font-weight:600;">GÜN</span>
+                        </div>
+                    </div>
+                    
+                    <div style="flex:1; min-width: 0;">
+                        <div style="display:flex; justify-content:space-between; align-items:flex-end; margin-bottom:0.25rem;">
+                            <div style="min-width: 0; padding-right: 0.5rem;">
+                                <h3 style="margin:0; font-size:1rem; font-weight:700;">Günlük Seri</h3>
+                                <div id="continuityOverdueText" class="truncate" style="font-size:0.75rem; color:var(--text-secondary);">Günün hedefi hesaplanıyor...</div>
+                            </div>
+                            <div id="continuityTokens" style="display:flex; gap:0.2rem; align-items:center;" title="Kalan Dondurma Jetonları">
+                            </div>
+                        </div>
+                        
+                        <div id="continuityHeatmap" style="display:flex; gap:0.25rem; height:14px; margin-top:0.6rem; width:100%; justify-content:flex-end;">
+                        </div>
+                    </div>
+                </div>
+            </div>
+
             <div class="card" id="homeStatsCard" style="margin-bottom: 1rem;">
                 <div class="stats-card-header">
                     <div class="stats-header-icon">
@@ -1191,6 +1220,12 @@
                     <span id="modalToggleQuickAccessLabel" data-i18n="qs_manage_for_source">Hızlı Erişim Yönetimi</span>
                 </button>
 
+                <!-- Focus Pool Management button -->
+                <button class="btn btn-secondary btn-block modal-action-btn" id="modalFocusPoolBtn">
+                    <span style="font-size: 1.1rem; margin-right: 4px;">📌</span>
+                    <span id="modalFocusPoolLabel">Günlük Garantiye Ekle</span>
+                </button>
+
                 <!-- 2-column action buttons grid -->
                 <div class="modal-grid-2col" style="display: grid; grid-template-columns: 1fr 1fr; gap: 0.5rem;">
                     <button class="btn btn-secondary btn-block modal-action-btn" id="modalDownloadBtn">
@@ -1453,6 +1488,11 @@
                     <label data-i18n="folder_desc">Klasör Açıklaması (Opsiyonel)</label>
                     <input type="text" id="folderDescInput" data-i18n-placeholder="ph_folder_desc" placeholder="Örn: 1. Dönem Sınavları">
                 </div>
+                
+                <button class="btn btn-secondary btn-block" id="folderFocusPoolBtn" style="margin-top: 1rem; display: none;">
+                    <span style="font-size: 1.1rem; margin-right: 4px;">📌</span>
+                    <span id="folderFocusPoolLabel">Günlük Garantiye Ekle</span>
+                </button>
             </div>
             <div class="modal-footer modal-footer-grid">
                 <button class="btn btn-danger" id="folderManageDeleteBtn" style="display: none;">
@@ -1465,6 +1505,32 @@
                 </button>
                 <button class="btn btn-subtle" id="folderManageCancelBtn" data-i18n="cancel">İptal</button>
                 <button class="btn btn-primary" id="folderManageSaveBtn" data-i18n="save_folder">Kaydet</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Focus Pool Modal -->
+    <div id="focusPoolOverlay" class="modal-overlay" style="z-index: 10000;">
+        <div class="modal-card">
+            <div class="modal-header">
+                <h3 id="focusPoolTitle">Günlük Garantiye Ekle</h3>
+                <p id="focusPoolDesc" style="font-size: 0.85rem; color: var(--text-secondary); margin-top: 4px; font-weight: 500;"></p>
+            </div>
+            <div class="modal-body" style="margin: 1.5rem 0;">
+                <div style="display: flex; justify-content: space-between; align-items: center; gap: 1rem;">
+                    <span style="font-weight: 600;">Soru Sayısı:</span>
+                    <div style="display: flex; align-items: center; gap: 0.5rem;">
+                        <button class="icon-btn" id="focusPoolDecBtn" style="width: 2rem; height: 2rem; background: var(--surface-hover);">-</button>
+                        <span id="focusPoolCount" style="font-size: 1.25rem; font-weight: bold; min-width: 2rem; text-align: center;">3</span>
+                        <button class="icon-btn" id="focusPoolIncBtn" style="width: 2rem; height: 2rem; background: var(--surface-hover);">+</button>
+                    </div>
+                </div>
+                <p id="focusPoolWarning" style="color: var(--danger-color); font-size: 0.8rem; margin-top: 1rem; display: none;"></p>
+            </div>
+            <div class="modal-footer" style="display: flex; gap: 0.75rem; justify-content: flex-end;">
+                <button class="btn btn-danger" id="focusPoolRemoveBtn" style="display: none; margin-right: auto;">Kaldır</button>
+                <button class="btn btn-secondary" id="focusPoolCancelBtn" data-i18n="cancel">Vazgeç</button>
+                <button class="btn btn-primary" id="focusPoolSaveBtn" data-i18n="save">Kaydet</button>
             </div>
         </div>
     </div>
