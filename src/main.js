@@ -1091,9 +1091,6 @@ function setupEventListeners() {
     const homeSourcesBtn = document.getElementById('homeSourcesBtn');
     if (homeSourcesBtn) homeSourcesBtn.onclick = openSourcesView;
 
-    const homeEmptySelectSourcesBtn = document.getElementById('homeEmptySelectSourcesBtn');
-    if (homeEmptySelectSourcesBtn) homeEmptySelectSourcesBtn.onclick = openSourcesView;
-
     // Results View
     document.getElementById('resHomeBtn').onclick = goHome;
     document.getElementById('resRetakeBtn').onclick = retakeSession;

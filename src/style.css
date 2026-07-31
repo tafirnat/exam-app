@@ -3311,22 +3311,11 @@ input:checked+.slider-small:before {
 }
 
 .home-empty-desc {
-    margin: 0 0 1.25rem 0;
+    margin: 0;
     font-size: 0.86rem;
     color: var(--text-secondary);
     line-height: 1.55;
     max-width: 320px;
-}
-
-.home-empty-btn {
-    display: inline-flex;
-    align-items: center;
-    justify-content: center;
-    gap: 0.5rem;
-    padding: 0.65rem 1.25rem;
-    font-size: 0.88rem;
-    font-weight: 600;
-    border-radius: var(--radius-sm, 8px);
 }
 
 @media (max-width: 600px) {
