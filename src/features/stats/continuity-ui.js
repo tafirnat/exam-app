@@ -1,6 +1,6 @@
 import { AppState } from '../../core/state.js';
 import { calculateGlobalStreak, getLocalDateStr, getDailyOverdueSnapshot, initTodayActivity } from './continuity-engine.js';
-import { getLiveQuestions } from '../../core/question-rules.js';
+import { buildQuestionPool } from '../test/test-engine.js';
 import { showToast } from '../../core/utils.js';
 
 export function renderContinuityBlock() {
@@ -8,7 +8,7 @@ export function renderContinuityBlock() {
     if (!card) return;
     
     // Only show if user has active sources or some stats
-    const liveQ = getLiveQuestions();
+    const liveQ = buildQuestionPool();
     if (!liveQ || liveQ.length === 0) {
         card.style.display = 'none';
         return;
@@ -106,7 +106,7 @@ export function renderContinuityBlock() {
 }
 
 export function showDailyMotivationToast() {
-    const liveQ = getLiveQuestions();
+    const liveQ = buildQuestionPool();
     if (!liveQ || liveQ.length === 0) return;
     
     const todayAct = initTodayActivity();
