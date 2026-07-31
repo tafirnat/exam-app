@@ -5456,51 +5456,63 @@ body.dnd-active {
 .continuity-carousel {
     position: relative;
     width: 100%;
+    display: grid;
+    grid-template-columns: 100%;
+    grid-template-rows: auto;
     overflow: hidden;
     border-radius: var(--radius-lg);
 }
 
 .continuity-slide {
-    display: none;
+    grid-area: 1 / 1 / 2 / 2;
     width: 100%;
     margin-bottom: 0 !important;
+    opacity: 0;
+    visibility: hidden;
+    pointer-events: none;
+    transform: translateX(100%);
+    transition: transform 0.4s cubic-bezier(0.25, 1, 0.5, 1), opacity 0.4s ease, visibility 0.4s ease;
+    will-change: transform, opacity;
 }
 
 .continuity-slide.active {
-    display: block;
-}
-
-/* Smooth Right-to-Left Slide Transitions */
-.continuity-slide.slide-animating {
-    display: block !important;
-    position: absolute;
-    top: 0;
-    left: 0;
-    right: 0;
-    width: 100%;
-    transition: transform 0.4s cubic-bezier(0.25, 1, 0.5, 1), opacity 0.4s ease;
-}
-
-.continuity-slide.slide-enter-right {
-    transform: translateX(100%);
-    opacity: 0.6;
+    opacity: 1;
+    visibility: visible;
+    pointer-events: auto;
+    transform: translateX(0);
     z-index: 2;
 }
 
-.continuity-slide.slide-enter-active {
-    transform: translateX(0);
-    opacity: 1;
-}
-
-.continuity-slide.slide-exit-left {
-    transform: translateX(0);
-    opacity: 1;
+/* Directional Slide Transition Animations */
+.continuity-slide.slide-out-left {
+    transform: translateX(-100%) !important;
+    opacity: 0 !important;
     z-index: 1;
 }
 
-.continuity-slide.slide-exit-active {
+.continuity-slide.slide-out-right {
+    transform: translateX(100%) !important;
+    opacity: 0 !important;
+    z-index: 1;
+}
+
+.continuity-slide.slide-in-right {
+    transform: translateX(100%);
+    opacity: 0;
+    visibility: visible;
+    z-index: 2;
+}
+
+.continuity-slide.slide-in-left {
     transform: translateX(-100%);
-    opacity: 0.6;
+    opacity: 0;
+    visibility: visible;
+    z-index: 2;
+}
+
+.continuity-slide.slide-in-active {
+    transform: translateX(0) !important;
+    opacity: 1 !important;
 }
 
 .continuity-dots {

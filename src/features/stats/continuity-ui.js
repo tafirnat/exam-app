@@ -198,7 +198,7 @@ function initCarouselEvents() {
     const dots = wrapper.querySelectorAll('.continuity-dots .dot');
     if (!slides.length) return;
 
-    function goToSlide(targetIndex) {
+    function goToSlide(targetIndex, direction = 'next') {
         if (targetIndex === currentSlideIndex || isAnimating) return;
 
         const currentSlide = slides[currentSlideIndex];
@@ -210,22 +210,28 @@ function initCarouselEvents() {
         // Highlight active dot immediately
         dots.forEach((d, idx) => d.classList.toggle('active', idx === targetIndex));
 
-        // Right-to-left continuous slide transition
-        currentSlide.classList.add('slide-animating', 'slide-exit-left');
-        nextSlide.classList.add('slide-animating', 'slide-enter-right');
+        const isNext = direction === 'next';
+
+        // Reset lingering animation classes on all slides
+        slides.forEach(s => {
+            s.classList.remove('slide-out-left', 'slide-out-right', 'slide-in-left', 'slide-in-right', 'slide-in-active');
+        });
+
+        // Position next slide at start location
+        nextSlide.classList.add(isNext ? 'slide-in-right' : 'slide-in-left');
 
         // Force browser layout reflow
         void nextSlide.offsetWidth;
 
-        // Trigger CSS animations
-        currentSlide.classList.add('slide-exit-active');
-        nextSlide.classList.add('slide-enter-active');
+        // Trigger smooth slide transitions
+        currentSlide.classList.add(isNext ? 'slide-out-left' : 'slide-out-right');
+        nextSlide.classList.add('slide-in-active');
 
         currentSlideIndex = targetIndex;
 
         setTimeout(() => {
             slides.forEach((s, idx) => {
-                s.classList.remove('slide-animating', 'slide-enter-right', 'slide-enter-active', 'slide-exit-left', 'slide-exit-active');
+                s.classList.remove('slide-out-left', 'slide-out-right', 'slide-in-left', 'slide-in-right', 'slide-in-active');
                 s.classList.toggle('active', idx === targetIndex);
             });
             isAnimating = false;
@@ -236,7 +242,7 @@ function initCarouselEvents() {
         stopTimer();
         carouselTimer = setInterval(() => {
             const nextIdx = (currentSlideIndex + 1) % slides.length;
-            goToSlide(nextIdx);
+            goToSlide(nextIdx, 'next');
         }, 4000);
     }
 
@@ -269,13 +275,13 @@ function initCarouselEvents() {
             const diffY = e.changedTouches[0].clientY - touchStartY;
             if (Math.abs(diffX) > 35 && Math.abs(diffX) > Math.abs(diffY)) {
                 if (diffX < 0) {
-                    // Swipe Left -> next slide
+                    // Swipe Left -> next slide (right-to-left)
                     const nextIdx = (currentSlideIndex + 1) % slides.length;
-                    goToSlide(nextIdx);
+                    goToSlide(nextIdx, 'next');
                 } else {
-                    // Swipe Right -> previous slide
+                    // Swipe Right -> previous slide (left-to-right)
                     const prevIdx = (currentSlideIndex - 1 + slides.length) % slides.length;
-                    goToSlide(prevIdx);
+                    goToSlide(prevIdx, 'prev');
                 }
             }
         }
@@ -284,7 +290,8 @@ function initCarouselEvents() {
     dots.forEach((dot, idx) => {
         dot.addEventListener('click', (e) => {
             e.stopPropagation();
-            goToSlide(idx);
+            const dir = idx > currentSlideIndex ? 'next' : (idx < currentSlideIndex ? 'prev' : 'next');
+            goToSlide(idx, dir);
             startTimer();
         });
     });
