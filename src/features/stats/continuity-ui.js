@@ -1,23 +1,50 @@
-import { AppState } from '../../core/state.js';
-import { calculateGlobalStreak, getLocalDateStr, getDailyOverdueSnapshot, initTodayActivity, getDailyRequirement, isActivityRequirementMet, getFsrsStatsForRange } from './continuity-engine.js';
+import { AppState, saveContinuityConfig } from '../../core/state.js';
+import {
+    calculateGlobalStreak,
+    calculateFocusStreak,
+    getLocalDateStr,
+    getDailyOverdueSnapshot,
+    getDailyFocusOverdueSnapshot,
+    initTodayActivity,
+    getDailyRequirement,
+    isActivityRequirementMet,
+    isFocusActivityRequirementMet,
+    getFsrsStatsForRange,
+    getFocusStatsForRange,
+    getFocusSources,
+    calculateFocusTargetDistribution
+} from './continuity-engine.js';
 import { buildQuestionPool } from '../test/test-engine.js';
 import { showToast } from '../../core/utils.js';
+
+let carouselTimer = null;
+let currentSlideIndex = 0;
 
 export function renderContinuityBlock() {
     renderGlobalCharts();
     
-    const card = document.getElementById('continuityCard');
-    if (!card) return;
+    const wrapper = document.getElementById('continuityCarouselWrapper');
+    if (!wrapper) return;
     
-    // Only show if user has active sources or some stats
+    // Only show if user has active sources or stats
     const liveQ = buildQuestionPool();
     if (!liveQ || liveQ.length === 0) {
-        card.style.display = 'none';
+        wrapper.style.display = 'none';
         return;
     }
     
-    card.style.display = 'block';
+    wrapper.style.display = 'block';
     
+    renderGlobalSlide(liveQ);
+    renderFocusSlide();
+    initCarouselEvents();
+    bindFocusModalEvents();
+}
+
+function renderGlobalSlide(liveQ) {
+    const card = document.getElementById('continuityCard');
+    if (!card) return;
+
     // Streak
     const streak = calculateGlobalStreak();
     document.getElementById('continuityStreakCount').textContent = streak;
@@ -72,26 +99,227 @@ export function renderContinuityBlock() {
     tokensEl.appendChild(tokenLabel);
 
     for (let i = 0; i < freezeTokens.total; i++) {
-        const svg = document.createElementNS('http://www.w3.org/2000/svg', 'svg');
-        svg.setAttribute('viewBox', '0 0 24 24');
-        svg.setAttribute('width', '16');
-        svg.setAttribute('height', '16');
-        svg.setAttribute('fill', 'none');
-        svg.setAttribute('stroke', i < freezeTokens.remaining ? 'var(--info-color, #3b82f6)' : 'var(--text-secondary)');
-        svg.setAttribute('stroke-width', '2');
-        svg.setAttribute('stroke-linecap', 'round');
-        svg.setAttribute('stroke-linejoin', 'round');
-        svg.style.opacity = i < freezeTokens.remaining ? '1' : '0.3';
-        svg.innerHTML = `
-            <line x1="12" y1="2" x2="12" y2="22"></line>
-            <path d="M17 5l-5 5-5-5"></path>
-            <path d="M17 19l-5-5-5 5"></path>
-            <line x1="2" y1="12" x2="22" y2="12"></line>
-            <path d="M5 7l5 5-5 5"></path>
-            <path d="M19 7l-5 5 5 5"></path>
-        `;
+        const svg = createTokenSvg(i < freezeTokens.remaining);
         tokensEl.appendChild(svg);
     }
+}
+
+function renderFocusSlide() {
+    const card = document.getElementById('focusContinuityCard');
+    if (!card) return;
+
+    const focusStreak = calculateFocusStreak();
+    document.getElementById('focusStreakCount').textContent = focusStreak;
+
+    const ring = document.getElementById('focusContinuityRing');
+    const todayAct = initTodayActivity();
+    const focusSources = getFocusSources();
+
+    const textEl = document.getElementById('focusContinuityOverdueText');
+
+    if (!focusSources || focusSources.length === 0) {
+        textEl.textContent = 'Kaynak seçilmedi. ⚙️ ikonuna dokunun.';
+        textEl.style.color = 'var(--text-secondary)';
+        ring.setAttribute('stroke-dasharray', '0, 100');
+    } else {
+        const focusOverdue = getDailyFocusOverdueSnapshot();
+        const req = getDailyRequirement(focusOverdue);
+        const solved = todayAct.focusQuestionCount || 0;
+
+        if (isFocusActivityRequirementMet(todayAct)) {
+            textEl.textContent = 'Odak serisi korundu 🎉';
+            textEl.style.color = 'var(--success-color, #10b981)';
+            ring.style.stroke = 'var(--success-color, #10b981)';
+            ring.setAttribute('stroke-dasharray', '100, 100');
+        } else {
+            const progress = Math.min(100, Math.round((solved / req) * 100));
+            ring.setAttribute('stroke-dasharray', `${progress}, 100`);
+            ring.style.stroke = 'var(--info-color, #3b82f6)';
+            textEl.style.color = 'var(--text-secondary)';
+            textEl.textContent = `Odak Seri için: ${solved}/${req} soru (${focusSources.length} kaynak)`;
+        }
+    }
+
+    // Focus Tokens
+    const tokensEl = document.getElementById('focusContinuityTokens');
+    tokensEl.innerHTML = '';
+    const focusTokens = AppState.continuityConfig?.focusFreezeTokens || { remaining: 1, total: 1 };
+    const stats7 = getFocusStatsForRange(7);
+    const stats14 = getFocusStatsForRange(14);
+
+    tokensEl.title = `Kalan Odak Dondurma: ${focusTokens.remaining}/${focusTokens.total}\n` +
+        `• 7 Gün Odak Seri: ${stats7.streakSustained ? 'Tamam' : 'Eksik'}\n` +
+        `• 14 Gün Odak Seri (Joker): ${stats14.streakSustained ? 'Tamam' : 'Eksik'}`;
+
+    const tokenLabel = document.createElement('span');
+    tokenLabel.style.fontSize = '0.7rem';
+    tokenLabel.style.fontWeight = '600';
+    tokenLabel.style.color = 'var(--text-secondary)';
+    tokenLabel.style.marginRight = '2px';
+    tokenLabel.textContent = `Dondurma:`;
+    tokensEl.appendChild(tokenLabel);
+
+    for (let i = 0; i < focusTokens.total; i++) {
+        const svg = createTokenSvg(i < focusTokens.remaining);
+        tokensEl.appendChild(svg);
+    }
+}
+
+function createTokenSvg(active) {
+    const svg = document.createElementNS('http://www.w3.org/2000/svg', 'svg');
+    svg.setAttribute('viewBox', '0 0 24 24');
+    svg.setAttribute('width', '16');
+    svg.setAttribute('height', '16');
+    svg.setAttribute('fill', 'none');
+    svg.setAttribute('stroke', active ? 'var(--info-color, #3b82f6)' : 'var(--text-secondary)');
+    svg.setAttribute('stroke-width', '2');
+    svg.setAttribute('stroke-linecap', 'round');
+    svg.setAttribute('stroke-linejoin', 'round');
+    svg.style.opacity = active ? '1' : '0.3';
+    svg.innerHTML = `
+        <line x1="12" y1="2" x2="12" y2="22"></line>
+        <path d="M17 5l-5 5-5-5"></path>
+        <path d="M17 19l-5-5-5 5"></path>
+        <line x1="2" y1="12" x2="22" y2="12"></line>
+        <path d="M5 7l5 5-5 5"></path>
+        <path d="M19 7l-5 5 5 5"></path>
+    `;
+    return svg;
+}
+
+function initCarouselEvents() {
+    const wrapper = document.getElementById('continuityCarouselWrapper');
+    if (!wrapper || wrapper.dataset.carouselInited) return;
+    wrapper.dataset.carouselInited = 'true';
+
+    const slides = wrapper.querySelectorAll('.continuity-slide');
+    const dots = wrapper.querySelectorAll('.continuity-dots .dot');
+
+    function goToSlide(index) {
+        currentSlideIndex = index;
+        slides.forEach((s, idx) => s.classList.toggle('active', idx === index));
+        dots.forEach((d, idx) => d.classList.toggle('active', idx === index));
+    }
+
+    function startTimer() {
+        stopTimer();
+        carouselTimer = setInterval(() => {
+            const nextIdx = (currentSlideIndex + 1) % slides.length;
+            goToSlide(nextIdx);
+        }, 4000);
+    }
+
+    function stopTimer() {
+        if (carouselTimer) {
+            clearInterval(carouselTimer);
+            carouselTimer = null;
+        }
+    }
+
+    wrapper.addEventListener('mouseenter', stopTimer);
+    wrapper.addEventListener('mouseleave', startTimer);
+    wrapper.addEventListener('touchstart', stopTimer, { passive: true });
+    wrapper.addEventListener('touchend', startTimer, { passive: true });
+
+    dots.forEach((dot, idx) => {
+        dot.addEventListener('click', () => {
+            goToSlide(idx);
+            startTimer();
+        });
+    });
+
+    startTimer();
+}
+
+function bindFocusModalEvents() {
+    const openBtn = document.getElementById('openFocusSourceModalBtn');
+    const modal = document.getElementById('focusSourceModal');
+    const closeBtn = document.getElementById('focusSourceModalCloseBtn');
+    const saveBtn = document.getElementById('focusSourceModalSaveBtn');
+
+    if (openBtn && !openBtn.dataset.bound) {
+        openBtn.dataset.bound = 'true';
+        openBtn.addEventListener('click', (e) => {
+            e.stopPropagation();
+            openFocusSourceModal();
+        });
+    }
+
+    if (closeBtn && !closeBtn.dataset.bound) {
+        closeBtn.dataset.bound = 'true';
+        closeBtn.addEventListener('click', () => {
+            modal.style.display = 'none';
+        });
+    }
+
+    if (saveBtn && !saveBtn.dataset.bound) {
+        saveBtn.dataset.bound = 'true';
+        saveBtn.addEventListener('click', () => {
+            saveFocusSourceSelection();
+            modal.style.display = 'none';
+            renderFocusSlide();
+            showToast('Özel Odak kaynakları güncellendi');
+        });
+    }
+}
+
+function openFocusSourceModal() {
+    const modal = document.getElementById('focusSourceModal');
+    const listEl = document.getElementById('focusSourceList');
+    if (!modal || !listEl) return;
+
+    listEl.innerHTML = '';
+    const selectedSources = getFocusSources();
+    const allSources = AppState.sources || [];
+
+    if (allSources.length === 0) {
+        listEl.innerHTML = '<div style="font-size:0.8rem; color:var(--text-secondary); padding:0.5rem;">Henüz ekli kaynak yok.</div>';
+    } else {
+        allSources.forEach(source => {
+            const isChecked = selectedSources.includes(source.id);
+            const item = document.createElement('label');
+            item.style.display = 'flex';
+            item.style.alignItems = 'center';
+            item.style.justifyContent = 'space-between';
+            item.style.padding = '0.6rem 0.75rem';
+            item.style.backgroundColor = 'var(--surface-hover)';
+            item.style.borderRadius = '8px';
+            item.style.cursor = 'pointer';
+
+            item.innerHTML = `
+                <span style="font-size:0.88rem; font-weight:500;">${source.name || source.id}</span>
+                <input type="checkbox" value="${source.id}" ${isChecked ? 'checked' : ''} class="focus-source-checkbox">
+            `;
+            listEl.appendChild(item);
+        });
+
+        // Limit to max 3 checkboxes
+        const checkboxes = listEl.querySelectorAll('.focus-source-checkbox');
+        checkboxes.forEach(cb => {
+            cb.addEventListener('change', () => {
+                const checkedCount = listEl.querySelectorAll('.focus-source-checkbox:checked').length;
+                if (checkedCount > 3) {
+                    cb.checked = false;
+                    showToast('En fazla 3 kaynak seçebilirsiniz!');
+                }
+            });
+        });
+    }
+
+    modal.style.display = 'flex';
+}
+
+function saveFocusSourceSelection() {
+    const listEl = document.getElementById('focusSourceList');
+    if (!listEl) return;
+
+    const checkedInputs = listEl.querySelectorAll('.focus-source-checkbox:checked');
+    const selectedIds = Array.from(checkedInputs).map(cb => cb.value);
+
+    if (!AppState.continuityConfig) AppState.continuityConfig = {};
+    AppState.continuityConfig.focusSources = selectedIds;
+    saveContinuityConfig();
+}
     
     // Heatmap (Last 10 days)
     // Heatmap (Moved to bottom of page, default 365 days, lazy loaded)

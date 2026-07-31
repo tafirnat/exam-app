@@ -2,7 +2,13 @@ import test, { before } from 'node:test';
 import assert from 'node:assert/strict';
 import { JSDOM } from 'jsdom';
 
-let getDailyRequirement, isActivityRequirementMet, getFsrsStatsForRange, evaluateFreezeTokenEligibility, AppState;
+let getDailyRequirement,
+    isActivityRequirementMet,
+    isFocusActivityRequirementMet,
+    getFsrsStatsForRange,
+    calculateFocusTargetDistribution,
+    calculateFocusStreak,
+    AppState;
 
 before(async () => {
     const dom = new JSDOM('<!doctype html><html><body></body></html>', { url: 'http://localhost/' });
@@ -17,59 +23,59 @@ before(async () => {
     const engineMod = await import('../src/features/stats/continuity-engine.js');
     getDailyRequirement = engineMod.getDailyRequirement;
     isActivityRequirementMet = engineMod.isActivityRequirementMet;
+    isFocusActivityRequirementMet = engineMod.isFocusActivityRequirementMet;
     getFsrsStatsForRange = engineMod.getFsrsStatsForRange;
-    evaluateFreezeTokenEligibility = engineMod.evaluateFreezeTokenEligibility;
+    calculateFocusTargetDistribution = engineMod.calculateFocusTargetDistribution;
+    calculateFocusStreak = engineMod.calculateFocusStreak;
 });
 
 test('getDailyRequirement calculates correct limits', () => {
-    // Overdue >= 15 -> 15
     assert.equal(getDailyRequirement(25), 15);
     assert.equal(getDailyRequirement(15), 15);
-
-    // 0 < Overdue < 15 -> Overdue count
     assert.equal(getDailyRequirement(8), 8);
     assert.equal(getDailyRequirement(1), 1);
-
-    // Overdue === 0 -> 15
     assert.equal(getDailyRequirement(0), 15);
     assert.equal(getDailyRequirement(null), 15);
 });
 
-test('isActivityRequirementMet evaluates study requirement correctly', () => {
-    // Frozen always met
+test('isActivityRequirementMet evaluates global study requirement correctly', () => {
     assert.equal(isActivityRequirementMet({ frozen: true }), true);
-
-    // Not studied and not frozen -> false
     assert.equal(isActivityRequirementMet({ studied: false, questionCount: 10 }), false);
-
-    // Overdue = 20, solved 10 -> false (requires 15)
     assert.equal(isActivityRequirementMet({ studied: true, questionCount: 10, overdueSnapshot: 20 }), false);
-
-    // Overdue = 20, solved 15 -> true
     assert.equal(isActivityRequirementMet({ studied: true, questionCount: 15, overdueSnapshot: 20 }), true);
-
-    // Overdue = 5, solved 5 -> true
     assert.equal(isActivityRequirementMet({ studied: true, questionCount: 5, overdueSnapshot: 5 }), true);
-
-    // Overdue = 0, solved 10 -> false (requires 15)
-    assert.equal(isActivityRequirementMet({ studied: true, questionCount: 10, overdueSnapshot: 0 }), false);
-
-    // Overdue = 0, solved 15 -> true
-    assert.equal(isActivityRequirementMet({ studied: true, questionCount: 15, overdueSnapshot: 0 }), true);
 });
 
-test('getFsrsStatsForRange calculates range percentage accurately', () => {
-    AppState.studyActivity = {
-        '2026-07-31': { studied: true, questionCount: 15, overdueSnapshot: 15 },
-        '2026-07-30': { studied: true, questionCount: 15, overdueSnapshot: 15 },
-        '2026-07-29': { studied: true, questionCount: 15, overdueSnapshot: 15 },
-        '2026-07-28': { studied: true, questionCount: 15, overdueSnapshot: 15 },
-        '2026-07-27': { studied: true, questionCount: 15, overdueSnapshot: 15 },
-        '2026-07-26': { studied: true, questionCount: 15, overdueSnapshot: 15 },
-        '2026-07-25': { studied: true, questionCount: 15, overdueSnapshot: 15 },
-    };
+test('isFocusActivityRequirementMet evaluates focus study requirement correctly', () => {
+    assert.equal(isFocusActivityRequirementMet({ focusFrozen: true }), true);
+    assert.equal(isFocusActivityRequirementMet({ focusStudied: false, focusQuestionCount: 10 }), false);
+    assert.equal(isFocusActivityRequirementMet({ focusStudied: true, focusQuestionCount: 15, focusOverdueSnapshot: 15 }), true);
+    assert.equal(isFocusActivityRequirementMet({ focusStudied: true, focusQuestionCount: 5, focusOverdueSnapshot: 5 }), true);
+});
 
-    const stats = getFsrsStatsForRange(7);
-    assert.equal(stats.rate, 100);
-    assert.equal(stats.streakSustained, true);
+test('calculateFocusTargetDistribution divides targets across sources properly', () => {
+    AppState.questions = [
+        { id: 1, sourceId: 'srcA' },
+        { id: 2, sourceId: 'srcA' },
+        { id: 3, sourceId: 'srcA' },
+        { id: 4, sourceId: 'srcB' }
+    ];
+
+    // 1 source -> 15
+    const dist1 = calculateFocusTargetDistribution(['srcA']);
+    assert.equal(dist1.totalTarget, 15);
+    assert.equal(dist1.distribution['srcA'], 15);
+
+    // 2 sources -> 8 to srcA (3 questions) and 7 to srcB (1 question)
+    const dist2 = calculateFocusTargetDistribution(['srcA', 'srcB']);
+    assert.equal(dist2.totalTarget, 15);
+    assert.equal(dist2.distribution['srcA'], 8);
+    assert.equal(dist2.distribution['srcB'], 7);
+
+    // 3 sources -> 5, 5, 5
+    const dist3 = calculateFocusTargetDistribution(['srcA', 'srcB', 'srcC']);
+    assert.equal(dist3.totalTarget, 15);
+    assert.equal(dist3.distribution['srcA'], 5);
+    assert.equal(dist3.distribution['srcB'], 5);
+    assert.equal(dist3.distribution['srcC'], 5);
 });

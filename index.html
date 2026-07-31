@@ -402,29 +402,75 @@
 
     <main>
         <div id="homeView">
-            <div class="card" id="continuityCard" style="margin-bottom: 1rem; display: none;">
-                <div style="display: flex; gap: 1rem; align-items: center;">
-                    <div style="position: relative; width: 60px; height: 60px; flex-shrink: 0;">
-                        <svg viewBox="0 0 36 36" style="width:100%; height:100%; transform: rotate(-90deg);">
-                            <path class="ring-bg" d="M18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831 a 15.9155 15.9155 0 0 1 0 -31.831" fill="none" stroke="var(--border-color)" stroke-width="3" />
-                            <path id="continuityRing" class="ring-fg" d="M18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831 a 15.9155 15.9155 0 0 1 0 -31.831" fill="none" stroke="var(--primary-color)" stroke-width="3" stroke-dasharray="0, 100" />
-                        </svg>
-                        <div style="position:absolute; top:0; left:0; right:0; bottom:0; display:flex; align-items:center; justify-content:center; flex-direction:column;">
-                            <span id="continuityStreakCount" style="font-weight:900; font-size:1.1rem; line-height:1;">0</span>
-                            <span style="font-size:0.6rem; color:var(--text-secondary); line-height:1; font-weight:600;">GÜN</span>
+            <div id="continuityCarouselWrapper" style="margin-bottom: 1rem; position: relative; display: none;">
+                <div id="continuityCarousel" class="continuity-carousel">
+                    <!-- Slide 1: Genel FSRS Serisi -->
+                    <div class="card continuity-slide active" id="continuityCard">
+                        <div style="display: flex; gap: 1rem; align-items: center;">
+                            <div style="position: relative; width: 60px; height: 60px; flex-shrink: 0;">
+                                <svg viewBox="0 0 36 36" style="width:100%; height:100%; transform: rotate(-90deg);">
+                                    <path class="ring-bg" d="M18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831 a 15.9155 15.9155 0 0 1 0 -31.831" fill="none" stroke="var(--border-color)" stroke-width="3" />
+                                    <path id="continuityRing" class="ring-fg" d="M18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831 a 15.9155 15.9155 0 0 1 0 -31.831" fill="none" stroke="var(--primary-color)" stroke-width="3" stroke-dasharray="0, 100" />
+                                </svg>
+                                <div style="position:absolute; top:0; left:0; right:0; bottom:0; display:flex; align-items:center; justify-content:center; flex-direction:column;">
+                                    <span id="continuityStreakCount" style="font-weight:900; font-size:1.1rem; line-height:1;">0</span>
+                                    <span style="font-size:0.6rem; color:var(--text-secondary); line-height:1; font-weight:600;">GÜN</span>
+                                </div>
+                            </div>
+                            
+                            <div style="flex:1; min-width: 0;">
+                                <div style="display:flex; justify-content:space-between; align-items:flex-end; margin-bottom:0.25rem;">
+                                    <div style="min-width: 0; padding-right: 0.5rem;">
+                                        <h3 style="margin:0; font-size:1rem; font-weight:700;">Genel Seri (FSRS)</h3>
+                                        <div id="continuityOverdueText" class="truncate" style="font-size:0.75rem; color:var(--text-secondary);">Günün hedefi hesaplanıyor...</div>
+                                    </div>
+                                    <div id="continuityTokens" style="display:flex; gap:0.2rem; align-items:center;" title="Kalan Dondurma Jetonları">
+                                    </div>
+                                </div>
+                            </div>
                         </div>
                     </div>
-                    
-                    <div style="flex:1; min-width: 0;">
-                        <div style="display:flex; justify-content:space-between; align-items:flex-end; margin-bottom:0.25rem;">
-                            <div style="min-width: 0; padding-right: 0.5rem;">
-                                <h3 style="margin:0; font-size:1rem; font-weight:700;">Günlük Seri</h3>
-                                <div id="continuityOverdueText" class="truncate" style="font-size:0.75rem; color:var(--text-secondary);">Günün hedefi hesaplanıyor...</div>
+
+                    <!-- Slide 2: Özel Odak Serisi -->
+                    <div class="card continuity-slide" id="focusContinuityCard">
+                        <div style="display: flex; gap: 1rem; align-items: center;">
+                            <div style="position: relative; width: 60px; height: 60px; flex-shrink: 0;">
+                                <svg viewBox="0 0 36 36" style="width:100%; height:100%; transform: rotate(-90deg);">
+                                    <path class="ring-bg" d="M18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831 a 15.9155 15.9155 0 0 1 0 -31.831" fill="none" stroke="var(--border-color)" stroke-width="3" />
+                                    <path id="focusContinuityRing" class="ring-fg" d="M18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831 a 15.9155 15.9155 0 0 1 0 -31.831" fill="none" stroke="var(--info-color, #3b82f6)" stroke-width="3" stroke-dasharray="0, 100" />
+                                </svg>
+                                <div style="position:absolute; top:0; left:0; right:0; bottom:0; display:flex; align-items:center; justify-content:center; flex-direction:column;">
+                                    <span id="focusStreakCount" style="font-weight:900; font-size:1.1rem; line-height:1;">0</span>
+                                    <span style="font-size:0.6rem; color:var(--text-secondary); line-height:1; font-weight:600;">GÜN</span>
+                                </div>
                             </div>
-                            <div id="continuityTokens" style="display:flex; gap:0.2rem; align-items:center;" title="Kalan Dondurma Jetonları">
+                            
+                            <div style="flex:1; min-width: 0;">
+                                <div style="display:flex; justify-content:space-between; align-items:flex-end; margin-bottom:0.25rem;">
+                                    <div style="min-width: 0; padding-right: 0.5rem;">
+                                        <div style="display: flex; align-items: center; gap: 0.35rem;">
+                                            <h3 style="margin:0; font-size:1rem; font-weight:700;">Özel Odak Serisi</h3>
+                                            <button id="openFocusSourceModalBtn" class="icon-btn" style="padding: 2px;" title="Kaynakları Seç (Max 3)">
+                                                <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2">
+                                                    <circle cx="12" cy="12" r="3"></circle>
+                                                    <path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"></path>
+                                                </svg>
+                                            </button>
+                                        </div>
+                                        <div id="focusContinuityOverdueText" class="truncate" style="font-size:0.75rem; color:var(--text-secondary);">Seçili kaynaklar yükleniyor...</div>
+                                    </div>
+                                    <div id="focusContinuityTokens" style="display:flex; gap:0.2rem; align-items:center;" title="Kalan Odak Dondurma Jetonları">
+                                    </div>
+                                </div>
                             </div>
                         </div>
                     </div>
+                </div>
+
+                <!-- Dots -->
+                <div id="continuityCarouselDots" class="continuity-dots">
+                    <span class="dot active" data-slide="0"></span>
+                    <span class="dot" data-slide="1"></span>
                 </div>
             </div>
 
@@ -1729,6 +1775,29 @@
             </div>
             <div class="modal-footer" style="display: flex; justify-content: flex-end; margin-top: 1rem;">
                 <button class="btn btn-subtle" id="qpmDoneBtn" data-i18n="close">Kapat</button>
+            </div>
+    <!-- Special Focus Sources Modal -->
+    <div class="modal" id="focusSourceModal" aria-hidden="true" style="display: none;">
+        <div class="modal-content card" style="max-width: 480px; width: 90%;">
+            <div class="modal-header">
+                <h3 class="modal-title" style="margin: 0; font-size: 1.1rem; font-weight: 700;">Özel Odak Kaynakları (Max 3)</h3>
+                <button class="icon-btn" id="focusSourceModalCloseBtn">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="18" height="18">
+                        <line x1="18" y1="6" x2="6" y2="18"></line>
+                        <line x1="6" y1="6" x2="18" y2="18"></line>
+                    </svg>
+                </button>
+            </div>
+            <div class="modal-body" style="padding: 0.5rem 0;">
+                <p style="font-size: 0.8rem; color: var(--text-secondary); margin-bottom: 0.75rem;">
+                    Özel Odak Serisi'nde takip etmek istediğiniz en fazla 3 JSON kaynağını seçin. Soru hedefleri seçilen kaynaklara göre otomatik dağıtılacaktır.
+                </p>
+                <div id="focusSourceList" style="display: flex; flex-direction: column; gap: 0.5rem; max-height: 280px; overflow-y: auto;">
+                    <!-- Populated dynamically by JS -->
+                </div>
+            </div>
+            <div class="modal-footer" style="display: flex; justify-content: flex-end; margin-top: 1rem;">
+                <button class="btn btn-primary" id="focusSourceModalSaveBtn">Kaydet ve Kapat</button>
             </div>
         </div>
     </div>

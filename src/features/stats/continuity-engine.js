@@ -18,11 +18,11 @@ export function getDailyRequirement(overdueSnapshot) {
     if (overdueSnapshot === null || overdueSnapshot === undefined) return 15;
     if (overdueSnapshot >= 15) return 15;
     if (overdueSnapshot > 0) return overdueSnapshot;
-    return 15; // overdueSnapshot === 0
+    return 15;
 }
 
 /**
- * Checks if a specific activity record meets the streak requirement.
+ * Checks if global activity record meets streak requirement.
  */
 export function isActivityRequirementMet(act) {
     if (!act) return false;
@@ -34,11 +34,87 @@ export function isActivityRequirementMet(act) {
 }
 
 /**
- * Initializes default freeze token configuration with 1 welcome token.
+ * Checks if focus activity record meets focus streak requirement.
+ */
+export function isFocusActivityRequirementMet(act) {
+    if (!act) return false;
+    if (act.focusFrozen) return true;
+    if (!act.focusStudied) return false;
+
+    const req = getDailyRequirement(act.focusOverdueSnapshot);
+    return (act.focusQuestionCount || 0) >= req;
+}
+
+export function getFocusSources() {
+    return AppState.continuityConfig?.focusSources || [];
+}
+
+/**
+ * Calculates question target distribution for up to 3 selected focus sources.
+ * Returns { totalTarget, distribution: { [sourceId]: targetCount } }
+ */
+export function calculateFocusTargetDistribution(sourceIds = getFocusSources()) {
+    if (!sourceIds || sourceIds.length === 0) {
+        return { totalTarget: 15, distribution: {} };
+    }
+
+    const selectedSources = sourceIds.slice(0, 3);
+    const distribution = {};
+
+    if (selectedSources.length === 1) {
+        distribution[selectedSources[0]] = 15;
+    } else if (selectedSources.length === 2) {
+        // Calculate available unlearned counts to assign 8 to the larger source
+        const count0 = (AppState.questions || []).filter(q => q.sourceId === selectedSources[0]).length;
+        const count1 = (AppState.questions || []).filter(q => q.sourceId === selectedSources[1]).length;
+
+        if (count0 >= count1) {
+            distribution[selectedSources[0]] = 8;
+            distribution[selectedSources[1]] = 7;
+        } else {
+            distribution[selectedSources[0]] = 7;
+            distribution[selectedSources[1]] = 8;
+        }
+    } else {
+        // 3 sources -> 5, 5, 5
+        selectedSources.forEach(id => {
+            distribution[id] = 5;
+        });
+    }
+
+    const totalTarget = Object.values(distribution).reduce((sum, val) => sum + val, 0);
+    return { totalTarget, distribution };
+}
+
+/**
+ * Gets snapshot of focus overdue questions for today across selected focus sources.
+ */
+export function getDailyFocusOverdueSnapshot() {
+    const activity = initTodayActivity();
+    if (activity.focusOverdueSnapshot !== null && activity.focusOverdueSnapshot !== undefined) {
+        return activity.focusOverdueSnapshot;
+    }
+
+    const focusSources = getFocusSources();
+    if (!focusSources || focusSources.length === 0) {
+        activity.focusOverdueSnapshot = 15;
+        saveStudyActivity();
+        return 15;
+    }
+
+    const distInfo = calculateFocusTargetDistribution(focusSources);
+    activity.focusOverdueSnapshot = distInfo.totalTarget;
+    saveStudyActivity();
+    return distInfo.totalTarget;
+}
+
+/**
+ * Initializes default freeze token configurations for both Global & Focus tracks.
  */
 export function checkAndReplenishTokens() {
     if (!AppState.continuityConfig) AppState.continuityConfig = {};
     const config = AppState.continuityConfig;
+
     if (!config.freezeTokens || !config.freezeTokens.initialized) {
         config.freezeTokens = {
             total: 1,
@@ -47,14 +123,25 @@ export function checkAndReplenishTokens() {
             tier2Earned: false,
             initialized: true
         };
-        saveContinuityConfig();
     }
+
+    if (!config.focusFreezeTokens || !config.focusFreezeTokens.initialized) {
+        config.focusFreezeTokens = {
+            total: 1,
+            remaining: 1,
+            tier1Earned: false,
+            tier2Earned: false,
+            initialized: true
+        };
+    }
+
+    saveContinuityConfig();
     evaluateFreezeTokenEligibility();
+    evaluateFocusFreezeTokenEligibility();
 }
 
 /**
- * Calculates FSRS completion rate & streak continuity over the past N days.
- * @param {number} days - Number of days to look back (e.g. 7 or 14)
+ * Calculates FSRS completion rate & streak continuity over past N days for Global track.
  */
 export function getFsrsStatsForRange(days = 7) {
     const activities = AppState.studyActivity || {};
@@ -63,7 +150,6 @@ export function getFsrsStatsForRange(days = 7) {
     let streakSustained = true;
 
     let currentDate = new Date();
-    // If today hasn't been completed yet, start evaluation from yesterday so we don't break the streak check prematurely
     const todayStr = getLocalDateStr(currentDate);
     const todayAct = activities[todayStr];
     if (todayAct && !isActivityRequirementMet(todayAct)) {
@@ -93,14 +179,51 @@ export function getFsrsStatsForRange(days = 7) {
 }
 
 /**
- * Evaluates performance over past 7 and 14 days to award 1st and 2nd freeze tokens.
+ * Calculates stats over past N days for Focus track.
+ */
+export function getFocusStatsForRange(days = 7) {
+    const activities = AppState.studyActivity || {};
+    let totalSolved = 0;
+    let totalTarget = 0;
+    let streakSustained = true;
+
+    let currentDate = new Date();
+    const todayStr = getLocalDateStr(currentDate);
+    const todayAct = activities[todayStr];
+    if (todayAct && !isFocusActivityRequirementMet(todayAct)) {
+        currentDate.setDate(currentDate.getDate() - 1);
+    }
+
+    for (let i = 0; i < days; i++) {
+        const dateStr = getLocalDateStr(currentDate);
+        const act = activities[dateStr];
+
+        if (!act || (!act.focusStudied && !act.focusFrozen)) {
+            streakSustained = false;
+        }
+
+        const snapshot = act?.focusOverdueSnapshot ?? 15;
+        const target = snapshot > 0 ? snapshot : 15;
+        const solved = Math.min(act?.focusQuestionCount || 0, target);
+
+        totalTarget += target;
+        totalSolved += solved;
+
+        currentDate.setDate(currentDate.getDate() - 1);
+    }
+
+    const rate = totalTarget > 0 ? Math.round((totalSolved / totalTarget) * 100) : 100;
+    return { rate, streakSustained, totalSolved, totalTarget };
+}
+
+/**
+ * Evaluates performance for Global freeze tokens.
  */
 export function evaluateFreezeTokenEligibility() {
     if (!AppState.continuityConfig?.freezeTokens) return;
     const tokens = AppState.continuityConfig.freezeTokens;
     const globalStreak = calculateGlobalStreak();
 
-    // Reset tiers if streak is broken
     if (globalStreak === 0) {
         tokens.tier1Earned = false;
         tokens.tier2Earned = false;
@@ -110,7 +233,6 @@ export function evaluateFreezeTokenEligibility() {
 
     let updated = false;
 
-    // Check Tier 1 (7 Days + 70% FSRS)
     if (globalStreak >= 7 && !tokens.tier1Earned) {
         const stats7 = getFsrsStatsForRange(7);
         if (stats7.rate >= 70 && stats7.streakSustained) {
@@ -121,7 +243,6 @@ export function evaluateFreezeTokenEligibility() {
         }
     }
 
-    // Check Tier 2 (14 Days + 80% FSRS)
     if (globalStreak >= 14 && !tokens.tier2Earned) {
         const stats14 = getFsrsStatsForRange(14);
         if (stats14.rate >= 80 && stats14.streakSustained) {
@@ -132,29 +253,101 @@ export function evaluateFreezeTokenEligibility() {
         }
     }
 
-    if (updated) {
+    if (updated) saveContinuityConfig();
+}
+
+/**
+ * Evaluates performance for Focus freeze tokens (15 q/day sustained).
+ */
+export function evaluateFocusFreezeTokenEligibility() {
+    if (!AppState.continuityConfig?.focusFreezeTokens) return;
+    const tokens = AppState.continuityConfig.focusFreezeTokens;
+    const focusStreak = calculateFocusStreak();
+
+    if (focusStreak === 0) {
+        tokens.tier1Earned = false;
+        tokens.tier2Earned = false;
         saveContinuityConfig();
+        return;
     }
+
+    let updated = false;
+
+    if (focusStreak >= 7 && !tokens.tier1Earned) {
+        const stats7 = getFocusStatsForRange(7);
+        if (stats7.streakSustained) {
+            tokens.tier1Earned = true;
+            tokens.total = Math.max(tokens.total, 1);
+            tokens.remaining = Math.min(tokens.total, tokens.remaining + 1);
+            updated = true;
+        }
+    }
+
+    if (focusStreak >= 14 && !tokens.tier2Earned) {
+        const stats14 = getFocusStatsForRange(14);
+        if (stats14.streakSustained) {
+            tokens.tier2Earned = true;
+            tokens.total = 2;
+            tokens.remaining = Math.min(2, tokens.remaining + 1);
+            updated = true;
+        }
+    }
+
+    if (updated) saveContinuityConfig();
 }
 
 /**
  * Checks past missed days and auto-freezes if tokens are available.
+ * Supports Cross-Streak Tier 2 (Joker) token usage!
  */
 function freezeMissedDaysIfPossible() {
-    if (!AppState.continuityConfig?.freezeTokens) return;
-    const tokens = AppState.continuityConfig.freezeTokens;
+    if (!AppState.continuityConfig) return;
+    const globalTokens = AppState.continuityConfig.freezeTokens;
+    const focusTokens = AppState.continuityConfig.focusFreezeTokens;
     const activities = AppState.studyActivity || {};
     
     const checkAndFreeze = (dateStr) => {
         let act = activities[dateStr];
         if (!act) {
-            act = { studied: false, questionCount: 0, frozen: false, overdueSnapshot: null };
+            act = {
+                studied: false,
+                questionCount: 0,
+                frozen: false,
+                overdueSnapshot: null,
+                focusStudied: false,
+                focusQuestionCount: 0,
+                focusFrozen: false,
+                focusOverdueSnapshot: null
+            };
             activities[dateStr] = act;
         }
-        if (!isActivityRequirementMet(act) && !act.frozen && tokens.remaining > 0) {
-            act.frozen = true;
-            tokens.remaining--;
-            saveContinuityConfig();
+
+        // Global Track Freeze
+        if (!isActivityRequirementMet(act) && !act.frozen) {
+            if (globalTokens && globalTokens.remaining > 0) {
+                act.frozen = true;
+                globalTokens.remaining--;
+                saveContinuityConfig();
+            } else if (focusTokens && focusTokens.tier2Earned && focusTokens.remaining > 0) {
+                // Use Cross-Streak Tier 2 Focus Token as Joker!
+                act.frozen = true;
+                focusTokens.remaining--;
+                saveContinuityConfig();
+            }
+        }
+
+        // Focus Track Freeze
+        if (!isFocusActivityRequirementMet(act) && !act.focusFrozen) {
+            if (focusTokens && focusTokens.remaining > 0) {
+                act.focusFrozen = true;
+                focusTokens.remaining--;
+                saveContinuityConfig();
+            } else if (globalTokens && globalTokens.tier2Earned && globalTokens.remaining > 0) {
+                // Use Cross-Streak Tier 2 Global Token as Joker!
+                act.focusFrozen = true;
+                globalTokens.remaining--;
+                saveContinuityConfig();
+            }
         }
     };
     
@@ -176,7 +369,11 @@ export function initTodayActivity() {
             studied: false,
             questionCount: 0,
             frozen: false,
-            overdueSnapshot: null
+            overdueSnapshot: null,
+            focusStudied: false,
+            focusQuestionCount: 0,
+            focusFrozen: false,
+            focusOverdueSnapshot: null
         };
         freezeMissedDaysIfPossible();
         saveStudyActivity();
@@ -204,7 +401,6 @@ export function calculateGlobalStreak() {
         } else if (firstDay) {
             // Today is allowed to be missing since it's not over yet.
         } else {
-            // Day missed and not frozen -> streak breaks
             break;
         }
         
@@ -215,20 +411,74 @@ export function calculateGlobalStreak() {
     return streak;
 }
 
-export function recordTestFinished(questionCount, correctCount = 0, wrongCount = 0, unansweredCount = 0) {
+/**
+ * Calculates current focus streak evaluating backwards from today.
+ */
+export function calculateFocusStreak() {
+    initTodayActivity();
+    const activities = AppState.studyActivity || {};
+    let streak = 0;
+
+    let currentDate = new Date();
+    let firstDay = true;
+
+    for (let i = 0; i < 365; i++) {
+        const dateStr = getLocalDateStr(currentDate);
+        const act = activities[dateStr];
+
+        if (act && isFocusActivityRequirementMet(act)) {
+            streak++;
+        } else if (firstDay) {
+            // Today is allowed to be missing
+        } else {
+            break;
+        }
+
+        firstDay = false;
+        currentDate.setDate(currentDate.getDate() - 1);
+    }
+
+    return streak;
+}
+
+/**
+ * Records test completion and updates both Global and Focus track activities.
+ */
+export function recordTestFinished(questionCount, correctCount = 0, wrongCount = 0, unansweredCount = 0, testQuestions = []) {
     const activity = initTodayActivity();
+
+    // Global Track Update
     activity.questionCount = (activity.questionCount || 0) + questionCount;
     activity.correctCount = (activity.correctCount || 0) + correctCount;
     activity.wrongCount = (activity.wrongCount || 0) + wrongCount;
     activity.unansweredCount = (activity.unansweredCount || 0) + unansweredCount;
     
-    const req = getDailyRequirement(activity.overdueSnapshot);
-    if (activity.questionCount >= req) {
+    const globalReq = getDailyRequirement(activity.overdueSnapshot);
+    if (activity.questionCount >= globalReq) {
         activity.studied = true;
     }
-    
+
+    // Focus Track Update
+    const focusSources = getFocusSources();
+    if (focusSources.length > 0) {
+        let focusQuestionsSolved = 0;
+        if (testQuestions && testQuestions.length > 0) {
+            focusQuestionsSolved = testQuestions.filter(q => focusSources.includes(q.sourceId || q.q?.sourceId)).length;
+        } else {
+            // Fallback if testQuestions array isn't explicitly passed
+            focusQuestionsSolved = questionCount;
+        }
+
+        activity.focusQuestionCount = (activity.focusQuestionCount || 0) + focusQuestionsSolved;
+        const focusReq = getDailyRequirement(activity.focusOverdueSnapshot);
+        if (activity.focusQuestionCount >= focusReq) {
+            activity.focusStudied = true;
+        }
+    }
+
     saveStudyActivity();
     evaluateFreezeTokenEligibility();
+    evaluateFocusFreezeTokenEligibility();
 }
 
 /**

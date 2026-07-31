@@ -844,9 +844,8 @@ export function renderSourcesList() {
         titleDiv.style.minWidth = '0';
         
         const folderSourcesCount = liveSources().filter(s => getEffectiveFolderId(s) === folder.id).length;
-        // Drives the edit button icon: its top-left square only stays bright while
-        // the folder holds at least one active source, so a collapsed folder still
-        // shows whether it holds a selection.
+        // Drives the folder icon fill and the edit button's top-left square, so a
+        // collapsed folder still shows whether it holds an active selection.
         const folderHasActive = liveSources().some(s => getEffectiveFolderId(s) === folder.id && s.active);
 
         const isCollapsed = collapsedFolders.has(folder.id);
@@ -859,7 +858,7 @@ export function renderSourcesList() {
 
         titleDiv.innerHTML = `
             ${toggleIcon}
-            <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="${folder.color || DEFAULT_FOLDER_COLOR}" stroke-width="2" style="margin-left: 0.2rem;">
+            <svg viewBox="0 0 24 24" width="18" height="18" fill="${folder.color || DEFAULT_FOLDER_COLOR}" fill-opacity="${folderHasActive ? '0.4' : '0'}" stroke="${folder.color || DEFAULT_FOLDER_COLOR}" stroke-width="2" style="margin-left: 0.2rem;">
                 <path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"></path>
             </svg>
             <div style="display: flex; flex-direction: column; min-width: 0;">

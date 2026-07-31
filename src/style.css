@@ -5456,3 +5456,55 @@ body.dnd-active {
     animation: folderGridSquaresPulse 0.35s cubic-bezier(0.4, 0, 0.2, 1);
     transform-origin: center;
 }
+
+/* Continuity Carousel Styles */
+.continuity-carousel {
+    position: relative;
+    width: 100%;
+    overflow: hidden;
+}
+
+.continuity-slide {
+    display: none;
+    width: 100%;
+    margin-bottom: 0 !important;
+    transition: opacity 0.3s ease-in-out;
+}
+
+.continuity-slide.active {
+    display: block;
+    animation: fadeInSlide 0.3s ease-in-out;
+}
+
+@keyframes fadeInSlide {
+    from {
+        opacity: 0;
+        transform: translateY(2px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+.continuity-dots {
+    display: flex;
+    justify-content: center;
+    gap: 6px;
+    margin-top: 6px;
+}
+
+.continuity-dots .dot {
+    width: 7px;
+    height: 7px;
+    border-radius: 50%;
+    background-color: var(--border-color);
+    cursor: pointer;
+    transition: all 0.2s ease;
+}
+
+.continuity-dots .dot.active {
+    background-color: var(--primary-color);
+    width: 16px;
+    border-radius: 4px;
+}
