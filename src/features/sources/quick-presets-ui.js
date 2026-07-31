@@ -5,10 +5,9 @@ import { applySwatch, applyPresetBar, addCurrentAsPreset } from './quick-presets
 import { buildQuestionPool } from '../test/test-engine.js';
 
 export function updateQuickSourcesDot() {
-    const dot = document.getElementById('quickSourcesDot');
     const btn = document.getElementById('quickSourcesBtn');
     const nameLabel = document.getElementById('quickSourcesActiveName');
-    if (!dot || !btn) return;
+    if (!btn) return;
 
     const activeSources = (AppState.sources || []).filter(s => s.active && !s.archived);
     const activeIds = activeSources.map(s => s.id).sort();
@@ -30,7 +29,6 @@ export function updateQuickSourcesDot() {
 
     if (matchedPreset) {
         btn.dataset.hasPreset = 'true';
-        applySwatch(dot, matchedPreset);
         if (nameLabel) {
             nameLabel.textContent = matchedPreset.name;
             nameLabel.title = matchedPreset.name;
@@ -75,7 +73,7 @@ export function applyPreset(preset) {
 
     saveSources();
 
-    // 3. Restore or Reset session
+    // 3. Restore or Reset session and land on Home view (#homeStatsCard)
     const savedSession = AppState.presetSessions ? AppState.presetSessions[preset.id] : null;
     if (savedSession && savedSession.currentTest && savedSession.currentTest.length > 0) {
         AppState.currentTest = savedSession.currentTest;
@@ -87,9 +85,6 @@ export function applyPreset(preset) {
         localStorage.setItem('focus_app_active_test', JSON.stringify(savedSession));
 
         buildQuestionPool();
-
-        if (typeof window.switchView === 'function') window.switchView('test');
-        if (typeof window.renderQuestion === 'function') window.renderQuestion();
     } else {
         AppState.currentTest = [];
         AppState.currentIndex = 0;
@@ -98,10 +93,10 @@ export function applyPreset(preset) {
         AppState.shuffledOptionsMap = {};
         AppState.testTracking = null;
         clearActiveTest();
-
-        if (typeof window.switchView === 'function') window.switchView('home');
-        if (typeof window.checkActiveTest === 'function') window.checkActiveTest();
     }
+
+    if (typeof window.switchView === 'function') window.switchView('home');
+    if (typeof window.checkActiveTest === 'function') window.checkActiveTest();
 
     if (typeof window.updateHomeStats === 'function') window.updateHomeStats();
     if (typeof window.renderSourcesList === 'function') window.renderSourcesList();
