@@ -5490,6 +5490,7 @@ body.dnd-active {
     pointer-events: auto;
     transform: translate3d(0, 0, 0);
     z-index: 2;
+    cursor: pointer;
 }
 
 /* Directional Slide Transition Animations.
