@@ -562,6 +562,10 @@ export function updateHomeStats() {
         }
     }
 
+    if (typeof window.renderHomeActiveSources === 'function') {
+        window.renderHomeActiveSources();
+    }
+
     const homeView = document.getElementById('homeView');
     if (totalSources === 0 || !hasActiveSource) {
         if (statsCard) statsCard.style.display = 'none';

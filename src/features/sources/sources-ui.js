@@ -308,6 +308,13 @@ export function showSourceActions(source) {
     }
 
     const archiveBtn = document.getElementById('modalArchiveBtn');
+    const toggleQaBtn = document.getElementById('modalToggleQuickAccessBtn');
+    const toggleQaLabel = document.getElementById('modalToggleQuickAccessLabel');
+
+    const existingPreset = (AppState.quickPresets || []).find(p => p.sourceIds && p.sourceIds.length === 1 && p.sourceIds[0] === source.id);
+    if (toggleQaLabel) {
+        toggleQaLabel.textContent = existingPreset ? t('qs_toggle_remove') : t('qs_toggle_add');
+    }
 
     const closeActions = () => {
         overlay.classList.remove('active');
@@ -317,7 +324,36 @@ export function showSourceActions(source) {
         editBtn.onclick = null;
         closeBtn.onclick = null;
         if (archiveBtn) archiveBtn.onclick = null;
+        if (toggleQaBtn) toggleQaBtn.onclick = null;
     };
+
+    if (toggleQaBtn) {
+        toggleQaBtn.onclick = async () => {
+            closeActions();
+            const { saveQuickPresets, trackDeletedQuickPreset } = await import('../../core/state.js');
+            const { updateQuickSourcesDot } = await import('./quick-presets-ui.js');
+
+            const isExisting = (AppState.quickPresets || []).find(p => p.sourceIds && p.sourceIds.length === 1 && p.sourceIds[0] === source.id);
+            if (isExisting) {
+                AppState.quickPresets = AppState.quickPresets.filter(p => p.id !== isExisting.id);
+                trackDeletedQuickPreset(isExisting.id);
+            } else {
+                const newPreset = {
+                    id: 'qp_' + Date.now() + '_' + Math.random().toString(36).substr(2, 4),
+                    name: source.name || t('untitled_source'),
+                    sourceIds: [source.id],
+                    color: null,
+                    order: AppState.quickPresets.length,
+                    createdAt: Date.now(),
+                    updatedAt: Date.now()
+                };
+                AppState.quickPresets.push(newPreset);
+            }
+            saveQuickPresets();
+            updateQuickSourcesDot();
+            if (typeof window.updateHomeStats === 'function') window.updateHomeStats();
+        };
+    }
 
     editBtn.onclick = () => {
         closeActions();
@@ -362,6 +398,63 @@ export function showSourceActions(source) {
         if (e.target === overlay) closeActions();
     };
 }
+
+export function renderHomeActiveSources() {
+    const container = document.getElementById('homeActiveSourcesList');
+    const section = document.getElementById('homeActiveSourcesSection');
+    if (!container || !section) return;
+
+    const activeSources = liveSources().filter(s => s.active);
+    if (activeSources.length === 0) {
+        section.style.display = 'none';
+        container.innerHTML = '';
+        return;
+    }
+
+    section.style.display = 'block';
+    container.innerHTML = '';
+
+    const folders = liveFolders();
+
+    activeSources.forEach(s => {
+        const folder = s.folderId ? folders.find(f => f.id === s.folderId) : null;
+        const ledColor = folder?.color || DEFAULT_FOLDER_COLOR;
+        const qCount = s.questions ? s.questions.length : 0;
+
+        const row = document.createElement('div');
+        row.className = 'active-source-row';
+
+        const leftDiv = document.createElement('div');
+        leftDiv.className = 'active-source-row-left';
+
+        const led = document.createElement('span');
+        led.className = 'source-led-dot';
+        led.style.backgroundColor = ledColor;
+
+        const title = document.createElement('span');
+        title.className = 'active-source-title';
+        title.textContent = s.name || t('untitled_source');
+
+        leftDiv.appendChild(led);
+        leftDiv.appendChild(title);
+
+        const countSpan = document.createElement('span');
+        countSpan.className = 'active-source-count';
+        countSpan.textContent = `(${qCount})`;
+
+        row.appendChild(leftDiv);
+        row.appendChild(countSpan);
+
+        row.addEventListener('click', (e) => {
+            e.stopPropagation();
+            showSourceOptionsModal(s.id);
+        });
+
+        container.appendChild(row);
+    });
+}
+window.renderHomeActiveSources = renderHomeActiveSources;
+window.showSourceOptionsModal = showSourceOptionsModal;
 export function showEditMetadata(source) {
     const overlay = document.getElementById('editMetadataOverlay');
     const titleInput = document.getElementById('editMetaTitle');
