@@ -10,7 +10,7 @@
     --border-color: #e2e8f0;
     --primary-color: #3b82f6;
     --primary-hover: #2563eb;
-    --ice-blue: #38bdf8;
+    --ice-blue: #7dd3fc;
 
     /* Light Theme - Doğru/Yanlış Renkleri */
     --success-color: #22c55e;
@@ -5588,24 +5588,39 @@ body.dnd-active {
     opacity: 1;
 }
 
-/* Continuity Info Button */
-.continuity-info-btn {
+/* Continuity Icon Button (Bottom-Right, Touch-Friendly) */
+.continuity-icon-btn {
     display: inline-flex;
     align-items: center;
-    gap: 0.3rem;
-    padding: 3px 8px;
-    background: transparent;
-    border: 1px solid var(--border-color, rgba(226, 232, 240, 0.7));
-    border-radius: 6px;
+    justify-content: center;
+    width: 32px;
+    height: 32px;
+    padding: 0;
+    background: var(--surface-hover, rgba(241, 245, 249, 0.7));
+    border: 1px solid var(--border-color, rgba(226, 232, 240, 0.8));
+    border-radius: 8px;
     color: var(--text-secondary);
-    font-size: 0.72rem;
-    font-weight: 500;
     cursor: pointer;
-    transition: color 0.2s ease, border-color 0.2s ease, background-color 0.2s ease;
+    transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+    position: relative;
+    touch-action: manipulation;
+    flex-shrink: 0;
 }
 
-.continuity-info-btn:hover {
+/* Touch hit area expansion for mobile (fat-finger friendly) */
+.continuity-icon-btn::before {
+    content: '';
+    position: absolute;
+    top: -6px;
+    bottom: -6px;
+    left: -6px;
+    right: -6px;
+}
+
+.continuity-icon-btn:hover,
+.continuity-icon-btn:active {
     color: var(--primary-color);
     border-color: var(--primary-color);
-    background: var(--bg-hover, rgba(59, 130, 246, 0.08));
+    background: var(--bg-hover, rgba(59, 130, 246, 0.12));
+    transform: translateY(-1px);
 }

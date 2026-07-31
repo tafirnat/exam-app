@@ -406,8 +406,8 @@
                 <div id="continuityCarousel" class="continuity-carousel">
                     <!-- Slide 1: Genel FSRS Serisi -->
                     <div class="card continuity-slide active" id="continuityCard">
-                        <div style="display: flex; gap: 1rem; align-items: center;">
-                            <div style="position: relative; width: 60px; height: 60px; flex-shrink: 0;">
+                        <div style="display: flex; gap: 0.85rem; align-items: flex-start;">
+                            <div style="position: relative; width: 56px; height: 56px; flex-shrink: 0; margin-top: 2px;">
                                 <svg viewBox="0 0 36 36" style="width:100%; height:100%; transform: rotate(-90deg);">
                                     <path class="ring-bg" d="M18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831 a 15.9155 15.9155 0 0 1 0 -31.831" fill="none" stroke="var(--border-color)" stroke-width="3" />
                                     <path id="continuityRing" class="ring-fg" d="M18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831 a 15.9155 15.9155 0 0 1 0 -31.831" fill="none" stroke="var(--primary-color)" stroke-width="3" stroke-dasharray="0, 100" />
@@ -418,33 +418,34 @@
                                 </div>
                             </div>
                             
-                            <div style="flex:1; min-width: 0;">
-                                <div style="display:flex; justify-content:space-between; align-items:flex-end; margin-bottom:0.25rem;">
+                            <div style="flex:1; min-width: 0; display: flex; flex-direction: column; justify-content: space-between;">
+                                <!-- Top Row: Title Left, Freeze Tokens Top-Right -->
+                                <div style="display:flex; justify-content:space-between; align-items:flex-start;">
                                     <div style="min-width: 0; padding-right: 0.5rem;">
-                                        <h3 style="margin:0; font-size:1rem; font-weight:700;">Genel Seri (FSRS)</h3>
-                                        <div id="continuityOverdueText" class="truncate" style="font-size:0.75rem; color:var(--text-secondary);">Günün hedefi hesaplanıyor...</div>
+                                        <h3 style="margin:0; font-size:0.95rem; font-weight:700; line-height: 1.2;">Genel Seri (FSRS)</h3>
+                                        <div id="continuityOverdueText" class="truncate" style="font-size:0.75rem; color:var(--text-secondary); margin-top: 2px;">Günün hedefi hesaplanıyor...</div>
                                     </div>
-                                    <div id="continuityTokens" style="display:flex; gap:0.3rem; align-items:center;" title="Kalan Dondurma Jetonları">
+                                    <div id="continuityTokens" style="display:flex; gap:0.25rem; align-items:center; flex-shrink:0;" title="Kalan Dondurma Jetonları">
                                     </div>
                                 </div>
+                                
+                                <!-- Bottom Row: Italic Info Button Bottom-Right -->
+                                <div style="display: flex; justify-content: flex-end; align-items: center; margin-top: 0.4rem;">
+                                    <button id="continuityInfoBtn" class="continuity-icon-btn" title="Genel Seri Hakkında Bilgi">
+                                        <svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                            <circle cx="12" cy="12" r="10"></circle>
+                                            <path d="M10 16h3.5m-1.5 0l2-5m-1.5-3.5h.01"></path>
+                                        </svg>
+                                    </button>
+                                </div>
                             </div>
-                        </div>
-                        <div style="display: flex; justify-content: flex-start; align-items: center; margin-top: 0.4rem;">
-                            <button id="continuityInfoBtn" class="continuity-info-btn" title="Genel Seri Hakkında Bilgi">
-                                <svg viewBox="0 0 24 24" width="13" height="13" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
-                                    <circle cx="12" cy="12" r="10"></circle>
-                                    <line x1="12" y1="16" x2="12" y2="12"></line>
-                                    <line x1="12" y1="8" x2="12.01" y2="8"></line>
-                                </svg>
-                                <span>Nasıl Çalışır?</span>
-                            </button>
                         </div>
                     </div>
 
                     <!-- Slide 2: Özel Odak Serisi -->
                     <div class="card continuity-slide" id="focusContinuityCard">
-                        <div style="display: flex; gap: 1rem; align-items: center;">
-                            <div style="position: relative; width: 60px; height: 60px; flex-shrink: 0;">
+                        <div style="display: flex; gap: 0.85rem; align-items: flex-start;">
+                            <div style="position: relative; width: 56px; height: 56px; flex-shrink: 0; margin-top: 2px;">
                                 <svg viewBox="0 0 36 36" style="width:100%; height:100%; transform: rotate(-90deg);">
                                     <path class="ring-bg" d="M18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831 a 15.9155 15.9155 0 0 1 0 -31.831" fill="none" stroke="var(--border-color)" stroke-width="3" />
                                     <path id="focusContinuityRing" class="ring-fg" d="M18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831 a 15.9155 15.9155 0 0 1 0 -31.831" fill="none" stroke="var(--info-color, #3b82f6)" stroke-width="3" stroke-dasharray="0, 100" />
@@ -455,34 +456,34 @@
                                 </div>
                             </div>
                             
-                            <div style="flex:1; min-width: 0;">
-                                <div style="display:flex; justify-content:space-between; align-items:flex-end; margin-bottom:0.25rem;">
+                            <div style="flex:1; min-width: 0; display: flex; flex-direction: column; justify-content: space-between;">
+                                <!-- Top Row: Title Left, Focus Freeze Tokens Top-Right -->
+                                <div style="display:flex; justify-content:space-between; align-items:flex-start;">
                                     <div style="min-width: 0; padding-right: 0.5rem;">
-                                        <div style="display: flex; align-items: center; gap: 0.35rem;">
-                                            <h3 style="margin:0; font-size:1rem; font-weight:700;">Özel Odak Serisi</h3>
-                                            <button id="openFocusSourceModalBtn" class="icon-btn" style="padding: 2px;" title="Kaynakları Seç (Max 3)">
-                                                <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2">
-                                                    <circle cx="12" cy="12" r="3"></circle>
-                                                    <path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"></path>
-                                                </svg>
-                                            </button>
-                                        </div>
-                                        <div id="focusContinuityOverdueText" class="truncate" style="font-size:0.75rem; color:var(--text-secondary);">Seçili kaynaklar yükleniyor...</div>
+                                        <h3 style="margin:0; font-size:0.95rem; font-weight:700; line-height: 1.2;">Özel Odak Serisi</h3>
+                                        <div id="focusContinuityOverdueText" class="truncate" style="font-size:0.75rem; color:var(--text-secondary); margin-top: 2px;">Seçili kaynaklar yükleniyor...</div>
                                     </div>
-                                    <div id="focusContinuityTokens" style="display:flex; gap:0.3rem; align-items:center;" title="Kalan Odak Dondurma Jetonları">
+                                    <div id="focusContinuityTokens" style="display:flex; gap:0.25rem; align-items:center; flex-shrink:0;" title="Kalan Odak Dondurma Jetonları">
                                     </div>
                                 </div>
+                                
+                                <!-- Bottom Row: Settings & Italic Info Buttons Bottom-Right X-axis Aligned -->
+                                <div style="display: flex; justify-content: flex-end; align-items: center; gap: 0.5rem; margin-top: 0.4rem;">
+                                    <button id="openFocusSourceModalBtn" class="continuity-icon-btn" title="Kaynakları Seç (Max 3)">
+                                        <svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" stroke-width="2">
+                                            <circle cx="12" cy="12" r="3"></circle>
+                                            <path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"></path>
+                                        </svg>
+                                    </button>
+
+                                    <button id="focusContinuityInfoBtn" class="continuity-icon-btn" title="Özel Odak Serisi Hakkında Bilgi">
+                                        <svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                            <circle cx="12" cy="12" r="10"></circle>
+                                            <path d="M10 16h3.5m-1.5 0l2-5m-1.5-3.5h.01"></path>
+                                        </svg>
+                                    </button>
+                                </div>
                             </div>
-                        </div>
-                        <div style="display: flex; justify-content: flex-start; align-items: center; margin-top: 0.4rem;">
-                            <button id="focusContinuityInfoBtn" class="continuity-info-btn" title="Özel Odak Serisi Hakkında Bilgi">
-                                <svg viewBox="0 0 24 24" width="13" height="13" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
-                                    <circle cx="12" cy="12" r="10"></circle>
-                                    <line x1="12" y1="16" x2="12" y2="12"></line>
-                                    <line x1="12" y1="8" x2="12.01" y2="8"></line>
-                                </svg>
-                                <span>Nasıl Çalışır?</span>
-                            </button>
                         </div>
                     </div>
                 </div>

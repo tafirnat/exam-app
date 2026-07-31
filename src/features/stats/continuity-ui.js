@@ -155,7 +155,7 @@ function createTokenSvg(active) {
     svg.setAttribute('width', '18');
     svg.setAttribute('height', '18');
     svg.setAttribute('fill', 'none');
-    const color = active ? 'var(--ice-blue, #38bdf8)' : 'var(--text-secondary)';
+    const color = active ? 'var(--ice-blue, #7dd3fc)' : 'var(--text-secondary)';
     svg.setAttribute('stroke', color);
     svg.setAttribute('stroke-width', '1.8');
     svg.setAttribute('stroke-linecap', 'round');
@@ -163,7 +163,7 @@ function createTokenSvg(active) {
     svg.style.opacity = active ? '1' : '0.25';
     svg.style.flexShrink = '0';
     if (active) {
-        svg.style.filter = 'drop-shadow(0 0 2.5px rgba(56, 189, 248, 0.45))';
+        svg.style.filter = 'drop-shadow(0 0 3px rgba(125, 211, 252, 0.75))';
     }
     svg.innerHTML = `
         <line x1="12" y1="2" x2="12" y2="22"></line>
