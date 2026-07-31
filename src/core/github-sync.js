@@ -13,8 +13,8 @@ const GIST_DESCRIPTION = 'Exam App - User Study & Resource Data Sync';
 const GITHUB_API_BASE = 'https://api.github.com';
 
 // Environment variables from Vite (.env)
-const GITHUB_CLIENT_ID = import.meta.env.VITE_GITHUB_CLIENT_ID || '';
-const WORKER_URL = import.meta.env.VITE_WORKER_URL || '';
+const GITHUB_CLIENT_ID = import.meta.env?.VITE_GITHUB_CLIENT_ID || '';
+const WORKER_URL = import.meta.env?.VITE_WORKER_URL || '';
 
 let syncTimer = null;
 let isSyncing = false;

@@ -284,7 +284,11 @@ const initApp = () => {
         if (!localStorage.getItem(SAMPLE_LOADED_KEY)) {
             const lang = ['tr', 'en', 'de'].includes(AppState.language) ? AppState.language : 'en';
             loadFromUrl(`./examples/sample-${lang}.json`, { active: true, silent: true }).then(source => {
-                if (source) renderSourcesList();
+                if (source) {
+                    source.folderId = 'uncategorized-folder';
+                    import('./core/state.js').then(m => m.saveSources());
+                    renderSourcesList();
+                }
             });
             localStorage.setItem(SAMPLE_LOADED_KEY, lang);
         }

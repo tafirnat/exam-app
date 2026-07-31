@@ -33,6 +33,19 @@ export const SAMPLE_LOADED_KEY = 'focus_app_sample_loaded';
    reader gets it in their own language and the sample stays a plain file
    they can open, copy and learn the schema from. */
 
+export const UNCATEGORIZED_FOLDER_ID = 'uncategorized-folder';
+
+export function createUncategorizedFolderRecord() {
+    return {
+        id: UNCATEGORIZED_FOLDER_ID,
+        name: 'Kategorisiz Kaynaklar',
+        color: '#8a99ad',
+        description: 'Kategorilenmemiş kaynaklar',
+        order: 0,
+        isSystem: true
+    };
+}
+
 export const AppState = {
     rawQuestions: [],
     currentTest: [],
@@ -43,14 +56,27 @@ export const AppState = {
     stats: safeJSONParse('focus_app_stats_local', {}),
     folders: (() => {
         let folders = safeJSONParse('focus_app_folders', null);
-        if (folders === null || (Array.isArray(folders) && folders.length === 0)) {
-            // Create a default folder for sample templates
-            folders = [
-                { id: 'default-folder', name: 'Sample Folder', color: '#0098fe', description: 'Varsayılan örnek klasör', order: 0 }
-            ];
-            try { localStorage.setItem('focus_app_folders', JSON.stringify(folders)); } catch(e){}
+        if (!Array.isArray(folders)) folders = [];
+
+        let hasUncategorized = false;
+        folders = folders.map(f => {
+            if (f.id === 'default-folder') {
+                hasUncategorized = true;
+                return { ...f, id: UNCATEGORIZED_FOLDER_ID, name: 'Kategorisiz Kaynaklar', color: '#8a99ad', isSystem: true };
+            }
+            if (f.id === UNCATEGORIZED_FOLDER_ID) {
+                hasUncategorized = true;
+                return { ...f, name: 'Kategorisiz Kaynaklar', color: '#8a99ad', isSystem: true };
+            }
+            return f;
+        });
+
+        if (!hasUncategorized) {
+            folders.unshift(createUncategorizedFolderRecord());
         }
-        return Array.isArray(folders) ? folders : [];
+
+        try { localStorage.setItem('focus_app_folders', JSON.stringify(folders)); } catch(e){}
+        return folders;
     })(),
     // Starts empty on a fresh install; main.js fetches the sample for the
     // detected language right after boot and renders it in.
@@ -127,9 +153,7 @@ export function touch(record) {
 }
 
 export function clearLocalStudyData() {
-    AppState.folders = [
-        { id: 'default-folder', name: 'Sample Folder', color: '#0098fe', description: 'Varsayılan örnek klasör', order: 0 }
-    ];
+    AppState.folders = [createUncategorizedFolderRecord()];
     AppState.sources = [];
     AppState.stats = {};
     AppState.totalStats = {};

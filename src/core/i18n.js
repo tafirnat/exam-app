@@ -430,6 +430,8 @@ export const translations = {
         md_callout_title: "Bilgi Kutusu (> [!note])",
         md_live_preview: "Canlı Önizleme",
         changes_saved: "Değişiklikler kaydedildi.",
+        uncategorized_folder: "Kategorisiz Kaynaklar",
+        uncategorized_folder_desc: "Kategorilenmemiş kaynaklar",
     },
     en: {
         theme_change: "Change Theme",
@@ -846,6 +848,8 @@ export const translations = {
         md_callout_title: "Callout (> [!note])",
         md_live_preview: "Live Preview",
         changes_saved: "Changes saved.",
+        uncategorized_folder: "Uncategorized Sources",
+        uncategorized_folder_desc: "Uncategorized sources",
     },
     de: {
         theme_change: "Design ändern",
@@ -1262,6 +1266,8 @@ export const translations = {
         md_callout_title: "Callout (> [!note])",
         md_live_preview: "Live-Vorschau",
         changes_saved: "Änderungen gespeichert.",
+        uncategorized_folder: "Unkategorisierte Quellen",
+        uncategorized_folder_desc: "Unkategorisierte Quellen",
     },
 };
 

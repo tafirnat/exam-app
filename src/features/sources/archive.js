@@ -119,7 +119,7 @@ export async function archiveSource(sourceId) {
 
 export async function archiveFolder(folderId) {
     const folder = AppState.folders.find(f => f.id === folderId);
-    if (!folder || folder.archived) return false;
+    if (!folder || folder.archived || folder.isSystem || folder.id === 'uncategorized-folder') return false;
 
     const contents = AppState.sources.filter(s => s.folderId === folderId && !s.archived);
     if (!await showConfirm(

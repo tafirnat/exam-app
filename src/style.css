@@ -5435,3 +5435,24 @@ body.dnd-active {
     border-color: var(--primary-color);
     color: #ffffff;
 }
+
+/* System Folder Edit Icon Micro-Animation Feedback */
+@keyframes folderGridSquaresPulse {
+    0% {
+        transform: scale(1);
+        filter: brightness(1);
+    }
+    40% {
+        transform: scale(1.15);
+        filter: brightness(1.8) drop-shadow(0 0 4px var(--text-primary, #ffffff));
+    }
+    100% {
+        transform: scale(1);
+        filter: brightness(1);
+    }
+}
+
+.folder-grid-icon-pulse {
+    animation: folderGridSquaresPulse 0.35s cubic-bezier(0.4, 0, 0.2, 1);
+    transform-origin: center;
+}

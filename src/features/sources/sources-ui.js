@@ -1,4 +1,4 @@
-import { AppState, saveSources, saveStats, saveFolders, liveSources, liveFolders, touch, trackDeletedFolder } from '../../core/state.js';
+import { AppState, saveSources, saveStats, saveFolders, liveSources, liveFolders, touch, trackDeletedFolder, UNCATEGORIZED_FOLDER_ID } from '../../core/state.js';
 import { t } from '../../core/i18n.js';
 import { showConfirm, showAlert, showToast } from '../../core/utils.js';
 
@@ -782,15 +782,12 @@ export function renderSourcesList() {
         countEl.textContent = n > 0 ? t('questions_count', { count: n }) : '';
     }
 
-    // Group sources (archived ones are only reachable from the archive screen)
-    const unassigned = liveSources().filter(s => !s.folderId).sort((a, b) => (a.order || 0) - (b.order || 0));
+    const getEffectiveFolderId = (s) => s.folderId || UNCATEGORIZED_FOLDER_ID;
 
+    // Group sources (archived ones are only reachable from the archive screen)
     // Sort folders by order
     const sortedFolders = liveFolders().sort((a, b) => (a.order || 0) - (b.order || 0));
 
-    // Render unassigned (root) items first, or at the end
-    // Let's render folders first, then unassigned
-    
     sortedFolders.forEach(folder => {
         const folderEl = document.createElement('div');
         folderEl.className = 'folder-container';
@@ -835,16 +832,19 @@ export function renderSourcesList() {
         titleDiv.style.gap = '0.5rem';
         titleDiv.style.minWidth = '0';
         
-        const folderSourcesCount = liveSources().filter(s => s.folderId === folder.id).length;
+        const folderSourcesCount = liveSources().filter(s => getEffectiveFolderId(s) === folder.id).length;
         // Drives the edit button icon: its top-left square only stays bright while
         // the folder holds at least one active source, so a collapsed folder still
         // shows whether it holds a selection.
-        const folderHasActive = liveSources().some(s => s.folderId === folder.id && s.active);
+        const folderHasActive = liveSources().some(s => getEffectiveFolderId(s) === folder.id && s.active);
 
         const isCollapsed = collapsedFolders.has(folder.id);
         const toggleIcon = isCollapsed 
             ? `<svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" style="opacity: 0.6;"><polyline points="9 18 15 12 9 6"></polyline></svg>`
             : `<svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" style="opacity: 0.6;"><polyline points="6 9 12 15 18 9"></polyline></svg>`;
+
+        const folderTitle = (folder.id === UNCATEGORIZED_FOLDER_ID || folder.isSystem) ? t('uncategorized_folder') : folder.name;
+        const folderDesc = (folder.id === UNCATEGORIZED_FOLDER_ID || folder.isSystem) ? t('uncategorized_folder_desc') : folder.description;
 
         titleDiv.innerHTML = `
             ${toggleIcon}
@@ -852,8 +852,8 @@ export function renderSourcesList() {
                 <path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"></path>
             </svg>
             <div style="display: flex; flex-direction: column; min-width: 0;">
-                <span class="truncate" style="font-weight: 600; font-size: 0.95rem;">${folder.name}</span>
-                ${folder.description ? `<span class="truncate" style="font-size: 0.7rem; color: var(--text-secondary);">${folder.description}</span>` : ''}
+                <span class="truncate" style="font-weight: 600; font-size: 0.95rem;">${folderTitle}</span>
+                ${folderDesc ? `<span class="truncate" style="font-size: 0.7rem; color: var(--text-secondary);">${folderDesc}</span>` : ''}
             </div>
         `;
         // Same grip element/markup as a source item, always the first child.
@@ -874,13 +874,27 @@ export function renderSourcesList() {
         countDiv.style.pointerEvents = 'none';
         countDiv.textContent = folderSourcesCount;
 
+        const isSystemFolder = folder.isSystem || folder.id === UNCATEGORIZED_FOLDER_ID;
         const editBtn = document.createElement('button');
         editBtn.className = 'icon-btn';
-        editBtn.innerHTML = `<svg viewBox="0 0 24 24" width="18" height="18"><rect x="4" y="4" width="7" height="7" rx="1.5" fill="${folder.color}" opacity="${folderHasActive ? '1' : '0.2'}"></rect><rect x="13" y="4" width="7" height="7" rx="1.5" fill="${folder.color}" opacity="0.7"></rect><rect x="4" y="13" width="7" height="7" rx="1.5" fill="${folder.color}" opacity="0.4"></rect><rect x="13" y="13" width="7" height="7" rx="1.5" fill="${folder.color}" opacity="0.2"></rect></svg>`;
-        editBtn.onclick = (e) => {
-            e.stopPropagation();
-            showFolderManageModal(folder);
-        };
+        editBtn.innerHTML = `<svg viewBox="0 0 24 24" width="18" height="18" class="folder-grid-svg"><rect x="4" y="4" width="7" height="7" rx="1.5" fill="${folder.color || DEFAULT_FOLDER_COLOR}" opacity="${folderHasActive ? '1' : '0.2'}"></rect><rect x="13" y="4" width="7" height="7" rx="1.5" fill="${folder.color || DEFAULT_FOLDER_COLOR}" opacity="0.7"></rect><rect x="4" y="13" width="7" height="7" rx="1.5" fill="${folder.color || DEFAULT_FOLDER_COLOR}" opacity="0.4"></rect><rect x="13" y="13" width="7" height="7" rx="1.5" fill="${folder.color || DEFAULT_FOLDER_COLOR}" opacity="0.2"></rect></svg>`;
+
+        if (isSystemFolder) {
+            editBtn.onclick = (e) => {
+                e.stopPropagation();
+                const svg = editBtn.querySelector('svg');
+                if (svg) {
+                    svg.classList.remove('folder-grid-icon-pulse');
+                    void svg.offsetWidth; // Reflow
+                    svg.classList.add('folder-grid-icon-pulse');
+                }
+            };
+        } else {
+            editBtn.onclick = (e) => {
+                e.stopPropagation();
+                showFolderManageModal(folder);
+            };
+        }
         
         const actionsDiv = document.createElement('div');
         actionsDiv.style.display = 'flex';
@@ -893,7 +907,7 @@ export function renderSourcesList() {
         folderEl.appendChild(header);
 
         // Sources inside folder
-        const folderSources = liveSources().filter(s => s.folderId === folder.id).sort((a, b) => (a.order || 0) - (b.order || 0));
+        const folderSources = liveSources().filter(s => getEffectiveFolderId(s) === folder.id).sort((a, b) => (a.order || 0) - (b.order || 0));
         
         const listDiv = document.createElement('div');
         listDiv.className = 'folder-list';
@@ -909,23 +923,6 @@ export function renderSourcesList() {
         folderEl.appendChild(listDiv);
         container.appendChild(folderEl);
     });
-
-    // Unassigned sources
-    if (unassigned.length > 0) {
-        const rootDiv = document.createElement('div');
-        rootDiv.className = 'folder-list';
-        const label = document.createElement('div');
-        label.style.fontSize = '0.8rem';
-        label.style.color = 'var(--text-secondary)';
-        label.style.marginBottom = '0.5rem';
-        label.textContent = t('root_folder');
-        rootDiv.appendChild(label);
-        
-        unassigned.forEach(s => {
-            rootDiv.appendChild(createSourceItemDOM(s, null));
-        });
-        container.appendChild(rootDiv);
-    }
 }
 
 function createSourceItemDOM(s, folderId) {
@@ -1043,6 +1040,7 @@ function createSourceItemDOM(s, folderId) {
 }
 
 export function showFolderManageModal(folder = null) {
+    if (folder && (folder.isSystem || folder.id === UNCATEGORIZED_FOLDER_ID)) return;
     const overlay = document.getElementById('folderManageOverlay');
     const title = document.getElementById('folderModalTitle');
     const nameInput = document.getElementById('folderNameInput');
@@ -1150,6 +1148,7 @@ export function showFolderManageModal(folder = null) {
 }
 
 export function showFolderDeleteModal(folderId) {
+    if (folderId === UNCATEGORIZED_FOLDER_ID) return;
     const overlay = document.getElementById('folderDeleteOverlay');
     if(!overlay) return;
     
