@@ -52,7 +52,11 @@ window.onSourcesUpdated = () => {
 
 
 // --- Initialize ---
+let isAppInitialized = false;
+
 const initApp = () => {
+    if (isAppInitialized) return;
+    isAppInitialized = true;
     console.log('initApp start');
     
     // Backwards compatibility helper to make contenteditable divs act like textareas

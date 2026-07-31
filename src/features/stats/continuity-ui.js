@@ -320,7 +320,8 @@ function saveFocusSourceSelection() {
     AppState.continuityConfig.focusSources = selectedIds;
     saveContinuityConfig();
 }
-    
+
+export function renderGlobalCharts() {
     // Heatmap (Last 10 days)
     // Heatmap (Moved to bottom of page, default 365 days, lazy loaded)
     const heatmapCard = document.getElementById('homeHeatmapCard');
