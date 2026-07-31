@@ -8,6 +8,8 @@ let getDailyRequirement,
     getFsrsStatsForRange,
     calculateFocusTargetDistribution,
     calculateFocusStreak,
+    checkAndReplenishTokens,
+    initTodayActivity,
     AppState;
 
 before(async () => {
@@ -27,6 +29,8 @@ before(async () => {
     getFsrsStatsForRange = engineMod.getFsrsStatsForRange;
     calculateFocusTargetDistribution = engineMod.calculateFocusTargetDistribution;
     calculateFocusStreak = engineMod.calculateFocusStreak;
+    checkAndReplenishTokens = engineMod.checkAndReplenishTokens;
+    initTodayActivity = engineMod.initTodayActivity;
 });
 
 test('getDailyRequirement calculates correct limits', () => {
@@ -79,3 +83,11 @@ test('calculateFocusTargetDistribution divides targets across sources properly',
     assert.equal(dist3.distribution['srcB'], 5);
     assert.equal(dist3.distribution['srcC'], 5);
 });
+
+test('initTodayActivity and checkAndReplenishTokens do not exceed maximum call stack size', () => {
+    assert.doesNotThrow(() => {
+        initTodayActivity();
+        checkAndReplenishTokens();
+    });
+});
+

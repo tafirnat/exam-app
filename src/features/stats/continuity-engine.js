@@ -108,36 +108,44 @@ export function getDailyFocusOverdueSnapshot() {
     return distInfo.totalTarget;
 }
 
+let isEvaluatingTokens = false;
+
 /**
  * Initializes default freeze token configurations for both Global & Focus tracks.
  */
 export function checkAndReplenishTokens() {
-    if (!AppState.continuityConfig) AppState.continuityConfig = {};
-    const config = AppState.continuityConfig;
+    if (isEvaluatingTokens) return;
+    isEvaluatingTokens = true;
+    try {
+        if (!AppState.continuityConfig) AppState.continuityConfig = {};
+        const config = AppState.continuityConfig;
 
-    if (!config.freezeTokens || !config.freezeTokens.initialized) {
-        config.freezeTokens = {
-            total: 1,
-            remaining: 1,
-            tier1Earned: false,
-            tier2Earned: false,
-            initialized: true
-        };
+        if (!config.freezeTokens || !config.freezeTokens.initialized) {
+            config.freezeTokens = {
+                total: 1,
+                remaining: 1,
+                tier1Earned: false,
+                tier2Earned: false,
+                initialized: true
+            };
+        }
+
+        if (!config.focusFreezeTokens || !config.focusFreezeTokens.initialized) {
+            config.focusFreezeTokens = {
+                total: 1,
+                remaining: 1,
+                tier1Earned: false,
+                tier2Earned: false,
+                initialized: true
+            };
+        }
+
+        saveContinuityConfig();
+        evaluateFreezeTokenEligibility();
+        evaluateFocusFreezeTokenEligibility();
+    } finally {
+        isEvaluatingTokens = false;
     }
-
-    if (!config.focusFreezeTokens || !config.focusFreezeTokens.initialized) {
-        config.focusFreezeTokens = {
-            total: 1,
-            remaining: 1,
-            tier1Earned: false,
-            tier2Earned: false,
-            initialized: true
-        };
-    }
-
-    saveContinuityConfig();
-    evaluateFreezeTokenEligibility();
-    evaluateFocusFreezeTokenEligibility();
 }
 
 /**
@@ -361,7 +369,6 @@ function freezeMissedDaysIfPossible() {
 }
 
 export function initTodayActivity() {
-    checkAndReplenishTokens();
     const today = getLocalDateStr();
     if (!AppState.studyActivity) AppState.studyActivity = {};
     if (!AppState.studyActivity[today]) {
@@ -378,6 +385,7 @@ export function initTodayActivity() {
         freezeMissedDaysIfPossible();
         saveStudyActivity();
     }
+    checkAndReplenishTokens();
     return AppState.studyActivity[today];
 }
 
