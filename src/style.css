@@ -2649,8 +2649,7 @@ input:checked+.slider-small:before {
 
 @media (max-width: 600px) {
     main {
-        padding: 0 1rem 1rem 1rem;
-        /* Removed top padding on mobile too */
+        padding: 1rem;
     }
 
     .card {
@@ -3319,10 +3318,6 @@ input:checked+.slider-small:before {
 }
 
 @media (max-width: 600px) {
-    #homeStatsCard {
-        margin-top: 1rem;
-    }
-
     .stats-footer-mask {
         bottom: 0;
         margin: 0 -1.35rem -1rem -1.35rem;
