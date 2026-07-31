@@ -537,16 +537,24 @@ export function showDailyMotivationToast() {
 }
 
 function renderActivityCharts() {
-    const container = document.getElementById('homeGlobalStatsCard');
-    if (!container) return;
+    const diffContainer = document.getElementById('homeDifficultyStatsCard');
+    const trendContainer = document.getElementById('homeWeeklyTrendCard');
+    const globalContainer = document.getElementById('homeGlobalStatsCard');
 
     const statsKeys = Object.keys(AppState.stats || {});
-    if (statsKeys.length === 0 && (!AppState.studyActivity || Object.keys(AppState.studyActivity).length === 0)) {
-        container.style.display = 'none';
+    const hasActivity = AppState.studyActivity && Object.keys(AppState.studyActivity).length > 0;
+    const hasStats = statsKeys.length > 0;
+
+    if (!hasStats && !hasActivity) {
+        if (diffContainer) diffContainer.style.display = 'none';
+        if (trendContainer) trendContainer.style.display = 'none';
+        if (globalContainer) globalContainer.style.display = 'none';
         return;
     }
-    
-    container.style.display = 'block';
+
+    if (diffContainer) diffContainer.style.display = 'block';
+    if (trendContainer) trendContainer.style.display = 'block';
+    if (globalContainer) globalContainer.style.display = 'block';
 
     // 1. Difficulty Donut Chart
     let diffCounts = { easy: 0, medium: 0, hard: 0, veryHard: 0, unsolved: 0 };

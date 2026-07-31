@@ -598,9 +598,9 @@
             </div>
 
             <!-- Global Stats Panel -->
-            <div class="card" id="homeGlobalStatsCard" style="margin-top: 1rem; display: none; padding-bottom: 0.5rem;">
-                <!-- Soru Zorluk Analizi -->
-                <div class="chart-section" style="margin-bottom: 2rem;">
+            <!-- Soru Zorluk Analizi Kartı -->
+            <div class="card" id="homeDifficultyStatsCard" style="margin-top: 1rem; display: none;">
+                <div class="chart-section">
                     <span style="font-size: 0.85rem; color: var(--text-secondary); font-weight: 700; text-transform: uppercase; letter-spacing: 0.5px;" data-i18n="question_difficulty_analysis">Soru Zorluk Analizi</span>
                     <div style="display: flex; gap: 2rem; margin-top: 1.25rem; align-items: center; flex-wrap: wrap;">
                         <div id="difficultyDonutChart" style="position: relative; width: 140px; height: 140px; border-radius: 50%; background: var(--surface-hover); flex-shrink: 0;">
@@ -613,8 +613,10 @@
                         </div>
                     </div>
                 </div>
+            </div>
 
-                <!-- Haftalık Çalışma Trendi -->
+            <!-- Haftalık Çalışma Trendi Kartı -->
+            <div class="card" id="homeWeeklyTrendCard" style="margin-top: 1rem; display: none;">
                 <div class="chart-section">
                     <span style="font-size: 0.85rem; color: var(--text-secondary); font-weight: 700; text-transform: uppercase; letter-spacing: 0.5px;" data-i18n="weekly_study_trend">Haftalık Çalışma Trendi</span>
                     <div id="weeklyTrendContainer" style="display: flex; height: 140px; margin-top: 1.25rem; flex-direction: column; position: relative;">
