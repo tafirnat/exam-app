@@ -39,6 +39,7 @@ export function renderContinuityBlock() {
     renderFocusSlide();
     initCarouselEvents();
     bindFocusModalEvents();
+    bindContinuityModalEvents();
 }
 
 function renderGlobalSlide(liveQ) {
@@ -78,29 +79,22 @@ function renderGlobalSlide(liveQ) {
         }
     }
     
-    // Tokens
+    // Tokens - ALWAYS render both tokens (Normal & Super/Joker)
     const tokensEl = document.getElementById('continuityTokens');
     tokensEl.innerHTML = '';
-    const freezeTokens = AppState.continuityConfig?.freezeTokens || { remaining: 1, total: 1 };
+    const freezeTokens = AppState.continuityConfig?.freezeTokens || { remaining: 1, total: 2 };
     
     const stats7 = getFsrsStatsForRange(7);
     const stats14 = getFsrsStatsForRange(14);
 
-    tokensEl.title = `Kalan Dondurma: ${freezeTokens.remaining}/${freezeTokens.total}\n` +
-        `• 7 Gün Seri + %70 FSRS: ${stats7.rate}% (${stats7.streakSustained ? 'Seri OK' : 'Seri Yok'})\n` +
-        `• 14 Gün Seri + %80 FSRS: ${stats14.rate}% (${stats14.streakSustained ? 'Seri OK' : 'Seri Yok'})`;
+    tokensEl.title = `Kalan Dondurma: ${freezeTokens.remaining}/2\n` +
+        `• 1. Jeton (Kar Tanesi): Hediye / 7 Gün Seri + %70 FSRS (${stats7.streakSustained ? 'Aktif' : 'Pasif'})\n` +
+        `• 2. Joker Jeton (Alev): 14 Gün Seri + %80 FSRS (${stats14.streakSustained ? 'Aktif' : 'Pasif'})`;
 
-    for (let i = 0; i < freezeTokens.total; i++) {
-        const svg = createTokenSvg(i, i < freezeTokens.remaining);
+    for (let i = 0; i < 2; i++) {
+        const isActive = i < (freezeTokens.remaining || 0);
+        const svg = createTokenSvg(i, isActive);
         tokensEl.appendChild(svg);
-    }
-
-    if (!tokensEl.dataset.bound) {
-        tokensEl.dataset.bound = 'true';
-        tokensEl.addEventListener('click', (e) => {
-            e.stopPropagation();
-            showFreezeTokenModal('global');
-        });
     }
 }
 
@@ -140,28 +134,21 @@ function renderFocusSlide() {
         }
     }
 
-    // Focus Tokens
+    // Focus Tokens - ALWAYS render both tokens (Normal & Super/Joker)
     const tokensEl = document.getElementById('focusContinuityTokens');
     tokensEl.innerHTML = '';
-    const focusTokens = AppState.continuityConfig?.focusFreezeTokens || { remaining: 1, total: 1 };
+    const focusTokens = AppState.continuityConfig?.focusFreezeTokens || { remaining: 1, total: 2 };
     const stats7 = getFocusStatsForRange(7);
     const stats14 = getFocusStatsForRange(14);
 
-    tokensEl.title = `Kalan Odak Dondurma: ${focusTokens.remaining}/${focusTokens.total}\n` +
-        `• 7 Gün Odak Seri: ${stats7.streakSustained ? 'Tamam' : 'Eksik'}\n` +
-        `• 14 Gün Odak Seri (Joker): ${stats14.streakSustained ? 'Tamam' : 'Eksik'}`;
+    tokensEl.title = `Kalan Odak Dondurma: ${focusTokens.remaining}/2\n` +
+        `• 1. Odak Jetonu: Hediye / 7 Gün Odak Seri (${stats7.streakSustained ? 'Aktif' : 'Pasif'})\n` +
+        `• 2. Joker Odak Jetonu: 14 Gün Odak Seri (${stats14.streakSustained ? 'Aktif' : 'Pasif'})`;
 
-    for (let i = 0; i < focusTokens.total; i++) {
-        const svg = createTokenSvg(i, i < focusTokens.remaining);
+    for (let i = 0; i < 2; i++) {
+        const isActive = i < (focusTokens.remaining || 0);
+        const svg = createTokenSvg(i, isActive);
         tokensEl.appendChild(svg);
-    }
-
-    if (!tokensEl.dataset.bound) {
-        tokensEl.dataset.bound = 'true';
-        tokensEl.addEventListener('click', (e) => {
-            e.stopPropagation();
-            showFreezeTokenModal('focus');
-        });
     }
 }
 
@@ -400,6 +387,53 @@ function bindFocusModalEvents() {
             modal.style.display = 'none';
             renderFocusSlide();
             showToast('Özel Odak kaynakları güncellendi');
+        });
+    }
+
+    if (modal && !modal.dataset.backdropBound) {
+        modal.dataset.backdropBound = 'true';
+        modal.addEventListener('click', (e) => {
+            if (e.target === modal) {
+                modal.style.display = 'none';
+            }
+        });
+    }
+}
+
+function bindContinuityModalEvents() {
+    const continuityInfoBtn = document.getElementById('continuityInfoBtn');
+    if (continuityInfoBtn && !continuityInfoBtn.dataset.bound) {
+        continuityInfoBtn.dataset.bound = 'true';
+        continuityInfoBtn.addEventListener('click', (e) => {
+            e.stopPropagation();
+            showContinuityInfoModal('global');
+        });
+    }
+
+    const focusInfoBtn = document.getElementById('focusContinuityInfoBtn');
+    if (focusInfoBtn && !focusInfoBtn.dataset.bound) {
+        focusInfoBtn.dataset.bound = 'true';
+        focusInfoBtn.addEventListener('click', (e) => {
+            e.stopPropagation();
+            showContinuityInfoModal('focus');
+        });
+    }
+
+    const continuityTokens = document.getElementById('continuityTokens');
+    if (continuityTokens && !continuityTokens.dataset.bound) {
+        continuityTokens.dataset.bound = 'true';
+        continuityTokens.addEventListener('click', (e) => {
+            e.stopPropagation();
+            showFreezeTokenModal('global');
+        });
+    }
+
+    const focusTokens = document.getElementById('focusContinuityTokens');
+    if (focusTokens && !focusTokens.dataset.bound) {
+        focusTokens.dataset.bound = 'true';
+        focusTokens.addEventListener('click', (e) => {
+            e.stopPropagation();
+            showFreezeTokenModal('focus');
         });
     }
 }
