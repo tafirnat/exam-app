@@ -424,8 +424,6 @@
                             <div id="continuityTokens" style="display:flex; gap:0.2rem; align-items:center;" title="Kalan Dondurma Jetonları">
                             </div>
                         </div>
-                        
-                        <div id="continuityHeatmap" style="display:flex; gap:0.25rem; height:14px; margin-top:0.6rem; width:100%; justify-content:flex-end;">
                         </div>
                     </div>
                 </div>
@@ -551,6 +549,30 @@
                         </svg>
                         <span data-i18n="show_stats" style="white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">Soru Detayları</span>
                     </button>
+                </div>
+            </div>
+
+            <!-- Heatmap Card (Yearly Overview) -->
+            <div class="card" id="homeHeatmapCard" style="margin-top: 1rem; display: none;">
+                <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom: 0.6rem;">
+                    <span style="font-size: 0.85rem; color: var(--text-primary); font-weight: 600;" data-i18n="activity_history_year">Yıllık Aktivite Geçmişi</span>
+                </div>
+                <div id="continuityHeatmapContainer" style="min-height: 120px; display: flex; flex-direction: column;">
+                    <div id="heatmapPlaceholder" style="flex: 1; display: flex; align-items: center; justify-content: center; color: var(--text-secondary); font-size: 0.8rem;">
+                        <span data-i18n="loading">Yükleniyor...</span>
+                    </div>
+                    <div id="continuityHeatmapWrapper" style="display: none; width:100%; overflow-x: auto; padding-bottom: 4px;">
+                        <div style="display: flex; gap: 4px;">
+                            <div id="heatmapYAxis" style="display: grid; grid-template-rows: repeat(7, 10px); gap: 2px; font-size: 0.55rem; color: var(--text-secondary); text-align: right; padding-right: 4px; margin-top: 14px; line-height: 10px;">
+                            </div>
+                            <div style="display: flex; flex-direction: column; flex: 1;">
+                                <div id="heatmapXAxis" style="display: flex; position: relative; height: 12px; font-size: 0.55rem; color: var(--text-secondary); margin-bottom: 2px;">
+                                </div>
+                                <div id="continuityHeatmap" style="display:grid; gap:2px;">
+                                </div>
+                            </div>
+                        </div>
+                    </div>
                 </div>
             </div>
         </div>
