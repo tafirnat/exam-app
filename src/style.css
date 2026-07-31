@@ -5457,49 +5457,87 @@ body.dnd-active {
     position: relative;
     width: 100%;
     overflow: hidden;
+    border-radius: var(--radius-lg);
 }
 
 .continuity-slide {
     display: none;
     width: 100%;
     margin-bottom: 0 !important;
-    transition: opacity 0.3s ease-in-out;
 }
 
 .continuity-slide.active {
     display: block;
-    animation: fadeInSlide 0.3s ease-in-out;
 }
 
-@keyframes fadeInSlide {
-    from {
-        opacity: 0;
-        transform: translateY(2px);
-    }
-    to {
-        opacity: 1;
-        transform: translateY(0);
-    }
+/* Smooth Right-to-Left Slide Transitions */
+.continuity-slide.slide-animating {
+    display: block !important;
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    width: 100%;
+    transition: transform 0.4s cubic-bezier(0.25, 1, 0.5, 1), opacity 0.4s ease;
+}
+
+.continuity-slide.slide-enter-right {
+    transform: translateX(100%);
+    opacity: 0.6;
+    z-index: 2;
+}
+
+.continuity-slide.slide-enter-active {
+    transform: translateX(0);
+    opacity: 1;
+}
+
+.continuity-slide.slide-exit-left {
+    transform: translateX(0);
+    opacity: 1;
+    z-index: 1;
+}
+
+.continuity-slide.slide-exit-active {
+    transform: translateX(-100%);
+    opacity: 0.6;
 }
 
 .continuity-dots {
     display: flex;
     justify-content: center;
-    gap: 6px;
-    margin-top: 6px;
+    align-items: center;
+    gap: 8px;
+    margin-top: 8px;
+    padding: 4px 0;
 }
 
 .continuity-dots .dot {
-    width: 7px;
-    height: 7px;
-    border-radius: 50%;
+    width: 32px;
+    height: 6px;
+    border-radius: 3px;
     background-color: var(--border-color);
     cursor: pointer;
-    transition: all 0.2s ease;
+    transition: background-color 0.25s ease, opacity 0.25s ease;
+    opacity: 0.45;
+    position: relative;
+}
+
+/* Touch hit area expansion for mobile */
+.continuity-dots .dot::after {
+    content: '';
+    position: absolute;
+    top: -8px;
+    bottom: -8px;
+    left: -4px;
+    right: -4px;
+}
+
+.continuity-dots .dot:hover {
+    opacity: 0.75;
 }
 
 .continuity-dots .dot.active {
     background-color: var(--primary-color);
-    width: 16px;
-    border-radius: 4px;
+    opacity: 1;
 }

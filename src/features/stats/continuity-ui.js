@@ -187,6 +187,8 @@ function createTokenSvg(active) {
     return svg;
 }
 
+let isAnimating = false;
+
 function initCarouselEvents() {
     const wrapper = document.getElementById('continuityCarouselWrapper');
     if (!wrapper || wrapper.dataset.carouselInited) return;
@@ -194,11 +196,40 @@ function initCarouselEvents() {
 
     const slides = wrapper.querySelectorAll('.continuity-slide');
     const dots = wrapper.querySelectorAll('.continuity-dots .dot');
+    if (!slides.length) return;
 
-    function goToSlide(index) {
-        currentSlideIndex = index;
-        slides.forEach((s, idx) => s.classList.toggle('active', idx === index));
-        dots.forEach((d, idx) => d.classList.toggle('active', idx === index));
+    function goToSlide(targetIndex) {
+        if (targetIndex === currentSlideIndex || isAnimating) return;
+
+        const currentSlide = slides[currentSlideIndex];
+        const nextSlide = slides[targetIndex];
+        if (!currentSlide || !nextSlide) return;
+
+        isAnimating = true;
+
+        // Highlight active dot immediately
+        dots.forEach((d, idx) => d.classList.toggle('active', idx === targetIndex));
+
+        // Right-to-left continuous slide transition
+        currentSlide.classList.add('slide-animating', 'slide-exit-left');
+        nextSlide.classList.add('slide-animating', 'slide-enter-right');
+
+        // Force browser layout reflow
+        void nextSlide.offsetWidth;
+
+        // Trigger CSS animations
+        currentSlide.classList.add('slide-exit-active');
+        nextSlide.classList.add('slide-enter-active');
+
+        currentSlideIndex = targetIndex;
+
+        setTimeout(() => {
+            slides.forEach((s, idx) => {
+                s.classList.remove('slide-animating', 'slide-enter-right', 'slide-enter-active', 'slide-exit-left', 'slide-exit-active');
+                s.classList.toggle('active', idx === targetIndex);
+            });
+            isAnimating = false;
+        }, 410);
     }
 
     function startTimer() {
@@ -218,11 +249,41 @@ function initCarouselEvents() {
 
     wrapper.addEventListener('mouseenter', stopTimer);
     wrapper.addEventListener('mouseleave', startTimer);
-    wrapper.addEventListener('touchstart', stopTimer, { passive: true });
-    wrapper.addEventListener('touchend', startTimer, { passive: true });
+
+    // Touch swipe handling for mobile
+    let touchStartX = 0;
+    let touchStartY = 0;
+
+    wrapper.addEventListener('touchstart', (e) => {
+        stopTimer();
+        if (e.touches.length === 1) {
+            touchStartX = e.touches[0].clientX;
+            touchStartY = e.touches[0].clientY;
+        }
+    }, { passive: true });
+
+    wrapper.addEventListener('touchend', (e) => {
+        startTimer();
+        if (e.changedTouches.length === 1) {
+            const diffX = e.changedTouches[0].clientX - touchStartX;
+            const diffY = e.changedTouches[0].clientY - touchStartY;
+            if (Math.abs(diffX) > 35 && Math.abs(diffX) > Math.abs(diffY)) {
+                if (diffX < 0) {
+                    // Swipe Left -> next slide
+                    const nextIdx = (currentSlideIndex + 1) % slides.length;
+                    goToSlide(nextIdx);
+                } else {
+                    // Swipe Right -> previous slide
+                    const prevIdx = (currentSlideIndex - 1 + slides.length) % slides.length;
+                    goToSlide(prevIdx);
+                }
+            }
+        }
+    }, { passive: true });
 
     dots.forEach((dot, idx) => {
-        dot.addEventListener('click', () => {
+        dot.addEventListener('click', (e) => {
+            e.stopPropagation();
             goToSlide(idx);
             startTimer();
         });
