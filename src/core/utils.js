@@ -179,7 +179,7 @@ export function showAlert(message, title = '') {
             return;
         }
 
-        messageEl.innerText = message;
+        messageEl.innerHTML = message;
         if (title) {
             titleEl.innerText = title;
             headerEl.style.display = 'block';

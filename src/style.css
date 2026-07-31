@@ -10,6 +10,7 @@
     --border-color: #e2e8f0;
     --primary-color: #3b82f6;
     --primary-hover: #2563eb;
+    --ice-blue: #38bdf8;
 
     /* Light Theme - Doğru/Yanlış Renkleri */
     --success-color: #22c55e;
@@ -5585,4 +5586,26 @@ body.dnd-active {
 .continuity-dots .dot.active {
     background-color: var(--primary-color);
     opacity: 1;
+}
+
+/* Continuity Info Button */
+.continuity-info-btn {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.3rem;
+    padding: 3px 8px;
+    background: transparent;
+    border: 1px solid var(--border-color, rgba(226, 232, 240, 0.7));
+    border-radius: 6px;
+    color: var(--text-secondary);
+    font-size: 0.72rem;
+    font-weight: 500;
+    cursor: pointer;
+    transition: color 0.2s ease, border-color 0.2s ease, background-color 0.2s ease;
+}
+
+.continuity-info-btn:hover {
+    color: var(--primary-color);
+    border-color: var(--primary-color);
+    background: var(--bg-hover, rgba(59, 130, 246, 0.08));
 }

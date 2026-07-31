@@ -15,7 +15,7 @@ import {
     calculateFocusTargetDistribution
 } from './continuity-engine.js';
 import { buildQuestionPool } from '../test/test-engine.js';
-import { showToast } from '../../core/utils.js';
+import { showToast, showAlert } from '../../core/utils.js';
 
 let carouselTimer = null;
 let currentSlideIndex = 0;
@@ -89,14 +89,6 @@ function renderGlobalSlide(liveQ) {
     tokensEl.title = `Kalan Dondurma: ${freezeTokens.remaining}/${freezeTokens.total}\n` +
         `• 7 Gün Seri + %70 FSRS: ${stats7.rate}% (${stats7.streakSustained ? 'Seri OK' : 'Seri Yok'})\n` +
         `• 14 Gün Seri + %80 FSRS: ${stats14.rate}% (${stats14.streakSustained ? 'Seri OK' : 'Seri Yok'})`;
-    
-    const tokenLabel = document.createElement('span');
-    tokenLabel.style.fontSize = '0.7rem';
-    tokenLabel.style.fontWeight = '600';
-    tokenLabel.style.color = 'var(--text-secondary)';
-    tokenLabel.style.marginRight = '2px';
-    tokenLabel.textContent = `Dondurma:`;
-    tokensEl.appendChild(tokenLabel);
 
     for (let i = 0; i < freezeTokens.total; i++) {
         const svg = createTokenSvg(i < freezeTokens.remaining);
@@ -151,14 +143,6 @@ function renderFocusSlide() {
         `• 7 Gün Odak Seri: ${stats7.streakSustained ? 'Tamam' : 'Eksik'}\n` +
         `• 14 Gün Odak Seri (Joker): ${stats14.streakSustained ? 'Tamam' : 'Eksik'}`;
 
-    const tokenLabel = document.createElement('span');
-    tokenLabel.style.fontSize = '0.7rem';
-    tokenLabel.style.fontWeight = '600';
-    tokenLabel.style.color = 'var(--text-secondary)';
-    tokenLabel.style.marginRight = '2px';
-    tokenLabel.textContent = `Dondurma:`;
-    tokensEl.appendChild(tokenLabel);
-
     for (let i = 0; i < focusTokens.total; i++) {
         const svg = createTokenSvg(i < focusTokens.remaining);
         tokensEl.appendChild(svg);
@@ -168,21 +152,28 @@ function renderFocusSlide() {
 function createTokenSvg(active) {
     const svg = document.createElementNS('http://www.w3.org/2000/svg', 'svg');
     svg.setAttribute('viewBox', '0 0 24 24');
-    svg.setAttribute('width', '16');
-    svg.setAttribute('height', '16');
+    svg.setAttribute('width', '18');
+    svg.setAttribute('height', '18');
     svg.setAttribute('fill', 'none');
-    svg.setAttribute('stroke', active ? 'var(--info-color, #3b82f6)' : 'var(--text-secondary)');
-    svg.setAttribute('stroke-width', '2');
+    const color = active ? 'var(--ice-blue, #38bdf8)' : 'var(--text-secondary)';
+    svg.setAttribute('stroke', color);
+    svg.setAttribute('stroke-width', '1.8');
     svg.setAttribute('stroke-linecap', 'round');
     svg.setAttribute('stroke-linejoin', 'round');
-    svg.style.opacity = active ? '1' : '0.3';
+    svg.style.opacity = active ? '1' : '0.25';
+    svg.style.flexShrink = '0';
+    if (active) {
+        svg.style.filter = 'drop-shadow(0 0 2.5px rgba(56, 189, 248, 0.45))';
+    }
     svg.innerHTML = `
         <line x1="12" y1="2" x2="12" y2="22"></line>
-        <path d="M17 5l-5 5-5-5"></path>
-        <path d="M17 19l-5-5-5 5"></path>
         <line x1="2" y1="12" x2="22" y2="12"></line>
-        <path d="M5 7l5 5-5 5"></path>
-        <path d="M19 7l-5 5 5 5"></path>
+        <line x1="4.93" y1="4.93" x2="19.07" y2="19.07"></line>
+        <line x1="19.07" y1="4.93" x2="4.93" y2="19.07"></line>
+        <path d="M9 5l3-3 3 3"></path>
+        <path d="M9 19l3 3 3-3"></path>
+        <path d="M5 9l-3 3 3 3"></path>
+        <path d="M19 9l3 3-3 3"></path>
     `;
     return svg;
 }
@@ -298,14 +289,32 @@ function initCarouselEvents() {
         }
     }, { passive: true });
 
+    // Dot click listeners
     dots.forEach((dot, idx) => {
-        dot.addEventListener('click', (e) => {
-            e.stopPropagation();
-            const dir = idx > currentSlideIndex ? 'next' : (idx < currentSlideIndex ? 'prev' : 'next');
+        dot.addEventListener('click', () => {
+            if (idx === currentSlideIndex) return;
+            const dir = idx > currentSlideIndex ? 'next' : 'prev';
             goToSlide(idx, dir);
             startTimer();
         });
     });
+
+    // Wire continuity info modal buttons
+    const continuityInfoBtn = document.getElementById('continuityInfoBtn');
+    if (continuityInfoBtn) {
+        continuityInfoBtn.addEventListener('click', (e) => {
+            e.stopPropagation();
+            showContinuityInfoModal('global');
+        });
+    }
+
+    const focusInfoBtn = document.getElementById('focusContinuityInfoBtn');
+    if (focusInfoBtn) {
+        focusInfoBtn.addEventListener('click', (e) => {
+            e.stopPropagation();
+            showContinuityInfoModal('focus');
+        });
+    }
 
     startTimer();
 }
@@ -781,4 +790,83 @@ function renderActivityCharts() {
         barWrap.appendChild(barInner);
         barsEl.appendChild(barWrap);
     });
+}
+
+export function showContinuityInfoModal(type) {
+    if (type === 'global') {
+        const title = '⚡ Genel FSRS Serisi Nedir & Nasıl Çalışır?';
+        const html = `
+            <div style="font-size: 0.88rem; color: var(--text-primary); text-align: left; display: flex; flex-direction: column; gap: 0.85rem;">
+                <div style="background: var(--bg-hover, rgba(59,130,246,0.06)); padding: 0.75rem 0.9rem; border-radius: 8px; border-left: 3px solid var(--primary-color);">
+                    <strong style="color: var(--primary-color); font-size: 0.92rem;">📌 Bu Kart Nedir?</strong>
+                    <p style="margin: 0.25rem 0 0 0; color: var(--text-secondary); line-height: 1.45;">
+                        Genel Seri, tüm soru bankanız genelinde FSRS (Spaced Repetition) sistemine göre vadesi gelen soruları çözerek çalışma sürekliliğinizi korumanızı sağlar.
+                    </p>
+                </div>
+
+                <div>
+                    <strong style="display: flex; align-items: center; gap: 0.35rem; margin-bottom: 0.35rem;">
+                        <span>🔄</span> Günlük Hedef & Seri Mantığı:
+                    </strong>
+                    <ul style="margin: 0; padding-left: 1.2rem; color: var(--text-secondary); line-height: 1.5;">
+                        <li>Her gün sistem FSRS algoritmik vadesi gelen soru hedefini belirler.</li>
+                        <li>Günün hedefini tamamladığınızda <strong>Seri Gün Sayısı (+1)</strong> artar.</li>
+                        <li>Vadesi gelen soru olmadığında seriniz otomatik olarak korunur.</li>
+                    </ul>
+                </div>
+
+                <div>
+                    <strong style="display: flex; align-items: center; gap: 0.35rem; margin-bottom: 0.35rem; color: var(--ice-blue, #38bdf8);">
+                        <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="2" x2="12" y2="22"></line><line x1="2" y1="12" x2="22" y2="12"></line><line x1="4.93" y1="4.93" x2="19.07" y2="19.07"></line><line x1="19.07" y1="4.93" x2="4.93" y2="19.07"></line><path d="M9 5l3-3 3 3"></path><path d="M9 19l3 3 3-3"></path><path d="M5 9l-3 3 3 3"></path><path d="M19 9l3 3-3 3"></path></svg>
+                        ❄️ Dondurma Jetonları (Seri Koruma):
+                    </strong>
+                    <p style="margin: 0 0 0.4rem 0; color: var(--text-secondary); line-height: 1.45;">
+                        Soru çözemediğiniz günlerde dondurma jetonunuz varsa otomatik olarak kullanılır ve seriniz sıfırlanmaz.
+                    </p>
+                    <ul style="margin: 0; padding-left: 1.2rem; color: var(--text-secondary); line-height: 1.5; font-size: 0.84rem;">
+                        <li><strong>1. Jeton:</strong> Son 7 günde kesintisiz seri + %70 FSRS başarısı ile kazanılır.</li>
+                        <li><strong>2. Jeton:</strong> Son 14 günde kesintisiz seri + %80 FSRS başarısı ile kazanılır.</li>
+                    </ul>
+                </div>
+            </div>
+        `;
+        showAlert(html, title);
+    } else {
+        const title = '🎯 Özel Odak Serisi Nedir & Nasıl Çalışır?';
+        const html = `
+            <div style="font-size: 0.88rem; color: var(--text-primary); text-align: left; display: flex; flex-direction: column; gap: 0.85rem;">
+                <div style="background: var(--bg-hover, rgba(59,130,246,0.06)); padding: 0.75rem 0.9rem; border-radius: 8px; border-left: 3px solid var(--info-color, #3b82f6);">
+                    <strong style="color: var(--info-color, #3b82f6); font-size: 0.92rem;">📌 Bu Kart Nedir?</strong>
+                    <p style="margin: 0.25rem 0 0 0; color: var(--text-secondary); line-height: 1.45;">
+                        Özel Odak Serisi, seçtiğiniz özel kaynaklara (en fazla 3 kaynak) odaklanarak özelleştirilmiş günlük çalışma disiplini sürdürmenizi sağlar.
+                    </p>
+                </div>
+
+                <div>
+                    <strong style="display: flex; align-items: center; gap: 0.35rem; margin-bottom: 0.35rem;">
+                        <span>⚙️</span> Kaynak Seçimi & Hedef:
+                    </strong>
+                    <ul style="margin: 0; padding-left: 1.2rem; color: var(--text-secondary); line-height: 1.5;">
+                        <li>Kart başlığındaki ⚙️ ikonuna dokunarak odaklanacağınız kaynakları seçebilirsiniz.</li>
+                        <li>Seçilen kaynaklardan günlük vadesi gelen sorular çözüldüğünde <strong>Odak Serisi (+1)</strong> artar.</li>
+                    </ul>
+                </div>
+
+                <div>
+                    <strong style="display: flex; align-items: center; gap: 0.35rem; margin-bottom: 0.35rem; color: var(--ice-blue, #38bdf8);">
+                        <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="2" x2="12" y2="22"></line><line x1="2" y1="12" x2="22" y2="12"></line><line x1="4.93" y1="4.93" x2="19.07" y2="19.07"></line><line x1="19.07" y1="4.93" x2="4.93" y2="19.07"></line><path d="M9 5l3-3 3 3"></path><path d="M9 19l3 3 3-3"></path><path d="M5 9l-3 3 3 3"></path><path d="M19 9l3 3-3 3"></path></svg>
+                        ❄️ Odak Dondurma Jetonları:
+                    </strong>
+                    <p style="margin: 0 0 0.4rem 0; color: var(--text-secondary); line-height: 1.45;">
+                        Seçili kaynaklardan soru çözülmeyen günlerde Odak Dondurma jetonunuz serinizi korur.
+                    </p>
+                    <ul style="margin: 0; padding-left: 1.2rem; color: var(--text-secondary); line-height: 1.5; font-size: 0.84rem;">
+                        <li><strong>1. Odak Jetonu:</strong> Son 7 günde kesintisiz Odak Serisi ile kazanılır.</li>
+                        <li><strong>2. Joker Jeton:</strong> Son 14 günde kesintisiz Odak Serisi ile kazanılır.</li>
+                    </ul>
+                </div>
+            </div>
+        `;
+        showAlert(html, title);
+    }
 }
