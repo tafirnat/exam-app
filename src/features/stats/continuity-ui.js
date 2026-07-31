@@ -166,6 +166,7 @@ function createTokenSvg(tokenIndex, active) {
     svg.setAttribute('viewBox', '0 0 1800 1800');
     svg.setAttribute('width', '20');
     svg.setAttribute('height', '20');
+    svg.setAttribute('data-token-index', tokenIndex);
     svg.style.flexShrink = '0';
     svg.style.transition = 'all 0.2s cubic-bezier(0.16, 1, 0.3, 1)';
     svg.style.cursor = 'pointer';
@@ -390,13 +391,24 @@ function bindContinuityModalEvents() {
     if (cardGlobal && !cardGlobal.dataset.bound) {
         cardGlobal.dataset.bound = 'true';
         cardGlobal.addEventListener('click', (e) => {
+            const tokenSvg = e.target.closest('svg[data-token-index]');
+            if (tokenSvg) {
+                e.stopPropagation();
+                const tokenIndex = parseInt(tokenSvg.getAttribute('data-token-index'), 10);
+                showSingleTokenModal('global', tokenIndex);
+                return;
+            }
             if (e.target.closest('#continuityTokens')) {
+                e.stopPropagation();
                 showFreezeTokenModal('global');
             } else if (e.target.closest('#continuityInfoBtn')) {
+                e.stopPropagation();
                 showContinuityInfoModal('global');
             } else if (e.target.closest('#globalRingContainer') || e.target.closest('#continuityRing') || e.target.closest('#continuityStreakCount') || e.target.closest('.ring-bg')) {
+                e.stopPropagation();
                 showContinuityProgressModal('global');
             } else if (e.target.closest('#continuityOverdueText')) {
+                e.stopPropagation();
                 showContinuityTargetModal('global');
             } else {
                 showContinuityInfoModal('global');
@@ -409,15 +421,28 @@ function bindContinuityModalEvents() {
         cardFocus.dataset.bound = 'true';
         cardFocus.addEventListener('click', (e) => {
             if (e.target.closest('#openFocusSourceModalBtn')) {
+                e.stopPropagation();
+                openFocusSourceModal();
+                return;
+            }
+            const tokenSvg = e.target.closest('svg[data-token-index]');
+            if (tokenSvg) {
+                e.stopPropagation();
+                const tokenIndex = parseInt(tokenSvg.getAttribute('data-token-index'), 10);
+                showSingleTokenModal('focus', tokenIndex);
                 return;
             }
             if (e.target.closest('#focusContinuityTokens')) {
+                e.stopPropagation();
                 showFreezeTokenModal('focus');
             } else if (e.target.closest('#focusContinuityInfoBtn')) {
+                e.stopPropagation();
                 showContinuityInfoModal('focus');
             } else if (e.target.closest('#focusRingContainer') || e.target.closest('#focusContinuityRing') || e.target.closest('#focusStreakCount') || e.target.closest('.ring-bg')) {
+                e.stopPropagation();
                 showContinuityProgressModal('focus');
             } else if (e.target.closest('#focusContinuityOverdueText')) {
+                e.stopPropagation();
                 showContinuityTargetModal('focus');
             } else {
                 showContinuityInfoModal('focus');
@@ -867,15 +892,58 @@ function renderActivityCharts() {
     });
 }
 
-function openInfoPopupModal(title, htmlContent) {
+function openInfoPopupModal(title, htmlContent, actionBtnConfig = null) {
     const overlay = document.getElementById('infoPopupOverlay');
     const titleEl = document.getElementById('infoPopupTitle');
     const bodyEl = document.getElementById('infoPopupBody');
+    const footerEl = document.getElementById('infoPopupFooter');
+    const closeBtn = document.getElementById('infoPopupCloseBtn');
     if (!overlay || !titleEl || !bodyEl) return;
 
     titleEl.innerHTML = title;
     bodyEl.innerHTML = htmlContent;
+
+    if (footerEl) {
+        footerEl.innerHTML = '';
+
+        if (actionBtnConfig) {
+            const actionBtn = document.createElement('button');
+            actionBtn.className = actionBtnConfig.className || 'btn btn-primary';
+            actionBtn.style.fontSize = '0.82rem';
+            actionBtn.style.padding = '0.4rem 0.85rem';
+            actionBtn.style.borderRadius = '6px';
+            actionBtn.style.cursor = 'pointer';
+            actionBtn.innerHTML = actionBtnConfig.text;
+            actionBtn.addEventListener('click', () => {
+                overlay.style.display = 'none';
+                if (typeof actionBtnConfig.onClick === 'function') {
+                    actionBtnConfig.onClick();
+                }
+            });
+            footerEl.appendChild(actionBtn);
+        }
+
+        const dismissBtn = document.createElement('button');
+        dismissBtn.className = 'btn btn-subtle';
+        dismissBtn.style.fontSize = '0.82rem';
+        dismissBtn.style.padding = '0.4rem 0.85rem';
+        dismissBtn.style.borderRadius = '6px';
+        dismissBtn.style.cursor = 'pointer';
+        dismissBtn.textContent = 'Anladım';
+        dismissBtn.addEventListener('click', () => {
+            overlay.style.display = 'none';
+        });
+        footerEl.appendChild(dismissBtn);
+    }
+
     overlay.style.display = 'flex';
+
+    if (closeBtn && !closeBtn.dataset.bound) {
+        closeBtn.dataset.bound = 'true';
+        closeBtn.addEventListener('click', () => {
+            overlay.style.display = 'none';
+        });
+    }
 
     if (!overlay.dataset.bound) {
         overlay.dataset.bound = 'true';
@@ -885,6 +953,69 @@ function openInfoPopupModal(title, htmlContent) {
                 overlay.style.display = 'none';
             }
         });
+    }
+}
+
+export function showSingleTokenModal(type, tokenIndex) {
+    const isGlobal = type === 'global';
+    const seriesTitle = isGlobal ? 'Genel FSRS Serisi' : 'Özel Odak Serisi';
+    
+    if (tokenIndex === 0) {
+        // 1st Snowflake: Buz Mavisi Kar Tanesi (Hediye Jeton)
+        const active = isGlobal ? false : true;
+        const title = `❄️ 1. Hediye Kar Tanesi Jetonu (Buz Mavisi)`;
+        const html = `
+            <div style="font-size: 0.88rem; color: var(--text-primary); text-align: left; display: flex; flex-direction: column; gap: 0.85rem;">
+                <div style="display: flex; align-items: center; justify-content: space-between; background: rgba(125, 211, 252, 0.1); padding: 0.75rem 0.9rem; border-radius: 8px; border-left: 3px solid #7dd3fc;">
+                    <div>
+                        <strong style="color: #7dd3fc; font-size: 0.92rem; display: block;">Jeton Tipi: Hediye Dondurma Jetonu</strong>
+                        <span style="font-size: 0.78rem; color: var(--text-secondary);">Ait Olduğu Seri: ${seriesTitle}</span>
+                    </div>
+                    <span style="font-size: 0.8rem; font-weight: 700; padding: 3px 8px; border-radius: 12px; background: ${active ? 'rgba(16, 185, 129, 0.2)' : 'rgba(148, 163, 184, 0.2)'}; color: ${active ? '#10b981' : 'var(--text-secondary)'};">
+                        ${active ? '● AKTİF' : '○ PASİF'}
+                    </span>
+                </div>
+
+                <div style="font-size: 0.83rem; color: var(--text-secondary); line-height: 1.5;">
+                    <p style="margin: 0 0 0.5rem 0;">
+                        Bu kar tanesi dondurma jetonu uygulamaya başlarken hediye edilen standart seri koruma hakkınızdır. Soru çözemediğiniz bir gün serinizi sıfırlanmaktan otomatik olarak korur.
+                    </p>
+                    <ul style="margin: 0; padding-left: 1.1rem; line-height: 1.6;">
+                        <li><strong>Yenilenme Şartı:</strong> Tüketilmesi halinde ${isGlobal ? '7 gün kesintisiz seri + %70 FSRS başarısı' : '7 gün kesintisiz Odak Serisi'} tamamlanarak tekrar kazanılır.</li>
+                        <li><strong>Görsel Özellik:</strong> Buz mavisi parlak kar tanesi simgesi.</li>
+                    </ul>
+                </div>
+            </div>
+        `;
+        openInfoPopupModal(title, html);
+    } else {
+        // 2nd Snowflake: Kızıl / Alev Renginde Joker Kar Tanesi
+        const active = isGlobal ? false : true;
+        const title = `🔥 2. Joker Kar Tanesi Jetonu (Kızıl / Alev)`;
+        const html = `
+            <div style="font-size: 0.88rem; color: var(--text-primary); text-align: left; display: flex; flex-direction: column; gap: 0.85rem;">
+                <div style="display: flex; align-items: center; justify-content: space-between; background: rgba(239, 68, 68, 0.08); padding: 0.75rem 0.9rem; border-radius: 8px; border-left: 3px solid #ef4444;">
+                    <div>
+                        <strong style="color: #ef4444; font-size: 0.92rem; display: block;">Jeton Tipi: Joker Dondurma Jetonu</strong>
+                        <span style="font-size: 0.78rem; color: var(--text-secondary);">Ait Olduğu Seri: ${seriesTitle}</span>
+                    </div>
+                    <span style="font-size: 0.8rem; font-weight: 700; padding: 3px 8px; border-radius: 12px; background: ${active ? 'rgba(239, 68, 68, 0.2)' : 'rgba(148, 163, 184, 0.2)'}; color: ${active ? '#ef4444' : 'var(--text-secondary)'};">
+                        ${active ? '● AKTİF (Joker)' : '○ PASİF'}
+                    </span>
+                </div>
+
+                <div style="font-size: 0.83rem; color: var(--text-secondary); line-height: 1.5;">
+                    <p style="margin: 0 0 0.5rem 0;">
+                        Bu kar tanesi jetonu premium bir <strong>Joker Jeton</strong>'dur. Kızıl ve alev rengi gölgesiyle öne çıkar. Hem Genel hem de Odak serileriniz için ortak çapraz koruma sağlar!
+                    </p>
+                    <ul style="margin: 0; padding-left: 1.1rem; line-height: 1.6;">
+                        <li><strong>Kazanım Şartı:</strong> ${isGlobal ? 'Son 14 günde kesintisiz seri + %80 FSRS başarısı' : 'Son 14 günde kesintisiz Odak Serisi'} tamamlanarak elde edilir.</li>
+                        <li><strong>Çapraz Joker Özelliği:</strong> Bir seride eksik olduğunuzda diğer serinin dondurma hakkı da devreye girebilir.</li>
+                    </ul>
+                </div>
+            </div>
+        `;
+        openInfoPopupModal(title, html);
     }
 }
 
@@ -978,7 +1109,14 @@ export function showContinuityInfoModal(type) {
                 </div>
             </div>
         `;
-        openInfoPopupModal(title, html);
+        const actionConfig = {
+            text: '⚙️ Kaynakları Seç',
+            className: 'btn btn-primary',
+            onClick: () => {
+                openFocusSourceModal();
+            }
+        };
+        openInfoPopupModal(title, html, actionConfig);
     }
 }
 
