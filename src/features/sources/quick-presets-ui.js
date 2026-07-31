@@ -425,8 +425,6 @@ export function showSourceQuickPresetsModal(source) {
     const subTitle = document.getElementById('sourceQuickPresetsSub');
     const listContainer = document.getElementById('sourceQuickPresetsList');
     const closeXBtn = document.getElementById('sourceQuickPresetsCloseXBtn');
-    const doneBtn = document.getElementById('sourceQuickPresetsDoneBtn');
-    const createBtn = document.getElementById('sourceQuickPresetsCreateNewBtn');
 
     if (!overlay || !listContainer) return;
 
@@ -437,8 +435,6 @@ export function showSourceQuickPresetsModal(source) {
     const closeSelf = () => {
         overlay.classList.remove('active');
         if (closeXBtn) closeXBtn.onclick = null;
-        if (doneBtn) doneBtn.onclick = null;
-        if (createBtn) createBtn.onclick = null;
         overlay.onclick = null;
     };
 
@@ -511,29 +507,8 @@ export function showSourceQuickPresetsModal(source) {
     overlay.classList.add('active');
 
     if (closeXBtn) closeXBtn.onclick = closeSelf;
-    if (doneBtn) doneBtn.onclick = closeSelf;
     overlay.onclick = (e) => {
         if (e.target === overlay) closeSelf();
     };
-
-    if (createBtn) {
-        createBtn.onclick = () => {
-            const newPreset = {
-                id: 'qp_' + Date.now() + '_' + Math.random().toString(36).substr(2, 4),
-                name: source.name || t('untitled_source'),
-                sourceIds: [source.id],
-                color: null,
-                order: (AppState.quickPresets || []).length,
-                createdAt: Date.now(),
-                updatedAt: Date.now()
-            };
-            AppState.quickPresets = AppState.quickPresets || [];
-            AppState.quickPresets.push(newPreset);
-            saveQuickPresets();
-            updateQuickSourcesDot();
-            if (typeof window.updateHomeStats === 'function') window.updateHomeStats();
-            renderList();
-        };
-    }
 }
 

@@ -136,8 +136,6 @@ test('showSourceQuickPresetsModal renders presets and toggles source inclusion',
             <p id="sourceQuickPresetsSub"></p>
             <div id="sourceQuickPresetsList"></div>
             <button id="sourceQuickPresetsCloseXBtn"></button>
-            <button id="sourceQuickPresetsDoneBtn"></button>
-            <button id="sourceQuickPresetsCreateNewBtn"></button>
         </div>
     `;
 
