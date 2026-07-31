@@ -82,17 +82,16 @@ function renderGlobalSlide(liveQ) {
     // Tokens - ALWAYS render both tokens (Normal & Super/Joker)
     const tokensEl = document.getElementById('continuityTokens');
     tokensEl.innerHTML = '';
-    const freezeTokens = AppState.continuityConfig?.freezeTokens || { remaining: 1, total: 2 };
     
     const stats7 = getFsrsStatsForRange(7);
     const stats14 = getFsrsStatsForRange(14);
 
-    tokensEl.title = `Kalan Dondurma: ${freezeTokens.remaining}/2\n` +
-        `• 1. Jeton (Kar Tanesi): Hediye / 7 Gün Seri + %70 FSRS (${stats7.streakSustained ? 'Aktif' : 'Pasif'})\n` +
-        `• 2. Joker Jeton (Alev): 14 Gün Seri + %80 FSRS (${stats14.streakSustained ? 'Aktif' : 'Pasif'})`;
+    tokensEl.title = `Kalan Dondurma: 0/2 (Test Modu: Pasif)\n` +
+        `• 1. Jeton (Buz Kar Tanesi): Pasif\n` +
+        `• 2. Joker Jeton (Kızıl Alev Kar Tanesi): Pasif`;
 
     for (let i = 0; i < 2; i++) {
-        const isActive = i < (freezeTokens.remaining || 0);
+        const isActive = false;
         const svg = createTokenSvg(i, isActive);
         tokensEl.appendChild(svg);
     }
@@ -144,16 +143,15 @@ function renderFocusSlide() {
     // Focus Tokens - ALWAYS render both tokens (Normal & Super/Joker)
     const tokensEl = document.getElementById('focusContinuityTokens');
     tokensEl.innerHTML = '';
-    const focusTokens = AppState.continuityConfig?.focusFreezeTokens || { remaining: 1, total: 2 };
     const stats7 = getFocusStatsForRange(7);
     const stats14 = getFocusStatsForRange(14);
 
-    tokensEl.title = `Kalan Odak Dondurma: ${focusTokens.remaining}/2\n` +
-        `• 1. Odak Jetonu: Hediye / 7 Gün Odak Seri (${stats7.streakSustained ? 'Aktif' : 'Pasif'})\n` +
-        `• 2. Joker Odak Jetonu: 14 Gün Odak Seri (${stats14.streakSustained ? 'Aktif' : 'Pasif'})`;
+    tokensEl.title = `Kalan Odak Dondurma: 2/2 (Test Modu: Aktif)\n` +
+        `• 1. Odak Jetonu (Buz Kar Tanesi): Aktif\n` +
+        `• 2. Joker Odak Jetonu (Kızıl/Alev Kar Tanesi): Aktif`;
 
     for (let i = 0; i < 2; i++) {
-        const isActive = i < (focusTokens.remaining || 0);
+        const isActive = true;
         const svg = createTokenSvg(i, isActive);
         tokensEl.appendChild(svg);
     }
@@ -168,15 +166,21 @@ function createTokenSvg(tokenIndex, active) {
     svg.style.transition = 'all 0.2s cubic-bezier(0.16, 1, 0.3, 1)';
     svg.style.cursor = 'pointer';
 
-    // Lighter, luminous ice blue color for vivid snowflake rendering
-    const iceColor = active ? '#7dd3fc' : 'var(--text-secondary)';
-    // Tip elements: fire orange for Joker (Token 1), ice blue for Normal (Token 0)
-    const tipColor = (tokenIndex === 1) ? (active ? '#f97316' : 'var(--text-secondary)') : iceColor;
+    // 1st snowflake (tokenIndex 0): Luminous ice blue
+    // 2nd snowflake (tokenIndex 1): Crimson / Flame red (Kızıl, alev rengi)
+    let iceColor, tipColor;
+    if (tokenIndex === 1) {
+        iceColor = active ? '#ef4444' : 'var(--text-secondary)';
+        tipColor = active ? '#f97316' : 'var(--text-secondary)';
+    } else {
+        iceColor = active ? '#7dd3fc' : 'var(--text-secondary)';
+        tipColor = iceColor;
+    }
 
     svg.style.opacity = active ? '1' : '0.35';
     if (active) {
         if (tokenIndex === 1) {
-            svg.style.filter = 'drop-shadow(0 0 5px rgba(249, 115, 22, 0.85))';
+            svg.style.filter = 'drop-shadow(0 0 6px rgba(239, 68, 68, 0.9))';
         } else {
             svg.style.filter = 'drop-shadow(0 0 4px rgba(125, 211, 252, 0.85))';
         }
@@ -385,7 +389,7 @@ function bindContinuityModalEvents() {
                 showFreezeTokenModal('global');
             } else if (e.target.closest('#continuityInfoBtn')) {
                 showContinuityInfoModal('global');
-            } else if (e.target.closest('#continuityRing') || e.target.closest('#continuityStreakCount') || e.target.closest('.ring-bg')) {
+            } else if (e.target.closest('#globalRingContainer') || e.target.closest('#continuityRing') || e.target.closest('#continuityStreakCount') || e.target.closest('.ring-bg')) {
                 showContinuityProgressModal('global');
             } else if (e.target.closest('#continuityOverdueText')) {
                 showContinuityTargetModal('global');
@@ -406,7 +410,7 @@ function bindContinuityModalEvents() {
                 showFreezeTokenModal('focus');
             } else if (e.target.closest('#focusContinuityInfoBtn')) {
                 showContinuityInfoModal('focus');
-            } else if (e.target.closest('#focusContinuityRing') || e.target.closest('#focusStreakCount') || e.target.closest('.ring-bg')) {
+            } else if (e.target.closest('#focusRingContainer') || e.target.closest('#focusContinuityRing') || e.target.closest('#focusStreakCount') || e.target.closest('.ring-bg')) {
                 showContinuityProgressModal('focus');
             } else if (e.target.closest('#focusContinuityOverdueText')) {
                 showContinuityTargetModal('focus');
@@ -985,10 +989,10 @@ export function showFreezeTokenModal(type) {
                     </p>
                 </div>
 
-                <div style="background: rgba(249, 115, 22, 0.08); padding: 0.75rem 0.9rem; border-radius: 8px; border-left: 3px solid #f97316;">
-                    <strong style="color: #f97316; font-size: 0.92rem;">🔥 2. Jeton (Joker Jeton - Turuncu Uçlu Kar Tanesi)</strong>
+                <div style="background: rgba(239, 68, 68, 0.08); padding: 0.75rem 0.9rem; border-radius: 8px; border-left: 3px solid #ef4444;">
+                    <strong style="color: #ef4444; font-size: 0.92rem;">🔥 2. Jeton (Joker Jeton - Kızıl/Alev Renginde Kar Tanesi)</strong>
                     <p style="margin: 0.25rem 0 0 0; color: var(--text-secondary); line-height: 1.45;">
-                        İkinci jeton bir <strong>Joker Jeton</strong>'dur. Hem normal serinizde hem de özel odak serinizde seri koruma hakkı olarak çapraz kullanılabilir!
+                        İkinci jeton bir <strong>Joker Jeton</strong>'dur. Kızıl ve alev rengindeki vurgusuyla öne çıkar. Hem normal serinizde hem de özel odak serinizde seri koruma hakkı olarak çapraz kullanılabilir!
                     </p>
                 </div>
 
