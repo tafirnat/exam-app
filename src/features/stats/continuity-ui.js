@@ -120,6 +120,11 @@ function renderHeatmapYearly() {
     yAxisEl.innerHTML = '';
     xAxisEl.innerHTML = '';
     
+    heatmapEl.style.gridTemplateRows = 'repeat(7, 10px)';
+    heatmapEl.style.gridAutoFlow = 'column';
+    heatmapEl.style.gridAutoColumns = '10px';
+    heatmapEl.style.justifyContent = 'flex-start';
+    
     const activities = AppState.studyActivity || {};
     const numDays = 365;
     
