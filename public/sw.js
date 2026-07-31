@@ -1,7 +1,7 @@
 // Bump on every release: the activate handler deletes any cache whose name no
 // longer matches, and an unchanged name is also what stops the browser from
 // noticing this file changed at all.
-const CACHE_NAME = 'focus-app-v20';
+const CACHE_NAME = 'focus-app-v21';
 // cache.addAll rejects as a whole if any one entry 404s, which would leave the
 // install with no cache at all — so this list has to track the files that
 // actually ship. All three samples are precached because the language is only
@@ -26,7 +26,7 @@ self.addEventListener('install', (event) => {
     );
 });
 
-// Activation: Clean up old caches
+// Activation: Clean up old caches and claim clients immediately
 self.addEventListener('activate', (event) => {
     event.waitUntil(
         caches.keys().then((cacheNames) => {
@@ -37,8 +37,15 @@ self.addEventListener('activate', (event) => {
                     }
                 })
             );
-        })
+        }).then(() => self.clients.claim())
     );
+});
+
+// Skip waiting message listener
+self.addEventListener('message', (event) => {
+    if (event.data && event.data.type === 'SKIP_WAITING') {
+        self.skipWaiting();
+    }
 });
 
 // Fetch: Network First Strategy

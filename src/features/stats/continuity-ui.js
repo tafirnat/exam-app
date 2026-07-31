@@ -87,8 +87,8 @@ function renderGlobalSlide(liveQ) {
     const stats14 = getFsrsStatsForRange(14);
 
     tokensEl.title = `Kalan Dondurma: 0/2 (Test Modu: Pasif)\n` +
-        `• 1. Jeton (Buz Kar Tanesi): Pasif\n` +
-        `• 2. Joker Jeton (Kızıl Alev Kar Tanesi): Pasif`;
+        `• 1. Hediye Jeton (Buz Mavisi Kar Tanesi): Pasif\n` +
+        `• 2. Joker Jeton (Kızıl / Alev Renginde Kar Tanesi): Pasif`;
 
     for (let i = 0; i < 2; i++) {
         const isActive = false;
@@ -147,8 +147,8 @@ function renderFocusSlide() {
     const stats14 = getFocusStatsForRange(14);
 
     tokensEl.title = `Kalan Odak Dondurma: 2/2 (Test Modu: Aktif)\n` +
-        `• 1. Odak Jetonu (Buz Kar Tanesi): Aktif\n` +
-        `• 2. Joker Odak Jetonu (Kızıl/Alev Kar Tanesi): Aktif`;
+        `• 1. Odak Hediye Jetonu (Buz Mavisi Kar Tanesi): Aktif\n` +
+        `• 2. Joker Odak Jetonu (Kızıl / Alev Renginde Kar Tanesi): Aktif`;
 
     for (let i = 0; i < 2; i++) {
         const isActive = true;
@@ -168,13 +168,15 @@ function createTokenSvg(tokenIndex, active) {
 
     // 1st snowflake (tokenIndex 0): Luminous ice blue
     // 2nd snowflake (tokenIndex 1): Crimson / Flame red (Kızıl, alev rengi)
-    let iceColor, tipColor;
+    let iceColor, tipColor, tokenLabel;
     if (tokenIndex === 1) {
         iceColor = active ? '#ef4444' : 'var(--text-secondary)';
         tipColor = active ? '#f97316' : 'var(--text-secondary)';
+        tokenLabel = `2. Joker Jeton (Kızıl / Alev Renginde Kar Tanesi) — ${active ? 'Aktif' : 'Pasif'}`;
     } else {
         iceColor = active ? '#7dd3fc' : 'var(--text-secondary)';
         tipColor = iceColor;
+        tokenLabel = `1. Hediye Jeton (Buz Mavisi Kar Tanesi) — ${active ? 'Aktif' : 'Pasif'}`;
     }
 
     svg.style.opacity = active ? '1' : '0.35';
@@ -194,7 +196,9 @@ function createTokenSvg(tokenIndex, active) {
         pathsHtml += `<path d="${d}" fill="${tipColor}"/>`;
     });
 
-    svg.innerHTML = `<g transform="translate(0.000000,1800.000000) scale(0.100000,-0.100000)" stroke="none">${pathsHtml}</g>`;
+    // <title> gives each snowflake its own hover tooltip, distinct from the
+    // summary tooltip on the container.
+    svg.innerHTML = `<title>${tokenLabel}</title><g transform="translate(0.000000,1800.000000) scale(0.100000,-0.100000)" stroke="none">${pathsHtml}</g>`;
     return svg;
 }
 
@@ -319,22 +323,8 @@ function initCarouselEvents() {
         });
     });
 
-    // Wire continuity info modal buttons
-    const continuityInfoBtn = document.getElementById('continuityInfoBtn');
-    if (continuityInfoBtn) {
-        continuityInfoBtn.addEventListener('click', (e) => {
-            e.stopPropagation();
-            showContinuityInfoModal('global');
-        });
-    }
-
-    const focusInfoBtn = document.getElementById('focusContinuityInfoBtn');
-    if (focusInfoBtn) {
-        focusInfoBtn.addEventListener('click', (e) => {
-            e.stopPropagation();
-            showContinuityInfoModal('focus');
-        });
-    }
+    // The info buttons are handled by the card-level delegation in
+    // bindContinuityModalEvents, so nothing extra is wired here.
 
     startTimer();
 }
@@ -921,7 +911,7 @@ export function showContinuityInfoModal(type) {
                         <div>
                             <strong style="font-size: 0.88rem; color: var(--text-primary);">Kar Tanesi & Joker Jetonlar</strong>
                             <p style="margin: 0.15rem 0 0 0; font-size: 0.83rem; color: var(--text-secondary); line-height: 1.45;">
-                                1. Jeton (Mavi Kar Tanesi) standart dondurma hakkıdır. 2. Jeton ise <strong>Joker Jeton</strong> olup turuncu/alev uçlu tasarımıyla hem Genel hem Odak serileriniz için ortak çapraz koruma sağlar.
+                                1. Jeton (<strong style="color:#7dd3fc;">Buz Mavisi Kar Tanesi</strong>) standart dondurma hakkıdır. 2. Jeton ise <strong>Joker Jeton</strong> olup <strong style="color:#ef4444;">Kızıl / Alev Renginde Kar Tanesi</strong> tasarımıyla hem Genel hem Odak serileriniz için ortak çapraz koruma sağlar.
                             </p>
                         </div>
                     </div>
@@ -966,7 +956,7 @@ export function showContinuityInfoModal(type) {
                         <div>
                             <strong style="font-size: 0.88rem; color: var(--text-primary);">Odak Kar Tanesi & Joker Jeton</strong>
                             <p style="margin: 0.15rem 0 0 0; font-size: 0.83rem; color: var(--text-secondary); line-height: 1.45;">
-                                1. Odak Jetonu (Buz Kar Tanesi) seçili kaynaklarınız için dondurma sağlarken, 2. Odak Jetonu (Joker Kar Tanesi - Turuncu Uçlu) hem Odak hem de Genel serilerinizde çapraz joker olarak kullanılabilir.
+                                1. Odak Jetonu (<strong style="color:#7dd3fc;">Buz Mavisi Kar Tanesi</strong>) seçili kaynaklarınız için dondurma sağlarken, 2. Odak Jetonu (<strong style="color:#ef4444;">Joker — Kızıl / Alev Renginde Kar Tanesi</strong>) hem Odak hem de Genel serilerinizde çapraz joker olarak kullanılabilir.
                             </p>
                         </div>
                     </div>
@@ -982,8 +972,8 @@ export function showFreezeTokenModal(type) {
         const title = '❄️ Genel Seri Dondurma Jetonları';
         const html = `
             <div style="font-size: 0.88rem; color: var(--text-primary); text-align: left; display: flex; flex-direction: column; gap: 0.85rem;">
-                <div style="background: rgba(56, 189, 248, 0.08); padding: 0.75rem 0.9rem; border-radius: 8px; border-left: 3px solid var(--ice-blue, #38bdf8);">
-                    <strong style="color: var(--ice-blue, #38bdf8); font-size: 0.92rem;">❄️ 1. Jeton (Mavi Kar Tanesi - Hediye Jeton)</strong>
+                <div style="background: rgba(125, 211, 252, 0.1); padding: 0.75rem 0.9rem; border-radius: 8px; border-left: 3px solid #7dd3fc;">
+                    <strong style="color: #7dd3fc; font-size: 0.92rem;">❄️ 1. Jeton (Buz Mavisi Kar Tanesi - Hediye Jeton)</strong>
                     <p style="margin: 0.25rem 0 0 0; color: var(--text-secondary); line-height: 1.45;">
                         İlk dondurma jetonunuz uygulamaya başlarken <strong>bir kereliğe mahsus hediye</strong> olarak verilir. Soru çözemediğiniz bir günde serinizi sıfırlanmaktan korur.
                     </p>
@@ -1001,8 +991,8 @@ export function showFreezeTokenModal(type) {
                         🏆 Jeton Kazanım Şartları:
                     </strong>
                     <ul style="margin: 0; padding-left: 1.2rem; color: var(--text-secondary); line-height: 1.5; font-size: 0.84rem;">
-                        <li><strong>1. Jeton (Mavi Kar Tanesi):</strong> Başlangıçta 1 defalık hediye (Tüketilirse: 7 gün seri + %70 FSRS başarısı ile tekrar kazanılır).</li>
-                        <li><strong>2. Jeton (Joker Jeton):</strong> Son 14 günde kesintisiz seri + %80 FSRS başarısı ile kazanılır.</li>
+                        <li><strong>1. Jeton (Buz Mavisi Kar Tanesi):</strong> Başlangıçta 1 defalık hediye (Tüketilirse: 7 gün seri + %70 FSRS başarısı ile tekrar kazanılır).</li>
+                        <li><strong>2. Jeton (Joker - Kızıl / Alev Renginde Kar Tanesi):</strong> Son 14 günde kesintisiz seri + %80 FSRS başarısı ile kazanılır.</li>
                     </ul>
                 </div>
             </div>
@@ -1012,17 +1002,17 @@ export function showFreezeTokenModal(type) {
         const title = '❄️ Odak Serisi Dondurma Jetonları';
         const html = `
             <div style="font-size: 0.88rem; color: var(--text-primary); text-align: left; display: flex; flex-direction: column; gap: 0.85rem;">
-                <div style="background: rgba(56, 189, 248, 0.08); padding: 0.75rem 0.9rem; border-radius: 8px; border-left: 3px solid var(--ice-blue, #38bdf8);">
-                    <strong style="color: var(--ice-blue, #38bdf8); font-size: 0.92rem;">❄️ 1. Odak Jetonu (Mavi Kar Tanesi - Hediye Jeton)</strong>
+                <div style="background: rgba(125, 211, 252, 0.1); padding: 0.75rem 0.9rem; border-radius: 8px; border-left: 3px solid #7dd3fc;">
+                    <strong style="color: #7dd3fc; font-size: 0.92rem;">❄️ 1. Odak Jetonu (Buz Mavisi Kar Tanesi - Hediye Jeton)</strong>
                     <p style="margin: 0.25rem 0 0 0; color: var(--text-secondary); line-height: 1.45;">
                         İlk odak dondurma jetonunuz <strong>bir kereliğe mahsus hediye</strong> olarak verilir. Seçili odak kaynaklarınızdan soru çözemediğiniz bir günde odak serinizi korur.
                     </p>
                 </div>
 
-                <div style="background: rgba(249, 115, 22, 0.08); padding: 0.75rem 0.9rem; border-radius: 8px; border-left: 3px solid #f97316;">
-                    <strong style="color: #f97316; font-size: 0.92rem;">🔥 2. Odak Jetonu (Joker Jeton - Turuncu Uçlu Kar Tanesi)</strong>
+                <div style="background: rgba(239, 68, 68, 0.08); padding: 0.75rem 0.9rem; border-radius: 8px; border-left: 3px solid #ef4444;">
+                    <strong style="color: #ef4444; font-size: 0.92rem;">🔥 2. Odak Jetonu (Joker Jeton - Kızıl / Alev Renginde Kar Tanesi)</strong>
                     <p style="margin: 0.25rem 0 0 0; color: var(--text-secondary); line-height: 1.45;">
-                        İkinci odak jetonunuz bir <strong>Joker Jeton</strong>'dur. Hem özel odak serinizde hem de normal serinizde ortak seri koruma hakkı olarak çapraz kullanılabilir!
+                        İkinci odak jetonunuz bir <strong>Joker Jeton</strong>'dur. Kızıl gövdesi ve alev renkli uçlarıyla ilk jetondan ayrılır. Hem özel odak serinizde hem de normal serinizde ortak seri koruma hakkı olarak çapraz kullanılabilir!
                     </p>
                 </div>
 
@@ -1031,8 +1021,8 @@ export function showFreezeTokenModal(type) {
                         🏆 Odak Serisi Jeton Kazanım Şartları:
                     </strong>
                     <ul style="margin: 0; padding-left: 1.2rem; color: var(--text-secondary); line-height: 1.5; font-size: 0.84rem;">
-                        <li><strong>1. Jeton (Mavi Kar Tanesi):</strong> Başlangıçta 1 defalık hediye (Tüketilirse: 7 gün kesintisiz Odak Serisi ile tekrar kazanılır).</li>
-                        <li><strong>2. Jeton (Joker Jeton):</strong> Son 14 günde kesintisiz Odak Serisi tamamlanarak kazanılır.</li>
+                        <li><strong>1. Jeton (Buz Mavisi Kar Tanesi):</strong> Başlangıçta 1 defalık hediye (Tüketilirse: 7 gün kesintisiz Odak Serisi ile tekrar kazanılır).</li>
+                        <li><strong>2. Jeton (Joker - Kızıl / Alev Renginde Kar Tanesi):</strong> Son 14 günde kesintisiz Odak Serisi tamamlanarak kazanılır.</li>
                     </ul>
                 </div>
             </div>

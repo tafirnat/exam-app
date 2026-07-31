@@ -1836,7 +1836,7 @@
         if ('serviceWorker' in navigator) {
             let refreshing = false;
 
-            // Handle controller change (new SW takes over)
+            // Handle controller change (new SW takes over) -> auto-reload page once
             navigator.serviceWorker.addEventListener('controllerchange', () => {
                 if (!refreshing) {
                     refreshing = true;
@@ -1845,19 +1845,45 @@
             });
 
             window.addEventListener('load', () => {
-                navigator.serviceWorker.register('./sw.js').then(reg => {
+                // updateViaCache: 'none' ensures browser fetches sw.js without HTTP disk caching delays
+                navigator.serviceWorker.register('./sw.js', { updateViaCache: 'none' }).then(reg => {
                     console.log('SW Registered:', reg.scope);
 
-                    // Check for updates periodically or on registration
+                    // If a worker is waiting, activate it immediately
+                    if (reg.waiting && navigator.serviceWorker.controller) {
+                        reg.waiting.postMessage({ type: 'SKIP_WAITING' });
+                    }
+
+                    // Check for updates whenever a new worker is installing
                     reg.addEventListener('updatefound', () => {
                         const newWorker = reg.installing;
+                        if (!newWorker) return;
                         newWorker.addEventListener('statechange', () => {
                             if (newWorker.state === 'installed' && navigator.serviceWorker.controller) {
-                                // New version available, inform user or auto-update
-                                console.log('New version available. Refreshing...');
+                                console.log('New SW version installed. Requesting skip waiting...');
+                                newWorker.postMessage({ type: 'SKIP_WAITING' });
                             }
                         });
                     });
+
+                    // Actively trigger update check on load
+                    reg.update().catch(() => {});
+
+                    // Check for update on tab focus or visibility change
+                    document.addEventListener('visibilitychange', () => {
+                        if (document.visibilityState === 'visible') {
+                            reg.update().catch(() => {});
+                        }
+                    });
+                    window.addEventListener('focus', () => {
+                        reg.update().catch(() => {});
+                    });
+
+                    // Periodically check for updates every 15 minutes
+                    setInterval(() => {
+                        reg.update().catch(() => {});
+                    }, 15 * 60 * 1000);
+
                 }).catch(err => {
                     console.log('SW Registration failed:', err);
                 });
