@@ -120,8 +120,13 @@ function renderFocusSlide() {
         const req = getDailyRequirement(focusOverdue);
         const solved = todayAct.focusQuestionCount || 0;
 
+        const selectedNames = focusSources
+            .map(id => (AppState.sources || []).find(s => s.id === id)?.name || id)
+            .filter(Boolean)
+            .join(', ');
+
         if (isFocusActivityRequirementMet(todayAct)) {
-            textEl.textContent = 'Odak serisi korundu 🎉';
+            textEl.textContent = selectedNames ? `Odak serisi korundu 🎉 (${selectedNames})` : 'Odak serisi korundu 🎉';
             textEl.style.color = 'var(--success-color, #10b981)';
             ring.style.stroke = 'var(--success-color, #10b981)';
             ring.setAttribute('stroke-dasharray', '100, 100');
@@ -130,7 +135,9 @@ function renderFocusSlide() {
             ring.setAttribute('stroke-dasharray', `${progress}, 100`);
             ring.style.stroke = 'var(--info-color, #3b82f6)';
             textEl.style.color = 'var(--text-secondary)';
-            textEl.textContent = `Odak Seri için: ${solved}/${req} soru (${focusSources.length} kaynak)`;
+            textEl.textContent = selectedNames 
+                ? `Seri için: ${solved}/${req} soru (${selectedNames})`
+                : `Seri için: ${solved}/${req} soru (${focusSources.length} kaynak)`;
         }
     }
 
@@ -157,20 +164,23 @@ function createTokenSvg(tokenIndex, active) {
     svg.setAttribute('viewBox', '0 0 24 24');
     svg.setAttribute('fill', 'none');
     svg.style.flexShrink = '0';
-    svg.style.transition = 'all 0.2s ease';
+    svg.style.transition = 'all 0.2s cubic-bezier(0.16, 1, 0.3, 1)';
+    svg.style.cursor = 'pointer';
+
+    // Lighter, luminous ice blue color for vivid snowflake rendering
+    const iceColor = active ? '#7dd3fc' : 'var(--text-secondary)';
 
     if (tokenIndex === 0) {
-        // Token 1: Snowflake (Kar Tanesi - Normal Dondurma Jetonu)
+        // Token 1: Snowflake (Kar Tanesi - Light Ice Blue)
         svg.setAttribute('width', '18');
         svg.setAttribute('height', '18');
-        const color = active ? 'var(--ice-blue, #38bdf8)' : 'var(--text-secondary)';
-        svg.setAttribute('stroke', color);
+        svg.setAttribute('stroke', iceColor);
         svg.setAttribute('stroke-width', '1.8');
         svg.setAttribute('stroke-linecap', 'round');
         svg.setAttribute('stroke-linejoin', 'round');
-        svg.style.opacity = active ? '1' : '0.25';
+        svg.style.opacity = active ? '1' : '0.35';
         if (active) {
-            svg.style.filter = 'drop-shadow(0 0 3px rgba(56, 189, 248, 0.75))';
+            svg.style.filter = 'drop-shadow(0 0 4px rgba(125, 211, 252, 0.85))';
         }
         svg.innerHTML = `
             <line x1="12" y1="2" x2="12" y2="22"></line>
@@ -187,11 +197,10 @@ function createTokenSvg(tokenIndex, active) {
         // Token 2: Super / Joker Token (Kar Tanesi + Alev)
         svg.setAttribute('width', '20');
         svg.setAttribute('height', '20');
-        svg.style.opacity = active ? '1' : '0.25';
+        svg.style.opacity = active ? '1' : '0.35';
         if (active) {
-            svg.style.filter = 'drop-shadow(0 0 4px rgba(249, 115, 22, 0.6))';
+            svg.style.filter = 'drop-shadow(0 0 5px rgba(249, 115, 22, 0.75))';
         }
-        const snowColor = active ? 'var(--ice-blue, #38bdf8)' : 'var(--text-secondary)';
         const flameColor = active ? '#ef4444' : 'var(--text-secondary)';
 
         svg.innerHTML = `
@@ -206,12 +215,12 @@ function createTokenSvg(tokenIndex, active) {
             </defs>
 
             <!-- Tilted Snowflake (Kar Tanesi) Bottom-Right -->
-            <line x1="9" y1="21" x2="21" y2="9" stroke="${snowColor}" stroke-width="1.8" stroke-linecap="round"></line>
-            <line x1="10" y1="10" x2="20" y2="20" stroke="${snowColor}" stroke-width="1.8" stroke-linecap="round"></line>
-            <line x1="8.5" y1="15" x2="21.5" y2="15" stroke="${snowColor}" stroke-width="1.8" stroke-linecap="round"></line>
-            <line x1="15" y1="8.5" x2="15" y2="21.5" stroke="${snowColor}" stroke-width="1.8" stroke-linecap="round"></line>
-            <path d="M17 11L19 9L21 11" stroke="${snowColor}" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"></path>
-            <path d="M13 19L11 21L9 19" stroke="${snowColor}" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"></path>
+            <line x1="9" y1="21" x2="21" y2="9" stroke="${iceColor}" stroke-width="1.8" stroke-linecap="round"></line>
+            <line x1="10" y1="10" x2="20" y2="20" stroke="${iceColor}" stroke-width="1.8" stroke-linecap="round"></line>
+            <line x1="8.5" y1="15" x2="21.5" y2="15" stroke="${iceColor}" stroke-width="1.8" stroke-linecap="round"></line>
+            <line x1="15" y1="8.5" x2="15" y2="21.5" stroke="${iceColor}" stroke-width="1.8" stroke-linecap="round"></line>
+            <path d="M17 11L19 9L21 11" stroke="${iceColor}" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"></path>
+            <path d="M13 19L11 21L9 19" stroke="${iceColor}" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"></path>
         `;
     }
 

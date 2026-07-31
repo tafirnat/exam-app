@@ -5642,19 +5642,25 @@ body.dnd-active {
     color: var(--primary-color);
 }
 
-/* Interactive Freeze Tokens Top-Right */
+/* Interactive Freeze Tokens Top-Right (Pure Icon View, No Button Box) */
 #continuityTokens,
 #focusContinuityTokens {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.35rem;
     cursor: pointer;
-    transition: transform 0.15s ease, opacity 0.15s ease;
-    padding: 2px 4px;
-    border-radius: 6px;
+    background: transparent !important;
+    border: none !important;
+    box-shadow: none !important;
+    padding: 0;
+    margin: 0;
+    transition: transform 0.15s ease;
 }
 
 #continuityTokens:hover,
 #focusContinuityTokens:hover {
-    transform: scale(1.08);
-    background: rgba(125, 211, 252, 0.1);
+    transform: scale(1.1);
+    background: transparent !important;
 }
 
 /* Info & Modal Overlay Base Styling */
