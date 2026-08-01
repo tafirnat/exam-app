@@ -16,7 +16,7 @@ export const MOTIVATION_QUOTES = [
             title: "The Starry Night",
             artist: "Vincent van Gogh",
             year: "1889",
-            url: "https://images.unsplash.com/photo-1579783902614-a3fb3927b675?q=80&w=1280&auto=format&fit=crop"
+            url: "https://images.unsplash.com/photo-1579783902614-a3fb3927b675?q=70&w=600&auto=format&fit=crop"
         }
     },
     {
@@ -29,7 +29,7 @@ export const MOTIVATION_QUOTES = [
             title: "Water Lilies",
             artist: "Claude Monet",
             year: "1916",
-            url: "https://images.unsplash.com/photo-1579783900882-c0d3dad7b119?q=80&w=1280&auto=format&fit=crop"
+            url: "https://images.unsplash.com/photo-1579783900882-c0d3dad7b119?q=70&w=600&auto=format&fit=crop"
         }
     },
     {
@@ -42,7 +42,7 @@ export const MOTIVATION_QUOTES = [
             title: "The Great Wave off Kanagawa",
             artist: "Katsushika Hokusai",
             year: "1831",
-            url: "https://images.unsplash.com/photo-1607604276583-eef5d076aa5f?q=80&w=1280&auto=format&fit=crop"
+            url: "https://images.unsplash.com/photo-1607604276583-eef5d076aa5f?q=70&w=600&auto=format&fit=crop"
         }
     },
     {
@@ -55,7 +55,7 @@ export const MOTIVATION_QUOTES = [
             title: "Wanderer above the Sea of Fog",
             artist: "Caspar David Friedrich",
             year: "1818",
-            url: "https://images.unsplash.com/photo-1506744038136-46273834b3fb?q=80&w=1280&auto=format&fit=crop"
+            url: "https://images.unsplash.com/photo-1506744038136-46273834b3fb?q=70&w=600&auto=format&fit=crop"
         }
     },
     {
@@ -68,7 +68,7 @@ export const MOTIVATION_QUOTES = [
             title: "Girl with a Pearl Earring",
             artist: "Johannes Vermeer",
             year: "1665",
-            url: "https://images.unsplash.com/photo-1578926375605-eaf7559b1458?q=80&w=1280&auto=format&fit=crop"
+            url: "https://images.unsplash.com/photo-1578926375605-eaf7559b1458?q=70&w=600&auto=format&fit=crop"
         }
     },
     {
@@ -81,7 +81,7 @@ export const MOTIVATION_QUOTES = [
             title: "The Kiss",
             artist: "Gustav Klimt",
             year: "1908",
-            url: "https://images.unsplash.com/photo-1579783928621-7a13d66a62d1?q=80&w=1280&auto=format&fit=crop"
+            url: "https://images.unsplash.com/photo-1579783928621-7a13d66a62d1?q=70&w=600&auto=format&fit=crop"
         }
     },
     {
@@ -94,7 +94,7 @@ export const MOTIVATION_QUOTES = [
             title: "Almond Blossoms",
             artist: "Vincent van Gogh",
             year: "1890",
-            url: "https://images.unsplash.com/photo-1577720643272-265f09367456?q=80&w=1280&auto=format&fit=crop"
+            url: "https://images.unsplash.com/photo-1577720643272-265f09367456?q=70&w=600&auto=format&fit=crop"
         }
     },
     {
@@ -107,7 +107,7 @@ export const MOTIVATION_QUOTES = [
             title: "Impression, Sunrise",
             artist: "Claude Monet",
             year: "1872",
-            url: "https://images.unsplash.com/photo-1518709268805-4e9042af9f23?q=80&w=1280&auto=format&fit=crop"
+            url: "https://images.unsplash.com/photo-1518709268805-4e9042af9f23?q=70&w=600&auto=format&fit=crop"
         }
     },
     {
@@ -120,7 +120,7 @@ export const MOTIVATION_QUOTES = [
             title: "Mona Lisa",
             artist: "Leonardo da Vinci",
             year: "1503",
-            url: "https://images.unsplash.com/photo-1582561846430-b307409c9162?q=80&w=1280&auto=format&fit=crop"
+            url: "https://images.unsplash.com/photo-1582561846430-b307409c9162?q=70&w=600&auto=format&fit=crop"
         }
     },
     {
@@ -133,7 +133,7 @@ export const MOTIVATION_QUOTES = [
             title: "Café Terrace at Night",
             artist: "Vincent van Gogh",
             year: "1888",
-            url: "https://images.unsplash.com/photo-1541701494587-cb58502866ab?q=80&w=1280&auto=format&fit=crop"
+            url: "https://images.unsplash.com/photo-1541701494587-cb58502866ab?q=70&w=600&auto=format&fit=crop"
         }
     },
     {
@@ -146,7 +146,7 @@ export const MOTIVATION_QUOTES = [
             title: "The Fighting Temeraire",
             artist: "J.M.W. Turner",
             year: "1839",
-            url: "https://images.unsplash.com/photo-1514539079130-25950c84af65?q=80&w=1280&auto=format&fit=crop"
+            url: "https://images.unsplash.com/photo-1514539079130-25950c84af65?q=70&w=600&auto=format&fit=crop"
         }
     },
     {
@@ -159,7 +159,7 @@ export const MOTIVATION_QUOTES = [
             title: "Luncheon of the Boating Party",
             artist: "Pierre-Auguste Renoir",
             year: "1881",
-            url: "https://images.unsplash.com/photo-1579783902614-a3fb3927b675?q=80&w=1280&auto=format&fit=crop"
+            url: "https://images.unsplash.com/photo-1579783902614-a3fb3927b675?q=70&w=600&auto=format&fit=crop"
         }
     },
     {
@@ -172,7 +172,7 @@ export const MOTIVATION_QUOTES = [
             title: "Composition VIII",
             artist: "Wassily Kandinsky",
             year: "1923",
-            url: "https://images.unsplash.com/photo-1541701494587-cb58502866ab?q=80&w=1280&auto=format&fit=crop"
+            url: "https://images.unsplash.com/photo-1541701494587-cb58502866ab?q=70&w=600&auto=format&fit=crop"
         }
     },
     {
@@ -185,7 +185,7 @@ export const MOTIVATION_QUOTES = [
             title: "The Birth of Venus",
             artist: "Sandro Botticelli",
             year: "1485",
-            url: "https://images.unsplash.com/photo-1579783900882-c0d3dad7b119?q=80&w=1280&auto=format&fit=crop"
+            url: "https://images.unsplash.com/photo-1579783900882-c0d3dad7b119?q=70&w=600&auto=format&fit=crop"
         }
     },
     {
@@ -198,7 +198,7 @@ export const MOTIVATION_QUOTES = [
             title: "The Card Players",
             artist: "Paul Cézanne",
             year: "1895",
-            url: "https://images.unsplash.com/photo-1579783928621-7a13d66a62d1?q=80&w=1280&auto=format&fit=crop"
+            url: "https://images.unsplash.com/photo-1579783928621-7a13d66a62d1?q=70&w=600&auto=format&fit=crop"
         }
     },
     {
@@ -211,7 +211,7 @@ export const MOTIVATION_QUOTES = [
             title: "The Night Watch",
             artist: "Rembrandt van Rijn",
             year: "1642",
-            url: "https://images.unsplash.com/photo-1518709268805-4e9042af9f23?q=80&w=1280&auto=format&fit=crop"
+            url: "https://images.unsplash.com/photo-1518709268805-4e9042af9f23?q=70&w=600&auto=format&fit=crop"
         }
     },
     {
@@ -224,7 +224,7 @@ export const MOTIVATION_QUOTES = [
             title: "A Sunday on La Grande Jatte",
             artist: "Georges Seurat",
             year: "1884",
-            url: "https://images.unsplash.com/photo-1577720643272-265f09367456?q=80&w=1280&auto=format&fit=crop"
+            url: "https://images.unsplash.com/photo-1577720643272-265f09367456?q=70&w=600&auto=format&fit=crop"
         }
     },
     {
@@ -237,7 +237,7 @@ export const MOTIVATION_QUOTES = [
             title: "The Sleeping Gypsy",
             artist: "Henri Rousseau",
             year: "1897",
-            url: "https://images.unsplash.com/photo-1506744038136-46273834b3fb?q=80&w=1280&auto=format&fit=crop"
+            url: "https://images.unsplash.com/photo-1506744038136-46273834b3fb?q=70&w=600&auto=format&fit=crop"
         }
     },
     {
@@ -250,7 +250,7 @@ export const MOTIVATION_QUOTES = [
             title: "The Creation of Adam",
             artist: "Michelangelo",
             year: "1512",
-            url: "https://images.unsplash.com/photo-1579783902614-a3fb3927b675?q=80&w=1280&auto=format&fit=crop"
+            url: "https://images.unsplash.com/photo-1579783902614-a3fb3927b675?q=70&w=600&auto=format&fit=crop"
         }
     },
     {
@@ -263,7 +263,7 @@ export const MOTIVATION_QUOTES = [
             title: "Irises",
             artist: "Vincent van Gogh",
             year: "1889",
-            url: "https://images.unsplash.com/photo-1577720643272-265f09367456?q=80&w=1280&auto=format&fit=crop"
+            url: "https://images.unsplash.com/photo-1577720643272-265f09367456?q=70&w=600&auto=format&fit=crop"
         }
     },
     {
@@ -276,7 +276,7 @@ export const MOTIVATION_QUOTES = [
             title: "The Ninth Wave",
             artist: "Ivan Aivazovsky",
             year: "1850",
-            url: "https://images.unsplash.com/photo-1518709268805-4e9042af9f23?q=80&w=1280&auto=format&fit=crop"
+            url: "https://images.unsplash.com/photo-1518709268805-4e9042af9f23?q=70&w=600&auto=format&fit=crop"
         }
     },
     {
@@ -289,7 +289,7 @@ export const MOTIVATION_QUOTES = [
             title: "Woman with a Parasol",
             artist: "Claude Monet",
             year: "1875",
-            url: "https://images.unsplash.com/photo-1579783900882-c0d3dad7b119?q=80&w=1280&auto=format&fit=crop"
+            url: "https://images.unsplash.com/photo-1579783900882-c0d3dad7b119?q=70&w=600&auto=format&fit=crop"
         }
     },
     {
@@ -302,7 +302,7 @@ export const MOTIVATION_QUOTES = [
             title: "Mont Sainte-Victoire",
             artist: "Paul Cézanne",
             year: "1904",
-            url: "https://images.unsplash.com/photo-1506744038136-46273834b3fb?q=80&w=1280&auto=format&fit=crop"
+            url: "https://images.unsplash.com/photo-1506744038136-46273834b3fb?q=70&w=600&auto=format&fit=crop"
         }
     },
     {
@@ -315,7 +315,7 @@ export const MOTIVATION_QUOTES = [
             title: "The Artist's Garden at Giverny",
             artist: "Claude Monet",
             year: "1900",
-            url: "https://images.unsplash.com/photo-1579783900882-c0d3dad7b119?q=80&w=1280&auto=format&fit=crop"
+            url: "https://images.unsplash.com/photo-1579783900882-c0d3dad7b119?q=70&w=600&auto=format&fit=crop"
         }
     },
     {
@@ -328,7 +328,7 @@ export const MOTIVATION_QUOTES = [
             title: "Wheatfield with Crows",
             artist: "Vincent van Gogh",
             year: "1890",
-            url: "https://images.unsplash.com/photo-1579783902614-a3fb3927b675?q=80&w=1280&auto=format&fit=crop"
+            url: "https://images.unsplash.com/photo-1579783902614-a3fb3927b675?q=70&w=600&auto=format&fit=crop"
         }
     },
     {
@@ -341,7 +341,7 @@ export const MOTIVATION_QUOTES = [
             title: "Carnation, Lily, Lily, Rose",
             artist: "John Singer Sargent",
             year: "1885",
-            url: "https://images.unsplash.com/photo-1577720643272-265f09367456?q=80&w=1280&auto=format&fit=crop"
+            url: "https://images.unsplash.com/photo-1577720643272-265f09367456?q=70&w=600&auto=format&fit=crop"
         }
     },
     {
@@ -354,7 +354,7 @@ export const MOTIVATION_QUOTES = [
             title: "The Dance Class",
             artist: "Edgar Degas",
             year: "1874",
-            url: "https://images.unsplash.com/photo-1578926375605-eaf7559b1458?q=80&w=1280&auto=format&fit=crop"
+            url: "https://images.unsplash.com/photo-1578926375605-eaf7559b1458?q=70&w=600&auto=format&fit=crop"
         }
     },
     {
@@ -367,7 +367,7 @@ export const MOTIVATION_QUOTES = [
             title: "The Sea of Ice",
             artist: "Caspar David Friedrich",
             year: "1824",
-            url: "https://images.unsplash.com/photo-1506744038136-46273834b3fb?q=80&w=1280&auto=format&fit=crop"
+            url: "https://images.unsplash.com/photo-1506744038136-46273834b3fb?q=70&w=600&auto=format&fit=crop"
         }
     },
     {
@@ -380,7 +380,7 @@ export const MOTIVATION_QUOTES = [
             title: "The Boulevard Montmartre at Night",
             artist: "Camille Pissarro",
             year: "1897",
-            url: "https://images.unsplash.com/photo-1541701494587-cb58502866ab?q=80&w=1280&auto=format&fit=crop"
+            url: "https://images.unsplash.com/photo-1541701494587-cb58502866ab?q=70&w=600&auto=format&fit=crop"
         }
     },
     {
@@ -393,7 +393,7 @@ export const MOTIVATION_QUOTES = [
             title: "A Bar at the Folies-Bergère",
             artist: "Édouard Manet",
             year: "1882",
-            url: "https://images.unsplash.com/photo-1579783928621-7a13d66a62d1?q=80&w=1280&auto=format&fit=crop"
+            url: "https://images.unsplash.com/photo-1579783928621-7a13d66a62d1?q=70&w=600&auto=format&fit=crop"
         }
     },
     {
@@ -406,7 +406,7 @@ export const MOTIVATION_QUOTES = [
             title: "Burlaks on the Volga",
             artist: "Ilya Repin",
             year: "1873",
-            url: "https://images.unsplash.com/photo-1518709268805-4e9042af9f23?q=80&w=1280&auto=format&fit=crop"
+            url: "https://images.unsplash.com/photo-1518709268805-4e9042af9f23?q=70&w=600&auto=format&fit=crop"
         }
     },
     {
@@ -419,7 +419,7 @@ export const MOTIVATION_QUOTES = [
             title: "The Starry Night",
             artist: "Vincent van Gogh",
             year: "1889",
-            url: "https://images.unsplash.com/photo-1579783902614-a3fb3927b675?q=80&w=1280&auto=format&fit=crop"
+            url: "https://images.unsplash.com/photo-1579783902614-a3fb3927b675?q=70&w=600&auto=format&fit=crop"
         }
     },
     {
@@ -432,7 +432,7 @@ export const MOTIVATION_QUOTES = [
             title: "The Blue Horse I",
             artist: "Franz Marc",
             year: "1911",
-            url: "https://images.unsplash.com/photo-1577720643272-265f09367456?q=80&w=1280&auto=format&fit=crop"
+            url: "https://images.unsplash.com/photo-1577720643272-265f09367456?q=70&w=600&auto=format&fit=crop"
         }
     },
     {
@@ -445,7 +445,7 @@ export const MOTIVATION_QUOTES = [
             title: "Composition VIII",
             artist: "Wassily Kandinsky",
             year: "1923",
-            url: "https://images.unsplash.com/photo-1541701494587-cb58502866ab?q=80&w=1280&auto=format&fit=crop"
+            url: "https://images.unsplash.com/photo-1541701494587-cb58502866ab?q=70&w=600&auto=format&fit=crop"
         }
     },
     {
@@ -458,7 +458,7 @@ export const MOTIVATION_QUOTES = [
             title: "Wanderer above the Sea of Fog",
             artist: "Caspar David Friedrich",
             year: "1818",
-            url: "https://images.unsplash.com/photo-1506744038136-46273834b3fb?q=80&w=1280&auto=format&fit=crop"
+            url: "https://images.unsplash.com/photo-1506744038136-46273834b3fb?q=70&w=600&auto=format&fit=crop"
         }
     },
     {
@@ -471,7 +471,7 @@ export const MOTIVATION_QUOTES = [
             title: "The Great Wave off Kanagawa",
             artist: "Katsushika Hokusai",
             year: "1831",
-            url: "https://images.unsplash.com/photo-1607604276583-eef5d076aa5f?q=80&w=1280&auto=format&fit=crop"
+            url: "https://images.unsplash.com/photo-1607604276583-eef5d076aa5f?q=70&w=600&auto=format&fit=crop"
         }
     }
 ];

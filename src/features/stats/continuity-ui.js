@@ -326,6 +326,14 @@ function renderFocusSlide() {
     renderStreakRunButton('focus');
 }
 
+function optimizeCdnImageUrl(url) {
+    if (!url) return '';
+    if (url.includes('images.unsplash.com')) {
+        return url.replace(/w=\d+/, 'w=600').replace(/q=\d+/, 'q=70');
+    }
+    return url;
+}
+
 export function renderMotivationSlide() {
     const textEl = document.getElementById('motivationQuoteText');
     const authorEl = document.getElementById('motivationQuoteAuthor');
@@ -345,7 +353,8 @@ export function renderMotivationSlide() {
     authorEl.textContent = `— ${quote.author}`;
 
     if (quote.artwork && quote.artwork.url) {
-        card.style.backgroundImage = `url("${quote.artwork.url}")`;
+        const optimizedUrl = optimizeCdnImageUrl(quote.artwork.url);
+        card.style.backgroundImage = `url("${optimizedUrl}")`;
         card.style.backgroundSize = 'cover';
         card.style.backgroundPosition = 'center center';
         if (artworkEl) {
@@ -393,7 +402,8 @@ export function bindMotivationEvents() {
             authorEl.textContent = `— ${newQuote.author}`;
 
             if (newQuote.artwork) {
-                card.style.backgroundImage = `url('${newQuote.artwork.url}')`;
+                const optimizedUrl = optimizeCdnImageUrl(newQuote.artwork.url);
+                card.style.backgroundImage = `url('${optimizedUrl}')`;
                 if (artworkEl) {
                     artworkEl.textContent = `${newQuote.artwork.artist} — ${newQuote.artwork.title} (${newQuote.artwork.year})`;
                     artworkEl.title = `Günün Eseri: ${newQuote.artwork.title} by ${newQuote.artwork.artist} (${newQuote.artwork.year})`;
