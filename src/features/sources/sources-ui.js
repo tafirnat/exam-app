@@ -356,7 +356,19 @@ export function showSourceActions(source) {
         if (toggleQaBtn) toggleQaBtn.onclick = null;
         const fpBtn = document.getElementById('modalFocusPoolBtn');
         if (fpBtn) fpBtn.onclick = null;
+        const inspectBtn = document.getElementById('modalInspectQuestionsBtn');
+        if (inspectBtn) inspectBtn.onclick = null;
     };
+
+    const inspectQuestionsBtn = document.getElementById('modalInspectQuestionsBtn');
+    if (inspectQuestionsBtn) {
+        inspectQuestionsBtn.onclick = () => {
+            closeActions();
+            AppState.currentSourceKey = source.id;
+            if (window.switchView) window.switchView('stats');
+            if (typeof window.renderStatsList === 'function') window.renderStatsList('all');
+        };
+    }
 
     if (toggleQaBtn) {
         toggleQaBtn.onclick = async () => {

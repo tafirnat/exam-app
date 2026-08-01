@@ -1237,6 +1237,24 @@ function bindDifficultyCardControls() {
             toggleStar();
         };
     }
+
+    const inspectBtn = document.getElementById('diffCardInspectBtn');
+    if (inspectBtn) {
+        inspectBtn.onclick = (e) => {
+            e.stopPropagation();
+            if (currentDifficultyViewId !== 'all') {
+                AppState.currentSourceKey = currentDifficultyViewId;
+            } else {
+                AppState.currentSourceKey = null;
+            }
+            if (typeof window.switchView === 'function') {
+                window.switchView('stats');
+            }
+            if (typeof window.renderStatsList === 'function') {
+                window.renderStatsList('all');
+            }
+        };
+    }
 }
 
 function renderActivityCharts() {
