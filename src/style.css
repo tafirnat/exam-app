@@ -6269,7 +6269,7 @@ body.dnd-active {
     overflow: hidden;
     text-overflow: ellipsis;
     min-width: 0;
-    max-width: 100%;
+    max-width: 320px;
     flex: 1;
     display: block;
     transition: color 0.15s ease;
@@ -6277,7 +6277,7 @@ body.dnd-active {
 
 @media (max-width: 600px) {
     .diff-card-source-text {
-        max-width: 150px;
+        max-width: 230px;
     }
 }
 

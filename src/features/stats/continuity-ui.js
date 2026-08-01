@@ -1260,7 +1260,7 @@ function renderActivityCharts() {
     const badgeEl = document.getElementById('diffCardSourceBadge');
     if (badgeTextEl) {
         const rawName = currentItem.name || '';
-        const truncatedName = rawName.length > 25 ? rawName.substring(0, 22) + '...' : rawName;
+        const truncatedName = rawName.length > 40 ? rawName.substring(0, 37) + '...' : rawName;
         badgeTextEl.textContent = truncatedName;
         if (badgeEl) {
             badgeEl.title = rawName;
