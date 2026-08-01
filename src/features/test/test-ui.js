@@ -1473,11 +1473,15 @@ export function updateFooterTags(tags, containerId) {
         tagEl.style.cursor = 'pointer'; // Ensure pointer cursor for accessibility
         tagEl.onclick = (e) => {
             e.stopPropagation();
-            if (window.switchView) window.switchView('stats');
-            const searchInput = document.getElementById('statsSearchInput');
-            if (searchInput) searchInput.value = '#' + tag;
-            if (typeof window.syncStatsSearchUI === 'function') window.syncStatsSearchUI(true);
-            if (typeof window.renderStatsList === 'function') window.renderStatsList('all', '#' + tag);
+            if (typeof window.executeTagSearch === 'function') {
+                window.executeTagSearch(tag);
+            } else {
+                if (window.switchView) window.switchView('stats');
+                const searchInput = document.getElementById('statsSearchInput');
+                if (searchInput) searchInput.value = '#' + tag;
+                if (typeof window.syncStatsSearchUI === 'function') window.syncStatsSearchUI(true);
+                if (typeof window.renderStatsList === 'function') window.renderStatsList('all', '#' + tag);
+            }
         };
         container.appendChild(tagEl);
     });

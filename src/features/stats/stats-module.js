@@ -37,7 +37,9 @@ export function renderStatsList(filter = 'all', searchKeyword = '') {
 
     const backBtn = document.getElementById('statsBackBtn');
     if (backBtn) {
-        if (isTagMode) {
+        if (typeof window.handleStatsBack === 'function') {
+            backBtn.onclick = window.handleStatsBack;
+        } else if (isTagMode) {
             backBtn.onclick = () => {
                 AppState.activeStatsFilter = 'all'; // Tag modundan çıkışta filtreyi sıfırla
                 if (AppState.navigationSourceView) {
@@ -284,10 +286,14 @@ export function renderStatsList(filter = 'all', searchKeyword = '') {
             pill.onclick = (e) => {
                 e.stopPropagation();
                 const tag = pill.dataset.tag;
-                const searchInput = document.getElementById('statsSearchInput');
-                if (searchInput) searchInput.value = '#' + tag;
-                if (typeof window.syncStatsSearchUI === 'function') window.syncStatsSearchUI(true);
-                renderStatsList('all', '#' + tag);
+                if (typeof window.executeTagSearch === 'function') {
+                    window.executeTagSearch(tag);
+                } else {
+                    const searchInput = document.getElementById('statsSearchInput');
+                    if (searchInput) searchInput.value = '#' + tag;
+                    if (typeof window.syncStatsSearchUI === 'function') window.syncStatsSearchUI(true);
+                    renderStatsList('all', '#' + tag);
+                }
             };
         });
         list.appendChild(item);

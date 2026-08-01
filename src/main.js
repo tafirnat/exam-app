@@ -321,25 +321,63 @@ const initApp = () => {
         window.onpopstate = (e) => {
             // Priority: Close any open modal first
             const modalClosed = closeAllModals();
-            
-            // If a modal was closed, we might want to stay on the same page?
-            // However, the browser already moved the history. 
-            // To prevent double navigation, we check if it was just a modal close.
-            
-            if (e.state && e.state.view) {
-                switchView(e.state.view, true);
-            } else {
-                switchView('home', true);
+
+            const state = e.state || {};
+            const targetView = state.view || 'home';
+            const searchQuery = state.searchQuery || '';
+            const filter = state.filter || 'all';
+
+            // Switch view without pushing new history state
+            switchView(targetView, true);
+
+            if (targetView === 'stats') {
+                const searchInput = document.getElementById('statsSearchInput');
+                if (searchInput) {
+                    searchInput.value = searchQuery;
+                }
+                if (typeof window.syncStatsSearchUI === 'function') {
+                    window.syncStatsSearchUI(!!searchQuery);
+                }
+                if (AppState.activeTagFilter && !filter.startsWith('tag:')) {
+                    AppState.activeTagFilter = null;
+                }
+                renderStatsList(filter, searchQuery);
             }
         };
 
         // Initialize first state
         if (!history.state) {
-            const initialView = window.location.hash.replace('#', '') || 'home';
+            let hash = window.location.hash.replace('#', '');
+            let initialView = 'home';
+            let initialQuery = '';
+            if (hash.includes('?')) {
+                const parts = hash.split('?');
+                initialView = parts[0];
+                try {
+                    const params = new URLSearchParams(parts[1]);
+                    initialQuery = params.get('q') || '';
+                } catch (err) { }
+            } else {
+                initialView = hash;
+            }
+
             const validViews = ['home', 'test', 'stats', 'sources', 'statsPreview', 'results'];
             const startView = validViews.includes(initialView) ? initialView : 'home';
-            history.replaceState({ view: startView }, '', `#${startView}`);
-            if (startView !== 'home') switchView(startView, true);
+            const hashUrl = initialQuery ? `#${startView}?q=${encodeURIComponent(initialQuery)}` : `#${startView}`;
+            
+            history.replaceState({ view: startView, searchQuery: initialQuery, filter: 'all' }, '', hashUrl);
+            
+            if (startView !== 'home' || initialQuery) {
+                switchView(startView, true);
+                if (startView === 'stats' && initialQuery) {
+                    const searchInput = document.getElementById('statsSearchInput');
+                    if (searchInput) searchInput.value = initialQuery;
+                    if (typeof window.syncStatsSearchUI === 'function') {
+                        window.syncStatsSearchUI(true);
+                    }
+                    renderStatsList('all', initialQuery);
+                }
+            }
         }
     } catch (err) {
         console.error('CRITICAL INITIALIZATION ERROR:', err);
@@ -1102,7 +1140,7 @@ function setupEventListeners() {
     document.getElementById('resRetakeBtn').onclick = retakeSession;
     const scBackBtn = document.getElementById('statsBackBtn');
     if (scBackBtn) {
-        scBackBtn.onclick = goHome;
+        scBackBtn.onclick = handleStatsBack;
     }
 
     const sourcesBackBtn = document.getElementById('sourcesBackBtn');
@@ -1343,11 +1381,30 @@ function setupEventListeners() {
 
         statsSearchInput.oninput = () => {
             syncSearchState();
+            const query = statsSearchInput.value;
+            const activeFilter = AppState.activeTagFilter 
+                ? ('tag:' + AppState.activeTagFilter) 
+                : (document.querySelector('.filter-btn.active')?.dataset.filter || 'all');
+
             if (AppState.activeTagFilter) {
-                renderTagView(AppState.activeTagFilter, 'all', statsSearchInput.value);
+                renderStatsList('tag:' + AppState.activeTagFilter, query);
             } else {
-                const activeFilter = document.querySelector('.filter-btn.active')?.dataset.filter || 'all';
-                renderStatsList(activeFilter, statsSearchInput.value);
+                renderStatsList(activeFilter, query);
+            }
+
+            const curState = history.state || {};
+            const hashUrl = query ? `#stats?q=${encodeURIComponent(query)}` : '#stats';
+
+            if (query.trim().length > 0) {
+                if (curState.view === 'stats' && curState.searchQuery) {
+                    history.replaceState({ view: 'stats', searchQuery: query, filter: activeFilter }, '', hashUrl);
+                } else {
+                    history.pushState({ view: 'stats', searchQuery: query, filter: activeFilter }, '', hashUrl);
+                }
+            } else {
+                if (curState.view === 'stats' && curState.searchQuery) {
+                    history.replaceState({ view: 'stats', searchQuery: '', filter: activeFilter }, '', '#stats');
+                }
             }
         };
 
@@ -1408,13 +1465,14 @@ function setupEventListeners() {
                 e.stopPropagation();
                 statsSearchInput.value = '';
                 if (AppState.activeTagFilter) {
-                    renderTagView(AppState.activeTagFilter, 'all', '');
+                    renderStatsList('tag:' + AppState.activeTagFilter, '');
                 } else {
                     const activeFilter = document.querySelector('.filter-btn.active')?.dataset.filter || 'all';
                     renderStatsList(activeFilter, '');
                 }
                 statsSearchInput.focus();
                 syncSearchState();
+                history.replaceState({ view: 'stats', searchQuery: '', filter: AppState.activeStatsFilter || 'all' }, '', '#stats');
             };
         }
     }
@@ -1460,6 +1518,58 @@ function setupEventListeners() {
 
 // This closes the setupEventListeners function, assuming the content started within it.
 
+// --- View & Search History Management ---
+function executeTagSearch(tag) {
+    if (!tag) return;
+    const searchQuery = '#' + tag;
+    const searchInput = document.getElementById('statsSearchInput');
+    if (searchInput) searchInput.value = searchQuery;
+
+    const currentView = history.state?.view || 'home';
+
+    if (currentView !== 'stats') {
+        // First push base stats view state so Back goes to main stats view
+        history.pushState({ view: 'stats', searchQuery: '', filter: 'all' }, '', '#stats');
+    }
+
+    // Push tag search state
+    history.pushState({ view: 'stats', searchQuery, filter: 'all' }, '', `#stats?q=${encodeURIComponent(searchQuery)}`);
+
+    // Switch view to stats without pushing another history state
+    switchView('stats', true);
+
+    if (typeof window.syncStatsSearchUI === 'function') {
+        window.syncStatsSearchUI(true);
+    }
+    renderStatsList('all', searchQuery);
+}
+window.executeTagSearch = executeTagSearch;
+
+function handleStatsBack() {
+    const input = document.getElementById('statsSearchInput');
+    const hasSearch = (input && input.value.trim().length > 0) || AppState.activeTagFilter;
+    const curState = history.state || {};
+
+    if (hasSearch || (curState.view === 'stats' && curState.searchQuery)) {
+        if (curState.searchQuery) {
+            window.history.back();
+        } else {
+            if (input) input.value = '';
+            AppState.activeTagFilter = null;
+            if (typeof window.syncStatsSearchUI === 'function') window.syncStatsSearchUI(false);
+            renderStatsList('all', '');
+            history.replaceState({ view: 'stats', searchQuery: '', filter: 'all' }, '', '#stats');
+        }
+    } else {
+        if (window.history.length > 1 && curState.view === 'stats') {
+            window.history.back();
+        } else {
+            goHome();
+        }
+    }
+}
+window.handleStatsBack = handleStatsBack;
+
 // --- View Management ---
 function switchView(view, isBack = false) {
     if (!view) return;
@@ -1471,15 +1581,9 @@ function switchView(view, isBack = false) {
 
     // History API integration
     if (!isBack) {
-        // Only push when the view actually changes. Re-rendering the current
-        // view calls switchView again (the TTS refresh, saving in the question
-        // editor, the show-stats-preview listener), and each of those used to
-        // stack another identical entry — so the first Back press moved between
-        // two states that render the same screen and the button looked dead.
         if (history.state?.view !== view) {
-            history.pushState({ view }, '', `#${view}`);
+            history.pushState({ view, searchQuery: '', filter: 'all' }, '', `#${view}`);
         }
-
     }
 
     if (view === 'test') {
