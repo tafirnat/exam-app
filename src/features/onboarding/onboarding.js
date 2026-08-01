@@ -12,7 +12,7 @@ let svgPathEl = null;
 let svgRingEl = null;
 let popoverEl = null;
 let activeSteps = [];
-let resizeHandler = null;
+let updateHandler = null;
 
 function getSteps() {
     return [
@@ -88,13 +88,15 @@ export function startOnboarding(force = false) {
     currentStepIndex = 0;
 
     createDOM();
-    renderStep(currentStepIndex);
+    renderStep(currentStepIndex, true);
 
-    if (resizeHandler) {
-        window.removeEventListener('resize', resizeHandler);
+    if (updateHandler) {
+        window.removeEventListener('resize', updateHandler);
+        window.removeEventListener('scroll', updateHandler);
     }
-    resizeHandler = () => renderStep(currentStepIndex);
-    window.addEventListener('resize', resizeHandler);
+    updateHandler = () => updateSpotlightAndPopoverPosition();
+    window.addEventListener('resize', updateHandler, { passive: true });
+    window.addEventListener('scroll', updateHandler, { passive: true });
 }
 
 export function stopOnboarding(markCompleted = true) {
@@ -102,9 +104,10 @@ export function stopOnboarding(markCompleted = true) {
         localStorage.setItem(STORAGE_KEY, 'true');
     }
 
-    if (resizeHandler) {
-        window.removeEventListener('resize', resizeHandler);
-        resizeHandler = null;
+    if (updateHandler) {
+        window.removeEventListener('resize', updateHandler);
+        window.removeEventListener('scroll', updateHandler);
+        updateHandler = null;
     }
 
     if (backdropEl) {
@@ -150,13 +153,12 @@ function createDOM() {
     popoverEl.className = 'onboarding-popover';
     document.body.appendChild(popoverEl);
 
-    // Trigger initial reflow for smooth animations
     requestAnimationFrame(() => {
         backdropEl.classList.add('active');
     });
 }
 
-function renderStep(index) {
+function renderStep(index, isInitial = false) {
     if (index < 0 || index >= activeSteps.length) {
         stopOnboarding(true);
         return;
@@ -165,48 +167,9 @@ function renderStep(index) {
     const step = activeSteps[index];
     const targetEl = document.querySelector(step.target);
 
-    let rect = {
-        top: window.innerHeight / 2 - 100,
-        left: window.innerWidth / 2 - 150,
-        width: 300,
-        height: 200,
-        bottom: window.innerHeight / 2 + 100,
-        right: window.innerWidth / 2 + 150
-    };
-
-    let isTargetVisible = false;
-
+    // Scroll element smoothly into center of viewport on mobile and desktop
     if (targetEl && targetEl.offsetParent !== null) {
-        // Ensure element is visible on screen
-        targetEl.scrollIntoView({ behavior: 'smooth', block: 'nearest', inline: 'nearest' });
-        const bRect = targetEl.getBoundingClientRect();
-        if (bRect.width > 0 && bRect.height > 0) {
-            rect = bRect;
-            isTargetVisible = true;
-        }
-    }
-
-    const padding = 6;
-    const rx = 8;
-    const x = Math.max(2, rect.left - padding);
-    const y = Math.max(2, rect.top - padding);
-    const w = Math.min(window.innerWidth - x - 2, rect.width + padding * 2);
-    const h = Math.min(window.innerHeight - y - 2, rect.height + padding * 2);
-    const vw = window.innerWidth;
-    const vh = window.innerHeight;
-
-    // SVG path cutout around target rectangle
-    if (isTargetVisible) {
-        svgPathEl.setAttribute('d', `M0,0 H${vw} V${vh} H0 Z M${x + rx},${y} H${x + w - rx} a${rx},${rx} 0 0 1 ${rx},${rx} V${y + h - rx} a${rx},${rx} 0 0 1 -${rx},${rx} H${x + rx} a${rx},${rx} 0 0 1 -${rx},-${rx} V${y + rx} a${rx},${rx} 0 0 1 ${rx},-${rx} Z`);
-        svgRingEl.setAttribute('x', x);
-        svgRingEl.setAttribute('y', y);
-        svgRingEl.setAttribute('width', w);
-        svgRingEl.setAttribute('height', h);
-        svgRingEl.setAttribute('rx', rx);
-        svgRingEl.style.display = 'block';
-    } else {
-        svgPathEl.setAttribute('d', `M0,0 H${vw} V${vh} H0 Z`);
-        svgRingEl.style.display = 'none';
+        targetEl.scrollIntoView({ behavior: 'smooth', block: 'center', inline: 'nearest' });
     }
 
     // Render Popover Content
@@ -244,8 +207,14 @@ function renderStep(index) {
         </div>
     `;
 
-    // Position popover card relative to spotlight rectangle
-    positionPopover(x, y, w, h);
+    // Update spotlight & popover position immediately and after smooth scroll completes
+    updateSpotlightAndPopoverPosition();
+    setTimeout(() => {
+        updateSpotlightAndPopoverPosition();
+    }, 150);
+    setTimeout(() => {
+        updateSpotlightAndPopoverPosition();
+    }, 350);
 
     // Bind event listeners for popover buttons
     const nextBtn = popoverEl.querySelector('#onboardingNextBtn');
@@ -271,32 +240,95 @@ function renderStep(index) {
     }
 }
 
-function positionPopover(x, y, w, h) {
+function updateSpotlightAndPopoverPosition() {
+    if (!popoverEl || currentStepIndex >= activeSteps.length) return;
+
+    const step = activeSteps[currentStepIndex];
+    const targetEl = document.querySelector(step.target);
+
+    let rect = {
+        top: window.innerHeight / 2 - 100,
+        left: window.innerWidth / 2 - 150,
+        width: 300,
+        height: 200,
+        bottom: window.innerHeight / 2 + 100,
+        right: window.innerWidth / 2 + 150
+    };
+
+    let isTargetVisible = false;
+
+    if (targetEl && targetEl.offsetParent !== null) {
+        const bRect = targetEl.getBoundingClientRect();
+        if (bRect.width > 0 && bRect.height > 0) {
+            rect = bRect;
+            isTargetVisible = true;
+        }
+    }
+
+    const padding = step.target === '#quickSourcesBtn' ? 8 : 6;
+    const rx = 8;
+    const x = Math.max(2, rect.left - padding);
+    const y = Math.max(2, rect.top - padding);
+    const w = Math.min(window.innerWidth - x - 2, rect.width + padding * 2);
+    const h = Math.min(window.innerHeight - y - 2, rect.height + padding * 2);
+    const vw = window.innerWidth;
+    const vh = window.innerHeight;
+
+    // SVG path cutout around target rectangle
+    if (isTargetVisible) {
+        svgPathEl.setAttribute('d', `M0,0 H${vw} V${vh} H0 Z M${x + rx},${y} H${x + w - rx} a${rx},${rx} 0 0 1 ${rx},${rx} V${y + h - rx} a${rx},${rx} 0 0 1 -${rx},${rx} H${x + rx} a${rx},${rx} 0 0 1 -${rx},-${rx} V${y + rx} a${rx},${rx} 0 0 1 ${rx},-${rx} Z`);
+        svgRingEl.setAttribute('x', x);
+        svgRingEl.setAttribute('y', y);
+        svgRingEl.setAttribute('width', w);
+        svgRingEl.setAttribute('height', h);
+        svgRingEl.setAttribute('rx', rx);
+        svgRingEl.style.display = 'block';
+    } else {
+        svgPathEl.setAttribute('d', `M0,0 H${vw} V${vh} H0 Z`);
+        svgRingEl.style.display = 'none';
+    }
+
+    positionPopover(x, y, w, h, step.target);
+}
+
+function positionPopover(x, y, w, h, targetSelector) {
     popoverEl.classList.remove('active');
 
     const popoverWidth = Math.min(window.innerWidth - 32, 380);
-    const popoverHeight = popoverEl.offsetHeight || 190;
-    const margin = 12;
+    const popoverHeight = popoverEl.offsetHeight || 210;
+    const margin = 14;
+    const vh = window.innerHeight;
+    const vw = window.innerWidth;
 
     let popLeft = x + (w / 2) - (popoverWidth / 2);
-    let popTop = y + h + margin;
+    let popTop;
 
-    // If bottom space is not enough, place above target
-    if (popTop + popoverHeight > window.innerHeight - margin) {
+    const spaceBelow = vh - (y + h + margin);
+    const spaceAbove = y - margin;
+
+    // Specific placement for #quickSourcesBtn to avoid obscuring header button
+    if (targetSelector === '#quickSourcesBtn') {
+        popTop = y + h + margin;
+        // On desktop, align popover towards the right of target or center below
+        popLeft = x + w - popoverWidth;
+    } else if (spaceBelow >= popoverHeight + margin) {
+        // Prefer placing BELOW target if space is sufficient
+        popTop = y + h + margin;
+    } else if (spaceAbove >= popoverHeight + margin) {
+        // Otherwise place ABOVE target if space is sufficient
         popTop = y - popoverHeight - margin;
+    } else {
+        // Tight space: pick whichever side has more room and clamp strictly inside viewport
+        if (spaceBelow >= spaceAbove) {
+            popTop = Math.min(y + h + margin, vh - popoverHeight - margin);
+        } else {
+            popTop = Math.max(margin, y - popoverHeight - margin);
+        }
     }
 
-    // Keep within horizontal bounds
-    if (popLeft < margin) {
-        popLeft = margin;
-    } else if (popLeft + popoverWidth > window.innerWidth - margin) {
-        popLeft = window.innerWidth - popoverWidth - margin;
-    }
-
-    // Keep within vertical bounds
-    if (popTop < margin) {
-        popTop = margin;
-    }
+    // Strict boundary clamping so popover NEVER overflows off top/bottom/left/right of viewport
+    popLeft = Math.max(margin, Math.min(popLeft, vw - popoverWidth - margin));
+    popTop = Math.max(margin, Math.min(popTop, vh - popoverHeight - margin));
 
     popoverEl.style.left = `${popLeft}px`;
     popoverEl.style.top = `${popTop}px`;
