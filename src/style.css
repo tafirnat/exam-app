@@ -6161,3 +6161,63 @@ body.dnd-active {
         transform: none;
     }
 }
+
+.diff-card-badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    font-size: 0.75rem;
+    font-weight: 500;
+    color: var(--accent-color, #3b82f6);
+    background: var(--surface-hover);
+    padding: 2px 8px;
+    border-radius: 6px;
+    border: 1px solid var(--border-color);
+    max-width: 100%;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    width: fit-content;
+    transition: all 0.2s ease;
+    margin-top: 2px;
+}
+
+.card-control-btn {
+    flex-shrink: 0;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 26px;
+    height: 26px;
+    padding: 0;
+    border: 1px solid var(--border-color);
+    border-radius: 8px;
+    background: var(--surface-hover);
+    color: var(--text-secondary);
+    cursor: pointer;
+    transition: background 0.2s ease, color 0.2s ease, border-color 0.2s ease, transform 0.15s ease;
+}
+
+.card-control-btn:hover:not(:disabled) {
+    background: var(--border-color);
+    color: var(--text-primary);
+}
+
+.card-control-btn:active:not(:disabled) {
+    transform: scale(0.92);
+}
+
+.card-control-btn:disabled {
+    opacity: 0.35;
+    cursor: not-allowed;
+}
+
+.card-control-btn.is-starred {
+    color: #eab308;
+    border-color: rgba(234, 179, 8, 0.4);
+    background: rgba(234, 179, 8, 0.15);
+}
+
+.card-control-btn.is-starred svg {
+    fill: #eab308;
+}

@@ -1,4 +1,4 @@
-import { AppState, liveSources, saveContinuityConfig } from '../../core/state.js';
+import { AppState, liveSources, liveFolders, touch, saveSources, UNCATEGORIZED_FOLDER_ID, saveContinuityConfig } from '../../core/state.js';
 import {
     calculateGlobalStreak,
     calculateFocusStreak,
@@ -876,6 +876,105 @@ export function showDailyMotivationToast() {
     }
 }
 
+let currentDifficultyViewId = 'all';
+let diffCardControlsBound = false;
+
+export function getOrderedLiveSources() {
+    const folders = liveFolders().sort((a, b) => (a.order || 0) - (b.order || 0));
+    const result = [];
+    const seenIds = new Set();
+
+    folders.forEach(f => {
+        const fSources = liveSources()
+            .filter(s => (s.folderId || UNCATEGORIZED_FOLDER_ID) === f.id)
+            .sort((a, b) => (a.order || 0) - (b.order || 0));
+        fSources.forEach(s => {
+            if (!seenIds.has(s.id)) {
+                seenIds.add(s.id);
+                const folderName = (f.id === UNCATEGORIZED_FOLDER_ID || f.isSystem) ? '' : f.name;
+                result.push({ source: s, folderName });
+            }
+        });
+    });
+
+    liveSources().forEach(s => {
+        if (!seenIds.has(s.id)) {
+            seenIds.add(s.id);
+            result.push({ source: s, folderName: '' });
+        }
+    });
+
+    return result;
+}
+
+export function getDifficultyNavItems() {
+    const ordered = getOrderedLiveSources();
+    const starred = ordered.filter(item => !!item.source.starred);
+    const unstarred = ordered.filter(item => !item.source.starred);
+
+    const items = [
+        { id: 'all', name: t('all_active_sources') || 'Tüm Aktif Kaynaklar', isAll: true }
+    ];
+
+    starred.forEach(item => {
+        const displayName = item.folderName ? `${item.folderName} › ${item.source.name}` : item.source.name;
+        items.push({ id: item.source.id, name: displayName, source: item.source, isStarred: true });
+    });
+
+    unstarred.forEach(item => {
+        const displayName = item.folderName ? `${item.folderName} › ${item.source.name}` : item.source.name;
+        items.push({ id: item.source.id, name: displayName, source: item.source, isStarred: false });
+    });
+
+    return items;
+}
+
+function bindDifficultyCardControls() {
+    if (diffCardControlsBound) return;
+    diffCardControlsBound = true;
+
+    const prevBtn = document.getElementById('diffCardPrevBtn');
+    const nextBtn = document.getElementById('diffCardNextBtn');
+    const starBtn = document.getElementById('diffCardStarBtn');
+
+    if (prevBtn) {
+        prevBtn.onclick = () => {
+            const items = getDifficultyNavItems();
+            if (items.length <= 1) return;
+            let idx = items.findIndex(i => i.id === currentDifficultyViewId);
+            if (idx === -1) idx = 0;
+            const nextIdx = (idx - 1 + items.length) % items.length;
+            currentDifficultyViewId = items[nextIdx].id;
+            renderActivityCharts();
+        };
+    }
+
+    if (nextBtn) {
+        nextBtn.onclick = () => {
+            const items = getDifficultyNavItems();
+            if (items.length <= 1) return;
+            let idx = items.findIndex(i => i.id === currentDifficultyViewId);
+            if (idx === -1) idx = 0;
+            const nextIdx = (idx + 1) % items.length;
+            currentDifficultyViewId = items[nextIdx].id;
+            renderActivityCharts();
+        };
+    }
+
+    if (starBtn) {
+        starBtn.onclick = () => {
+            if (currentDifficultyViewId === 'all') return;
+            const source = liveSources().find(s => s.id === currentDifficultyViewId);
+            if (source) {
+                source.starred = !source.starred;
+                touch(source);
+                saveSources();
+                renderActivityCharts();
+            }
+        };
+    }
+}
+
 function renderActivityCharts() {
     const diffContainer = document.getElementById('homeDifficultyStatsCard');
     const trendContainer = document.getElementById('homeWeeklyTrendCard');
@@ -884,8 +983,9 @@ function renderActivityCharts() {
     const statsKeys = Object.keys(AppState.stats || {});
     const hasActivity = AppState.studyActivity && Object.keys(AppState.studyActivity).length > 0;
     const hasStats = statsKeys.length > 0;
+    const hasLiveSources = liveSources().length > 0;
 
-    if (!hasStats && !hasActivity) {
+    if (!hasStats && !hasActivity && !hasLiveSources) {
         if (diffContainer) diffContainer.style.display = 'none';
         if (trendContainer) trendContainer.style.display = 'none';
         if (globalContainer) globalContainer.style.display = 'none';
@@ -896,12 +996,45 @@ function renderActivityCharts() {
     if (trendContainer) trendContainer.style.display = 'block';
     if (globalContainer) globalContainer.style.display = 'block';
 
-    // 1. Difficulty Donut Chart
+    // 1. Difficulty Donut Chart with Navigation & Starring Scope
+    bindDifficultyCardControls();
+    const navItems = getDifficultyNavItems();
+    const currentItem = navItems.find(i => i.id === currentDifficultyViewId) || navItems[0];
+    currentDifficultyViewId = currentItem.id;
+
+    const badgeTextEl = document.getElementById('diffCardSourceBadgeText');
+    const badgeEl = document.getElementById('diffCardSourceBadge');
+    if (badgeTextEl) {
+        badgeTextEl.textContent = currentItem.name;
+        if (badgeEl) badgeEl.title = currentItem.name;
+    }
+
+    const starBtn = document.getElementById('diffCardStarBtn');
+    if (starBtn) {
+        if (currentItem.isAll) {
+            starBtn.disabled = true;
+            starBtn.classList.remove('is-starred');
+        } else {
+            starBtn.disabled = false;
+            starBtn.classList.toggle('is-starred', !!currentItem.source?.starred);
+        }
+    }
+
+    const prevBtn = document.getElementById('diffCardPrevBtn');
+    const nextBtn = document.getElementById('diffCardNextBtn');
+    const hasMultiple = navItems.length > 1;
+    if (prevBtn) prevBtn.disabled = !hasMultiple;
+    if (nextBtn) nextBtn.disabled = !hasMultiple;
+
     let diffCounts = { easy: 0, medium: 0, hard: 0, veryHard: 0, unsolved: 0 };
     let totalQuestions = 0;
     
+    const targetSources = currentItem.isAll 
+        ? liveSources() 
+        : liveSources().filter(s => s.id === currentItem.id);
+
     const allQuestions = [];
-    liveSources().forEach(s => {
+    targetSources.forEach(s => {
         if (s.questions) {
             s.questions.forEach(q => allQuestions.push(`${s.id}_${q.id}`));
         }
