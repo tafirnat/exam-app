@@ -6285,6 +6285,16 @@ body.dnd-active {
     color: var(--text-primary);
 }
 
+.diff-card-title-btn {
+    cursor: pointer;
+    user-select: none;
+    transition: color 0.15s ease, opacity 0.15s ease;
+}
+
+.diff-card-title-btn:hover {
+    color: var(--primary-color, #3b82f6) !important;
+}
+
 /* Masterpiece Art Background Card for 3rd Slide */
 .motivation-card-art {
     position: relative;

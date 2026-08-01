@@ -1222,6 +1222,16 @@ function bindDifficultyCardControls() {
         };
     }
 
+    const titleEl = document.getElementById('diffCardTitle') || document.querySelector('#homeDifficultyStatsCard [data-i18n="question_difficulty_analysis"]');
+    if (titleEl) {
+        titleEl.onclick = () => {
+            if (currentDifficultyViewId !== 'all') {
+                currentDifficultyViewId = 'all';
+                renderActivityCharts();
+            }
+        };
+    }
+
     if (badgeEl) {
         badgeEl.onclick = () => {
             toggleStar();

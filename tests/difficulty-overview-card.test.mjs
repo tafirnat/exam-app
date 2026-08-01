@@ -23,9 +23,10 @@ before(async () => {
 const html = readFileSync(new URL('../index.html', import.meta.url), 'utf8');
 const markup = new JSDOM(html).window.document;
 
-test('homeDifficultyStatsCard carries badge and control buttons in header', () => {
+test('homeDifficultyStatsCard carries title button, badge and control buttons in header', () => {
     const card = markup.getElementById('homeDifficultyStatsCard');
     assert.ok(card, 'homeDifficultyStatsCard should exist');
+    assert.ok(markup.getElementById('diffCardTitle'), 'diffCardTitle should exist');
     assert.ok(markup.getElementById('diffCardSourceBadge'), 'diffCardSourceBadge should exist');
     assert.ok(markup.getElementById('diffCardStarBtn'), 'diffCardStarBtn should exist');
     assert.ok(markup.getElementById('diffCardPrevBtn'), 'diffCardPrevBtn should exist');
