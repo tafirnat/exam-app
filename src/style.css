@@ -5599,6 +5599,87 @@ body.dnd-active {
     flex-shrink: 0;
 }
 
+/* Expanded Streak Ring & Flame Icon Styling */
+.streak-ring-container {
+    position: relative;
+    width: 64px;
+    height: 64px;
+    flex-shrink: 0;
+    margin-top: 2px;
+    cursor: pointer;
+}
+
+.streak-ring-svg {
+    width: 100%;
+    height: 100%;
+    transform: rotate(-90deg);
+}
+
+.streak-ring-content {
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-direction: column;
+    padding: 2px;
+    box-sizing: border-box;
+}
+
+.streak-count-row {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 2px;
+}
+
+.streak-count-text {
+    font-weight: 900;
+    font-size: 1.05rem;
+    line-height: 1;
+    color: var(--text-primary);
+    transition: font-size 0.15s ease;
+}
+
+.streak-flame-icon {
+    width: 14px;
+    height: 14px;
+    display: inline-block;
+    flex-shrink: 0;
+    animation: flameFlicker 1.8s ease-in-out infinite;
+    transform-origin: center bottom;
+}
+
+@keyframes flameFlicker {
+    0%, 100% {
+        transform: scale(1) rotate(0deg);
+        filter: drop-shadow(0 0 2px rgba(255, 76, 13, 0.6));
+    }
+    25% {
+        transform: scale(1.08) rotate(-2deg);
+        filter: drop-shadow(0 0 4px rgba(252, 149, 2, 0.8));
+    }
+    50% {
+        transform: scale(0.95) rotate(2deg);
+        filter: drop-shadow(0 0 3px rgba(255, 76, 13, 0.7));
+    }
+    75% {
+        transform: scale(1.06) rotate(-1deg);
+        filter: drop-shadow(0 0 5px rgba(252, 226, 2, 0.8));
+    }
+}
+
+.streak-unit-label {
+    font-size: 0.58rem;
+    color: var(--text-secondary);
+    line-height: 1;
+    font-weight: 600;
+    margin-top: 1px;
+}
+
 .continuity-icon-btn {
     display: inline-flex;
     align-items: center;
