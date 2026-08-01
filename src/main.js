@@ -16,6 +16,7 @@ import { initTimer, stopTimer } from './features/test/timer-module.js';
 import { initSync, syncToGist } from './core/github-sync.js';
 import { renderMarkdown, renderInlineMarkdown, plainText, applySearchHighlight } from './core/markdown.js';
 import { setupQuickPresets, updateQuickSourcesDot } from './features/sources/quick-presets-ui.js';
+import { startOnboarding, stopOnboarding } from './features/onboarding/onboarding.js';
 
 // Expose functions globally for dynamic/inline invocation and window compatibility
 window.showSourceOptionsModal = showSourceOptionsModal;
@@ -353,6 +354,11 @@ const initApp = () => {
             buildQuestionPool();
         }
         checkActiveTest();
+
+        // Start onboarding tour if user hasn't seen it yet
+        setTimeout(() => {
+            startOnboarding(false);
+        }, 600);
 
         // --- History API popstate listener ---
         window.onpopstate = (e) => {
@@ -861,6 +867,10 @@ function setupEventListeners() {
     // Menu
     setClick('menuToggleBtn', toggleMenu);
     setClick('menuTheme', toggleTheme);
+    setClick('menuStartOnboarding', () => {
+        if (menuActive) toggleMenu();
+        startOnboarding(true);
+    });
     setClick('menuResetApp', openResetAppModal);
     setClick('resetAppCloseBtn', closeResetAppModal);
     setClick('resetAppCancelBtn', closeResetAppModal);
@@ -2274,6 +2284,13 @@ function closeAllModals() {
     const cm = document.getElementById('customModalOverlay');
     if (cm && cm.classList.contains('active')) {
         cm.classList.remove('active');
+        closedAny = true;
+    }
+
+    // 6. Onboarding Tour
+    const ob = document.querySelector('.onboarding-backdrop');
+    if (ob) {
+        stopOnboarding(true);
         closedAny = true;
     }
 
