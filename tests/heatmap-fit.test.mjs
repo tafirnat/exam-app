@@ -8,7 +8,7 @@ import { JSDOM } from 'jsdom';
 // seven weekday rows survive every screen size and that the window still ends
 // on today.
 
-let fitHeatmapWeeks, buildHeatmapWindow;
+let fitHeatmapWeeks, buildHeatmapWindow, getHeatmapDayLabels;
 
 before(async () => {
     const dom = new JSDOM('<!doctype html><html lang="tr"><body></body></html>', { url: 'http://localhost/' });
@@ -20,6 +20,27 @@ before(async () => {
     const mod = await import('../src/features/stats/continuity-ui.js');
     fitHeatmapWeeks = mod.fitHeatmapWeeks;
     buildHeatmapWindow = mod.buildHeatmapWindow;
+    getHeatmapDayLabels = mod.getHeatmapDayLabels;
+});
+
+test('every language labels one row per grid row, Monday first and Sunday last', () => {
+    for (const lang of ['tr', 'de', 'en', 'fr']) {
+        const labels = getHeatmapDayLabels(lang);
+        assert.equal(labels.length, 7, `${lang}: one slot per weekday row`);
+        assert.ok(labels[0], `${lang}: Monday opens the grid and must be named`);
+        assert.ok(labels[6], `${lang}: Sunday closes the grid and must be named`);
+    }
+});
+
+test('the Turkish rows do not repeat an abbreviation', () => {
+    // Pazartesi and Pazar both start "Paz" - collapsing them would put the same
+    // word on two rows and make the axis unreadable.
+    const named = getHeatmapDayLabels('tr').filter(Boolean);
+    assert.equal(new Set(named).size, named.length, `expected distinct labels, got ${named.join(', ')}`);
+});
+
+test('an unknown language falls back to the English rows', () => {
+    assert.deepEqual(getHeatmapDayLabels('fr'), getHeatmapDayLabels('en'));
 });
 
 test('a desktop card fits the full year', () => {

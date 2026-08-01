@@ -830,6 +830,18 @@ export function fitHeatmapWeeks(availableWidth, cell) {
 }
 
 /**
+ * Row labels, Monday first. Every other row is left blank so the labels do not
+ * crowd at an 8px row height, but Sunday is always named even though it breaks
+ * that alternation: it closes the week, and an unnamed bottom row reads as an
+ * offcut rather than as the end of the grid.
+ */
+export function getHeatmapDayLabels(lang = 'tr') {
+    if (lang.startsWith('tr')) return ['Pzt', '', 'Çar', '', 'Cum', '', 'Paz'];
+    if (lang.startsWith('de')) return ['Mo', '', 'Mi', '', 'Fr', '', 'So'];
+    return ['Mon', '', 'Wed', '', 'Fri', '', 'Sun'];
+}
+
+/**
  * The day window for a given column count. It always ends on today's column and
  * starts on a Monday, so every column is a whole week - anything else would put
  * a different weekday in row 0 depending on the screen width.
@@ -869,14 +881,8 @@ function renderHeatmapYearly() {
     const activities = AppState.studyActivity || {};
 
     const lang = document.documentElement.lang || 'tr';
-    const isTr = lang.startsWith('tr');
-    const isDe = lang.startsWith('de');
 
-    const dayLabels = isTr ? ['Pzt', '', 'Çar', '', 'Cum', '', ''] :
-                      isDe ? ['Mo', '', 'Mi', '', 'Fr', '', ''] :
-                             ['Mon', '', 'Wed', '', 'Fri', '', ''];
-
-    dayLabels.forEach(label => {
+    getHeatmapDayLabels(lang).forEach(label => {
         const div = document.createElement('div');
         div.textContent = label;
         yAxisEl.appendChild(div);
