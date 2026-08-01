@@ -152,7 +152,17 @@ export function renderStatsList(filter = 'all', searchKeyword = '') {
     // Apply Search Filter
     if (searchKeyword.trim() !== '') {
         const rawKw = searchKeyword.trim();
-        if (rawKw.startsWith('#')) {
+        if (rawKw.startsWith('$')) {
+            // Source scope search: "$Kaynak Adı" limits results to that source only.
+            // Archived sources never enter the pool (filterSources comes from liveSources()).
+            const srcKw = rawKw.slice(1).trim().toLowerCase();
+            if (srcKw !== '') {
+                filteredQuestions = filteredQuestions.filter(q => {
+                    if (String(q.sourceId).toLowerCase() === srcKw) return true;
+                    return String(q.sourceName || '').toLowerCase().includes(srcKw);
+                });
+            }
+        } else if (rawKw.startsWith('#')) {
             const tagKw = rawKw.slice(1).trim().toLowerCase();
             filteredQuestions = filteredQuestions.filter(q => {
                 const rawTags = q.tags || q.content?.tags || q.tag || [];
@@ -729,6 +739,45 @@ export function setupStatsEventListeners() {
         };
     }
 }
+
+/**
+ * Opens #stats showing only the questions of one source.
+ * Turns on the "all sources" toggle (so the source is in the pool even when it is
+ * not active) and runs the existing search with the "$name" source-scope prefix.
+ * Archived sources are still excluded - the pool always comes from liveSources().
+ */
+export function inspectSourceQuestions(sourceId) {
+    const source = liveSources().find(s => s.id === sourceId);
+    if (!source) return;
+
+    const globalToggle = document.getElementById('statsGlobalToggle');
+    if (globalToggle) globalToggle.checked = true;
+
+    const query = `$${source.name}`;
+    AppState.activeTagFilter = null;
+    AppState.activeStatsFilter = 'all';
+    document.querySelectorAll('.filter-btn').forEach(b => {
+        b.classList.toggle('active', b.dataset.filter === 'all');
+    });
+
+    const searchInput = document.getElementById('statsSearchInput');
+    if (searchInput) searchInput.value = query;
+
+    if (typeof window.switchView === 'function') window.switchView('stats');
+    if (typeof window.syncStatsSearchUI === 'function') window.syncStatsSearchUI(true);
+
+    renderStatsList('all', query);
+
+    try {
+        history.replaceState(
+            { view: 'stats', searchQuery: query, filter: 'all' },
+            '',
+            `#stats?q=${encodeURIComponent(query)}`
+        );
+    } catch (err) { }
+}
+
+window.inspectSourceQuestions = inspectSourceQuestions;
 
 /**
  * Calculates a premium HSL color based on question coefficient.

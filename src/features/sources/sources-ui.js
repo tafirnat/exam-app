@@ -362,11 +362,10 @@ export function showSourceActions(source) {
 
     const inspectQuestionsBtn = document.getElementById('modalInspectQuestionsBtn');
     if (inspectQuestionsBtn) {
-        inspectQuestionsBtn.onclick = () => {
+        inspectQuestionsBtn.onclick = async () => {
             closeActions();
-            AppState.currentSourceKey = source.id;
-            if (window.switchView) window.switchView('stats');
-            if (typeof window.renderStatsList === 'function') window.renderStatsList('all');
+            const { inspectSourceQuestions } = await import('../stats/stats-module.js');
+            inspectSourceQuestions(source.id);
         };
     }
 
