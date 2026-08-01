@@ -28,7 +28,7 @@ function getSteps() {
             titleKey: 'onboarding_step2_title',
             descKey: 'onboarding_step2_desc',
             defaultTitle: 'Yan Menü & Ayarlar ⚙️',
-            defaultDesc: 'Tema değiştirme, dil seçimi, veri yedekleme, AI entegrasyonu ve zamanlayıcı ayarlarına menüden ulaşabilirsiniz.'
+            defaultDesc: 'Görünüm (Tema), dil, veri yedekleme, AI entegrasyonu ve zamanlayıcı ayarlarına menüden ulaşabilirsiniz.'
         },
         {
             target: '#continuityCarouselWrapper',
@@ -38,11 +38,39 @@ function getSteps() {
             defaultDesc: 'FSRS sistemi unutma eğrinize göre soruları zamanlar. Günlük çalışma hedefinizi tamamlayarak serinizi koruyun!'
         },
         {
-            target: '#githubSyncBtn',
+            target: '#homeStatsCard',
             titleKey: 'onboarding_step4_title',
             descKey: 'onboarding_step4_desc',
-            defaultTitle: 'GitHub Senkronizasyonu ☁️',
-            defaultDesc: 'Sorularınızı ve ilerlemenizi GitHub Gist hesabınızla eşitleyebilir, farklı cihazlarda kesintisiz çalışabilirsiniz.'
+            defaultTitle: 'Soru & Test Özeti 📝',
+            defaultDesc: 'Seçili kaynaklarınızın soru sayısı, ortalama zorluk derecesi ve öğrenme ilerlemesini buradan takip edip test başlatabilirsiniz.'
+        },
+        {
+            target: '#quickSourcesBtn',
+            titleKey: 'onboarding_step5_title',
+            descKey: 'onboarding_step5_desc',
+            defaultTitle: 'Hızlı Erişim & Karma Çalışma 📌',
+            defaultDesc: 'Farklı kaynaklardaki soruları tek bir hızlı erişim paketinde birleştirerek karma pratik ve tekrar yapabilirsiniz.'
+        },
+        {
+            target: '#homeSourcesBtn',
+            titleKey: 'onboarding_step6_title',
+            descKey: 'onboarding_step6_desc',
+            defaultTitle: 'Kaynak Ekleme & Yönetimi 📁',
+            defaultDesc: 'JSON dosyalarınızı yükleyin, URL ile soru bankası ekleyin, klasörleyin veya aktif çalışacağınız kaynakları belirleyin.'
+        },
+        {
+            target: '#homeStatsBtn',
+            titleKey: 'onboarding_step7_title',
+            descKey: 'onboarding_step7_desc',
+            defaultTitle: 'Soru Detayları & Arama 🔍',
+            defaultDesc: 'Tüm sorularınızın geçmiş performansını inceleyin. Soru metni, cevaplar veya #etiket bazlı detaylı aramalar yapın.'
+        },
+        {
+            target: '.home-charts-grid',
+            titleKey: 'onboarding_step8_title',
+            descKey: 'onboarding_step8_desc',
+            defaultTitle: 'Grafikler & İlerleme Analizi 📊',
+            defaultDesc: 'Soru zorluk dağılımı (Donut Grafik) ve Haftalık/Aylık çalışma trendiniz ile gelişiminizi görsel olarak analiz edin.'
         }
     ];
 }
