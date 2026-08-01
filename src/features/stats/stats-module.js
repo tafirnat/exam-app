@@ -313,13 +313,19 @@ function updateStatsFooter(filter, keyword, count, questions = []) {
         text = t('stats_count_filtered', { count });
     }
 
-    if (count > 0 && Array.isArray(questions) && questions.length > 0 && filter !== 'recent' && filter !== 'incorrect') {
+    const isSearchActive = !!(keyword && keyword.trim() !== '');
+    const isFilterActive = filter && filter !== 'all' && filter !== 'recent' && filter !== 'incorrect';
+    const isTagMode = filter && filter.startsWith('tag:');
+    const shouldShowButton = (isSearchActive || isFilterActive || isTagMode) && count > 0 && Array.isArray(questions) && questions.length > 0;
+
+    if (shouldShowButton) {
         footer.innerHTML = `
-            <div class="stats-footer-content" style="display: flex; flex-direction: column; align-items: center; gap: 0.6rem; width: 100%;">
+            <div class="stats-footer-content" style="display: flex; flex-direction: column; align-items: center; gap: 0.5rem; width: 100%;">
                 <div class="stats-footer-text">${escapeHTML(text)}</div>
-                <button class="btn btn-primary start-filtered-test-btn" id="startFilteredTestBtn">
-                    <svg viewBox="0 0 24 24" width="16" height="16" fill="currentColor" style="flex-shrink: 0;">
-                        <polygon points="5 3 19 12 5 21 5 3"></polygon>
+                <button class="start-filtered-test-btn" id="startFilteredTestBtn">
+                    <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" style="flex-shrink: 0;">
+                        <path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"></path>
+                        <path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"></path>
                     </svg>
                     <span>${t('start_test_from_results', { count })}</span>
                 </button>

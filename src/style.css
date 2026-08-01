@@ -3294,29 +3294,43 @@ input:checked+.slider-small:before {
     display: inline-flex;
     align-items: center;
     justify-content: center;
-    gap: 0.5rem;
-    width: 100%;
-    max-width: 340px;
-    padding: 0.55rem 1.1rem;
-    font-size: 0.88rem;
-    font-weight: 600;
-    border-radius: var(--radius-md);
-    background: linear-gradient(135deg, var(--accent-color, #6366f1) 0%, #4f46e5 100%);
-    color: #ffffff;
-    border: none;
+    gap: 0.6rem;
+    height: var(--chip-h, 36px);
+    padding: 0 1.25rem;
+    font-size: var(--chip-font, 0.85rem);
+    font-weight: var(--btn-weight, 600);
+    font-family: inherit;
+    border-radius: var(--btn-radius-pill, 20px);
+    background: color-mix(in srgb, var(--primary-color) 12%, var(--surface-color));
+    color: var(--primary-color);
+    border: 1px solid color-mix(in srgb, var(--primary-color) 40%, transparent);
     cursor: pointer;
-    box-shadow: 0 4px 12px rgba(99, 102, 241, 0.3);
-    transition: all 0.2s ease;
+    transition: var(--btn-transition, all 0.2s ease);
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+}
+
+.start-filtered-test-btn svg {
+    color: var(--primary-color);
+    width: 16px;
+    height: 16px;
+    flex-shrink: 0;
+    transition: color 0.2s ease;
 }
 
 .start-filtered-test-btn:hover {
+    background: var(--primary-color);
+    color: var(--btn-on-solid, #ffffff);
+    border-color: var(--primary-color);
     transform: translateY(-1px);
-    box-shadow: 0 6px 16px rgba(99, 102, 241, 0.45);
-    filter: brightness(1.05);
+    box-shadow: 0 4px 14px rgba(var(--primary-rgb, 99, 102, 241), 0.35);
+}
+
+.start-filtered-test-btn:hover svg {
+    color: var(--btn-on-solid, #ffffff);
 }
 
 .start-filtered-test-btn:active {
-    transform: translateY(0);
+    transform: var(--btn-press, translateY(0));
 }
 
 .stats-item-num {
