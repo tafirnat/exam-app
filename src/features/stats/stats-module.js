@@ -149,20 +149,33 @@ export function renderStatsList(filter = 'all', searchKeyword = '') {
 
     // Apply Search Filter
     if (searchKeyword.trim() !== '') {
-        const kw = searchKeyword.toLowerCase();
-        filteredQuestions = filteredQuestions.filter(q => {
-            const text = (q.content?.text || q.text || '').toLowerCase();
+        const rawKw = searchKeyword.trim();
+        if (rawKw.startsWith('#')) {
+            const tagKw = rawKw.slice(1).trim().toLowerCase();
+            filteredQuestions = filteredQuestions.filter(q => {
+                const rawTags = q.tags || q.content?.tags || q.tag || [];
+                const tags = Array.isArray(rawTags) ? rawTags : [rawTags];
+                if (tagKw === '') {
+                    return tags.length > 0 && tags.some(t => String(t).trim() !== '');
+                }
+                return tags.some(t => String(t).toLowerCase().includes(tagKw));
+            });
+        } else {
+            const kw = rawKw.toLowerCase();
+            filteredQuestions = filteredQuestions.filter(q => {
+                const text = (q.content?.text || q.text || '').toLowerCase();
 
-            // Extract text from options objects
-            const optionsArr = q.content?.options || q.options || [];
-            const optionsText = optionsArr.map(o => o.text || '').join(' ').toLowerCase();
+                // Extract text from options objects
+                const optionsArr = q.content?.options || q.options || [];
+                const optionsText = optionsArr.map(o => o.text || '').join(' ').toLowerCase();
 
-            // Handle answers (can be string, number, or array)
-            const ans = q.content?.answer || q.answer || '';
-            const answerText = Array.isArray(ans) ? ans.join(' ').toLowerCase() : String(ans).toLowerCase();
+                // Handle answers (can be string, number, or array)
+                const ans = q.content?.answer || q.answer || '';
+                const answerText = Array.isArray(ans) ? ans.join(' ').toLowerCase() : String(ans).toLowerCase();
 
-            return text.includes(kw) || optionsText.includes(kw) || answerText.includes(kw);
-        });
+                return text.includes(kw) || optionsText.includes(kw) || answerText.includes(kw);
+            });
+        }
     }
 
     // Apply Sorting
