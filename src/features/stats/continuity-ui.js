@@ -223,7 +223,7 @@ function renderGlobalSlide(liveQ) {
     } else {
         const progress = Math.min(100, Math.round((solved / req) * 100));
         ring.setAttribute('stroke-dasharray', `${progress}, 100`);
-        ring.style.stroke = 'var(--primary-color)';
+        ring.style.stroke = 'var(--trend-line-normal, #0891b2)';
         textEl.style.color = 'var(--text-secondary)';
 
         if (overdueCount === 0) {
@@ -296,7 +296,7 @@ function renderFocusSlide() {
         } else {
             const progress = Math.min(100, Math.round((solved / req) * 100));
             ring.setAttribute('stroke-dasharray', `${progress}, 100`);
-            ring.style.stroke = 'var(--info-color, #3b82f6)';
+            ring.style.stroke = 'var(--trend-line-focus, #8b5cf6)';
             textEl.style.color = 'var(--text-secondary)';
             textEl.textContent = selectedNames 
                 ? `Seri için: ${solved}/${req} soru (${selectedNames})`
