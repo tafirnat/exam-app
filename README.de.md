@@ -25,6 +25,32 @@ Erleben Sie die Anwendung live: **[https://exam.rifatarslan.dev/](https://exam.r
 
 ---
 
+## 📸 Screenshots & Benutzeroberfläche
+
+<div align="center">
+
+### 🏠 Dashboard & Training Center
+
+| Hell-Modus (Light Mode) | Dunkel-Modus (Dark Mode) |
+| :---: | :---: |
+| ![Dashboard Light](./docs/screenshots/dashboard-light.png) | ![Dashboard Dark](./docs/screenshots/dashboard-dark.png) |
+
+### 📝 Prüfungsoberfläche & Testergebnisse
+
+| Aktive Prüfungssitzung | Testergebnisse & Analysen |
+| :---: | :---: |
+| ![Quiz Interface](./docs/screenshots/quiz-interface.png) | ![Test Results](./docs/screenshots/test-results.png) |
+
+### 📂 Quellverwaltung & Detaillierte Fragenanalysen
+
+| Gespeicherte Fragenquellen | Fragedetails & Statistiken |
+| :---: | :---: |
+| ![Saved Sources](./docs/screenshots/saved-sources.png) | ![Question Details](./docs/screenshots/question-details.png) |
+
+</div>
+
+---
+
 ## 📌 Was ist die Exam App & Warum wurde sie entwickelt?
 
 ### Das Problem

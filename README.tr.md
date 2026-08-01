@@ -25,6 +25,32 @@ Uygulamayı canlı olarak deneyimleyin: **[https://exam.rifatarslan.dev/](https:
 
 ---
 
+## 📸 Ekran Görüntüleri ve Arayüz Önizlemesi
+
+<div align="center">
+
+### 🏠 Ana Kontrol Paneli (Dashboard) & Çalışma Merkezi
+
+| Açık Tema (Light Mode) | Koyu Tema (Dark Mode) |
+| :---: | :---: |
+| ![Dashboard Light](./docs/screenshots/dashboard-light.png) | ![Dashboard Dark](./docs/screenshots/dashboard-dark.png) |
+
+### 📝 Sınav Arayüzü ve Test Sonuçları
+
+| Aktif Sınav Oturumu | Test Sonuçları & Analiz |
+| :---: | :---: |
+| ![Quiz Interface](./docs/screenshots/quiz-interface.png) | ![Test Results](./docs/screenshots/test-results.png) |
+
+### 📂 Kaynak Yönetimi ve Detaylı Soru İstatistikleri
+
+| Kayıtlı Soru Kaynakları | Soru Detayları & İstatistikler |
+| :---: | :---: |
+| ![Saved Sources](./docs/screenshots/saved-sources.png) | ![Question Details](./docs/screenshots/question-details.png) |
+
+</div>
+
+---
+
 ## 📌 Exam App Nedir ve Neden Geliştirildi?
 
 ### Problem
