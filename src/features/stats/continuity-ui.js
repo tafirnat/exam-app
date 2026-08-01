@@ -756,53 +756,86 @@ function renderHeatmapCard() {
     }
 }
 
+const HEATMAP_GAP = 2;
+const HEATMAP_MAX_WEEKS = 53;
+const HEATMAP_MIN_WEEKS = 12;
+
+/**
+ * How many week columns fit the given width. The grid keeps its seven weekday
+ * rows at every screen size - it is the range that shrinks on a narrow phone,
+ * never the shape, so the row labels and the weekday banding stay meaningful.
+ */
+export function fitHeatmapWeeks(availableWidth, cell) {
+    if (!(availableWidth > 0)) return HEATMAP_MAX_WEEKS;
+    const fits = Math.floor(availableWidth / (cell + HEATMAP_GAP));
+    return Math.max(HEATMAP_MIN_WEEKS, Math.min(HEATMAP_MAX_WEEKS, fits));
+}
+
+/**
+ * The day window for a given column count. It always ends on today's column and
+ * starts on a Monday, so every column is a whole week - anything else would put
+ * a different weekday in row 0 depending on the screen width.
+ */
+export function buildHeatmapWindow(weeks, today = new Date()) {
+    const todayCol = (today.getDay() + 6) % 7; // Monday-first index
+    const start = new Date(today);
+    start.setDate(start.getDate() - todayCol - (weeks - 1) * 7);
+    return { start, numDays: (weeks - 1) * 7 + todayCol + 1 };
+}
+
 function renderHeatmapYearly() {
     const heatmapEl = document.getElementById('continuityHeatmap');
     const yAxisEl = document.getElementById('heatmapYAxis');
     const xAxisEl = document.getElementById('heatmapXAxis');
     const wrapper = document.getElementById('continuityHeatmapWrapper');
     const placeholder = document.getElementById('heatmapPlaceholder');
-    
+
     if (!heatmapEl || !yAxisEl || !xAxisEl) return;
-    
+
     heatmapEl.innerHTML = '';
     yAxisEl.innerHTML = '';
     xAxisEl.innerHTML = '';
-    
-    heatmapEl.style.gridTemplateRows = 'repeat(7, 10px)';
+
+    // Shown before measuring, not after: a display:none wrapper reports a
+    // clientWidth of 0 and every column would be sized against nothing.
+    if (wrapper) wrapper.style.display = 'block';
+
+    const cell = window.innerWidth <= 600 ? 8 : 10;
+
+    heatmapEl.style.gridTemplateRows = `repeat(7, ${cell}px)`;
     heatmapEl.style.gridAutoFlow = 'column';
-    heatmapEl.style.gridAutoColumns = '10px';
+    heatmapEl.style.gridAutoColumns = `${cell}px`;
+    heatmapEl.style.gap = `${HEATMAP_GAP}px`;
     heatmapEl.style.justifyContent = 'flex-start';
-    
+
     const activities = AppState.studyActivity || {};
-    const numDays = 365;
-    
-    let currentDate = new Date();
-    currentDate.setDate(currentDate.getDate() - numDays + 1); 
-    
+
     const lang = document.documentElement.lang || 'tr';
     const isTr = lang.startsWith('tr');
     const isDe = lang.startsWith('de');
-    
-    const dayLabels = isTr ? ['Pzt', '', 'Çar', '', 'Cum', '', ''] : 
-                      isDe ? ['Mo', '', 'Mi', '', 'Fr', '', ''] : 
+
+    const dayLabels = isTr ? ['Pzt', '', 'Çar', '', 'Cum', '', ''] :
+                      isDe ? ['Mo', '', 'Mi', '', 'Fr', '', ''] :
                              ['Mon', '', 'Wed', '', 'Fri', '', ''];
-                             
+
     dayLabels.forEach(label => {
         const div = document.createElement('div');
         div.textContent = label;
         yAxisEl.appendChild(div);
     });
-    
-    const startDayOfWeek = currentDate.getDay();
-    const paddingDays = startDayOfWeek === 0 ? 6 : startDayOfWeek - 1; 
-    
-    for (let p = 0; p < paddingDays; p++) {
-        const rect = document.createElement('div');
-        rect.style.backgroundColor = 'transparent';
-        heatmapEl.appendChild(rect);
-    }
-    
+
+    yAxisEl.style.gridTemplateRows = `repeat(7, ${cell}px)`;
+    yAxisEl.style.lineHeight = `${cell}px`;
+
+    // The gutter is measured rather than assumed - the day labels differ in
+    // width per language, and guessing it wrong costs a whole column.
+    const gutter = Math.ceil(yAxisEl.getBoundingClientRect().width) + 4;
+    const weeks = fitHeatmapWeeks((wrapper?.clientWidth || 0) - gutter, cell);
+    const { start, numDays } = buildHeatmapWindow(weeks);
+    const currentDate = start;
+
+    updateHeatmapTitle(weeks, numDays);
+
     const isDark = document.documentElement.getAttribute('data-theme') === 'dark';
     const colorLevel1 = isDark ? '#0e4429' : '#9be9a8';
     const colorLevel2 = isDark ? '#006d32' : '#40c463';
@@ -811,17 +844,24 @@ function renderHeatmapYearly() {
     const colorEmpty  = isDark ? 'rgba(255, 255, 255, 0.05)' : '#ebedf0';
     const colorFrozen = isDark ? '#38bdf8' : '#3b82f6';
     
+    let lastLabelCol = -1;
+
     for (let i = 0; i < numDays; i++) {
         if (i === 0 || currentDate.getDate() === 1) {
-            const currentCol = Math.floor((i + paddingDays) / 7);
-            const monthStr = new Intl.DateTimeFormat(lang, { month: 'short' }).format(currentDate);
-            
-            const monthDiv = document.createElement('div');
-            monthDiv.textContent = monthStr;
-            monthDiv.style.position = 'absolute';
-            monthDiv.style.left = `${currentCol * 12}px`;
-            monthDiv.style.top = '0';
-            xAxisEl.appendChild(monthDiv);
+            const currentCol = Math.floor(i / 7);
+            // A range starting late in a month would stack its own label on top
+            // of the next month's; one label per column is the rule.
+            if (currentCol !== lastLabelCol) {
+                lastLabelCol = currentCol;
+                const monthStr = new Intl.DateTimeFormat(lang, { month: 'short' }).format(currentDate);
+
+                const monthDiv = document.createElement('div');
+                monthDiv.textContent = monthStr;
+                monthDiv.style.position = 'absolute';
+                monthDiv.style.left = `${currentCol * (cell + HEATMAP_GAP)}px`;
+                monthDiv.style.top = '0';
+                xAxisEl.appendChild(monthDiv);
+            }
         }
 
         const dateStr = getLocalDateStr(currentDate);
@@ -830,8 +870,8 @@ function renderHeatmapYearly() {
         const rect = document.createElement('div');
         rect.style.borderRadius = '2px';
         rect.title = dateStr;
-        rect.style.width = '10px'; // strictly 10px to avoid flex stretching
-        rect.style.height = '10px';
+        rect.style.width = `${cell}px`; // strictly sized to avoid flex stretching
+        rect.style.height = `${cell}px`;
         
         if (act) {
             if (act.studied) {
@@ -853,12 +893,44 @@ function renderHeatmapYearly() {
     }
     
     if (placeholder) placeholder.style.display = 'none';
+    bindHeatmapResize();
     if (!wrapper) return;
-    wrapper.style.display = 'block';
 
+    // The fitted range normally leaves nothing to scroll; this still matters on
+    // a screen too narrow even for the minimum column count.
     setTimeout(() => {
         wrapper.scrollLeft = wrapper.scrollWidth;
     }, 10);
+}
+
+/** Names the range actually drawn, so a short window never reads as missing data. */
+function updateHeatmapTitle(weeks, numDays) {
+    const titleEl = document.getElementById('heatmapCardTitle');
+    if (!titleEl) return;
+
+    if (weeks >= HEATMAP_MAX_WEEKS) {
+        titleEl.dataset.i18n = 'activity_history_year';
+        titleEl.textContent = t('activity_history_year');
+        return;
+    }
+
+    // Dropped from the static pass: the label carries a count no key can hold.
+    delete titleEl.dataset.i18n;
+    titleEl.textContent = t('activity_history_last_months', { n: Math.max(1, Math.round(numDays / 30.44)) });
+}
+
+let heatmapResizeBound = false;
+
+/** Re-fits the column count when the viewport changes (rotation, desktop resize). */
+function bindHeatmapResize() {
+    if (heatmapResizeBound) return;
+    heatmapResizeBound = true;
+
+    let timer = null;
+    window.addEventListener('resize', () => {
+        clearTimeout(timer);
+        timer = setTimeout(renderHeatmapYearly, 200);
+    });
 }
 
 export function showDailyMotivationToast() {

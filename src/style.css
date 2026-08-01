@@ -6248,6 +6248,7 @@ body.dnd-active {
     gap: 0.4rem;
     margin-top: 2px;
     max-width: 100%;
+    min-width: 0;
     cursor: pointer;
     user-select: none;
 }
@@ -6264,6 +6265,9 @@ body.dnd-active {
     white-space: nowrap;
     overflow: hidden;
     text-overflow: ellipsis;
+    min-width: 0;
+    max-width: 100%;
+    flex: 1;
     transition: color 0.15s ease;
 }
 

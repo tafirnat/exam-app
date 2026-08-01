@@ -904,6 +904,9 @@ function setupEventListeners() {
                 renderQuestion();
                 renderStatsList();
                 updateHomeStats();
+                // The heatmap draws its own weekday and month labels, so the
+                // static pass alone leaves it in the previous language.
+                renderGlobalCharts();
             } catch (err) {
                 console.error('UI update partially failed:', err);
             }
