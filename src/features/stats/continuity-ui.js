@@ -363,15 +363,29 @@ export function renderMotivationSlide() {
     if (quote.artwork && quote.artwork.url) {
         const optimizedUrl = optimizeCdnImageUrl(quote.artwork.url);
         const focal = randomFocalPoint();
-        card.style.backgroundImage = `url("${optimizedUrl}")`;
-        card.style.backgroundSize = 'cover';
-        card.style.backgroundPosition = focal;
         card.dataset.focalPoint = focal;
         card.dataset.artworkUrl = quote.artwork.url;
         if (artworkEl) {
             artworkEl.textContent = `${quote.artwork.artist} — ${quote.artwork.title} (${quote.artwork.year})`;
             artworkEl.title = `Günün Eseri: ${quote.artwork.title} by ${quote.artwork.artist} (${quote.artwork.year})`;
         }
+        // Preload the image; show the card only once it's fully fetched (smooth fade-in).
+        const img = new Image();
+        img.onload = () => {
+            card.style.backgroundImage = `url("${optimizedUrl}")`;
+            card.style.backgroundSize = 'cover';
+            card.style.backgroundPosition = focal;
+            card.classList.add('motivation-img-ready');
+        };
+        img.onerror = () => {
+            // Show card anyway so text is still readable
+            card.style.backgroundImage = `url("${optimizedUrl}")`;
+            card.classList.add('motivation-img-ready');
+        };
+        img.src = optimizedUrl;
+    } else {
+        // No artwork — still reveal the card
+        card.classList.add('motivation-img-ready');
     }
 }
 
@@ -417,14 +431,28 @@ export function bindMotivationEvents() {
             if (newQuote.artwork) {
                 const optimizedUrl = optimizeCdnImageUrl(newQuote.artwork.url);
                 const focal = randomFocalPoint();
-                card.style.backgroundImage = `url('${optimizedUrl}')`;
-                card.style.backgroundPosition = focal;
                 card.dataset.focalPoint = focal;
                 card.dataset.artworkUrl = newQuote.artwork.url;
                 if (artworkEl) {
                     artworkEl.textContent = `${newQuote.artwork.artist} — ${newQuote.artwork.title} (${newQuote.artwork.year})`;
                     artworkEl.title = `Günün Eseri: ${newQuote.artwork.title} by ${newQuote.artwork.artist} (${newQuote.artwork.year})`;
                 }
+                // Cross-fade: fade out → swap → preload → fade back in
+                card.classList.remove('motivation-img-ready');
+                card.classList.add('motivation-img-refreshing');
+                const img = new Image();
+                img.onload = () => {
+                    card.style.backgroundImage = `url('${optimizedUrl}')`;
+                    card.style.backgroundPosition = focal;
+                    card.classList.remove('motivation-img-refreshing');
+                    card.classList.add('motivation-img-ready');
+                };
+                img.onerror = () => {
+                    card.style.backgroundImage = `url('${optimizedUrl}')`;
+                    card.classList.remove('motivation-img-refreshing');
+                    card.classList.add('motivation-img-ready');
+                };
+                img.src = optimizedUrl;
             }
         });
     }
