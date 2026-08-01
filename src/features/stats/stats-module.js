@@ -218,7 +218,7 @@ export function renderStatsList(filter = 'all', searchKeyword = '') {
         window.syncStatsSearchUI();
     }
 
-    updateStatsFooter(filter, searchKeyword, filteredQuestions.length);
+    updateStatsFooter(filter, searchKeyword, filteredQuestions.length, filteredQuestions);
     if (filteredQuestions.length === 0) {
         list.innerHTML = `<div style="text-align:center; padding: 3rem 1rem; color: var(--text-secondary);">
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="width: 48px; height: 48px; margin-bottom: 1rem; opacity: 0.5;">
@@ -300,16 +300,42 @@ export function renderStatsList(filter = 'all', searchKeyword = '') {
     });
 }
 
-function updateStatsFooter(filter, keyword, count) {
+function updateStatsFooter(filter, keyword, count, questions = []) {
     const footer = document.getElementById('statsFooter');
     if (!footer) return;
 
+    let text = '';
     if (keyword && keyword.trim() !== '') {
-        footer.innerText = t('stats_count_search', { keyword, count });
+        text = t('stats_count_search', { keyword, count });
     } else if (filter === 'all') {
-        footer.innerText = t('stats_count_all', { count });
+        text = t('stats_count_all', { count });
     } else {
-        footer.innerText = t('stats_count_filtered', { count });
+        text = t('stats_count_filtered', { count });
+    }
+
+    if (count > 0 && Array.isArray(questions) && questions.length > 0 && filter !== 'recent' && filter !== 'incorrect') {
+        footer.innerHTML = `
+            <div class="stats-footer-content" style="display: flex; flex-direction: column; align-items: center; gap: 0.6rem; width: 100%;">
+                <div class="stats-footer-text">${escapeHTML(text)}</div>
+                <button class="btn btn-primary start-filtered-test-btn" id="startFilteredTestBtn">
+                    <svg viewBox="0 0 24 24" width="16" height="16" fill="currentColor" style="flex-shrink: 0;">
+                        <polygon points="5 3 19 12 5 21 5 3"></polygon>
+                    </svg>
+                    <span>${t('start_test_from_results', { count })}</span>
+                </button>
+            </div>
+        `;
+        const btn = footer.querySelector('#startFilteredTestBtn');
+        if (btn) {
+            btn.onclick = (e) => {
+                e.stopPropagation();
+                if (typeof window.startTestFromFilteredQuestions === 'function') {
+                    window.startTestFromFilteredQuestions(questions, keyword || filter);
+                }
+            };
+        }
+    } else {
+        footer.innerHTML = `<div class="stats-footer-text">${escapeHTML(text)}</div>`;
     }
 }
 

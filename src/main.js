@@ -36,6 +36,43 @@ window.onRetake = (historyEntry, onlyIncorrect) => {
     }
 };
 
+window.startTestFromFilteredQuestions = async (questions, searchOrFilterName) => {
+    if (!questions || questions.length === 0) return;
+
+    const { prepareFromCompositeIds, buildQuestionPool } = await import('./features/test/test-engine.js');
+    buildQuestionPool({ scope: 'all' });
+
+    const compositeIds = questions.map(q => `${q.sourceId}_${q.id}`);
+    let title = '';
+    if (typeof searchOrFilterName === 'string' && searchOrFilterName.trim() !== '') {
+        const raw = searchOrFilterName.trim();
+        if (raw.startsWith('#')) {
+            title = `"${raw}" (${questions.length} Soru)`;
+        } else if (['all', 'starred', 'flagged', 'noted'].includes(raw)) {
+            const filterTitles = {
+                all: t('filter_all'),
+                starred: t('filter_starred'),
+                flagged: t('filter_flagged'),
+                noted: t('filter_noted')
+            };
+            title = `${filterTitles[raw] || raw} (${questions.length} Soru)`;
+        } else {
+            title = `"${raw}" (${questions.length} Soru)`;
+        }
+    } else {
+        title = `Arama Sonuçları (${questions.length} Soru)`;
+    }
+
+    if (prepareFromCompositeIds(compositeIds, { shuffle: true, sourceTitle: title, mode: 'custom_filter' })) {
+        switchView('test');
+        renderQuestion();
+        showDailyMotivationToast();
+        showToast(t('test_started_filtered', { count: questions.length }));
+    } else {
+        showToast(t('no_questions_available'));
+    }
+};
+
 // --- Global access for module cross-communication ---
 window.renderStatsList = renderStatsList;
 window.updateHomeStats = updateHomeStats;
