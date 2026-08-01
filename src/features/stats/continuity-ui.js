@@ -349,7 +349,7 @@ export function renderMotivationSlide() {
         card.style.backgroundSize = 'cover';
         card.style.backgroundPosition = 'center center';
         if (artworkEl) {
-            artworkEl.textContent = `🎨 ${quote.artwork.artist} — ${quote.artwork.title} (${quote.artwork.year})`;
+            artworkEl.textContent = `${quote.artwork.artist} — ${quote.artwork.title} (${quote.artwork.year})`;
             artworkEl.title = `Günün Eseri: ${quote.artwork.title} by ${quote.artwork.artist} (${quote.artwork.year})`;
         }
     }
@@ -395,7 +395,7 @@ export function bindMotivationEvents() {
             if (newQuote.artwork) {
                 card.style.backgroundImage = `url('${newQuote.artwork.url}')`;
                 if (artworkEl) {
-                    artworkEl.textContent = `🎨 ${newQuote.artwork.artist} — ${newQuote.artwork.title} (${newQuote.artwork.year})`;
+                    artworkEl.textContent = `${newQuote.artwork.artist} — ${newQuote.artwork.title} (${newQuote.artwork.year})`;
                     artworkEl.title = `Günün Eseri: ${newQuote.artwork.title} by ${newQuote.artwork.artist} (${newQuote.artwork.year})`;
                 }
             }
@@ -1183,9 +1183,11 @@ function renderActivityCharts() {
     const badgeTextEl = document.getElementById('diffCardSourceBadgeText');
     const badgeEl = document.getElementById('diffCardSourceBadge');
     if (badgeTextEl) {
-        badgeTextEl.textContent = currentItem.name;
+        const rawName = currentItem.name || '';
+        const truncatedName = rawName.length > 25 ? rawName.substring(0, 22) + '...' : rawName;
+        badgeTextEl.textContent = truncatedName;
         if (badgeEl) {
-            badgeEl.title = currentItem.name;
+            badgeEl.title = rawName;
             badgeEl.classList.toggle('is-disabled', currentItem.isAll);
         }
     }

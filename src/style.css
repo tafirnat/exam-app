@@ -6253,6 +6253,7 @@ body.dnd-active {
     min-width: 0;
     cursor: pointer;
     user-select: none;
+    overflow: hidden;
 }
 
 .diff-card-source-row.is-disabled {
@@ -6270,7 +6271,14 @@ body.dnd-active {
     min-width: 0;
     max-width: 100%;
     flex: 1;
+    display: block;
     transition: color 0.15s ease;
+}
+
+@media (max-width: 600px) {
+    .diff-card-source-text {
+        max-width: 150px;
+    }
 }
 
 .diff-card-source-row:hover:not(.is-disabled) .diff-card-source-text {
@@ -6300,4 +6308,24 @@ body.dnd-active {
     transition: background 0.4s ease;
 }
 
+.motivation-artwork-tag {
+    font-size: 0.68rem;
+    color: #e2e8f0;
+    font-style: italic;
+    text-shadow: 0 1px 3px #000, 0 1px 5px rgba(0,0,0,0.9);
+    max-width: 70%;
+    display: inline-block;
+    transform: translate(-75px, 25px);
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    vertical-align: bottom;
+}
+
+@media (max-width: 600px) {
+    .motivation-artwork-tag {
+        max-width: 85%;
+        transform: translate(-75px, 25px);
+    }
+}
 }
