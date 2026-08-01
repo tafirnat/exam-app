@@ -1200,7 +1200,7 @@ export function getDifficultyNavItems() {
     const unstarred = ordered.filter(item => !item.source.starred);
 
     const items = [
-        { id: 'all', name: t('all_active_sources') || 'Tüm Aktif Kaynaklar', isAll: true }
+        { id: 'all', name: t('all_active_sources') || 'Tüm Kaynaklar', isAll: true }
     ];
 
     starred.forEach(item => {
