@@ -5626,39 +5626,43 @@ body.dnd-active {
     display: flex;
     justify-content: center;
     align-items: center;
-    gap: 8px;
-    margin-top: 8px;
-    padding: 4px 0;
+    gap: 10px;
+    margin-top: 10px;
+    padding: 6px 0;
 }
 
 .continuity-dots .dot {
-    width: 32px;
-    height: 6px;
-    border-radius: 3px;
-    background-color: var(--border-color);
+    width: 28px;
+    height: 7px;
+    border-radius: 4px;
+    background-color: var(--text-secondary);
     cursor: pointer;
-    transition: background-color 0.25s ease, opacity 0.25s ease;
-    opacity: 0.45;
+    transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+    opacity: 0.55;
     position: relative;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.15);
 }
 
 /* Touch hit area expansion for mobile */
 .continuity-dots .dot::after {
     content: '';
     position: absolute;
-    top: -8px;
-    bottom: -8px;
-    left: -4px;
-    right: -4px;
+    top: -10px;
+    bottom: -10px;
+    left: -6px;
+    right: -6px;
 }
 
 .continuity-dots .dot:hover {
-    opacity: 0.75;
+    opacity: 0.85;
+    transform: translateY(-1px);
 }
 
 .continuity-dots .dot.active {
+    width: 36px;
     background-color: var(--primary-color);
     opacity: 1;
+    box-shadow: 0 0 8px rgba(var(--primary-rgb, 59, 130, 246), 0.45);
 }
 
 /* Bottom row of a continuity card: the run action claims the free space on the
@@ -6131,8 +6135,6 @@ body.dnd-active {
     width: 6px;
     height: 6px;
     border-radius: 50%;
-    border: 1.5px solid var(--surface-color);
-    box-sizing: content-box;
     transform: translate(-50%, -50%);
 }
 
