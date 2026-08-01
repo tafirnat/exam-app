@@ -969,57 +969,134 @@ function renderActivityCharts() {
         });
     }
 
-    // 2. Weekly Study Trend
+    // 2. Study Trend (weekly on the card's front face, monthly on its back)
     const activities = AppState.studyActivity || {};
-    const yAxisEl = document.getElementById('trendYAxis');
-    const barsEl = document.getElementById('trendBars');
-    const xAxisEl = document.getElementById('trendXAxis');
-    
+    renderTrendChart(buildWeeklyTrendBuckets(activities), 'trendYAxis', 'trendBars', 'trendXAxis');
+    renderTrendChart(buildMonthlyTrendBuckets(activities), 'monthlyTrendYAxis', 'monthlyTrendBars', 'monthlyTrendXAxis');
+    bindTrendFlip();
+}
+
+/** Wires the flip buttons on both faces of the trend card (once). */
+function bindTrendFlip() {
+    const card = document.getElementById('homeWeeklyTrendCard');
+    if (!card || card.dataset.flipBound) return;
+    card.dataset.flipBound = 'true';
+
+    card.querySelectorAll('[data-trend-flip]').forEach(btn => {
+        btn.addEventListener('click', () => {
+            const flipped = card.classList.toggle('flipped');
+            // The hidden face must stay out of the tab order, otherwise focus
+            // can land on a button nobody can see.
+            card.querySelectorAll('.chart-flip-front [data-trend-flip]').forEach(b => {
+                b.tabIndex = flipped ? -1 : 0;
+            });
+            card.querySelectorAll('.chart-flip-back [data-trend-flip]').forEach(b => {
+                b.tabIndex = flipped ? 0 : -1;
+            });
+        });
+    });
+
+    card.querySelectorAll('.chart-flip-back [data-trend-flip]').forEach(b => {
+        b.tabIndex = -1;
+    });
+}
+
+/** One bucket per day for the last 7 days, oldest first. */
+export function buildWeeklyTrendBuckets(activities) {
+    const numDays = 7;
+    const currentDate = new Date();
+    currentDate.setDate(currentDate.getDate() - numDays + 1);
+
+    const lang = document.documentElement.lang || 'tr';
+    const isTr = lang.startsWith('tr');
+    const isDe = lang.startsWith('de');
+    const dayLabels = isTr ? ['Paz', 'Pzt', 'Sal', 'Çar', 'Per', 'Cum', 'Cmt'] :
+                      isDe ? ['So', 'Mo', 'Di', 'Mi', 'Do', 'Fr', 'Sa'] :
+                             ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
+
+    const buckets = [];
+    for (let i = 0; i < numDays; i++) {
+        const bucket = { label: dayLabels[currentDate.getDay()], correct: 0, wrong: 0, empty: 0, total: 0 };
+        addActivityToBucket(bucket, activities[getLocalDateStr(currentDate)]);
+        buckets.push(bucket);
+        currentDate.setDate(currentDate.getDate() + 1);
+    }
+    return buckets;
+}
+
+/** One bucket per calendar month for the last 6 months, oldest first. */
+export function buildMonthlyTrendBuckets(activities) {
+    const numMonths = 6;
+    const lang = document.documentElement.lang || 'tr';
+    const monthFormatter = new Intl.DateTimeFormat(lang, { month: 'short' });
+
+    const today = new Date();
+    const buckets = [];
+    const bucketByKey = {};
+
+    for (let i = numMonths - 1; i >= 0; i--) {
+        const monthDate = new Date(today.getFullYear(), today.getMonth() - i, 1);
+        const bucket = {
+            label: monthFormatter.format(monthDate),
+            correct: 0, wrong: 0, empty: 0, total: 0
+        };
+        // Keyed by year-month so activity dates land in the right bucket even
+        // when the range spans a year boundary.
+        bucketByKey[`${monthDate.getFullYear()}-${monthDate.getMonth()}`] = bucket;
+        buckets.push(bucket);
+    }
+
+    Object.keys(activities).forEach(dateStr => {
+        const [y, m] = dateStr.split('-');
+        const bucket = bucketByKey[`${Number(y)}-${Number(m) - 1}`];
+        if (bucket) addActivityToBucket(bucket, activities[dateStr]);
+    });
+
+    return buckets;
+}
+
+/** Folds one day's activity record into a bucket's correct/wrong/empty totals. */
+function addActivityToBucket(bucket, act) {
+    if (!act || !act.studied) return;
+
+    const total = act.questionCount || 0;
+    let correct = act.correctCount || 0;
+    let wrong = act.wrongCount || 0;
+    let empty = act.unansweredCount || 0;
+
+    // Older records only carry a question count; treat those as unanswered so
+    // the bar still reflects the day's volume.
+    if (total > 0 && correct === 0 && wrong === 0 && empty === 0) {
+        empty = total;
+    }
+
+    bucket.correct += correct;
+    bucket.wrong += wrong;
+    bucket.empty += empty;
+    bucket.total += total;
+}
+
+/** Draws the stacked bar chart shared by the weekly and monthly trend faces. */
+function renderTrendChart(buckets, yAxisId, barsId, xAxisId) {
+    const yAxisEl = document.getElementById(yAxisId);
+    const barsEl = document.getElementById(barsId);
+    const xAxisEl = document.getElementById(xAxisId);
+
     if (!yAxisEl || !barsEl || !xAxisEl) return;
-    
+
     yAxisEl.innerHTML = '';
     barsEl.innerHTML = '';
     xAxisEl.innerHTML = '';
 
-    const numDays = 7;
-    let currentDate = new Date();
-    currentDate.setDate(currentDate.getDate() - numDays + 1);
-    
-    const lang = document.documentElement.lang || 'tr';
-    const isTr = lang.startsWith('tr');
-    const isDe = lang.startsWith('de');
-    const daysArr = [];
-    let maxCount = 0;
-    
-    for (let i = 0; i < numDays; i++) {
-        const dateStr = getLocalDateStr(currentDate);
-        const act = activities[dateStr];
-        
-        const dayLabels = isTr ? ['Paz', 'Pzt', 'Sal', 'Çar', 'Per', 'Cum', 'Cmt'] : 
-                          isDe ? ['So', 'Mo', 'Di', 'Mi', 'Do', 'Fr', 'Sa'] : 
-                                 ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
-        
-        const dayLabel = dayLabels[currentDate.getDay()];
-        
-        let c = 0, w = 0, u = 0, t = 0;
-        if (act && act.studied) {
-            c = act.correctCount || 0;
-            w = act.wrongCount || 0;
-            u = act.unansweredCount || 0;
-            t = act.questionCount || 0;
-            
-            if (t > 0 && c === 0 && w === 0 && u === 0) {
-                u = t;
-            }
-        }
-        
-        if (t > maxCount) maxCount = t;
-        
-        daysArr.push({ label: dayLabel, correct: c, wrong: w, empty: u, total: t });
-        currentDate.setDate(currentDate.getDate() + 1);
-    }
-    
+    const maxCount = buckets.reduce((max, b) => Math.max(max, b.total), 0);
     const topLimit = Math.max(10, Math.ceil(maxCount / 5) * 5);
+
+    // Monthly totals run into the hundreds, so the axis gutter grows with the
+    // widest tick instead of clipping against the fixed 20px the week needs.
+    const labelWidth = Math.max(20, String(topLimit).length * 8);
+    barsEl.style.paddingLeft = `${labelWidth + 5}px`;
+    xAxisEl.style.paddingLeft = `${labelWidth + 5}px`;
+
     for (let i = 0; i <= 5; i++) {
         const val = Math.round((topLimit / 5) * i);
         const line = document.createElement('div');
@@ -1028,11 +1105,11 @@ function renderActivityCharts() {
         line.style.fontSize = '0.7rem';
         line.style.color = 'var(--text-secondary)';
         line.style.width = '100%';
-        line.innerHTML = `<span style="width:20px; text-align:right; margin-right:5px;">${val}</span><div style="flex:1; height:1px; background:var(--border-color); opacity:0.5;"></div>`;
+        line.innerHTML = `<span style="width:${labelWidth}px; text-align:right; margin-right:5px;">${val}</span><div style="flex:1; height:1px; background:var(--border-color); opacity:0.5;"></div>`;
         yAxisEl.appendChild(line);
     }
 
-    daysArr.forEach(d => {
+    buckets.forEach(d => {
         const xLbl = document.createElement('div');
         xLbl.textContent = d.label;
         xLbl.style.flex = '1';
