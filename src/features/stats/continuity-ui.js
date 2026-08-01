@@ -546,9 +546,23 @@ function initCarouselEvents() {
         }, getSlideDuration(carousel || wrapper) + 40);
     }
 
+    let isHovering = false;
+    let isFocused = false;
+    let touchPauseTimer = null;
+
+    function shouldPause() {
+        return isHovering || isFocused || Boolean(touchPauseTimer);
+    }
+
     function startTimer() {
         stopTimer();
+        if (shouldPause()) return;
+
         carouselTimer = setInterval(() => {
+            if (shouldPause()) {
+                stopTimer();
+                return;
+            }
             const nextIdx = (currentSlideIndex + 1) % slides.length;
             goToSlide(nextIdx, 'next');
         }, CAROUSEL_INTERVAL_MS);
@@ -561,15 +575,70 @@ function initCarouselEvents() {
         }
     }
 
-    wrapper.addEventListener('mouseenter', stopTimer);
-    wrapper.addEventListener('mouseleave', startTimer);
+    function pauseTemporarily(durationMs = 12000) {
+        stopTimer();
+        if (touchPauseTimer) clearTimeout(touchPauseTimer);
+        touchPauseTimer = setTimeout(() => {
+            touchPauseTimer = null;
+            if (!shouldPause()) {
+                startTimer();
+            }
+        }, durationMs);
+    }
 
-    // Touch swipe handling for mobile
+    // Hover events (Desktop / Mouse)
+    wrapper.addEventListener('mouseenter', () => {
+        isHovering = true;
+        stopTimer();
+    });
+
+    wrapper.addEventListener('mouseleave', () => {
+        isHovering = false;
+        if (!shouldPause()) {
+            startTimer();
+        }
+    });
+
+    // Pointer events (Hybrid & Touchscreen Pointer support)
+    wrapper.addEventListener('pointerenter', (e) => {
+        if (e.pointerType === 'mouse') {
+            isHovering = true;
+            stopTimer();
+        }
+    });
+
+    wrapper.addEventListener('pointerleave', (e) => {
+        if (e.pointerType === 'mouse') {
+            isHovering = false;
+            if (!shouldPause()) {
+                startTimer();
+            }
+        }
+    });
+
+    // Focus events (Keyboard navigation & UI Interaction)
+    wrapper.addEventListener('focusin', () => {
+        isFocused = true;
+        stopTimer();
+    });
+
+    wrapper.addEventListener('focusout', () => {
+        setTimeout(() => {
+            if (!wrapper.contains(document.activeElement)) {
+                isFocused = false;
+                if (!shouldPause()) {
+                    startTimer();
+                }
+            }
+        }, 50);
+    });
+
+    // Touch swipe & Touch interaction handling for mobile
     let touchStartX = 0;
     let touchStartY = 0;
 
     wrapper.addEventListener('touchstart', (e) => {
-        stopTimer();
+        pauseTemporarily(15000);
         if (e.touches.length === 1) {
             touchStartX = e.touches[0].clientX;
             touchStartY = e.touches[0].clientY;
@@ -577,7 +646,6 @@ function initCarouselEvents() {
     }, { passive: true });
 
     wrapper.addEventListener('touchend', (e) => {
-        startTimer();
         if (e.changedTouches.length === 1) {
             const diffX = e.changedTouches[0].clientX - touchStartX;
             const diffY = e.changedTouches[0].clientY - touchStartY;
@@ -593,6 +661,7 @@ function initCarouselEvents() {
                 }
             }
         }
+        pauseTemporarily(12000);
     }, { passive: true });
 
     // Dot click listeners
@@ -601,12 +670,9 @@ function initCarouselEvents() {
             if (idx === currentSlideIndex) return;
             const dir = idx > currentSlideIndex ? 'next' : 'prev';
             goToSlide(idx, dir);
-            startTimer();
+            pauseTemporarily(12000);
         });
     });
-
-    // The info buttons are handled by the card-level delegation in
-    // bindContinuityModalEvents, so nothing extra is wired here.
 
     startTimer();
 }
