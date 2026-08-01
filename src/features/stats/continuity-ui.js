@@ -334,6 +334,14 @@ function optimizeCdnImageUrl(url) {
     return url;
 }
 
+/** Three vertical focal zones — gives 36 artworks × 3 = 108 distinct background crops. */
+const ARTWORK_FOCAL_POINTS = ['center top', 'center center', 'center bottom'];
+
+/** Returns a randomly chosen focal point string. */
+function randomFocalPoint() {
+    return ARTWORK_FOCAL_POINTS[Math.floor(Math.random() * ARTWORK_FOCAL_POINTS.length)];
+}
+
 export function renderMotivationSlide() {
     const textEl = document.getElementById('motivationQuoteText');
     const authorEl = document.getElementById('motivationQuoteAuthor');
@@ -354,9 +362,11 @@ export function renderMotivationSlide() {
 
     if (quote.artwork && quote.artwork.url) {
         const optimizedUrl = optimizeCdnImageUrl(quote.artwork.url);
+        const focal = randomFocalPoint();
         card.style.backgroundImage = `url("${optimizedUrl}")`;
         card.style.backgroundSize = 'cover';
-        card.style.backgroundPosition = 'center center';
+        card.style.backgroundPosition = focal;
+        card.dataset.focalPoint = focal;
         if (artworkEl) {
             artworkEl.textContent = `${quote.artwork.artist} — ${quote.artwork.title} (${quote.artwork.year})`;
             artworkEl.title = `Günün Eseri: ${quote.artwork.title} by ${quote.artwork.artist} (${quote.artwork.year})`;
@@ -403,7 +413,10 @@ export function bindMotivationEvents() {
 
             if (newQuote.artwork) {
                 const optimizedUrl = optimizeCdnImageUrl(newQuote.artwork.url);
+                const focal = randomFocalPoint();
                 card.style.backgroundImage = `url('${optimizedUrl}')`;
+                card.style.backgroundPosition = focal;
+                card.dataset.focalPoint = focal;
                 if (artworkEl) {
                     artworkEl.textContent = `${newQuote.artwork.artist} — ${newQuote.artwork.title} (${newQuote.artwork.year})`;
                     artworkEl.title = `Günün Eseri: ${newQuote.artwork.title} by ${newQuote.artwork.artist} (${newQuote.artwork.year})`;
@@ -1240,19 +1253,19 @@ function bindDifficultyCardControls() {
 
     const inspectBtn = document.getElementById('diffCardInspectBtn');
     if (inspectBtn) {
-        inspectBtn.onclick = (e) => {
+        inspectBtn.onclick = async (e) => {
             e.stopPropagation();
+            const { inspectSourceQuestions, renderStatsList } = await import('./stats-module.js');
             if (currentDifficultyViewId !== 'all') {
-                AppState.currentSourceKey = currentDifficultyViewId;
-            } else {
-                AppState.currentSourceKey = null;
+                inspectSourceQuestions(currentDifficultyViewId);
+                return;
             }
-            if (typeof window.switchView === 'function') {
-                window.switchView('stats');
-            }
-            if (typeof window.renderStatsList === 'function') {
-                window.renderStatsList('all');
-            }
+            AppState.currentSourceKey = null;
+            const searchInput = document.getElementById('statsSearchInput');
+            if (searchInput) searchInput.value = '';
+            if (typeof window.switchView === 'function') window.switchView('stats');
+            if (typeof window.syncStatsSearchUI === 'function') window.syncStatsSearchUI();
+            renderStatsList('all');
         };
     }
 }
