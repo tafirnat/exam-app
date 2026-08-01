@@ -844,23 +844,31 @@ function renderHeatmapYearly() {
     const colorEmpty  = isDark ? 'rgba(255, 255, 255, 0.05)' : '#ebedf0';
     const colorFrozen = isDark ? '#38bdf8' : '#3b82f6';
     
-    let lastLabelCol = -1;
+    // Roughly the width of a three-letter month at this font size.
+    const MIN_LABEL_GAP = 26;
+    let lastLabelLeft = -Infinity;
+    let lastLabelEl = null;
 
     for (let i = 0; i < numDays; i++) {
         if (i === 0 || currentDate.getDate() === 1) {
-            const currentCol = Math.floor(i / 7);
-            // A range starting late in a month would stack its own label on top
-            // of the next month's; one label per column is the rule.
-            if (currentCol !== lastLabelCol) {
-                lastLabelCol = currentCol;
-                const monthStr = new Intl.DateTimeFormat(lang, { month: 'short' }).format(currentDate);
+            const left = Math.floor(i / 7) * (cell + HEATMAP_GAP);
+            const monthStr = new Intl.DateTimeFormat(lang, { month: 'short' }).format(currentDate);
 
+            // A window starting late in a month sets its own label a column or
+            // two before the next month's, and the two collide. The later one
+            // wins that slot - the columns after it belong to that month.
+            if (left - lastLabelLeft < MIN_LABEL_GAP && lastLabelEl) {
+                lastLabelEl.textContent = monthStr;
+            } else {
                 const monthDiv = document.createElement('div');
                 monthDiv.textContent = monthStr;
                 monthDiv.style.position = 'absolute';
-                monthDiv.style.left = `${currentCol * (cell + HEATMAP_GAP)}px`;
+                monthDiv.style.left = `${left}px`;
                 monthDiv.style.top = '0';
                 xAxisEl.appendChild(monthDiv);
+
+                lastLabelLeft = left;
+                lastLabelEl = monthDiv;
             }
         }
 
