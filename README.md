@@ -92,8 +92,6 @@ Now that you know **what** Exam App does and **why** it exists, here is **how** 
 - **Vite & Single-File Bundler**: Uses `vite-plugin-singlefile` to generate a 100% standalone, single `index.html` output containing all JavaScript, CSS, and assets.
 - **Client-Side Storage & Sync**: Relies on browser `localStorage` for offline state and GitHub Gist REST API for cross-device synchronization.
 
-> 📄 The full rules behind the streak tracks, the one-tap daily review and the archive freeze live in [`docs/CONTINUITY_SPEC.md`](docs/CONTINUITY_SPEC.md).
-
 ---
 
 ## ☁️ Cross-Device Sync (GitHub Gist)

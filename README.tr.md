@@ -92,8 +92,6 @@ Exam App'in **ne** yaptığını ve **neden** var olduğunu öğrendikten sonra,
 - **Vite & Tek Dosyalı Derleyici**: Tüm JavaScript, CSS ve varlıkları içeren %100 bağımsız, tek bir `index.html` çıktısı üretmek için `vite-plugin-singlefile` kullanır.
 - **İstemci Tarafı Depolama & Senkronizasyon**: Çevrimdışı durum için tarayıcı `localStorage`'ına ve cihazlar arası senkronizasyon için GitHub Gist REST API'sine dayanır.
 
-> 📄 Seri kulvarlarının, tek tıkla günün tekrarının ve arşiv dondurmanın tüm kuralları [`docs/CONTINUITY_SPEC.md`](docs/CONTINUITY_SPEC.md) içindedir.
-
 ---
 
 ## ☁️ Cihazlar Arası Senkronizasyon (GitHub Gist)

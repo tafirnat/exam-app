@@ -92,8 +92,6 @@ Nachdem Sie wissen, **was** die Exam App tut und **warum** sie existiert, erfahr
 - **Vite & Single-File-Bundler**: Nutzt `vite-plugin-singlefile`, um eine 100 % eigenständige, einzelne `index.html`-Ausgabe zu erzeugen, die sämtliches JavaScript, CSS und Assets enthält.
 - **Client-seitige Speicherung & Synchronisation**: Nutzt den `localStorage` des Browsers für den Offline-Status und die GitHub Gist REST API für die geräteübergreifende Synchronisation.
 
-> 📄 Die vollständigen Regeln zu den Serien-Kulvaren, zur täglichen Wiederholung mit einem Tipp und zum Einfrieren des Archivs stehen in [`docs/CONTINUITY_SPEC.md`](docs/CONTINUITY_SPEC.md).
-
 ---
 
 ## ☁️ Geräteübergreifende Synchronisation (GitHub Gist)
