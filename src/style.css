@@ -6274,3 +6274,36 @@ body.dnd-active {
 .diff-card-source-row:hover:not(.is-disabled) .diff-card-source-text {
     color: var(--text-primary);
 }
+
+/* Masterpiece Art Background Card for 3rd Slide */
+.motivation-card-art {
+    position: relative;
+    overflow: hidden;
+    background-size: cover;
+    background-position: center center;
+    background-repeat: no-repeat;
+    transition: background-image 0.6s ease-in-out;
+}
+
+.motivation-card-overlay {
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: linear-gradient(135deg, rgba(15, 23, 42, 0.80) 0%, rgba(15, 23, 42, 0.92) 100%);
+    backdrop-filter: blur(1px);
+    z-index: 1;
+    transition: background 0.4s ease;
+}
+
+.motivation-btn-art {
+    background: rgba(255, 255, 255, 0.15) !important;
+    color: #e2e8f0 !important;
+    border: 1px solid rgba(255, 255, 255, 0.25) !important;
+}
+
+.motivation-btn-art:hover {
+    background: rgba(255, 255, 255, 0.3) !important;
+    color: #ffffff !important;
+}

@@ -329,6 +329,7 @@ function renderFocusSlide() {
 export function renderMotivationSlide() {
     const textEl = document.getElementById('motivationQuoteText');
     const authorEl = document.getElementById('motivationQuoteAuthor');
+    const artworkEl = document.getElementById('motivationArtworkInfo');
     const card = document.getElementById('motivationContinuityCard');
     if (!textEl || !authorEl || !card) return;
 
@@ -338,8 +339,17 @@ export function renderMotivationSlide() {
     if (!card.dataset.quoteId) {
         const quote = getDailyQuote(lang);
         card.dataset.quoteId = String(quote.id);
-        textEl.textContent = `"${quote.text}"`;
+        const safeLang = (quote[lang]) ? lang : 'tr';
+        textEl.textContent = `"${quote[safeLang] || quote.text || quote.tr}"`;
         authorEl.textContent = `— ${quote.author}`;
+
+        if (quote.artwork) {
+            card.style.backgroundImage = `url('${quote.artwork.url}')`;
+            if (artworkEl) {
+                artworkEl.textContent = `🎨 ${quote.artwork.artist} — ${quote.artwork.title} (${quote.artwork.year})`;
+                artworkEl.title = `Günün Eseri: ${quote.artwork.title} by ${quote.artwork.artist} (${quote.artwork.year})`;
+            }
+        }
     }
 }
 
@@ -348,6 +358,7 @@ export function bindMotivationEvents() {
     const refreshBtn = document.getElementById('refreshMotivationBtn');
     const textEl = document.getElementById('motivationQuoteText');
     const authorEl = document.getElementById('motivationQuoteAuthor');
+    const artworkEl = document.getElementById('motivationArtworkInfo');
     const card = document.getElementById('motivationContinuityCard');
 
     if (copyBtn && !copyBtn.dataset.bound) {
@@ -375,8 +386,17 @@ export function bindMotivationEvents() {
             const currentId = parseInt(card.dataset.quoteId || '0', 10);
             const newQuote = getRandomQuote(lang, currentId);
             card.dataset.quoteId = String(newQuote.id);
-            textEl.textContent = `"${newQuote.text}"`;
+            const safeLang = (newQuote[lang]) ? lang : 'tr';
+            textEl.textContent = `"${newQuote[safeLang] || newQuote.text || newQuote.tr}"`;
             authorEl.textContent = `— ${newQuote.author}`;
+
+            if (newQuote.artwork) {
+                card.style.backgroundImage = `url('${newQuote.artwork.url}')`;
+                if (artworkEl) {
+                    artworkEl.textContent = `🎨 ${newQuote.artwork.artist} — ${newQuote.artwork.title} (${newQuote.artwork.year})`;
+                    artworkEl.title = `Günün Eseri: ${newQuote.artwork.title} by ${newQuote.artwork.artist} (${newQuote.artwork.year})`;
+                }
+            }
         });
     }
 }
@@ -454,7 +474,7 @@ function createTokenSvg(tokenIndex, active) {
 
 let isAnimating = false;
 
-const CAROUSEL_INTERVAL_MS = 5000;
+const CAROUSEL_INTERVAL_MS = 10000;
 
 // Read the slide duration from CSS so timing lives in one place.
 function getSlideDuration(carousel) {
