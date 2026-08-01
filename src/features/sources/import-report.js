@@ -105,9 +105,10 @@ export function showImportReport(source, gaps) {
                 ${escapeHTML(t('import_gaps_summary', { name: source.name, count: gaps.length }))}
             </p>
 
-            <div class="btn-row import-report-actions" data-count="2">
+            <div class="btn-row import-report-actions" data-count="3">
                 <button class="btn btn-primary" id="importGapsFlagBtn">${escapeHTML(t('import_gaps_flag_btn'))}</button>
                 <button class="btn btn-danger" id="importGapsRemoveBtn">${escapeHTML(t('import_gaps_remove_btn'))}</button>
+                <button class="btn btn-secondary" id="importGapsCancelBtn">${escapeHTML(t('import_gaps_cancel_btn'))}</button>
             </div>
 
             <p class="import-report-hint">${escapeHTML(t('import_gaps_hint'))}</p>
@@ -123,6 +124,12 @@ export function showImportReport(source, gaps) {
         refreshUI();
     };
 
+    const handleCancel = () => {
+        closeReport();
+        refreshUI();
+    };
+
     document.getElementById('importGapsFlagBtn').onclick = () => finish(() => flagGaps(source, gaps));
     document.getElementById('importGapsRemoveBtn').onclick = () => finish(() => removeGaps(source, gaps));
+    document.getElementById('importGapsCancelBtn').onclick = handleCancel;
 }
