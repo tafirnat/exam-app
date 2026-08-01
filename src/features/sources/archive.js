@@ -9,6 +9,7 @@ import { showToast, showAlert, showConfirm, escapeHTML } from '../../core/utils.
 import { t } from '../../core/i18n.js';
 import { normalizeQuestions } from './sources-service.js';
 import { renderSourcesList, downloadSourceJSON, DEFAULT_FOLDER_COLOR } from './sources-ui.js';
+import { syncQuickPresetsWithLiveSources } from './quick-presets.js';
 
 /**
  * Archiving is a flag on the source, never a move into a second collection: every
@@ -151,6 +152,7 @@ export async function archiveSource(sourceId) {
     }
 
     saveSources();
+    syncQuickPresetsWithLiveSources();
     renderSourcesList();
     if (window.onSourcesUpdated) window.onSourcesUpdated();
     showToast(source.offloaded ? t('archive_done_remote') : t('archive_done_local'));
@@ -186,6 +188,7 @@ export async function archiveFolder(folderId) {
 
     saveSources();
     saveFolders();
+    syncQuickPresetsWithLiveSources();
     renderSourcesList();
     if (window.onSourcesUpdated) window.onSourcesUpdated();
     showToast(t('archive_done_folder', { count: contents.length }));
@@ -323,6 +326,8 @@ export async function deleteArchivedSource(sourceId) {
 
     saveStats();
     saveSources();
+    syncQuickPresetsWithLiveSources();
+    if (window.onSourcesUpdated) window.onSourcesUpdated();
     showToast(t('archive_deleted', { name: source.name }));
     renderArchiveList();
     return true;
@@ -353,6 +358,8 @@ export async function deleteArchivedFolder(folderId) {
     saveStats();
     saveSources();
     saveFolders();
+    syncQuickPresetsWithLiveSources();
+    if (window.onSourcesUpdated) window.onSourcesUpdated();
     showToast(t('archive_deleted', { name: folder.name }));
     renderArchiveList();
     return true;

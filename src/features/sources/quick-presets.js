@@ -1,4 +1,4 @@
-import { AppState, liveFolders, saveQuickPresets } from '../../core/state.js';
+import { AppState, liveSources, liveFolders, saveQuickPresets, trackDeletedQuickPreset, clearPresetSessionData } from '../../core/state.js';
 import { showAlert } from '../../core/utils.js';
 import { t } from '../../core/i18n.js';
 
@@ -145,3 +145,41 @@ export function addCurrentAsPreset() {
     saveQuickPresets();
     return newPreset;
 }
+
+export function syncQuickPresetsWithLiveSources() {
+    if (!AppState.quickPresets || AppState.quickPresets.length === 0) return false;
+
+    const liveIds = new Set(liveSources().map(s => s.id));
+    let changed = false;
+    const remainingPresets = [];
+
+    for (const preset of AppState.quickPresets) {
+        if (!preset.sourceIds || !Array.isArray(preset.sourceIds)) {
+            changed = true;
+            continue;
+        }
+
+        const validSourceIds = preset.sourceIds.filter(id => liveIds.has(id));
+
+        if (validSourceIds.length === 0) {
+            trackDeletedQuickPreset(preset.id);
+            clearPresetSessionData(preset.id);
+            changed = true;
+        } else {
+            if (validSourceIds.length !== preset.sourceIds.length) {
+                preset.sourceIds = validSourceIds;
+                preset.updatedAt = Date.now();
+                changed = true;
+            }
+            remainingPresets.push(preset);
+        }
+    }
+
+    if (changed) {
+        AppState.quickPresets = remainingPresets;
+        saveQuickPresets();
+    }
+
+    return changed;
+}
+

@@ -22,6 +22,7 @@ before(async () => {
     resolvePresetColor = quickPresetsModule.resolvePresetColor;
     DEFAULT_FOLDER_COLOR = quickPresetsModule.DEFAULT_FOLDER_COLOR;
     generateAutoName = quickPresetsModule.generateAutoName;
+    global.syncQuickPresetsWithLiveSources = quickPresetsModule.syncQuickPresetsWithLiveSources;
 });
 
 test('generateAutoName resolves name collisions correctly', () => {
@@ -165,3 +166,69 @@ test('showSourceQuickPresetsModal renders presets and toggles source inclusion',
     rows[1].click();
     assert.ok(!AppState.quickPresets[1].sourceIds.includes('src_test_1'));
 });
+
+test('syncQuickPresetsWithLiveSources removes single-source preset when source is archived or deleted', () => {
+    AppState.sources = [
+        { id: 's1', name: 'Source 1', archived: true }, // archived
+        { id: 's2', name: 'Source 2', archived: false } // live
+    ];
+
+    AppState.quickPresets = [
+        { id: 'qp_single_s1', name: 'Single S1', sourceIds: ['s1'] },
+        { id: 'qp_single_s2', name: 'Single S2', sourceIds: ['s2'] }
+    ];
+
+    const changed = global.syncQuickPresetsWithLiveSources();
+    assert.equal(changed, true);
+    assert.equal(AppState.quickPresets.length, 1);
+    assert.equal(AppState.quickPresets[0].id, 'qp_single_s2');
+});
+
+test('restoring an archived source does not automatically re-add it to quick presets', () => {
+    // 1. Source s1 was archived and removed from preset
+    AppState.sources = [{ id: 's1', name: 'Source 1', archived: true }];
+    AppState.quickPresets = [{ id: 'qp_single_s1', name: 'Single S1', sourceIds: ['s1'] }];
+
+    global.syncQuickPresetsWithLiveSources();
+    assert.equal(AppState.quickPresets.length, 0);
+
+    // 2. Unarchive s1
+    AppState.sources[0].archived = false;
+    global.syncQuickPresetsWithLiveSources();
+
+    // Preset does not magically re-appear
+    assert.equal(AppState.quickPresets.length, 0);
+});
+
+test('syncQuickPresetsWithLiveSources unlinks archived/deleted source from multi-source preset', () => {
+    AppState.sources = [
+        { id: 's1', name: 'Source 1', archived: false },
+        { id: 's2', name: 'Source 2', archived: true }, // archived
+        { id: 's3', name: 'Source 3', archived: false }
+    ];
+
+    AppState.quickPresets = [
+        { id: 'qp_multi', name: 'Multi Preset', sourceIds: ['s1', 's2', 's3'] }
+    ];
+
+    const changed = global.syncQuickPresetsWithLiveSources();
+    assert.equal(changed, true);
+    assert.equal(AppState.quickPresets.length, 1);
+    assert.deepEqual(AppState.quickPresets[0].sourceIds, ['s1', 's3']);
+});
+
+test('syncQuickPresetsWithLiveSources removes multi-source preset completely when no live source remains', () => {
+    AppState.sources = [
+        { id: 's1', name: 'Source 1', archived: true },
+        { id: 's2', name: 'Source 2', archived: true }
+    ];
+
+    AppState.quickPresets = [
+        { id: 'qp_multi_all_archived', name: 'Dead Multi Preset', sourceIds: ['s1', 's2'] }
+    ];
+
+    const changed = global.syncQuickPresetsWithLiveSources();
+    assert.equal(changed, true);
+    assert.equal(AppState.quickPresets.length, 0);
+});
+

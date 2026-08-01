@@ -45,6 +45,21 @@ test('the trend card carries both faces and every chart container', () => {
     assert.equal(card.querySelectorAll('[data-trend-flip]').length, 2, 'each face needs its own flip button');
 });
 
+test('each face names its two line series in a legend', () => {
+    const card = markup.getElementById('homeWeeklyTrendCard');
+
+    for (const [face, legendId] of [['.chart-flip-front', 'trendLegend'], ['.chart-flip-back', 'monthlyTrendLegend']]) {
+        const legend = card.querySelector(face).querySelector(`#${legendId}`);
+        assert.ok(legend, `#${legendId} must live on the ${face} face`);
+
+        // Identity must not rest on hue alone - each swatch carries the class
+        // that gives it its stroke pattern, and every item is labelled.
+        assert.ok(legend.querySelector('.trend-legend-swatch.is-normal'), 'the normal series needs a swatch');
+        assert.ok(legend.querySelector('.trend-legend-swatch.is-focus'), 'the focus series needs a swatch');
+        assert.equal(legend.querySelectorAll('[data-i18n]').length, 2, 'both series need a translated label');
+    }
+});
+
 test('a weekly bucket splits one day into correct, wrong and unanswered', () => {
     const today = getLocalDateStr();
     const buckets = buildWeeklyTrendBuckets({
@@ -57,6 +72,35 @@ test('a weekly bucket splits one day into correct, wrong and unanswered', () => 
         { correct: last.correct, wrong: last.wrong, empty: last.empty, total: last.total },
         { correct: 6, wrong: 3, empty: 1, total: 10 }
     );
+});
+
+test('a bucket carries the focus track alongside the day total', () => {
+    const today = getLocalDateStr();
+    const buckets = buildWeeklyTrendBuckets({
+        [today]: { studied: true, questionCount: 20, correctCount: 12, wrongCount: 5, unansweredCount: 3, focusQuestionCount: 8 }
+    });
+    const last = buckets[buckets.length - 1];
+
+    assert.equal(last.total, 20, 'the normal line reads the day total');
+    assert.equal(last.focus, 8, 'the focus line reads the focus track only');
+});
+
+test('a focus count larger than the day total is clamped to the bar', () => {
+    const today = getLocalDateStr();
+    const buckets = buildWeeklyTrendBuckets({
+        [today]: { studied: true, questionCount: 10, correctCount: 10, wrongCount: 0, unansweredCount: 0, focusQuestionCount: 40 }
+    });
+    const last = buckets[buckets.length - 1];
+
+    assert.equal(last.focus, 10, 'the focus line must never float above its bar');
+});
+
+test('days without a focus track leave the focus line at zero', () => {
+    const buckets = buildWeeklyTrendBuckets({
+        [getLocalDateStr()]: { studied: true, questionCount: 12, correctCount: 12, wrongCount: 0, unansweredCount: 0 }
+    });
+
+    assert.equal(buckets.reduce((sum, b) => sum + b.focus, 0), 0);
 });
 
 test('legacy records without a breakdown still show their volume', () => {
@@ -76,15 +120,15 @@ test('the monthly face sums every day of a month into one bar', () => {
     };
 
     const buckets = buildMonthlyTrendBuckets({
-        [day(1)]: { studied: true, questionCount: 5, correctCount: 4, wrongCount: 1, unansweredCount: 0 },
-        [day(2)]: { studied: true, questionCount: 7, correctCount: 3, wrongCount: 2, unansweredCount: 2 }
+        [day(1)]: { studied: true, questionCount: 5, correctCount: 4, wrongCount: 1, unansweredCount: 0, focusQuestionCount: 2 },
+        [day(2)]: { studied: true, questionCount: 7, correctCount: 3, wrongCount: 2, unansweredCount: 2, focusQuestionCount: 6 }
     });
 
     assert.equal(buckets.length, 6, 'the monthly face covers six months');
     const current = buckets[buckets.length - 1];
     assert.deepEqual(
-        { correct: current.correct, wrong: current.wrong, empty: current.empty, total: current.total },
-        { correct: 7, wrong: 3, empty: 2, total: 12 }
+        { correct: current.correct, wrong: current.wrong, empty: current.empty, total: current.total, focus: current.focus },
+        { correct: 7, wrong: 3, empty: 2, total: 12, focus: 8 }
     );
 });
 

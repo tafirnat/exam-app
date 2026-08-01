@@ -1,6 +1,7 @@
 import { AppState, saveSources, saveStats, saveFolders, liveSources, liveFolders, touch, trackDeletedFolder, UNCATEGORIZED_FOLDER_ID } from '../../core/state.js';
 import { t } from '../../core/i18n.js';
 import { showConfirm, showAlert, showToast } from '../../core/utils.js';
+import { syncQuickPresetsWithLiveSources } from './quick-presets.js';
 
 export function toggleSource(id) {
     let activeCount = 0;
@@ -65,6 +66,7 @@ export async function removeSource(id) {
 
     saveStats();
     saveSources();
+    syncQuickPresetsWithLiveSources();
     renderSourcesList();
     if (window.onSourcesUpdated) window.onSourcesUpdated();
     showAlert(t('source_removed_msg', { name: oldName }), t('info_title'));
@@ -1447,7 +1449,9 @@ export function showFolderDeleteModal(folderId) {
         trackDeletedFolder(folderId);
         saveSources();
         import('../../core/state.js').then(m => m.saveFolders());
+        syncQuickPresetsWithLiveSources();
         renderSourcesList();
+        if (window.onSourcesUpdated) window.onSourcesUpdated();
         close();
     };
     
@@ -1469,7 +1473,9 @@ export function showFolderDeleteModal(folderId) {
         saveStats();
         saveSources();
         import('../../core/state.js').then(m => m.saveFolders());
+        syncQuickPresetsWithLiveSources();
         renderSourcesList();
+        if (window.onSourcesUpdated) window.onSourcesUpdated();
         close();
     };
     

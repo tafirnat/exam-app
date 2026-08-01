@@ -21,6 +21,12 @@
     --selected-bg: #e0f2fe;
     --warning-color: #f59e0b;
     --note-color: #8b5cf6;
+
+    /* Trend chart line series. Picked against the bar fills (green/red/slate)
+       rather than by eye: the pair clears CVD separation and 3:1 contrast on
+       the card surface in both themes, so neither line hides in a bar. */
+    --trend-line-normal: #2563eb;
+    --trend-line-focus: #d97706;
     --shadow-sm: 0 1px 2px 0 rgb(0 0 0 / 0.05);
     --shadow-md: 0 4px 6px -1px rgb(0 0 0 / 0.1);
     --radius-sm: 8px;
@@ -159,6 +165,11 @@
     --selected-bg: rgba(59, 130, 246, 0.2);
     --warning-color: #fbbf24;
     --note-color: #a78bfa;
+
+    /* Dark steps are re-picked, not brightened: the light blue would sit above
+       the mid-lightness band the dark surface needs. */
+    --trend-line-normal: #3b82f6;
+    --trend-line-focus: #d97706;
     --shadow-sm: 0 1px 2px 0 rgb(0 0 0 / 0.3);
     --shadow-md: 0 10px 15px -3px rgb(0 0 0 / 0.4);
     --primary-rgb: 127, 164, 230;
@@ -6052,6 +6063,71 @@ body.dnd-active {
     position: absolute;
     inset: 0;
     transform: rotateY(180deg);
+}
+
+/* Line overlay drawn over the trend bars. It is inset by the y-axis gutter so
+   its first point lands on the centre of the first bar, and it never takes a
+   pointer event - the bars underneath stay reachable. */
+.trend-line-overlay {
+    position: absolute;
+    top: 0;
+    height: 100%;
+    pointer-events: none;
+    z-index: 2;
+}
+
+.trend-line-overlay svg {
+    display: block;
+    width: 100%;
+    height: 100%;
+    overflow: visible;
+}
+
+.trend-line-dot {
+    position: absolute;
+    width: 8px;
+    height: 8px;
+    border-radius: 50%;
+    border: 2px solid var(--surface-color);
+    box-sizing: content-box;
+    transform: translate(-50%, -50%);
+}
+
+.trend-legend {
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: center;
+    gap: 0.25rem 1rem;
+    margin-top: 0.5rem;
+    font-size: 0.68rem;
+    color: var(--text-secondary);
+}
+
+.trend-legend-item {
+    display: flex;
+    align-items: center;
+    gap: 0.35rem;
+}
+
+/* The swatch repeats the mark, not just the hue: the focus series is dashed on
+   the chart, so it is dashed here too and stays identifiable without color. */
+.trend-legend-swatch {
+    width: 18px;
+    height: 2px;
+    border-radius: 1px;
+    flex-shrink: 0;
+}
+
+.trend-legend-swatch.is-normal {
+    background: var(--trend-line-normal);
+}
+
+.trend-legend-swatch.is-focus {
+    background: repeating-linear-gradient(
+        90deg,
+        var(--trend-line-focus) 0 5px,
+        transparent 5px 9px
+    );
 }
 
 .chart-flip-btn {

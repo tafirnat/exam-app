@@ -1,4 +1,4 @@
-import { AppState, saveContinuityConfig } from '../../core/state.js';
+import { AppState, liveSources, saveContinuityConfig } from '../../core/state.js';
 import {
     calculateGlobalStreak,
     calculateFocusStreak,
@@ -901,7 +901,7 @@ function renderActivityCharts() {
     let totalQuestions = 0;
     
     const allQuestions = [];
-    (AppState.sources || []).forEach(s => {
+    liveSources().forEach(s => {
         if (s.questions) {
             s.questions.forEach(q => allQuestions.push(`${s.id}_${q.id}`));
         }
@@ -1016,7 +1016,7 @@ export function buildWeeklyTrendBuckets(activities) {
 
     const buckets = [];
     for (let i = 0; i < numDays; i++) {
-        const bucket = { label: dayLabels[currentDate.getDay()], correct: 0, wrong: 0, empty: 0, total: 0 };
+        const bucket = { label: dayLabels[currentDate.getDay()], correct: 0, wrong: 0, empty: 0, focus: 0, total: 0 };
         addActivityToBucket(bucket, activities[getLocalDateStr(currentDate)]);
         buckets.push(bucket);
         currentDate.setDate(currentDate.getDate() + 1);
@@ -1038,7 +1038,7 @@ export function buildMonthlyTrendBuckets(activities) {
         const monthDate = new Date(today.getFullYear(), today.getMonth() - i, 1);
         const bucket = {
             label: monthFormatter.format(monthDate),
-            correct: 0, wrong: 0, empty: 0, total: 0
+            correct: 0, wrong: 0, empty: 0, focus: 0, total: 0
         };
         // Keyed by year-month so activity dates land in the right bucket even
         // when the range spans a year boundary.
@@ -1074,6 +1074,11 @@ function addActivityToBucket(bucket, act) {
     bucket.wrong += wrong;
     bucket.empty += empty;
     bucket.total += total;
+
+    // The focus track only ever counts a subset of the day's questions, so it is
+    // clamped to the day's volume - a stale focusQuestionCount must not draw a
+    // line above the bar it belongs to.
+    bucket.focus += Math.min(act.focusQuestionCount || 0, total);
 }
 
 /** Draws the stacked bar chart shared by the weekly and monthly trend faces. */
@@ -1094,8 +1099,11 @@ function renderTrendChart(buckets, yAxisId, barsId, xAxisId) {
     // Monthly totals run into the hundreds, so the axis gutter grows with the
     // widest tick instead of clipping against the fixed 20px the week needs.
     const labelWidth = Math.max(20, String(topLimit).length * 8);
-    barsEl.style.paddingLeft = `${labelWidth + 5}px`;
-    xAxisEl.style.paddingLeft = `${labelWidth + 5}px`;
+    const gutter = labelWidth + 5;
+    barsEl.style.paddingLeft = `${gutter}px`;
+    xAxisEl.style.paddingLeft = `${gutter}px`;
+    // The line overlay is absolutely positioned inside the bar strip.
+    barsEl.style.position = 'relative';
 
     for (let i = 0; i <= 5; i++) {
         const val = Math.round((topLimit / 5) * i);
@@ -1180,6 +1188,80 @@ function renderTrendChart(buckets, yAxisId, barsId, xAxisId) {
         barWrap.appendChild(barInner);
         barsEl.appendChild(barWrap);
     });
+
+    renderTrendLines(barsEl, buckets, topLimit, gutter);
+}
+
+const SVG_NS = 'http://www.w3.org/2000/svg';
+
+/**
+ * Overlays two line series on the trend bars, sharing the bars' y-scale:
+ * the normal (global) track's solved questions and the focus track's subset.
+ * Both are drawn from the same buckets, so a line point always sits on the
+ * bar it describes.
+ */
+function renderTrendLines(barsEl, buckets, topLimit, gutter) {
+    if (!buckets.length) return;
+
+    const series = [
+        { key: 'total', color: 'var(--trend-line-normal)', dash: '' },
+        { key: 'focus', color: 'var(--trend-line-focus)', dash: '5 4' }
+    ];
+
+    // The viewBox is a plain 0-100 square stretched to the bar strip, so points
+    // are expressed as percentages and survive any card width.
+    const xAt = i => ((i + 0.5) * 100) / buckets.length;
+    const yAt = v => 100 - Math.min(100, Math.max(0, (v / topLimit) * 100));
+
+    const overlay = document.createElement('div');
+    overlay.className = 'trend-line-overlay';
+    overlay.style.left = `${gutter}px`;
+    overlay.style.width = `calc(100% - ${gutter}px)`;
+
+    const svg = document.createElementNS(SVG_NS, 'svg');
+    svg.setAttribute('viewBox', '0 0 100 100');
+    svg.setAttribute('preserveAspectRatio', 'none');
+    svg.setAttribute('aria-hidden', 'true');
+
+    const pointsOf = s => buckets.map((b, i) => `${xAt(i)},${yAt(b[s.key] || 0)}`).join(' ');
+
+    const polyline = (points, stroke, width, dash) => {
+        const el = document.createElementNS(SVG_NS, 'polyline');
+        el.setAttribute('points', points);
+        // Without this the horizontal stretch would fatten the stroke.
+        el.setAttribute('vector-effect', 'non-scaling-stroke');
+        el.style.fill = 'none';
+        el.style.stroke = stroke;
+        el.style.strokeWidth = width;
+        el.style.strokeLinejoin = 'round';
+        el.style.strokeLinecap = 'round';
+        if (dash) el.style.strokeDasharray = dash;
+        return el;
+    };
+
+    // Every halo goes down before any line, otherwise the second series' halo
+    // would eat a bite out of the first series' stroke where they cross.
+    series.forEach(s => {
+        const halo = polyline(pointsOf(s), 'var(--surface-color)', '6', '');
+        halo.style.strokeOpacity = '0.8';
+        svg.appendChild(halo);
+    });
+    series.forEach(s => svg.appendChild(polyline(pointsOf(s), s.color, '2', s.dash)));
+
+    overlay.appendChild(svg);
+
+    series.forEach(s => {
+        buckets.forEach((b, i) => {
+            const dot = document.createElement('div');
+            dot.className = 'trend-line-dot';
+            dot.style.left = `${xAt(i)}%`;
+            dot.style.top = `${yAt(b[s.key] || 0)}%`;
+            dot.style.background = s.color;
+            overlay.appendChild(dot);
+        });
+    });
+
+    barsEl.appendChild(overlay);
 }
 
 function openInfoPopupModal(title, htmlContent, actionBtnConfig = null) {

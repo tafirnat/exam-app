@@ -6,7 +6,7 @@ import { migrateOldData, migrateFolderColors, sanitizeStudyActivity } from './co
 import { getQuestionCategory } from './core/question-rules.js';
 import { processJSON, loadFromUrl, loadFromFile, normalizeQuestions, mergeSources } from './features/sources/sources-service.js';
 import { renderSourcesList, showMergeModal, closeAllSourcesModals, showSourceOptionsModal, renderHomeActiveSources } from './features/sources/sources-ui.js';
-import { renderContinuityBlock, showDailyMotivationToast } from './features/stats/continuity-ui.js';
+import { renderContinuityBlock, renderGlobalCharts, showDailyMotivationToast } from './features/stats/continuity-ui.js';
 import { initArchiveUI } from './features/sources/archive.js';
 import { prepareTest, finishTest, prepareRetake, buildQuestionPool } from './features/test/test-engine.js';
 import { renderQuestion, handleCheckAnswer, updateIndicators, handleTranslation, handleDifficultyRating, handleFlashcardRating, renderTestResults, handleTtsToggle, getIsAudioPlaying, stopAudio, decorateReadingSections } from './features/test/test-ui.js';
@@ -16,6 +16,7 @@ import { initTimer, stopTimer } from './features/test/timer-module.js';
 import { initSync, syncToGist } from './core/github-sync.js';
 import { renderMarkdown, renderInlineMarkdown, plainText, applySearchHighlight } from './core/markdown.js';
 import { setupQuickPresets, updateQuickSourcesDot } from './features/sources/quick-presets-ui.js';
+import { syncQuickPresetsWithLiveSources } from './features/sources/quick-presets.js';
 import { startOnboarding, stopOnboarding } from './features/onboarding/onboarding.js';
 
 // Expose functions globally for dynamic/inline invocation and window compatibility
@@ -85,8 +86,11 @@ window.copyQuestionText = copyQuestionText;
 window.checkActiveTest = checkActiveTest;
 window.renderQuestion = renderQuestion;
 window.onSourcesUpdated = () => {
+    syncQuickPresetsWithLiveSources();
     updateQuickSourcesDot();
     checkActiveTest();
+    updateHomeStats();
+    if (typeof renderGlobalCharts === 'function') renderGlobalCharts();
 };
 
 
@@ -320,6 +324,7 @@ const initApp = () => {
 
         console.log('Setting up Quick Presets...');
         setupQuickPresets();
+        syncQuickPresetsWithLiveSources();
 
 
         console.log('App initialized v1.2.3');
@@ -434,11 +439,6 @@ if (document.readyState === 'loading') {
 } else {
     initApp();
 }
-
-// Callback for sources update
-window.onSourcesUpdated = () => {
-    updateHomeStats();
-};
 
 window.renderQuestionPreview = (q, stats = null, source = null) => {
     // Capture scroll position before switching
