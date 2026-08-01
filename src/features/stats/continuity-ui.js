@@ -17,6 +17,7 @@ import {
     calculateFocusTargetDistribution
 } from './continuity-engine.js';
 import { buildQuestionPool } from '../test/test-engine.js';
+import { buildStreakRun, prepareStreakRun, resolveStreakCount } from './streak-run.js';
 import { renderSourcePicker } from '../sources/sources-ui.js';
 import { showToast, showAlert } from '../../core/utils.js';
 
@@ -45,6 +46,155 @@ export function renderContinuityBlock() {
     initCarouselEvents();
     bindFocusModalEvents();
     bindContinuityModalEvents();
+    bindStreakRunModalEvents();
+}
+
+/* ------------------------------------------------------------------ */
+/* Streak run: one tap from a card into the questions FSRS wants today */
+/* ------------------------------------------------------------------ */
+
+export const STREAK_ORDERS = ['mixed', 'grouped'];
+
+/**
+ * The remembered presentation mode. Null until the user has picked one, which
+ * is what makes the first tap open the picker and every later tap start
+ * immediately - the promise of the feature is a single tap, so the popup must
+ * not become a daily toll.
+ */
+export function getStreakOrder() {
+    const stored = AppState.continuityConfig?.streakRunOrder;
+    return STREAK_ORDERS.includes(stored) ? stored : null;
+}
+
+function setStreakOrder(order) {
+    if (!STREAK_ORDERS.includes(order)) return;
+    if (!AppState.continuityConfig) AppState.continuityConfig = {};
+    AppState.continuityConfig.streakRunOrder = order;
+    saveContinuityConfig();
+}
+
+/** The session size the user already configured for manual tests. */
+function readQuestionCountPreference() {
+    const el = document.getElementById('questionCount');
+    return resolveStreakCount(el ? el.value : undefined);
+}
+
+/**
+ * Label and availability for one card's run button. The count is the real
+ * length of the run that would start, so the button never promises questions
+ * that are not there.
+ */
+export function describeStreakRun(scope) {
+    const available = buildStreakRun({
+        scope,
+        order: getStreakOrder() || 'mixed',
+        count: readQuestionCountPreference()
+    }).length;
+
+    if (available === 0) {
+        return { available, enabled: false, label: 'Tekrar bekleyen soru yok' };
+    }
+
+    const todayAct = initTodayActivity();
+    const met = scope === 'focus'
+        ? isFocusActivityRequirementMet(todayAct)
+        : isActivityRequirementMet(todayAct);
+
+    // Once the day is safe the button keeps working; it just stops claiming to
+    // be rescuing a streak that is already secured.
+    return {
+        available,
+        enabled: true,
+        label: met ? `FSRS ile Çalış (${available})` : `Seriyi Koru (${available})`
+    };
+}
+
+function renderStreakRunButton(scope) {
+    const prefix = scope === 'focus' ? 'focus' : 'global';
+    const btn = document.getElementById(`${prefix}StreakRunBtn`);
+    const modeBtn = document.getElementById(`${prefix}StreakModeBtn`);
+    const label = document.getElementById(`${prefix}StreakRunLabel`);
+    if (!btn || !label) return;
+
+    const state = describeStreakRun(scope);
+    label.textContent = state.label;
+    btn.disabled = !state.enabled;
+    if (modeBtn) modeBtn.disabled = !state.enabled;
+}
+
+function startStreakRun(scope, order) {
+    const started = prepareStreakRun({
+        scope,
+        order,
+        count: readQuestionCountPreference()
+    });
+
+    if (!started) {
+        showToast('Bugün tekrar bekleyen soru yok');
+        return;
+    }
+
+    closeStreakRunModal();
+    // The view switch lives in main.js; a card must not reach into it directly.
+    window.dispatchEvent(new CustomEvent('streak-run-started', { detail: { scope, order } }));
+}
+
+function handleStreakRunClick(scope) {
+    const order = getStreakOrder();
+    if (!order) {
+        openStreakRunModal(scope);
+        return;
+    }
+    startStreakRun(scope, order);
+}
+
+let pendingStreakScope = 'global';
+
+function openStreakRunModal(scope) {
+    pendingStreakScope = scope;
+    const modal = document.getElementById('streakRunModal');
+    if (!modal) return;
+
+    const subtitle = document.getElementById('streakRunModalSubtitle');
+    if (subtitle) {
+        const state = describeStreakRun(scope);
+        subtitle.textContent = scope === 'focus'
+            ? `Odak Seri · ${state.available} soru hazır`
+            : `Genel Seri · ${state.available} soru hazır`;
+    }
+
+    const current = getStreakOrder();
+    modal.querySelectorAll('[data-streak-order]').forEach(el => {
+        el.classList.toggle('active', el.dataset.streakOrder === current);
+    });
+
+    modal.style.display = 'flex';
+}
+
+function closeStreakRunModal() {
+    const modal = document.getElementById('streakRunModal');
+    if (modal) modal.style.display = 'none';
+}
+
+function bindStreakRunModalEvents() {
+    const modal = document.getElementById('streakRunModal');
+    if (!modal || modal.dataset.bound) return;
+    modal.dataset.bound = 'true';
+
+    const closeBtn = document.getElementById('streakRunModalCloseBtn');
+    if (closeBtn) closeBtn.addEventListener('click', () => closeStreakRunModal());
+
+    modal.addEventListener('click', (e) => {
+        if (e.target === modal) {
+            closeStreakRunModal();
+            return;
+        }
+        const option = e.target.closest('[data-streak-order]');
+        if (!option) return;
+        const order = option.dataset.streakOrder;
+        setStreakOrder(order);
+        startStreakRun(pendingStreakScope, order);
+    });
 }
 
 function renderGlobalSlide(liveQ) {
@@ -100,6 +250,8 @@ function renderGlobalSlide(liveQ) {
         const svg = createTokenSvg(i, isActive);
         tokensEl.appendChild(svg);
     }
+
+    renderStreakRunButton('global');
 }
 
 function renderFocusSlide() {
@@ -166,6 +318,8 @@ function renderFocusSlide() {
         const svg = createTokenSvg(i, isActive);
         tokensEl.appendChild(svg);
     }
+
+    renderStreakRunButton('focus');
 }
 
 // Gradient ids have to be unique per rendered icon or the first <defs> in the
@@ -429,6 +583,18 @@ function bindContinuityModalEvents() {
     if (cardGlobal && !cardGlobal.dataset.bound) {
         cardGlobal.dataset.bound = 'true';
         cardGlobal.addEventListener('click', (e) => {
+            // Checked first: the run controls sit inside the card, and every
+            // other branch below opens an explanatory modal instead.
+            if (e.target.closest('#globalStreakModeBtn')) {
+                e.stopPropagation();
+                openStreakRunModal('global');
+                return;
+            }
+            if (e.target.closest('#globalStreakRunBtn')) {
+                e.stopPropagation();
+                handleStreakRunClick('global');
+                return;
+            }
             const tokenSvg = e.target.closest('[data-token-index]');
             if (tokenSvg) {
                 e.stopPropagation();
@@ -463,6 +629,16 @@ function bindContinuityModalEvents() {
     if (cardFocus && !cardFocus.dataset.bound) {
         cardFocus.dataset.bound = 'true';
         cardFocus.addEventListener('click', (e) => {
+            if (e.target.closest('#focusStreakModeBtn')) {
+                e.stopPropagation();
+                openStreakRunModal('focus');
+                return;
+            }
+            if (e.target.closest('#focusStreakRunBtn')) {
+                e.stopPropagation();
+                handleStreakRunClick('focus');
+                return;
+            }
             if (e.target.closest('#openFocusSourceModalBtn')) {
                 e.stopPropagation();
                 openFocusSourceModal();

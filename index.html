@@ -446,12 +446,19 @@
                                 
                                 <!-- Bottom Row: Streak Run action left, Italic Info Button right -->
                                 <div class="continuity-action-row">
-                                    <button id="globalStreakRunBtn" class="streak-run-btn" type="button">
-                                        <svg viewBox="0 0 24 24" width="13" height="13" fill="currentColor" aria-hidden="true">
-                                            <path d="M8 5v14l11-7z"/>
-                                        </svg>
-                                        <span id="globalStreakRunLabel">Seriyi Koru</span>
-                                    </button>
+                                    <div class="streak-run-group">
+                                        <button id="globalStreakRunBtn" class="streak-run-btn" type="button" title="FSRS'in bugün önerdiği soruları başlat">
+                                            <svg viewBox="0 0 24 24" width="13" height="13" fill="currentColor" aria-hidden="true">
+                                                <path d="M8 5v14l11-7z"/>
+                                            </svg>
+                                            <span id="globalStreakRunLabel">Seriyi Koru</span>
+                                        </button>
+                                        <button id="globalStreakModeBtn" class="streak-mode-btn" type="button" title="Sıralama modunu seç">
+                                            <svg viewBox="0 0 24 24" width="12" height="12" fill="none" stroke="currentColor" stroke-width="3">
+                                                <polyline points="6 9 12 15 18 9"></polyline>
+                                            </svg>
+                                        </button>
+                                    </div>
                                     <div class="continuity-icon-row">
                                         <button id="continuityInfoBtn" class="continuity-icon-btn" title="Genel Seri Hakkında Bilgi">
                                             <span class="info-italic-icon">i</span>
@@ -504,12 +511,19 @@
                                 
                                 <!-- Bottom Row: Streak Run action left, settings & info right -->
                                 <div class="continuity-action-row">
-                                    <button id="focusStreakRunBtn" class="streak-run-btn" type="button">
-                                        <svg viewBox="0 0 24 24" width="13" height="13" fill="currentColor" aria-hidden="true">
-                                            <path d="M8 5v14l11-7z"/>
-                                        </svg>
-                                        <span id="focusStreakRunLabel">Seriyi Koru</span>
-                                    </button>
+                                    <div class="streak-run-group focus-accent">
+                                        <button id="focusStreakRunBtn" class="streak-run-btn" type="button" title="Odak kaynaklarından FSRS'in önerdiği soruları başlat">
+                                            <svg viewBox="0 0 24 24" width="13" height="13" fill="currentColor" aria-hidden="true">
+                                                <path d="M8 5v14l11-7z"/>
+                                            </svg>
+                                            <span id="focusStreakRunLabel">Seriyi Koru</span>
+                                        </button>
+                                        <button id="focusStreakModeBtn" class="streak-mode-btn" type="button" title="Sıralama modunu seç">
+                                            <svg viewBox="0 0 24 24" width="12" height="12" fill="none" stroke="currentColor" stroke-width="3">
+                                                <polyline points="6 9 12 15 18 9"></polyline>
+                                            </svg>
+                                        </button>
+                                    </div>
                                     <div class="continuity-icon-row">
                                     <button id="openFocusSourceModalBtn" class="continuity-icon-btn" title="Kaynakları Seç (Max 3)">
                                         <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2">
@@ -1886,6 +1900,35 @@
                 <div id="focusSourceList" style="max-height: min(60vh, 460px); overflow-y: auto; padding-right: 0.25rem;">
                     <!-- Populated dynamically by renderSourcePicker -->
                 </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="modal" id="streakRunModal" aria-hidden="true" style="display: none;">
+        <div class="modal-content card" style="max-width: 460px; width: 90%;">
+            <div class="modal-header" style="display: flex; align-items: flex-start; justify-content: space-between; gap: 0.5rem;">
+                <div style="min-width: 0;">
+                    <h3 class="modal-title" id="streakRunModalTitle" style="margin: 0; font-size: 1.1rem; font-weight: 700;">Günün Tekrarı</h3>
+                    <span id="streakRunModalSubtitle" style="font-size: 0.72rem; color: var(--text-secondary); opacity: 0.85; display: block; margin-top: 2px;"></span>
+                </div>
+                <button class="icon-btn" id="streakRunModalCloseBtn">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="18" height="18">
+                        <line x1="18" y1="6" x2="6" y2="18"></line>
+                        <line x1="6" y1="6" x2="18" y2="18"></line>
+                    </svg>
+                </button>
+            </div>
+            <div class="modal-body" style="padding: 0.75rem 0 0 0;">
+                <!-- The chosen mode is remembered, so the card button can start
+                     the run directly next time and this popup stays optional. -->
+                <button class="streak-mode-option" data-streak-order="mixed" type="button">
+                    <span class="streak-mode-name">Soruları FSRS sırasına göre getir</span>
+                    <span class="streak-mode-desc">Kaynak ve klasörden tamamen bağımsız. En acil tekrar edilmesi gereken soru başta olmak üzere, FSRS'in hesabına göre sıralanır.</span>
+                </button>
+                <button class="streak-mode-option" data-streak-order="grouped" type="button">
+                    <span class="streak-mode-name">Kaynak / klasör bazlı gruplayarak getir</span>
+                    <span class="streak-mode-desc">Yine en acil sorudan başlar, ama o sorunun kaynağını ve aynı klasördeki kaynakları bir arada tutar. İlişkili konular birlikte çalışılır.</span>
+                </button>
             </div>
         </div>
     </div>

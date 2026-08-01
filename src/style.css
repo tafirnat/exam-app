@@ -5589,6 +5589,118 @@ body.dnd-active {
     opacity: 1;
 }
 
+/* Bottom row of a continuity card: the run action claims the free space on the
+   left, the icon cluster stays pinned right where it has always been. */
+.continuity-action-row {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 0.5rem;
+    margin-top: 0.4rem;
+    min-width: 0;
+}
+
+/* One pill, two jobs: the label starts the run with the remembered mode, the
+   caret opens the mode picker. Keeping the picker visible is what lets the main
+   action stay a single tap without the choice becoming undiscoverable. */
+.streak-run-group {
+    display: inline-flex;
+    align-items: stretch;
+    min-width: 0;
+    border-radius: 999px;
+    overflow: hidden;
+    background: var(--primary-color);
+}
+
+.streak-run-btn,
+.streak-mode-btn {
+    display: inline-flex;
+    align-items: center;
+    border: none;
+    background: transparent;
+    color: #fff;
+    cursor: pointer;
+    transition: background 0.15s ease, opacity 0.15s ease;
+}
+
+.streak-run-btn {
+    gap: 0.35rem;
+    min-width: 0;
+    padding: 0.3rem 0.55rem 0.3rem 0.7rem;
+    font-size: 0.72rem;
+    font-weight: 600;
+    line-height: 1.2;
+    white-space: nowrap;
+    overflow: hidden;
+}
+
+.streak-mode-btn {
+    padding: 0.3rem 0.55rem 0.3rem 0.4rem;
+    box-shadow: inset 1px 0 0 rgba(255, 255, 255, 0.28);
+}
+
+.streak-run-btn:hover:not(:disabled),
+.streak-mode-btn:hover:not(:disabled) {
+    background: rgba(255, 255, 255, 0.16);
+}
+
+.streak-run-group:has(.streak-run-btn:disabled) {
+    opacity: 0.45;
+}
+
+.streak-run-btn:disabled,
+.streak-mode-btn:disabled {
+    cursor: default;
+}
+
+.streak-run-btn span {
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+/* The focus card keeps its own accent so the two slides stay distinguishable. */
+.streak-run-group.focus-accent {
+    background: var(--info-color, #3b82f6);
+}
+
+.streak-mode-option {
+    display: block;
+    width: 100%;
+    text-align: left;
+    padding: 0.75rem 0.85rem;
+    margin-bottom: 0.6rem;
+    border: 1px solid var(--border-color);
+    border-radius: 10px;
+    background: var(--surface-color, transparent);
+    color: inherit;
+    cursor: pointer;
+    transition: border-color 0.15s ease, background 0.15s ease;
+}
+
+.streak-mode-option:hover {
+    border-color: var(--primary-color);
+    background: var(--surface-hover);
+}
+
+.streak-mode-option.active {
+    border-color: var(--primary-color);
+    box-shadow: inset 0 0 0 1px var(--primary-color);
+}
+
+.streak-mode-name {
+    display: block;
+    font-size: 0.85rem;
+    font-weight: 600;
+    margin-bottom: 0.2rem;
+}
+
+.streak-mode-desc {
+    display: block;
+    font-size: 0.72rem;
+    line-height: 1.45;
+    color: var(--text-secondary);
+}
+
 /* Continuity Icon Row Container & Standardized Icon Buttons */
 .continuity-icon-row {
     display: inline-flex;
