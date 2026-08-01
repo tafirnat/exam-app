@@ -444,11 +444,19 @@
                                     </div>
                                 </div>
                                 
-                                <!-- Bottom Row: Italic Info Button Bottom-Right -->
-                                <div class="continuity-icon-row" style="margin-top: 0.4rem;">
-                                    <button id="continuityInfoBtn" class="continuity-icon-btn" title="Genel Seri Hakkında Bilgi">
-                                        <span class="info-italic-icon">i</span>
+                                <!-- Bottom Row: Streak Run action left, Italic Info Button right -->
+                                <div class="continuity-action-row">
+                                    <button id="globalStreakRunBtn" class="streak-run-btn" type="button">
+                                        <svg viewBox="0 0 24 24" width="13" height="13" fill="currentColor" aria-hidden="true">
+                                            <path d="M8 5v14l11-7z"/>
+                                        </svg>
+                                        <span id="globalStreakRunLabel">Seriyi Koru</span>
                                     </button>
+                                    <div class="continuity-icon-row">
+                                        <button id="continuityInfoBtn" class="continuity-icon-btn" title="Genel Seri Hakkında Bilgi">
+                                            <span class="info-italic-icon">i</span>
+                                        </button>
+                                    </div>
                                 </div>
                             </div>
                         </div>
@@ -494,8 +502,15 @@
                                     </div>
                                 </div>
                                 
-                                <!-- Bottom Row: Settings & Italic Info Buttons Bottom-Right X-axis Aligned -->
-                                <div class="continuity-icon-row" style="margin-top: 0.4rem;">
+                                <!-- Bottom Row: Streak Run action left, settings & info right -->
+                                <div class="continuity-action-row">
+                                    <button id="focusStreakRunBtn" class="streak-run-btn" type="button">
+                                        <svg viewBox="0 0 24 24" width="13" height="13" fill="currentColor" aria-hidden="true">
+                                            <path d="M8 5v14l11-7z"/>
+                                        </svg>
+                                        <span id="focusStreakRunLabel">Seriyi Koru</span>
+                                    </button>
+                                    <div class="continuity-icon-row">
                                     <button id="openFocusSourceModalBtn" class="continuity-icon-btn" title="Kaynakları Seç (Max 3)">
                                         <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2">
                                             <circle cx="12" cy="12" r="3"></circle>
@@ -506,6 +521,7 @@
                                     <button id="focusContinuityInfoBtn" class="continuity-icon-btn" title="Odak Seri Hakkında Bilgi">
                                         <span class="info-italic-icon">i</span>
                                     </button>
+                                    </div>
                                 </div>
                             </div>
                         </div>

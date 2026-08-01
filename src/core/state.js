@@ -331,6 +331,11 @@ export function saveActiveTest() {
         };
         localStorage.setItem('focus_app_active_test', JSON.stringify(activeData));
 
+        // A streak run is drawn from the whole library, so it belongs to no
+        // preset. Filing it under whichever preset happens to match the active
+        // sources would overwrite that preset's own saved session.
+        if (activeData.testTracking?.mode === 'streak') return;
+
         const matchedPresetId = findMatchingPresetId();
         if (matchedPresetId) {
             if (activeData.currentTest && activeData.currentTest.length > 0) {

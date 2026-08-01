@@ -1,7 +1,7 @@
-import { AppState, UNCATEGORIZED_FOLDER_ID } from '../../core/state.js';
+import { AppState, UNCATEGORIZED_FOLDER_ID, clearActiveTest } from '../../core/state.js';
 import { shuffleArraySeeded } from '../../core/utils.js';
-import { buildQuestionPool, calculateRetrievability } from '../test/test-engine.js';
-import { getLocalDateStr, getLiveFocusSources } from './continuity-engine.js';
+import { buildQuestionPool, calculateRetrievability, prepareFromCompositeIds } from '../test/test-engine.js';
+import { getLocalDateStr, getLiveFocusSources, getDailyOverdueSnapshot } from './continuity-engine.js';
 
 /**
  * The streak run: the questions FSRS says are due today, handed over in one tap
@@ -234,4 +234,31 @@ export function buildStreakRun(options = {}) {
 
     const ordered = order === 'grouped' ? groupByFolder(selected) : selected;
     return ordered.map(item => item.key);
+}
+
+/**
+ * The one-tap session itself: FSRS decides which questions, the user decides
+ * only how they are laid out.
+ *
+ * Unlike prepareTest this never shuffles, never injects focus pools and never
+ * touches the preset sessions - the order IS the feature, and a run drawn from
+ * the whole library belongs to no source group.
+ */
+export function prepareStreakRun(options = {}) {
+    const { scope = 'global', order = 'mixed', count } = options;
+
+    const compositeIds = buildStreakRun({
+        scope,
+        order,
+        count: resolveStreakCount(count)
+    });
+    if (compositeIds.length === 0) return null;
+
+    clearActiveTest();
+
+    // Today's target has to be pinned before the run reduces the backlog,
+    // otherwise finishing it would move the bar the user is running at.
+    getDailyOverdueSnapshot(AppState.rawQuestions);
+
+    return prepareFromCompositeIds(compositeIds, { shuffle: false, mode: 'streak' });
 }

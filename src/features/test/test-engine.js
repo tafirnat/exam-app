@@ -192,10 +192,36 @@ export function prepareTest(count) {
     return AppState.currentTest;
 }
 
+/**
+ * Names the sources a session actually drew from, derived from the questions
+ * themselves rather than from whatever happens to be switched on. A streak run
+ * spans the whole library, so the active-source list says nothing about it - and
+ * even a normal test should not name a source it took no question from.
+ */
+function deriveSourceLabels(compositeIds) {
+    const seen = [];
+    compositeIds.forEach(cid => {
+        const sourceId = AppState.questionMap[cid]?.sourceId;
+        if (sourceId && !seen.includes(sourceId)) seen.push(sourceId);
+    });
+
+    const names = seen.map(id => {
+        const source = AppState.sources.find(s => s.id === id);
+        return source?.name || id;
+    });
+
+    if (names.length === 0) return { names: [], sourceTitle: 'Unknown Source' };
+    if (names.length === 1) return { names, sourceTitle: names[0] };
+    // A run touching a dozen sources would otherwise produce an unreadable
+    // history row, so only the leading few are spelled out.
+    const sourceTitle = names.length <= 3
+        ? names.join(' + ')
+        : `${names.slice(0, 3).join(' + ')} +${names.length - 3}`;
+    return { names, sourceTitle };
+}
+
 function startTestTracking(count) {
-    const activeSources = AppState.sources.filter(s => s.active && !s.archived);
-    const names = activeSources.map(s => s.name || s.id);
-    const sourceTitle = names.length > 1 ? names.join(' + ') : (names[0] || "Unknown Source");
+    const { names, sourceTitle } = deriveSourceLabels(AppState.currentTest || []);
 
     AppState.testTracking = {
         startTime: new Date().toISOString(),
@@ -209,6 +235,55 @@ function startTestTracking(count) {
     };
 }
 
+/**
+ * Installs an explicit, already-ordered list of questions as the current test.
+ * Shared by the retake flow and the streak run: both know exactly which
+ * questions they want, and differ only in whether the order may be disturbed.
+ *
+ * `mode` travels with the tracking record into the saved session, which is how
+ * the resume path knows to rebuild the wide question map and how saveActiveTest
+ * knows to keep a streak run out of the preset sessions.
+ */
+export function prepareFromCompositeIds(compositeIds, options = {}) {
+    const { shuffle = true, mode = null, retakeOfId = null, sourceNames, sourceTitle } = options;
+
+    const known = (compositeIds || []).filter(cid => AppState.questionMap[cid]);
+    if (known.length === 0) return null;
+
+    const ordered = shuffle ? shuffleArray(known) : known;
+
+    AppState.currentTest = ordered;
+    AppState.currentIndex = 0;
+    AppState.userAnswers = {};
+    AppState.isAnswerChecked = {};
+    AppState.shuffledOptionsMap = {};
+    AppState.hasReachedEnd = false;
+
+    ordered.forEach(cid => {
+        const q = AppState.questionMap[cid];
+        if (q?.options) AppState.shuffledOptionsMap[q.id] = shuffleArray([...q.options]);
+    });
+
+    const voices = ["A", "B", "C", "D", "E", "F", "G"];
+    AppState.currentTtsVoice = voices[Math.floor(Math.random() * voices.length)];
+
+    const derived = deriveSourceLabels(ordered);
+    AppState.testTracking = {
+        startTime: new Date().toISOString(),
+        endTime: null,
+        sourceNames: sourceNames || derived.names,
+        sourceTitle: sourceTitle || derived.sourceTitle,
+        questionCount: ordered.length,
+        elapsedSeconds: 0,
+        questionTimeRemaining: {},
+        results: []
+    };
+    if (mode) AppState.testTracking.mode = mode;
+    if (retakeOfId) AppState.testTracking.retakeOfId = retakeOfId;
+
+    return AppState.currentTest;
+}
+
 export function prepareRetake(historyEntry, onlyIncorrect = false) {
     if (!historyEntry || !Array.isArray(historyEntry.questions)) return null;
 
@@ -220,50 +295,29 @@ export function prepareRetake(historyEntry, onlyIncorrect = false) {
 
     buildQuestionPool();
 
-    // Build composite IDs, filter out questions no longer in active sources
-    const compositeIds = shuffleArray(
-        retakeQuestions
-            .map(rq => `${rq.sourceId}_${rq.id}`)
-            .filter(cid => AppState.questionMap[cid])
+    return prepareFromCompositeIds(
+        retakeQuestions.map(rq => `${rq.sourceId}_${rq.id}`),
+        {
+            shuffle: true,
+            retakeOfId: historyEntry.id,
+            sourceNames: historyEntry.sourceNames,
+            sourceTitle: historyEntry.sourceTitle
+                || (historyEntry.sourceNames?.length > 1
+                    ? historyEntry.sourceNames.join(' + ')
+                    : historyEntry.sourceNames?.[0])
+        }
     );
-
-    if (compositeIds.length === 0) return null;
-
-    AppState.currentTest = compositeIds;
-    AppState.currentIndex = 0;
-    AppState.userAnswers = {};
-    AppState.isAnswerChecked = {};
-    AppState.shuffledOptionsMap = {};
-    AppState.hasReachedEnd = false;
-
-    compositeIds.forEach(cid => {
-        const q = AppState.questionMap[cid];
-        if (q?.options) AppState.shuffledOptionsMap[q.id] = shuffleArray([...q.options]);
-    });
-
-    const voices = ["A", "B", "C", "D", "E", "F", "G"];
-    AppState.currentTtsVoice = voices[Math.floor(Math.random() * voices.length)];
-
-    AppState.testTracking = {
-        startTime: new Date().toISOString(),
-        endTime: null,
-        sourceNames: historyEntry.sourceNames,
-        sourceTitle: historyEntry.sourceTitle || (historyEntry.sourceNames?.length > 1 ? historyEntry.sourceNames.join(' + ') : historyEntry.sourceNames?.[0]),
-        questionCount: compositeIds.length,
-        retakeOfId: historyEntry.id,
-        elapsedSeconds: 0,
-        questionTimeRemaining: {},
-        results: []
-    };
-
-    return AppState.currentTest;
 }
+
 
 export async function finishTest() {
     if (!AppState.testTracking) {
         console.warn("finishTest: No active testTracking found.");
         return;
     }
+
+    // Read before the finally block nulls the tracking record.
+    const isStreakRun = AppState.testTracking.mode === 'streak';
 
     try {
         AppState.testTracking.endTime = new Date().toISOString();
@@ -325,9 +379,12 @@ export async function finishTest() {
             questions: sessionQuestions
         };
 
-        // Record for continuity / streak layer
+        // Record for continuity / streak layer. The questions must travel with
+        // the counts: without them recordTestFinished falls back to crediting
+        // every answer to the Odak Seri, so a run that never touched a focus
+        // source would complete that streak too.
         if (total > 0) {
-            recordTestFinished(total, correctCount, wrongCount, unansweredCount);
+            recordTestFinished(total, correctCount, wrongCount, unansweredCount, sessionQuestions);
         }
 
         if (!Array.isArray(AppState.recentTests)) AppState.recentTests = [];
@@ -383,9 +440,13 @@ export async function finishTest() {
         console.error("Critical error in finishTest:", err);
     } finally {
         AppState.testTracking = null;
-        const matchedPresetId = findMatchingPresetId();
-        if (matchedPresetId) {
-            clearPresetSessionData(matchedPresetId);
+        // A streak run was never filed under a preset, so it must not clear one
+        // either - the user's saved preset session has to survive it.
+        if (!isStreakRun) {
+            const matchedPresetId = findMatchingPresetId();
+            if (matchedPresetId) {
+                clearPresetSessionData(matchedPresetId);
+            }
         }
         clearActiveTest();
     }

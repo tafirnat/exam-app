@@ -1,4 +1,4 @@
-import { AppState, saveStats, saveSources, saveCurrentSource, saveCustomAIPrompt, saveAiProviders, DEFAULT_AI_PROVIDERS, saveActiveTest, clearActiveTest, clearLocalStudyData, SAMPLE_LOADED_KEY, findMatchingPresetId } from './core/state.js';
+import { AppState, saveStats, saveSources, saveCurrentSource, saveCustomAIPrompt, saveAiProviders, DEFAULT_AI_PROVIDERS, saveActiveTest, clearActiveTest, clearLocalStudyData, SAMPLE_LOADED_KEY, findMatchingPresetId, saveStudyActivity, saveContinuityConfig } from './core/state.js';
 import { initTheme, toggleTheme } from './core/theme.js';
 import { updateStaticTranslations, t, targetLanguages, translations } from './core/i18n.js';
 import { showToast, showConfirm, getCorrectAnswers, highlightText, escapeHTML } from './core/utils.js';
@@ -300,6 +300,41 @@ const initApp = () => {
                 }
             });
             localStorage.setItem(SAMPLE_LOADED_KEY, lang);
+        }
+
+        // Auto-load test visualization suite into active workspace if missing
+        const hasVizSource = (AppState.sources || []).some(s => s && s.id === 'source_viz_test_01');
+        if (!hasVizSource) {
+            fetch('./test_visualization_suite.json').then(res => {
+                if (res.ok) return res.json();
+            }).then(data => {
+                if (data && data.sources && Array.isArray(data.sources)) {
+                    data.sources.forEach(src => {
+                        if (!AppState.sources.some(s => s && s.id === src.id)) {
+                            AppState.sources.push(src);
+                        }
+                    });
+                    if (data.stats) {
+                        AppState.stats = { ...data.stats, ...AppState.stats };
+                    }
+                    if (data.studyActivity) {
+                        AppState.studyActivity = { ...AppState.studyActivity, ...data.studyActivity };
+                    }
+                    if (data.continuityConfig) {
+                        AppState.continuityConfig = { ...AppState.continuityConfig, ...data.continuityConfig };
+                    }
+                    saveSources();
+                    saveStats();
+                    saveStudyActivity();
+                    saveContinuityConfig();
+                    renderSourcesList();
+                    renderHomeActiveSources();
+                    buildQuestionPool();
+                    renderContinuityBlock();
+                }
+            }).catch(err => {
+                console.warn('Auto-loading test_visualization_suite.json skipped:', err);
+            });
         }
 
         // Fix: If we have active sources but no questions loaded (e.g. after refresh), load them

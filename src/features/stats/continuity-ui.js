@@ -29,8 +29,10 @@ export function renderContinuityBlock() {
     const wrapper = document.getElementById('continuityCarouselWrapper');
     if (!wrapper) return;
     
-    // Only show if user has active sources or stats
-    const liveQ = buildQuestionPool();
+    // The whole library, not just the active sources: the Genel Seri is
+    // source-independent, so its target must be measured over everything the
+    // streak run can actually draw from.
+    const liveQ = buildQuestionPool({ scope: 'all' });
     if (!liveQ || liveQ.length === 0) {
         wrapper.style.display = 'none';
         return;
@@ -683,7 +685,7 @@ function renderHeatmapYearly() {
 }
 
 export function showDailyMotivationToast() {
-    const liveQ = buildQuestionPool();
+    const liveQ = buildQuestionPool({ scope: 'all' });
     if (!liveQ || liveQ.length === 0) return;
     
     const todayAct = initTodayActivity();
