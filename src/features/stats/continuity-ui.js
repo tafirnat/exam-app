@@ -1260,6 +1260,9 @@ function bindDifficultyCardControls() {
                 inspectSourceQuestions(currentDifficultyViewId);
                 return;
             }
+            // All-sources view: turn on global toggle so all sources are in the search pool
+            const globalToggle = document.getElementById('statsGlobalToggle');
+            if (globalToggle) globalToggle.checked = true;
             AppState.currentSourceKey = null;
             const searchInput = document.getElementById('statsSearchInput');
             if (searchInput) searchInput.value = '';

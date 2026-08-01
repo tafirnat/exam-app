@@ -1170,6 +1170,9 @@ function setupEventListeners() {
     document.getElementById('diffEasyBtn').onclick = () => handleDifficultyRating('easy');
     window.handleFlashcardRating = handleFlashcardRating;
     const openStatsView = () => {
+        // Entering via homeStatsBtn: deactivate global toggle so only active sources are searched
+        const globalToggle = document.getElementById('statsGlobalToggle');
+        if (globalToggle) globalToggle.checked = false;
         const lastFilter = AppState.activeStatsFilter || 'all';
         switchView('stats');
         renderStatsList(lastFilter.startsWith('tag:') ? 'all' : lastFilter);

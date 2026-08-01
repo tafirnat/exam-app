@@ -314,6 +314,10 @@ function updateStatsFooter(filter, keyword, count, questions = []) {
     const footer = document.getElementById('statsFooter');
     if (!footer) return;
 
+    const globalToggle = document.getElementById('statsGlobalToggle');
+    const isGlobal = globalToggle ? globalToggle.checked : false;
+    const scopeLabel = isGlobal ? t('stats_scope_all') : t('stats_scope_active');
+
     let text = '';
     if (keyword && keyword.trim() !== '') {
         text = t('stats_count_search', { keyword, count });
@@ -323,6 +327,9 @@ function updateStatsFooter(filter, keyword, count, questions = []) {
         text = t('stats_count_filtered', { count });
     }
 
+    // Combine scope label with count text
+    const fullText = `${scopeLabel} | ${text}`;
+
     const isSearchActive = !!(keyword && keyword.trim() !== '');
     const isFilterActive = filter && filter !== 'all' && filter !== 'recent' && filter !== 'incorrect';
     const isTagMode = filter && filter.startsWith('tag:');
@@ -331,7 +338,7 @@ function updateStatsFooter(filter, keyword, count, questions = []) {
     if (shouldShowButton) {
         footer.innerHTML = `
             <div class="stats-footer-content" style="display: flex; flex-direction: column; align-items: center; gap: 0.5rem; width: 100%;">
-                <div class="stats-footer-text">${escapeHTML(text)}</div>
+                <div class="stats-footer-text">${escapeHTML(fullText)}</div>
                 <button class="start-filtered-test-btn" id="startFilteredTestBtn">
                     <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" style="flex-shrink: 0;">
                         <path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"></path>
@@ -351,7 +358,7 @@ function updateStatsFooter(filter, keyword, count, questions = []) {
             };
         }
     } else {
-        footer.innerHTML = `<div class="stats-footer-text">${escapeHTML(text)}</div>`;
+        footer.innerHTML = `<div class="stats-footer-text">${escapeHTML(fullText)}</div>`;
     }
 }
 
