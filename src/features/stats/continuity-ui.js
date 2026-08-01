@@ -21,6 +21,7 @@ import { buildStreakRun, prepareStreakRun, resolveStreakCount } from './streak-r
 import { renderSourcePicker } from '../sources/sources-ui.js';
 import { showToast, showAlert } from '../../core/utils.js';
 import { t } from '../../core/i18n.js';
+import { getDailyQuote, getRandomQuote } from './motivation-quotes.js';
 
 let carouselTimer = null;
 let currentSlideIndex = 0;
@@ -44,10 +45,12 @@ export function renderContinuityBlock() {
     
     renderGlobalSlide(liveQ);
     renderFocusSlide();
+    renderMotivationSlide();
     initCarouselEvents();
     bindFocusModalEvents();
     bindContinuityModalEvents();
     bindStreakRunModalEvents();
+    bindMotivationEvents();
 }
 
 /* ------------------------------------------------------------------ */
@@ -321,6 +324,61 @@ function renderFocusSlide() {
     }
 
     renderStreakRunButton('focus');
+}
+
+export function renderMotivationSlide() {
+    const textEl = document.getElementById('motivationQuoteText');
+    const authorEl = document.getElementById('motivationQuoteAuthor');
+    const card = document.getElementById('motivationContinuityCard');
+    if (!textEl || !authorEl || !card) return;
+
+    const lang = AppState.language || 'tr';
+    
+    // If quote not loaded yet, fetch daily quote
+    if (!card.dataset.quoteId) {
+        const quote = getDailyQuote(lang);
+        card.dataset.quoteId = String(quote.id);
+        textEl.textContent = `"${quote.text}"`;
+        authorEl.textContent = `— ${quote.author}`;
+    }
+}
+
+export function bindMotivationEvents() {
+    const copyBtn = document.getElementById('copyMotivationBtn');
+    const refreshBtn = document.getElementById('refreshMotivationBtn');
+    const textEl = document.getElementById('motivationQuoteText');
+    const authorEl = document.getElementById('motivationQuoteAuthor');
+    const card = document.getElementById('motivationContinuityCard');
+
+    if (copyBtn && !copyBtn.dataset.bound) {
+        copyBtn.dataset.bound = 'true';
+        copyBtn.addEventListener('click', () => {
+            if (!textEl || !authorEl) return;
+            const textToCopy = `${textEl.textContent} ${authorEl.textContent}`;
+            if (navigator.clipboard && navigator.clipboard.writeText) {
+                navigator.clipboard.writeText(textToCopy).then(() => {
+                    showToast(t('motivation_copied') || 'Motivasyon sözü kopyalandı');
+                }).catch(() => {
+                    showToast(textToCopy);
+                });
+            } else {
+                showToast(textToCopy);
+            }
+        });
+    }
+
+    if (refreshBtn && !refreshBtn.dataset.bound) {
+        refreshBtn.dataset.bound = 'true';
+        refreshBtn.addEventListener('click', () => {
+            if (!textEl || !authorEl || !card) return;
+            const lang = AppState.language || 'tr';
+            const currentId = parseInt(card.dataset.quoteId || '0', 10);
+            const newQuote = getRandomQuote(lang, currentId);
+            card.dataset.quoteId = String(newQuote.id);
+            textEl.textContent = `"${newQuote.text}"`;
+            authorEl.textContent = `— ${newQuote.author}`;
+        });
+    }
 }
 
 // Gradient ids have to be unique per rendered icon or the first <defs> in the
