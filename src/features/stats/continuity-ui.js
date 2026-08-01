@@ -367,6 +367,7 @@ export function renderMotivationSlide() {
         card.style.backgroundSize = 'cover';
         card.style.backgroundPosition = focal;
         card.dataset.focalPoint = focal;
+        card.dataset.artworkUrl = quote.artwork.url;
         if (artworkEl) {
             artworkEl.textContent = `${quote.artwork.artist} — ${quote.artwork.title} (${quote.artwork.year})`;
             artworkEl.title = `Günün Eseri: ${quote.artwork.title} by ${quote.artwork.artist} (${quote.artwork.year})`;
@@ -405,7 +406,9 @@ export function bindMotivationEvents() {
             if (!textEl || !authorEl || !card) return;
             const lang = AppState.language || 'tr';
             const currentId = parseInt(card.dataset.quoteId || '0', 10);
-            const newQuote = getRandomQuote(lang, currentId);
+            // Also exclude the current artwork URL so the same image never reappears on refresh
+            const currentArtworkUrl = card.dataset.artworkUrl || null;
+            const newQuote = getRandomQuote(lang, currentId, currentArtworkUrl);
             card.dataset.quoteId = String(newQuote.id);
             const safeLang = (newQuote[lang]) ? lang : 'tr';
             textEl.textContent = `"${newQuote[safeLang] || newQuote.text || newQuote.tr}"`;
@@ -417,6 +420,7 @@ export function bindMotivationEvents() {
                 card.style.backgroundImage = `url('${optimizedUrl}')`;
                 card.style.backgroundPosition = focal;
                 card.dataset.focalPoint = focal;
+                card.dataset.artworkUrl = newQuote.artwork.url;
                 if (artworkEl) {
                     artworkEl.textContent = `${newQuote.artwork.artist} — ${newQuote.artwork.title} (${newQuote.artwork.year})`;
                     artworkEl.title = `Günün Eseri: ${newQuote.artwork.title} by ${newQuote.artwork.artist} (${newQuote.artwork.year})`;

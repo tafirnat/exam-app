@@ -504,13 +504,28 @@ export function getDailyQuote(lang = 'tr') {
 }
 
 /**
- * Returns a random quote different from currentId.
+ * Returns a random quote different from currentId and (optionally) from the same artwork URL.
+ * This prevents the same image from reappearing on refresh by excluding any quote that
+ * shares the current artwork URL.
  * @param {string} [lang='tr']
  * @param {number} [excludeId]
+ * @param {string|null} [excludeArtworkUrl] - artwork URL to also exclude
  * @returns {{ id: number, author: string, text: string, artwork: Object }}
  */
-export function getRandomQuote(lang = 'tr', excludeId = null) {
-    const available = MOTIVATION_QUOTES.filter(q => q.id !== excludeId);
+export function getRandomQuote(lang = 'tr', excludeId = null, excludeArtworkUrl = null) {
+    // Exclude by id and, if provided, by artwork URL (same image = boring repeat)
+    let available = MOTIVATION_QUOTES.filter(q => {
+        if (q.id === excludeId) return false;
+        if (excludeArtworkUrl && q.artwork && q.artwork.url === excludeArtworkUrl) return false;
+        return true;
+    });
+    // Fallback: if all are excluded (e.g. all share same artwork), only exclude by id
+    if (available.length === 0) {
+        available = MOTIVATION_QUOTES.filter(q => q.id !== excludeId);
+    }
+    // Final fallback
+    if (available.length === 0) available = MOTIVATION_QUOTES;
+
     const randomIndex = Math.floor(Math.random() * available.length);
     const item = available[randomIndex] || MOTIVATION_QUOTES[0];
     const safeLang = (item && item[lang]) ? lang : 'tr';
