@@ -6293,8 +6293,8 @@ body.dnd-active {
     left: 0;
     right: 0;
     bottom: 0;
-    background: linear-gradient(135deg, rgba(15, 23, 42, 0.45) 0%, rgba(15, 23, 42, 0.70) 100%);
-    backdrop-filter: blur(1px);
+    background: linear-gradient(135deg, rgba(15, 23, 42, 0.28) 0%, rgba(15, 23, 42, 0.48) 100%);
+    backdrop-filter: blur(0px);
     z-index: 1;
     pointer-events: none;
     transition: background 0.4s ease;
