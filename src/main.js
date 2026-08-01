@@ -18,6 +18,16 @@ import { renderMarkdown, renderInlineMarkdown, plainText, applySearchHighlight }
 import { setupQuickPresets, updateQuickSourcesDot } from './features/sources/quick-presets-ui.js';
 import { syncQuickPresetsWithLiveSources } from './features/sources/quick-presets.js';
 import { startOnboarding, stopOnboarding } from './features/onboarding/onboarding.js';
+import {
+    registerServiceWorker,
+    scheduleNotifications,
+    saveNotificationSettings,
+    getNotificationStatus,
+    disableNotifications,
+    sendTestNotification,
+    shouldShowOptIn,
+    showOptInModal
+} from './core/notification-manager.js';
 
 // Expose functions globally for dynamic/inline invocation and window compatibility
 window.showSourceOptionsModal = showSourceOptionsModal;
@@ -308,6 +318,31 @@ const initApp = () => {
 
         console.log('Initializing sync...');
         initSync();
+
+        // Register Service Worker and schedule notifications
+        registerServiceWorker().then(() => {
+            scheduleNotifications();
+        });
+
+        // Handle ?action= URL params from notification deep-links
+        const urlParams = new URLSearchParams(window.location.search);
+        const urlAction = urlParams.get('action');
+        if (urlAction === 'streak') {
+            setTimeout(() => switchView('home'), 300);
+        } else if (urlAction === 'focus') {
+            setTimeout(() => switchView('home'), 300);
+        }
+
+        // Listen for test-finished event to trigger opt-in prompt
+        window.addEventListener('test-finished', (e) => {
+            const detail = e.detail || {};
+            const isGoodScore = (detail.successRate || 0) >= 60 || (detail.questionCount || 0) >= 5;
+            if (isGoodScore && shouldShowOptIn()) {
+                setTimeout(() => {
+                    showOptInModal({ offerFocus: true });
+                }, 1500);
+            }
+        });
 
         console.log('Rendering stats list...');
         renderStatsList();
@@ -1085,6 +1120,129 @@ function setupEventListeners() {
     }
 
     setupStatsEventListeners();
+
+    // ---- Notification Settings ----
+    (async function initNotificationSettings() {
+        const status = getNotificationStatus();
+        const s = AppState.continuityConfig?.notificationSettings || {};
+
+        const generalToggle = document.getElementById('notifGeneralToggle');
+        const focusToggle   = document.getElementById('notifFocusToggle');
+        const generalTimeRow = document.getElementById('notifGeneralTimeRow');
+        const focusTimeRow   = document.getElementById('notifFocusTimeRow');
+        const generalTimeInput = document.getElementById('notifGeneralTime');
+        const focusTimeInput   = document.getElementById('notifFocusTime');
+        const quietStart = document.getElementById('notifQuietStart');
+        const quietEnd   = document.getElementById('notifQuietEnd');
+        const testBtn    = document.getElementById('notifTestBtn');
+        const permStatus = document.getElementById('notifPermissionStatus');
+        const focusHint  = document.getElementById('notifFocusHint');
+
+        // Populate current values
+        if (generalToggle) generalToggle.checked = !!s.enabled;
+        if (focusToggle)   focusToggle.checked   = !!s.focusEnabled;
+        if (generalTimeInput) {
+            const h = String(s.dailyScheduleHour ?? 9).padStart(2,'0');
+            const m = String(s.dailyScheduleMinute ?? 0).padStart(2,'0');
+            generalTimeInput.value = `${h}:${m}`;
+        }
+        if (focusTimeInput) {
+            const h = String(s.focusScheduleHour ?? 19).padStart(2,'0');
+            const m = String(s.focusScheduleMinute ?? 0).padStart(2,'0');
+            focusTimeInput.value = `${h}:${m}`;
+        }
+        if (quietStart) quietStart.value = s.quietHoursStart || '22:00';
+        if (quietEnd)   quietEnd.value   = s.quietHoursEnd   || '08:00';
+
+        // Focus toggle availability — check if any focus source is configured
+        const hasFocusSources = (AppState.continuityConfig?.focusSources || []).length > 0;
+        if (focusToggle) focusToggle.disabled = !hasFocusSources;
+        if (focusHint)   focusHint.style.display = hasFocusSources ? 'none' : 'block';
+
+        // Show/hide time rows based on toggle state
+        const syncRows = () => {
+            if (generalTimeRow) generalTimeRow.style.display = generalToggle?.checked ? 'flex' : 'none';
+            if (focusTimeRow)   focusTimeRow.style.display   = focusToggle?.checked   ? 'flex' : 'none';
+        };
+        syncRows();
+
+        // Show permission status if blocked
+        if (permStatus && status.permission === 'denied') {
+            permStatus.style.display = 'block';
+            permStatus.textContent = t('notif_permission_denied');
+        } else if (permStatus && !status.swAvailable) {
+            permStatus.style.display = 'block';
+            permStatus.textContent = t('notif_not_supported');
+        }
+
+        if (generalToggle) {
+            generalToggle.onchange = async (e) => {
+                if (e.target.checked) {
+                    const { requestNotificationPermission } = await import('./core/notification-manager.js');
+                    const result = await requestNotificationPermission('general');
+                    if (result !== 'granted') {
+                        e.target.checked = false;
+                        if (permStatus) { permStatus.style.display = 'block'; permStatus.textContent = t('notif_permission_denied'); }
+                        return;
+                    }
+                    if (permStatus) permStatus.style.display = 'none';
+                } else {
+                    disableNotifications('general');
+                }
+                syncRows();
+                scheduleNotifications();
+            };
+        }
+
+        if (focusToggle) {
+            focusToggle.onchange = async (e) => {
+                if (!hasFocusSources) { e.target.checked = false; return; }
+                if (e.target.checked) {
+                    const { requestNotificationPermission } = await import('./core/notification-manager.js');
+                    const result = await requestNotificationPermission('focus');
+                    if (result !== 'granted') {
+                        e.target.checked = false;
+                        if (permStatus) { permStatus.style.display = 'block'; permStatus.textContent = t('notif_permission_denied'); }
+                        return;
+                    }
+                    if (permStatus) permStatus.style.display = 'none';
+                } else {
+                    disableNotifications('focus');
+                }
+                syncRows();
+                scheduleNotifications();
+            };
+        }
+
+        const handleTimeChange = () => {
+            const [genH, genM] = (generalTimeInput?.value || '09:00').split(':').map(Number);
+            const [focH, focM] = (focusTimeInput?.value   || '19:00').split(':').map(Number);
+            saveNotificationSettings({
+                dailyScheduleHour:  genH,  dailyScheduleMinute:  genM,
+                focusScheduleHour:  focH,  focusScheduleMinute:  focM,
+                quietHoursStart: quietStart?.value || '22:00',
+                quietHoursEnd:   quietEnd?.value   || '08:00'
+            });
+        };
+
+        if (generalTimeInput) generalTimeInput.onchange = handleTimeChange;
+        if (focusTimeInput)   focusTimeInput.onchange   = handleTimeChange;
+        if (quietStart)       quietStart.onchange       = handleTimeChange;
+        if (quietEnd)         quietEnd.onchange         = handleTimeChange;
+
+        if (testBtn) {
+            testBtn.onclick = async () => {
+                const channel = focusToggle?.checked ? 'focus' : 'general';
+                const sent = await sendTestNotification(channel);
+                if (sent) {
+                    showToast(t('notif_test_sent'));
+                } else {
+                    if (permStatus) { permStatus.style.display = 'block'; permStatus.textContent = t('notif_permission_denied'); }
+                }
+            };
+        }
+    })();
+    // ---- End Notification Settings ----
 
     document.getElementById('indStar').onclick = toggleStar;
     document.getElementById('indFlag').onclick = toggleFlag;

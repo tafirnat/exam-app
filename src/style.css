@@ -6445,3 +6445,147 @@ body.dnd-active {
     max-width: 100%;
     margin-left: auto;
 }
+
+/* ================================================================== */
+/* Notification Opt-In Modal                                           */
+/* ================================================================== */
+
+.notif-optin-modal {
+    position: fixed;
+    inset: 0;
+    z-index: 9999;
+    display: flex;
+    align-items: flex-end;
+    justify-content: center;
+    pointer-events: none;
+    opacity: 0;
+    transition: opacity 0.25s ease;
+}
+
+.notif-optin-modal.visible {
+    pointer-events: all;
+    opacity: 1;
+}
+
+.notif-optin-backdrop {
+    position: absolute;
+    inset: 0;
+    background: rgba(0, 0, 0, 0.45);
+    backdrop-filter: blur(4px);
+    -webkit-backdrop-filter: blur(4px);
+}
+
+.notif-optin-card {
+    position: relative;
+    z-index: 1;
+    width: min(420px, 95vw);
+    margin-bottom: 1.5rem;
+    padding: 1.75rem 1.5rem 1.5rem;
+    background: var(--surface-color);
+    border: 1px solid var(--border-color);
+    border-radius: 20px;
+    box-shadow: 0 20px 60px rgba(0,0,0,0.4), 0 4px 16px rgba(0,0,0,0.2);
+    transform: translateY(24px);
+    transition: transform 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);
+    display: flex;
+    flex-direction: column;
+    gap: 1rem;
+}
+
+.notif-optin-modal.visible .notif-optin-card {
+    transform: translateY(0);
+}
+
+.notif-optin-icon {
+    font-size: 2rem;
+    text-align: center;
+    line-height: 1;
+    filter: drop-shadow(0 0 8px rgba(250, 173, 20, 0.5));
+}
+
+.notif-optin-title {
+    font-size: 1rem;
+    font-weight: 700;
+    color: var(--text-primary);
+    text-align: center;
+    margin: 0;
+}
+
+.notif-optin-body {
+    font-size: 0.85rem;
+    color: var(--text-secondary);
+    text-align: center;
+    line-height: 1.5;
+    margin: 0;
+}
+
+.notif-optin-check-row {
+    display: flex;
+    align-items: center;
+    gap: 0.6rem;
+    padding: 0.6rem 0.8rem;
+    background: var(--surface-hover);
+    border-radius: 10px;
+    cursor: pointer;
+    border: 1px solid var(--border-color);
+    transition: background 0.15s ease, border-color 0.15s ease;
+}
+
+.notif-optin-check-row:hover {
+    background: var(--surface-active);
+    border-color: var(--primary-color);
+}
+
+.notif-optin-check-row input[type="checkbox"] {
+    accent-color: var(--primary-color);
+    width: 16px;
+    height: 16px;
+    flex-shrink: 0;
+}
+
+.notif-optin-check-row span {
+    font-size: 0.85rem;
+    color: var(--text-primary);
+    flex: 1;
+}
+
+.notif-optin-time {
+    font-size: 0.75rem;
+    color: var(--text-muted);
+    font-style: normal;
+    background: var(--bg-color);
+    padding: 0.15rem 0.4rem;
+    border-radius: 4px;
+    border: 1px solid var(--border-color);
+}
+
+.notif-optin-actions {
+    display: flex;
+    gap: 0.75rem;
+    padding-top: 0.25rem;
+}
+
+.notif-optin-actions .btn-primary {
+    flex: 1;
+    padding: 0.65rem;
+    font-size: 0.9rem;
+    font-weight: 600;
+    border-radius: 10px;
+}
+
+.notif-optin-actions .btn-ghost {
+    flex: 1;
+    padding: 0.65rem;
+    font-size: 0.85rem;
+    border-radius: 10px;
+    background: transparent;
+    border: 1px solid var(--border-color);
+    color: var(--text-secondary);
+    cursor: pointer;
+    transition: background 0.15s ease;
+}
+
+.notif-optin-actions .btn-ghost:hover {
+    background: var(--surface-hover);
+    color: var(--text-primary);
+}

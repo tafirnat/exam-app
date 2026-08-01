@@ -339,6 +339,90 @@
                 </div>
             </div>
 
+            <!-- Bildirimler -->
+            <div class="menu-section">
+                <div class="menu-section-header" data-section="notifications">
+                    <div class="menu-section-title">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" class="section-icon">
+                            <path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"></path>
+                            <path d="M13.73 21a2 2 0 0 1-3.46 0"></path>
+                        </svg>
+                        <span data-i18n="notif_settings_title">Bildirimler</span>
+                    </div>
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" class="chevron">
+                        <polyline points="6 9 12 15 18 9"></polyline>
+                    </svg>
+                </div>
+                <div class="menu-section-content" id="section-notifications">
+                    <div style="padding: 0 0.5rem 0.5rem; display: flex; flex-direction: column; gap: 0.75rem;">
+
+                        <!-- Genel Seri -->
+                        <div style="display: flex; flex-direction: column; gap: 0.5rem; padding-bottom: 0.75rem; border-bottom: 1px solid var(--border-color);">
+                            <div style="display: flex; justify-content: space-between; align-items: center;">
+                                <span data-i18n="notif_general_label" style="font-size: 0.85rem;">Genel Seri Hatırlatıcı</span>
+                                <label class="switch-small">
+                                    <input type="checkbox" id="notifGeneralToggle">
+                                    <span class="slider-small"></span>
+                                </label>
+                            </div>
+                            <div id="notifGeneralTimeRow" style="display: none; align-items: center; gap: 0.5rem; padding: 0.4rem 0.6rem; background: var(--surface-hover); border-radius: 6px;">
+                                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" style="width:14px;height:14px;opacity:0.6;flex-shrink:0;">
+                                    <circle cx="12" cy="12" r="10"></circle>
+                                    <polyline points="12 6 12 12 16 14"></polyline>
+                                </svg>
+                                <span data-i18n="notif_general_schedule" style="font-size: 0.8rem; color: var(--text-secondary); flex: 1;">Genel bildirim saati</span>
+                                <input type="time" id="notifGeneralTime" value="09:00" style="border: 1px solid var(--border-color); border-radius: 4px; background: var(--bg-color); color: var(--text-primary); padding: 0.15rem 0.4rem; font-size: 0.8rem;">
+                            </div>
+                        </div>
+
+                        <!-- Odak Seri -->
+                        <div style="display: flex; flex-direction: column; gap: 0.5rem; padding-bottom: 0.75rem; border-bottom: 1px solid var(--border-color);">
+                            <div style="display: flex; justify-content: space-between; align-items: center;">
+                                <div style="display: flex; flex-direction: column; gap: 0.15rem;">
+                                    <span data-i18n="notif_focus_label" style="font-size: 0.85rem;">Odak Seri Hatırlatıcı</span>
+                                    <span id="notifFocusHint" data-i18n="notif_focus_unavailable" style="font-size: 0.72rem; color: var(--text-muted); display: none;">Odak kaynağı seç</span>
+                                </div>
+                                <label class="switch-small">
+                                    <input type="checkbox" id="notifFocusToggle">
+                                    <span class="slider-small"></span>
+                                </label>
+                            </div>
+                            <div id="notifFocusTimeRow" style="display: none; align-items: center; gap: 0.5rem; padding: 0.4rem 0.6rem; background: var(--surface-hover); border-radius: 6px;">
+                                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" style="width:14px;height:14px;opacity:0.6;flex-shrink:0;">
+                                    <circle cx="12" cy="12" r="10"></circle>
+                                    <polyline points="12 6 12 12 16 14"></polyline>
+                                </svg>
+                                <span data-i18n="notif_focus_schedule" style="font-size: 0.8rem; color: var(--text-secondary); flex: 1;">Odak bildirim saati</span>
+                                <input type="time" id="notifFocusTime" value="19:00" style="border: 1px solid var(--border-color); border-radius: 4px; background: var(--bg-color); color: var(--text-primary); padding: 0.15rem 0.4rem; font-size: 0.8rem;">
+                            </div>
+                        </div>
+
+                        <!-- Sessiz Saatler -->
+                        <div style="display: flex; flex-direction: column; gap: 0.4rem; padding-bottom: 0.75rem; border-bottom: 1px solid var(--border-color);">
+                            <span data-i18n="notif_quiet_hours" style="font-size: 0.8rem; color: var(--text-secondary);">Sessiz Saatler</span>
+                            <div style="display: flex; align-items: center; gap: 0.5rem;">
+                                <input type="time" id="notifQuietStart" value="22:00" style="flex:1; border: 1px solid var(--border-color); border-radius: 4px; background: var(--bg-color); color: var(--text-primary); padding: 0.2rem 0.4rem; font-size: 0.8rem;">
+                                <span style="color: var(--text-muted); font-size: 0.8rem;">–</span>
+                                <input type="time" id="notifQuietEnd" value="08:00" style="flex:1; border: 1px solid var(--border-color); border-radius: 4px; background: var(--bg-color); color: var(--text-primary); padding: 0.2rem 0.4rem; font-size: 0.8rem;">
+                            </div>
+                        </div>
+
+                        <!-- Test Bildirimi -->
+                        <button id="notifTestBtn" class="btn btn-subtle btn-block" style="font-size: 0.82rem; gap: 0.4rem;">
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" style="width:14px;height:14px;flex-shrink:0;">
+                                <path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"></path>
+                                <path d="M13.73 21a2 2 0 0 1-3.46 0"></path>
+                            </svg>
+                            <span data-i18n="notif_test_btn">Test Bildirimi Gönder</span>
+                        </button>
+
+                        <!-- İzin durumu göstergesi -->
+                        <div id="notifPermissionStatus" style="display: none; font-size: 0.75rem; color: var(--warning-color); padding: 0.4rem 0.6rem; background: var(--surface-hover); border-radius: 6px; text-align: center;"></div>
+
+                    </div>
+                </div>
+            </div>
+
             <div class="dropdown-divider"></div>
 
             <!-- Test Active Only Items -->

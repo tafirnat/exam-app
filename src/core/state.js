@@ -128,7 +128,24 @@ export const AppState = {
         focusPools: [],
         focusSources: [],
         focusSourceNames: {},
-        notificationSettings: { enabled: false, quietHoursStart: "22:00", quietHoursEnd: "08:00", lastNotifiedDate: null }
+        notificationSettings: {
+            enabled: false,          // Genel Seri bildirimi
+            focusEnabled: false,     // Odak Serisi bildirimi (ayrı opt-in)
+            quietHoursStart: '22:00',
+            quietHoursEnd: '08:00',
+            dailyScheduleHour: 9,    // Genel bildirim saati (09:00)
+            dailyScheduleMinute: 0,
+            focusScheduleHour: 19,   // Odak bildirim saati (19:00)
+            focusScheduleMinute: 0,
+            lastNotifiedDate: null,      // Son Genel bildirim tarihi
+            lastFocusNotifiedDate: null, // Son Odak bildirim tarihi
+            ignoreStreakA: 0,            // Üst üste ignore sayacı (Genel)
+            ignoreStreakB: 0,            // Üst üste ignore sayacı (Odak)
+            pausedUntilA: null,          // Genel duraklatma tarihi
+            pausedUntilB: null,          // Odak duraklatma tarihi
+            optInDismissedAt: null,      // Opt-in "Hayır" tarihi
+            optInFocusDismissedAt: null  // Odak opt-in "Hayır" tarihi
+        }
     }),
     studyActivity: safeJSONParse('focus_app_study_activity', {})
 };
@@ -177,7 +194,24 @@ export function clearLocalStudyData() {
         focusPools: [],
         focusSources: [],
         focusSourceNames: {},
-        notificationSettings: { enabled: false, quietHoursStart: "22:00", quietHoursEnd: "08:00", lastNotifiedDate: null }
+        notificationSettings: {
+            enabled: false,
+            focusEnabled: false,
+            quietHoursStart: '22:00',
+            quietHoursEnd: '08:00',
+            dailyScheduleHour: 9,
+            dailyScheduleMinute: 0,
+            focusScheduleHour: 19,
+            focusScheduleMinute: 0,
+            lastNotifiedDate: null,
+            lastFocusNotifiedDate: null,
+            ignoreStreakA: 0,
+            ignoreStreakB: 0,
+            pausedUntilA: null,
+            pausedUntilB: null,
+            optInDismissedAt: null,
+            optInFocusDismissedAt: null
+        }
     };
     AppState.studyActivity = {};
     localStorage.removeItem('focus_app_preset_sessions');
