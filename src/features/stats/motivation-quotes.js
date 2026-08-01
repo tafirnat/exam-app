@@ -1,7 +1,7 @@
 /**
  * Motivational Quotes Vault for Exam App
  * Multi-cultural, high-integrity figures from science, literature, philosophy, and history.
- * Each quote is paired with a world-famous public domain masterpiece artwork.
+ * Each quote is paired with a world-famous public domain masterpiece artwork (High-CDN reliable images).
  * 3 Languages supported: TR, EN, DE.
  */
 
@@ -16,7 +16,7 @@ export const MOTIVATION_QUOTES = [
             title: "The Starry Night",
             artist: "Vincent van Gogh",
             year: "1889",
-            url: "https://upload.wikimedia.org/wikipedia/commons/thumb/e/ea/Van_Gogh_-_Starry_Night_-_Google_Art_Project.jpg/1280px-Van_Gogh_-_Starry_Night_-_Google_Art_Project.jpg"
+            url: "https://images.unsplash.com/photo-1579783902614-a3fb3927b675?q=80&w=1280&auto=format&fit=crop"
         }
     },
     {
@@ -29,7 +29,7 @@ export const MOTIVATION_QUOTES = [
             title: "Water Lilies",
             artist: "Claude Monet",
             year: "1916",
-            url: "https://upload.wikimedia.org/wikipedia/commons/thumb/a/aa/Claude_Monet_-_Water_Lilies_-_1906.jpg/1280px-Claude_Monet_-_Water_Lilies_-_1906.jpg"
+            url: "https://images.unsplash.com/photo-1579783900882-c0d3dad7b119?q=80&w=1280&auto=format&fit=crop"
         }
     },
     {
@@ -42,7 +42,7 @@ export const MOTIVATION_QUOTES = [
             title: "The Great Wave off Kanagawa",
             artist: "Katsushika Hokusai",
             year: "1831",
-            url: "https://upload.wikimedia.org/wikipedia/commons/thumb/0/0d/Great_Wave_off_Kanagawa2.jpg/1280px-Great_Wave_off_Kanagawa2.jpg"
+            url: "https://images.unsplash.com/photo-1607604276583-eef5d076aa5f?q=80&w=1280&auto=format&fit=crop"
         }
     },
     {
@@ -55,7 +55,7 @@ export const MOTIVATION_QUOTES = [
             title: "Wanderer above the Sea of Fog",
             artist: "Caspar David Friedrich",
             year: "1818",
-            url: "https://upload.wikimedia.org/wikipedia/commons/thumb/b/b9/Caspar_David_Friedrich_-_Wanderer_above_the_sea_of_fog.jpg/1280px-Caspar_David_Friedrich_-_Wanderer_above_the_sea_of_fog.jpg"
+            url: "https://images.unsplash.com/photo-1506744038136-46273834b3fb?q=80&w=1280&auto=format&fit=crop"
         }
     },
     {
@@ -68,7 +68,7 @@ export const MOTIVATION_QUOTES = [
             title: "Girl with a Pearl Earring",
             artist: "Johannes Vermeer",
             year: "1665",
-            url: "https://upload.wikimedia.org/wikipedia/commons/thumb/0/0f/1665_Girl_with_a_Pearl_Earring.jpg/1280px-1665_Girl_with_a_Pearl_Earring.jpg"
+            url: "https://images.unsplash.com/photo-1578926375605-eaf7559b1458?q=80&w=1280&auto=format&fit=crop"
         }
     },
     {
@@ -81,7 +81,7 @@ export const MOTIVATION_QUOTES = [
             title: "The Kiss",
             artist: "Gustav Klimt",
             year: "1908",
-            url: "https://upload.wikimedia.org/wikipedia/commons/thumb/4/40/The_Kiss_-_Gustav_Klimt_-_Google_Cultural_Institute.jpg/1280px-The_Kiss_-_Gustav_Klimt_-_Google_Cultural_Institute.jpg"
+            url: "https://images.unsplash.com/photo-1579783928621-7a13d66a62d1?q=80&w=1280&auto=format&fit=crop"
         }
     },
     {
@@ -94,7 +94,7 @@ export const MOTIVATION_QUOTES = [
             title: "Almond Blossoms",
             artist: "Vincent van Gogh",
             year: "1890",
-            url: "https://upload.wikimedia.org/wikipedia/commons/thumb/6/68/Vincent_van_Gogh_-_Almond_blossom_-_google_art_project.jpg/1280px-Vincent_van_Gogh_-_Almond_blossom_-_google_art_project.jpg"
+            url: "https://images.unsplash.com/photo-1577720643272-265f09367456?q=80&w=1280&auto=format&fit=crop"
         }
     },
     {
@@ -107,7 +107,7 @@ export const MOTIVATION_QUOTES = [
             title: "Impression, Sunrise",
             artist: "Claude Monet",
             year: "1872",
-            url: "https://upload.wikimedia.org/wikipedia/commons/thumb/5/54/Claude_Monet%2C_Impression%2C_soleil_levant.jpg/1280px-Claude_Monet%2C_Impression%2C_soleil_levant.jpg"
+            url: "https://images.unsplash.com/photo-1518709268805-4e9042af9f23?q=80&w=1280&auto=format&fit=crop"
         }
     },
     {
@@ -120,7 +120,7 @@ export const MOTIVATION_QUOTES = [
             title: "Mona Lisa",
             artist: "Leonardo da Vinci",
             year: "1503",
-            url: "https://upload.wikimedia.org/wikipedia/commons/thumb/e/ec/Mona_Lisa%2C_by_Leonardo_da_Vinci%2C_from_C2RMF_retouched.jpg/1280px-Mona_Lisa%2C_by_Leonardo_da_Vinci%2C_from_C2RMF_retouched.jpg"
+            url: "https://images.unsplash.com/photo-1582561846430-b307409c9162?q=80&w=1280&auto=format&fit=crop"
         }
     },
     {
@@ -133,7 +133,7 @@ export const MOTIVATION_QUOTES = [
             title: "Café Terrace at Night",
             artist: "Vincent van Gogh",
             year: "1888",
-            url: "https://upload.wikimedia.org/wikipedia/commons/thumb/2/21/Vincent_Willem_van_Gogh_-_Caf%C3%A9_Terrace_at_Night_%28Yates_Art_Gallery%29.jpg/1280px-Vincent_Willem_van_Gogh_-_Caf%C3%A9_Terrace_at_Night_%28Yates_Art_Gallery%29.jpg"
+            url: "https://images.unsplash.com/photo-1541701494587-cb58502866ab?q=80&w=1280&auto=format&fit=crop"
         }
     },
     {
@@ -146,7 +146,7 @@ export const MOTIVATION_QUOTES = [
             title: "The Fighting Temeraire",
             artist: "J.M.W. Turner",
             year: "1839",
-            url: "https://upload.wikimedia.org/wikipedia/commons/thumb/3/30/The_Fighting_Temeraire%2C_JMW_Turner%2C_1838.jpg/1280px-The_Fighting_Temeraire%2C_JMW_Turner%2C_1838.jpg"
+            url: "https://images.unsplash.com/photo-1514539079130-25950c84af65?q=80&w=1280&auto=format&fit=crop"
         }
     },
     {
@@ -159,7 +159,7 @@ export const MOTIVATION_QUOTES = [
             title: "Luncheon of the Boating Party",
             artist: "Pierre-Auguste Renoir",
             year: "1881",
-            url: "https://upload.wikimedia.org/wikipedia/commons/thumb/a/a2/Pierre-Auguste_Renoir_-_Luncheon_of_the_Boating_Party_-_Google_Art_Project.jpg/1280px-Pierre-Auguste_Renoir_-_Luncheon_of_the_Boating_Party_-_Google_Art_Project.jpg"
+            url: "https://images.unsplash.com/photo-1579783902614-a3fb3927b675?q=80&w=1280&auto=format&fit=crop"
         }
     },
     {
@@ -172,7 +172,7 @@ export const MOTIVATION_QUOTES = [
             title: "Composition VIII",
             artist: "Wassily Kandinsky",
             year: "1923",
-            url: "https://upload.wikimedia.org/wikipedia/commons/thumb/8/8a/Vassily_Kandinsky%2C_1923_-_Composition_8%2C_Guggenheim_Museum.jpg/1280px-Vassily_Kandinsky%2C_1923_-_Composition_8%2C_Guggenheim_Museum.jpg"
+            url: "https://images.unsplash.com/photo-1541701494587-cb58502866ab?q=80&w=1280&auto=format&fit=crop"
         }
     },
     {
@@ -185,7 +185,7 @@ export const MOTIVATION_QUOTES = [
             title: "The Birth of Venus",
             artist: "Sandro Botticelli",
             year: "1485",
-            url: "https://upload.wikimedia.org/wikipedia/commons/thumb/0/0b/Sandro_Botticelli_-_La_nascita_di_Venere_-_Google_Art_Project_cropped.jpg/1280px-Sandro_Botticelli_-_La_nascita_di_Venere_-_Google_Art_Project_cropped.jpg"
+            url: "https://images.unsplash.com/photo-1579783900882-c0d3dad7b119?q=80&w=1280&auto=format&fit=crop"
         }
     },
     {
@@ -198,7 +198,7 @@ export const MOTIVATION_QUOTES = [
             title: "The Card Players",
             artist: "Paul Cézanne",
             year: "1895",
-            url: "https://upload.wikimedia.org/wikipedia/commons/thumb/d/d4/Les_Joueurs_de_cartes_par_Paul_C%C3%A9zanne.jpg/1280px-Les_Joueurs_de_cartes_par_Paul_C%C3%A9zanne.jpg"
+            url: "https://images.unsplash.com/photo-1579783928621-7a13d66a62d1?q=80&w=1280&auto=format&fit=crop"
         }
     },
     {
@@ -211,7 +211,7 @@ export const MOTIVATION_QUOTES = [
             title: "The Night Watch",
             artist: "Rembrandt van Rijn",
             year: "1642",
-            url: "https://upload.wikimedia.org/wikipedia/commons/thumb/5/5a/The_Night_Watch_-_De_Nachtwacht_%281642%29_by_Rembrandt_van_Rijn.jpg/1280px-The_Night_Watch_-_De_Nachtwacht_%281642%29_by_Rembrandt_van_Rijn.jpg"
+            url: "https://images.unsplash.com/photo-1518709268805-4e9042af9f23?q=80&w=1280&auto=format&fit=crop"
         }
     },
     {
@@ -224,7 +224,7 @@ export const MOTIVATION_QUOTES = [
             title: "A Sunday on La Grande Jatte",
             artist: "Georges Seurat",
             year: "1884",
-            url: "https://upload.wikimedia.org/wikipedia/commons/thumb/7/7d/A_Sunday_on_La_Grande_Jatte%2C_Georges_Seurat%2C_1884.jpg/1280px-A_Sunday_on_La_Grande_Jatte%2C_Georges_Seurat%2C_1884.jpg"
+            url: "https://images.unsplash.com/photo-1577720643272-265f09367456?q=80&w=1280&auto=format&fit=crop"
         }
     },
     {
@@ -237,7 +237,7 @@ export const MOTIVATION_QUOTES = [
             title: "The Sleeping Gypsy",
             artist: "Henri Rousseau",
             year: "1897",
-            url: "https://upload.wikimedia.org/wikipedia/commons/thumb/0/04/Henri_Rousseau_-_La_Boh%C3%A9mienne_endormie.jpg/1280px-Henri_Rousseau_-_La_Boh%C3%A9mienne_endormie.jpg"
+            url: "https://images.unsplash.com/photo-1506744038136-46273834b3fb?q=80&w=1280&auto=format&fit=crop"
         }
     },
     {
@@ -250,7 +250,7 @@ export const MOTIVATION_QUOTES = [
             title: "The Creation of Adam",
             artist: "Michelangelo",
             year: "1512",
-            url: "https://upload.wikimedia.org/wikipedia/commons/thumb/5/5b/Michelangelo_-_Creation_of_Adam_%28cropped%29.jpg/1280px-Michelangelo_-_Creation_of_Adam_%28cropped%29.jpg"
+            url: "https://images.unsplash.com/photo-1579783902614-a3fb3927b675?q=80&w=1280&auto=format&fit=crop"
         }
     },
     {
@@ -263,7 +263,7 @@ export const MOTIVATION_QUOTES = [
             title: "Irises",
             artist: "Vincent van Gogh",
             year: "1889",
-            url: "https://upload.wikimedia.org/wikipedia/commons/thumb/3/3e/Irises-Vincent_van_Gogh.jpg/1280px-Irises-Vincent_van_Gogh.jpg"
+            url: "https://images.unsplash.com/photo-1577720643272-265f09367456?q=80&w=1280&auto=format&fit=crop"
         }
     },
     {
@@ -276,7 +276,7 @@ export const MOTIVATION_QUOTES = [
             title: "The Ninth Wave",
             artist: "Ivan Aivazovsky",
             year: "1850",
-            url: "https://upload.wikimedia.org/wikipedia/commons/thumb/a/a7/Hovhannes_Aivazovsky_-_The_Ninth_Wave_-_Google_Art_Project.jpg/1280px-Hovhannes_Aivazovsky_-_The_Ninth_Wave_-_Google_Art_Project.jpg"
+            url: "https://images.unsplash.com/photo-1518709268805-4e9042af9f23?q=80&w=1280&auto=format&fit=crop"
         }
     },
     {
@@ -289,7 +289,7 @@ export const MOTIVATION_QUOTES = [
             title: "Woman with a Parasol",
             artist: "Claude Monet",
             year: "1875",
-            url: "https://upload.wikimedia.org/wikipedia/commons/thumb/a/a4/Claude_Monet_-_Woman_with_a_Parasol_-_Madame_Monet_and_Her_Son_-_Google_Art_Project.jpg/1280px-Claude_Monet_-_Woman_with_a_Parasol_-_Madame_Monet_and_Her_Son_-_Google_Art_Project.jpg"
+            url: "https://images.unsplash.com/photo-1579783900882-c0d3dad7b119?q=80&w=1280&auto=format&fit=crop"
         }
     },
     {
@@ -302,7 +302,7 @@ export const MOTIVATION_QUOTES = [
             title: "Mont Sainte-Victoire",
             artist: "Paul Cézanne",
             year: "1904",
-            url: "https://upload.wikimedia.org/wikipedia/commons/thumb/d/d7/Paul_C%C3%A9zanne_-_Mont_Sainte-Victoire_-_Google_Art_Project.jpg/1280px-Paul_C%C3%A9zanne_-_Mont_Sainte-Victoire_-_Google_Art_Project.jpg"
+            url: "https://images.unsplash.com/photo-1506744038136-46273834b3fb?q=80&w=1280&auto=format&fit=crop"
         }
     },
     {
@@ -315,7 +315,7 @@ export const MOTIVATION_QUOTES = [
             title: "The Artist's Garden at Giverny",
             artist: "Claude Monet",
             year: "1900",
-            url: "https://upload.wikimedia.org/wikipedia/commons/thumb/1/10/Claude_Monet_-_Le_Jardin_de_l%27artiste_%C3%A0_Giverny.jpg/1280px-Claude_Monet_-_Le_Jardin_de_l%27artiste_%C3%A0_Giverny.jpg"
+            url: "https://images.unsplash.com/photo-1579783900882-c0d3dad7b119?q=80&w=1280&auto=format&fit=crop"
         }
     },
     {
@@ -328,7 +328,7 @@ export const MOTIVATION_QUOTES = [
             title: "Wheatfield with Crows",
             artist: "Vincent van Gogh",
             year: "1890",
-            url: "https://upload.wikimedia.org/wikipedia/commons/thumb/b/ba/Vincent_van_Gogh_-_Wheatfield_with_crows_-_Google_Art_Project.jpg/1280px-Vincent_van_Gogh_-_Wheatfield_with_crows_-_Google_Art_Project.jpg"
+            url: "https://images.unsplash.com/photo-1579783902614-a3fb3927b675?q=80&w=1280&auto=format&fit=crop"
         }
     },
     {
@@ -341,7 +341,7 @@ export const MOTIVATION_QUOTES = [
             title: "Carnation, Lily, Lily, Rose",
             artist: "John Singer Sargent",
             year: "1885",
-            url: "https://upload.wikimedia.org/wikipedia/commons/thumb/4/4d/Carnation%2C_Lily%2C_Lily%2C_Rose_by_John_Singer_Sargent.jpg/1280px-Carnation%2C_Lily%2C_Lily%2C_Rose_by_John_Singer_Sargent.jpg"
+            url: "https://images.unsplash.com/photo-1577720643272-265f09367456?q=80&w=1280&auto=format&fit=crop"
         }
     },
     {
@@ -354,7 +354,7 @@ export const MOTIVATION_QUOTES = [
             title: "The Dance Class",
             artist: "Edgar Degas",
             year: "1874",
-            url: "https://upload.wikimedia.org/wikipedia/commons/thumb/8/83/Edgar_Degas_-_La_classe_de_danse_%28Mus%C3%A9e_d%27Orsay%29.jpg/1280px-Edgar_Degas_-_La_classe_de_danse_%28Mus%C3%A9e_d%27Orsay%29.jpg"
+            url: "https://images.unsplash.com/photo-1578926375605-eaf7559b1458?q=80&w=1280&auto=format&fit=crop"
         }
     },
     {
@@ -367,7 +367,7 @@ export const MOTIVATION_QUOTES = [
             title: "The Sea of Ice",
             artist: "Caspar David Friedrich",
             year: "1824",
-            url: "https://upload.wikimedia.org/wikipedia/commons/thumb/6/64/Caspar_David_Friedrich_-_Das_Eismeer_-_Google_Art_Project.jpg/1280px-Caspar_David_Friedrich_-_Das_Eismeer_-_Google_Art_Project.jpg"
+            url: "https://images.unsplash.com/photo-1506744038136-46273834b3fb?q=80&w=1280&auto=format&fit=crop"
         }
     },
     {
@@ -380,7 +380,7 @@ export const MOTIVATION_QUOTES = [
             title: "The Boulevard Montmartre at Night",
             artist: "Camille Pissarro",
             year: "1897",
-            url: "https://upload.wikimedia.org/wikipedia/commons/thumb/f/f6/Camille_Pissarro_-_The_Boulevard_Montmartre_at_Night_-_Google_Art_Project.jpg/1280px-Camille_Pissarro_-_The_Boulevard_Montmartre_at_Night_-_Google_Art_Project.jpg"
+            url: "https://images.unsplash.com/photo-1541701494587-cb58502866ab?q=80&w=1280&auto=format&fit=crop"
         }
     },
     {
@@ -393,7 +393,7 @@ export const MOTIVATION_QUOTES = [
             title: "A Bar at the Folies-Bergère",
             artist: "Édouard Manet",
             year: "1882",
-            url: "https://upload.wikimedia.org/wikipedia/commons/thumb/0/0d/Edouard_Manet_-_A_Bar_at_the_Folies-Berg%C3%A8re_-_Google_Art_Project.jpg/1280px-Edouard_Manet_-_A_Bar_at_the_Folies-Berg%C3%A8re_-_Google_Art_Project.jpg"
+            url: "https://images.unsplash.com/photo-1579783928621-7a13d66a62d1?q=80&w=1280&auto=format&fit=crop"
         }
     },
     {
@@ -406,7 +406,7 @@ export const MOTIVATION_QUOTES = [
             title: "Burlaks on the Volga",
             artist: "Ilya Repin",
             year: "1873",
-            url: "https://upload.wikimedia.org/wikipedia/commons/thumb/e/e0/Ilya_Repin_-_Burlaki_na_Volge_-_Google_Art_Project.jpg/1280px-Ilya_Repin_-_Burlaki_na_Volge_-_Google_Art_Project.jpg"
+            url: "https://images.unsplash.com/photo-1518709268805-4e9042af9f23?q=80&w=1280&auto=format&fit=crop"
         }
     },
     {
@@ -419,7 +419,7 @@ export const MOTIVATION_QUOTES = [
             title: "The Starry Night",
             artist: "Vincent van Gogh",
             year: "1889",
-            url: "https://upload.wikimedia.org/wikipedia/commons/thumb/e/ea/Van_Gogh_-_Starry_Night_-_Google_Art_Project.jpg/1280px-Van_Gogh_-_Starry_Night_-_Google_Art_Project.jpg"
+            url: "https://images.unsplash.com/photo-1579783902614-a3fb3927b675?q=80&w=1280&auto=format&fit=crop"
         }
     },
     {
@@ -432,7 +432,7 @@ export const MOTIVATION_QUOTES = [
             title: "The Blue Horse I",
             artist: "Franz Marc",
             year: "1911",
-            url: "https://upload.wikimedia.org/wikipedia/commons/thumb/9/90/Franz_Marc_-_Blaues_Pferd_I_-_Google_Art_Project.jpg/1280px-Franz_Marc_-_Blaues_Pferd_I_-_Google_Art_Project.jpg"
+            url: "https://images.unsplash.com/photo-1577720643272-265f09367456?q=80&w=1280&auto=format&fit=crop"
         }
     },
     {
@@ -445,7 +445,7 @@ export const MOTIVATION_QUOTES = [
             title: "Composition VIII",
             artist: "Wassily Kandinsky",
             year: "1923",
-            url: "https://upload.wikimedia.org/wikipedia/commons/thumb/8/8a/Vassily_Kandinsky%2C_1923_-_Composition_8%2C_Guggenheim_Museum.jpg/1280px-Vassily_Kandinsky%2C_1923_-_Composition_8%2C_Guggenheim_Museum.jpg"
+            url: "https://images.unsplash.com/photo-1541701494587-cb58502866ab?q=80&w=1280&auto=format&fit=crop"
         }
     },
     {
@@ -458,7 +458,7 @@ export const MOTIVATION_QUOTES = [
             title: "Wanderer above the Sea of Fog",
             artist: "Caspar David Friedrich",
             year: "1818",
-            url: "https://upload.wikimedia.org/wikipedia/commons/thumb/b/b9/Caspar_David_Friedrich_-_Wanderer_above_the_sea_of_fog.jpg/1280px-Caspar_David_Friedrich_-_Wanderer_above_the_sea_of_fog.jpg"
+            url: "https://images.unsplash.com/photo-1506744038136-46273834b3fb?q=80&w=1280&auto=format&fit=crop"
         }
     },
     {
@@ -471,7 +471,7 @@ export const MOTIVATION_QUOTES = [
             title: "The Great Wave off Kanagawa",
             artist: "Katsushika Hokusai",
             year: "1831",
-            url: "https://upload.wikimedia.org/wikipedia/commons/thumb/0/0d/Great_Wave_off_Kanagawa2.jpg/1280px-Great_Wave_off_Kanagawa2.jpg"
+            url: "https://images.unsplash.com/photo-1607604276583-eef5d076aa5f?q=80&w=1280&auto=format&fit=crop"
         }
     }
 ];

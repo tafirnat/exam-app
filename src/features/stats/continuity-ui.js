@@ -21,7 +21,7 @@ import { buildStreakRun, prepareStreakRun, resolveStreakCount } from './streak-r
 import { renderSourcePicker } from '../sources/sources-ui.js';
 import { showToast, showAlert } from '../../core/utils.js';
 import { t } from '../../core/i18n.js';
-import { getDailyQuote, getRandomQuote } from './motivation-quotes.js';
+import { MOTIVATION_QUOTES, getDailyQuote, getRandomQuote } from './motivation-quotes.js';
 
 let carouselTimer = null;
 let currentSlideIndex = 0;
@@ -334,21 +334,23 @@ export function renderMotivationSlide() {
     if (!textEl || !authorEl || !card) return;
 
     const lang = AppState.language || 'tr';
-    
-    // If quote not loaded yet, fetch daily quote
-    if (!card.dataset.quoteId) {
-        const quote = getDailyQuote(lang);
-        card.dataset.quoteId = String(quote.id);
-        const safeLang = (quote[lang]) ? lang : 'tr';
-        textEl.textContent = `"${quote[safeLang] || quote.text || quote.tr}"`;
-        authorEl.textContent = `— ${quote.author}`;
+    const currentId = card.dataset.quoteId ? parseInt(card.dataset.quoteId, 10) : null;
+    const quote = currentId 
+        ? (MOTIVATION_QUOTES.find(q => q.id === currentId) || getDailyQuote(lang))
+        : getDailyQuote(lang);
 
-        if (quote.artwork) {
-            card.style.backgroundImage = `url('${quote.artwork.url}')`;
-            if (artworkEl) {
-                artworkEl.textContent = `🎨 ${quote.artwork.artist} — ${quote.artwork.title} (${quote.artwork.year})`;
-                artworkEl.title = `Günün Eseri: ${quote.artwork.title} by ${quote.artwork.artist} (${quote.artwork.year})`;
-            }
+    card.dataset.quoteId = String(quote.id);
+    const safeLang = (quote[lang]) ? lang : 'tr';
+    textEl.textContent = `"${quote[safeLang] || quote.text || quote.tr}"`;
+    authorEl.textContent = `— ${quote.author}`;
+
+    if (quote.artwork && quote.artwork.url) {
+        card.style.backgroundImage = `url("${quote.artwork.url}")`;
+        card.style.backgroundSize = 'cover';
+        card.style.backgroundPosition = 'center center';
+        if (artworkEl) {
+            artworkEl.textContent = `🎨 ${quote.artwork.artist} — ${quote.artwork.title} (${quote.artwork.year})`;
+            artworkEl.title = `Günün Eseri: ${quote.artwork.title} by ${quote.artwork.artist} (${quote.artwork.year})`;
         }
     }
 }
