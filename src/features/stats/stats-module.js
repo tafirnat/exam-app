@@ -316,29 +316,52 @@ function updateStatsFooter(filter, keyword, count, questions = []) {
 
     const globalToggle = document.getElementById('statsGlobalToggle');
     const isGlobal = globalToggle ? globalToggle.checked : false;
-    const scopeLabel = isGlobal ? t('stats_scope_all') : t('stats_scope_active');
 
-    let text = '';
-    if (keyword && keyword.trim() !== '') {
-        text = t('stats_count_search', { keyword, count });
-    } else if (filter === 'all') {
-        text = t('stats_count_all', { count });
+    // --- Determine left-side scope label ---
+    let scopeName = '';
+    const rawKw = (keyword || '').trim();
+
+    if (rawKw.startsWith('$')) {
+        // Source scope: strip $ prefix to get clean source name
+        scopeName = rawKw.slice(1).trim() || t('stats_scope_all_label');
+    } else if (rawKw.startsWith('#')) {
+        // Tag scope: strip # prefix to get clean tag name
+        const tagName = rawKw.slice(1).trim();
+        scopeName = tagName ? `#${tagName}` : t('stats_scope_tags');
+    } else if (rawKw !== '') {
+        // Free-text keyword search
+        scopeName = t('stats_scope_search');
+    } else if (filter && filter.startsWith('tag:')) {
+        // Tag filter mode
+        const tagName = filter.slice(4).trim();
+        scopeName = tagName ? `#${tagName}` : t('stats_scope_tags');
+    } else if (filter && filter !== 'all' && filter !== 'recent' && filter !== 'incorrect') {
+        // Named filter (starred, flagged, noted etc.)
+        scopeName = t(`filter_${filter}`) || filter;
     } else {
-        text = t('stats_count_filtered', { count });
+        // Default: show active vs all sources
+        scopeName = isGlobal ? t('stats_scope_all_label') : t('stats_scope_active_label');
     }
 
-    // Combine scope label with count text
-    const fullText = `${scopeLabel} | ${text}`;
+    // --- Right-side count ---
+    const countText = t('stats_count_short', { count });
 
-    const isSearchActive = !!(keyword && keyword.trim() !== '');
+    // --- Build HTML (left: scope, right: count) ---
+    const isSearchActive = rawKw !== '';
     const isFilterActive = filter && filter !== 'all' && filter !== 'recent' && filter !== 'incorrect';
     const isTagMode = filter && filter.startsWith('tag:');
     const shouldShowButton = (isSearchActive || isFilterActive || isTagMode) && count > 0 && Array.isArray(questions) && questions.length > 0;
 
+    const scopeRow = `
+        <div class="stats-footer-row">
+            <span class="stats-footer-scope">${escapeHTML(t('stats_scope_prefix'))} <strong class="stats-footer-scope-name">${escapeHTML(scopeName)}</strong></span>
+            <span class="stats-footer-count">${escapeHTML(countText)}</span>
+        </div>`;
+
     if (shouldShowButton) {
         footer.innerHTML = `
-            <div class="stats-footer-content" style="display: flex; flex-direction: column; align-items: center; gap: 0.5rem; width: 100%;">
-                <div class="stats-footer-text">${escapeHTML(fullText)}</div>
+            <div class="stats-footer-content">
+                ${scopeRow}
                 <button class="start-filtered-test-btn" id="startFilteredTestBtn">
                     <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" style="flex-shrink: 0;">
                         <path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"></path>
@@ -358,9 +381,10 @@ function updateStatsFooter(filter, keyword, count, questions = []) {
             };
         }
     } else {
-        footer.innerHTML = `<div class="stats-footer-text">${escapeHTML(fullText)}</div>`;
+        footer.innerHTML = `<div class="stats-footer-content">${scopeRow}</div>`;
     }
 }
+
 
 function renderHistoricalTests(list, filter) {
     let testsToShow = [];
