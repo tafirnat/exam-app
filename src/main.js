@@ -1192,16 +1192,14 @@ function setupEventListeners() {
         reader.onload = async (e) => {
             try {
                 const data = JSON.parse(e.target.result);
-                if (data.questions) {
-                    // Single source import
-                    await processJSON(data, file.name);
-                    renderSourcesList();
-                } else if (data.sources || data.stats) {
+                if (data.sources || data.stats) {
                     // Full backup import
                     if (await showConfirm(t('confirm_import_backup'))) {
                         if (data.sources) AppState.sources = data.sources;
                         if (data.folders) AppState.folders = data.folders;
                         if (data.stats) AppState.stats = data.stats;
+                        if (data.studyActivity) AppState.studyActivity = data.studyActivity;
+                        if (data.continuityConfig) AppState.continuityConfig = data.continuityConfig;
                         if (data.recentTests) AppState.recentTests = data.recentTests;
                         saveStats();
                         saveSources();
@@ -1209,9 +1207,21 @@ function setupEventListeners() {
                             const { saveFolders } = await import('./core/state.js');
                             saveFolders();
                         }
+                        if (data.studyActivity) {
+                            const { saveStudyActivity } = await import('./core/state.js');
+                            saveStudyActivity();
+                        }
+                        if (data.continuityConfig) {
+                            const { saveContinuityConfig } = await import('./core/state.js');
+                            saveContinuityConfig();
+                        }
                         import('./core/state.js').then(m => m.saveRecentTests());
                         location.reload(); // Simplest way to re-init everything safely
                     }
+                } else if (data.questions || (Array.isArray(data.sources) && data.sources[0]?.questions)) {
+                    // Single source import
+                    await processJSON(data, file.name);
+                    renderSourcesList();
                 } else {
                     showToast(t('invalid_format'));
                 }

@@ -8,6 +8,15 @@ import { showImportReport } from './import-report.js';
 // rewrites them to their canonical spellings so only honest types reach storage.
 const VALID_TYPES = new Set([...KNOWN_TYPES, ...Object.keys(LEGACY_TYPE_ALIASES)]);
 
+export function getQuestionsFromData(data) {
+    if (!data || typeof data !== 'object') return null;
+    if (Array.isArray(data.questions)) return data.questions;
+    if (Array.isArray(data.sources) && data.sources.length > 0 && Array.isArray(data.sources[0]?.questions)) {
+        return data.sources[0].questions;
+    }
+    return null;
+}
+
 /* Structural validation only: a file that fails here cannot be read at all, so
    the import is refused outright. Whether the questions are *answerable* is a
    separate matter handled by findContentGaps() — see question-rules.js. A file
@@ -20,18 +29,20 @@ export function validateExamSchema(data) {
         return { valid: false, errors: ['Dosya geçerli bir JSON nesnesi olmalıdır.'] };
     }
 
-    if (!Array.isArray(data.questions)) {
+    const questions = getQuestionsFromData(data);
+
+    if (!Array.isArray(questions)) {
         errors.push('"questions" alanı bir dizi olmalıdır.');
         return { valid: false, errors };
     }
 
-    if (data.questions.length === 0) {
+    if (questions.length === 0) {
         errors.push('"questions" dizisi boş olamaz.');
         return { valid: false, errors };
     }
 
     const ids = new Set();
-    data.questions.forEach((q, i) => {
+    questions.forEach((q, i) => {
         const prefix = `Soru[${i + 1}]`;
 
         if (q.id === undefined || q.id === null) {
@@ -113,8 +124,9 @@ export function processJSON(rawData, name, options = {}) {
         return null;
     }
 
-    const normalizedQuestions = normalizeQuestions(data.questions);
-    let title = data.exam_metadata?.title || data.exam?.title || name;
+    const rawQuestions = getQuestionsFromData(data) || [];
+    const normalizedQuestions = normalizeQuestions(rawQuestions);
+    let title = data.exam_metadata?.title || data.sources?.[0]?.name || data.exam?.title || name;
 
     // Smart Name Suffixing Logic
     let finalTitle = title;
