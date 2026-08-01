@@ -16,7 +16,7 @@ export const MOTIVATION_QUOTES = [
             title: "The Starry Night",
             artist: "Vincent van Gogh",
             year: "1889",
-            url: "https://images.unsplash.com/photo-1579783902614-a3fb3927b675?q=70&w=600&auto=format&fit=crop"
+            url: "https://images.unsplash.com/photo-1577083552431-6e5fd01aa342?q=70&w=600&auto=format&fit=crop"
         }
     },
     {
@@ -120,7 +120,7 @@ export const MOTIVATION_QUOTES = [
             title: "Mona Lisa",
             artist: "Leonardo da Vinci",
             year: "1503",
-            url: "https://images.unsplash.com/photo-1582561846430-b307409c9162?q=70&w=600&auto=format&fit=crop"
+            url: "https://images.unsplash.com/photo-1579783900882-c0d3dad7b119?q=70&w=600&auto=format&fit=crop"
         }
     },
     {
@@ -159,7 +159,7 @@ export const MOTIVATION_QUOTES = [
             title: "Luncheon of the Boating Party",
             artist: "Pierre-Auguste Renoir",
             year: "1881",
-            url: "https://images.unsplash.com/photo-1579783902614-a3fb3927b675?q=70&w=600&auto=format&fit=crop"
+            url: "https://images.unsplash.com/photo-1577083552431-6e5fd01aa342?q=70&w=600&auto=format&fit=crop"
         }
     },
     {
@@ -250,7 +250,7 @@ export const MOTIVATION_QUOTES = [
             title: "The Creation of Adam",
             artist: "Michelangelo",
             year: "1512",
-            url: "https://images.unsplash.com/photo-1579783902614-a3fb3927b675?q=70&w=600&auto=format&fit=crop"
+            url: "https://images.unsplash.com/photo-1577083552431-6e5fd01aa342?q=70&w=600&auto=format&fit=crop"
         }
     },
     {
@@ -328,7 +328,7 @@ export const MOTIVATION_QUOTES = [
             title: "Wheatfield with Crows",
             artist: "Vincent van Gogh",
             year: "1890",
-            url: "https://images.unsplash.com/photo-1579783902614-a3fb3927b675?q=70&w=600&auto=format&fit=crop"
+            url: "https://images.unsplash.com/photo-1577083552431-6e5fd01aa342?q=70&w=600&auto=format&fit=crop"
         }
     },
     {
@@ -419,7 +419,7 @@ export const MOTIVATION_QUOTES = [
             title: "The Starry Night",
             artist: "Vincent van Gogh",
             year: "1889",
-            url: "https://images.unsplash.com/photo-1579783902614-a3fb3927b675?q=70&w=600&auto=format&fit=crop"
+            url: "https://images.unsplash.com/photo-1577083552431-6e5fd01aa342?q=70&w=600&auto=format&fit=crop"
         }
     },
     {
