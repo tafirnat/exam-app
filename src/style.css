@@ -6300,13 +6300,4 @@ body.dnd-active {
     transition: background 0.4s ease;
 }
 
-.motivation-btn-art {
-    background: rgba(255, 255, 255, 0.15) !important;
-    color: #e2e8f0 !important;
-    border: 1px solid rgba(255, 255, 255, 0.25) !important;
-}
-
-.motivation-btn-art:hover {
-    background: rgba(255, 255, 255, 0.3) !important;
-    color: #ffffff !important;
 }
