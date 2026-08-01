@@ -40,6 +40,9 @@ test_results*.json
 EKLENECEK_OZELLIKLER.md
 eklenecek_ozellikler.md
 
+# Local-only notes (debugging lessons, scratch findings)
+*.local.md
+
 # IDE & OS System Files
 .DS_Store
 Thumbs.db
