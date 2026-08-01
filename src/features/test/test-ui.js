@@ -1473,17 +1473,11 @@ export function updateFooterTags(tags, containerId) {
         tagEl.style.cursor = 'pointer'; // Ensure pointer cursor for accessibility
         tagEl.onclick = (e) => {
             e.stopPropagation();
-            // Store return path
-            const currentView = ['home', 'test', 'results', 'statsPreview'].find(v => {
-                const el = document.getElementById(v + 'View');
-                return el && el.style.display !== 'none';
-            }) || 'home';
-            
-            import('../../core/state.js').then(m => {
-                m.AppState.navigationSourceView = currentView;
-                if (window.switchView) window.switchView('stats');
-                if (window.renderStatsList) window.renderStatsList('tag:' + tag);
-            });
+            if (window.switchView) window.switchView('stats');
+            const searchInput = document.getElementById('statsSearchInput');
+            if (searchInput) searchInput.value = '#' + tag;
+            if (typeof window.syncStatsSearchUI === 'function') window.syncStatsSearchUI(true);
+            if (typeof window.renderStatsList === 'function') window.renderStatsList('all', '#' + tag);
         };
         container.appendChild(tagEl);
     });

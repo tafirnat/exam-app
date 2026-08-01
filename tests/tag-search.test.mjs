@@ -56,3 +56,15 @@ test('i18n search_label contains # tag format indicator', () => {
     assert.ok(i18nSource.includes('search_label: "Search... (#tag)"'));
     assert.ok(i18nSource.includes('search_label: "Suche... (#tag)"'));
 });
+
+test('stats-module renders tag pills and conditionally hides source and ref during # search', () => {
+    const statsModuleSrc = readFileSync(join(root, 'src/features/stats/stats-module.js'), 'utf8');
+    assert.ok(statsModuleSrc.includes('stats-tag-pill'));
+    assert.ok(statsModuleSrc.includes('!isTagSearch && safeSourceName'));
+    assert.ok(statsModuleSrc.includes('!isTagSearch'));
+});
+
+test('test-ui updateFooterTags sets #statsSearchInput value and triggers search', () => {
+    const testUiSrc = readFileSync(join(root, 'src/features/test/test-ui.js'), 'utf8');
+    assert.ok(testUiSrc.includes("searchInput.value = '#' + tag"));
+});

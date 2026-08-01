@@ -229,6 +229,8 @@ export function renderStatsList(filter = 'all', searchKeyword = '') {
         return;
     }
 
+    const isTagSearch = searchKeyword.trim().startsWith('#');
+
     filteredQuestions.forEach((q, i) => {
         const statKey = `${q.sourceId}_${q.id}`;
         const s = AppState.stats[statKey] || { correct: 0, wrong: 0, difficulty: 5.0 };
@@ -247,12 +249,22 @@ export function renderStatsList(filter = 'all', searchKeyword = '') {
         const r = calculateRetrievability(s.stability, s.lastReview);
         const rPercent = r > 0 ? Math.round(r * 100) : null;
 
+        const rawTags = q.tags || q.content?.tags || q.tag || [];
+        const qTags = Array.isArray(rawTags) ? rawTags : (rawTags ? [rawTags] : []);
+
+        const tagsHtml = qTags.length > 0 ? `
+            <div class="stats-item-tags" style="display: inline-flex; align-items: center; gap: 4px; flex-wrap: wrap;">
+                ${qTags.map(tName => `<span class="stats-tag-pill" data-tag="${escapeHTML(tName)}">🏷️ ${escapeHTML(tName)}</span>`).join('')}
+            </div>
+        ` : '';
+
         item.innerHTML = `
             <div style="flex: 1; min-width: 0;">
                 <div class="stats-item-text">${isLearned ? `<span class="learned-badge" title="${t('learned_label')}">🎓</span> ` : ''}${qText}</div>
-                <div style="display: flex; align-items: center; gap: 4px;">
-                    ${safeSourceName ? `<div class="stats-item-source">${safeSourceName}</div>` : ''}
-                    <div class="stats-item-ref">#${q.originalIndex}</div>
+                <div style="display: flex; align-items: center; gap: 6px; flex-wrap: wrap; margin-top: 2px;">
+                    ${(!isTagSearch && safeSourceName) ? `<div class="stats-item-source">${safeSourceName}</div>` : ''}
+                    ${(!isTagSearch) ? `<div class="stats-item-ref">#${q.originalIndex}</div>` : ''}
+                    ${tagsHtml}
                     ${streakAbs > 1 ? `<span class="stats-item-streak" title="Streak: ${streak}" style="font-size: 0.72rem; line-height: 1;">${streakIcon}${streakAbs}</span>` : ''}
                     ${rPercent !== null ? `<span class="stats-item-retrievability ${r <= 0.9 ? 'overdue' : ''}" title="Retrievability: ${rPercent}%" style="font-size: 0.72rem; line-height: 1;">🧠 ${rPercent}%</span>` : ''}
                     ${s.starred ? `<span class="stats-indicator starred"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"></polygon></svg></span>` : ''}
@@ -268,6 +280,16 @@ export function renderStatsList(filter = 'all', searchKeyword = '') {
         item.onclick = () => {
             if (window.onPreviewQuestion) window.onPreviewQuestion(q, null, 'stats');
         };
+        item.querySelectorAll('.stats-tag-pill').forEach(pill => {
+            pill.onclick = (e) => {
+                e.stopPropagation();
+                const tag = pill.dataset.tag;
+                const searchInput = document.getElementById('statsSearchInput');
+                if (searchInput) searchInput.value = '#' + tag;
+                if (typeof window.syncStatsSearchUI === 'function') window.syncStatsSearchUI(true);
+                renderStatsList('all', '#' + tag);
+            };
+        });
         list.appendChild(item);
     });
 }
