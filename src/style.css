@@ -5602,10 +5602,10 @@ body.dnd-active {
 /* Expanded Streak Ring & Flame Icon Styling */
 .streak-ring-container {
     position: relative;
-    width: 64px;
-    height: 64px;
+    width: 78px;
+    height: 78px;
     flex-shrink: 0;
-    margin-top: 2px;
+    margin-top: 0;
     cursor: pointer;
 }
 
@@ -5633,20 +5633,20 @@ body.dnd-active {
     display: flex;
     align-items: center;
     justify-content: center;
-    gap: 2px;
+    gap: 3px;
 }
 
 .streak-count-text {
     font-weight: 900;
-    font-size: 1.05rem;
+    font-size: 1.28rem;
     line-height: 1;
     color: var(--text-primary);
     transition: font-size 0.15s ease;
 }
 
 .streak-flame-icon {
-    width: 14px;
-    height: 14px;
+    width: 18px;
+    height: 18px;
     display: inline-block;
     flex-shrink: 0;
     animation: flameFlicker 1.8s ease-in-out infinite;
@@ -5673,11 +5673,12 @@ body.dnd-active {
 }
 
 .streak-unit-label {
-    font-size: 0.58rem;
+    font-size: 0.65rem;
     color: var(--text-secondary);
     line-height: 1;
-    font-weight: 600;
-    margin-top: 1px;
+    font-weight: 700;
+    margin-top: 2px;
+    letter-spacing: 0.5px;
 }
 
 .continuity-icon-btn {

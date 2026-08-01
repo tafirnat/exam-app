@@ -211,11 +211,11 @@ function updateStreakCountDisplay(elementId, count) {
     el.textContent = count;
     const len = String(count).length;
     if (len >= 3) {
-        el.style.fontSize = '0.78rem';
+        el.style.fontSize = '0.98rem';
     } else if (len === 2) {
-        el.style.fontSize = '0.94rem';
+        el.style.fontSize = '1.16rem';
     } else {
-        el.style.fontSize = '1.05rem';
+        el.style.fontSize = '1.28rem';
     }
 }
 
