@@ -1,11 +1,15 @@
-# 🎓 Exam App - Minimalist Learning & Active Recall Platform
+# 🎓 Exam App
 
 [![Live Demo](https://img.shields.io/badge/Demo-Online-brightgreen.svg)](https://exam.rifatarslan.dev/)
 [![Deploy to GitHub Pages](https://github.com/tafirnat/exam-app/actions/workflows/deploy.yml/badge.svg)](https://github.com/tafirnat/exam-app/actions/workflows/deploy.yml)
 ![License](https://img.shields.io/badge/License-MIT-blue.svg)
 ![Tech Stack](https://img.shields.io/badge/Tech-HTML5%20%7C%20CSS3%20%7C%20JS-orange)
 
-A professional, modular, privacy-first, and high-performance examination web application designed for active recall, spaced repetition, and markdown-based study.
+**Your personal, private exam & flashcard app that works 100% offline — no account, no subscription, no data sent to any server.**
+
+Exam App lets you turn any study material into interactive quizzes and flashcards. It remembers which questions you struggle with and schedules them for review at the right time, using the science-backed FSRS spaced repetition algorithm. Everything stays on your device (or optionally syncs to your own private GitHub Gist).
+
+> 💡 Just want to try it? **[Open the live demo →](https://exam.rifatarslan.dev/)**
 
 ---
 
@@ -19,130 +23,155 @@ A professional, modular, privacy-first, and high-performance examination web app
 
 ---
 
-## 🌐 Live Demo
+## 🤔 Who Is This For?
 
-Experience the application live: **[https://exam.rifatarslan.dev/](https://exam.rifatarslan.dev/)**
+Exam App is built for anyone who learns from their own material:
+
+- 📚 **Students** preparing for university, professional, or language certification exams
+- 🧠 **Self-learners** who keep notes in Obsidian or similar Markdown tools and want to turn them into practice tests
+- 🔁 **Anyone** who wants a distraction-free, privacy-first alternative to Anki, Quizlet, or similar apps — without subscriptions or cloud lock-in
 
 ---
 
-## 📸 Screenshots & Interface Showcase
+## ✨ What Can It Do?
+
+### 📋 7 Question Types — All in One App
+
+- **Single Choice** — standard multiple-choice with one correct option
+- **Multiple Choice** — two or more correct selections required
+- **True / False** — binary statement verification
+- **Short Answer** — type the exact answer; supports multiple accepted variants and optional case-sensitivity
+- **Fill in the Blank** — keywords embedded inline via `{{blank}}` or `{{canonical|alternative}}`
+- **Flashcard** — classic flip card with self-rated retention
+- **Reading Material** — rich Markdown study notes, no grading pressure *(alias: `topic_review`)*
+
+### 🧠 Intelligent Spaced Repetition (FSRS v4.5)
+
+Questions you find hard come back sooner. Questions you know well are spaced further apart. The FSRS v4.5 algorithm — the same engine used by Anki — adapts review intervals to your actual memory, not a fixed timetable.
+
+### ⚡ One-Tap Daily Review
+
+A streak card on the home screen shows how many questions are due today based on your FSRS schedule. Tap once to start — no source hunting required. Choose between **pure FSRS order** (most urgent first) or **grouped by source/folder** for context-aware studying.
+
+### 🔥 Streak & Continuity Tracking
+
+A global study streak counts consecutive active days. An automatic **freeze buffer** silently forgives up to 2 missed days per week — a busy day won't break your streak.
+
+### 📌 Focus Pools
+
+Pin up to 3 sources or folders as daily focus pools with a custom question target (1–5 per pool, 15 total max). These questions are quietly blended into your daily FSRS session when they aren't already due — no forced quotas, no guilt-tripping.
+
+### 📁 Folder & Archive Management
+
+Organize sources into color-labeled folder hierarchies. Archive individual sources or entire folders to pause them — the FSRS clock **freezes while archived**, so restoring a large archive never floods your daily queue with overdue cards all at once.
+
+### 📊 Progress Analytics
+
+- **Activity Heatmap** — GitHub-style daily activity grid, color-coded by dominant folder
+- **Weekly & Monthly Trend Charts** — bar charts showing study volume over time
+- **Per-Question Analytics** — full history, retrievability score, and difficulty for every question
+- **Detailed Source Breakdown** — active vs. archived sources with question counts at a glance
+
+### 🔔 Smart Push Notifications
+
+Opt-in daily reminders that fire once per day when cards are due. Permission is requested only after a successful study session — never at first launch. Configurable quiet hours (default: 22:00–08:00).
+
+### 🚀 Onboarding Guide
+
+An interactive step-by-step tour walks you through the app's key features on first launch, or any time from the settings menu.
+
+### 🌐 Multilingual Interface
+
+Full UI in **English**, **Turkish**, and **German**. Integrated Google Translate support for translating question content into 10+ languages.
+
+### 🤖 AI Integration
+
+- **Generate question sets**: Use the included prompt ([AI_AGENT_PROMPT.md](./AI_AGENT_PROMPT.md)) with ChatGPT, Claude, or Gemini to convert any text into Exam App JSON.
+- **Ask AI about a question**: Send any question's context to ChatGPT, Claude, Gemini, DeepSeek, Kimi, etc. in one click, in your active UI language.
+
+### 🔊 Text-to-Speech
+
+Reads questions and reading cards aloud using native browser speech synthesis. Adjustable speed (×0.7–×1.3), autoplay on navigation, floating playback controls.
+
+### 🔒 100% Private — Zero Backend
+
+No servers. No accounts. No subscription. Study data lives in your browser's `localStorage`. Optional cross-device sync via your own private GitHub Gist.
+
+---
+
+## 📸 Screenshots
 
 <div align="center">
 
-### 🏠 Dashboard & Training Center
+### 🏠 Dashboard & Daily Review
 
 | Light Mode | Dark Mode |
 | :---: | :---: |
 | ![Dashboard Light](./docs/screenshots/dashboard-light.png) | ![Dashboard Dark](./docs/screenshots/dashboard-dark.png) |
 
-### 📝 Quiz Interface & Test Results
+### 📝 Quiz Interface & Results
 
 | Active Exam Session | Test Results & Analytics |
 | :---: | :---: |
 | ![Quiz Interface](./docs/screenshots/quiz-interface.png) | ![Test Results](./docs/screenshots/test-results.png) |
 
-### 📂 Source Management & Detailed Question Analytics
+### 📂 Source Management & Navigation
 
-| Saved Question Sources | Question Analytics & Details |
+| Saved Sources & Folders | Sidebar Menu & Quick Access |
 | :---: | :---: |
-| ![Saved Sources](./docs/screenshots/saved-sources.png) | ![Question Details](./docs/screenshots/question-details.png) |
+| ![Saved Sources](./docs/screenshots/saved-sources.png) | ![Sidebar Menu](./docs/screenshots/sidebar-menu.png) |
+
+### 📊 Detailed Question Analytics
+
+| Question Details & History |
+| :---: |
+| ![Question Details](./docs/screenshots/question-details.png) |
 
 </div>
 
 ---
 
-## 📌 What is Exam App & Why Was It Built?
-
-### The Problem
-Traditional exam preparation tools and flashcard apps often lock your study data behind proprietary servers, require monthly subscriptions, lack native Markdown support (or mangle formatting), and force online connectivity. Students and self-learners who manage their knowledge in tools like [Obsidian](https://obsidian.md/) often struggle to turn their personal notes and question banks into an interactive, distraction-free study tool without compromising privacy.
-
-### The Purpose
-**Exam App** was built to solve these issues. It is a completely free, open-source, serverless, offline-first web application that empowers users to create, practice, and track custom exams and flashcards using standard JSON datasets formatted in rich **Obsidian Markdown**.
-
-### Core Philosophy
-- 🔒 **100% Data Privacy & Zero Backend ($0 Cost)**: No central servers, no user accounts to register. Your study progress and datasets remain on your local device or sync securely to your private GitHub Gist.
-- 🧠 **Scientific Learning Engine**: Employs the **FSRS v4.5 (Free Spaced Repetition Scheduler)** algorithm to optimize review intervals based on memory stability and retrievability.
-- 📝 **Obsidian Native Content**: Paste notes directly from your Obsidian vault into question cards—headings, callouts (`> [!tip]`), code blocks, pipe tables, task lists, and highlights render natively.
-- 📱 **Offline-First & Mobile Ready**: Fully operational without internet. Can be installed as a PWA (Progressive Web App) on smartphones and desktops.
-
----
-
-## 🧩 Supported Question Types & Study Modes
-
-Exam App supports **7 canonical question types** categorized into 4 family structures to accommodate all study material:
-
-### 1. 🔘 Single Choice (`single_choice`)
-Standard multiple-choice format with exactly one correct option. Ideal for targeted concept testing.
-
-### 2. ☑️ Multiple Choice (`multiple_choice`)
-Questions requiring two or more correct selections. Ensures deep comprehension of complex topics.
-
-### 3. ☯️ True / False (`true_false`)
-Binary statement verification with predefined True/False choices. Great for rapid-fire recall checks.
-
-### 4. ✍️ Short Answer (`short_answer` / `text_input`)
-Free-form text input where learners type the exact answer. Supports multiple accepted answer variations and optional case-sensitivity.
-
-### 5. 📝 Fill in the Blank (`fill_in_the_blank`)
-Sentences with missing keywords embedded via double braces (`{{blank}}` or `{{canonical|alternative}}`). Learners fill in blanks directly within the body text.
-
-### 6. 🎴 Flashcard (`flashcard`)
-Classic front/back flashcards for active recall. Learners flip the card to reveal the answer and self-rate their retention.
-
-### 7. 📖 Reading / Study Material (`reading`)
-Rich markdown prose blocks and summary cards for reviewing key concepts before or during exams without auto-grading pressure. *(Legacy alias: `topic_review`)*.
-
----
-
-## 🔥 Key Features & Capabilities
-
-- 🧠 **FSRS v4.5 Spaced Repetition**: Scientifically prioritizes "Overdue" questions ($R < 0.9$). Adaptively calculates review intervals based on learner feedback (*Hard* vs *Easy*).
-- ⚡ **One-Tap Daily Review**: Start the day's session straight from the streak card, without hunting through sources first. The run is assembled per question and independent of which sources are switched on — a question is scheduled by what FSRS knows about *it*, not by the file it came from. Choose between two layouts: **pure FSRS order** (most urgent question first, sources ignored) or **grouped by source and folder** (still starts from the most urgent question, but keeps its source and folder-mates together so related material is studied in context).
-- 📁 **Folder & Archive Management**: Organize question sources into custom folder hierarchies. Archive individual sources or entire folders out of active study sets without losing test history. Archived items sync separately (`exam_app_archive.json`) to keep routine sync light.
-- ❄️ **Archiving Freezes the FSRS Clock**: Time spent in the archive is not counted against a question's schedule. A source parked with three days left on a review comes back with those three days still intact, instead of returning with its entire backlog overdue at once — so restoring a large archive never buries the daily target.
-- 🔊 **Advanced Text-to-Speech (TTS)**: Reads questions and reading cards aloud using native speech synthesis. Supports adjustable playback speed (x0.7 to x1.3), autoplay on navigation, and floating playback controls.
-- 🌐 **Multilingual Interface & AI Translation**: Full native UI in **English**, **Turkish**, and **German**. Includes integrated Google Translate support for translating content into over 10 languages.
-- 🤖 **Custom AI Provider Hub**: One-click integration to send question contexts or custom prompt templates to AI services (ChatGPT, Claude, Gemini, DeepSeek, Kimi, etc.) in your active UI language.
-- 📤 **Flexible Data Sharing**: Copy raw JSON datasets to clipboard, share natively via Web Share / File export, with context-aware length guidance for large files.
-- 🎨 **Visual Excellence**: Sleek dark mode, glassmorphism UI components, smooth micro-animations, and contrast-guaranteed folder color palettes.
-
----
-
-## ⚙️ How Is It Built? Technical Architecture
-
-Now that you know **what** Exam App does and **why** it exists, here is **how** it was crafted under the hood:
-
-### 🛠️ Tech Stack & Philosophy
-- **Vanilla Modern JS & HTML5**: Core logic is built with modular ES Modules for ultra-fast startup and execution.
-- **Custom Tailwind-Free CSS**: Tailored design system with CSS custom properties (variables) for fine-tuned glassmorphic visuals without framework overhead.
-- **Vite & Single-File Bundler**: Uses `vite-plugin-singlefile` to generate a 100% standalone, single `index.html` output containing all JavaScript, CSS, and assets.
-- **Client-Side Storage & Sync**: Relies on browser `localStorage` for offline state and GitHub Gist REST API for cross-device synchronization.
-
----
-
 ## ☁️ Cross-Device Sync (GitHub Gist)
 
-Sync all your question banks, test progress, statistics, stars, notes, and preferences across devices without third-party servers:
+Sync all your question banks, progress, stats, notes, and preferences across devices — without any third-party server:
 
-1. **Generate GitHub Token:**
-   - Go to [GitHub Token Settings](https://github.com/settings/tokens?type=beta).
-   - Create a Fine-grained token with **Gists: Read and Write** permissions.
-2. **Connect in App:**
-   - Open Exam App, click the **GitHub ↗** icon in the header, paste your token, and click **Connect & Sync**.
-3. **Automated Background Sync:**
-   - The app automatically creates a secret Gist (`exam_app_backup.json`) and syncs progress in the background.
-   - Archived items are offloaded to a secondary file (`exam_app_archive.json`) inside the same Gist.
+1. **Generate a GitHub Token**
+   - Go to [GitHub Token Settings](https://github.com/settings/tokens?type=beta)
+   - Create a Fine-grained token with **Gists: Read and Write** permissions
+2. **Connect in the App**
+   - Click the **GitHub ↗** icon in the header, paste your token, and click **Connect & Sync**
+3. **Automatic Background Sync**
+   - The app creates a private Gist (`exam_app_backup.json`) and syncs in the background
+   - Archived items sync separately (`exam_app_archive.json`) to keep routine sync lightweight
 
 ### 🔗 Companion Obsidian Plugin
-If you draft questions in Obsidian, use the companion plugin **[Obsidian ExamApp Gist Sync](https://github.com/tafirnat/Obsidian-ExamApp-Sync)** to sync your Obsidian Vault directly with Exam App via Gist.
+
+If you draft questions in Obsidian, the **[Obsidian ExamApp Gist Sync](https://github.com/tafirnat/Obsidian-ExamApp-Sync)** plugin syncs your vault directly with Exam App via Gist.
+
+---
+
+## 📥 Getting Started (End Users)
+
+The easiest way to use Exam App is the **[hosted live demo](https://exam.rifatarslan.dev/)** — no installation needed. The app is a fully static, offline-capable PWA that can also be installed on your phone or desktop directly from the browser.
+
+To load your own questions, use the **Add Source** button on the home screen to import a JSON file. See the [JSON schema guide](./public/examples/schema-guide.md) for the data format, or use the [AI prompt](./AI_AGENT_PROMPT.md) to generate question sets automatically.
+
+---
+
+## 🤖 Generating Question Sets with AI
+
+Turn any textbook, article, or lecture note into Exam App JSON:
+
+1. Open **[AI_AGENT_PROMPT.md](./AI_AGENT_PROMPT.md)** and copy its instructions
+2. Paste the prompt along with your study material into ChatGPT, Claude, Gemini, or DeepSeek
+3. Import the generated JSON directly into Exam App
 
 ---
 
 ## 📊 Data Structure & JSON Schema
 
-Exam App parses exams using a clean, human-readable JSON schema consisting of `exam_metadata` and a `questions` array.
+Exam App uses a clean, human-readable JSON schema with `exam_metadata` and a `questions` array.
 
-### Example JSON
 ```json
 {
   "exam_metadata": {
@@ -172,56 +201,68 @@ Exam App parses exams using a clean, human-readable JSON schema consisting of `e
 }
 ```
 
-*For complete schema specifications and prompt instructions for external AI models, see **[AI_AGENT_PROMPT.md](./AI_AGENT_PROMPT.md)** and **[schema-guide.md](./public/examples/schema-guide.md)**.*
+*For the full schema specification and AI prompt instructions, see **[AI_AGENT_PROMPT.md](./AI_AGENT_PROMPT.md)** and **[schema-guide.md](./public/examples/schema-guide.md)**.*
 
 ---
 
-## 🤖 Generating Question Sets with AI
+## ⚙️ Technical Architecture
 
-You can turn any textbook, article, or lecture note into Exam App JSON datasets using AI:
-1. Open **[AI_AGENT_PROMPT.md](./AI_AGENT_PROMPT.md)** and copy its instructions.
-2. Paste the prompt along with your study material into ChatGPT, Claude, Gemini, or DeepSeek.
-3. Import the generated JSON directly into Exam App.
+### 🛠️ Tech Stack
+
+- **Vanilla JS (ES Modules) & HTML5** — No framework overhead; modular architecture with tree-shakeable imports
+- **Custom CSS** — Tailwind-free design system using CSS custom properties for glassmorphic dark/light theming
+- **Vite + `vite-plugin-singlefile`** — Produces a single standalone `index.html` containing all JS, CSS, and assets
+- **Browser `localStorage`** — All state stored client-side; no backend required
+- **GitHub Gist REST API** — Optional cross-device sync via the user's own private Gist
+- **Service Worker (PWA)** — Offline support and push notification scheduling
+
+### 🧠 Core Algorithms
+
+- **FSRS v4.5** — Free Spaced Repetition Scheduler for memory-optimized review intervals
+- **Archive FSRS Freeze** — Time in archive is not counted against a question's schedule; restoring a large archive never floods the daily queue
 
 ---
 
-## 📥 Getting Started & Development
+## 📥 Local Development
 
 ### Prerequisites
+
 - Node.js (v18 or higher)
 - npm
 
 ### Installation
+
 ```bash
 git clone https://github.com/tafirnat/exam-app.git
 cd exam-app
 npm install
 ```
 
-### Local Development
+### Run Dev Server
+
 ```bash
 npm run dev
 ```
 
 ### Build Single-File Production App
+
 ```bash
 npm run build
 ```
-The compiled, standalone static file will be generated at `dist/index.html`.
+
+The compiled standalone file is output to `dist/index.html`.
 
 ---
 
 ## 🚀 CI/CD & Automated Deployment
 
-This repository uses **GitHub Actions** for automated building and deployment:
-- **Workflow**: [.github/workflows/deploy.yml](.github/workflows/deploy.yml)
-- **Behavior**: Every commit pushed to `main` triggers a Vite single-file build and automatically deploys the resulting `dist/index.html` to **GitHub Pages** (`gh-pages` branch).
+Every commit to `main` triggers a GitHub Actions workflow ([deploy.yml](.github/workflows/deploy.yml)) that runs a Vite single-file build and deploys `dist/index.html` to **GitHub Pages** (`gh-pages` branch).
 
 ---
 
 ## 🤖 Development Transparency & Credits
 
-This application was designed and developed by leveraging advanced AI coding assistants (**Antigravity** & **Claude**). While rigorous testing and optimization have been performed across all components, feedback and issue reports are always welcome!
+This application was designed and developed with the assistance of AI coding tools (**Antigravity** & **Claude**). Feedback and issue reports are always welcome!
 
 ---
 

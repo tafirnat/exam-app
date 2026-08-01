@@ -1,11 +1,15 @@
-# 🎓 Exam App - Minimalistische Lern- & Active-Recall-Plattform
+# 🎓 Exam App
 
 [![Live Demo](https://img.shields.io/badge/Demo-Online-brightgreen.svg)](https://exam.rifatarslan.dev/)
 [![Deploy to GitHub Pages](https://github.com/tafirnat/exam-app/actions/workflows/deploy.yml/badge.svg)](https://github.com/tafirnat/exam-app/actions/workflows/deploy.yml)
 ![License](https://img.shields.io/badge/License-MIT-blue.svg)
 ![Tech Stack](https://img.shields.io/badge/Tech-HTML5%20%7C%20CSS3%20%7C%20JS-orange)
 
-Eine professionelle, modulare, datenschutzorientierte und hochleistungsfähige Prüfungs-Webanwendung, entwickelt für Active Recall, Spaced Repetition (abgestufte Wiederholung) und Markdown-basiertes Lernen.
+**Ihre persönliche, private Lern-App für Prüfungen & Karteikarten — 100 % offline, kein Account, kein Abo, keine Daten auf fremden Servern.**
+
+Exam App verwandelt jedes Lernmaterial in interaktive Quizze und Karteikarten. Die App merkt sich, welche Fragen Ihnen schwer fallen, und plant Wiederholungen mit dem wissenschaftlich fundierten FSRS-Algorithmus zum richtigen Zeitpunkt ein. Alles bleibt auf Ihrem Gerät (oder synchronisiert optional mit Ihrem eigenen privaten GitHub Gist).
+
+> 💡 Einfach ausprobieren? **[Live-Demo öffnen →](https://exam.rifatarslan.dev/)**
 
 ---
 
@@ -19,130 +23,155 @@ Eine professionelle, modulare, datenschutzorientierte und hochleistungsfähige P
 
 ---
 
-## 🌐 Live-Demo
+## 🤔 Für Wen Ist Diese App?
 
-Erleben Sie die Anwendung live: **[https://exam.rifatarslan.dev/](https://exam.rifatarslan.dev/)**
+Exam App wurde für alle entwickelt, die aus eigenem Material lernen:
+
+- 📚 **Studierende**, die sich auf Uni-, Berufs- oder Sprachprüfungen vorbereiten
+- 🧠 **Selbstlerner**, die Notizen in Obsidian oder ähnlichen Markdown-Tools führen und diese in Übungstests umwandeln möchten
+- 🔁 **Alle**, die eine ablenkungsfreie, datenschutzorientierte Alternative zu Anki, Quizlet & Co. suchen — ohne Abos oder Cloud-Bindung
 
 ---
 
-## 📸 Screenshots & Benutzeroberfläche
+## ✨ Was Kann Die App?
+
+### 📋 7 Fragetypen — Alles in einer App
+
+- **Einzelauswahl** — Standard-Multiple-Choice mit einer richtigen Antwort
+- **Mehrfachauswahl** — zwei oder mehr richtige Antworten erforderlich
+- **Richtig / Falsch** — binäre Aussageprüfung
+- **Kurzantwort** — exakte Antwort eintippen; unterstützt mehrere akzeptierte Varianten und optionale Groß-/Kleinschreibung
+- **Lückentext** — Schlüsselwörter inline eingebettet via `{{Lücke}}` oder `{{Kanonisch|Alternativ}}`
+- **Karteikarte (Flashcard)** — klassisches Flip-Karten-Format mit Selbstbewertung
+- **Lesematerial** — reichhaltige Markdown-Lernnotizen ohne Bewertungsdruck *(ehem. `topic_review`)*
+
+### 🧠 Intelligentes Spaced Repetition (FSRS v4.5)
+
+Schwierige Fragen kommen häufiger. Gut bekannte Fragen werden seltener wiederholt. Der FSRS v4.5-Algorithmus — auch von Anki genutzt — passt Wiederholungsintervalle an Ihr echtes Gedächtnis an, nicht an einen festen Plan.
+
+### ⚡ Tägliche Wiederholung mit einem Tipp
+
+Eine Serien-Karte auf dem Startbildschirm zeigt, wie viele Fragen heute laut FSRS-Zeitplan fällig sind. Einmal tippen — kein Suchen nach Quellen nötig. Wählen Sie zwischen **reiner FSRS-Reihenfolge** (dringendste Frage zuerst) oder **nach Quelle/Ordner gruppiert** für kontextbewusstes Lernen.
+
+### 🔥 Serien- & Kontinuitätsverfolgung
+
+Eine globale Lernserie zählt aufeinanderfolgende aktive Tage. Ein automatischer **Einfrierungspuffer** verzeiht stillschweigend bis zu 2 versäumte Tage pro Woche — ein geschäftiger Tag bricht Ihre Serie nicht.
+
+### 📌 Fokus-Pools
+
+Heften Sie bis zu 3 Quellen oder Ordner als tägliche Fokus-Pools mit einem individuellen Fragenziel an (1–5 pro Pool, max. 15 gesamt). Diese Fragen werden still in Ihre tägliche FSRS-Sitzung eingemischt, wenn sie noch nicht fällig sind — keine erzwungenen Quoten, kein Schuldgefühl.
+
+### 📁 Ordner- & Archivverwaltung
+
+Organisieren Sie Quellen in farblich markierten Ordnerhierarchien. Archivieren Sie einzelne Quellen oder ganze Ordner zum Pausieren — die FSRS-Uhr **friert während der Archivierung ein**, sodass das Wiederherstellen eines großen Archivs Ihre tägliche Warteschlange nie mit überfälligen Karten überflutet.
+
+### 📊 Fortschritts-Analytik
+
+- **Aktivitäts-Heatmap** — GitHub-artiges Tagesraster, farblich nach dominantem Ordner kodiert
+- **Wochen- & Monats-Trenddiagramme** — Balkendiagramme zum Lernvolumen über die Zeit
+- **Fragenspezifische Analytik** — vollständige Historie, Abrufbarkeits-Score und Schwierigkeit für jede Frage
+- **Detaillierte Quellenübersicht** — aktive vs. archivierte Quellen mit Frageanzahl auf einen Blick
+
+### 🔔 Smarte Push-Benachrichtigungen
+
+Opt-in-Erinnerungen, die einmal täglich ausgelöst werden, wenn Karten fällig sind. Die Erlaubnis wird erst nach einer erfolgreichen Lernsitzung angefragt — nie beim ersten Start. Konfigurierbare Ruhezeiten (Standard: 22:00–08:00).
+
+### 🚀 Onboarding-Guide
+
+Eine interaktive Schritt-für-Schritt-Tour führt Sie beim ersten Start (oder jederzeit über das Einstellungsmenü) durch die wichtigsten Funktionen der App.
+
+### 🌐 Mehrsprachige Benutzeroberfläche
+
+Vollständige native Benutzeroberfläche auf **Englisch**, **Türkisch** und **Deutsch**. Integrierte Google-Translate-Unterstützung zur Übersetzung von Frageninhalt in 10+ Sprachen.
+
+### 🤖 KI-Integration
+
+- **Fragensets generieren**: Nutzen Sie den mitgelieferten Prompt ([AI_AGENT_PROMPT.md](./AI_AGENT_PROMPT.md)) mit ChatGPT, Claude oder Gemini, um beliebigen Text in Exam App JSON umzuwandeln.
+- **KI zu einer Frage befragen**: Senden Sie den Kontext einer Frage mit einem Klick in Ihrer aktiven UI-Sprache an ChatGPT, Claude, Gemini, DeepSeek, Kimi usw.
+
+### 🔊 Text-to-Speech
+
+Liest Fragen und Lesekarten mit nativer Browser-Sprachsynthese vor. Einstellbare Geschwindigkeit (×0,7–×1,3), automatische Wiedergabe bei Navigation, schwebende Steuerleiste.
+
+### 🔒 100 % Privat — Null Backend
+
+Keine Server. Kein Account. Kein Abo. Lerndaten werden im `localStorage` des Browsers gespeichert. Optionale geräteübergreifende Synchronisation über Ihren eigenen privaten GitHub Gist.
+
+---
+
+## 📸 Screenshots
 
 <div align="center">
 
-### 🏠 Dashboard & Training Center
+### 🏠 Dashboard & Tägliche Wiederholung
 
-| Hell-Modus (Light Mode) | Dunkel-Modus (Dark Mode) |
+| Hell-Modus | Dunkel-Modus |
 | :---: | :---: |
 | ![Dashboard Light](./docs/screenshots/dashboard-light.png) | ![Dashboard Dark](./docs/screenshots/dashboard-dark.png) |
 
-### 📝 Prüfungsoberfläche & Testergebnisse
+### 📝 Prüfungsoberfläche & Ergebnisse
 
 | Aktive Prüfungssitzung | Testergebnisse & Analysen |
 | :---: | :---: |
 | ![Quiz Interface](./docs/screenshots/quiz-interface.png) | ![Test Results](./docs/screenshots/test-results.png) |
 
-### 📂 Quellverwaltung & Detaillierte Fragenanalysen
+### 📂 Quellverwaltung & Navigation
 
-| Gespeicherte Fragenquellen | Fragedetails & Statistiken |
+| Gespeicherte Quellen & Ordner | Seitenmenü & Schnellzugriff |
 | :---: | :---: |
-| ![Saved Sources](./docs/screenshots/saved-sources.png) | ![Question Details](./docs/screenshots/question-details.png) |
+| ![Saved Sources](./docs/screenshots/saved-sources.png) | ![Sidebar Menu](./docs/screenshots/sidebar-menu.png) |
+
+### 📊 Detaillierte Fragenanalyse
+
+| Fragedetails & Verlauf |
+| :---: |
+| ![Question Details](./docs/screenshots/question-details.png) |
 
 </div>
 
 ---
 
-## 📌 Was ist die Exam App & Warum wurde sie entwickelt?
-
-### Das Problem
-Herkömmliche Prüfungsvorbereitungs- und Karteikarten-Apps sperren Ihre Lerndaten oft hinter proprietären Servern ein, verlangen monatliche Abonnements, bieten keine native Markdown-Unterstützung (oder beschädigen die Formatierung) und erzwingen eine ständige Internetverbindung. Lernende, die ihr Wissen in Tools wie [Obsidian](https://obsidian.md/) verwalten, haben oft Schwierigkeiten, ihre persönlichen Notizen und Fragensammlungen ohne Kompromisse beim Datenschutz in ein interaktives, ablenkungsfreies Lerntool zu verwandeln.
-
-### Der Zweck
-Die **Exam App** wurde entwickelt, um diese Probleme zu lösen. Sie ist eine vollkommen kostenlose, quelloffene, serverlose und primär offline-fähige (offline-first) Webanwendung, die es Benutzern ermöglicht, individuelle Prüfungen und Karteikarten mithilfe von Standard-JSON-Datensätzen im reichhaltigen **Obsidian Markdown**-Format zu erstellen, zu üben und zu verfolgen.
-
-### Kernphilosophie
-- 🔒 **100 % Datenschutz & Null Backend-Kosten ($0)**: Keine zentralen Server, keine Registrierung von Benutzerkonten erforderlich. Ihr Lernfortschritt und Ihre Datensätze bleiben auf Ihrem lokalen Gerät oder werden sicher mit Ihrem privaten GitHub Gist synchronisiert.
-- 🧠 **Wissenschaftliche Lern-Engine**: Nutzt den **FSRS v4.5 (Free Spaced Repetition Scheduler)** Algorithmus, um die Wiederholungsintervalle basierend auf Gedächtnisstabilität und Abrufbarkeit zu optimieren.
-- 📝 **Obsidian-nativ**: Fügen Sie Notizen direkt aus Ihrem Obsidian-Vault in Fragenkarten ein—Überschriften, Hervorhebungen (`> [!tip]`), Codeblöcke, Tabellen, Aufgabenlisten und Farbmarkierungen werden nativ gerendert.
-- 📱 **Offline-First & Mobile-Ready**: Vollständig ohne Internetverbindung funktionsfähig. Kann als PWA (Progressive Web App) auf Smartphones und Desktops installiert werden.
-
----
-
-## 🧩 Unterstützte Fragetypen & Lernmodi
-
-Die Exam App unterstützt **7 kanonische Fragetypen**, die in 4 Strukturfamilien unterteilt sind, um sich allen Lernmaterialien anzupassen:
-
-### 1. 🔘 Einzelauswahl (`single_choice`)
-Standard-Multiple-Choice-Format mit genau einer richtigen Option. Ideal für gezielte Konzeptprüfungen.
-
-### 2. ☑️ Mehrfachauswahl (`multiple_choice`)
-Fragen, die zwei oder mehr richtige Auswahlen erfordern. Stellt das tiefe Verständnis komplexer Themen sicher.
-
-### 3. ☯️ Richtig / Falsch (`true_false`)
-Binäre Aussageprüfung mit vordefinierten Richtig/Falsch-Optionen. Hervorragend für schnelle Abruf-Checks.
-
-### 4. ✍️ Kurzantwort (`short_answer` / `text_input`)
-Freitext-Eingabe, bei der die Lernenden die exakte Antwort eintippen. Unterstützt mehrere akzeptierte Antwortvarianten und optionale Groß-/Kleinschreibung.
-
-### 5. 📝 Lückentext (`fill_in_the_blank`)
-Sätze mit fehlenden Schlüsselwörtern, die über doppelte geschweifte Klammern (`{{Lücke}}` oder `{{Kanonisch|Alternativ}}`) eingebettet sind. Lernende füllen die Lücken direkt im Haupttext aus.
-
-### 6. 🎴 Karteikarte / Flashcard (`flashcard`)
-Klassische Vorder-/Rückseiten-Karteikarten für Active Recall. Lernende drehen die Karte um, um die Antwort zu sehen, und bewerten ihr Behalten selbst.
-
-### 7. 📖 Lese- / Lernmaterial (`reading`)
-Reichhaltige Markdown-Textblöcke und Zusammenfassungskarten zur Überprüfung von Kernkonzepten vor oder während Prüfungen ohne automatischen Bewertungsdruck. *(Ehemaliger Name: `topic_review`)*.
-
----
-
-## 🔥 Hauptmerkmale & Funktionen
-
-- 🧠 **FSRS v4.5 Spaced Repetition**: Priorisiert wissenschaftlich "überfällige" Fragen ($R < 0.9$). Berechnet Wiederholungsintervalle adaptiv basierend auf dem Feedback der Lernenden (*Schwer* vs. *Einfach*).
-- ⚡ **Tägliche Wiederholung mit einem Tipp**: Die Sitzung des Tages startet direkt auf der Serien-Karte, ohne vorher Quellen zusammensuchen zu müssen. Der Durchlauf wird pro Frage zusammengestellt und ist unabhängig davon, welche Quellen gerade aktiv sind — eine Frage wird danach eingeplant, was FSRS über *sie* weiß, nicht nach der Datei, aus der sie stammt. Zwei Anordnungen stehen zur Wahl: **reine FSRS-Reihenfolge** (dringendste Frage zuerst, Quellen spielen keine Rolle) oder **nach Quelle und Ordner gruppiert** (beginnt ebenfalls bei der dringendsten Frage, hält aber deren Quelle und die Quellen desselben Ordners zusammen, sodass verwandte Inhalte im Zusammenhang gelernt werden).
-- 📁 **Ordner- & Archivverwaltung**: Organisieren Sie Fragenquellen in benutzerdefinierten Ordnerhierarchien. Archivieren Sie einzelne Quellen oder ganze Ordner aus aktiven Lernsets, ohne den Testverlauf zu verlieren. Archivierte Elemente werden separat synchronisiert (`exam_app_archive.json`), um die tägliche Synchronisation leicht zu halten.
-- ❄️ **Das Archiv friert die FSRS-Uhr ein**: Zeit im Archiv wird dem Wiederholungsplan einer Frage nicht angerechnet. Eine Quelle, die drei Tage vor der nächsten Wiederholung archiviert wurde, kehrt mit genau diesen drei Tagen zurück, statt mit einem auf einen Schlag komplett überfälligen Rückstand — so begräbt das Wiederherstellen eines großen Archivs niemals das Tagesziel.
-- 🔊 **Erweiterte Text-to-Speech (TTS)**: Liest Fragen und Lesekarten mithilfe nativer Sprachsynthese laut vor. Unterstützt einstellbare Wiedergabegeschwindigkeit (x0,7 bis x1,3), automatische Wiedergabe bei Navigation und schwebende Wiedergabesteuerungen.
-- 🌐 **Mehrsprachige Benutzeroberfläche & KI-Übersetzung**: Vollständige native Benutzeroberfläche auf **Englisch**, **Türkisch** und **Deutsch**. Enthält eine integrierte Google-Übersetzungsunterstützung zur Übersetzung von Inhalten in über 10 Sprachen.
-- 🤖 **Benutzerdefinierter KI-Anbieter-Hub**: Ein-Klick-Integration zum Senden von Fragenkontexten oder eigenen Prompt-Vorlagen an KI-Dienste (ChatGPT, Claude, Gemini, DeepSeek, Kimi etc.) in Ihrer aktiven UI-Sprache.
-- 📤 **Flexible Datenteilung**: Kopieren Sie rohe JSON-Datensätze in die Zwischenablage, teilen Sie diese nativ über Web Share / Dateiexport, mit kontextbezogener Längenführung für große Dateien.
-- 🎨 **Visuelle Exzellenz**: Eleganter Dunkelmodus, Glassmorphism-UI-Komponenten, sanfte Mikro-Animationen und kontrastgarantierte Ordner-Farbpaletten.
-
----
-
-## ⚙️ Wie ist es aufgebaut? Technische Architektur
-
-Nachdem Sie wissen, **was** die Exam App tut und **warum** sie existiert, erfahren Sie hier, **wie** sie unter der Haube entwickelt wurde:
-
-### 🛠️ Tech-Stack & Philosophie
-- **Vanilla Modern JS & HTML5**: Die Kernlogik basiert auf modularen ES-Modulen für ultraschnellen Start und Ausführung.
-- **Benutzerdefiniertes CSS ohne Tailwind**: Maßgeschneidertes Design-System mit CSS-Variablen für feine Glassmorphism-Visuelles ohne Framework-Overhead.
-- **Vite & Single-File-Bundler**: Nutzt `vite-plugin-singlefile`, um eine 100 % eigenständige, einzelne `index.html`-Ausgabe zu erzeugen, die sämtliches JavaScript, CSS und Assets enthält.
-- **Client-seitige Speicherung & Synchronisation**: Nutzt den `localStorage` des Browsers für den Offline-Status und die GitHub Gist REST API für die geräteübergreifende Synchronisation.
-
----
-
 ## ☁️ Geräteübergreifende Synchronisation (GitHub Gist)
 
-Synchronisieren Sie alle Ihre Fragensammlungen, Testfortschritte, Statistiken, Sterne, Notizen und Einstellungen geräteübergreifend ohne Server von Drittanbietern:
+Synchronisieren Sie alle Fragensammlungen, Fortschritte, Statistiken, Notizen und Einstellungen geräteübergreifend — ohne fremde Server:
 
-1. **GitHub-Token erstellen:**
-   - Rufen Sie die [GitHub-Token-Einstellungen](https://github.com/settings/tokens?type=beta) auf.
-   - Erstellen Sie ein Fine-Grained-Token mit den Berechtigungen **Gists: Read and Write**.
-2. **In der App verbinden:**
-   - Öffnen Sie die Exam App, klicken Sie auf das **GitHub ↗**-Symbol im Header, fügen Sie Ihr Token ein und klicken Sie auf **Verbinden & Synchronisieren**.
-3. **Automatische Hintergrund-Synchronisation:**
-   - Die App erstellt automatisch ein geheimes Gist (`exam_app_backup.json`) und synchronisiert den Fortschritt im Hintergrund.
-   - Archivierte Elemente werden in eine sekundäre Datei (`exam_app_archive.json`) innerhalb desselben Gists ausgelagert.
+1. **GitHub-Token erstellen**
+   - Rufen Sie die [GitHub-Token-Einstellungen](https://github.com/settings/tokens?type=beta) auf
+   - Erstellen Sie ein Fine-Grained-Token mit den Berechtigungen **Gists: Read and Write**
+2. **In der App verbinden**
+   - Klicken Sie auf das **GitHub ↗**-Symbol im Header, fügen Sie Ihr Token ein und klicken Sie auf **Verbinden & Synchronisieren**
+3. **Automatische Hintergrundsynchronisation**
+   - Die App erstellt automatisch ein geheimes Gist (`exam_app_backup.json`) und synchronisiert im Hintergrund
+   - Archivierte Elemente werden separat synchronisiert (`exam_app_archive.json`) — hält die Routinesynchronisation leicht
 
 ### 🔗 Zugehöriges Obsidian-Plugin
-Wenn Sie Fragen in Obsidian entwerfen, nutzen Sie das Begleit-Plugin **[Obsidian ExamApp Gist Sync](https://github.com/tafirnat/Obsidian-ExamApp-Sync)**, um Ihren Obsidian-Vault direkt über Gist mit der Exam App zu synchronisieren.
+
+Wenn Sie Fragen in Obsidian entwerfen, synchronisiert das Plugin **[Obsidian ExamApp Gist Sync](https://github.com/tafirnat/Obsidian-ExamApp-Sync)** Ihren Vault direkt über Gist mit der Exam App.
+
+---
+
+## 📥 Erste Schritte (für Endnutzer)
+
+Der einfachste Weg, Exam App zu nutzen, ist die **[Live-Demo](https://exam.rifatarslan.dev/)** — keine Installation erforderlich. Die App ist ein vollständig statisches, offline-fähiges PWA, das auch direkt vom Browser aus auf Ihrem Smartphone oder Desktop installiert werden kann.
+
+Um eigene Fragen zu laden, nutzen Sie die Schaltfläche **Quelle hinzufügen** auf dem Startbildschirm, um eine JSON-Datei zu importieren. Das Datenformat finden Sie im [JSON-Schema-Leitfaden](./public/examples/schema-guide.md); Fragensets können automatisch mit dem [KI-Prompt](./AI_AGENT_PROMPT.md) generiert werden.
+
+---
+
+## 🤖 Fragensets mit KI Erstellen
+
+Wandeln Sie beliebige Lehrbücher, Artikel oder Vorlesungsnotizen in Exam App JSON um:
+
+1. Öffnen Sie **[AI_AGENT_PROMPT.md](./AI_AGENT_PROMPT.md)** und kopieren Sie die Anweisungen
+2. Fügen Sie den Prompt zusammen mit Ihrem Lernmaterial in ChatGPT, Claude, Gemini oder DeepSeek ein
+3. Importieren Sie das generierte JSON direkt in die Exam App
 
 ---
 
 ## 📊 Datenstruktur & JSON-Schema
 
-Die Exam App parst Prüfungen mithilfe eines sauberen, menschenlesbaren JSON-Schemas, das aus `exam_metadata` und einem `questions`-Array besteht.
+Exam App nutzt ein sauberes, menschenlesbares JSON-Schema mit `exam_metadata` und einem `questions`-Array.
 
-### Beispiel JSON
 ```json
 {
   "exam_metadata": {
@@ -172,56 +201,68 @@ Die Exam App parst Prüfungen mithilfe eines sauberen, menschenlesbaren JSON-Sch
 }
 ```
 
-*Für vollständige Schema-Spezifikationen und Prompt-Anweisungen für externe KI-Modelle siehe **[AI_AGENT_PROMPT.md](./AI_AGENT_PROMPT.md)** und **[schema-guide.md](./public/examples/schema-guide.md)**.*
+*Vollständige Schema-Spezifikationen und KI-Prompt-Anweisungen finden Sie in **[AI_AGENT_PROMPT.md](./AI_AGENT_PROMPT.md)** und **[schema-guide.md](./public/examples/schema-guide.md)**.*
 
 ---
 
-## 🤖 Erstellen von Fragensets mit KI
+## ⚙️ Technische Architektur
 
-Sie können jedes Lehrbuch, jeden Artikel oder jede Vorlesungsnotiz mithilfe von KI in Exam App JSON-Datensätze umwandeln:
-1. Öffnen Sie **[AI_AGENT_PROMPT.md](./AI_AGENT_PROMPT.md)** und kopieren Sie die Anweisungen.
-2. Fügen Sie den Prompt zusammen mit Ihrem Lernmaterial in ChatGPT, Claude, Gemini oder DeepSeek ein.
-3. Importieren Sie das generierte JSON direkt in die Exam App.
+### 🛠️ Tech-Stack
+
+- **Vanilla JS (ES-Module) & HTML5** — kein Framework-Overhead; modulare Architektur mit tree-shakeablen Imports
+- **Benutzerdefiniertes CSS** — Tailwind-freies Designsystem mit CSS-Variablen für glassmorphisches Dunkel-/Hell-Theming
+- **Vite + `vite-plugin-singlefile`** — erzeugt ein einzelnes, eigenständiges `index.html` mit allem JS, CSS und Assets
+- **Browser `localStorage`** — gesamter Zustand wird clientseitig gespeichert; kein Backend erforderlich
+- **GitHub Gist REST API** — optionale geräteübergreifende Synchronisation über den eigenen privaten Gist
+- **Service Worker (PWA)** — Offline-Unterstützung und Push-Benachrichtigungs-Planung
+
+### 🧠 Kernalgorithmen
+
+- **FSRS v4.5** — Free Spaced Repetition Scheduler für gedächtnisoptimierte Wiederholungsintervalle
+- **Archiv-FSRS-Einfrierung** — Archivzeit wird nicht auf den Fragen-Zeitplan angerechnet; Archiv-Wiederherstellung überflutet die Tageswarteschlange nie
 
 ---
 
-## 📥 Erste Schritte & Entwicklung
+## 📥 Lokale Entwicklung
 
 ### Voraussetzungen
+
 - Node.js (v18 oder höher)
 - npm
 
 ### Installation
+
 ```bash
 git clone https://github.com/tafirnat/exam-app.git
 cd exam-app
 npm install
 ```
 
-### Lokale Entwicklung
+### Entwicklungsserver starten
+
 ```bash
 npm run dev
 ```
 
-### Einzeldatei-Produktions-Build
+### Einzeldatei-Produktions-Build erstellen
+
 ```bash
 npm run build
 ```
-Die kompilierte, eigenständige statische Datei wird unter `dist/index.html` generiert.
+
+Die kompilierte, eigenständige Datei wird unter `dist/index.html` ausgegeben.
 
 ---
 
 ## 🚀 CI/CD & Automatische Bereitstellung
 
-Dieses Repository nutzt **GitHub Actions** für automatischen Build und Bereitstellung:
-- **Workflow**: [.github/workflows/deploy.yml](.github/workflows/deploy.yml)
-- **Verhalten**: Jeder Commit auf den `main`-Branch löst einen Vite Single-File-Build aus und stellt die resultierende `dist/index.html` automatisch auf **GitHub Pages** (`gh-pages`-Branch) bereit.
+Jeder Commit auf `main` löst einen GitHub Actions Workflow ([deploy.yml](.github/workflows/deploy.yml)) aus, der einen Vite Single-File-Build ausführt und `dist/index.html` automatisch auf **GitHub Pages** (`gh-pages`-Branch) bereitstellt.
 
 ---
 
 ## 🤖 Entwicklungstransparenz & Danksagung
 
-Diese Anwendung wurde unter Einsatz fortschrittlicher KI-Codierungsassistenten (**Antigravity** & **Claude**) konzipiert und entwickelt. Obwohl alle Komponenten gründlich getestet und optimiert wurden, sind Feedback und Problemberichte stets willkommen!
+Diese Anwendung wurde mit Unterstützung von KI-Coding-Tools (**Antigravity** & **Claude**) konzipiert und entwickelt. Feedback und Fehlermeldungen sind jederzeit willkommen!
 
 ---
 
