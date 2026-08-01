@@ -1376,13 +1376,8 @@ function renderTrendLines(barsEl, buckets, topLimit, gutter) {
         return el;
     };
 
-    // Every halo goes down before any line, otherwise the second series' halo
-    // would eat a bite out of the first series' stroke where they cross.
-    series.forEach(s => {
-        const halo = polyline(pointsOf(s), 'var(--surface-color)', '6', '');
-        halo.style.strokeOpacity = '0.8';
-        svg.appendChild(halo);
-    });
+    // Bare strokes, no outline: the two hues are far enough apart in CVD terms
+    // that neither needs a halo to be told from the other or from a bar.
     series.forEach(s => svg.appendChild(polyline(pointsOf(s), s.color, '2', s.dash)));
 
     overlay.appendChild(svg);

@@ -22,11 +22,13 @@
     --warning-color: #f59e0b;
     --note-color: #8b5cf6;
 
-    /* Trend chart line series. Picked against the bar fills (green/red/slate)
-       rather than by eye: the pair clears CVD separation and 3:1 contrast on
-       the card surface in both themes, so neither line hides in a bar. */
-    --trend-line-normal: #2563eb;
-    --trend-line-focus: #d97706;
+    /* Trend chart line series. Not picked by eye: this pair clears CVD
+       separation and 3:1 contrast against both card surfaces, so one set of
+       steps serves light and dark alike. Blue is deliberately avoided for the
+       normal line - blue against lilac is the pair a deuteranope cannot split
+       at all, so moving the normal line to cyan is what buys the lilac. */
+    --trend-line-normal: #0891b2;
+    --trend-line-focus: #8b5cf6;
     --shadow-sm: 0 1px 2px 0 rgb(0 0 0 / 0.05);
     --shadow-md: 0 4px 6px -1px rgb(0 0 0 / 0.1);
     --radius-sm: 8px;
@@ -165,11 +167,6 @@
     --selected-bg: rgba(59, 130, 246, 0.2);
     --warning-color: #fbbf24;
     --note-color: #a78bfa;
-
-    /* Dark steps are re-picked, not brightened: the light blue would sit above
-       the mid-lightness band the dark surface needs. */
-    --trend-line-normal: #3b82f6;
-    --trend-line-focus: #d97706;
     --shadow-sm: 0 1px 2px 0 rgb(0 0 0 / 0.3);
     --shadow-md: 0 10px 15px -3px rgb(0 0 0 / 0.4);
     --primary-rgb: 127, 164, 230;
@@ -6083,12 +6080,14 @@ body.dnd-active {
     overflow: visible;
 }
 
+/* The hairline ring is not decoration: it is what keeps a marker visible when
+   it lands on a bar segment of a similar tone. */
 .trend-line-dot {
     position: absolute;
-    width: 8px;
-    height: 8px;
+    width: 6px;
+    height: 6px;
     border-radius: 50%;
-    border: 2px solid var(--surface-color);
+    border: 1.5px solid var(--surface-color);
     box-sizing: content-box;
     transform: translate(-50%, -50%);
 }
