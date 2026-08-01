@@ -1182,6 +1182,10 @@ function renderTrendChart(buckets, yAxisId, barsId, xAxisId) {
             topLbl.style.fontSize = '0.7rem';
             topLbl.style.fontWeight = 'bold';
             topLbl.style.color = 'var(--text-primary)';
+            // The line series pass straight through this label on a low bar, so
+            // it sits above the overlay and carries a surface-coloured halo.
+            topLbl.style.zIndex = '3';
+            topLbl.style.textShadow = '0 0 3px var(--surface-color), 0 0 3px var(--surface-color), 0 0 2px var(--surface-color)';
             barInner.appendChild(topLbl);
         }
         
