@@ -16,15 +16,11 @@ import { initTimer, stopTimer } from './features/test/timer-module.js';
 import { initSync, syncToGist } from './core/github-sync.js';
 import { renderMarkdown, renderInlineMarkdown, plainText, applySearchHighlight } from './core/markdown.js';
 import { setupQuickPresets, updateQuickSourcesDot } from './features/sources/quick-presets-ui.js';
-import { initDevAutoReload, toggleDevAutoReload } from './core/dev-auto-reload.js';
 
 // Expose functions globally for dynamic/inline invocation and window compatibility
 window.showSourceOptionsModal = showSourceOptionsModal;
 window.renderHomeActiveSources = renderHomeActiveSources;
-window.toggleDevAutoReload = toggleDevAutoReload;
 
-// Initialize developer auto-reload mode (runs version polling if dev mode is enabled)
-initDevAutoReload();
 
 
 

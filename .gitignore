@@ -4,7 +4,6 @@ node_modules/
 # Production & Build outputs
 dist/
 dist-ssr/
-public/version.json
 *.lcov
 *.zip
 *.tar.gz
