@@ -19,5 +19,21 @@
             "type": "image/png",
             "purpose": "any maskable"
         }
+    ],
+    "shortcuts": [
+        {
+            "name": "Bugünkü Tekrar",
+            "short_name": "Tekrar",
+            "description": "FSRS kartlarını gözden geçir",
+            "url": "./?action=streak",
+            "icons": [{ "src": "app-icon.png", "sizes": "192x192" }]
+        },
+        {
+            "name": "Odak Hedefi",
+            "short_name": "Odak",
+            "description": "Odak serisi sorularını tamamla",
+            "url": "./?action=focus",
+            "icons": [{ "src": "app-icon.png", "sizes": "192x192" }]
+        }
     ]
 }
