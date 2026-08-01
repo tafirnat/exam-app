@@ -107,7 +107,7 @@ export const MOTIVATION_QUOTES = [
             title: "Impression, Sunrise",
             artist: "Claude Monet",
             year: "1872",
-            url: "https://images.unsplash.com/photo-1518709268805-4e9042af9f23?q=70&w=600&auto=format&fit=crop"
+            url: "https://images.unsplash.com/photo-1579546929518-9e396f3cc809?q=70&w=600&auto=format&fit=crop"
         }
     },
     {
@@ -211,7 +211,7 @@ export const MOTIVATION_QUOTES = [
             title: "The Night Watch",
             artist: "Rembrandt van Rijn",
             year: "1642",
-            url: "https://images.unsplash.com/photo-1518709268805-4e9042af9f23?q=70&w=600&auto=format&fit=crop"
+            url: "https://images.unsplash.com/photo-1618005182384-a83a8bd57fbe?q=70&w=600&auto=format&fit=crop"
         }
     },
     {
@@ -276,7 +276,7 @@ export const MOTIVATION_QUOTES = [
             title: "The Ninth Wave",
             artist: "Ivan Aivazovsky",
             year: "1850",
-            url: "https://images.unsplash.com/photo-1518709268805-4e9042af9f23?q=70&w=600&auto=format&fit=crop"
+            url: "https://images.unsplash.com/photo-1550684848-fac1c5b4e853?q=70&w=600&auto=format&fit=crop"
         }
     },
     {
@@ -406,7 +406,7 @@ export const MOTIVATION_QUOTES = [
             title: "Burlaks on the Volga",
             artist: "Ilya Repin",
             year: "1873",
-            url: "https://images.unsplash.com/photo-1518709268805-4e9042af9f23?q=70&w=600&auto=format&fit=crop"
+            url: "https://images.unsplash.com/photo-1513542789411-b6a5d4f31634?q=70&w=600&auto=format&fit=crop"
         }
     },
     {
