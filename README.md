@@ -9,6 +9,16 @@ A professional, modular, privacy-first, and high-performance examination web app
 
 ---
 
+## 🌐 Languages / Diller / Sprachen
+
+> ℹ️ **Note**: The **English** version (`README.md`) is the **primary original source**.
+>
+> 🌐 **Read in other languages:**
+> - 🇹🇷 **[Türkçe README](./README.tr.md)**
+> - 🇩🇪 **[Deutsch README](./README.de.md)**
+
+---
+
 ## 🌐 Live Demo
 
 Experience the application live: **[https://exam.rifatarslan.dev/](https://exam.rifatarslan.dev/)**
