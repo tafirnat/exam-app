@@ -25,7 +25,20 @@
 }
 
 .import-report-actions {
+    display: grid;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: 0.5rem;
     margin-bottom: 0.75rem;
+}
+
+.import-report-actions > .btn {
+    grid-column: auto !important;
+    padding-left: 0.35rem;
+    padding-right: 0.35rem;
+    font-size: 0.82rem;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
 }
 
 /* Sits between the choice and the evidence, explaining what each button does
@@ -100,6 +113,16 @@
 }
 
 @media (max-width: 480px) {
+    .import-report-actions {
+        gap: 0.35rem;
+    }
+
+    .import-report-actions > .btn {
+        font-size: 0.74rem;
+        padding-left: 0.2rem;
+        padding-right: 0.2rem;
+    }
+
     .gap-item-head {
         flex-direction: column;
         align-items: flex-start;

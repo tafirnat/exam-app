@@ -71,7 +71,9 @@ Sınav öncesinde veya sırasında otomatik puanlama baskısı olmadan temel kav
 ## 🔥 Temel Özellikler & Yetenekler
 
 - 🧠 **FSRS v4.5 Aralıklı Tekrar**: "Süresi Geçmiş" ($R < 0.9$) soruları bilimsel olarak önceliklendirir. Öğrenici geri bildirimlerine göre (*Zor* vs *Kolay*) tekrar aralıklarını adaptif olarak hesaplar.
+- ⚡ **Tek Tıkla Günün Tekrarı**: Günün seansı, önce kaynaklar arasında arama yapmadan doğrudan seri kartından başlatılır. Havuz soru bazında kurulur ve hangi kaynağın açık olduğundan bağımsızdır — bir soru, geldiği dosyaya göre değil, FSRS'in *o soru* hakkında bildiğine göre sıraya girer. İki düzenden birini seçersiniz: **saf FSRS sırası** (en acil soru başta, kaynak gözetilmez) veya **kaynak/klasör bazlı gruplama** (yine en acil sorudan başlar, ama o sorunun kaynağını ve aynı klasördeki kaynakları bir arada tutarak ilişkili konuları bağlam içinde çalıştırır).
 - 📁 **Klasör & Arşiv Yönetimi**: Soru kaynaklarını özel klasör hiyerarşilerinde düzenleyin. Test geçmişinizi kaybetmeden tekil kaynakları veya klasörlerin tamamını aktif çalışma setlerinden arşivleyin. Arşivlenen ögeler, günlük senkronizasyonu hafif tutmak için ayrı olarak senkronize edilir (`exam_app_archive.json`).
+- ❄️ **Arşiv FSRS Saatini Dondurur**: Arşivde geçen süre, sorunun tekrar takviminden düşülmez. Tekrarına üç gün kala arşivlenen bir kaynak, o üç gün hâlâ dururken geri döner; birikmiş tekrarların tamamı bir anda süresi geçmiş olarak üstünüze yıkılmaz — böylece büyük bir arşivi geri almak günlük hedefi asla boğmaz.
 - 🔊 **Gelişmiş Metin Okuma (TTS)**: Yerel konuşma sentezini kullanarak soruları ve okuma kartlarını sesli okur. Ayarlanabilir oynatma hızını (x0.7 - x1.3), gezinmede otomatik oynatmayı ve yüzen oynatma kontrollerini destekler.
 - 🌐 **Çok Dilli Arayüz & Yapay Zeka Çevirisi**: **İngilizce**, **Türkçe** ve **Almanca** dillerinde tam yerel kullanıcı arayüzü. İçeriği 10'dan fazla dile çevirmek için tümleşik Google Translate desteği içerir.
 - 🤖 **Özel AI Sağlayıcı Merkezi**: Soru bağlamlarını veya özel komut taslaklarını aktif UI dilinizde AI servislerine (ChatGPT, Claude, Gemini, DeepSeek, Kimi vb.) tek tıkla gönderme olanağı.
@@ -89,6 +91,8 @@ Exam App'in **ne** yaptığını ve **neden** var olduğunu öğrendikten sonra,
 - **Tailwind İçermeyen Özel CSS**: Framework yükü olmadan hassas cam efekti görselleri sunan CSS özel özelliklerine (değişkenler) sahip özel tasarım sistemi.
 - **Vite & Tek Dosyalı Derleyici**: Tüm JavaScript, CSS ve varlıkları içeren %100 bağımsız, tek bir `index.html` çıktısı üretmek için `vite-plugin-singlefile` kullanır.
 - **İstemci Tarafı Depolama & Senkronizasyon**: Çevrimdışı durum için tarayıcı `localStorage`'ına ve cihazlar arası senkronizasyon için GitHub Gist REST API'sine dayanır.
+
+> 📄 Seri kulvarlarının, tek tıkla günün tekrarının ve arşiv dondurmanın tüm kuralları [`docs/CONTINUITY_SPEC.md`](docs/CONTINUITY_SPEC.md) içindedir.
 
 ---
 

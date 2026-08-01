@@ -71,7 +71,9 @@ Reichhaltige Markdown-Textblöcke und Zusammenfassungskarten zur Überprüfung v
 ## 🔥 Hauptmerkmale & Funktionen
 
 - 🧠 **FSRS v4.5 Spaced Repetition**: Priorisiert wissenschaftlich "überfällige" Fragen ($R < 0.9$). Berechnet Wiederholungsintervalle adaptiv basierend auf dem Feedback der Lernenden (*Schwer* vs. *Einfach*).
+- ⚡ **Tägliche Wiederholung mit einem Tipp**: Die Sitzung des Tages startet direkt auf der Serien-Karte, ohne vorher Quellen zusammensuchen zu müssen. Der Durchlauf wird pro Frage zusammengestellt und ist unabhängig davon, welche Quellen gerade aktiv sind — eine Frage wird danach eingeplant, was FSRS über *sie* weiß, nicht nach der Datei, aus der sie stammt. Zwei Anordnungen stehen zur Wahl: **reine FSRS-Reihenfolge** (dringendste Frage zuerst, Quellen spielen keine Rolle) oder **nach Quelle und Ordner gruppiert** (beginnt ebenfalls bei der dringendsten Frage, hält aber deren Quelle und die Quellen desselben Ordners zusammen, sodass verwandte Inhalte im Zusammenhang gelernt werden).
 - 📁 **Ordner- & Archivverwaltung**: Organisieren Sie Fragenquellen in benutzerdefinierten Ordnerhierarchien. Archivieren Sie einzelne Quellen oder ganze Ordner aus aktiven Lernsets, ohne den Testverlauf zu verlieren. Archivierte Elemente werden separat synchronisiert (`exam_app_archive.json`), um die tägliche Synchronisation leicht zu halten.
+- ❄️ **Das Archiv friert die FSRS-Uhr ein**: Zeit im Archiv wird dem Wiederholungsplan einer Frage nicht angerechnet. Eine Quelle, die drei Tage vor der nächsten Wiederholung archiviert wurde, kehrt mit genau diesen drei Tagen zurück, statt mit einem auf einen Schlag komplett überfälligen Rückstand — so begräbt das Wiederherstellen eines großen Archivs niemals das Tagesziel.
 - 🔊 **Erweiterte Text-to-Speech (TTS)**: Liest Fragen und Lesekarten mithilfe nativer Sprachsynthese laut vor. Unterstützt einstellbare Wiedergabegeschwindigkeit (x0,7 bis x1,3), automatische Wiedergabe bei Navigation und schwebende Wiedergabesteuerungen.
 - 🌐 **Mehrsprachige Benutzeroberfläche & KI-Übersetzung**: Vollständige native Benutzeroberfläche auf **Englisch**, **Türkisch** und **Deutsch**. Enthält eine integrierte Google-Übersetzungsunterstützung zur Übersetzung von Inhalten in über 10 Sprachen.
 - 🤖 **Benutzerdefinierter KI-Anbieter-Hub**: Ein-Klick-Integration zum Senden von Fragenkontexten oder eigenen Prompt-Vorlagen an KI-Dienste (ChatGPT, Claude, Gemini, DeepSeek, Kimi etc.) in Ihrer aktiven UI-Sprache.
@@ -89,6 +91,8 @@ Nachdem Sie wissen, **was** die Exam App tut und **warum** sie existiert, erfahr
 - **Benutzerdefiniertes CSS ohne Tailwind**: Maßgeschneidertes Design-System mit CSS-Variablen für feine Glassmorphism-Visuelles ohne Framework-Overhead.
 - **Vite & Single-File-Bundler**: Nutzt `vite-plugin-singlefile`, um eine 100 % eigenständige, einzelne `index.html`-Ausgabe zu erzeugen, die sämtliches JavaScript, CSS und Assets enthält.
 - **Client-seitige Speicherung & Synchronisation**: Nutzt den `localStorage` des Browsers für den Offline-Status und die GitHub Gist REST API für die geräteübergreifende Synchronisation.
+
+> 📄 Die vollständigen Regeln zu den Serien-Kulvaren, zur täglichen Wiederholung mit einem Tipp und zum Einfrieren des Archivs stehen in [`docs/CONTINUITY_SPEC.md`](docs/CONTINUITY_SPEC.md).
 
 ---
 

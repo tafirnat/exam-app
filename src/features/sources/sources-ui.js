@@ -138,6 +138,7 @@ export async function shareSourceJSON(source) {
     const copyBtn = document.getElementById('shareCopyClipboardBtn');
     const textBtn = document.getElementById('shareAsTextBtn');
     const fileBtn = document.getElementById('shareAsFileBtn');
+    const viewBrowserBtn = document.getElementById('shareViewBrowserBtn');
     const closeBtn = document.getElementById('shareOptionsCloseBtn');
 
     if (!overlay || !copyBtn || !textBtn || !fileBtn || !closeBtn) {
@@ -168,6 +169,7 @@ export async function shareSourceJSON(source) {
         copyBtn.onclick = null;
         textBtn.onclick = null;
         fileBtn.onclick = null;
+        if (viewBrowserBtn) viewBrowserBtn.onclick = null;
         closeBtn.onclick = null;
         overlay.onclick = null;
     };
@@ -244,6 +246,26 @@ export async function shareSourceJSON(source) {
         // Fallback for browsers that don't support file sharing
         downloadSourceJSON(source);
     };
+
+    // 4. Tarayıcıda Aç (Open JSON natively in Browser)
+    if (viewBrowserBtn) {
+        viewBrowserBtn.onclick = () => {
+            closeShareOptions();
+            try {
+                const blob = new Blob([jsonStr], { type: 'application/json;charset=utf-8;' });
+                const blobUrl = URL.createObjectURL(blob);
+                const win = window.open(blobUrl, '_blank');
+                if (!win) {
+                    window.location.href = blobUrl;
+                }
+                setTimeout(() => {
+                    URL.revokeObjectURL(blobUrl);
+                }, 60000);
+            } catch (err) {
+                console.error('Open in browser failed:', err);
+            }
+        };
+    }
 
     closeBtn.onclick = closeShareOptions;
 

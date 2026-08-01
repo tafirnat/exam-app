@@ -71,7 +71,9 @@ Rich markdown prose blocks and summary cards for reviewing key concepts before o
 ## 🔥 Key Features & Capabilities
 
 - 🧠 **FSRS v4.5 Spaced Repetition**: Scientifically prioritizes "Overdue" questions ($R < 0.9$). Adaptively calculates review intervals based on learner feedback (*Hard* vs *Easy*).
+- ⚡ **One-Tap Daily Review**: Start the day's session straight from the streak card, without hunting through sources first. The run is assembled per question and independent of which sources are switched on — a question is scheduled by what FSRS knows about *it*, not by the file it came from. Choose between two layouts: **pure FSRS order** (most urgent question first, sources ignored) or **grouped by source and folder** (still starts from the most urgent question, but keeps its source and folder-mates together so related material is studied in context).
 - 📁 **Folder & Archive Management**: Organize question sources into custom folder hierarchies. Archive individual sources or entire folders out of active study sets without losing test history. Archived items sync separately (`exam_app_archive.json`) to keep routine sync light.
+- ❄️ **Archiving Freezes the FSRS Clock**: Time spent in the archive is not counted against a question's schedule. A source parked with three days left on a review comes back with those three days still intact, instead of returning with its entire backlog overdue at once — so restoring a large archive never buries the daily target.
 - 🔊 **Advanced Text-to-Speech (TTS)**: Reads questions and reading cards aloud using native speech synthesis. Supports adjustable playback speed (x0.7 to x1.3), autoplay on navigation, and floating playback controls.
 - 🌐 **Multilingual Interface & AI Translation**: Full native UI in **English**, **Turkish**, and **German**. Includes integrated Google Translate support for translating content into over 10 languages.
 - 🤖 **Custom AI Provider Hub**: One-click integration to send question contexts or custom prompt templates to AI services (ChatGPT, Claude, Gemini, DeepSeek, Kimi, etc.) in your active UI language.
@@ -89,6 +91,8 @@ Now that you know **what** Exam App does and **why** it exists, here is **how** 
 - **Custom Tailwind-Free CSS**: Tailored design system with CSS custom properties (variables) for fine-tuned glassmorphic visuals without framework overhead.
 - **Vite & Single-File Bundler**: Uses `vite-plugin-singlefile` to generate a 100% standalone, single `index.html` output containing all JavaScript, CSS, and assets.
 - **Client-Side Storage & Sync**: Relies on browser `localStorage` for offline state and GitHub Gist REST API for cross-device synchronization.
+
+> 📄 The full rules behind the streak tracks, the one-tap daily review and the archive freeze live in [`docs/CONTINUITY_SPEC.md`](docs/CONTINUITY_SPEC.md).
 
 ---
 
