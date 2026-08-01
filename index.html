@@ -689,23 +689,23 @@
                         <div style="display: flex; align-items: flex-start; justify-content: space-between; gap: 0.5rem;">
                             <div style="display: flex; flex-direction: column; gap: 4px; min-width: 0; flex: 1;">
                                 <span style="font-size: 0.85rem; color: var(--text-primary); font-weight: 600;" data-i18n="question_difficulty_analysis">Sorulara Genel Bakış</span>
-                                <div id="diffCardSourceBadge" class="diff-card-badge" title="Tüm Aktif Kaynaklar">
-                                    <span id="diffCardSourceBadgeText" data-i18n="all_active_sources">Tüm Aktif Kaynaklar</span>
+                                <div id="diffCardSourceBadge" class="diff-card-source-row" title="Tüm Aktif Kaynaklar">
+                                    <button type="button" class="card-control-btn star-icon-btn" id="diffCardStarBtn" title="Kaynağı Yıldızla / Yıldızı Kaldır" data-i18n-title="toggle_star_source" aria-label="Yıldızla" disabled>
+                                        <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                            <polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"></polygon>
+                                        </svg>
+                                    </button>
+                                    <span id="diffCardSourceBadgeText" class="diff-card-source-text" data-i18n="all_active_sources">Tüm Aktif Kaynaklar</span>
                                 </div>
                             </div>
-                            <div style="display: flex; align-items: center; gap: 6px; flex-shrink: 0;">
-                                <button type="button" class="card-control-btn" id="diffCardStarBtn" title="Kaynağı Yıldızla / Yıldızı Kaldır" data-i18n-title="toggle_star_source" aria-label="Yıldızla" disabled>
-                                    <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                                        <polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"></polygon>
-                                    </svg>
-                                </button>
+                            <div class="diff-card-nav-controls" style="display: flex; align-items: center; gap: 0.85rem; flex-shrink: 0;">
                                 <button type="button" class="card-control-btn" id="diffCardPrevBtn" title="Önceki Kaynak" data-i18n-title="prev_source" aria-label="Önceki">
-                                    <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+                                    <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
                                         <path d="M15 18l-6-6 6-6"></path>
                                     </svg>
                                 </button>
                                 <button type="button" class="card-control-btn" id="diffCardNextBtn" title="Sonraki Kaynak" data-i18n-title="next_source" aria-label="Sonraki">
-                                    <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+                                    <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
                                         <path d="M9 18l6-6-6-6"></path>
                                     </svg>
                                 </button>

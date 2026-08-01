@@ -936,6 +936,18 @@ function bindDifficultyCardControls() {
     const prevBtn = document.getElementById('diffCardPrevBtn');
     const nextBtn = document.getElementById('diffCardNextBtn');
     const starBtn = document.getElementById('diffCardStarBtn');
+    const badgeEl = document.getElementById('diffCardSourceBadge');
+
+    const toggleStar = () => {
+        if (currentDifficultyViewId === 'all') return;
+        const source = liveSources().find(s => s.id === currentDifficultyViewId);
+        if (source) {
+            source.starred = !source.starred;
+            touch(source);
+            saveSources();
+            renderActivityCharts();
+        }
+    };
 
     if (prevBtn) {
         prevBtn.onclick = () => {
@@ -962,15 +974,15 @@ function bindDifficultyCardControls() {
     }
 
     if (starBtn) {
-        starBtn.onclick = () => {
-            if (currentDifficultyViewId === 'all') return;
-            const source = liveSources().find(s => s.id === currentDifficultyViewId);
-            if (source) {
-                source.starred = !source.starred;
-                touch(source);
-                saveSources();
-                renderActivityCharts();
-            }
+        starBtn.onclick = (e) => {
+            e.stopPropagation();
+            toggleStar();
+        };
+    }
+
+    if (badgeEl) {
+        badgeEl.onclick = () => {
+            toggleStar();
         };
     }
 }
@@ -1006,7 +1018,10 @@ function renderActivityCharts() {
     const badgeEl = document.getElementById('diffCardSourceBadge');
     if (badgeTextEl) {
         badgeTextEl.textContent = currentItem.name;
-        if (badgeEl) badgeEl.title = currentItem.name;
+        if (badgeEl) {
+            badgeEl.title = currentItem.name;
+            badgeEl.classList.toggle('is-disabled', currentItem.isAll);
+        }
     }
 
     const starBtn = document.getElementById('diffCardStarBtn');

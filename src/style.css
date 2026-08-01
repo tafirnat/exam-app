@@ -6173,26 +6173,42 @@ body.dnd-active {
     );
 }
 
-.chart-flip-btn {
+/* Frameless Icon-Only Controls matching openFocusSourceModalBtn (.continuity-icon-btn) */
+.chart-flip-btn,
+.card-control-btn {
     flex-shrink: 0;
-    display: flex;
+    display: inline-flex;
     align-items: center;
     justify-content: center;
-    width: 26px;
-    height: 26px;
-    padding: 0;
-    border: 1px solid var(--border-color);
-    border-radius: 8px;
-    background: var(--surface-hover);
+    min-width: 32px;
+    min-height: 32px;
+    padding: 4px;
+    border: none;
+    background: transparent;
     color: var(--text-secondary);
     cursor: pointer;
-    transition: background 0.2s ease, color 0.2s ease, transform 0.3s ease;
+    transition: color 0.15s ease, opacity 0.15s ease, transform 0.15s ease;
 }
 
 .chart-flip-btn:hover {
-    background: var(--border-color);
     color: var(--text-primary);
+    background: transparent;
     transform: rotate(180deg);
+}
+
+.card-control-btn:hover:not(:disabled) {
+    color: var(--text-primary);
+    background: transparent;
+}
+
+.card-control-btn:active:not(:disabled),
+.chart-flip-btn:active {
+    transform: scale(0.9);
+}
+
+.card-control-btn:disabled {
+    opacity: 0.3;
+    cursor: default;
 }
 
 @media (prefers-reduced-motion: reduce) {
@@ -6205,62 +6221,52 @@ body.dnd-active {
     }
 }
 
-.diff-card-badge {
-    display: inline-flex;
-    align-items: center;
-    gap: 6px;
-    font-size: 0.75rem;
-    font-weight: 500;
-    color: var(--accent-color, #3b82f6);
-    background: var(--surface-hover);
-    padding: 2px 8px;
-    border-radius: 6px;
-    border: 1px solid var(--border-color);
-    max-width: 100%;
-    overflow: hidden;
-    text-overflow: ellipsis;
-    white-space: nowrap;
-    width: fit-content;
-    transition: all 0.2s ease;
-    margin-top: 2px;
-}
-
-.card-control-btn {
-    flex-shrink: 0;
-    display: inline-flex;
-    align-items: center;
-    justify-content: center;
-    width: 26px;
-    height: 26px;
+/* Star Icon button in the source title row */
+.card-control-btn.star-icon-btn {
+    min-width: auto;
+    min-height: auto;
+    width: 18px;
+    height: 18px;
     padding: 0;
-    border: 1px solid var(--border-color);
-    border-radius: 8px;
-    background: var(--surface-hover);
-    color: var(--text-secondary);
-    cursor: pointer;
-    transition: background 0.2s ease, color 0.2s ease, border-color 0.2s ease, transform 0.15s ease;
-}
-
-.card-control-btn:hover:not(:disabled) {
-    background: var(--border-color);
-    color: var(--text-primary);
-}
-
-.card-control-btn:active:not(:disabled) {
-    transform: scale(0.92);
-}
-
-.card-control-btn:disabled {
-    opacity: 0.35;
-    cursor: not-allowed;
 }
 
 .card-control-btn.is-starred {
-    color: #eab308;
-    border-color: rgba(234, 179, 8, 0.4);
-    background: rgba(234, 179, 8, 0.15);
+    color: var(--primary-color, #3b82f6);
+    background: transparent;
+    border: none;
 }
 
 .card-control-btn.is-starred svg {
-    fill: #eab308;
+    fill: var(--primary-color, #3b82f6);
+    stroke: var(--primary-color, #3b82f6);
+}
+
+/* Diff Card Source Title Row replacing badge pill - formatted like homeActiveSourcesSection */
+.diff-card-source-row {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.4rem;
+    margin-top: 2px;
+    max-width: 100%;
+    cursor: pointer;
+    user-select: none;
+}
+
+.diff-card-source-row.is-disabled {
+    cursor: default;
+}
+
+.diff-card-source-text {
+    font-size: 0.82rem;
+    font-weight: 400;
+    color: var(--text-secondary);
+    letter-spacing: 0.02em;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    transition: color 0.15s ease;
+}
+
+.diff-card-source-row:hover:not(.is-disabled) .diff-card-source-text {
+    color: var(--text-primary);
 }
