@@ -167,7 +167,7 @@ function createTokenSvg(tokenIndex, active) {
     svg.setAttribute('width', '24');
     svg.setAttribute('height', '24');
     svg.setAttribute('data-token-index', tokenIndex);
-    svg.className = 'continuity-icon-btn continuity-token-icon';
+    svg.setAttribute('class', 'continuity-icon-btn continuity-token-icon');
     svg.style.cursor = 'pointer';
 
     // 1st snowflake (tokenIndex 0): Luminous ice blue
