@@ -12,9 +12,12 @@ import {
     getFsrsStatsForRange,
     getFocusStatsForRange,
     getFocusSources,
+    getLiveFocusSources,
+    getFocusSourceLabel,
     calculateFocusTargetDistribution
 } from './continuity-engine.js';
 import { buildQuestionPool } from '../test/test-engine.js';
+import { renderSourcePicker } from '../sources/sources-ui.js';
 import { showToast, showAlert } from '../../core/utils.js';
 
 let carouselTimer = null;
@@ -119,8 +122,14 @@ function renderFocusSlide() {
         const req = getDailyRequirement(focusOverdue);
         const solved = todayAct.focusQuestionCount || 0;
 
+        // Names come from the snapshot when a source is gone, so the card keeps
+        // describing the streak instead of falling back to a raw id.
+        const liveFocusSources = getLiveFocusSources();
         const selectedNames = focusSources
-            .map(id => (AppState.sources || []).find(s => s.id === id)?.name || id)
+            .map(id => {
+                const label = getFocusSourceLabel(id);
+                return liveFocusSources.includes(id) ? label : `${label} (kaynak yok)`;
+            })
             .filter(Boolean)
             .join(', ');
 
@@ -360,29 +369,33 @@ function bindFocusModalEvents() {
 
     if (closeBtn && !closeBtn.dataset.bound) {
         closeBtn.dataset.bound = 'true';
-        closeBtn.addEventListener('click', () => {
-            modal.style.display = 'none';
-        });
+        closeBtn.addEventListener('click', () => closeFocusSourceModal());
     }
 
     if (saveBtn && !saveBtn.dataset.bound) {
         saveBtn.dataset.bound = 'true';
         saveBtn.addEventListener('click', () => {
             saveFocusSourceSelection();
-            modal.style.display = 'none';
+            closeFocusSourceModal();
             renderFocusSlide();
-            showToast('Özel Odak kaynakları güncellendi');
+            showToast('Odak Seri kaynakları güncellendi');
         });
     }
 
     if (modal && !modal.dataset.backdropBound) {
         modal.dataset.backdropBound = 'true';
         modal.addEventListener('click', (e) => {
-            if (e.target === modal) {
-                modal.style.display = 'none';
-            }
+            if (e.target === modal) closeFocusSourceModal();
         });
     }
+}
+
+function closeFocusSourceModal() {
+    const modal = document.getElementById('focusSourceModal');
+    if (modal) modal.style.display = 'none';
+    // Dropping the handle keeps a stale selection from being saved the next time
+    // the popup is opened and dismissed without touching a row.
+    focusPickerHandle = null;
 }
 
 function bindContinuityModalEvents() {
@@ -450,61 +463,49 @@ function bindContinuityModalEvents() {
     }
 }
 
+export const MAX_FOCUS_SOURCES = 3;
+
+// Live handle on the open picker; null whenever the popup is closed.
+let focusPickerHandle = null;
+
+function updateFocusSelectionCount(count) {
+    const countEl = document.getElementById('focusSourceSelectionCount');
+    if (countEl) countEl.textContent = `${count} / ${MAX_FOCUS_SOURCES} kaynak seçildi`;
+}
+
 function openFocusSourceModal() {
     const modal = document.getElementById('focusSourceModal');
     const listEl = document.getElementById('focusSourceList');
     if (!modal || !listEl) return;
 
-    listEl.innerHTML = '';
-    const selectedSources = getFocusSources();
-    const allSources = AppState.sources || [];
-
-    if (allSources.length === 0) {
-        listEl.innerHTML = '<div style="font-size:0.8rem; color:var(--text-secondary); padding:0.5rem;">Henüz ekli kaynak yok.</div>';
-    } else {
-        allSources.forEach(source => {
-            const isChecked = selectedSources.includes(source.id);
-            const item = document.createElement('label');
-            item.style.display = 'flex';
-            item.style.alignItems = 'center';
-            item.style.justifyContent = 'space-between';
-            item.style.padding = '0.6rem 0.75rem';
-            item.style.backgroundColor = 'var(--surface-hover)';
-            item.style.borderRadius = '8px';
-            item.style.cursor = 'pointer';
-
-            item.innerHTML = `
-                <span style="font-size:0.88rem; font-weight:500;">${source.name || source.id}</span>
-                <input type="checkbox" value="${source.id}" ${isChecked ? 'checked' : ''} class="focus-source-checkbox">
-            `;
-            listEl.appendChild(item);
-        });
-
-        // Limit to max 3 checkboxes
-        const checkboxes = listEl.querySelectorAll('.focus-source-checkbox');
-        checkboxes.forEach(cb => {
-            cb.addEventListener('change', () => {
-                const checkedCount = listEl.querySelectorAll('.focus-source-checkbox:checked').length;
-                if (checkedCount > 3) {
-                    cb.checked = false;
-                    showToast('En fazla 3 kaynak seçebilirsiniz!');
-                }
-            });
-        });
-    }
+    // Same folder/source layout as the sources screen, selection only - the
+    // picker deliberately exposes no folder or source settings.
+    focusPickerHandle = renderSourcePicker(listEl, {
+        selected: getFocusSources(),
+        max: MAX_FOCUS_SOURCES,
+        onChange: (ids) => updateFocusSelectionCount(ids.length)
+    });
 
     modal.style.display = 'flex';
 }
 
 function saveFocusSourceSelection() {
-    const listEl = document.getElementById('focusSourceList');
-    if (!listEl) return;
-
-    const checkedInputs = listEl.querySelectorAll('.focus-source-checkbox:checked');
-    const selectedIds = Array.from(checkedInputs).map(cb => cb.value);
+    if (!focusPickerHandle) return;
+    const selectedIds = focusPickerHandle.getSelected().slice(0, MAX_FOCUS_SOURCES);
 
     if (!AppState.continuityConfig) AppState.continuityConfig = {};
     AppState.continuityConfig.focusSources = selectedIds;
+
+    // Names are snapshotted next to the ids so a card can still say which source
+    // a streak came from after that source is archived or deleted. The streak
+    // itself never depends on this - it lives in studyActivity, keyed by date.
+    const names = { ...(AppState.continuityConfig.focusSourceNames || {}) };
+    selectedIds.forEach(id => {
+        const source = (AppState.sources || []).find(s => s.id === id);
+        if (source?.name) names[id] = source.name;
+    });
+    AppState.continuityConfig.focusSourceNames = names;
+
     saveContinuityConfig();
 }
 
@@ -957,7 +958,7 @@ function openInfoPopupModal(title, htmlContent, actionBtnConfig = null) {
 
 export function showSingleTokenModal(type, tokenIndex) {
     const isGlobal = type === 'global';
-    const seriesTitle = isGlobal ? 'Genel FSRS Serisi' : 'Özel Odak Serisi';
+    const seriesTitle = isGlobal ? 'Genel FSRS Serisi' : 'Odak Seri';
     
     if (tokenIndex === 0) {
         // 1st Snowflake: Mavi Kar Tanesi
@@ -980,7 +981,7 @@ export function showSingleTokenModal(type, tokenIndex) {
                         Mavi Kar Tanesi, uygulamaya başlarken hediye edilen standart dondurma hakkınızdır. Soru çözemediğiniz bir gün serinizi sıfırlanmaktan otomatik olarak korur.
                     </p>
                     <ul style="margin: 0; padding-left: 1.1rem; line-height: 1.6;">
-                        <li><strong>Kazanım Şartı:</strong> Tüketilmesi halinde ${isGlobal ? '7 gün kesintisiz seri + %70 FSRS başarısı' : '7 gün kesintisiz Odak Serisi'} tamamlanarak tekrar kazanılır.</li>
+                        <li><strong>Kazanım Şartı:</strong> Tüketilmesi halinde ${isGlobal ? '7 gün kesintisiz seri + %70 FSRS başarısı' : '7 gün kesintisiz Odak Seri'} tamamlanarak tekrar kazanılır.</li>
                     </ul>
                 </div>
             </div>
@@ -1004,11 +1005,11 @@ export function showSingleTokenModal(type, tokenIndex) {
 
                 <div style="font-size: 0.83rem; color: var(--text-secondary); line-height: 1.5;">
                     <p style="margin: 0 0 0.5rem 0;">
-                        Kızıl Kar Tanesi dondurma hakkı, genel veya özel tüm serileriniz için ortak dondurma koruması sağlar.
+                        Kızıl Kar Tanesi dondurma hakkı, Genel Seri ve Odak Seri'nin tamamı için ortak dondurma koruması sağlar.
                     </p>
                     <ul style="margin: 0; padding-left: 1.1rem; line-height: 1.6;">
-                        <li><strong>Kazanım Şartı:</strong> ${isGlobal ? 'Son 14 günde kesintisiz seri + %80 FSRS başarısı' : 'Son 14 günde kesintisiz Odak Serisi'} tamamlanarak elde edilir.</li>
-                        <li><strong>Çapraz Joker Özelliği:</strong> Kullanıcı bu dondurma hakkını özel veya normal seri için kullanabilir.</li>
+                        <li><strong>Kazanım Şartı:</strong> ${isGlobal ? 'Son 14 günde kesintisiz seri + %80 FSRS başarısı' : 'Son 14 günde kesintisiz Odak Seri'} tamamlanarak elde edilir.</li>
+                        <li><strong>Çapraz Joker Özelliği:</strong> Kullanıcı bu dondurma hakkını Odak Seri veya Genel Seri için kullanabilir.</li>
                     </ul>
                 </div>
             </div>
@@ -1055,7 +1056,7 @@ export function showContinuityInfoModal(type) {
                         <div>
                             <strong style="font-size: 0.88rem; color: var(--text-primary);">Dondurma Hakları</strong>
                             <p style="margin: 0.15rem 0 0 0; font-size: 0.83rem; color: var(--text-secondary); line-height: 1.45;">
-                                1. öge <strong style="color:#7dd3fc;"><span style="color:#7dd3fc;">❄️</span> Mavi Kar Tanesi</strong> standart dondurma hakkıdır. 2. öge <strong style="color:#ef4444;"><span style="color:#ef4444;">❄️</span> Kızıl Kar Tanesi</strong> ise gelişmiş dondurma hakkıdır; kullanıcı bu dondurma hakkını özel veya normal seri için kullanabilir.
+                                1. öge <strong style="color:#7dd3fc;"><span style="color:#7dd3fc;">❄️</span> Mavi Kar Tanesi</strong> standart dondurma hakkıdır. 2. öge <strong style="color:#ef4444;"><span style="color:#ef4444;">❄️</span> Kızıl Kar Tanesi</strong> ise gelişmiş dondurma hakkıdır; kullanıcı bu dondurma hakkını Odak Seri veya Genel Seri için kullanabilir.
                             </p>
                         </div>
                     </div>
@@ -1064,13 +1065,13 @@ export function showContinuityInfoModal(type) {
         `;
         openInfoPopupModal(title, html);
     } else {
-        const title = '🎯 Özel Odak Serisi Rehberi';
+        const title = '🎯 Odak Seri Rehberi';
         const html = `
             <div style="font-size: 0.88rem; color: var(--text-primary); text-align: left; display: flex; flex-direction: column; gap: 0.85rem;">
                 <div style="background: var(--bg-hover, rgba(59,130,246,0.06)); padding: 0.8rem 0.95rem; border-radius: 8px; border-left: 3px solid var(--info-color, #3b82f6);">
-                    <strong style="color: var(--info-color, #3b82f6); font-size: 0.95rem; display: block; margin-bottom: 0.3rem;">🎯 Özel Odak Serisi Nedir?</strong>
+                    <strong style="color: var(--info-color, #3b82f6); font-size: 0.95rem; display: block; margin-bottom: 0.3rem;">🎯 Odak Seri Nedir?</strong>
                     <p style="margin: 0; color: var(--text-secondary); line-height: 1.5;">
-                        Özel Odak Serisi, seçtiğiniz en fazla 3 özel soru kaynağına yoğunlaşarak özelleştirilmiş günlük çalışma temposu sürdürmenizi sağlar.
+                        Odak Seri, seçtiğiniz en fazla 3 soru kaynağına yoğunlaşarak özelleştirilmiş günlük çalışma temposu sürdürmenizi sağlar. Seri geçmişiniz kaynaklardan bağımsız tutulur: kaynak değiştirmeniz, arşivlemeniz veya silmeniz kazandığınız günleri etkilemez.
                     </p>
                 </div>
 
@@ -1100,7 +1101,7 @@ export function showContinuityInfoModal(type) {
                         <div>
                             <strong style="font-size: 0.88rem; color: var(--text-primary);">Odak Dondurma Hakları</strong>
                             <p style="margin: 0.15rem 0 0 0; font-size: 0.83rem; color: var(--text-secondary); line-height: 1.45;">
-                                1. Odak hakkı <strong style="color:#7dd3fc;"><span style="color:#7dd3fc;">❄️</span> Mavi Kar Tanesi</strong> seçili kaynaklarınız için dondurma sağlarken, 2. Odak hakkı <strong style="color:#ef4444;"><span style="color:#ef4444;">❄️</span> Kızıl Kar Tanesi</strong> özel veya normal seri için ortak dondurma hakkı sunar.
+                                1. Odak hakkı <strong style="color:#7dd3fc;"><span style="color:#7dd3fc;">❄️</span> Mavi Kar Tanesi</strong> seçili kaynaklarınız için dondurma sağlarken, 2. Odak hakkı <strong style="color:#ef4444;"><span style="color:#ef4444;">❄️</span> Kızıl Kar Tanesi</strong> Odak Seri veya Genel Seri için ortak dondurma hakkı sunar.
                             </p>
                         </div>
                     </div>
@@ -1133,7 +1134,7 @@ export function showFreezeTokenModal(type) {
                 <div style="background: rgba(239, 68, 68, 0.08); padding: 0.75rem 0.9rem; border-radius: 8px; border-left: 3px solid #ef4444;">
                     <strong style="color: #ef4444; font-size: 0.92rem;"><span style="color: #ef4444;">❄️</span> 2. Kızıl Kar Tanesi</strong>
                     <p style="margin: 0.25rem 0 0 0; color: var(--text-secondary); line-height: 1.45;">
-                        İkinci dondurma hakkı <strong>Kızıl Kar Tanesi</strong>'dir. Kullanıcı bu dondurma hakkını özel veya normal seri için kullanabilir.
+                        İkinci dondurma hakkı <strong>Kızıl Kar Tanesi</strong>'dir. Kullanıcı bu dondurma hakkını Odak Seri veya Genel Seri için kullanabilir.
                     </p>
                 </div>
 
@@ -1150,7 +1151,7 @@ export function showFreezeTokenModal(type) {
         `;
         openInfoPopupModal(title, html);
     } else {
-        const title = '<span style="color: #7dd3fc;">❄️</span> Odak Serisi Dondurma Hakları';
+        const title = '<span style="color: #7dd3fc;">❄️</span> Odak Seri Dondurma Hakları';
         const html = `
             <div style="font-size: 0.88rem; color: var(--text-primary); text-align: left; display: flex; flex-direction: column; gap: 0.85rem;">
                 <div style="background: rgba(125, 211, 252, 0.1); padding: 0.75rem 0.9rem; border-radius: 8px; border-left: 3px solid #7dd3fc;">
@@ -1163,17 +1164,17 @@ export function showFreezeTokenModal(type) {
                 <div style="background: rgba(239, 68, 68, 0.08); padding: 0.75rem 0.9rem; border-radius: 8px; border-left: 3px solid #ef4444;">
                     <strong style="color: #ef4444; font-size: 0.92rem;"><span style="color: #ef4444;">❄️</span> 2. Kızıl Kar Tanesi</strong>
                     <p style="margin: 0.25rem 0 0 0; color: var(--text-secondary); line-height: 1.45;">
-                        İkinci odak dondurma hakkı <strong>Kızıl Kar Tanesi</strong>'dir. Kullanıcı bu dondurma hakkını özel veya normal seri için kullanabilir.
+                        İkinci odak dondurma hakkı <strong>Kızıl Kar Tanesi</strong>'dir. Kullanıcı bu dondurma hakkını Odak Seri veya Genel Seri için kullanabilir.
                     </p>
                 </div>
 
                 <div>
                     <strong style="display: flex; align-items: center; gap: 0.35rem; margin-bottom: 0.35rem;">
-                        🏆 Odak Serisi Dondurma Hakkı Kazanım Şartları:
+                        🏆 Odak Seri Dondurma Hakkı Kazanım Şartları:
                     </strong>
                     <ul style="margin: 0; padding-left: 1.2rem; color: var(--text-secondary); line-height: 1.5; font-size: 0.84rem;">
-                        <li><strong>1. Mavi Kar Tanesi:</strong> Başlangıçta 1 defalık hediye (Tüketilirse: 7 gün kesintisiz Odak Serisi ile tekrar kazanılır).</li>
-                        <li><strong>2. Kızıl Kar Tanesi:</strong> Son 14 günde kesintisiz Odak Serisi tamamlanarak kazanılır.</li>
+                        <li><strong>1. Mavi Kar Tanesi:</strong> Başlangıçta 1 defalık hediye (Tüketilirse: 7 gün kesintisiz Odak Seri ile tekrar kazanılır).</li>
+                        <li><strong>2. Kızıl Kar Tanesi:</strong> Son 14 günde kesintisiz Odak Seri tamamlanarak kazanılır.</li>
                     </ul>
                 </div>
             </div>
@@ -1223,12 +1224,12 @@ export function showContinuityProgressModal(type) {
         const solved = todayAct.focusQuestionCount || 0;
         const isMet = isFocusActivityRequirementMet(todayAct);
 
-        const title = '🎯 Odak Serisi İlerleme Durumu';
+        const title = '🎯 Odak Seri İlerleme Durumu';
         const html = `
             <div style="font-size: 0.88rem; color: var(--text-primary); text-align: left; display: flex; flex-direction: column; gap: 0.85rem;">
                 <div style="display: flex; align-items: center; justify-content: space-between; background: var(--bg-hover); padding: 0.75rem 0.9rem; border-radius: 8px;">
                     <div>
-                        <div style="font-size: 0.78rem; color: var(--text-secondary);">Mevcut Odak Serisi</div>
+                        <div style="font-size: 0.78rem; color: var(--text-secondary);">Mevcut Odak Seri</div>
                         <div style="font-size: 1.25rem; font-weight: 800; color: var(--info-color, #3b82f6);">${streak} Gün 🎯</div>
                     </div>
                     <div style="text-align: right;">
@@ -1268,13 +1269,13 @@ export function showContinuityTargetModal(type) {
     } else {
         const focusOverdue = getDailyFocusOverdueSnapshot();
         const focusSources = getFocusSources();
-        const title = '⚙️ Özel Odak Hedef Detayı';
+        const title = '⚙️ Odak Seri Hedef Detayı';
         const html = `
             <div style="font-size: 0.88rem; color: var(--text-primary); text-align: left; display: flex; flex-direction: column; gap: 0.85rem;">
                 <div style="background: var(--bg-hover); padding: 0.75rem 0.9rem; border-radius: 8px; border-left: 3px solid var(--info-color, #3b82f6);">
                     <strong style="color: var(--info-color, #3b82f6); font-size: 0.9rem;">Seçili Kaynak Vadesi: ${focusOverdue} Soru (${focusSources.length} Kaynak)</strong>
                     <p style="margin: 0.25rem 0 0 0; color: var(--text-secondary); font-size: 0.83rem; line-height: 1.45;">
-                        Yalnızca seçtiğiniz özel kaynaklardaki FSRS vadesi gelen sorular günlük hedefe dahil edilir. ⚙️ ikonu üzerinden odaklanmak istediğiniz kaynakları istediğiniz an değiştirebilirsiniz.
+                        Yalnızca seçtiğiniz kaynaklardaki FSRS vadesi gelen sorular günlük hedefe dahil edilir. ⚙️ ikonu üzerinden odaklanmak istediğiniz kaynakları istediğiniz an değiştirebilirsiniz.
                     </p>
                 </div>
             </div>

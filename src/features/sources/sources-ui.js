@@ -28,12 +28,18 @@ export function toggleSource(id) {
     if (window.onSourcesUpdated) window.onSourcesUpdated();
 }
 
+/**
+ * Deleting a source never touches AppState.studyActivity or the freeze tokens:
+ * Genel Seri and Odak Seri are day-keyed histories, so days already earned stay
+ * earned no matter what happens to the library afterwards. The same holds for
+ * archiving (see archive.js) - only future question counting changes.
+ */
 export async function removeSource(id) {
     const source = AppState.sources.find(s => s.id === id);
     if (!source) return;
     if (!await showConfirm(t('confirm_remove_source', { name: '' }))) return;
     const oldName = source.name;
-    
+
     // 1. Purge related stats
     Object.keys(AppState.stats).forEach(key => {
         if (key.startsWith(`${id}_`)) {
@@ -1047,6 +1053,213 @@ function createSourceItemDOM(s, folderId) {
     item.appendChild(actions);
     
     return item;
+}
+
+// Collapse state of the picker lives apart from `collapsedFolders` so folding a
+// folder inside a popup never rearranges the real sources screen behind it.
+const pickerCollapsedFolders = new Set();
+
+/**
+ * Selection-only rendering of the folder/source tree, sharing the visual
+ * language of #sourcesCard (same .folder-header / .source-item classes) but with
+ * every management affordance stripped out: no card header, no drag handles, no
+ * folder edit or source action buttons, no origin path and no stat chips. Rows
+ * do exactly one thing - toggle selection - so a picker can never mutate the
+ * library it is picking from.
+ *
+ * Returns a handle with getSelected(); the caller decides when to persist.
+ */
+export function renderSourcePicker(container, options = {}) {
+    if (!container) return { getSelected: () => [] };
+
+    const { selected = [], max = 3, onChange = null } = options;
+    const sources = liveSources();
+    // Seeded from live sources only: an archived or deleted id can no longer be
+    // shown, so carrying it silently would push the real selection over `max`.
+    // Dropping it here costs nothing - the streak history it produced lives in
+    // studyActivity and is never keyed on the source.
+    const liveIds = new Set(sources.map(s => s.id));
+    const selectedSet = new Set(selected.filter(id => liveIds.has(id)));
+    const getEffectiveFolderId = (s) => s.folderId || UNCATEGORIZED_FOLDER_ID;
+    const pickableCount = () => selectedSet.size;
+
+    const notify = () => {
+        if (typeof onChange === 'function') onChange([...selectedSet]);
+    };
+
+    const toggle = (sourceId) => {
+        if (selectedSet.has(sourceId)) {
+            selectedSet.delete(sourceId);
+        } else {
+            if (pickableCount() >= max) {
+                showToast(`En fazla ${max} kaynak seçebilirsiniz!`);
+                return;
+            }
+            selectedSet.add(sourceId);
+        }
+        render();
+        notify();
+    };
+
+    function buildSourceRow(s) {
+        const row = document.createElement('div');
+        const isSelected = selectedSet.has(s.id);
+        row.className = `source-item${isSelected ? ' active' : ''}`;
+        row.dataset.sourceId = s.id;
+        row.style.position = 'relative';
+        row.style.justifyContent = 'space-between';
+        row.style.cursor = 'pointer';
+        row.style.userSelect = 'none';
+        row.onclick = () => toggle(s.id);
+
+        const info = document.createElement('div');
+        info.style.flex = '1';
+        info.style.minWidth = '0';
+
+        const nameEl = document.createElement('div');
+        nameEl.className = 'truncate';
+        nameEl.style.fontWeight = '600';
+        nameEl.style.fontSize = '0.9rem';
+        nameEl.textContent = s.name || t('untitled_source');
+
+        const metaEl = document.createElement('div');
+        metaEl.style.fontSize = '0.75rem';
+        metaEl.style.color = 'var(--text-secondary)';
+        metaEl.style.marginTop = '2px';
+        metaEl.textContent = t('questions_count', { count: (s.questions || []).length });
+
+        info.appendChild(nameEl);
+        info.appendChild(metaEl);
+
+        // Sits where the source-actions button sits on the real list, so both
+        // screens keep the same right-edge rhythm.
+        const mark = document.createElement('span');
+        mark.style.flexShrink = '0';
+        mark.style.width = '20px';
+        mark.style.height = '20px';
+        mark.style.borderRadius = '50%';
+        mark.style.display = 'flex';
+        mark.style.alignItems = 'center';
+        mark.style.justifyContent = 'center';
+        mark.style.border = `2px solid ${isSelected ? 'var(--primary-color)' : 'var(--border-color)'}`;
+        mark.style.backgroundColor = isSelected ? 'var(--primary-color)' : 'transparent';
+        mark.innerHTML = isSelected
+            ? '<svg viewBox="0 0 24 24" width="12" height="12" fill="none" stroke="#fff" stroke-width="3.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"></polyline></svg>'
+            : '';
+
+        row.appendChild(info);
+        row.appendChild(mark);
+        return row;
+    }
+
+    function render() {
+        container.innerHTML = '';
+
+        if (sources.length === 0) {
+            const empty = document.createElement('div');
+            empty.style.fontSize = '0.82rem';
+            empty.style.color = 'var(--text-secondary)';
+            empty.style.padding = '0.75rem 0.25rem';
+            empty.textContent = 'Henüz ekli kaynak yok.';
+            container.appendChild(empty);
+            return;
+        }
+
+        liveFolders()
+            .slice()
+            .sort((a, b) => (a.order || 0) - (b.order || 0))
+            .forEach(folder => {
+                const folderSources = sources
+                    .filter(s => getEffectiveFolderId(s) === folder.id)
+                    .sort((a, b) => (a.order || 0) - (b.order || 0));
+                if (folderSources.length === 0) return;
+
+                const folderEl = document.createElement('div');
+                folderEl.className = 'folder-container';
+                folderEl.dataset.folderId = folder.id;
+                folderEl.style.marginBottom = '0.85rem';
+
+                const isCollapsed = pickerCollapsedFolders.has(folder.id);
+                const color = folder.color || DEFAULT_FOLDER_COLOR;
+                const isSystemFolder = folder.isSystem || folder.id === UNCATEGORIZED_FOLDER_ID;
+                const folderName = isSystemFolder ? t('uncategorized_folder') : folder.name;
+                const selectedHere = folderSources.filter(s => selectedSet.has(s.id)).length;
+
+                const header = document.createElement('div');
+                header.className = 'folder-header';
+                header.style.position = 'relative';
+                header.style.display = 'flex';
+                header.style.alignItems = 'center';
+                header.style.justifyContent = 'space-between';
+                header.style.padding = '0.5rem';
+                header.style.backgroundColor = 'var(--surface-color)';
+                header.style.border = '1px solid var(--border-color)';
+                header.style.borderLeft = `4px solid ${color}`;
+                header.style.borderRadius = 'var(--radius-md)';
+                header.style.cursor = 'pointer';
+                header.style.marginBottom = '0.5rem';
+                header.onclick = () => {
+                    if (isCollapsed) pickerCollapsedFolders.delete(folder.id);
+                    else pickerCollapsedFolders.add(folder.id);
+                    render();
+                };
+
+                const chevron = isCollapsed
+                    ? '<polyline points="9 18 15 12 9 6"></polyline>'
+                    : '<polyline points="6 9 12 15 18 9"></polyline>';
+
+                const titleDiv = document.createElement('div');
+                titleDiv.style.display = 'flex';
+                titleDiv.style.alignItems = 'center';
+                titleDiv.style.gap = '0.5rem';
+                titleDiv.style.minWidth = '0';
+                titleDiv.innerHTML = `
+                    <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" style="opacity: 0.6;">${chevron}</svg>
+                    <svg viewBox="0 0 24 24" width="18" height="18" fill="${color}" fill-opacity="${selectedHere > 0 ? '0.4' : '0'}" stroke="${color}" stroke-width="2">
+                        <path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"></path>
+                    </svg>
+                `;
+                const nameSpan = document.createElement('span');
+                nameSpan.className = 'truncate';
+                nameSpan.style.fontWeight = '600';
+                nameSpan.style.fontSize = '0.95rem';
+                nameSpan.textContent = folderName;
+                titleDiv.appendChild(nameSpan);
+
+                const countDiv = document.createElement('div');
+                countDiv.style.fontSize = '3.5rem';
+                countDiv.style.fontWeight = '900';
+                countDiv.style.fontFamily = '"Plaster", "Black Ops One", "Rubik Maze", Impact, sans-serif';
+                countDiv.style.color = '#ffffff';
+                countDiv.style.opacity = '0.08';
+                countDiv.style.position = 'absolute';
+                countDiv.style.right = '14px';
+                countDiv.style.top = '50%';
+                countDiv.style.transform = 'translateY(-50%) skewX(-12deg)';
+                countDiv.style.userSelect = 'none';
+                countDiv.style.lineHeight = '1';
+                countDiv.style.pointerEvents = 'none';
+                countDiv.textContent = folderSources.length;
+
+                header.appendChild(titleDiv);
+                header.appendChild(countDiv);
+                folderEl.appendChild(header);
+
+                const listDiv = document.createElement('div');
+                listDiv.className = 'folder-list';
+                listDiv.style.paddingLeft = '1rem';
+                if (isCollapsed) listDiv.style.display = 'none';
+                folderSources.forEach(s => listDiv.appendChild(buildSourceRow(s)));
+
+                folderEl.appendChild(listDiv);
+                container.appendChild(folderEl);
+            });
+    }
+
+    render();
+    notify();
+
+    return { getSelected: () => [...selectedSet] };
 }
 
 export function showFolderManageModal(folder = null) {

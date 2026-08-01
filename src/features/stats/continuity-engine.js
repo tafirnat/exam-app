@@ -45,15 +45,45 @@ export function isFocusActivityRequirementMet(act) {
     return (act.focusQuestionCount || 0) >= req;
 }
 
+/**
+ * The Odak Seri selection. Streak history itself never keys on a source: it
+ * lives day-by-day in AppState.studyActivity, so archiving, deleting or swapping
+ * a source changes only which questions count from tomorrow on - everything
+ * already earned stays earned. Both tracks (Genel and Odak) follow this rule.
+ */
 export function getFocusSources() {
     return AppState.continuityConfig?.focusSources || [];
+}
+
+/**
+ * Selected sources that are still in the live library. A source the user
+ * archived or deleted drops out here (it can contribute no questions) while
+ * getFocusSources keeps the raw selection for display.
+ */
+export function getLiveFocusSources() {
+    const selected = getFocusSources();
+    if (selected.length === 0) return [];
+    const live = new Set((AppState.sources || []).filter(s => !s.archived).map(s => s.id));
+    return selected.filter(id => live.has(id));
+}
+
+/**
+ * Name for a selected source id. Falls back to the snapshot taken when the
+ * selection was saved, so a card describing past streak days stays readable
+ * after the source itself is gone.
+ */
+export function getFocusSourceLabel(sourceId) {
+    const source = (AppState.sources || []).find(s => s.id === sourceId);
+    if (source && source.name) return source.name;
+    const snapshot = AppState.continuityConfig?.focusSourceNames || {};
+    return snapshot[sourceId] || sourceId;
 }
 
 /**
  * Calculates question target distribution for up to 3 selected focus sources.
  * Returns { totalTarget, distribution: { [sourceId]: targetCount } }
  */
-export function calculateFocusTargetDistribution(sourceIds = getFocusSources()) {
+export function calculateFocusTargetDistribution(sourceIds = getLiveFocusSources()) {
     if (!sourceIds || sourceIds.length === 0) {
         return { totalTarget: 15, distribution: {} };
     }
@@ -61,12 +91,21 @@ export function calculateFocusTargetDistribution(sourceIds = getFocusSources()) 
     const selectedSources = sourceIds.slice(0, 3);
     const distribution = {};
 
+    // AppState.questions is only populated in some flows; fall back to the
+    // source records so the 8/7 split is decided on real counts either way.
+    const questionCountOf = (sourceId) => {
+        const flat = (AppState.questions || []).filter(q => q.sourceId === sourceId).length;
+        if (flat > 0) return flat;
+        const source = (AppState.sources || []).find(s => s.id === sourceId);
+        return (source?.questions || []).length;
+    };
+
     if (selectedSources.length === 1) {
         distribution[selectedSources[0]] = 15;
     } else if (selectedSources.length === 2) {
         // Calculate available unlearned counts to assign 8 to the larger source
-        const count0 = (AppState.questions || []).filter(q => q.sourceId === selectedSources[0]).length;
-        const count1 = (AppState.questions || []).filter(q => q.sourceId === selectedSources[1]).length;
+        const count0 = questionCountOf(selectedSources[0]);
+        const count1 = questionCountOf(selectedSources[1]);
 
         if (count0 >= count1) {
             distribution[selectedSources[0]] = 8;
@@ -91,11 +130,13 @@ export function calculateFocusTargetDistribution(sourceIds = getFocusSources()) 
  */
 export function getDailyFocusOverdueSnapshot() {
     const activity = initTodayActivity();
+    // Once the day has a snapshot it is frozen: swapping the selection mid-day
+    // must never move the bar the user is already running at.
     if (activity.focusOverdueSnapshot !== null && activity.focusOverdueSnapshot !== undefined) {
         return activity.focusOverdueSnapshot;
     }
 
-    const focusSources = getFocusSources();
+    const focusSources = getLiveFocusSources();
     if (!focusSources || focusSources.length === 0) {
         activity.focusOverdueSnapshot = 15;
         saveStudyActivity();

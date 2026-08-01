@@ -126,6 +126,8 @@ export const AppState = {
     continuityConfig: safeJSONParse('focus_app_continuity_config', {
         freezeTokens: { total: 2, remaining: 2, weekStart: null },
         focusPools: [],
+        focusSources: [],
+        focusSourceNames: {},
         notificationSettings: { enabled: false, quietHoursStart: "22:00", quietHoursEnd: "08:00", lastNotifiedDate: null }
     }),
     studyActivity: safeJSONParse('focus_app_study_activity', {})
@@ -173,6 +175,8 @@ export function clearLocalStudyData() {
     AppState.continuityConfig = {
         freezeTokens: { total: 2, remaining: 2, weekStart: null },
         focusPools: [],
+        focusSources: [],
+        focusSourceNames: {},
         notificationSettings: { enabled: false, quietHoursStart: "22:00", quietHoursEnd: "08:00", lastNotifiedDate: null }
     };
     AppState.studyActivity = {};
