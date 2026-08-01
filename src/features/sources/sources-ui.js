@@ -1055,10 +1055,6 @@ function createSourceItemDOM(s, folderId) {
     return item;
 }
 
-// Collapse state of the picker lives apart from `collapsedFolders` so folding a
-// folder inside a popup never rearranges the real sources screen behind it.
-const pickerCollapsedFolders = new Set();
-
 /**
  * Selection-only rendering of the folder/source tree, sharing the visual
  * language of #sourcesCard (same .folder-header / .source-item classes) but with
@@ -1072,7 +1068,7 @@ const pickerCollapsedFolders = new Set();
 export function renderSourcePicker(container, options = {}) {
     if (!container) return { getSelected: () => [] };
 
-    const { selected = [], max = 3, onChange = null } = options;
+    const { selected = [], max = 3, onChange = null, startCollapsed = false } = options;
     const sources = liveSources();
     // Seeded from live sources only: an archived or deleted id can no longer be
     // shown, so carrying it silently would push the real selection over `max`.
@@ -1082,6 +1078,14 @@ export function renderSourcePicker(container, options = {}) {
     const selectedSet = new Set(selected.filter(id => liveIds.has(id)));
     const getEffectiveFolderId = (s) => s.folderId || UNCATEGORIZED_FOLDER_ID;
     const pickableCount = () => selectedSet.size;
+
+    // Fold state is per picker instance, never shared with `collapsedFolders`, so
+    // folding inside the popup cannot rearrange the sources screen behind it.
+    // Opening onto a wall of sources buries the folder structure, so the picker
+    // starts folded: the user chooses a folder first, then the sources in it.
+    const pickerCollapsedFolders = new Set(
+        startCollapsed ? sources.map(getEffectiveFolderId) : []
+    );
 
     const notify = () => {
         if (typeof onChange === 'function') onChange([...selectedSet]);
@@ -1226,6 +1230,20 @@ export function renderSourcePicker(container, options = {}) {
                 nameSpan.textContent = folderName;
                 titleDiv.appendChild(nameSpan);
 
+                // A folded folder must still say that a pick lives inside it.
+                if (selectedHere > 0) {
+                    const badge = document.createElement('span');
+                    badge.style.flexShrink = '0';
+                    badge.style.fontSize = '0.68rem';
+                    badge.style.fontWeight = '700';
+                    badge.style.padding = '1px 7px';
+                    badge.style.borderRadius = '999px';
+                    badge.style.color = '#fff';
+                    badge.style.backgroundColor = 'var(--primary-color)';
+                    badge.textContent = `${selectedHere} seçili`;
+                    titleDiv.appendChild(badge);
+                }
+
                 const countDiv = document.createElement('div');
                 countDiv.style.fontSize = '3.5rem';
                 countDiv.style.fontWeight = '900';
@@ -1254,6 +1272,11 @@ export function renderSourcePicker(container, options = {}) {
                 folderEl.appendChild(listDiv);
                 container.appendChild(folderEl);
             });
+
+        // A trailing margin is enough to overflow the scroll box by a pixel and
+        // raise a scrollbar over content that actually fits.
+        const lastFolder = container.lastElementChild;
+        if (lastFolder) lastFolder.style.marginBottom = '0';
     }
 
     render();

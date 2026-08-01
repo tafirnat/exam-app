@@ -368,7 +368,6 @@ function bindFocusModalEvents() {
     const openBtn = document.getElementById('openFocusSourceModalBtn');
     const modal = document.getElementById('focusSourceModal');
     const closeBtn = document.getElementById('focusSourceModalCloseBtn');
-    const saveBtn = document.getElementById('focusSourceModalSaveBtn');
 
     if (openBtn && !openBtn.dataset.bound) {
         openBtn.dataset.bound = 'true';
@@ -383,16 +382,6 @@ function bindFocusModalEvents() {
         closeBtn.addEventListener('click', () => closeFocusSourceModal());
     }
 
-    if (saveBtn && !saveBtn.dataset.bound) {
-        saveBtn.dataset.bound = 'true';
-        saveBtn.addEventListener('click', () => {
-            saveFocusSourceSelection();
-            closeFocusSourceModal();
-            renderFocusSlide();
-            showToast('Odak Seri kaynakları güncellendi');
-        });
-    }
-
     if (modal && !modal.dataset.backdropBound) {
         modal.dataset.backdropBound = 'true';
         modal.addEventListener('click', (e) => {
@@ -401,14 +390,38 @@ function bindFocusModalEvents() {
     }
 }
 
+/**
+ * Closing IS the commit: there is no save button, so whatever is ticked at this
+ * moment becomes the selection. Runs exactly once per open - the handle is
+ * dropped first, so a backdrop click landing after the X button cannot save a
+ * second time.
+ */
 function closeFocusSourceModal() {
     const modal = document.getElementById('focusSourceModal');
     if (modal) modal.style.display = 'none';
-    // Dropping the handle keeps a stale selection from being saved the next time
-    // the popup is opened and dismissed without touching a row.
+
+    const handle = focusPickerHandle;
     focusPickerHandle = null;
+    if (!handle) return;
+
+    const previous = getFocusSources();
+    const selectedIds = handle.getSelected().slice(0, MAX_FOCUS_SOURCES);
+    const changed =
+        previous.length !== selectedIds.length ||
+        selectedIds.some(id => !previous.includes(id));
+
+    saveFocusSourceSelection(selectedIds);
+    renderFocusSlide();
+    if (changed) showToast('Odak Seri kaynakları güncellendi');
 }
 
+/**
+ * Every element on a continuity card owns its own explanation: the ring shows
+ * progress, the overdue line shows how the daily target was derived, the tokens
+ * show freeze rules. The general series guide belongs to the "i" button alone -
+ * the card title and the empty space around the widgets stay inert, so brushing
+ * the card no longer throws the guide over whatever the user was reading.
+ */
 function bindContinuityModalEvents() {
     const cardGlobal = document.getElementById('continuityCard');
     if (cardGlobal && !cardGlobal.dataset.bound) {
@@ -424,17 +437,22 @@ function bindContinuityModalEvents() {
             if (e.target.closest('#continuityTokens')) {
                 e.stopPropagation();
                 showFreezeTokenModal('global');
-            } else if (e.target.closest('#continuityInfoBtn')) {
-                e.stopPropagation();
-                showContinuityInfoModal('global');
-            } else if (e.target.closest('#globalRingContainer') || e.target.closest('#continuityRing') || e.target.closest('#continuityStreakCount') || e.target.closest('.ring-bg')) {
+                return;
+            }
+            if (e.target.closest('#globalRingContainer')) {
                 e.stopPropagation();
                 showContinuityProgressModal('global');
-            } else if (e.target.closest('#continuityOverdueText')) {
+                return;
+            }
+            if (e.target.closest('#continuityOverdueText')) {
                 e.stopPropagation();
                 showContinuityTargetModal('global');
-            } else {
+                return;
+            }
+            if (e.target.closest('#continuityInfoBtn')) {
+                e.stopPropagation();
                 showContinuityInfoModal('global');
+                return;
             }
         });
     }
@@ -458,17 +476,22 @@ function bindContinuityModalEvents() {
             if (e.target.closest('#focusContinuityTokens')) {
                 e.stopPropagation();
                 showFreezeTokenModal('focus');
-            } else if (e.target.closest('#focusContinuityInfoBtn')) {
-                e.stopPropagation();
-                showContinuityInfoModal('focus');
-            } else if (e.target.closest('#focusRingContainer') || e.target.closest('#focusContinuityRing') || e.target.closest('#focusStreakCount') || e.target.closest('.ring-bg')) {
+                return;
+            }
+            if (e.target.closest('#focusRingContainer')) {
                 e.stopPropagation();
                 showContinuityProgressModal('focus');
-            } else if (e.target.closest('#focusContinuityOverdueText')) {
+                return;
+            }
+            if (e.target.closest('#focusContinuityOverdueText')) {
                 e.stopPropagation();
                 showContinuityTargetModal('focus');
-            } else {
+                return;
+            }
+            if (e.target.closest('#focusContinuityInfoBtn')) {
+                e.stopPropagation();
                 showContinuityInfoModal('focus');
+                return;
             }
         });
     }
@@ -494,15 +517,15 @@ function openFocusSourceModal() {
     focusPickerHandle = renderSourcePicker(listEl, {
         selected: getFocusSources(),
         max: MAX_FOCUS_SOURCES,
+        startCollapsed: true,
         onChange: (ids) => updateFocusSelectionCount(ids.length)
     });
 
     modal.style.display = 'flex';
 }
 
-function saveFocusSourceSelection() {
-    if (!focusPickerHandle) return;
-    const selectedIds = focusPickerHandle.getSelected().slice(0, MAX_FOCUS_SOURCES);
+function saveFocusSourceSelection(selectedIds) {
+    if (!Array.isArray(selectedIds)) return;
 
     if (!AppState.continuityConfig) AppState.continuityConfig = {};
     AppState.continuityConfig.focusSources = selectedIds;

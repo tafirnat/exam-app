@@ -8,7 +8,7 @@ import { processJSON, loadFromUrl, loadFromFile, normalizeQuestions, mergeSource
 import { renderSourcesList, showMergeModal, closeAllSourcesModals, showSourceOptionsModal, renderHomeActiveSources } from './features/sources/sources-ui.js';
 import { renderContinuityBlock, showDailyMotivationToast } from './features/stats/continuity-ui.js';
 import { initArchiveUI } from './features/sources/archive.js';
-import { prepareTest, finishTest, prepareRetake } from './features/test/test-engine.js';
+import { prepareTest, finishTest, prepareRetake, buildQuestionPool } from './features/test/test-engine.js';
 import { renderQuestion, handleCheckAnswer, updateIndicators, handleTranslation, handleDifficultyRating, handleFlashcardRating, renderTestResults, handleTtsToggle, getIsAudioPlaying, stopAudio, decorateReadingSections } from './features/test/test-ui.js';
 import { renderStatsList, updateHomeStats, setupStatsEventListeners } from './features/stats/stats-module.js';
 import { openQuestionEditor, closeQuestionEditor } from './features/stats/question-editor.js';
@@ -313,21 +313,7 @@ const initApp = () => {
                 }
             });
 
-            const questions = [];
-            const questionMap = {};
-            AppState.sources.forEach(s => {
-                if (s.active && !s.archived && s.questions) {
-                    s.questions.forEach(q => {
-                        const entry = { ...q, sourceId: s.id };
-                        questions.push(entry);
-                        questionMap[`${s.id}_${q.id}`] = entry;
-                    });
-                }
-            });
-            if (questions.length > 0) {
-                AppState.rawQuestions = questions;
-                AppState.questionMap = questionMap;
-            }
+            buildQuestionPool();
         }
         checkActiveTest();
 
@@ -1661,21 +1647,11 @@ function resumeActiveTest() {
     AppState.shuffledOptionsMap = activeData.shuffledOptionsMap;
     AppState.testTracking = activeData.testTracking;
 
-    // Ensure questionMap is populated (rawQuestions built in DOMContentLoaded)
-    if (AppState.rawQuestions.length === 0) {
-        const questions = [];
-        const questionMap = {};
-        AppState.sources.forEach(s => {
-            if (s.active && !s.archived && s.questions) {
-                s.questions.forEach(q => {
-                    const entry = { ...q, sourceId: s.id };
-                    questions.push(entry);
-                    questionMap[`${s.id}_${q.id}`] = entry;
-                });
-            }
-        });
-        AppState.rawQuestions = questions;
-        AppState.questionMap = questionMap;
+    // A streak run is drawn from the whole library, so its ids may point at
+    // sources that are not currently active. buildQuestionPool always maps every
+    // live source, which is what makes those ids resolvable on the way back in.
+    if (AppState.rawQuestions.length === 0 || activeData.testTracking?.mode === 'streak') {
+        buildQuestionPool({ scope: activeData.testTracking?.mode === 'streak' ? 'all' : 'active' });
     }
 
     switchView('test');

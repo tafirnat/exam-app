@@ -90,6 +90,46 @@ function markArchived(source, folder) {
     source.folderId = null;
 }
 
+/**
+ * An archived source is out of circulation, so the FSRS clock must not keep
+ * running on its questions: a source parked for six months would otherwise come
+ * back with every question massively overdue and bury the daily target.
+ *
+ * Restoring shifts every review date forward by exactly the time spent in the
+ * archive. Shifting lastReview (rather than storing a remaining-days figure)
+ * preserves the whole retrievability curve, not just the moment a question falls
+ * due - and the streak run orders questions by R, so the curve is what matters.
+ * A question that was already overdue on the way in comes back exactly as
+ * overdue as it went, never worse.
+ *
+ * Questions cannot be reviewed while their source is archived, so one shift per
+ * restore is correct even across repeated archive/restore cycles: a question
+ * reviewed between two episodes only ever sees the second one.
+ *
+ * Returns how many stat records moved, so the caller knows whether to persist.
+ */
+export function thawStatsOnRestore(source) {
+    const archivedAt = Number(source?.archivedAt);
+    if (!Number.isFinite(archivedAt) || archivedAt <= 0) return 0;
+
+    const now = nowTs();
+    const delta = now - archivedAt;
+    if (delta <= 0) return 0;
+
+    let shifted = 0;
+    (source.questions || []).forEach(q => {
+        const stat = AppState.stats[`${source.id}_${q.id}`];
+        if (!stat || !stat.lastReview) return;
+        const reviewedAt = new Date(stat.lastReview).getTime();
+        // A corrupt date must be left alone: NaN here would make
+        // calculateRetrievability return NaN and drop the question out of FSRS.
+        if (!Number.isFinite(reviewedAt) || reviewedAt <= 0) return;
+        stat.lastReview = new Date(Math.min(now, reviewedAt + delta)).toISOString();
+        shifted++;
+    });
+    return shifted;
+}
+
 export async function archiveSource(sourceId) {
     const source = AppState.sources.find(s => s.id === sourceId);
     if (!source || source.archived) return false;
@@ -208,6 +248,7 @@ export async function restoreSource(sourceId) {
     const folder = resolveTargetFolder(source);
     source.folderId = folder ? folder.id : null;
     source.order = AppState.sources.filter(s => !s.archived && (s.folderId || null) === (source.folderId || null)).length;
+    const thawed = thawStatsOnRestore(source);
     source.archived = false;
     source.updatedAt = nowTs();
     delete source.archivedAt;
@@ -216,6 +257,7 @@ export async function restoreSource(sourceId) {
     await dropFromRemote([sourceId]);
 
     saveSources();
+    if (thawed) saveStats();
     renderSourcesList();
     if (window.onSourcesUpdated) window.onSourcesUpdated();
     showToast(folder
@@ -240,9 +282,14 @@ export async function restoreArchivedFolder(folderId) {
     delete folder.archivedAt;
     folder.updatedAt = nowTs();
 
+    // Thawing lives inside this loop, next to the archivedAt it consumes: a
+    // separate pass would leave sources thawed but still archived if the restore
+    // aborted midway, and the next attempt would shift them a second time.
+    let thawed = 0;
     members.forEach((s, i) => {
         s.folderId = folderId;
         s.order = i;
+        thawed += thawStatsOnRestore(s);
         s.archived = false;
         s.updatedAt = nowTs();
         delete s.archivedAt;
@@ -253,6 +300,7 @@ export async function restoreArchivedFolder(folderId) {
 
     saveFolders();
     saveSources();
+    if (thawed) saveStats();
     renderSourcesList();
     if (window.onSourcesUpdated) window.onSourcesUpdated();
     showToast(t('archive_restored_folder_bulk', { name: folder.name, count: members.length }));

@@ -14,18 +14,38 @@ export function calculateRetrievability(stability, lastReviewDate) {
 }
 
 /**
- * Builds rawQuestions and questionMap from all active sources.
+ * Builds the selection pool and the composite-id lookup table.
  * Always call this before starting or resuming a test to ensure lookups are stable.
+ *
+ * The two serve different jobs and deliberately have different widths:
+ *
+ * - `rawQuestions` is what a test is drawn FROM, so it honours `scope`:
+ *   'active' keeps the manual test flow unchanged, 'all' backs the streak run,
+ *   which is source-independent by design.
+ * - `questionMap` is only ever read as `questionMap[compositeId]`, so it always
+ *   covers every live source. Keeping it narrow bought nothing and broke resume:
+ *   a streak test spanning a currently inactive source came back from
+ *   "Devam Et" with unresolvable ids.
+ *
+ * Archived sources are in neither: their questions are offloaded and their FSRS
+ * clock is frozen (see thawStatsOnRestore in archive.js).
  */
-export function buildQuestionPool() {
+export function buildQuestionPool(options = {}) {
+    const { scope = 'active' } = options;
+
     const rawQuestions = [];
-    AppState.sources.forEach(s => {
-        if (s.active && !s.archived && s.questions) {
-            s.questions.forEach(q => rawQuestions.push({ ...q, sourceId: s.id }));
-        }
-    });
     const questionMap = {};
-    rawQuestions.forEach(q => { questionMap[`${q.sourceId}_${q.id}`] = q; });
+
+    AppState.sources.forEach(s => {
+        if (s.archived || !s.questions) return;
+        const inScope = scope === 'all' || s.active;
+        s.questions.forEach(q => {
+            const entry = { ...q, sourceId: s.id };
+            questionMap[`${s.id}_${q.id}`] = entry;
+            if (inScope) rawQuestions.push(entry);
+        });
+    });
+
     AppState.rawQuestions = rawQuestions;
     AppState.questionMap = questionMap;
     return rawQuestions;

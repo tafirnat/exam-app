@@ -82,6 +82,34 @@ test('picker renders folders and source rows but no management controls', () => 
     assert.equal(container.querySelectorAll('[draggable="true"]').length, 0);
 });
 
+test('startCollapsed folds every folder and still flags where picks live', () => {
+    const container = makeContainer();
+    renderSourcePicker(container, { selected: ['srcB'], max: 3, startCollapsed: true });
+
+    const lists = [...container.querySelectorAll('.folder-list')];
+    assert.equal(lists.length, 2);
+    assert.ok(lists.every(el => el.style.display === 'none'), 'all folders should start folded');
+
+    // The folded folder holding srcB advertises the selection.
+    const badges = [...container.querySelectorAll('.folder-header')]
+        .map(el => el.textContent.replace(/\s+/g, ' ').trim())
+        .filter(txt => txt.includes('seçili'));
+    assert.equal(badges.length, 1);
+    assert.match(badges[0], /^Dersler1 seçili/);
+});
+
+test('expanding a folder reveals its rows without touching the others', () => {
+    const container = makeContainer();
+    renderSourcePicker(container, { selected: [], max: 3, startCollapsed: true });
+
+    container.querySelector('[data-folder-id="f1"] .folder-header').click();
+
+    const f1 = container.querySelector('[data-folder-id="f1"] .folder-list');
+    const other = container.querySelector('[data-folder-id="uncategorized-folder"] .folder-list');
+    assert.notEqual(f1.style.display, 'none');
+    assert.equal(other.style.display, 'none');
+});
+
 test('picker marks pre-selected sources as active', () => {
     const container = makeContainer();
     const handle = renderSourcePicker(container, { selected: ['srcB'], max: 3 });

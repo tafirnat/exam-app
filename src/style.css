@@ -5820,3 +5820,24 @@ body.dnd-active {
         transform: scale(1) translateY(0);
     }
 }
+
+/* Home view side-by-side charts grid layout for desktop */
+.home-charts-grid {
+    display: grid;
+    grid-template-columns: 1fr;
+    gap: 1rem;
+    margin-top: 1rem;
+}
+
+@media (min-width: 768px) {
+    .home-charts-grid {
+        grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
+    }
+}
+
+.home-charts-grid > .card {
+    margin-top: 0 !important;
+    margin-bottom: 0 !important;
+    height: 100%;
+    box-sizing: border-box;
+}
