@@ -20,6 +20,7 @@ import { buildQuestionPool } from '../test/test-engine.js';
 import { buildStreakRun, prepareStreakRun, resolveStreakCount } from './streak-run.js';
 import { renderSourcePicker } from '../sources/sources-ui.js';
 import { showToast, showAlert } from '../../core/utils.js';
+import { t } from '../../core/i18n.js';
 
 let carouselTimer = null;
 let currentSlideIndex = 0;
@@ -923,11 +924,11 @@ function renderActivityCharts() {
     });
 
     const diffData = [
-        { label: 'Kolay', count: diffCounts.easy, color: '#22c55e' },
-        { label: 'Orta', count: diffCounts.medium, color: '#eab308' },
-        { label: 'Zor', count: diffCounts.hard, color: '#f97316' },
-        { label: 'Çok Zor', count: diffCounts.veryHard, color: '#ef4444' },
-        { label: 'Çözülmedi', count: diffCounts.unsolved, color: 'var(--text-secondary)' }
+        { label: t('difficulty_easy'), count: diffCounts.easy, color: '#22c55e' },
+        { label: t('difficulty_medium'), count: diffCounts.medium, color: '#eab308' },
+        { label: t('difficulty_hard'), count: diffCounts.hard, color: '#f97316' },
+        { label: t('difficulty_very_hard'), count: diffCounts.veryHard, color: '#ef4444' },
+        { label: t('stat_not_solved'), count: diffCounts.unsolved, color: 'var(--text-secondary)' }
     ];
 
     let currentDegree = 0;
