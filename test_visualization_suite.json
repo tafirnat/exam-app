@@ -87,7 +87,7 @@
       "tags": ["css", "orta"],
       "difficulty": 6.0,
       "content": {
-        "text": "CSS Grid yerleşiminde sütunları esnek 2 eşit parçaya bölmek için `grid-template-columns: {{repeat(2, 1fr)}}` kullanılır."
+        "text": "CSS Grid yerleşiminde sütunları esnek 2 eşit parçaya bölmek için `grid-template-columns:` {{repeat(2, 1fr)}} kullanılır."
       },
       "answer": {
         "explanation": "`1fr` esnek kesirli birim anlamına gelir."
@@ -309,7 +309,7 @@
           "tags": ["css", "orta"],
           "difficulty": 6.0,
           "content": {
-            "text": "CSS Grid yerleşiminde sütunları esnek 2 eşit parçaya bölmek için `grid-template-columns: {{repeat(2, 1fr)}}` kullanılır."
+            "text": "CSS Grid yerleşiminde sütunları esnek 2 eşit parçaya bölmek için `grid-template-columns:` {{repeat(2, 1fr)}} kullanılır."
           },
           "answer": {
             "explanation": "`1fr` esnek kesirli birim anlamına gelir."
