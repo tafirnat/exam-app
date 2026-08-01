@@ -164,11 +164,10 @@ let tokenGradientSeq = 0;
 function createTokenSvg(tokenIndex, active) {
     const svg = document.createElementNS('http://www.w3.org/2000/svg', 'svg');
     svg.setAttribute('viewBox', '0 0 1800 1800');
-    svg.setAttribute('width', '20');
-    svg.setAttribute('height', '20');
+    svg.setAttribute('width', '24');
+    svg.setAttribute('height', '24');
     svg.setAttribute('data-token-index', tokenIndex);
-    svg.style.flexShrink = '0';
-    svg.style.transition = 'all 0.2s cubic-bezier(0.16, 1, 0.3, 1)';
+    svg.className = 'continuity-icon-btn continuity-token-icon';
     svg.style.cursor = 'pointer';
 
     // 1st snowflake (tokenIndex 0): Luminous ice blue
@@ -391,7 +390,7 @@ function bindContinuityModalEvents() {
     if (cardGlobal && !cardGlobal.dataset.bound) {
         cardGlobal.dataset.bound = 'true';
         cardGlobal.addEventListener('click', (e) => {
-            const tokenSvg = e.target.closest('svg[data-token-index]');
+            const tokenSvg = e.target.closest('[data-token-index]');
             if (tokenSvg) {
                 e.stopPropagation();
                 const tokenIndex = parseInt(tokenSvg.getAttribute('data-token-index'), 10);
@@ -425,7 +424,7 @@ function bindContinuityModalEvents() {
                 openFocusSourceModal();
                 return;
             }
-            const tokenSvg = e.target.closest('svg[data-token-index]');
+            const tokenSvg = e.target.closest('[data-token-index]');
             if (tokenSvg) {
                 e.stopPropagation();
                 const tokenIndex = parseInt(tokenSvg.getAttribute('data-token-index'), 10);

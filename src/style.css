@@ -5589,22 +5589,35 @@ body.dnd-active {
     opacity: 1;
 }
 
-/* Continuity Icon Button (Pure Icon, No Border/Background) */
+/* Continuity Icon Row Container & Standardized Icon Buttons */
+.continuity-icon-row {
+    display: inline-flex;
+    align-items: center;
+    justify-content: flex-end;
+    gap: 0.65rem;
+    height: 26px;
+    flex-shrink: 0;
+}
+
 .continuity-icon-btn {
     display: inline-flex;
     align-items: center;
     justify-content: center;
-    padding: 2px 4px;
+    width: 26px;
+    height: 26px;
+    padding: 0;
+    margin: 0;
     background: transparent !important;
     border: none !important;
     box-shadow: none !important;
     outline: none !important;
     color: var(--text-secondary);
     cursor: pointer;
-    transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+    transition: transform 0.18s cubic-bezier(0.16, 1, 0.3, 1), opacity 0.15s ease, filter 0.15s ease, color 0.15s ease;
     position: relative;
     touch-action: manipulation;
     flex-shrink: 0;
+    box-sizing: border-box;
 }
 
 /* Touch hit area expansion for mobile (fat-finger friendly) */
@@ -5623,7 +5636,7 @@ body.dnd-active {
     background: transparent !important;
     border: none !important;
     box-shadow: none !important;
-    transform: scale(1.15);
+    transform: scale(1.18);
 }
 
 /* Pure Italic 'i' Info Icon (No Circle) */
@@ -5631,9 +5644,13 @@ body.dnd-active {
     font-family: 'Georgia', 'Times New Roman', serif;
     font-style: italic;
     font-weight: 700;
-    font-size: 1.15rem;
+    font-size: 1.1rem;
     line-height: 1;
-    display: inline-block;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 18px;
+    height: 18px;
     color: var(--text-secondary);
     transition: color 0.15s ease, transform 0.15s ease;
     user-select: none;
@@ -5643,12 +5660,14 @@ body.dnd-active {
     color: var(--primary-color);
 }
 
-/* Interactive Freeze Tokens Top-Right (Pure Icon View, No Button Box) */
+/* Interactive Freeze Tokens Top-Right (Standardized to 26x26 container) */
 #continuityTokens,
 #focusContinuityTokens {
     display: inline-flex;
     align-items: center;
+    justify-content: flex-end;
     gap: 0.65rem;
+    height: 26px;
     cursor: pointer;
     background: transparent !important;
     border: none !important;
@@ -5659,10 +5678,14 @@ body.dnd-active {
 
 #continuityTokens svg,
 #focusContinuityTokens svg {
-    position: relative;
-    padding: 4px;
-    margin: -4px;
-    border-radius: 50%;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 26px;
+    height: 26px;
+    padding: 0;
+    margin: 0;
+    box-sizing: border-box;
     touch-action: manipulation;
     transition: transform 0.18s cubic-bezier(0.16, 1, 0.3, 1), opacity 0.15s ease, filter 0.15s ease;
 }
@@ -5671,7 +5694,7 @@ body.dnd-active {
 #focusContinuityTokens svg:hover,
 #continuityTokens svg:active,
 #focusContinuityTokens svg:active {
-    transform: scale(1.22);
+    transform: scale(1.18);
 }
 
 /* Info & Modal Overlay Base Styling */
