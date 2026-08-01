@@ -6313,9 +6313,9 @@ body.dnd-active {
     color: #e2e8f0;
     font-style: italic;
     text-shadow: 0 1px 3px #000, 0 1px 5px rgba(0,0,0,0.9);
-    max-width: 70%;
+    max-width: 65%;
     display: inline-block;
-    transform: translate(-75px, 25px);
+    transform: translate(-50px, 18px);
     white-space: nowrap;
     overflow: hidden;
     text-overflow: ellipsis;
@@ -6324,8 +6324,7 @@ body.dnd-active {
 
 @media (max-width: 600px) {
     .motivation-artwork-tag {
-        max-width: 85%;
-        transform: translate(-75px, 25px);
+        max-width: 70%;
+        transform: translate(-46px, 16px);
     }
-}
 }
