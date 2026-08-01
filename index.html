@@ -509,8 +509,8 @@ ${m}`);n(S?"replace":"merge");return}const u=l.innerText,p=c.innerText;a.innerTe
             </svg>
             <div>${f("no_questions_available")}</div>
         </div>`;return}const I=t.trim().startsWith("#");S.forEach((h,b)=>{var P,R;const v=`${h.sourceId}_${h.id}`,x=s.stats[v]||{correct:0,wrong:0,difficulty:5},L=x.correct+x.wrong,z=L>0?Math.round(x.correct/L*100):0,q=document.createElement("div");q.className="stats-list-item";const D=((P=h.content)==null?void 0:P.text)||h.text||f("untitled_question"),C=Z(ur(D)),A=h.sourceName?Z(h.sourceName):"",O=!!x.learned,N=x.streak||0,M=N>0?"🔥":N<0?"❄️":"",H=Math.abs(N),G=Ie(x.stability,x.lastReview),F=G>0?Math.round(G*100):null,_=h.tags||((R=h.content)==null?void 0:R.tags)||h.tag||[],w=Array.isArray(_)?_:_?[_]:[],T=w.length>0?`
-            <div class="stats-item-tags" style="display: inline-flex; align-items: center; gap: 4px; flex-wrap: wrap;">
-                ${w.map(U=>`<span class="stats-tag-pill" data-tag="${Z(U)}">🏷️ ${Z(U)}</span>`).join("")}
+            <div class="stats-item-tags" style="display: flex; align-items: center; gap: 4px; flex-wrap: wrap; margin-top: 4px;">
+                ${w.map(U=>`<span class="stats-tag-pill" data-tag="${Z(U)}">#${Z(U)}</span>`).join("")}
             </div>
         `:"";q.innerHTML=`
             <div style="flex: 1; min-width: 0;">
@@ -518,13 +518,13 @@ ${m}`);n(S?"replace":"merge");return}const u=l.innerText,p=c.innerText;a.innerTe
                 <div style="display: flex; align-items: center; gap: 6px; flex-wrap: wrap; margin-top: 2px;">
                     ${!I&&A?`<div class="stats-item-source">${A}</div>`:""}
                     ${I?"":`<div class="stats-item-ref">#${h.originalIndex}</div>`}
-                    ${T}
                     ${H>1?`<span class="stats-item-streak" title="Streak: ${N}" style="font-size: 0.72rem; line-height: 1;">${M}${H}</span>`:""}
                     ${F!==null?`<span class="stats-item-retrievability ${G<=.9?"overdue":""}" title="Retrievability: ${F}%" style="font-size: 0.72rem; line-height: 1;">🧠 ${F}%</span>`:""}
                     ${x.starred?'<span class="stats-indicator starred"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"></polygon></svg></span>':""}
                     ${x.flagged?'<span class="stats-indicator flagged"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"><path d="M4 15s1-1 4-1 5 2 8 2 4-1 4-1V3s-1 1-4 1-5-2-8-2-4 1-4 1z"></path><line x1="4" y1="22" x2="4" y2="15"></line></svg></span>':""}
                     ${x.note&&x.note.trim()!==""?'<span class="stats-indicator noted"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"></path></svg></span>':""}
                 </div>
+                ${T}
             </div>
             <div class="stats-item-meta">
                 <span>✓${x.correct} ✗${x.wrong} (${z}%)</span>
