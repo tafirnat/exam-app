@@ -88,7 +88,7 @@ function renderGlobalSlide(liveQ) {
 
     tokensEl.title = `Kalan Dondurma: 0/2 (Test Modu: Pasif)\n` +
         `• 1. Hediye Jeton (Buz Mavisi Kar Tanesi): Pasif\n` +
-        `• 2. Joker Jeton (Kızıl / Alev Renginde Kar Tanesi): Pasif`;
+        `• 2. Joker Jeton (Kızıl Kar Tanesi): Pasif`;
 
     for (let i = 0; i < 2; i++) {
         const isActive = false;
@@ -148,7 +148,7 @@ function renderFocusSlide() {
 
     tokensEl.title = `Kalan Odak Dondurma: 2/2 (Test Modu: Aktif)\n` +
         `• 1. Odak Hediye Jetonu (Buz Mavisi Kar Tanesi): Aktif\n` +
-        `• 2. Joker Odak Jetonu (Kızıl / Alev Renginde Kar Tanesi): Aktif`;
+        `• 2. Joker Odak Jetonu (Kızıl Kar Tanesi): Aktif`;
 
     for (let i = 0; i < 2; i++) {
         const isActive = true;
@@ -172,12 +172,12 @@ function createTokenSvg(tokenIndex, active) {
     svg.style.cursor = 'pointer';
 
     // 1st snowflake (tokenIndex 0): Luminous ice blue
-    // 2nd snowflake (tokenIndex 1): Crimson / Flame red (Kızıl, alev rengi)
+    // 2nd snowflake (tokenIndex 1): Crimson red (Kızıl Kar Tanesi)
     let iceColor, tipColor, tokenLabel;
     if (tokenIndex === 1) {
         iceColor = active ? '#ef4444' : 'var(--text-secondary)';
         tipColor = active ? '#f97316' : 'var(--text-secondary)';
-        tokenLabel = `2. Joker Jeton (Kızıl / Alev Renginde Kar Tanesi) — ${active ? 'Aktif' : 'Pasif'}`;
+        tokenLabel = `2. Joker Jeton (Kızıl Kar Tanesi) — ${active ? 'Aktif' : 'Pasif'}`;
     } else {
         iceColor = active ? '#7dd3fc' : 'var(--text-secondary)';
         tipColor = iceColor;
@@ -989,9 +989,9 @@ export function showSingleTokenModal(type, tokenIndex) {
         `;
         openInfoPopupModal(title, html);
     } else {
-        // 2nd Snowflake: Kızıl / Alev Renginde Joker Kar Tanesi
+        // 2nd Snowflake: Kızıl Kar Tanesi (Joker Jeton)
         const active = isGlobal ? false : true;
-        const title = `🔥 2. Joker Kar Tanesi Jetonu (Kızıl / Alev)`;
+        const title = `<span style="color: #ef4444;">❄️</span> 2. Joker Kar Tanesi Jetonu (Kızıl Kar Tanesi)`;
         const html = `
             <div style="font-size: 0.88rem; color: var(--text-primary); text-align: left; display: flex; flex-direction: column; gap: 0.85rem;">
                 <div style="display: flex; align-items: center; justify-content: space-between; background: rgba(239, 68, 68, 0.08); padding: 0.75rem 0.9rem; border-radius: 8px; border-left: 3px solid #ef4444;">
@@ -1006,7 +1006,7 @@ export function showSingleTokenModal(type, tokenIndex) {
 
                 <div style="font-size: 0.83rem; color: var(--text-secondary); line-height: 1.5;">
                     <p style="margin: 0 0 0.5rem 0;">
-                        Bu kar tanesi jetonu premium bir <strong>Joker Jeton</strong>'dur. Kızıl ve alev rengi gölgesiyle öne çıkar. Hem Genel hem de Odak serileriniz için ortak çapraz koruma sağlar!
+                        Bu kar tanesi jetonu premium bir <strong>Joker Jeton</strong>'dur. Kızıl rengiyle öne çıkar. Hem Genel hem de Odak serileriniz için ortak çapraz koruma sağlar!
                     </p>
                     <ul style="margin: 0; padding-left: 1.1rem; line-height: 1.6;">
                         <li><strong>Kazanım Şartı:</strong> ${isGlobal ? 'Son 14 günde kesintisiz seri + %80 FSRS başarısı' : 'Son 14 günde kesintisiz Odak Serisi'} tamamlanarak elde edilir.</li>
@@ -1057,7 +1057,7 @@ export function showContinuityInfoModal(type) {
                         <div>
                             <strong style="font-size: 0.88rem; color: var(--text-primary);">Kar Tanesi & Joker Jetonlar</strong>
                             <p style="margin: 0.15rem 0 0 0; font-size: 0.83rem; color: var(--text-secondary); line-height: 1.45;">
-                                1. Jeton (<strong style="color:#7dd3fc;">Buz Mavisi Kar Tanesi</strong>) standart dondurma hakkıdır. 2. Jeton ise <strong>Joker Jeton</strong> olup <strong style="color:#ef4444;">Kızıl / Alev Renginde Kar Tanesi</strong> tasarımıyla hem Genel hem Odak serileriniz için ortak çapraz koruma sağlar.
+                                1. Jeton (<strong style="color:#7dd3fc;">Buz Mavisi Kar Tanesi</strong>) standart dondurma hakkıdır. 2. Jeton ise <strong>Joker Jeton</strong> olup <strong style="color:#ef4444;">Kızıl Kar Tanesi</strong> tasarımıyla hem Genel hem Odak serileriniz için ortak çapraz koruma sağlar.
                             </p>
                         </div>
                     </div>
@@ -1102,7 +1102,7 @@ export function showContinuityInfoModal(type) {
                         <div>
                             <strong style="font-size: 0.88rem; color: var(--text-primary);">Odak Kar Tanesi & Joker Jeton</strong>
                             <p style="margin: 0.15rem 0 0 0; font-size: 0.83rem; color: var(--text-secondary); line-height: 1.45;">
-                                1. Odak Jetonu (<strong style="color:#7dd3fc;">Buz Mavisi Kar Tanesi</strong>) seçili kaynaklarınız için dondurma sağlarken, 2. Odak Jetonu (<strong style="color:#ef4444;">Joker — Kızıl / Alev Renginde Kar Tanesi</strong>) hem Odak hem de Genel serilerinizde çapraz joker olarak kullanılabilir.
+                                1. Odak Jetonu (<strong style="color:#7dd3fc;">Buz Mavisi Kar Tanesi</strong>) seçili kaynaklarınız için dondurma sağlarken, 2. Odak Jetonu (<strong style="color:#ef4444;">Joker — Kızıl Kar Tanesi</strong>) hem Odak hem de Genel serilerinizde çapraz joker olarak kullanılabilir.
                             </p>
                         </div>
                     </div>
@@ -1133,9 +1133,9 @@ export function showFreezeTokenModal(type) {
                 </div>
 
                 <div style="background: rgba(239, 68, 68, 0.08); padding: 0.75rem 0.9rem; border-radius: 8px; border-left: 3px solid #ef4444;">
-                    <strong style="color: #ef4444; font-size: 0.92rem;">🔥 2. Jeton (Joker Jeton - Kızıl/Alev Renginde Kar Tanesi)</strong>
+                    <strong style="color: #ef4444; font-size: 0.92rem;"><span style="color: #ef4444;">❄️</span> 2. Jeton (Joker Jeton - Kızıl Kar Tanesi)</strong>
                     <p style="margin: 0.25rem 0 0 0; color: var(--text-secondary); line-height: 1.45;">
-                        İkinci jeton bir <strong>Joker Jeton</strong>'dur. Kızıl ve alev rengindeki vurgusuyla öne çıkar. Hem normal serinizde hem de özel odak serinizde seri koruma hakkı olarak çapraz kullanılabilir!
+                        İkinci jeton bir <strong>Joker Jeton</strong>'dur. Kızıl rengiyle öne çıkar. Hem normal serinizde hem de özel odak serinizde seri koruma hakkı olarak çapraz kullanılabilir!
                     </p>
                 </div>
 
@@ -1145,7 +1145,7 @@ export function showFreezeTokenModal(type) {
                     </strong>
                     <ul style="margin: 0; padding-left: 1.2rem; color: var(--text-secondary); line-height: 1.5; font-size: 0.84rem;">
                         <li><strong>1. Jeton (Buz Mavisi Kar Tanesi):</strong> Başlangıçta 1 defalık hediye (Tüketilirse: 7 gün seri + %70 FSRS başarısı ile tekrar kazanılır).</li>
-                        <li><strong>2. Jeton (Joker - Kızıl / Alev Renginde Kar Tanesi):</strong> Son 14 günde kesintisiz seri + %80 FSRS başarısı ile kazanılır.</li>
+                        <li><strong>2. Jeton (Joker - Kızıl Kar Tanesi):</strong> Son 14 günde kesintisiz seri + %80 FSRS başarısı ile kazanılır.</li>
                     </ul>
                 </div>
             </div>
@@ -1163,9 +1163,9 @@ export function showFreezeTokenModal(type) {
                 </div>
 
                 <div style="background: rgba(239, 68, 68, 0.08); padding: 0.75rem 0.9rem; border-radius: 8px; border-left: 3px solid #ef4444;">
-                    <strong style="color: #ef4444; font-size: 0.92rem;">🔥 2. Odak Jetonu (Joker Jeton - Kızıl / Alev Renginde Kar Tanesi)</strong>
+                    <strong style="color: #ef4444; font-size: 0.92rem;"><span style="color: #ef4444;">❄️</span> 2. Odak Jetonu (Joker Jeton - Kızıl Kar Tanesi)</strong>
                     <p style="margin: 0.25rem 0 0 0; color: var(--text-secondary); line-height: 1.45;">
-                        İkinci odak jetonunuz bir <strong>Joker Jeton</strong>'dur. Kızıl gövdesi ve alev renkli uçlarıyla ilk jetondan ayrılır. Hem özel odak serinizde hem de normal serinizde ortak seri koruma hakkı olarak çapraz kullanılabilir!
+                        İkinci odak jetonunuz bir <strong>Joker Jeton</strong>'dur. Kızıl rengiyle ilk jetondan ayrılır. Hem özel odak serinizde hem de normal serinizde ortak seri koruma hakkı olarak çapraz kullanılabilir!
                     </p>
                 </div>
 
@@ -1175,7 +1175,7 @@ export function showFreezeTokenModal(type) {
                     </strong>
                     <ul style="margin: 0; padding-left: 1.2rem; color: var(--text-secondary); line-height: 1.5; font-size: 0.84rem;">
                         <li><strong>1. Jeton (Buz Mavisi Kar Tanesi):</strong> Başlangıçta 1 defalık hediye (Tüketilirse: 7 gün kesintisiz Odak Serisi ile tekrar kazanılır).</li>
-                        <li><strong>2. Jeton (Joker - Kızıl / Alev Renginde Kar Tanesi):</strong> Son 14 günde kesintisiz Odak Serisi tamamlanarak kazanılır.</li>
+                        <li><strong>2. Jeton (Joker - Kızıl Kar Tanesi):</strong> Son 14 günde kesintisiz Odak Serisi tamamlanarak kazanılır.</li>
                     </ul>
                 </div>
             </div>
