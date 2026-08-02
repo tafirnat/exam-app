@@ -1003,7 +1003,7 @@ window.syncTextInput = (val) => {
     const unansweredList = document.querySelector('.unanswered-list');
     if (unansweredList) {
         unansweredList.innerHTML = unansweredIndices.map(idx => `
-            <div class="unanswered-item" onclick="window.goToQuestion(${idx})" title="${AppState.questionMap[AppState.currentTest[idx]]?.text?.substring(0, 50)}...">
+            <div class="unanswered-item" onclick="window.goToQuestion(${idx})" title="${escapeHTML((AppState.questionMap[AppState.currentTest[idx]]?.text || '').substring(0, 50))}...">
                 <span class="unanswered-item-num">#${idx + 1}</span>
             </div>
         `).join('');

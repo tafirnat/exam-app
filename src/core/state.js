@@ -1,19 +1,11 @@
 import { detectLanguage, detectTranslationTarget } from './i18n.js';
+import { persist, persistRemove, readJSON, readString, readInt, readFloat } from './storage.js';
 
 /**
  * Safely reads and parses a JSON item from localStorage.
- * Returns fallback value if item is missing or corrupted.
+ * Kept as the historical name; storage.js owns the implementation now.
  */
-export function safeJSONParse(key, fallback) {
-    try {
-        const item = localStorage.getItem(key);
-        if (item === null || item === undefined) return fallback;
-        return JSON.parse(item);
-    } catch (e) {
-        console.warn(`[AppState] Corrupted JSON in localStorage key "${key}", falling back.`, e);
-        return fallback;
-    }
-}
+export const safeJSONParse = readJSON;
 
 export const DEFAULT_AI_PROVIDERS = [
     { id: 'google', name: 'Google AI (Search)', url: 'https://www.google.com/search?q={PROMPT}&udm=50', domain: 'google.com' },
@@ -75,7 +67,7 @@ export const AppState = {
             folders.unshift(createUncategorizedFolderRecord());
         }
 
-        try { localStorage.setItem('focus_app_folders', JSON.stringify(folders)); } catch(e){}
+        persist('focus_app_folders', folders);
         return folders;
     })(),
     // Starts empty on a fresh install; main.js fetches the sample for the
@@ -85,7 +77,7 @@ export const AppState = {
         return Array.isArray(sources) ? sources.filter(s => s && s.questions && Array.isArray(s.questions)) : [];
     })(),
     totalStats: safeJSONParse('focus_app_stats_global', {}),
-    currentSourceKey: localStorage.getItem('focus_app_current_source') || null,
+    currentSourceKey: readString('focus_app_current_source') || null,
     examTitle: 'Exam App',
     language: detectLanguage(),
     translationTarget: detectTranslationTarget(),
@@ -98,35 +90,35 @@ export const AppState = {
     activeStatsFilter: 'all',
     activeStatsSortField: 'original', // 'original', 'coeff', 'success', 'wrong'
     activeStatsSortDir: 'asc', // 'asc', 'desc'
-    customAIPrompt: localStorage.getItem('focus_app_custom_ai_prompt') || '',
+    customAIPrompt: readString('focus_app_custom_ai_prompt', '') || '',
     aiProviders: safeJSONParse('focus_app_ai_providers', DEFAULT_AI_PROVIDERS),
     ttsEnabled: safeJSONParse('focus_app_tts_enabled', false),
     ttsAutoplay: safeJSONParse('focus_app_tts_autoplay', false),
-    ttsSpeed: parseFloat(localStorage.getItem('focus_app_tts_speed') ?? '0.5'),
+    ttsSpeed: readFloat('focus_app_tts_speed', 0.5),
     timerStopwatchEnabled: safeJSONParse('focus_app_timer_stopwatch', false),
     timerCountdownEnabled: safeJSONParse('focus_app_timer_countdown', false),
-    timerCountdownLimit: parseInt(localStorage.getItem('focus_app_timer_limit') || '59', 10),
+    timerCountdownLimit: readInt('focus_app_timer_limit', 59),
     timerAutoCheckEnabled: safeJSONParse('focus_app_timer_auto_check', true), // Default to true
     currentTtsVoice: null, // Randomly selected at test start
     navigationSourceView: null, // View to return to from Tag Mode
     activeTagFilter: null, // Currently active tag Filter for stats view
     questionMap: {}, // composite key (sourceId_questionId) → question object
-    githubToken: localStorage.getItem('focus_app_github_token') || null,
-    githubGistId: localStorage.getItem('focus_app_github_gist_id') || null,
+    githubToken: readString('focus_app_github_token') || null,
+    githubGistId: readString('focus_app_github_gist_id') || null,
     githubUser: safeJSONParse('focus_app_github_user', null),
-    lastGithubUser: localStorage.getItem('focus_app_last_github_user') || null,
-    lastSyncTime: parseInt(localStorage.getItem('focus_app_last_sync') || '0', 10),
+    lastGithubUser: readString('focus_app_last_github_user') || null,
+    lastSyncTime: readInt('focus_app_last_sync', 0),
     deletedSourceIds: safeJSONParse('focus_app_deleted_sources', []),
     deletedFolderIds: safeJSONParse('focus_app_deleted_folders', []),
     quickPresets: safeJSONParse('focus_app_quick_presets', []),
     deletedQuickPresetIds: safeJSONParse('focus_app_deleted_quick_presets', []),
     // Timestamp of the last destructive reset on this device (sources/full reset).
-    lastResetTimestamp: parseInt(localStorage.getItem('focus_app_last_reset') || '0', 10),
+    lastResetTimestamp: readInt('focus_app_last_reset', 0),
     // Timestamp of the last progress reset on this device (progress/full reset).
     // Used by mergeSyncData() to prevent stale stats, study activity, streaks
     // and continuity data from a remote Gist overwriting a deliberate clear.
-    lastProgressResetTimestamp: parseInt(localStorage.getItem('focus_app_last_progress_reset') || '0', 10),
-    githubGistUrl: localStorage.getItem('focus_app_github_gist_url') || null,
+    lastProgressResetTimestamp: readInt('focus_app_last_progress_reset', 0),
+    githubGistUrl: readString('focus_app_github_gist_url') || null,
     presetSessions: safeJSONParse('focus_app_preset_sessions', {}),
     activePresetId: null,
     continuityConfig: safeJSONParse('focus_app_continuity_config', {
@@ -282,25 +274,25 @@ export function clearLocalStudyData() {
     // guard in mergeSyncData() fires for stats / activity / continuity as well.
     AppState.lastProgressResetTimestamp = AppState.lastResetTimestamp;
 
-    localStorage.removeItem('focus_app_preset_sessions');
-    localStorage.setItem('focus_app_folders', JSON.stringify(AppState.folders));
-    localStorage.setItem('focus_app_sources', JSON.stringify(AppState.sources));
-    localStorage.removeItem('focus_app_stats_local');
-    localStorage.removeItem('focus_app_stats_global');
-    localStorage.removeItem('focus_app_recent_tests');
-    // Persist tombstones (not removeItem!) so the next sync push carries them
-    localStorage.setItem('focus_app_deleted_sources', JSON.stringify(allDeletedSourceIds));
-    localStorage.setItem('focus_app_deleted_folders', JSON.stringify(allDeletedFolderIds));
-    localStorage.setItem('focus_app_quick_presets', JSON.stringify([]));
-    localStorage.setItem('focus_app_deleted_quick_presets', JSON.stringify(allDeletedPresetIds));
-    localStorage.removeItem('focus_app_current_source');
-    localStorage.removeItem('focus_app_active_test');
-    localStorage.removeItem('focus_app_continuity_config');
-    localStorage.removeItem('focus_app_study_activity');
+    persistRemove('focus_app_preset_sessions');
+    persist('focus_app_folders', AppState.folders);
+    persist('focus_app_sources', AppState.sources);
+    persistRemove('focus_app_stats_local');
+    persistRemove('focus_app_stats_global');
+    persistRemove('focus_app_recent_tests');
+    // Persist tombstones (not remove!) so the next sync push carries them
+    persist('focus_app_deleted_sources', allDeletedSourceIds);
+    persist('focus_app_deleted_folders', allDeletedFolderIds);
+    persist('focus_app_quick_presets', []);
+    persist('focus_app_deleted_quick_presets', allDeletedPresetIds);
+    persistRemove('focus_app_current_source');
+    persistRemove('focus_app_active_test');
+    persistRemove('focus_app_continuity_config');
+    persistRemove('focus_app_study_activity');
     // Clear sample loaded key so the starter sample JSON for active language is auto-loaded on reset
-    localStorage.removeItem(SAMPLE_LOADED_KEY);
-    localStorage.setItem('focus_app_last_reset', AppState.lastResetTimestamp.toString());
-    localStorage.setItem('focus_app_last_progress_reset', AppState.lastProgressResetTimestamp.toString());
+    persistRemove(SAMPLE_LOADED_KEY);
+    persist('focus_app_last_reset', AppState.lastResetTimestamp.toString());
+    persist('focus_app_last_progress_reset', AppState.lastProgressResetTimestamp.toString());
 
     clearActiveTest();
 }
@@ -356,13 +348,13 @@ export function clearProgressData() {
     // pull back stats / activity / continuity data that predates this clear.
     AppState.lastProgressResetTimestamp = Date.now();
 
-    localStorage.removeItem('focus_app_stats_local');
-    localStorage.removeItem('focus_app_stats_global');
-    localStorage.removeItem('focus_app_recent_tests');
-    localStorage.removeItem('focus_app_preset_sessions');
-    localStorage.removeItem('focus_app_study_activity');
-    localStorage.setItem('focus_app_continuity_config', JSON.stringify(AppState.continuityConfig));
-    localStorage.setItem('focus_app_last_progress_reset', AppState.lastProgressResetTimestamp.toString());
+    persistRemove('focus_app_stats_local');
+    persistRemove('focus_app_stats_global');
+    persistRemove('focus_app_recent_tests');
+    persistRemove('focus_app_preset_sessions');
+    persistRemove('focus_app_study_activity');
+    persist('focus_app_continuity_config', AppState.continuityConfig);
+    persist('focus_app_last_progress_reset', AppState.lastProgressResetTimestamp.toString());
     clearActiveTest();
 }
 
@@ -405,23 +397,23 @@ export function clearSourcesData() {
     AppState.presetSessions = {};
     AppState.lastResetTimestamp = Date.now();
 
-    localStorage.removeItem('focus_app_preset_sessions');
-    localStorage.setItem('focus_app_folders', JSON.stringify(AppState.folders));
-    localStorage.setItem('focus_app_sources', JSON.stringify(AppState.sources));
-    localStorage.setItem('focus_app_quick_presets', JSON.stringify([]));
+    persistRemove('focus_app_preset_sessions');
+    persist('focus_app_folders', AppState.folders);
+    persist('focus_app_sources', AppState.sources);
+    persist('focus_app_quick_presets', []);
     // Persist tombstones so the next sync push carries them
-    localStorage.setItem('focus_app_deleted_sources', JSON.stringify(allDeletedSourceIds));
-    localStorage.setItem('focus_app_deleted_folders', JSON.stringify(allDeletedFolderIds));
-    localStorage.setItem('focus_app_deleted_quick_presets', JSON.stringify(allDeletedPresetIds));
-    localStorage.removeItem('focus_app_current_source');
-    localStorage.removeItem(SAMPLE_LOADED_KEY);
-    localStorage.setItem('focus_app_last_reset', AppState.lastResetTimestamp.toString());
+    persist('focus_app_deleted_sources', allDeletedSourceIds);
+    persist('focus_app_deleted_folders', allDeletedFolderIds);
+    persist('focus_app_deleted_quick_presets', allDeletedPresetIds);
+    persistRemove('focus_app_current_source');
+    persistRemove(SAMPLE_LOADED_KEY);
+    persist('focus_app_last_reset', AppState.lastResetTimestamp.toString());
 
     clearActiveTest();
 }
 
 export function savePresetSessions() {
-    localStorage.setItem('focus_app_preset_sessions', JSON.stringify(AppState.presetSessions || {}));
+    persist('focus_app_preset_sessions', AppState.presetSessions || {});
 }
 
 export function savePresetSessionData(presetId, sessionData) {
@@ -453,7 +445,7 @@ export function trackDeletedSource(id) {
     if (!id) return;
     if (!AppState.deletedSourceIds.includes(id)) {
         AppState.deletedSourceIds.push(id);
-        localStorage.setItem('focus_app_deleted_sources', JSON.stringify(AppState.deletedSourceIds));
+        persist('focus_app_deleted_sources', AppState.deletedSourceIds);
     }
 }
 
@@ -461,7 +453,7 @@ export function trackDeletedFolder(id) {
     if (!id) return;
     if (!AppState.deletedFolderIds.includes(id)) {
         AppState.deletedFolderIds.push(id);
-        localStorage.setItem('focus_app_deleted_folders', JSON.stringify(AppState.deletedFolderIds));
+        persist('focus_app_deleted_folders', AppState.deletedFolderIds);
     }
 }
 
@@ -469,71 +461,87 @@ export function trackDeletedQuickPreset(id) {
     if (!id) return;
     if (!AppState.deletedQuickPresetIds.includes(id)) {
         AppState.deletedQuickPresetIds.push(id);
-        localStorage.setItem('focus_app_deleted_quick_presets', JSON.stringify(AppState.deletedQuickPresetIds));
+        persist('focus_app_deleted_quick_presets', AppState.deletedQuickPresetIds);
     }
 }
 
+/* Each save* returns whether the value actually reached disk. A false means the
+   change lives in memory only and will be gone on reload - the Gist push is
+   still scheduled either way, because when local storage is full the remote
+   copy is the user's only way of getting the data back. */
+
 export function saveQuickPresets() {
-    localStorage.setItem('focus_app_quick_presets', JSON.stringify(AppState.quickPresets));
+    const ok = persist('focus_app_quick_presets', AppState.quickPresets);
     import('./github-sync.js').then(m => m.scheduleSync(300)).catch(() => {});
+    return ok;
 }
 
 export function saveContinuityConfig() {
-    localStorage.setItem('focus_app_continuity_config', JSON.stringify(AppState.continuityConfig));
+    const ok = persist('focus_app_continuity_config', AppState.continuityConfig);
     import('./github-sync.js').then(m => m.scheduleSync(300)).catch(() => {});
+    return ok;
 }
 
 export function saveStudyActivity() {
-    localStorage.setItem('focus_app_study_activity', JSON.stringify(AppState.studyActivity));
+    const ok = persist('focus_app_study_activity', AppState.studyActivity);
     import('./github-sync.js').then(m => m.scheduleSync(300)).catch(() => {});
+    return ok;
 }
 
 export function saveStats() {
-    localStorage.setItem('focus_app_stats_local', JSON.stringify(AppState.stats));
-    localStorage.setItem('focus_app_stats_global', JSON.stringify(AppState.totalStats));
+    const localOk = persist('focus_app_stats_local', AppState.stats);
+    const globalOk = persist('focus_app_stats_global', AppState.totalStats);
     import('./github-sync.js').then(m => m.scheduleSync(1500)).catch(() => {});
+    return localOk && globalOk;
 }
 
 export function saveCustomAIPrompt() {
-    localStorage.setItem('focus_app_custom_ai_prompt', AppState.customAIPrompt);
+    return persist('focus_app_custom_ai_prompt', AppState.customAIPrompt);
 }
 
 
 export function saveAiProviders() {
-    localStorage.setItem('focus_app_ai_providers', JSON.stringify(AppState.aiProviders));
+    return persist('focus_app_ai_providers', AppState.aiProviders);
 }
 
 export function saveTtsSettings() {
-    localStorage.setItem('focus_app_tts_enabled', JSON.stringify(AppState.ttsEnabled));
-    localStorage.setItem('focus_app_tts_autoplay', JSON.stringify(AppState.ttsAutoplay));
-    localStorage.setItem('focus_app_tts_speed', AppState.ttsSpeed.toString());
+    return [
+        persist('focus_app_tts_enabled', AppState.ttsEnabled),
+        persist('focus_app_tts_autoplay', AppState.ttsAutoplay),
+        persist('focus_app_tts_speed', AppState.ttsSpeed.toString())
+    ].every(Boolean);
 }
 
 export function saveTimerSettings() {
-    localStorage.setItem('focus_app_timer_stopwatch', JSON.stringify(AppState.timerStopwatchEnabled));
-    localStorage.setItem('focus_app_timer_countdown', JSON.stringify(AppState.timerCountdownEnabled));
-    localStorage.setItem('focus_app_timer_limit', AppState.timerCountdownLimit.toString());
-    localStorage.setItem('focus_app_timer_auto_check', JSON.stringify(AppState.timerAutoCheckEnabled));
+    return [
+        persist('focus_app_timer_stopwatch', AppState.timerStopwatchEnabled),
+        persist('focus_app_timer_countdown', AppState.timerCountdownEnabled),
+        persist('focus_app_timer_limit', AppState.timerCountdownLimit.toString()),
+        persist('focus_app_timer_auto_check', AppState.timerAutoCheckEnabled)
+    ].every(Boolean);
 }
 
 export function saveSources() {
-    localStorage.setItem('focus_app_sources', JSON.stringify(AppState.sources));
+    const ok = persist('focus_app_sources', AppState.sources);
     import('./github-sync.js').then(m => m.scheduleSync(300)).catch(() => {});
+    return ok;
 }
 
 export function saveFolders() {
-    localStorage.setItem('focus_app_folders', JSON.stringify(AppState.folders));
+    const ok = persist('focus_app_folders', AppState.folders);
     import('./github-sync.js').then(m => m.scheduleSync(300)).catch(() => {});
+    return ok;
 }
 
 export function saveCurrentSource(key) {
     AppState.currentSourceKey = key;
-    localStorage.setItem('focus_app_current_source', key || '');
+    return persist('focus_app_current_source', key || '');
 }
 
 export function saveRecentTests() {
-    localStorage.setItem('focus_app_recent_tests', JSON.stringify(AppState.recentTests));
+    const ok = persist('focus_app_recent_tests', AppState.recentTests);
     import('./github-sync.js').then(m => m.scheduleSync(300)).catch(() => {});
+    return ok;
 }
 
 let _saveActiveTestTimer = null;
@@ -548,7 +556,7 @@ export function saveActiveTest() {
             shuffledOptionsMap: AppState.shuffledOptionsMap,
             testTracking: AppState.testTracking,
         };
-        localStorage.setItem('focus_app_active_test', JSON.stringify(activeData));
+        persist('focus_app_active_test', activeData);
 
         // A streak run is drawn from the whole library, so it belongs to no
         // preset. Filing it under whichever preset happens to match the active
@@ -565,5 +573,5 @@ export function saveActiveTest() {
 }
 
 export function clearActiveTest() {
-    localStorage.removeItem('focus_app_active_test');
+    persistRemove('focus_app_active_test');
 }

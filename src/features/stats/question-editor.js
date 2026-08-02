@@ -235,7 +235,7 @@ function renderEditorModal() {
                     <div class="editor-input-group">
                         <label>${t('flashcard_front')}</label>
                         ${renderMarkdownToolbar('edit-fc-front', 'full')}
-                        <textarea class="editor-field code-font" id="edit-fc-front" style="min-height: 100px;">${currentEditingQuestion.content?.text || ''}</textarea>
+                        <textarea class="editor-field code-font" id="edit-fc-front" style="min-height: 100px;">${escapeHTML(currentEditingQuestion.content?.text || '')}</textarea>
                         <div class="editor-live-preview-container">
                             <div class="editor-live-preview-label">${t('md_live_preview')}</div>
                             <div class="editor-live-preview-box md-content" id="preview-edit-fc-front"></div>
@@ -244,7 +244,7 @@ function renderEditorModal() {
                     <div class="editor-input-group">
                         <label>${t('flashcard_back')}</label>
                         ${renderMarkdownToolbar('edit-fc-back', 'full')}
-                        <textarea class="editor-field code-font" id="edit-fc-back" style="min-height: 100px;">${currentEditingQuestion.answer?.back || ''}</textarea>
+                        <textarea class="editor-field code-font" id="edit-fc-back" style="min-height: 100px;">${escapeHTML(currentEditingQuestion.answer?.back || '')}</textarea>
                         <div class="editor-live-preview-container">
                             <div class="editor-live-preview-label">${t('md_live_preview')}</div>
                             <div class="editor-live-preview-box md-content" id="preview-edit-fc-back"></div>
@@ -321,7 +321,7 @@ function renderEditorModal() {
                     <div class="editor-input-group">
                         <label>${t('text_label')}</label>
                         ${renderMarkdownToolbar('edit-text', 'full')}
-                        <textarea class="editor-field code-font" id="edit-text" style="min-height: 110px;">${currentEditingQuestion.content?.text || currentEditingQuestion.text || ''}</textarea>
+                        <textarea class="editor-field code-font" id="edit-text" style="min-height: 110px;">${escapeHTML(currentEditingQuestion.content?.text || currentEditingQuestion.text || '')}</textarea>
                         <div class="editor-live-preview-container">
                             <div class="editor-live-preview-label">${t('md_live_preview')}</div>
                             <div class="editor-live-preview-box md-content" id="preview-edit-text"></div>
@@ -346,7 +346,7 @@ function renderEditorModal() {
                     </div>
                     <div class="editor-input-group">
                         <label>${t('media_url_label')}</label>
-                        <input type="text" class="editor-field" id="edit-media-url" value="${currentEditingQuestion.content?.media?.[0]?.url || ''}">
+                        <input type="text" class="editor-field" id="edit-media-url" value="${escapeHTML(currentEditingQuestion.content?.media?.[0]?.url || '')}">
                     </div>
                 </div>
                 ${optionsSection}
@@ -392,7 +392,7 @@ function renderOptionsList() {
 
         const correctIndicator = isChoice ? `
             <label class="opt-correct-label ${isCorrect ? 'is-correct' : ''}" title="${t('mark_correct_title')}">
-                <input type="${inputType}" name="correct-answer" class="answer-option-input" value="${opt.id}" ${isCorrect ? 'checked' : ''}>
+                <input type="${inputType}" name="correct-answer" class="answer-option-input" value="${escapeHTML(String(opt.id ?? ''))}" ${isCorrect ? 'checked' : ''}>
                 <span>${isCorrect ? t('option_is_correct') : t('option_not_correct')}</span>
             </label>` : '';
 
@@ -410,7 +410,7 @@ function renderOptionsList() {
             <div style="margin-bottom: 0.5rem;">
                 <label style="font-size: 0.75rem; font-weight: 600; display: block; margin-bottom: 0.2rem;">${t('text_label')}</label>
                 ${renderMarkdownToolbar(fieldId, 'inline')}
-                <textarea class="editor-field code-font opt-text-field" id="${fieldId}" data-idx="${idx}" style="min-height: 50px;">${opt.text || ''}</textarea>
+                <textarea class="editor-field code-font opt-text-field" id="${fieldId}" data-idx="${idx}" style="min-height: 50px;">${escapeHTML(opt.text || '')}</textarea>
                 <div class="editor-live-preview-container">
                     <div class="editor-live-preview-label">${t('md_live_preview')}</div>
                     <div class="editor-live-preview-box" id="preview-${fieldId}"></div>
@@ -428,7 +428,7 @@ function renderOptionsList() {
                 </div>
                 <div class="editor-input-group">
                     <label>${t('media_url_label')}</label>
-                    <input type="text" class="editor-field opt-media-url" data-idx="${idx}" value="${opt.media?.[0]?.url || ''}">
+                    <input type="text" class="editor-field opt-media-url" data-idx="${idx}" value="${escapeHTML(opt.media?.[0]?.url || '')}">
                 </div>
             </div>
         </div>
@@ -574,7 +574,7 @@ function renderAnswerSection() {
         <div class="editor-input-group">
             <label>${t('explanation_label')}</label>
             ${renderMarkdownToolbar('edit-explanation', 'full')}
-            <textarea class="editor-field code-font" id="edit-explanation" style="min-height: 100px;">${q.answer?.explanation || ''}</textarea>
+            <textarea class="editor-field code-font" id="edit-explanation" style="min-height: 100px;">${escapeHTML(q.answer?.explanation || '')}</textarea>
             <div class="editor-live-preview-container">
                 <div class="editor-live-preview-label">${t('md_live_preview')}</div>
                 <div class="editor-live-preview-box md-content" id="preview-edit-explanation"></div>
@@ -593,7 +593,7 @@ function renderAnswerSection() {
     return `
         <div class="editor-input-group">
             <label>${t('accepted_texts_label')}</label>
-            <textarea class="editor-field" id="edit-accepted-texts" style="min-height: 90px;" placeholder="${t('accepted_texts_placeholder')}">${acceptedTexts}</textarea>
+            <textarea class="editor-field" id="edit-accepted-texts" style="min-height: 90px;" placeholder="${t('accepted_texts_placeholder')}">${escapeHTML(acceptedTexts)}</textarea>
         </div>
         <div style="display: flex; align-items: center; gap: 0.75rem; padding: 0.25rem 0 0.5rem;">
             <input type="checkbox" id="edit-case-sensitive" ${q.answer?.caseSensitive ? 'checked' : ''} style="width: 18px; height: 18px; flex-shrink: 0;">

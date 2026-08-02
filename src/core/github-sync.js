@@ -2,6 +2,7 @@ import { AppState, saveSources, saveStats, saveRecentTests, saveFolders, saveQui
 import { showToast, showAlert } from './utils.js';
 import { t } from './i18n.js';
 import { migrateFolderColors, sanitizeActivityRecord } from './migration.js';
+import { persist, persistRemove } from './storage.js';
 
 const GIST_FILENAME = 'exam_app_backup.json';
 // The archive lives in its own file inside the same Gist. A Gist PATCH only
@@ -250,10 +251,10 @@ async function completeLoginWithToken(rawToken) {
     AppState.githubUser = userObj;
     AppState.lastGithubUser = userObj.login;
 
-    localStorage.setItem('focus_app_github_token', token);
-    localStorage.setItem('focus_app_github_gist_id', gistId);
-    localStorage.setItem('focus_app_github_user', JSON.stringify(userObj));
-    localStorage.setItem('focus_app_last_github_user', userObj.login);
+    persist('focus_app_github_token', token);
+    persist('focus_app_github_gist_id', gistId);
+    persist('focus_app_github_user', userObj);
+    persist('focus_app_last_github_user', userObj.login);
 
     // 4. Perform initial sync
     if (shouldReplaceLocalData) {
@@ -288,11 +289,11 @@ export async function logout() {
     AppState.githubUser = null;
     AppState.lastSyncTime = 0;
 
-    localStorage.removeItem('focus_app_github_token');
-    localStorage.removeItem('focus_app_github_gist_id');
-    localStorage.removeItem('focus_app_github_gist_url');
-    localStorage.removeItem('focus_app_github_user');
-    localStorage.removeItem('focus_app_last_sync');
+    persistRemove('focus_app_github_token');
+    persistRemove('focus_app_github_gist_id');
+    persistRemove('focus_app_github_gist_url');
+    persistRemove('focus_app_github_user');
+    persistRemove('focus_app_last_sync');
 
     updateSyncUI();
     closeSyncDropdown();
@@ -341,12 +342,12 @@ async function pullRemoteGistOnly(token, gistId) {
 
             if (Array.isArray(remotePayload.deletedSourceIds)) {
                 AppState.deletedSourceIds = remotePayload.deletedSourceIds;
-                localStorage.setItem('focus_app_deleted_sources', JSON.stringify(remotePayload.deletedSourceIds));
+                persist('focus_app_deleted_sources', remotePayload.deletedSourceIds);
             }
 
             if (Array.isArray(remotePayload.deletedFolderIds)) {
                 AppState.deletedFolderIds = remotePayload.deletedFolderIds;
-                localStorage.setItem('focus_app_deleted_folders', JSON.stringify(remotePayload.deletedFolderIds));
+                persist('focus_app_deleted_folders', remotePayload.deletedFolderIds);
             }
 
             if (remotePayload.stats && typeof remotePayload.stats === 'object') {
@@ -356,7 +357,7 @@ async function pullRemoteGistOnly(token, gistId) {
 
             if (remotePayload.totalStats && typeof remotePayload.totalStats === 'object') {
                 AppState.totalStats = remotePayload.totalStats;
-                localStorage.setItem('focus_app_stats_global', JSON.stringify(AppState.totalStats));
+                persist('focus_app_stats_global', AppState.totalStats);
             }
 
             if (Array.isArray(remotePayload.recentTests)) {
@@ -379,7 +380,7 @@ async function pullRemoteGistOnly(token, gistId) {
             }
 
             AppState.lastSyncTime = Date.now();
-            localStorage.setItem('focus_app_last_sync', AppState.lastSyncTime.toString());
+            persist('focus_app_last_sync', AppState.lastSyncTime.toString());
 
             import('../features/test/test-engine.js').then(m => {
                 if (typeof m.buildQuestionPool === 'function') m.buildQuestionPool();
@@ -561,7 +562,7 @@ async function findOrCreateGist(token) {
 function rememberGistUrl(url) {
     if (!url) return;
     AppState.githubGistUrl = url;
-    localStorage.setItem('focus_app_github_gist_url', url);
+    persist('focus_app_github_gist_url', url);
 }
 
 /**
@@ -595,7 +596,7 @@ export async function syncToGist(options = {}) {
         }
 
         AppState.lastSyncTime = Date.now();
-        localStorage.setItem('focus_app_last_sync', AppState.lastSyncTime.toString());
+        persist('focus_app_last_sync', AppState.lastSyncTime.toString());
         updateSyncUI();
 
         if (!options.silent) {
@@ -666,12 +667,12 @@ export async function syncFromGist(options = {}) {
             // Apply merged deleted source IDs (Tombstones)
             if (Array.isArray(merged.deletedSourceIds)) {
                 AppState.deletedSourceIds = merged.deletedSourceIds;
-                localStorage.setItem('focus_app_deleted_sources', JSON.stringify(merged.deletedSourceIds));
+                persist('focus_app_deleted_sources', merged.deletedSourceIds);
             }
 
             if (Array.isArray(merged.deletedFolderIds)) {
                 AppState.deletedFolderIds = merged.deletedFolderIds;
-                localStorage.setItem('focus_app_deleted_folders', JSON.stringify(merged.deletedFolderIds));
+                persist('focus_app_deleted_folders', merged.deletedFolderIds);
             }
 
             if (Array.isArray(merged.quickPresets)) {
@@ -681,7 +682,7 @@ export async function syncFromGist(options = {}) {
 
             if (Array.isArray(merged.deletedQuickPresetIds)) {
                 AppState.deletedQuickPresetIds = merged.deletedQuickPresetIds;
-                localStorage.setItem('focus_app_deleted_quick_presets', JSON.stringify(merged.deletedQuickPresetIds));
+                persist('focus_app_deleted_quick_presets', merged.deletedQuickPresetIds);
             }
 
             // Apply merged stats
@@ -692,7 +693,7 @@ export async function syncFromGist(options = {}) {
 
             if (merged.totalStats && typeof merged.totalStats === 'object') {
                 AppState.totalStats = merged.totalStats;
-                localStorage.setItem('focus_app_stats_global', JSON.stringify(AppState.totalStats));
+                persist('focus_app_stats_global', AppState.totalStats);
             }
 
             // Apply merged recent tests
@@ -718,12 +719,12 @@ export async function syncFromGist(options = {}) {
             if (typeof merged.lastResetTimestamp === 'number'
                     && merged.lastResetTimestamp > (AppState.lastResetTimestamp || 0)) {
                 AppState.lastResetTimestamp = merged.lastResetTimestamp;
-                localStorage.setItem('focus_app_last_reset', merged.lastResetTimestamp.toString());
+                persist('focus_app_last_reset', merged.lastResetTimestamp.toString());
             }
             if (typeof merged.lastProgressResetTimestamp === 'number'
                     && merged.lastProgressResetTimestamp > (AppState.lastProgressResetTimestamp || 0)) {
                 AppState.lastProgressResetTimestamp = merged.lastProgressResetTimestamp;
-                localStorage.setItem('focus_app_last_progress_reset', merged.lastProgressResetTimestamp.toString());
+                persist('focus_app_last_progress_reset', merged.lastProgressResetTimestamp.toString());
             }
 
             // Push merged state back to Gist if local had newer changes
@@ -732,7 +733,7 @@ export async function syncFromGist(options = {}) {
             }
 
             AppState.lastSyncTime = Date.now();
-            localStorage.setItem('focus_app_last_sync', AppState.lastSyncTime.toString());
+            persist('focus_app_last_sync', AppState.lastSyncTime.toString());
 
             // Rebuild question pool and questionMap for Test Engine & UI
             import('../features/test/test-engine.js').then(m => {

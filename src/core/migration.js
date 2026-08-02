@@ -1,5 +1,6 @@
 
 import { AppState, saveSources, saveStats, saveCurrentSource, saveFolders, saveStudyActivity, touch } from './state.js';
+import { persist, persistRemove } from './storage.js';
 
 // Folders store their colour, so replacing the picker's palette left existing
 // folders on the retired colours - several of which wash out on the light
@@ -39,7 +40,7 @@ export function migrateFolderColors({ force = false } = {}) {
     });
 
     if (changed > 0) saveFolders();
-    localStorage.setItem(FOLDER_PALETTE_FLAG, '1');
+    persist(FOLDER_PALETTE_FLAG, '1');
     return changed;
 }
 
@@ -154,7 +155,7 @@ export function migrateOldData() {
         }
 
         // Save question data
-        localStorage.setItem('focusAppData_' + key, oldJSON);
+        persist('focusAppData_' + key, oldJSON);
 
         // Migrate stats
         const oldStatsStr = localStorage.getItem('focusAppStats');
@@ -172,9 +173,9 @@ export function migrateOldData() {
         saveCurrentSource(key);
 
         // Clean up old keys
-        localStorage.removeItem('focusAppSavedJSON');
-        localStorage.removeItem('focusAppStats');
-        localStorage.removeItem('focusAppSources'); // Remove old source list format if any
+        persistRemove('focusAppSavedJSON');
+        persistRemove('focusAppStats');
+        persistRemove('focusAppSources'); // Remove old source list format if any
 
         console.log('Legacy data migrated successfully');
     } catch (e) {

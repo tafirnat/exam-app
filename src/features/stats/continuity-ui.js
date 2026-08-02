@@ -218,16 +218,23 @@ function renderGlobalSlide(liveQ) {
     
     // Overdue text & Progress Ring
     const textEl = document.getElementById('continuityOverdueText');
+    const spinGroup = document.getElementById('globalRingSpinGroup');
     if (isActivityRequirementMet(todayAct)) {
         textEl.textContent = 'Günün serisi korundu 🎉';
         textEl.style.color = 'var(--success-color, #10b981)';
         ring.style.stroke = 'var(--success-color, #10b981)';
         ring.setAttribute('stroke-dasharray', '100, 100');
+        if (spinGroup) spinGroup.classList.add('ring-spin-paused');
     } else {
         const progress = Math.min(100, Math.round((solved / req) * 100));
         ring.setAttribute('stroke-dasharray', `${progress}, 100`);
         ring.style.stroke = 'var(--trend-line-normal, #0891b2)';
         textEl.style.color = 'var(--text-secondary)';
+        // Spin only when there's meaningful progress (not 0%)
+        if (spinGroup) {
+            if (progress > 0) spinGroup.classList.remove('ring-spin-paused');
+            else spinGroup.classList.add('ring-spin-paused');
+        }
 
         if (overdueCount === 0) {
             textEl.textContent = `Seri için: ${solved}/15 soru`;
@@ -276,11 +283,13 @@ function renderFocusSlide() {
     const focusSources = getFocusSources();
 
     const textEl = document.getElementById('focusContinuityOverdueText');
+    const focusSpinGroup = document.getElementById('focusRingSpinGroup');
 
     if (!focusSources || focusSources.length === 0) {
         textEl.textContent = 'Kaynak seçilmedi. ⚙️ ikonuna dokunun.';
         textEl.style.color = 'var(--text-secondary)';
         ring.setAttribute('stroke-dasharray', '0, 100');
+        if (focusSpinGroup) focusSpinGroup.classList.add('ring-spin-paused');
     } else {
         const focusOverdue = getDailyFocusOverdueSnapshot();
         const req = getDailyRequirement(focusOverdue);
@@ -302,11 +311,16 @@ function renderFocusSlide() {
             textEl.style.color = 'var(--success-color, #10b981)';
             ring.style.stroke = 'var(--success-color, #10b981)';
             ring.setAttribute('stroke-dasharray', '100, 100');
+            if (focusSpinGroup) focusSpinGroup.classList.add('ring-spin-paused');
         } else {
             const progress = Math.min(100, Math.round((solved / req) * 100));
             ring.setAttribute('stroke-dasharray', `${progress}, 100`);
             ring.style.stroke = 'var(--trend-line-focus, #8b5cf6)';
             textEl.style.color = 'var(--text-secondary)';
+            if (focusSpinGroup) {
+                if (progress > 0) focusSpinGroup.classList.remove('ring-spin-paused');
+                else focusSpinGroup.classList.add('ring-spin-paused');
+            }
             textEl.textContent = selectedNames 
                 ? `Seri için: ${solved}/${req} soru (${selectedNames})`
                 : `Seri için: ${solved}/${req} soru (${focusSources.length} kaynak)`;

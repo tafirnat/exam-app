@@ -4,6 +4,7 @@ import { updateStaticTranslations, t, targetLanguages, translations } from './co
 import { showToast, showConfirm, getCorrectAnswers, highlightText, escapeHTML } from './core/utils.js';
 import { migrateOldData, migrateFolderColors, sanitizeStudyActivity } from './core/migration.js';
 import { getQuestionCategory } from './core/question-rules.js';
+import { persist } from './core/storage.js';
 import { processJSON, loadFromUrl, loadFromFile, normalizeQuestions, mergeSources } from './features/sources/sources-service.js';
 import { renderSourcesList, showMergeModal, closeAllSourcesModals, showSourceOptionsModal, renderHomeActiveSources } from './features/sources/sources-ui.js';
 import { renderContinuityBlock, renderGlobalCharts, showDailyMotivationToast } from './features/stats/continuity-ui.js';
@@ -377,7 +378,7 @@ const initApp = () => {
                     renderSourcesList();
                 }
             });
-            localStorage.setItem(SAMPLE_LOADED_KEY, lang);
+            persist(SAMPLE_LOADED_KEY, lang);
         }
 
         // Fix: If we have active sources but no questions loaded (e.g. after refresh), load them
@@ -1010,7 +1011,7 @@ function setupEventListeners() {
         btn.onclick = () => {
             const lang = btn.getAttribute('data-lang');
             AppState.language = lang;
-            localStorage.setItem('focus_app_lang', lang);
+            persist('focus_app_lang', lang);
             updateLangUI(); // Immediate UI feedback
 
             try {
@@ -1041,7 +1042,7 @@ function setupEventListeners() {
         transSelect.value = AppState.translationTarget;
         transSelect.onchange = (e) => {
             AppState.translationTarget = e.target.value;
-            localStorage.setItem('focus_app_target_lang', e.target.value);
+            persist('focus_app_target_lang', e.target.value);
         };
     }
 
@@ -1054,7 +1055,7 @@ function setupEventListeners() {
 
         transToggle.onchange = (e) => {
             AppState.translationEnabled = e.target.checked;
-            localStorage.setItem('focus_app_translation_enabled', e.target.checked);
+            persist('focus_app_translation_enabled', e.target.checked);
             updateTranslationUI();
         };
     }
@@ -2009,7 +2010,7 @@ function checkActiveTest() {
     let activeData = null;
     if (matchedPresetId && AppState.presetSessions && AppState.presetSessions[matchedPresetId]) {
         activeData = AppState.presetSessions[matchedPresetId];
-        localStorage.setItem('focus_app_active_test', JSON.stringify(activeData));
+        persist('focus_app_active_test', activeData);
     } else {
         activeData = JSON.parse(localStorage.getItem('focus_app_active_test') || 'null');
     }
@@ -2206,11 +2207,11 @@ function renderAiCopyList(isPreview = false) {
         const iconUrl = `https://www.google.com/s2/favicons?sz=64&domain=${domain}`;
 
         item.innerHTML = `
-            <img class="ai-icon-img" src="${iconUrl}" onerror="this.style.display='none'; this.nextElementSibling.style.display='inline-block';" alt="${p.name}">
+            <img class="ai-icon-img" src="${escapeHTML(iconUrl)}" onerror="this.style.display='none'; this.nextElementSibling.style.display='inline-block';" alt="${escapeHTML(p.name)}">
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" style="display:none;" class="ai-icon-fallback">
                 <path d="M12 2l3 6 6 3-6 3-3 6-3-6-6-3 6-3z"></path>
             </svg>
-            <span>${p.name}</span>
+            <span>${escapeHTML(p.name)}</span>
         `;
 
         item.onclick = (e) => {
@@ -2417,8 +2418,8 @@ function renderAiManagerList() {
 
         item.innerHTML = `
             <div class="ai-manage-item-info">
-                <span class="ai-manage-item-name">${p.name}</span>
-                <span class="ai-manage-item-url">${p.url}</span>
+                <span class="ai-manage-item-name">${escapeHTML(p.name)}</span>
+                <span class="ai-manage-item-url">${escapeHTML(p.url)}</span>
             </div>
             <button class="icon-btn delete-ai-btn" style="color: #ef4444;" title="${t('delete') || 'Sil'}">
                 <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="16" height="16">

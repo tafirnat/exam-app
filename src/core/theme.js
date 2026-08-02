@@ -1,3 +1,5 @@
+import { persist } from './storage.js';
+
 
 // The attribute goes on <html>, not <body>: :root-level custom properties that
 // reference other theme variables are substituted on the element that declares
@@ -13,7 +15,7 @@ export function toggleTheme() {
     const current = document.documentElement.getAttribute('data-theme');
     const next = current === 'dark' ? 'light' : 'dark';
     document.documentElement.setAttribute('data-theme', next);
-    localStorage.setItem('focus_theme', next);
+    persist('focus_theme', next);
     updateThemeUI(next);
 }
 

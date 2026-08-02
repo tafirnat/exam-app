@@ -5917,6 +5917,30 @@ body.dnd-active {
     transform: rotate(-90deg);
 }
 
+/* ── Animated ring spin ── */
+.ring-spin-group {
+    transform-origin: 18px 18px;
+    animation: ringClockwise 12s linear infinite;
+    /* pause when progress is 0 or 100 — handled by JS toggling .ring-spin-paused */
+}
+
+.ring-spin-paused .ring-spin-group,
+.ring-spin-group.ring-spin-paused {
+    animation-play-state: paused;
+}
+
+@keyframes ringClockwise {
+    from { transform: rotate(0deg); }
+    to   { transform: rotate(360deg); }
+}
+
+/* ── Round linecap already set via HTML attribute; tail-fade via mask ── */
+.ring-fg {
+    /* Subtle glow on the active stroke */
+    filter: drop-shadow(0 0 1.5px currentColor);
+}
+
+
 .streak-ring-content {
     position: absolute;
     top: 0;

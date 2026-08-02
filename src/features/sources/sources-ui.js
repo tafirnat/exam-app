@@ -1,7 +1,8 @@
 import { AppState, saveSources, saveStats, saveFolders, liveSources, liveFolders, touch, trackDeletedFolder, UNCATEGORIZED_FOLDER_ID } from '../../core/state.js';
 import { t } from '../../core/i18n.js';
-import { showConfirm, showAlert, showToast } from '../../core/utils.js';
+import { showConfirm, showAlert, showToast, escapeHTML } from '../../core/utils.js';
 import { syncQuickPresetsWithLiveSources } from './quick-presets.js';
+import { persist } from '../../core/storage.js';
 
 export function toggleSource(id) {
     let activeCount = 0;
@@ -59,7 +60,7 @@ export async function removeSource(id) {
     import('../../core/state.js').then(m => {
         if (typeof m.trackDeletedSource === 'function') m.trackDeletedSource(id);
         if (m.SAMPLE_LOADED_KEY && !localStorage.getItem(m.SAMPLE_LOADED_KEY)) {
-            localStorage.setItem(m.SAMPLE_LOADED_KEY, AppState.language || 'user_deleted');
+            persist(m.SAMPLE_LOADED_KEY, AppState.language || 'user_deleted');
         }
     }).catch(() => {});
     
@@ -312,7 +313,7 @@ export function showSourceActions(source) {
         let optionsHtml = `<option value="">-- ${t('move_to_folder')} --</option>`;
         optionsHtml += `<option value="root">${t('root_folder')}</option>`;
         selectableFolders.forEach(f => {
-            optionsHtml += `<option value="${f.id}" ${source.folderId === f.id ? 'selected' : ''}>${f.name}</option>`;
+            optionsHtml += `<option value="${escapeHTML(f.id)}" ${source.folderId === f.id ? 'selected' : ''}>${escapeHTML(f.name)}</option>`;
         });
         
         moveContainer.innerHTML = `
@@ -906,8 +907,8 @@ export function renderSourcesList() {
                 <path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"></path>
             </svg>
             <div style="display: flex; flex-direction: column; min-width: 0;">
-                <span class="truncate" style="font-weight: 600; font-size: 0.95rem;">${folderTitle}</span>
-                ${folderDesc ? `<span class="truncate" style="font-size: 0.7rem; color: var(--text-secondary);">${folderDesc}</span>` : ''}
+                <span class="truncate" style="font-weight: 600; font-size: 0.95rem;">${escapeHTML(folderTitle)}</span>
+                ${folderDesc ? `<span class="truncate" style="font-size: 0.7rem; color: var(--text-secondary);">${escapeHTML(folderDesc)}</span>` : ''}
             </div>
         `;
         // Same grip element/markup as a source item, always the first child.
@@ -1062,7 +1063,7 @@ function createSourceItemDOM(s, folderId) {
 
     info.innerHTML = `
         <div style="font-weight:600; font-size:0.9rem; margin-bottom: 2px; display:flex; align-items:center; gap:0.4rem; min-width:0;">
-            <span class="truncate">${qText}</span>
+            <span class="truncate">${escapeHTML(qText)}</span>
         </div>
         <div style="font-size:0.75rem; color:var(--text-secondary); margin-bottom: 4px; display: flex; align-items: center; gap: 6px; flex-wrap:wrap;">
             <span>${t('questions_count', { count: totalQ })}</span>
@@ -1535,9 +1536,9 @@ export function showMergeModal() {
         item.style.transition = 'all 0.2s ease';
 
         item.innerHTML = `
-            <input type="checkbox" value="${s.id}" style="width: 18px; height: 18px; cursor: pointer;">
+            <input type="checkbox" value="${escapeHTML(s.id)}" style="width: 18px; height: 18px; cursor: pointer;">
             <div style="flex: 1;">
-                <div style="font-weight: 600; font-size: 0.9rem;">${s.name}</div>
+                <div style="font-weight: 600; font-size: 0.9rem;">${escapeHTML(s.name)}</div>
                 <div style="font-size: 0.75rem; color: var(--text-secondary);">${t('questions_count', { count: s.questions?.length || 0 })}</div>
             </div>
         `;

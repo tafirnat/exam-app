@@ -3,6 +3,7 @@ import { t } from '../../core/i18n.js';
 import { showConfirm } from '../../core/utils.js';
 import { applySwatch, applyPresetBar, addCurrentAsPreset } from './quick-presets.js';
 import { buildQuestionPool } from '../test/test-engine.js';
+import { persist } from '../../core/storage.js';
 
 export function updateQuickSourcesDot() {
     const btn = document.getElementById('quickSourcesBtn');
@@ -68,7 +69,7 @@ export function applyPreset(preset) {
 
     if (preset.sourceIds.length > 0) {
         AppState.currentSourceKey = preset.sourceIds[0];
-        localStorage.setItem('focus_app_current_source', AppState.currentSourceKey);
+        persist('focus_app_current_source', AppState.currentSourceKey);
     }
 
     saveSources();
@@ -82,7 +83,7 @@ export function applyPreset(preset) {
         AppState.isAnswerChecked = savedSession.isAnswerChecked || {};
         AppState.shuffledOptionsMap = savedSession.shuffledOptionsMap || {};
         AppState.testTracking = savedSession.testTracking || null;
-        localStorage.setItem('focus_app_active_test', JSON.stringify(savedSession));
+        persist('focus_app_active_test', savedSession);
 
         buildQuestionPool();
     } else {

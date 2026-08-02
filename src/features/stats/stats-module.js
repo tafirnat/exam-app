@@ -509,7 +509,7 @@ function renderHistoricalTests(list, filter) {
             let statusClass = q.isCorrect ? 'correct' : (q.isUnanswered ? 'unanswered' : 'wrong');
             return `
                         <div class="history-question-item ${statusClass}">
-                            <div class="history-question-text">${q.content?.text || q.text}</div>
+                            <div class="history-question-text">${escapeHTML(q.content?.text || q.text || '')}</div>
                             <div class="history-question-status">${statusIcon}</div>
                         </div>
                     `;
