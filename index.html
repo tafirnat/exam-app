@@ -2031,9 +2031,9 @@
         </div>
     </div>
 
-    <!-- Factory Reset Modal -->
+    <!-- Factory / Multi-Scope Reset Modal -->
     <div id="resetAppModalOverlay" class="modal-overlay" style="z-index: 10005; display: none;">
-        <div class="modal-card" style="max-width: 440px; border-top: 4px solid #ef4444;">
+        <div class="modal-card" style="max-width: 480px; border-top: 4px solid var(--danger-color, #ef4444);">
             <div class="modal-header" style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.75rem;">
                 <div style="display: flex; align-items: center; gap: 0.5rem; color: #ef4444;">
                     <svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="2.5">
@@ -2050,10 +2050,46 @@
                     </svg>
                 </button>
             </div>
-            <div class="modal-body" style="padding: 0.25rem 0;">
-                <div style="background-color: rgba(239, 68, 68, 0.1); border-left: 3px solid #ef4444; border-radius: 6px; padding: 0.75rem; margin-bottom: 1rem;">
-                    <div style="font-weight: 600; color: #ef4444; font-size: 0.88rem; margin-bottom: 0.25rem;" data-i18n="reset_app_warning_title">Tüm Veriler Silinecek!</div>
-                    <div style="font-size: 0.8rem; color: var(--text-secondary); line-height: 1.45;" data-i18n="reset_app_warning_text">Bu işlem tüm yerel verilerinizi kalıcı olarak siler ve varsayılan fabrika ayarlarına döndürür.</div>
+
+            <!-- STEP 1: Selection View -->
+            <div id="resetStep1" class="modal-body" style="padding: 0.25rem 0;">
+                <p style="font-size: 0.85rem; color: var(--text-secondary); margin: 0 0 0.85rem 0;" data-i18n="reset_app_select_mode_title">Lütfen yapmak istediğiniz sıfırlama kapsamını seçin:</p>
+                
+                <div class="reset-option-list" style="display: flex; flex-direction: column; gap: 0.65rem;">
+                    <!-- Option 1: Progress & Stats -->
+                    <label class="reset-option-card active" data-reset-mode="progress" style="display: flex; gap: 0.75rem; align-items: flex-start; padding: 0.75rem 0.85rem; border: 2px solid var(--primary-color, #3b82f6); background: rgba(59, 130, 246, 0.05); border-radius: 8px; cursor: pointer; transition: all 0.2s;">
+                        <input type="radio" name="resetMode" value="progress" checked style="margin-top: 3px; accent-color: var(--primary-color, #3b82f6);">
+                        <div>
+                            <div style="font-weight: 700; font-size: 0.9rem; color: var(--text-primary);" data-i18n="reset_mode_progress_title">İlerleme & İstatistikleri Sıfırla</div>
+                            <div style="font-size: 0.78rem; color: var(--text-secondary); line-height: 1.4; margin-top: 2px;" data-i18n="reset_mode_progress_desc">Kaynaklar ve klasörler korunur. FSRS algoritma verileri, seri (streak), dondurma hakları ve test geçmişi sıfırlanır.</div>
+                        </div>
+                    </label>
+
+                    <!-- Option 2: Sources Only -->
+                    <label class="reset-option-card" data-reset-mode="sources" style="display: flex; gap: 0.75rem; align-items: flex-start; padding: 0.75rem 0.85rem; border: 1px solid var(--border-color, #cbd5e1); background: var(--bg-hover, rgba(0,0,0,0.02)); border-radius: 8px; cursor: pointer; transition: all 0.2s;">
+                        <input type="radio" name="resetMode" value="sources" style="margin-top: 3px; accent-color: var(--primary-color, #3b82f6);">
+                        <div>
+                            <div style="font-weight: 700; font-size: 0.9rem; color: var(--text-primary);" data-i18n="reset_mode_sources_title">Tüm Kaynakları & Klasörleri Sil</div>
+                            <div style="font-size: 0.78rem; color: var(--text-secondary); line-height: 1.4; margin-top: 2px;" data-i18n="reset_mode_sources_desc">Eklenmiş tüm soru kaynakları, klasörler ve hızlı hazır setler silinir.</div>
+                        </div>
+                    </label>
+
+                    <!-- Option 3: Full Factory Reset -->
+                    <label class="reset-option-card" data-reset-mode="full" style="display: flex; gap: 0.75rem; align-items: flex-start; padding: 0.75rem 0.85rem; border: 1px solid var(--border-color, #cbd5e1); background: var(--bg-hover, rgba(0,0,0,0.02)); border-radius: 8px; cursor: pointer; transition: all 0.2s;">
+                        <input type="radio" name="resetMode" value="full" style="margin-top: 3px; accent-color: var(--danger-color, #ef4444);">
+                        <div>
+                            <div style="font-weight: 700; font-size: 0.9rem; color: #ef4444;" data-i18n="reset_mode_full_title">Tam Fabrika Ayarlarına Sıfırla</div>
+                            <div style="font-size: 0.78rem; color: var(--text-secondary); line-height: 1.4; margin-top: 2px;" data-i18n="reset_mode_full_desc">Tüm kaynaklar, klasörler, istatistikler ve ayarlar kalıcı olarak tamamen temizlenir.</div>
+                        </div>
+                    </label>
+                </div>
+            </div>
+
+            <!-- STEP 2: Confirmation View -->
+            <div id="resetStep2" class="modal-body" style="padding: 0.25rem 0; display: none;">
+                <div id="resetWarningBanner" style="background-color: rgba(239, 68, 68, 0.1); border-left: 3px solid #ef4444; border-radius: 6px; padding: 0.75rem; margin-bottom: 1rem;">
+                    <div id="resetWarningTitle" style="font-weight: 600; color: #ef4444; font-size: 0.88rem; margin-bottom: 0.25rem;" data-i18n="reset_app_warning_title">Dikkat: İşlem Geri Alınamaz!</div>
+                    <div id="resetWarningText" style="font-size: 0.8rem; color: var(--text-secondary); line-height: 1.45;" data-i18n="reset_app_warning_full">Bu işlem tüm yerel verilerinizi kalıcı olarak siler ve varsayılan fabrika ayarlarına döndürür.</div>
                 </div>
                 <div style="font-size: 0.84rem; color: var(--text-primary); margin-bottom: 0.75rem;">
                     <span data-i18n="reset_app_word_instruction">Silme işlemini onaylamak için lütfen aşağıdaki kutuya gösterilen şehir adını yazın:</span>
@@ -2061,9 +2097,13 @@
                 </div>
                 <input type="text" id="resetAppConfirmInput" autocomplete="off" spellcheck="false" class="reset-input-field" placeholder="Kelimeyi buraya yazın..." data-i18n-placeholder="reset_app_placeholder">
             </div>
+
+            <!-- Modal Footer -->
             <div class="modal-footer" style="display: flex; gap: 0.5rem; justify-content: flex-end; margin-top: 1rem;">
                 <button class="btn btn-subtle" id="resetAppCancelBtn" data-i18n="reset_app_cancel_btn">Vazgeç</button>
-                <button class="btn btn-danger" id="resetAppConfirmBtn" disabled data-i18n="reset_app_confirm_btn">Verileri Sil ve Sıfırla</button>
+                <button class="btn btn-subtle" id="resetAppBackBtn" style="display: none;" data-i18n="reset_back_btn">← Geri</button>
+                <button class="btn btn-primary" id="resetAppNextBtn" data-i18n="reset_next_btn">İleri →</button>
+                <button class="btn btn-danger" id="resetAppConfirmBtn" disabled style="display: none;" data-i18n="reset_app_confirm_btn">Verileri Sil ve Sıfırla</button>
             </div>
         </div>
     </div>

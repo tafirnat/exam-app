@@ -1,4 +1,4 @@
-import { AppState, saveStats, saveSources, saveCurrentSource, saveCustomAIPrompt, saveAiProviders, DEFAULT_AI_PROVIDERS, saveActiveTest, clearActiveTest, clearLocalStudyData, SAMPLE_LOADED_KEY, findMatchingPresetId } from './core/state.js';
+import { AppState, saveStats, saveSources, saveCurrentSource, saveCustomAIPrompt, saveAiProviders, DEFAULT_AI_PROVIDERS, saveActiveTest, clearActiveTest, clearLocalStudyData, clearProgressData, clearSourcesData, SAMPLE_LOADED_KEY, findMatchingPresetId } from './core/state.js';
 import { initTheme, toggleTheme } from './core/theme.js';
 import { updateStaticTranslations, t, targetLanguages, translations } from './core/i18n.js';
 import { showToast, showConfirm, getCorrectAnswers, highlightText, escapeHTML } from './core/utils.js';
@@ -834,29 +834,94 @@ function updateIndicatorsPreview() {
 
 const RESET_VERIFICATION_WORDS = ['BERLIN', 'PARIS', 'LONDON', 'MADRID', 'ROME', 'VIENNA', 'AMSTERDAM', 'PRAGUE', 'ISTANBUL', 'WARSAW'];
 let currentResetWord = 'BERLIN';
+let currentResetMode = 'progress'; // 'progress' | 'sources' | 'full'
+let currentResetStep = 1; // 1 | 2
+
+function updateResetOptionCardStyles() {
+    const cards = document.querySelectorAll('.reset-option-card');
+    cards.forEach(card => {
+        const mode = card.dataset.resetMode;
+        const isSelected = mode === currentResetMode;
+        card.classList.toggle('active', isSelected);
+        const radio = card.querySelector('input[type="radio"]');
+        if (radio) radio.checked = isSelected;
+
+        if (isSelected) {
+            if (mode === 'full') {
+                card.style.border = '2px solid var(--danger-color, #ef4444)';
+                card.style.background = 'rgba(239, 68, 68, 0.06)';
+            } else {
+                card.style.border = '2px solid var(--primary-color, #3b82f6)';
+                card.style.background = 'rgba(59, 130, 246, 0.06)';
+            }
+        } else {
+            card.style.border = '1px solid var(--border-color, #cbd5e1)';
+            card.style.background = 'var(--bg-hover, rgba(0,0,0,0.02))';
+        }
+    });
+}
+
+function showResetStep(step) {
+    currentResetStep = step;
+    const step1El = document.getElementById('resetStep1');
+    const step2El = document.getElementById('resetStep2');
+    const nextBtn = document.getElementById('resetAppNextBtn');
+    const backBtn = document.getElementById('resetAppBackBtn');
+    const confirmBtn = document.getElementById('resetAppConfirmBtn');
+
+    if (!step1El || !step2El) return;
+
+    if (step === 1) {
+        step1El.style.display = 'block';
+        step2El.style.display = 'none';
+        if (nextBtn) nextBtn.style.display = 'inline-block';
+        if (backBtn) backBtn.style.display = 'none';
+        if (confirmBtn) confirmBtn.style.display = 'none';
+        updateResetOptionCardStyles();
+    } else {
+        step1El.style.display = 'none';
+        step2El.style.display = 'block';
+        if (nextBtn) nextBtn.style.display = 'none';
+        if (backBtn) backBtn.style.display = 'inline-block';
+        if (confirmBtn) {
+            confirmBtn.style.display = 'inline-block';
+            confirmBtn.disabled = true;
+        }
+
+        // Generate random verification word for step 2
+        currentResetWord = RESET_VERIFICATION_WORDS[Math.floor(Math.random() * RESET_VERIFICATION_WORDS.length)];
+        const wordDisplay = document.getElementById('resetAppWordDisplay');
+        if (wordDisplay) wordDisplay.textContent = currentResetWord;
+
+        const input = document.getElementById('resetAppConfirmInput');
+        if (input) {
+            input.value = '';
+            input.classList.remove('valid');
+        }
+
+        // Update warning text based on mode
+        const warningTextEl = document.getElementById('resetWarningText');
+        if (warningTextEl) {
+            if (currentResetMode === 'progress') {
+                warningTextEl.textContent = t('reset_app_warning_progress');
+            } else if (currentResetMode === 'sources') {
+                warningTextEl.textContent = t('reset_app_warning_sources');
+            } else {
+                warningTextEl.textContent = t('reset_app_warning_full');
+            }
+        }
+    }
+}
 
 function openResetAppModal() {
     if (typeof menuActive !== 'undefined' && menuActive) {
         toggleMenu(); // Close side menu if open
     }
     const modal = document.getElementById('resetAppModalOverlay');
-    const input = document.getElementById('resetAppConfirmInput');
-    const display = document.getElementById('resetAppWordDisplay');
-    const confirmBtn = document.getElementById('resetAppConfirmBtn');
-
     if (!modal) return;
 
-    // Pick random verification word
-    currentResetWord = RESET_VERIFICATION_WORDS[Math.floor(Math.random() * RESET_VERIFICATION_WORDS.length)];
-    if (display) display.textContent = currentResetWord;
-
-    if (input) {
-        input.value = '';
-        input.classList.remove('valid');
-    }
-    // Disabled styling comes from the .btn system's :disabled rule.
-    if (confirmBtn) confirmBtn.disabled = true;
-
+    currentResetMode = 'progress';
+    showResetStep(1);
     modal.style.display = 'flex';
 }
 
@@ -878,7 +943,13 @@ function handleResetInputChange(e) {
 
 async function executeFactoryReset() {
     try {
-        clearLocalStudyData();
+        if (currentResetMode === 'progress') {
+            clearProgressData();
+        } else if (currentResetMode === 'sources') {
+            clearSourcesData();
+        } else {
+            clearLocalStudyData();
+        }
 
         // If GitHub sync is connected, push clean payload to GitHub Gist as well
         if (AppState.githubToken && AppState.githubGistId) {
@@ -909,7 +980,20 @@ function setupEventListeners() {
     setClick('menuResetApp', openResetAppModal);
     setClick('resetAppCloseBtn', closeResetAppModal);
     setClick('resetAppCancelBtn', closeResetAppModal);
+    setClick('resetAppNextBtn', () => showResetStep(2));
+    setClick('resetAppBackBtn', () => showResetStep(1));
     setClick('resetAppConfirmBtn', executeFactoryReset);
+
+    // Option cards selection click listeners
+    document.querySelectorAll('.reset-option-card').forEach(card => {
+        card.addEventListener('click', (e) => {
+            const mode = card.dataset.resetMode;
+            if (mode) {
+                currentResetMode = mode;
+                updateResetOptionCardStyles();
+            }
+        });
+    });
 
     const resetInput = document.getElementById('resetAppConfirmInput');
     if (resetInput) {

@@ -265,6 +265,83 @@ export function clearLocalStudyData() {
     clearActiveTest();
 }
 
+/**
+ * Resets progress, statistics, FSRS stability, study activity, streaks, and tokens,
+ * while keeping all sources, folders, and presets intact.
+ */
+export function clearProgressData() {
+    AppState.stats = {};
+    AppState.totalStats = {};
+    AppState.recentTests = [];
+    AppState.presetSessions = {};
+    AppState.studyActivity = {};
+    AppState.continuityConfig = {
+        freezeTokens: {
+            total: 1,
+            remaining: 1,
+            tier1Earned: false,
+            tier2Earned: false,
+            initialized: true
+        },
+        focusFreezeTokens: {
+            total: 1,
+            remaining: 1,
+            tier1Earned: false,
+            tier2Earned: false,
+            initialized: true
+        },
+        focusPools: [],
+        focusSources: AppState.continuityConfig?.focusSources || [],
+        focusSourceNames: AppState.continuityConfig?.focusSourceNames || {},
+        notificationSettings: AppState.continuityConfig?.notificationSettings || {
+            enabled: false,
+            focusEnabled: false,
+            quietHoursStart: '22:00',
+            quietHoursEnd: '08:00',
+            dailyScheduleHour: 9,
+            dailyScheduleMinute: 0,
+            focusScheduleHour: 19,
+            focusScheduleMinute: 0,
+            lastNotifiedDate: null,
+            lastFocusNotifiedDate: null,
+            ignoreStreakA: 0,
+            ignoreStreakB: 0,
+            pausedUntilA: null,
+            pausedUntilB: null,
+            optInDismissedAt: null,
+            optInFocusDismissedAt: null
+        }
+    };
+
+    localStorage.removeItem('focus_app_stats_local');
+    localStorage.removeItem('focus_app_stats_global');
+    localStorage.removeItem('focus_app_recent_tests');
+    localStorage.removeItem('focus_app_preset_sessions');
+    localStorage.removeItem('focus_app_study_activity');
+    localStorage.setItem('focus_app_continuity_config', JSON.stringify(AppState.continuityConfig));
+    clearActiveTest();
+}
+
+/**
+ * Deletes all imported question sources, folders, and quick presets,
+ * while leaving global configuration intact.
+ */
+export function clearSourcesData() {
+    AppState.folders = [createUncategorizedFolderRecord()];
+    AppState.sources = [];
+    AppState.quickPresets = [];
+    AppState.currentSourceKey = null;
+    AppState.presetSessions = {};
+    
+    localStorage.removeItem('focus_app_preset_sessions');
+    localStorage.setItem('focus_app_folders', JSON.stringify(AppState.folders));
+    localStorage.setItem('focus_app_sources', JSON.stringify(AppState.sources));
+    localStorage.setItem('focus_app_quick_presets', JSON.stringify(AppState.quickPresets));
+    localStorage.removeItem('focus_app_current_source');
+    
+    clearActiveTest();
+}
+
 export function savePresetSessions() {
     localStorage.setItem('focus_app_preset_sessions', JSON.stringify(AppState.presetSessions || {}));
 }
