@@ -10,6 +10,7 @@ import { renderSourcesList, showMergeModal, closeAllSourcesModals, showSourceOpt
 import { renderContinuityBlock, renderGlobalCharts, showDailyMotivationToast } from './features/stats/continuity-ui.js';
 import { initArchiveUI } from './features/sources/archive.js';
 import { prepareTest, finishTest, prepareRetake, buildQuestionPool } from './features/test/test-engine.js';
+import { flushInProgressAnswers } from './features/stats/continuity-engine.js';
 import { renderQuestion, handleCheckAnswer, updateIndicators, handleTranslation, handleDifficultyRating, handleFlashcardRating, renderTestResults, handleTtsToggle, getIsAudioPlaying, stopAudio, decorateReadingSections } from './features/test/test-ui.js';
 import { renderStatsList, updateHomeStats, setupStatsEventListeners } from './features/stats/stats-module.js';
 import { openQuestionEditor, closeQuestionEditor } from './features/stats/question-editor.js';
@@ -342,6 +343,20 @@ const initApp = () => {
                 setTimeout(() => {
                     showOptInModal({ offerFocus: true });
                 }, 1500);
+            }
+        });
+
+        // Flush mid-session progress when the user hides the tab or closes the browser.
+        // This ensures questions answered so far always count toward the daily streak
+        // even if the user never taps "Testi Bitir".
+        document.addEventListener('visibilitychange', () => {
+            if (document.visibilityState === 'hidden' && AppState.testTracking?.results?.length > 0) {
+                flushInProgressAnswers();
+            }
+        });
+        window.addEventListener('pagehide', () => {
+            if (AppState.testTracking?.results?.length > 0) {
+                flushInProgressAnswers();
             }
         });
 
@@ -1866,8 +1881,11 @@ window.handleStatsBack = handleStatsBack;
 function switchView(view, isBack = false) {
     if (!view) return;
 
-    // Stop audio when leaving test environment
+    // If leaving the test view mid-session, commit answered questions to the streak
     if (view !== 'test' && view !== 'statsPreview') {
+        if (AppState.testTracking && AppState.testTracking.results?.length > 0) {
+            flushInProgressAnswers();
+        }
         stopAudio(true, 'manual');
     }
 

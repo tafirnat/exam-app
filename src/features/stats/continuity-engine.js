@@ -508,8 +508,14 @@ export function calculateFocusStreak() {
 export function recordTestFinished(questionCount, correctCount = 0, wrongCount = 0, unansweredCount = 0, testQuestions = []) {
     const activity = initTodayActivity();
 
+    // Subtract the already-flushed in-progress count to avoid double-counting
+    // when flushInProgressAnswers() was called before the test was finished.
+    const flushed = AppState.testTracking?._flushedCount || 0;
+    const flushedFocus = AppState.testTracking?._flushedFocusCount || 0;
+    const net = Math.max(0, questionCount - flushed);
+
     // Global Track Update
-    activity.questionCount = (activity.questionCount || 0) + questionCount;
+    activity.questionCount = (activity.questionCount || 0) + net;
     activity.correctCount = (activity.correctCount || 0) + correctCount;
     activity.wrongCount = (activity.wrongCount || 0) + wrongCount;
     activity.unansweredCount = (activity.unansweredCount || 0) + unansweredCount;
@@ -526,16 +532,79 @@ export function recordTestFinished(questionCount, correctCount = 0, wrongCount =
         if (testQuestions && testQuestions.length > 0) {
             focusQuestionsSolved = testQuestions.filter(q => focusSources.includes(q.sourceId || q.q?.sourceId)).length;
         } else {
-            // Fallback if testQuestions array isn't explicitly passed
             focusQuestionsSolved = questionCount;
         }
 
-        activity.focusQuestionCount = (activity.focusQuestionCount || 0) + focusQuestionsSolved;
+        const netFocus = Math.max(0, focusQuestionsSolved - flushedFocus);
+        activity.focusQuestionCount = (activity.focusQuestionCount || 0) + netFocus;
         const focusReq = getDailyRequirement(activity.focusOverdueSnapshot);
         if (activity.focusQuestionCount >= focusReq) {
             activity.focusStudied = true;
         }
     }
+
+    saveStudyActivity();
+    evaluateFreezeTokenEligibility();
+    evaluateFocusFreezeTokenEligibility();
+}
+
+/**
+ * Commits questions answered so far in an unfinished test to the daily streak.
+ *
+ * Safe to call multiple times — uses a checkpoint stored on testTracking so
+ * only the *delta* since the last flush is added each time. finishTest() then
+ * subtracts the flushed amount to avoid double-counting on proper completion.
+ *
+ * Call this whenever the user leaves the test view without finishing
+ * (view switch, browser back, page visibility change, etc.).
+ */
+export function flushInProgressAnswers() {
+    const tracking = AppState.testTracking;
+    if (!tracking || !Array.isArray(tracking.results)) return;
+
+    // Only count questions the user actually interacted with (have a result entry)
+    const answeredResults = tracking.results.filter(r => r.userAnswer !== null && r.userAnswer !== undefined);
+    const answeredCount = answeredResults.length;
+
+    // Delta since last flush — prevents double-counting on repeated calls
+    const alreadyFlushed = tracking._flushedCount || 0;
+    const delta = answeredCount - alreadyFlushed;
+    if (delta <= 0) return; // nothing new to commit
+
+    const activity = initTodayActivity();
+
+    // Global track
+    activity.questionCount = (activity.questionCount || 0) + delta;
+    activity.correctCount = (activity.correctCount || 0) +
+        answeredResults.slice(alreadyFlushed).filter(r => r.isCorrect).length;
+
+    const globalReq = getDailyRequirement(activity.overdueSnapshot);
+    if (activity.questionCount >= globalReq) {
+        activity.studied = true;
+    }
+
+    // Focus track
+    const focusSources = getFocusSources();
+    if (focusSources.length > 0) {
+        const focusDelta = answeredResults.slice(alreadyFlushed)
+            .filter(r => {
+                const q = AppState.questionMap?.[`${r.sourceId || ''}_${r.questionId}`]
+                    || Object.values(AppState.questionMap || {}).find(q => String(q.id) === String(r.questionId));
+                return q && focusSources.includes(q.sourceId);
+            }).length;
+
+        const alreadyFlushedFocus = tracking._flushedFocusCount || 0;
+        activity.focusQuestionCount = (activity.focusQuestionCount || 0) + focusDelta;
+        tracking._flushedFocusCount = alreadyFlushedFocus + focusDelta;
+
+        const focusReq = getDailyRequirement(activity.focusOverdueSnapshot);
+        if (activity.focusQuestionCount >= focusReq) {
+            activity.focusStudied = true;
+        }
+    }
+
+    // Advance checkpoint
+    tracking._flushedCount = answeredCount;
 
     saveStudyActivity();
     evaluateFreezeTokenEligibility();
