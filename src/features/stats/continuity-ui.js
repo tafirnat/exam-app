@@ -226,6 +226,13 @@ function resolveColor(cssValue) {
 function updateCometRing(container, spinGroup, progress, color) {
     if (!container) return;
 
+    const spinEl = spinGroup || container.querySelector('.ring-comet-spin');
+    if (spinEl) {
+        spinEl.style.display = progress > 0 ? 'block' : 'none';
+    }
+
+    if (progress <= 0) return;
+
     // Resolve actual rgb() value so we can build rgba() variants inline
     const rgb = resolveColor(color);
     // rgb(r, g, b) → rgba(r, g, b, alpha)
@@ -293,7 +300,7 @@ function renderGlobalSlide(liveQ) {
         textEl.style.color = 'var(--success-color, #10b981)';
         updateCometRing(container, spinGroup, 100, 'var(--success-color, #10b981)');
     } else {
-        const progress = Math.min(100, Math.round((solved / req) * 100));
+        const progress = solved > 0 ? Math.max(1, Math.min(100, Math.round((solved / req) * 100))) : 0;
         textEl.style.color = 'var(--text-secondary)';
         updateCometRing(container, spinGroup, progress, 'var(--trend-line-normal, #0891b2)');
 
@@ -372,7 +379,7 @@ function renderFocusSlide() {
             textEl.style.color = 'var(--success-color, #10b981)';
             updateCometRing(focusContainer, focusSpinGroup, 100, 'var(--success-color, #10b981)');
         } else {
-            const progress = Math.min(100, Math.round((solved / req) * 100));
+            const progress = solved > 0 ? Math.max(1, Math.min(100, Math.round((solved / req) * 100))) : 0;
             textEl.style.color = 'var(--text-secondary)';
             updateCometRing(focusContainer, focusSpinGroup, progress, 'var(--trend-line-focus, #8b5cf6)');
             textEl.textContent = selectedNames
