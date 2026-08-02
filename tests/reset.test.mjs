@@ -66,7 +66,7 @@ test('clearSourcesData resets sources & folders but preserves state structure', 
     assert.deepEqual(AppState.quickPresets, []);
 });
 
-test('clearLocalStudyData performs a full factory reset', () => {
+test('clearLocalStudyData performs a full factory reset and sets sample key', () => {
     clearLocalStudyData();
 
     assert.deepEqual(AppState.sources, []);
@@ -76,4 +76,15 @@ test('clearLocalStudyData performs a full factory reset', () => {
     assert.deepEqual(AppState.studyActivity, {});
     assert.equal(AppState.folders.length, 1);
     assert.deepEqual(AppState.quickPresets, []);
+    assert.equal(global.localStorage.getItem('focus_app_sample_loaded'), 'reset');
+});
+
+test('fresh state returns 0 streak without falsely auto-freezing yesterday', async () => {
+    clearLocalStudyData();
+    const { calculateGlobalStreak, calculateFocusStreak } = await import('../src/features/stats/continuity-engine.js');
+
+    assert.equal(calculateGlobalStreak(), 0);
+    assert.equal(calculateFocusStreak(), 0);
+    assert.equal(AppState.continuityConfig.freezeTokens.remaining, 1);
+    assert.equal(AppState.continuityConfig.focusFreezeTokens.remaining, 1);
 });

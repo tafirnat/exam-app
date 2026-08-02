@@ -354,8 +354,20 @@ function freezeMissedDaysIfPossible() {
     const globalTokens = AppState.continuityConfig.freezeTokens;
     const focusTokens = AppState.continuityConfig.focusFreezeTokens;
     const activities = AppState.studyActivity || {};
-    
+
+    const hasPriorActivityBefore = (targetDateStr) => {
+        const keys = Object.keys(activities);
+        return keys.some(k => k < targetDateStr && (
+            activities[k]?.studied ||
+            activities[k]?.frozen ||
+            activities[k]?.focusStudied ||
+            activities[k]?.focusFrozen
+        ));
+    };
+
     const checkAndFreeze = (dateStr) => {
+        if (!hasPriorActivityBefore(dateStr)) return;
+
         let act = activities[dateStr];
         if (!act) {
             act = {
@@ -399,11 +411,11 @@ function freezeMissedDaysIfPossible() {
             }
         }
     };
-    
+
     const yesterday = new Date();
     yesterday.setDate(yesterday.getDate() - 1);
     checkAndFreeze(getLocalDateStr(yesterday));
-    
+
     const dayBefore = new Date();
     dayBefore.setDate(dayBefore.getDate() - 2);
     checkAndFreeze(getLocalDateStr(dayBefore));

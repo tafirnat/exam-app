@@ -618,7 +618,7 @@ export function updateHomeStats() {
     const solvedOnlyPct = total > 0 ? (solvedOnlyCount / total * 100).toFixed(1) : 0;
     const notSolvedPct  = total > 0 ? Math.max(0, 100 - parseFloat(learnedPct) - parseFloat(solvedOnlyPct)).toFixed(1) : 100;
 
-    const avgDiff = total > 0 ? (totalDifficulty / total / 2).toFixed(1) : "0.0";
+    const avgDiff = total > 0 ? (totalDifficulty / total / 2).toFixed(1) : "-";
     const updateEl = (id, text) => {
         const el = document.getElementById(id);
         if (el) el.innerText = text;
