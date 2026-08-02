@@ -8,7 +8,8 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'unsafe-inline'; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src 'self' https://fonts.gstatic.com data:; img-src 'self' data: blob: https:; media-src 'self' data: blob: https:; connect-src 'self' https://api.github.com https://*.workers.dev https://translate.googleapis.com; frame-src 'none'; object-src 'none';">
+    <meta http-equiv="Content-Security-Policy"
+        content="default-src 'self'; script-src 'self' 'unsafe-inline'; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src 'self' https://fonts.gstatic.com data:; img-src 'self' data: blob: https:; media-src 'self' data: blob: https:; connect-src 'self' https://api.github.com https://*.workers.dev https://translate.googleapis.com; frame-src 'none'; object-src 'none';">
     <meta name="theme-color" content="#0f172a">
     <meta name="apple-mobile-web-app-capable" content="yes">
     <meta name="mobile-web-app-capable" content="yes">
@@ -49,7 +50,8 @@
         <div class="header-sync-container" style="position: relative;">
             <button class="github-sync-btn" id="githubSyncBtn" data-i18n-title="github_sync">
                 <svg viewBox="0 0 24 24" width="18" height="18" fill="currentColor">
-                    <path d="M12 0C5.37 0 0 5.37 0 12c0 5.31 3.435 9.795 8.205 11.385.6.105.825-.255.825-.57 0-.285-.015-1.23-.015-2.235-3.015.555-3.795-.735-4.035-1.41-.135-.345-.72-1.41-1.23-1.695-.42-.225-1.02-.78-.015-.795.945-.015 1.62.87 1.845 1.23 1.08 1.815 2.805 1.305 3.495.99.105-.78.42-1.305.765-1.605-2.67-.3-5.46-1.335-5.46-5.925 0-1.305.465-2.385 1.23-3.225-.12-.3-.54-1.53.12-3.18 0 0 1.005-.315 3.3 1.23.96-.27 1.98-.405 3-.405s2.04.135 3 .405c2.295-1.56 3.3-1.23 3.3-1.23.66 1.65.24 2.88.12 3.18.765.84 1.23 1.905 1.23 3.225 0 4.605-2.805 5.625-5.475 5.925.435.375.81 1.095.81 2.22 0 1.605-.015 2.895-.015 3.3 0 .315.225.69.825.57A12.02 12.02 0 0024 12c0-6.63-5.37-12-12-12z"/>
+                    <path
+                        d="M12 0C5.37 0 0 5.37 0 12c0 5.31 3.435 9.795 8.205 11.385.6.105.825-.255.825-.57 0-.285-.015-1.23-.015-2.235-3.015.555-3.795-.735-4.035-1.41-.135-.345-.72-1.41-1.23-1.695-.42-.225-1.02-.78-.015-.795.945-.015 1.62.87 1.845 1.23 1.08 1.815 2.805 1.305 3.495.99.105-.78.42-1.305.765-1.605-2.67-.3-5.46-1.335-5.46-5.925 0-1.305.465-2.385 1.23-3.225-.12-.3-.54-1.53.12-3.18 0 0 1.005-.315 3.3 1.23.96-.27 1.98-.405 3-.405s2.04.135 3 .405c2.295-1.56 3.3-1.23 3.3-1.23.66 1.65.24 2.88.12 3.18.765.84 1.23 1.905 1.23 3.225 0 4.605-2.805 5.625-5.475 5.925.435.375.81 1.095.81 2.22 0 1.605-.015 2.895-.015 3.3 0 .315.225.69.825.57A12.02 12.02 0 0024 12c0-6.63-5.37-12-12-12z" />
                 </svg>
                 <span class="github-sync-label" id="githubSyncLabel" data-i18n="github_login">Oturum Aç</span>
             </button>
@@ -60,14 +62,17 @@
                 </div>
                 <div class="github-dropdown-actions">
                     <button class="btn btn-subtle btn-block github-dropdown-btn" id="githubDropdownSyncNow">
-                        <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2">
-                            <path d="M21.5 2v6h-6M2.5 22v-6h6M2 11.5a10 10 0 0 1 18.8-4.3M22 12.5a10 10 0 0 1-18.8 4.2"/>
+                        <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor"
+                            stroke-width="2">
+                            <path
+                                d="M21.5 2v6h-6M2.5 22v-6h6M2 11.5a10 10 0 0 1 18.8-4.3M22 12.5a10 10 0 0 1-18.8 4.2" />
                         </svg>
                         <span data-i18n="github_sync_now">Şimdi Eşitle</span>
                     </button>
                     <button class="btn btn-subtle btn-block github-dropdown-btn danger" id="githubDropdownLogout">
-                        <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2">
-                            <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4M16 17l5-5-5-5M21 12H9"/>
+                        <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor"
+                            stroke-width="2">
+                            <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4M16 17l5-5-5-5M21 12H9" />
                         </svg>
                         <span data-i18n="github_logout">Çıkış Yap</span>
                     </button>
@@ -96,7 +101,8 @@
             <div class="menu-section">
                 <div class="menu-section-header no-accordion" id="menuTheme">
                     <div class="menu-section-title">
-                        <svg id="menuThemeIcon" viewBox="0 0 24 24" fill="none" stroke="currentColor" class="section-icon"></svg>
+                        <svg id="menuThemeIcon" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                            class="section-icon"></svg>
                         <span id="menuThemeText" data-i18n="theme_change">Görünümü Değiştir</span>
                     </div>
                 </div>
@@ -109,7 +115,9 @@
                         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" class="section-icon">
                             <circle cx="12" cy="12" r="10"></circle>
                             <line x1="2" y1="12" x2="22" y2="12"></line>
-                            <path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"></path>
+                            <path
+                                d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z">
+                            </path>
                         </svg>
                         <span data-i18n="lang_select">Dil Seçimi</span>
                     </div>
@@ -130,7 +138,8 @@
             <div class="menu-section">
                 <div class="menu-section-header" data-section="backup">
                     <div class="menu-section-title">
-                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="section-icon">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
+                            stroke-linecap="round" stroke-linejoin="round" class="section-icon">
                             <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
                             <polyline points="17 8 12 3 7 8"></polyline>
                             <line x1="12" y1="3" x2="12" y2="15"></line>
@@ -144,7 +153,8 @@
                 <div class="menu-section-content" id="section-backup">
                     <div style="padding: 0 0.5rem; display: flex; flex-direction: column; gap: 0.5rem;">
                         <button class="menu-sub-item" id="menuExportBtn">
-                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" width="14" height="14">
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
+                                stroke-linecap="round" stroke-linejoin="round" width="14" height="14">
                                 <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
                                 <polyline points="17 8 12 3 7 8"></polyline>
                                 <line x1="12" y1="3" x2="12" y2="15"></line>
@@ -152,7 +162,8 @@
                             <span data-i18n="export">Dışa Aktar</span>
                         </button>
                         <button class="menu-sub-item" id="menuImportBtn">
-                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" width="14" height="14">
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
+                                stroke-linecap="round" stroke-linejoin="round" width="14" height="14">
                                 <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
                                 <polyline points="7 10 12 15 17 10"></polyline>
                                 <line x1="12" y1="15" x2="12" y2="3"></line>
@@ -188,7 +199,9 @@
                         <button class="menu-sub-item" id="menuManageAIProviders" style="margin-top: 0.4rem;">
                             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" width="14" height="14">
                                 <circle cx="12" cy="12" r="3"></circle>
-                                <path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"></path>
+                                <path
+                                    d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z">
+                                </path>
                             </svg>
                             <span data-i18n="manage_ai_services">AI Servislerini Düzenle</span>
                         </button>
@@ -215,28 +228,37 @@
                 </div>
                 <div class="menu-section-content" id="section-timer">
                     <div style="padding: 0 0.5rem 0.5rem; display: flex; flex-direction: column; gap: 0.75rem;">
-                        <div style="display: flex; justify-content: space-between; align-items: center; padding-bottom: 0.5rem; border-bottom: 1px solid var(--border-color);">
+                        <div
+                            style="display: flex; justify-content: space-between; align-items: center; padding-bottom: 0.5rem; border-bottom: 1px solid var(--border-color);">
                             <span data-i18n="timer_stopwatch" style="font-size: 0.85rem;">Genel Süre (Kronometre)</span>
                             <label class="switch-small">
                                 <input type="checkbox" id="timerStopwatchToggle">
                                 <span class="slider-small"></span>
                             </label>
                         </div>
-                        <div style="display: flex; flex-direction: column; padding-bottom: 0.5rem; border-bottom: 1px solid var(--border-color);">
+                        <div
+                            style="display: flex; flex-direction: column; padding-bottom: 0.5rem; border-bottom: 1px solid var(--border-color);">
                             <div style="display: flex; justify-content: space-between; align-items: center;">
-                                <span data-i18n="timer_countdown" style="font-size: 0.85rem;">Soru Başına Geri Sayım</span>
+                                <span data-i18n="timer_countdown" style="font-size: 0.85rem;">Soru Başına Geri
+                                    Sayım</span>
                                 <label class="switch-small">
                                     <input type="checkbox" id="timerCountdownToggle">
                                     <span class="slider-small"></span>
                                 </label>
                             </div>
-                            <div id="countdownSubMenu" style="display: flex; flex-direction: column; gap: 0.6rem; padding: 0.75rem; margin-top: 0.75rem; background-color: var(--surface-hover); border-radius: 6px;">
+                            <div id="countdownSubMenu"
+                                style="display: flex; flex-direction: column; gap: 0.6rem; padding: 0.75rem; margin-top: 0.75rem; background-color: var(--surface-hover); border-radius: 6px;">
                                 <div style="display: flex; justify-content: space-between; align-items: center;">
-                                    <span data-i18n="timer_countdown_limit" style="font-size: 0.8rem; color: var(--text-secondary);">Soru Süresi (Saniye)</span>
-                                    <input type="number" id="timerCountdownLimitInput" min="1" max="999" value="59" style="width: 60px; text-align: center; border: 1px solid var(--border-color); border-radius: 4px; background-color: var(--bg-color); color: var(--text-primary); padding: 0.2rem;">
+                                    <span data-i18n="timer_countdown_limit"
+                                        style="font-size: 0.8rem; color: var(--text-secondary);">Soru Süresi
+                                        (Saniye)</span>
+                                    <input type="number" id="timerCountdownLimitInput" min="1" max="999" value="59"
+                                        style="width: 60px; text-align: center; border: 1px solid var(--border-color); border-radius: 4px; background-color: var(--bg-color); color: var(--text-primary); padding: 0.2rem;">
                                 </div>
                                 <div style="display: flex; justify-content: space-between; align-items: center;">
-                                    <span data-i18n="timer_countdown_autocheck" style="font-size: 0.8rem; color: var(--text-secondary);">Süre bitince cevabı göster</span>
+                                    <span data-i18n="timer_countdown_autocheck"
+                                        style="font-size: 0.8rem; color: var(--text-secondary);">Süre bitince cevabı
+                                        göster</span>
                                     <label class="switch-small">
                                         <input type="checkbox" id="timerCountdownAutoCheckToggle">
                                         <span class="slider-small"></span>
@@ -267,18 +289,19 @@
                     </svg>
                 </div>
                 <div class="menu-section-content" id="section-translate">
-                        <div style="padding: 0 0.5rem;">
-                            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1rem; padding-bottom: 0.5rem; border-bottom: 1px solid var(--border-color);">
-                                <span data-i18n="enable_translation" style="font-size: 0.85rem;">Çeviriyi Etkinleştir</span>
-                                <label class="switch-small">
-                                    <input type="checkbox" id="translationToggle">
-                                    <span class="slider-small"></span>
-                                </label>
-                            </div>
-                            <select id="translationTargetSelect" class="menu-select" style="display: none;">
-                                <!-- Populated by JS -->
-                            </select>
+                    <div style="padding: 0 0.5rem;">
+                        <div
+                            style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1rem; padding-bottom: 0.5rem; border-bottom: 1px solid var(--border-color);">
+                            <span data-i18n="enable_translation" style="font-size: 0.85rem;">Çeviriyi Etkinleştir</span>
+                            <label class="switch-small">
+                                <input type="checkbox" id="translationToggle">
+                                <span class="slider-small"></span>
+                            </label>
                         </div>
+                        <select id="translationTargetSelect" class="menu-select" style="display: none;">
+                            <!-- Populated by JS -->
+                        </select>
+                    </div>
                 </div>
             </div>
 
@@ -297,7 +320,8 @@
                     </svg>
                 </div>
                 <div class="menu-section-content" id="section-tts">
-                    <div style="display: flex; justify-content: space-between; align-items: center; padding: 0 0.5rem 0.5rem 0.5rem; border-bottom: 1px solid var(--border-color); margin-bottom: 0.5rem;">
+                    <div
+                        style="display: flex; justify-content: space-between; align-items: center; padding: 0 0.5rem 0.5rem 0.5rem; border-bottom: 1px solid var(--border-color); margin-bottom: 0.5rem;">
                         <span data-i18n="enable_tts" style="font-size: 0.85rem;">Metin Okumayı Etkinleştir</span>
                         <label class="switch-small">
                             <input type="checkbox" id="ttsToggle">
@@ -317,10 +341,12 @@
                                 <div class="tts-tick-dot"></div>
                                 <div class="tts-tick-dot"></div>
                             </div>
-                            <input type="range" id="ttsMenuSpeed" min="0.35" max="0.65" step="0.05" class="menu-tts-slider">
+                            <input type="range" id="ttsMenuSpeed" min="0.35" max="0.65" step="0.05"
+                                class="menu-tts-slider">
                         </div>
-                        
-                        <div style="display: flex; justify-content: space-between; align-items: center; padding: 0.5rem; border-top: 1px solid var(--border-color); margin-top: 0.5rem;">
+
+                        <div
+                            style="display: flex; justify-content: space-between; align-items: center; padding: 0.5rem; border-top: 1px solid var(--border-color); margin-top: 0.5rem;">
                             <span data-i18n="tts_autoplay" style="font-size: 0.85rem;">Otomatik Oynat</span>
                             <label class="switch-small">
                                 <input type="checkbox" id="ttsAutoplayToggle">
@@ -328,7 +354,8 @@
                             </label>
                         </div>
                         <div class="menu-hint">
-                            <svg viewBox="0 0 24 24" width="12" height="12" fill="none" stroke="currentColor" stroke-width="2">
+                            <svg viewBox="0 0 24 24" width="12" height="12" fill="none" stroke="currentColor"
+                                stroke-width="2">
                                 <circle cx="12" cy="12" r="10"></circle>
                                 <line x1="12" y1="16" x2="12" y2="12"></line>
                                 <line x1="12" y1="8" x2="12.01" y2="8"></line>
@@ -357,59 +384,81 @@
                     <div style="padding: 0 0.5rem 0.5rem; display: flex; flex-direction: column; gap: 0.75rem;">
 
                         <!-- Genel Seri -->
-                        <div style="display: flex; flex-direction: column; gap: 0.5rem; padding-bottom: 0.75rem; border-bottom: 1px solid var(--border-color);">
+                        <div
+                            style="display: flex; flex-direction: column; gap: 0.5rem; padding-bottom: 0.75rem; border-bottom: 1px solid var(--border-color);">
                             <div style="display: flex; justify-content: space-between; align-items: center;">
-                                <span data-i18n="notif_general_label" style="font-size: 0.85rem;">Genel Seri Hatırlatıcı</span>
+                                <span data-i18n="notif_general_label" style="font-size: 0.85rem;">Genel Seri
+                                    Hatırlatıcı</span>
                                 <label class="switch-small">
                                     <input type="checkbox" id="notifGeneralToggle">
                                     <span class="slider-small"></span>
                                 </label>
                             </div>
-                            <div id="notifGeneralTimeRow" style="display: none; align-items: center; gap: 0.5rem; padding: 0.4rem 0.6rem; background: var(--surface-hover); border-radius: 6px;">
-                                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" style="width:14px;height:14px;opacity:0.6;flex-shrink:0;">
+                            <div id="notifGeneralTimeRow"
+                                style="display: none; align-items: center; gap: 0.5rem; padding: 0.4rem 0.6rem; background: var(--surface-hover); border-radius: 6px;">
+                                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                                    style="width:14px;height:14px;opacity:0.6;flex-shrink:0;">
                                     <circle cx="12" cy="12" r="10"></circle>
                                     <polyline points="12 6 12 12 16 14"></polyline>
                                 </svg>
-                                <span data-i18n="notif_general_schedule" style="font-size: 0.8rem; color: var(--text-secondary); flex: 1;">Genel bildirim saati</span>
-                                <input type="time" id="notifGeneralTime" value="09:00" style="border: 1px solid var(--border-color); border-radius: 4px; background: var(--bg-color); color: var(--text-primary); padding: 0.15rem 0.4rem; font-size: 0.8rem;">
+                                <span data-i18n="notif_general_schedule"
+                                    style="font-size: 0.8rem; color: var(--text-secondary); flex: 1;">Genel bildirim
+                                    saati</span>
+                                <input type="time" id="notifGeneralTime" value="09:00"
+                                    style="border: 1px solid var(--border-color); border-radius: 4px; background: var(--bg-color); color: var(--text-primary); padding: 0.15rem 0.4rem; font-size: 0.8rem;">
                             </div>
                         </div>
 
                         <!-- Odak Seri -->
-                        <div style="display: flex; flex-direction: column; gap: 0.5rem; padding-bottom: 0.75rem; border-bottom: 1px solid var(--border-color);">
+                        <div
+                            style="display: flex; flex-direction: column; gap: 0.5rem; padding-bottom: 0.75rem; border-bottom: 1px solid var(--border-color);">
                             <div style="display: flex; justify-content: space-between; align-items: center;">
                                 <div style="display: flex; flex-direction: column; gap: 0.15rem;">
-                                    <span data-i18n="notif_focus_label" style="font-size: 0.85rem;">Odak Seri Hatırlatıcı</span>
-                                    <span id="notifFocusHint" data-i18n="notif_focus_unavailable" style="font-size: 0.72rem; color: var(--text-muted); display: none;">Odak kaynağı seç</span>
+                                    <span data-i18n="notif_focus_label" style="font-size: 0.85rem;">Odak Seri
+                                        Hatırlatıcı</span>
+                                    <span id="notifFocusHint" data-i18n="notif_focus_unavailable"
+                                        style="font-size: 0.72rem; color: var(--text-muted); display: none;">Odak
+                                        kaynağı seç</span>
                                 </div>
                                 <label class="switch-small">
                                     <input type="checkbox" id="notifFocusToggle">
                                     <span class="slider-small"></span>
                                 </label>
                             </div>
-                            <div id="notifFocusTimeRow" style="display: none; align-items: center; gap: 0.5rem; padding: 0.4rem 0.6rem; background: var(--surface-hover); border-radius: 6px;">
-                                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" style="width:14px;height:14px;opacity:0.6;flex-shrink:0;">
+                            <div id="notifFocusTimeRow"
+                                style="display: none; align-items: center; gap: 0.5rem; padding: 0.4rem 0.6rem; background: var(--surface-hover); border-radius: 6px;">
+                                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                                    style="width:14px;height:14px;opacity:0.6;flex-shrink:0;">
                                     <circle cx="12" cy="12" r="10"></circle>
                                     <polyline points="12 6 12 12 16 14"></polyline>
                                 </svg>
-                                <span data-i18n="notif_focus_schedule" style="font-size: 0.8rem; color: var(--text-secondary); flex: 1;">Odak bildirim saati</span>
-                                <input type="time" id="notifFocusTime" value="19:00" style="border: 1px solid var(--border-color); border-radius: 4px; background: var(--bg-color); color: var(--text-primary); padding: 0.15rem 0.4rem; font-size: 0.8rem;">
+                                <span data-i18n="notif_focus_schedule"
+                                    style="font-size: 0.8rem; color: var(--text-secondary); flex: 1;">Odak bildirim
+                                    saati</span>
+                                <input type="time" id="notifFocusTime" value="19:00"
+                                    style="border: 1px solid var(--border-color); border-radius: 4px; background: var(--bg-color); color: var(--text-primary); padding: 0.15rem 0.4rem; font-size: 0.8rem;">
                             </div>
                         </div>
 
                         <!-- Sessiz Saatler -->
-                        <div style="display: flex; flex-direction: column; gap: 0.4rem; padding-bottom: 0.75rem; border-bottom: 1px solid var(--border-color);">
-                            <span data-i18n="notif_quiet_hours" style="font-size: 0.8rem; color: var(--text-secondary);">Sessiz Saatler</span>
+                        <div
+                            style="display: flex; flex-direction: column; gap: 0.4rem; padding-bottom: 0.75rem; border-bottom: 1px solid var(--border-color);">
+                            <span data-i18n="notif_quiet_hours"
+                                style="font-size: 0.8rem; color: var(--text-secondary);">Sessiz Saatler</span>
                             <div style="display: flex; align-items: center; gap: 0.5rem;">
-                                <input type="time" id="notifQuietStart" value="22:00" style="flex:1; border: 1px solid var(--border-color); border-radius: 4px; background: var(--bg-color); color: var(--text-primary); padding: 0.2rem 0.4rem; font-size: 0.8rem;">
+                                <input type="time" id="notifQuietStart" value="22:00"
+                                    style="flex:1; border: 1px solid var(--border-color); border-radius: 4px; background: var(--bg-color); color: var(--text-primary); padding: 0.2rem 0.4rem; font-size: 0.8rem;">
                                 <span style="color: var(--text-muted); font-size: 0.8rem;">–</span>
-                                <input type="time" id="notifQuietEnd" value="08:00" style="flex:1; border: 1px solid var(--border-color); border-radius: 4px; background: var(--bg-color); color: var(--text-primary); padding: 0.2rem 0.4rem; font-size: 0.8rem;">
+                                <input type="time" id="notifQuietEnd" value="08:00"
+                                    style="flex:1; border: 1px solid var(--border-color); border-radius: 4px; background: var(--bg-color); color: var(--text-primary); padding: 0.2rem 0.4rem; font-size: 0.8rem;">
                             </div>
                         </div>
 
                         <!-- Test Bildirimi -->
-                        <button id="notifTestBtn" class="btn btn-subtle btn-block" style="font-size: 0.82rem; gap: 0.4rem;">
-                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" style="width:14px;height:14px;flex-shrink:0;">
+                        <button id="notifTestBtn" class="btn btn-subtle btn-block"
+                            style="font-size: 0.82rem; gap: 0.4rem;">
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                                style="width:14px;height:14px;flex-shrink:0;">
                                 <path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"></path>
                                 <path d="M13.73 21a2 2 0 0 1-3.46 0"></path>
                             </svg>
@@ -417,7 +466,9 @@
                         </button>
 
                         <!-- İzin durumu göstergesi -->
-                        <div id="notifPermissionStatus" style="display: none; font-size: 0.75rem; color: var(--warning-color); padding: 0.4rem 0.6rem; background: var(--surface-hover); border-radius: 6px; text-align: center;"></div>
+                        <div id="notifPermissionStatus"
+                            style="display: none; font-size: 0.75rem; color: var(--warning-color); padding: 0.4rem 0.6rem; background: var(--surface-hover); border-radius: 6px; text-align: center;">
+                        </div>
 
                     </div>
                 </div>
@@ -429,7 +480,9 @@
             <div id="testOnlyMenuItems" style="display: none;">
                 <button class="menu-side-item" id="menuStar">
                     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor">
-                        <polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"></polygon>
+                        <polygon
+                            points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2">
+                        </polygon>
                     </svg>
                     <span id="menuStarText" data-i18n="star">Yıldızla</span>
                 </button>
@@ -475,16 +528,20 @@
                 <span data-i18n="onboarding_menu_title">Kullanım Rehberi</span>
             </button>
 
-            <a href="https://github.com/tafirnat/exam-app" target="_blank" rel="noopener noreferrer" class="menu-side-item" style="text-decoration: none;">
+            <a href="https://github.com/tafirnat/exam-app" target="_blank" rel="noopener noreferrer"
+                class="menu-side-item" style="text-decoration: none;">
                 <svg viewBox="0 0 24 24" width="20" height="20" fill="currentColor">
-                    <path d="M12 0C5.37 0 0 5.37 0 12c0 5.31 3.435 9.795 8.205 11.385.6.105.825-.255.825-.57 0-.285-.015-1.23-.015-2.235-3.015.555-3.795-.735-4.035-1.41-.135-.345-.72-1.41-1.23-1.695-.42-.225-1.02-.78-.015-.795.945-.015 1.62.87 1.845 1.23 1.08 1.815 2.805 1.305 3.495.99.105-.78.42-1.305.765-1.605-2.67-.3-5.46-1.335-5.46-5.925 0-1.305.465-2.385 1.23-3.225-.12-.3-.54-1.53.12-3.18 0 0 1.005-.315 3.3 1.23.96-.27 1.98-.405 3-.405s2.04.135 3 .405c2.295-1.56 3.3-1.23 3.3-1.23.66 1.65.24 2.88.12 3.18.765.84 1.23 1.905 1.23 3.225 0 4.605-2.805 5.625-5.475 5.925.435.375.81 1.095.81 2.22 0 1.605-.015 2.895-.015 3.3 0 .315.225.69.825.57A12.02 12.02 0 0024 12c0-6.63-5.37-12-12-12z"/>
+                    <path
+                        d="M12 0C5.37 0 0 5.37 0 12c0 5.31 3.435 9.795 8.205 11.385.6.105.825-.255.825-.57 0-.285-.015-1.23-.015-2.235-3.015.555-3.795-.735-4.035-1.41-.135-.345-.72-1.41-1.23-1.695-.42-.225-1.02-.78-.015-.795.945-.015 1.62.87 1.845 1.23 1.08 1.815 2.805 1.305 3.495.99.105-.78.42-1.305.765-1.605-2.67-.3-5.46-1.335-5.46-5.925 0-1.305.465-2.385 1.23-3.225-.12-.3-.54-1.53.12-3.18 0 0 1.005-.315 3.3 1.23.96-.27 1.98-.405 3-.405s2.04.135 3 .405c2.295-1.56 3.3-1.23 3.3-1.23.66 1.65.24 2.88.12 3.18.765.84 1.23 1.905 1.23 3.225 0 4.605-2.805 5.625-5.475 5.925.435.375.81 1.095.81 2.22 0 1.605-.015 2.895-.015 3.3 0 .315.225.69.825.57A12.02 12.02 0 0024 12c0-6.63-5.37-12-12-12z" />
                 </svg>
                 <span>Source Code (GitHub)</span>
             </a>
 
             <button class="menu-side-item" id="menuResetApp" style="margin-top: auto;">
-                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="color: inherit;" width="18" height="18">
-                    <path d="M3 6h18M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path>
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="color: inherit;"
+                    width="18" height="18">
+                    <path d="M3 6h18M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2">
+                    </path>
                     <line x1="10" y1="11" x2="10" y2="17"></line>
                     <line x1="14" y1="11" x2="14" y2="17"></line>
                 </svg>
@@ -501,8 +558,6 @@
                     <div class="card continuity-slide active" id="continuityCard">
                         <div style="display: flex; gap: 0.85rem; align-items: flex-start;">
                             <div id="globalRingContainer" class="streak-ring-container" title="Genel Seri İlerlemesi">
-                                <!-- Progress fill: conic-gradient set by JS based on solved/required ratio -->
-                                <div class="ring-progress-fill" id="globalRingProgress"></div>
                                 <!-- Spinning Comet — always full 360°, App.tsx: animate-[spin_4s_linear_infinite] -->
                                 <div class="ring-comet-spin" id="globalRingSpinGroup">
                                     <div class="ring-comet-blur"></div>
@@ -518,35 +573,45 @@
                                     <span class="streak-unit-label">GÜN</span>
                                 </div>
                             </div>
-                            
-                            <div style="flex:1; min-width: 0; display: flex; flex-direction: column; justify-content: space-between;">
+
+                            <div
+                                style="flex:1; min-width: 0; display: flex; flex-direction: column; justify-content: space-between;">
                                 <!-- Top Row: Title Left, Freeze Tokens Top-Right -->
                                 <div style="display:flex; justify-content:space-between; align-items:flex-start;">
                                     <div style="min-width: 0; padding-right: 0.5rem;">
-                                        <h3 style="margin:0; font-size:0.95rem; font-weight:700; line-height: 1.2;">Genel Seri (FSRS)</h3>
-                                        <div id="continuityOverdueText" class="truncate" style="font-size:0.75rem; color:var(--text-secondary); margin-top: 2px; cursor: pointer;">Günün hedefi hesaplanıyor...</div>
+                                        <h3 style="margin:0; font-size:0.95rem; font-weight:700; line-height: 1.2;">
+                                            Genel Seri (FSRS)</h3>
+                                        <div id="continuityOverdueText" class="truncate"
+                                            style="font-size:0.75rem; color:var(--text-secondary); margin-top: 2px; cursor: pointer;">
+                                            Günün hedefi hesaplanıyor...</div>
                                     </div>
-                                    <div id="continuityTokens" class="continuity-icon-row" title="Kalan Dondurma Jetonları">
+                                    <div id="continuityTokens" class="continuity-icon-row"
+                                        title="Kalan Dondurma Jetonları">
                                     </div>
                                 </div>
-                                
+
                                 <!-- Bottom Row: Streak Run action left, Italic Info Button right -->
                                 <div class="continuity-action-row">
                                     <div class="streak-run-group">
-                                        <button id="globalStreakRunBtn" class="streak-run-btn" type="button" title="FSRS'in bugün önerdiği soruları başlat">
-                                            <svg viewBox="0 0 24 24" width="13" height="13" fill="currentColor" aria-hidden="true">
-                                                <path d="M8 5v14l11-7z"/>
+                                        <button id="globalStreakRunBtn" class="streak-run-btn" type="button"
+                                            title="FSRS'in bugün önerdiği soruları başlat">
+                                            <svg viewBox="0 0 24 24" width="13" height="13" fill="currentColor"
+                                                aria-hidden="true">
+                                                <path d="M8 5v14l11-7z" />
                                             </svg>
                                             <span id="globalStreakRunLabel">Seriyi Koru</span>
                                         </button>
-                                        <button id="globalStreakModeBtn" class="streak-mode-btn" type="button" title="Sıralama modunu seç">
-                                            <svg viewBox="0 0 24 24" width="12" height="12" fill="none" stroke="currentColor" stroke-width="3">
+                                        <button id="globalStreakModeBtn" class="streak-mode-btn" type="button"
+                                            title="Sıralama modunu seç">
+                                            <svg viewBox="0 0 24 24" width="12" height="12" fill="none"
+                                                stroke="currentColor" stroke-width="3">
                                                 <polyline points="6 9 12 15 18 9"></polyline>
                                             </svg>
                                         </button>
                                     </div>
                                     <div class="continuity-icon-row">
-                                        <button id="continuityInfoBtn" class="continuity-icon-btn" title="Genel Seri Hakkında Bilgi">
+                                        <button id="continuityInfoBtn" class="continuity-icon-btn"
+                                            title="Genel Seri Hakkında Bilgi">
                                             <span class="info-italic-icon">i</span>
                                         </button>
                                     </div>
@@ -559,8 +624,6 @@
                     <div class="card continuity-slide" id="focusContinuityCard">
                         <div style="display: flex; gap: 0.85rem; align-items: flex-start;">
                             <div id="focusRingContainer" class="streak-ring-container" title="Odak Seri İlerlemesi">
-                                <!-- Progress fill: conic-gradient set by JS based on solved/required ratio -->
-                                <div class="ring-progress-fill" id="focusRingProgress"></div>
                                 <!-- Spinning Comet — always full 360°, App.tsx: animate-[spin_4s_linear_infinite] -->
                                 <div class="ring-comet-spin" id="focusRingSpinGroup">
                                     <div class="ring-comet-blur"></div>
@@ -576,44 +639,58 @@
                                     <span class="streak-unit-label">GÜN</span>
                                 </div>
                             </div>
-                            
-                            <div style="flex:1; min-width: 0; display: flex; flex-direction: column; justify-content: space-between;">
+
+                            <div
+                                style="flex:1; min-width: 0; display: flex; flex-direction: column; justify-content: space-between;">
                                 <!-- Top Row: Title Left, Focus Freeze Tokens Top-Right -->
                                 <div style="display:flex; justify-content:space-between; align-items:flex-start;">
                                     <div style="min-width: 0; padding-right: 0.5rem;">
-                                        <h3 style="margin:0; font-size:0.95rem; font-weight:700; line-height: 1.2;">Odak Seri</h3>
-                                        <div id="focusContinuityOverdueText" class="truncate" style="font-size:0.75rem; color:var(--text-secondary); margin-top: 2px; cursor: pointer;">Seçili kaynaklar yükleniyor...</div>
+                                        <h3 style="margin:0; font-size:0.95rem; font-weight:700; line-height: 1.2;">Odak
+                                            Seri</h3>
+                                        <div id="focusContinuityOverdueText" class="truncate"
+                                            style="font-size:0.75rem; color:var(--text-secondary); margin-top: 2px; cursor: pointer;">
+                                            Seçili kaynaklar yükleniyor...</div>
                                     </div>
-                                    <div id="focusContinuityTokens" class="continuity-icon-row" title="Kalan Odak Dondurma Jetonları">
+                                    <div id="focusContinuityTokens" class="continuity-icon-row"
+                                        title="Kalan Odak Dondurma Jetonları">
                                     </div>
                                 </div>
-                                
+
                                 <!-- Bottom Row: Streak Run action left, settings & info right -->
                                 <div class="continuity-action-row">
                                     <div class="streak-run-group focus-accent">
-                                        <button id="focusStreakRunBtn" class="streak-run-btn" type="button" title="Odak kaynaklarından FSRS'in önerdiği soruları başlat">
-                                            <svg viewBox="0 0 24 24" width="13" height="13" fill="currentColor" aria-hidden="true">
-                                                <path d="M8 5v14l11-7z"/>
+                                        <button id="focusStreakRunBtn" class="streak-run-btn" type="button"
+                                            title="Odak kaynaklarından FSRS'in önerdiği soruları başlat">
+                                            <svg viewBox="0 0 24 24" width="13" height="13" fill="currentColor"
+                                                aria-hidden="true">
+                                                <path d="M8 5v14l11-7z" />
                                             </svg>
                                             <span id="focusStreakRunLabel">Seriyi Koru</span>
                                         </button>
-                                        <button id="focusStreakModeBtn" class="streak-mode-btn" type="button" title="Sıralama modunu seç">
-                                            <svg viewBox="0 0 24 24" width="12" height="12" fill="none" stroke="currentColor" stroke-width="3">
+                                        <button id="focusStreakModeBtn" class="streak-mode-btn" type="button"
+                                            title="Sıralama modunu seç">
+                                            <svg viewBox="0 0 24 24" width="12" height="12" fill="none"
+                                                stroke="currentColor" stroke-width="3">
                                                 <polyline points="6 9 12 15 18 9"></polyline>
                                             </svg>
                                         </button>
                                     </div>
                                     <div class="continuity-icon-row">
-                                    <button id="openFocusSourceModalBtn" class="continuity-icon-btn" title="Kaynakları Seç (Max 3)">
-                                        <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2">
-                                            <circle cx="12" cy="12" r="3"></circle>
-                                            <path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"></path>
-                                        </svg>
-                                    </button>
+                                        <button id="openFocusSourceModalBtn" class="continuity-icon-btn"
+                                            title="Kaynakları Seç (Max 3)">
+                                            <svg viewBox="0 0 24 24" width="18" height="18" fill="none"
+                                                stroke="currentColor" stroke-width="2">
+                                                <circle cx="12" cy="12" r="3"></circle>
+                                                <path
+                                                    d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z">
+                                                </path>
+                                            </svg>
+                                        </button>
 
-                                    <button id="focusContinuityInfoBtn" class="continuity-icon-btn" title="Odak Seri Hakkında Bilgi">
-                                        <span class="info-italic-icon">i</span>
-                                    </button>
+                                        <button id="focusContinuityInfoBtn" class="continuity-icon-btn"
+                                            title="Odak Seri Hakkında Bilgi">
+                                            <span class="info-italic-icon">i</span>
+                                        </button>
                                     </div>
                                 </div>
                             </div>
@@ -623,35 +700,49 @@
                     <!-- Slide 3: Günün Motivasyon Sözü & Sanat Tablosu -->
                     <div class="card continuity-slide motivation-card-art" id="motivationContinuityCard">
                         <div class="motivation-card-overlay"></div>
-                        <div style="position: relative; z-index: 2; display: flex; gap: 0.85rem; align-items: center; min-height: 90px;">
-                            <div class="motivation-icon-badge" style="display: flex; align-items: center; justify-content: center; width: 44px; height: 44px; border-radius: 50%; background: rgba(245, 158, 11, 0.22); color: #fbbf24; flex-shrink: 0; box-shadow: 0 2px 8px rgba(0,0,0,0.3);">
-                                <svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                                    <path d="M12 2v4M12 18v4M4.93 4.93l2.83 2.83M16.24 16.24l2.83 2.83M2 12h4M18 12h4M4.93 19.07l2.83-2.83M16.24 7.76l2.83-2.83"/>
+                        <div
+                            style="position: relative; z-index: 2; display: flex; gap: 0.85rem; align-items: center; min-height: 90px;">
+                            <div class="motivation-icon-badge"
+                                style="display: flex; align-items: center; justify-content: center; width: 44px; height: 44px; border-radius: 50%; background: rgba(245, 158, 11, 0.22); color: #fbbf24; flex-shrink: 0; box-shadow: 0 2px 8px rgba(0,0,0,0.3);">
+                                <svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor"
+                                    stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                    <path
+                                        d="M12 2v4M12 18v4M4.93 4.93l2.83 2.83M16.24 16.24l2.83 2.83M2 12h4M18 12h4M4.93 19.07l2.83-2.83M16.24 7.76l2.83-2.83" />
                                 </svg>
                             </div>
-                            <div style="flex: 1; min-width: 0; display: flex; flex-direction: column; justify-content: space-between; gap: 4px;">
+                            <div
+                                style="flex: 1; min-width: 0; display: flex; flex-direction: column; justify-content: space-between; gap: 4px;">
                                 <div style="display: flex; justify-content: space-between; align-items: center;">
-                                    <h3 style="margin: 0; font-size: 0.78rem; font-weight: 700; color: #f1f5f9; text-transform: uppercase; letter-spacing: 0.6px; text-shadow: 0 1px 3px #000, 0 2px 6px rgba(0,0,0,0.9);" data-i18n="motivation_title">Günün Motivasyonu</h3>
+                                    <h3 style="margin: 0; font-size: 0.78rem; font-weight: 700; color: #f1f5f9; text-transform: uppercase; letter-spacing: 0.6px; text-shadow: 0 1px 3px #000, 0 2px 6px rgba(0,0,0,0.9);"
+                                        data-i18n="motivation_title">Günün Motivasyonu</h3>
                                     <div class="continuity-icon-row">
-                                        <button id="copyMotivationBtn" class="continuity-icon-btn" data-i18n-title="motivation_copy_title" title="Sözü Kopyala">
-                                            <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2">
+                                        <button id="copyMotivationBtn" class="continuity-icon-btn"
+                                            data-i18n-title="motivation_copy_title" title="Sözü Kopyala">
+                                            <svg viewBox="0 0 24 24" width="14" height="14" fill="none"
+                                                stroke="currentColor" stroke-width="2">
                                                 <rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect>
-                                                <path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path>
+                                                <path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1">
+                                                </path>
                                             </svg>
                                         </button>
-                                        <button id="refreshMotivationBtn" class="continuity-icon-btn" data-i18n-title="motivation_refresh_title" title="Başka Söz Göster">
-                                            <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2">
+                                        <button id="refreshMotivationBtn" class="continuity-icon-btn"
+                                            data-i18n-title="motivation_refresh_title" title="Başka Söz Göster">
+                                            <svg viewBox="0 0 24 24" width="14" height="14" fill="none"
+                                                stroke="currentColor" stroke-width="2">
                                                 <path d="M23 4v6h-6"></path>
                                                 <path d="M20.49 15a9 9 0 1 1-2.12-9.36L23 10"></path>
                                             </svg>
                                         </button>
                                     </div>
                                 </div>
-                                <div id="motivationQuoteText" style="font-size: 0.88rem; font-style: italic; font-weight: 600; color: #ffffff; line-height: 1.35; text-shadow: 0 1px 3px #000, 0 2px 8px rgba(0,0,0,0.95);">
+                                <div id="motivationQuoteText"
+                                    style="font-size: 0.88rem; font-style: italic; font-weight: 600; color: #ffffff; line-height: 1.35; text-shadow: 0 1px 3px #000, 0 2px 8px rgba(0,0,0,0.95);">
                                     "..."
                                 </div>
-                                <div style="position: relative; display: flex; justify-content: flex-end; align-items: center; margin-top: 2px;">
-                                    <span id="motivationArtworkInfo" class="motivation-artwork-tag truncate" title="Günün Sanat Eseri">
+                                <div
+                                    style="position: relative; display: flex; justify-content: flex-end; align-items: center; margin-top: 2px;">
+                                    <span id="motivationArtworkInfo" class="motivation-artwork-tag truncate"
+                                        title="Günün Sanat Eseri">
                                         ...
                                     </span>
                                     <span id="motivationQuoteAuthor" class="motivation-quote-author">
@@ -682,9 +773,13 @@
                     </div>
                     <h2 style="margin: 0; font-size: 1.1rem;" data-i18n="home_test_title">Soru &amp; Test Özeti</h2>
                     <div class="quick-sources-wrapper">
-                        <span id="quickSourcesActiveName" class="quick-sources-active-name" style="display: none;"></span>
-                        <button id="quickSourcesBtn" class="icon-btn quick-sources-btn" data-i18n-title="quick_sources_title" aria-haspopup="dialog" title="Hızlı Erişim">
-                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" width="19" height="19" aria-hidden="true">
+                        <span id="quickSourcesActiveName" class="quick-sources-active-name"
+                            style="display: none;"></span>
+                        <button id="quickSourcesBtn" class="icon-btn quick-sources-btn"
+                            data-i18n-title="quick_sources_title" aria-haspopup="dialog" title="Hızlı Erişim">
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
+                                stroke-linecap="round" stroke-linejoin="round" width="19" height="19"
+                                aria-hidden="true">
                                 <path d="M19 21l-7-4-7 4V5a2 2 0 0 1 2-2h10a2 2 0 0 1 2 2v16z"></path>
                                 <line x1="12" y1="7" x2="12" y2="13"></line>
                                 <line x1="9" y1="10" x2="15" y2="10"></line>
@@ -706,14 +801,16 @@
                     </div>
                     <div class="progress-section" id="homeProgressSection" style="margin-top: 0.75rem;">
                         <div style="display: flex; justify-content: space-between; margin-bottom: 0.5rem;">
-                            <span style="font-size: 0.85rem; color: var(--text-secondary);"
-                                data-i18n="progress">Öğrenme İlerlemesi</span>
+                            <span style="font-size: 0.85rem; color: var(--text-secondary);" data-i18n="progress">Öğrenme
+                                İlerlemesi</span>
                             <span style="font-size: 0.85rem; font-weight: 600;" id="homeProgressPercent">0%</span>
                         </div>
-                        <div class="progress-bar-track progress-bar-clickable" id="homeProgressBarTrack" title="Grafik görünümü">
+                        <div class="progress-bar-track progress-bar-clickable" id="homeProgressBarTrack"
+                            title="Grafik görünümü">
                             <div class="progress-bar-segment seg-learned" id="pbSegLearned" style="width:0%"></div>
                             <div class="progress-bar-segment seg-solved" id="pbSegSolved" style="width:0%"></div>
-                            <div class="progress-bar-segment seg-not-solved" id="pbSegNotSolved" style="width:100%"></div>
+                            <div class="progress-bar-segment seg-not-solved" id="pbSegNotSolved" style="width:100%">
+                            </div>
                         </div>
                         <div class="progress-legend" style="margin-top: 0.5rem; display: flex; align-items: center;">
                             <span class="legend-item">
@@ -728,7 +825,9 @@
                                 <span class="legend-dot dot-not-solved"></span>
                                 <span class="legend-count" id="legendNotSolvedCount"></span>
                             </span>
-                            <div id="homeProgressDetail" style="font-size: 0.72rem; color: var(--text-secondary); margin-left: auto; font-weight: 500;"></div>
+                            <div id="homeProgressDetail"
+                                style="font-size: 0.72rem; color: var(--text-secondary); margin-left: auto; font-weight: 500;">
+                            </div>
                         </div>
                     </div>
 
@@ -745,19 +844,24 @@
                         <div id="startBtnContainer" style="display: flex; gap: 0.75rem; flex-direction: column;">
                             <button class="btn btn-warning btn-block" id="resumeBtn" style="display: none;"
                                 data-i18n="resume_test">Devam Et</button>
-                            <button class="btn btn-primary btn-block" id="startBtn" data-i18n="start_test">Başla</button>
+                            <button class="btn btn-primary btn-block" id="startBtn"
+                                data-i18n="start_test">Başla</button>
                         </div>
 
-                        <div id="homeActiveSourcesSection" style="margin-top: 1.25rem; padding-top: 1rem; border-top: 1px solid var(--border-color); display: none;">
-                            <div style="font-size: 0.82rem; font-weight: 600; color: var(--text-secondary); margin-bottom: 0.6rem; letter-spacing: 0.04em;" data-i18n="active_sources_title">Kullanılan Kaynaklar</div>
-                            <div id="homeActiveSourcesList" style="display: flex; flex-direction: column; gap: 0.4rem;"></div>
+                        <div id="homeActiveSourcesSection"
+                            style="margin-top: 1.25rem; padding-top: 1rem; border-top: 1px solid var(--border-color); display: none;">
+                            <div style="font-size: 0.82rem; font-weight: 600; color: var(--text-secondary); margin-bottom: 0.6rem; letter-spacing: 0.04em;"
+                                data-i18n="active_sources_title">Kullanılan Kaynaklar</div>
+                            <div id="homeActiveSourcesList" style="display: flex; flex-direction: column; gap: 0.4rem;">
+                            </div>
                         </div>
                     </div>
                 </div>
 
                 <div id="homeStatsEmptyState" class="home-stats-empty" style="display: none;">
                     <div class="home-empty-icon">
-                        <svg viewBox="0 0 24 24" width="26" height="26" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                        <svg viewBox="0 0 24 24" width="26" height="26" fill="none" stroke="currentColor"
+                            stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
                             <path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"></path>
                             <path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"></path>
                             <line x1="12" y1="9" x2="12" y2="13"></line>
@@ -766,7 +870,8 @@
                     </div>
                     <h3 class="home-empty-title" data-i18n="home_empty_title">Henüz Kaynak Seçilmedi</h3>
                     <p class="home-empty-desc" data-i18n="home_empty_desc">
-                        Soru çözümüne başlamak için Kaynakları Yönet kısmından çalışmak istediğiniz bir veya daha fazla kaynağı seçin.
+                        Soru çözümüne başlamak için Kaynakları Yönet kısmından çalışmak istediğiniz bir veya daha fazla
+                        kaynağı seçin.
                     </p>
                 </div>
             </div>
@@ -775,22 +880,32 @@
 
             <div class="card" id="homeManageSourcesCard" style="margin-top: 1rem;">
                 <div style="display: flex; gap: 0.75rem; flex-direction: row;">
-                    <button class="btn btn-secondary btn-flex" id="homeSourcesBtn" style="flex: 1; min-width: 0; padding: 0.85rem 0.75rem; font-size: 0.9rem; font-weight: 600; justify-content: center; gap: 0.5rem;">
-                        <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" style="flex-shrink: 0;">
-                            <path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"></path>
+                    <button class="btn btn-secondary btn-flex" id="homeSourcesBtn"
+                        style="flex: 1; min-width: 0; padding: 0.85rem 0.75rem; font-size: 0.9rem; font-weight: 600; justify-content: center; gap: 0.5rem;">
+                        <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor"
+                            stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" style="flex-shrink: 0;">
+                            <path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z">
+                            </path>
                         </svg>
-                        <span data-i18n="manage_sources" style="white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">Kaynakları Yönet</span>
-                        <span id="homeSourcesBadge" class="badge" style="font-size: 0.72rem; background: var(--surface-hover); color: var(--text-secondary); padding: 0.15rem 0.5rem; border-radius: 12px; flex-shrink: 0; margin-left: 0.25rem;"></span>
+                        <span data-i18n="manage_sources"
+                            style="white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">Kaynakları
+                            Yönet</span>
+                        <span id="homeSourcesBadge" class="badge"
+                            style="font-size: 0.72rem; background: var(--surface-hover); color: var(--text-secondary); padding: 0.15rem 0.5rem; border-radius: 12px; flex-shrink: 0; margin-left: 0.25rem;"></span>
                     </button>
-                    <button class="btn btn-secondary btn-flex" id="homeStatsBtn" style="flex: 1; min-width: 0; padding: 0.85rem 0.75rem; font-size: 0.9rem; font-weight: 600; justify-content: center; gap: 0.5rem;">
-                        <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" style="flex-shrink: 0;">
+                    <button class="btn btn-secondary btn-flex" id="homeStatsBtn"
+                        style="flex: 1; min-width: 0; padding: 0.85rem 0.75rem; font-size: 0.9rem; font-weight: 600; justify-content: center; gap: 0.5rem;">
+                        <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor"
+                            stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" style="flex-shrink: 0;">
                             <line x1="3" y1="6" x2="13" y2="6"></line>
                             <line x1="3" y1="12" x2="10" y2="12"></line>
                             <line x1="3" y1="18" x2="10" y2="18"></line>
                             <circle cx="16" cy="15" r="4"></circle>
                             <line x1="19" y1="18" x2="22" y2="21"></line>
                         </svg>
-                        <span data-i18n="show_stats" style="white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">Soru Detayları</span>
+                        <span data-i18n="show_stats"
+                            style="white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">Soru
+                            Detayları</span>
                     </button>
                 </div>
             </div>
@@ -800,43 +915,68 @@
                 <!-- Sorulara Genel Bakış Kartı -->
                 <div class="card" id="homeDifficultyStatsCard" style="display: none; position: relative;">
                     <div class="chart-section" style="height: 100%; display: flex; flex-direction: column;">
-                        <div style="display: flex; align-items: flex-start; justify-content: space-between; gap: 0.5rem;">
+                        <div
+                            style="display: flex; align-items: flex-start; justify-content: space-between; gap: 0.5rem;">
                             <div style="display: flex; flex-direction: column; gap: 4px; min-width: 0; flex: 1;">
-                                <span id="diffCardTitle" class="diff-card-title-btn" style="font-size: 0.85rem; color: var(--text-primary); font-weight: 600;" data-i18n="question_difficulty_analysis" data-i18n-title="reset_to_all_sources" title="En Başa Dön (Tüm Aktif Kaynaklar)">Sorulara Genel Bakış</span>
+                                <span id="diffCardTitle" class="diff-card-title-btn"
+                                    style="font-size: 0.85rem; color: var(--text-primary); font-weight: 600;"
+                                    data-i18n="question_difficulty_analysis" data-i18n-title="reset_to_all_sources"
+                                    title="En Başa Dön (Tüm Aktif Kaynaklar)">Sorulara Genel Bakış</span>
                                 <div id="diffCardSourceBadge" class="diff-card-source-row" title="Tüm Kaynaklar">
-                                    <button type="button" class="card-control-btn star-icon-btn" id="diffCardStarBtn" title="Kaynağı Yıldızla / Yıldızı Kaldır" data-i18n-title="toggle_star_source" aria-label="Yıldızla" disabled>
-                                        <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                                            <polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"></polygon>
+                                    <button type="button" class="card-control-btn star-icon-btn" id="diffCardStarBtn"
+                                        title="Kaynağı Yıldızla / Yıldızı Kaldır" data-i18n-title="toggle_star_source"
+                                        aria-label="Yıldızla" disabled>
+                                        <svg viewBox="0 0 24 24" width="14" height="14" fill="none"
+                                            stroke="currentColor" stroke-width="2" stroke-linecap="round"
+                                            stroke-linejoin="round">
+                                            <polygon
+                                                points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2">
+                                            </polygon>
                                         </svg>
                                     </button>
-                                    <span id="diffCardSourceBadgeText" class="diff-card-source-text" data-i18n="all_active_sources">Tüm Kaynaklar</span>
+                                    <span id="diffCardSourceBadgeText" class="diff-card-source-text"
+                                        data-i18n="all_active_sources">Tüm Kaynaklar</span>
                                 </div>
                             </div>
-                            <div class="diff-card-nav-controls" style="display: flex; align-items: center; gap: 0.85rem; flex-shrink: 0;">
-                                <button type="button" class="card-control-btn" id="diffCardPrevBtn" title="Önceki Kaynak" data-i18n-title="prev_source" aria-label="Önceki">
-                                    <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+                            <div class="diff-card-nav-controls"
+                                style="display: flex; align-items: center; gap: 0.85rem; flex-shrink: 0;">
+                                <button type="button" class="card-control-btn" id="diffCardPrevBtn"
+                                    title="Önceki Kaynak" data-i18n-title="prev_source" aria-label="Önceki">
+                                    <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor"
+                                        stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
                                         <path d="M15 18l-6-6 6-6"></path>
                                     </svg>
                                 </button>
-                                <button type="button" class="card-control-btn" id="diffCardNextBtn" title="Sonraki Kaynak" data-i18n-title="next_source" aria-label="Sonraki">
-                                    <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+                                <button type="button" class="card-control-btn" id="diffCardNextBtn"
+                                    title="Sonraki Kaynak" data-i18n-title="next_source" aria-label="Sonraki">
+                                    <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor"
+                                        stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
                                         <path d="M9 18l6-6-6-6"></path>
                                     </svg>
                                 </button>
                             </div>
                         </div>
-                        <div style="display: flex; gap: 1.5rem; margin-top: 1.25rem; align-items: center; flex-wrap: wrap; flex: 1;">
-                            <div id="difficultyDonutChart" style="position: relative; width: 130px; height: 130px; border-radius: 50%; background: var(--surface-hover); flex-shrink: 0;">
-                                <div style="position: absolute; inset: 24px; background: var(--surface-color); border-radius: 50%; display: flex; flex-direction: column; align-items: center; justify-content: center; box-shadow: inset 0 2px 4px rgba(0,0,0,0.05);">
-                                    <span id="donutTotalCount" style="font-size: 1.6rem; font-weight: 800; color: var(--text-primary); line-height: 1;">0</span>
-                                    <span style="font-size: 0.75rem; color: var(--text-secondary); margin-top: 4px;" data-i18n="question">Soru</span>
+                        <div
+                            style="display: flex; gap: 1.5rem; margin-top: 1.25rem; align-items: center; flex-wrap: wrap; flex: 1;">
+                            <div id="difficultyDonutChart"
+                                style="position: relative; width: 130px; height: 130px; border-radius: 50%; background: var(--surface-hover); flex-shrink: 0;">
+                                <div
+                                    style="position: absolute; inset: 24px; background: var(--surface-color); border-radius: 50%; display: flex; flex-direction: column; align-items: center; justify-content: center; box-shadow: inset 0 2px 4px rgba(0,0,0,0.05);">
+                                    <span id="donutTotalCount"
+                                        style="font-size: 1.6rem; font-weight: 800; color: var(--text-primary); line-height: 1;">0</span>
+                                    <span style="font-size: 0.75rem; color: var(--text-secondary); margin-top: 4px;"
+                                        data-i18n="question">Soru</span>
                                 </div>
                             </div>
-                            <div id="difficultyLegend" style="display: grid; grid-template-columns: repeat(auto-fit, minmax(110px, 1fr)); gap: 0.6rem 0.8rem; font-size: 0.8rem; color: var(--text-secondary); flex: 1; min-width: 130px;">
+                            <div id="difficultyLegend"
+                                style="display: grid; grid-template-columns: repeat(auto-fit, minmax(110px, 1fr)); gap: 0.6rem 0.8rem; font-size: 0.8rem; color: var(--text-secondary); flex: 1; min-width: 130px;">
                             </div>
                         </div>
-                        <button type="button" class="card-control-btn diff-card-inspect-btn" id="diffCardInspectBtn" title="Soruları İncele (#stats)" data-i18n-title="inspect_source_questions" aria-label="Soruları İncele" style="position: absolute; bottom: 0.75rem; right: 0.75rem;">
-                            <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+                        <button type="button" class="card-control-btn diff-card-inspect-btn" id="diffCardInspectBtn"
+                            title="Soruları İncele (#stats)" data-i18n-title="inspect_source_questions"
+                            aria-label="Soruları İncele" style="position: absolute; bottom: 0.75rem; right: 0.75rem;">
+                            <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor"
+                                stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
                                 <line x1="3" y1="6" x2="13" y2="6"></line>
                                 <line x1="3" y1="12" x2="10" y2="12"></line>
                                 <line x1="3" y1="18" x2="10" y2="18"></line>
@@ -853,10 +993,16 @@
                         <!-- Ön yüz: Haftalık -->
                         <div class="card chart-flip-face chart-flip-front">
                             <div class="chart-section" style="height: 100%; display: flex; flex-direction: column;">
-                                <div style="display: flex; align-items: center; justify-content: space-between; gap: 0.5rem;">
-                                    <span style="font-size: 0.85rem; color: var(--text-primary); font-weight: 600;" data-i18n="weekly_study_trend">Haftalık Çalışma Trendi</span>
-                                    <button type="button" class="chart-flip-btn" data-trend-flip aria-label="Aylık görünüme çevir" data-i18n-aria-label="show_monthly_trend" title="Aylık Çalışma Trendi" data-i18n-title="monthly_study_trend">
-                                        <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+                                <div
+                                    style="display: flex; align-items: center; justify-content: space-between; gap: 0.5rem;">
+                                    <span style="font-size: 0.85rem; color: var(--text-primary); font-weight: 600;"
+                                        data-i18n="weekly_study_trend">Haftalık Çalışma Trendi</span>
+                                    <button type="button" class="chart-flip-btn" data-trend-flip
+                                        aria-label="Aylık görünüme çevir" data-i18n-aria-label="show_monthly_trend"
+                                        title="Aylık Çalışma Trendi" data-i18n-title="monthly_study_trend">
+                                        <svg viewBox="0 0 24 24" width="14" height="14" fill="none"
+                                            stroke="currentColor" stroke-width="2.5" stroke-linecap="round"
+                                            stroke-linejoin="round">
                                             <path d="M21 2v6h-6"></path>
                                             <path d="M3 12a9 9 0 0 1 15-6.7L21 8"></path>
                                             <path d="M3 22v-6h6"></path>
@@ -864,27 +1010,41 @@
                                         </svg>
                                     </button>
                                 </div>
-                                <div id="weeklyTrendContainer" style="display: flex; height: 140px; margin-top: 1.25rem; flex-direction: column; position: relative; justify-content: flex-end; flex: 1;">
-                                    <div id="trendYAxis" style="position: absolute; top: 0; left: 0; right: 0; bottom: 25px; display: flex; flex-direction: column-reverse; justify-content: space-between; pointer-events: none;">
+                                <div id="weeklyTrendContainer"
+                                    style="display: flex; height: 140px; margin-top: 1.25rem; flex-direction: column; position: relative; justify-content: flex-end; flex: 1;">
+                                    <div id="trendYAxis"
+                                        style="position: absolute; top: 0; left: 0; right: 0; bottom: 25px; display: flex; flex-direction: column-reverse; justify-content: space-between; pointer-events: none;">
                                     </div>
-                                    <div id="trendBars" style="display: flex; justify-content: space-around; align-items: flex-end; width: 100%; height: 115px; z-index: 1; padding-left: 25px;">
+                                    <div id="trendBars"
+                                        style="display: flex; justify-content: space-around; align-items: flex-end; width: 100%; height: 115px; z-index: 1; padding-left: 25px;">
                                     </div>
-                                    <div id="trendXAxis" style="display: flex; justify-content: space-around; width: 100%; height: 25px; align-items: flex-end; padding-left: 25px; font-size: 0.7rem; color: var(--text-secondary);">
+                                    <div id="trendXAxis"
+                                        style="display: flex; justify-content: space-around; width: 100%; height: 25px; align-items: flex-end; padding-left: 25px; font-size: 0.7rem; color: var(--text-secondary);">
                                     </div>
                                 </div>
                                 <div class="trend-legend" id="trendLegend">
-                                    <span class="trend-legend-item"><span class="trend-legend-swatch is-normal"></span><span data-i18n="trend_line_normal">Normal seri</span></span>
-                                    <span class="trend-legend-item"><span class="trend-legend-swatch is-focus"></span><span data-i18n="trend_line_focus">Odak serisi</span></span>
+                                    <span class="trend-legend-item"><span
+                                            class="trend-legend-swatch is-normal"></span><span
+                                            data-i18n="trend_line_normal">Normal seri</span></span>
+                                    <span class="trend-legend-item"><span
+                                            class="trend-legend-swatch is-focus"></span><span
+                                            data-i18n="trend_line_focus">Odak serisi</span></span>
                                 </div>
                             </div>
                         </div>
                         <!-- Arka yüz: Aylık -->
                         <div class="card chart-flip-face chart-flip-back">
                             <div class="chart-section" style="height: 100%; display: flex; flex-direction: column;">
-                                <div style="display: flex; align-items: center; justify-content: space-between; gap: 0.5rem;">
-                                    <span style="font-size: 0.85rem; color: var(--text-primary); font-weight: 600;" data-i18n="monthly_study_trend">Aylık Çalışma Trendi</span>
-                                    <button type="button" class="chart-flip-btn" data-trend-flip aria-label="Haftalık görünüme çevir" data-i18n-aria-label="show_weekly_trend" title="Haftalık Çalışma Trendi" data-i18n-title="weekly_study_trend">
-                                        <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+                                <div
+                                    style="display: flex; align-items: center; justify-content: space-between; gap: 0.5rem;">
+                                    <span style="font-size: 0.85rem; color: var(--text-primary); font-weight: 600;"
+                                        data-i18n="monthly_study_trend">Aylık Çalışma Trendi</span>
+                                    <button type="button" class="chart-flip-btn" data-trend-flip
+                                        aria-label="Haftalık görünüme çevir" data-i18n-aria-label="show_weekly_trend"
+                                        title="Haftalık Çalışma Trendi" data-i18n-title="weekly_study_trend">
+                                        <svg viewBox="0 0 24 24" width="14" height="14" fill="none"
+                                            stroke="currentColor" stroke-width="2.5" stroke-linecap="round"
+                                            stroke-linejoin="round">
                                             <path d="M21 2v6h-6"></path>
                                             <path d="M3 12a9 9 0 0 1 15-6.7L21 8"></path>
                                             <path d="M3 22v-6h6"></path>
@@ -892,17 +1052,25 @@
                                         </svg>
                                     </button>
                                 </div>
-                                <div id="monthlyTrendContainer" style="display: flex; height: 140px; margin-top: 1.25rem; flex-direction: column; position: relative; justify-content: flex-end; flex: 1;">
-                                    <div id="monthlyTrendYAxis" style="position: absolute; top: 0; left: 0; right: 0; bottom: 25px; display: flex; flex-direction: column-reverse; justify-content: space-between; pointer-events: none;">
+                                <div id="monthlyTrendContainer"
+                                    style="display: flex; height: 140px; margin-top: 1.25rem; flex-direction: column; position: relative; justify-content: flex-end; flex: 1;">
+                                    <div id="monthlyTrendYAxis"
+                                        style="position: absolute; top: 0; left: 0; right: 0; bottom: 25px; display: flex; flex-direction: column-reverse; justify-content: space-between; pointer-events: none;">
                                     </div>
-                                    <div id="monthlyTrendBars" style="display: flex; justify-content: space-around; align-items: flex-end; width: 100%; height: 115px; z-index: 1; padding-left: 25px;">
+                                    <div id="monthlyTrendBars"
+                                        style="display: flex; justify-content: space-around; align-items: flex-end; width: 100%; height: 115px; z-index: 1; padding-left: 25px;">
                                     </div>
-                                    <div id="monthlyTrendXAxis" style="display: flex; justify-content: space-around; width: 100%; height: 25px; align-items: flex-end; padding-left: 25px; font-size: 0.7rem; color: var(--text-secondary);">
+                                    <div id="monthlyTrendXAxis"
+                                        style="display: flex; justify-content: space-around; width: 100%; height: 25px; align-items: flex-end; padding-left: 25px; font-size: 0.7rem; color: var(--text-secondary);">
                                     </div>
                                 </div>
                                 <div class="trend-legend" id="monthlyTrendLegend">
-                                    <span class="trend-legend-item"><span class="trend-legend-swatch is-normal"></span><span data-i18n="trend_line_normal">Normal seri</span></span>
-                                    <span class="trend-legend-item"><span class="trend-legend-swatch is-focus"></span><span data-i18n="trend_line_focus">Odak serisi</span></span>
+                                    <span class="trend-legend-item"><span
+                                            class="trend-legend-swatch is-normal"></span><span
+                                            data-i18n="trend_line_normal">Normal seri</span></span>
+                                    <span class="trend-legend-item"><span
+                                            class="trend-legend-swatch is-focus"></span><span
+                                            data-i18n="trend_line_focus">Odak serisi</span></span>
                                 </div>
                             </div>
                         </div>
@@ -913,18 +1081,24 @@
             <!-- Heatmap Card (Yearly Overview) -->
             <div class="card" id="homeHeatmapCard" style="margin-top: 1rem; display: none;">
                 <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom: 0.6rem;">
-                    <span id="heatmapCardTitle" style="font-size: 0.85rem; color: var(--text-primary); font-weight: 600;" data-i18n="activity_history_year">Yıllık Aktivite Geçmişi</span>
+                    <span id="heatmapCardTitle"
+                        style="font-size: 0.85rem; color: var(--text-primary); font-weight: 600;"
+                        data-i18n="activity_history_year">Yıllık Aktivite Geçmişi</span>
                 </div>
                 <div id="continuityHeatmapContainer" style="min-height: 120px; display: flex; flex-direction: column;">
-                    <div id="heatmapPlaceholder" style="flex: 1; display: flex; align-items: center; justify-content: center; color: var(--text-secondary); font-size: 0.8rem;">
+                    <div id="heatmapPlaceholder"
+                        style="flex: 1; display: flex; align-items: center; justify-content: center; color: var(--text-secondary); font-size: 0.8rem;">
                         <span data-i18n="loading">Yükleniyor...</span>
                     </div>
-                    <div id="continuityHeatmapWrapper" style="display: none; width:100%; overflow-x: auto; padding-bottom: 4px;">
+                    <div id="continuityHeatmapWrapper"
+                        style="display: none; width:100%; overflow-x: auto; padding-bottom: 4px;">
                         <div style="display: flex; gap: 4px;">
-                            <div id="heatmapYAxis" style="display: grid; grid-template-rows: repeat(7, 10px); gap: 2px; font-size: 0.55rem; color: var(--text-secondary); text-align: right; padding-right: 4px; margin-top: 14px; line-height: 10px;">
+                            <div id="heatmapYAxis"
+                                style="display: grid; grid-template-rows: repeat(7, 10px); gap: 2px; font-size: 0.55rem; color: var(--text-secondary); text-align: right; padding-right: 4px; margin-top: 14px; line-height: 10px;">
                             </div>
                             <div style="display: flex; flex-direction: column; flex: 1;">
-                                <div id="heatmapXAxis" style="display: flex; position: relative; height: 12px; font-size: 0.55rem; color: var(--text-secondary); margin-bottom: 2px;">
+                                <div id="heatmapXAxis"
+                                    style="display: flex; position: relative; height: 12px; font-size: 0.55rem; color: var(--text-secondary); margin-bottom: 2px;">
                                 </div>
                                 <div id="continuityHeatmap" style="display:grid; gap:2px;">
                                 </div>
@@ -957,7 +1131,8 @@
                     </div>
                 </div>
 
-                <div id="resDurationBox" style="display: none; align-items: center; justify-content: center; gap: 0.5rem; padding: 0.75rem; background: var(--surface-hover); border-radius: 12px; color: var(--text-secondary); font-weight: 600;">
+                <div id="resDurationBox"
+                    style="display: none; align-items: center; justify-content: center; gap: 0.5rem; padding: 0.75rem; background: var(--surface-hover); border-radius: 12px; color: var(--text-secondary); font-weight: 600;">
                     <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2">
                         <circle cx="12" cy="12" r="10"></circle>
                         <polyline points="12 6 12 12 16 14"></polyline>
@@ -968,7 +1143,7 @@
                 <div class="success-rate-container">
                     <div class="success-rate-gauge">
                         <div class="gauge-fill" id="resGaugeFill"></div>
-                <div class="gauge-text" id="resSuccessRate">0%</div>
+                        <div class="gauge-text" id="resSuccessRate">0%</div>
                     </div>
                     <div class="success-rate-label" data-i18n="success_rate">Başarı Oranı</div>
                 </div>
@@ -997,8 +1172,9 @@
         <div id="testView" class="view-container">
             <div class="indicators-bar" id="indicatorsBar">
                 <span id="progressText">Soru 1 / 20</span>
-                
-                <span id="timerDisplay" style="display: none; align-items: center; gap: 4px; font-variant-numeric: tabular-nums; font-weight: 600; font-size: 0.9rem; margin-left: 0.75rem; color: var(--text-secondary);">
+
+                <span id="timerDisplay"
+                    style="display: none; align-items: center; gap: 4px; font-variant-numeric: tabular-nums; font-weight: 600; font-size: 0.9rem; margin-left: 0.75rem; color: var(--text-secondary);">
                     <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2">
                         <circle cx="12" cy="12" r="10"></circle>
                         <polyline points="12 6 12 12 16 14"></polyline>
@@ -1030,7 +1206,8 @@
                         <div class="ai-copy-divider"></div>
                         <div class="ai-copy-item" id="aiCopyTextOption">
                             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                                <path d="M16 4h2a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h2"></path>
+                                <path d="M16 4h2a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h2">
+                                </path>
                                 <rect x="8" y="2" width="8" height="4" rx="1" ry="1"></rect>
                             </svg>
                             <span data-i18n="copy_question">Soru Metnini Kopyala</span>
@@ -1080,8 +1257,10 @@
             </div>
 
             <div class="note-area" id="noteArea" style="margin-top: 0.75rem; border-top: none;">
-                <div class="note-header-row" style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.8rem;">
-                    <label id="noteLabel" style="font-size: 0.85rem; color: var(--text-secondary); margin: 0; display: block;"
+                <div class="note-header-row"
+                    style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.8rem;">
+                    <label id="noteLabel"
+                        style="font-size: 0.85rem; color: var(--text-secondary); margin: 0; display: block;"
                         data-i18n="note_label">Notunuz:</label>
                 </div>
                 <div class="note-input-wrapper" id="noteInputWrapper">
@@ -1091,13 +1270,21 @@
                         <div class="translation-text" id="trans_noteInput" style="display:none;"></div>
                     </div>
                     <button class="note-edit-btn" id="noteEditBtn" title="Düzenle">
-                        <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                        <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor"
+                            stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
                             <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"></path>
                             <path d="M18.5 2.5a2.121 2.121 0 1 1 3 3L12 15l-4 1 1-4 9.5-9.5z"></path>
                         </svg>
                     </button>
                     <button class="corner-translate-btn" id="noteTranslateBtn" title="Çevir" style="display: none;">
-                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M5 8l6 6"></path><path d="M4 14l6-6 2-3"></path><path d="M2 5h12"></path><path d="M7 2h1"></path><path d="M22 22l-5-10-5 10"></path><path d="M14 18h6"></path></svg>
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor">
+                            <path d="M5 8l6 6"></path>
+                            <path d="M4 14l6-6 2-3"></path>
+                            <path d="M2 5h12"></path>
+                            <path d="M7 2h1"></path>
+                            <path d="M22 22l-5-10-5 10"></path>
+                            <path d="M14 18h6"></path>
+                        </svg>
                     </button>
                 </div>
             </div>
@@ -1109,9 +1296,10 @@
             <div class="card">
                 <div class="stats-sticky-controls">
                     <div class="stats-card-header" style="margin-bottom: 1rem; min-height: auto;">
-                        <button class="back-btn home-back-btn" id="statsBackBtn" data-i18n-title="go_home" title="Ana Sayfa">
-                            <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2"
-                                stroke-linecap="round" stroke-linejoin="round">
+                        <button class="back-btn home-back-btn" id="statsBackBtn" data-i18n-title="go_home"
+                            title="Ana Sayfa">
+                            <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor"
+                                stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
                                 <path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"></path>
                                 <polyline points="9 22 9 12 15 12 15 22"></polyline>
                             </svg>
@@ -1130,7 +1318,9 @@
                             <h2 class="stats-title-text" id="statsTitleText" data-i18n="show_stats">Soru Detayları</h2>
                         </div>
                         <div class="stats-header-global-toggle" id="statsGlobalToggleWrapper">
-                            <span data-i18n="all_sources_stats" style="font-size: 0.72rem; color: var(--text-secondary); font-weight: 500;">Tüm Kaynaklar</span>
+                            <span data-i18n="all_sources_stats"
+                                style="font-size: 0.72rem; color: var(--text-secondary); font-weight: 500;">Tüm
+                                Kaynaklar</span>
                             <label class="switch-small">
                                 <input type="checkbox" id="statsGlobalToggle">
                                 <span class="slider-small"></span>
@@ -1287,8 +1477,10 @@
             <div class="card" id="sourcesCard">
                 <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1rem;">
                     <div style="display: flex; align-items: center; gap: 0.75rem;">
-                        <button class="back-btn home-back-btn" id="sourcesBackBtn" data-i18n-title="go_home" title="Ana Sayfa">
-                            <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                        <button class="back-btn home-back-btn" id="sourcesBackBtn" data-i18n-title="go_home"
+                            title="Ana Sayfa">
+                            <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor"
+                                stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
                                 <path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"></path>
                                 <polyline points="9 22 9 12 15 12 15 22"></polyline>
                             </svg>
@@ -1301,21 +1493,25 @@
                     </div>
                     <div style="display: flex; gap: 0.25rem;">
                         <button class="icon-btn" id="addFolderBtn" data-i18n-title="add_folder">
-                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
-                                <path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"></path>
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"
+                                stroke-linecap="round" stroke-linejoin="round">
+                                <path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z">
+                                </path>
                                 <line x1="12" y1="11" x2="12" y2="17"></line>
                                 <line x1="9" y1="14" x2="15" y2="14"></line>
                             </svg>
                         </button>
                         <button class="icon-btn" id="archiveBtn" data-i18n-title="archive_title">
-                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"
+                                stroke-linecap="round" stroke-linejoin="round">
                                 <polyline points="21 8 21 21 3 21 3 8"></polyline>
                                 <rect x="1" y="3" width="22" height="5"></rect>
                                 <line x1="10" y1="12" x2="14" y2="12"></line>
                             </svg>
                         </button>
                         <button class="icon-btn" id="mergeSourcesBtn" data-i18n-title="merge_sources">
-                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"
+                                stroke-linecap="round" stroke-linejoin="round">
                                 <path d="M3 6h4c2 0 4 6 8 6h5"></path>
                                 <path d="M3 18h4c2 0 4-6 8-6"></path>
                                 <polyline points="17 9 20 12 17 15"></polyline>
@@ -1335,7 +1531,8 @@
                     <div class="input-group">
                         <label data-i18n="load_url">URL ile Yükle</label>
                         <div style="display: flex; gap: 0.5rem;">
-                            <input type="text" id="urlInput" data-i18n-placeholder="ph_url" placeholder="https://.../questions.json">
+                            <input type="text" id="urlInput" data-i18n-placeholder="ph_url"
+                                placeholder="https://.../questions.json">
                             <button class="btn btn-primary" id="loadUrlBtn" data-i18n="load">Yükle</button>
                         </div>
                     </div>
@@ -1351,8 +1548,10 @@
                         -</div>
                     <div class="input-group" style="margin-bottom: 0;">
                         <button class="btn btn-secondary btn-block" id="loadClipboardBtn">
-                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
-                                <path d="M16 4h2a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h2"></path>
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"
+                                stroke-linecap="round" stroke-linejoin="round">
+                                <path d="M16 4h2a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h2">
+                                </path>
                                 <rect x="8" y="2" width="8" height="4" rx="1" ry="1"></rect>
                             </svg>
                             <span data-i18n="load_clipboard">Panodan Al</span>
@@ -1391,7 +1590,8 @@
                         <div class="ai-copy-divider"></div>
                         <div class="ai-copy-item" id="previewAiCopyTextOption">
                             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                                <path d="M16 4h2a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h2"></path>
+                                <path d="M16 4h2a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h2">
+                                </path>
                                 <rect x="8" y="2" width="8" height="4" rx="1" ry="1"></rect>
                             </svg>
                             <span data-i18n="copy_question">Soru Metnini Kopyala</span>
@@ -1440,8 +1640,10 @@
             </div>
 
             <div class="note-area" id="previewNoteArea">
-                <div class="note-header-row" style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.5rem;">
-                    <label id="previewNoteLabel" style="font-size: 0.85rem; color: var(--text-secondary); margin: 0; display: block;"
+                <div class="note-header-row"
+                    style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.5rem;">
+                    <label id="previewNoteLabel"
+                        style="font-size: 0.85rem; color: var(--text-secondary); margin: 0; display: block;"
                         data-i18n="note_label">Notunuz:</label>
                 </div>
                 <div class="note-input-wrapper" id="previewNoteInputWrapper">
@@ -1451,13 +1653,22 @@
                         <div class="translation-text" id="trans_previewNoteInput" style="display:none;"></div>
                     </div>
                     <button class="note-edit-btn" id="previewNoteEditBtn" title="Düzenle">
-                        <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                        <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor"
+                            stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
                             <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"></path>
                             <path d="M18.5 2.5a2.121 2.121 0 1 1 3 3L12 15l-4 1 1-4 9.5-9.5z"></path>
                         </svg>
                     </button>
-                    <button class="corner-translate-btn" id="previewNoteTranslateBtn" title="Çevir" style="display: none;">
-                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M5 8l6 6"></path><path d="M4 14l6-6 2-3"></path><path d="M2 5h12"></path><path d="M7 2h1"></path><path d="M22 22l-5-10-5 10"></path><path d="M14 18h6"></path></svg>
+                    <button class="corner-translate-btn" id="previewNoteTranslateBtn" title="Çevir"
+                        style="display: none;">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor">
+                            <path d="M5 8l6 6"></path>
+                            <path d="M4 14l6-6 2-3"></path>
+                            <path d="M2 5h12"></path>
+                            <path d="M7 2h1"></path>
+                            <path d="M22 22l-5-10-5 10"></path>
+                            <path d="M14 18h6"></path>
+                        </svg>
                     </button>
                 </div>
             </div>
@@ -1475,7 +1686,8 @@
                     <span id="previewBackBtnText" data-i18n="back_to_stats">İstatistiklere Dön</span>
                 </button>
                 <button class="btn btn-primary btn-pill btn-edit-preview" id="statsPreviewEditBtn">
-                    <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+                    <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2.5"
+                        stroke-linecap="round" stroke-linejoin="round">
                         <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"></path>
                         <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"></path>
                     </svg>
@@ -1501,16 +1713,21 @@
                 <span id="checkBtnText" data-i18n="check">Kontrol Et</span>
             </button>
             <div class="difficulty-pill" id="difficultyPill" style="display: none;">
-                <button class="btn btn-danger-soft difficulty-btn difficulty-hard" id="diffHardBtn" data-i18n="difficulty_hard">Zor</button>
+                <button class="btn btn-danger-soft difficulty-btn difficulty-hard" id="diffHardBtn"
+                    data-i18n="difficulty_hard">Zor</button>
                 <div class="difficulty-divider"></div>
                 <button class="btn btn-success-soft difficulty-btn difficulty-easy" id="diffEasyBtn"
                     data-i18n="difficulty_easy">Kolay</button>
             </div>
             <div class="flashcard-rating-bar" id="flashcardRatingBar" style="display: none;">
-                <button class="btn btn-flex btn-danger fc-rating-btn fc-again" onclick="window.handleFlashcardRating('again')" data-i18n="rating_again">Tekrar</button>
-                <button class="btn btn-flex btn-warning fc-rating-btn fc-hard" onclick="window.handleFlashcardRating('hard')" data-i18n="rating_hard">Zor</button>
-                <button class="btn btn-flex fc-rating-btn fc-normal" onclick="window.handleFlashcardRating('normal')" data-i18n="rating_normal">Normal</button>
-                <button class="btn btn-flex btn-success fc-rating-btn fc-easy" onclick="window.handleFlashcardRating('easy')" data-i18n="rating_easy">Kolay</button>
+                <button class="btn btn-flex btn-danger fc-rating-btn fc-again"
+                    onclick="window.handleFlashcardRating('again')" data-i18n="rating_again">Tekrar</button>
+                <button class="btn btn-flex btn-warning fc-rating-btn fc-hard"
+                    onclick="window.handleFlashcardRating('hard')" data-i18n="rating_hard">Zor</button>
+                <button class="btn btn-flex fc-rating-btn fc-normal" onclick="window.handleFlashcardRating('normal')"
+                    data-i18n="rating_normal">Normal</button>
+                <button class="btn btn-flex btn-success fc-rating-btn fc-easy"
+                    onclick="window.handleFlashcardRating('easy')" data-i18n="rating_easy">Kolay</button>
             </div>
             <button class="btn btn-glass nav-btn" id="nextBtn">
                 <span class="nav-btn-text" data-i18n="next">Sonraki</span>
@@ -1529,7 +1746,8 @@
             <div class="chart-panel-header">
                 <h3 style="margin:0; font-size:1rem;" data-i18n="chart_title">Çalışılan Aktif Kaynakların Detayları</h3>
                 <button id="closeChartBtn" class="icon-btn" style="margin-left:auto;">
-                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"
+                        stroke-linecap="round">
                         <line x1="18" y1="6" x2="6" y2="18"></line>
                         <line x1="6" y1="6" x2="18" y2="18"></line>
                     </svg>
@@ -1574,18 +1792,20 @@
             </div>
         </div>
     </div>
-    
+
     <!-- Source Actions Modal -->
     <div id="sourceActionsOverlay" class="modal-overlay" style="z-index: 9999;">
         <div class="modal-card">
             <div class="modal-header">
                 <h3 id="sourceActionsTitle" data-i18n="source_actions_title">Kaynak İşlemleri</h3>
-                <p id="sourceActionsName" style="font-size: 0.85rem; color: var(--text-secondary); margin-top: 4px; font-weight: 500;"></p>
+                <p id="sourceActionsName"
+                    style="font-size: 0.85rem; color: var(--text-secondary); margin-top: 4px; font-weight: 500;"></p>
             </div>
             <div class="modal-body" style="display: flex; flex-direction: column; gap: 0.5rem; margin: 1rem 0;">
                 <!-- Edit button at the top -->
                 <button class="btn btn-secondary btn-block modal-action-btn" id="modalEditMetadataBtn">
-                    <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+                    <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2.5"
+                        stroke-linecap="round" stroke-linejoin="round">
                         <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"></path>
                         <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"></path>
                     </svg>
@@ -1594,7 +1814,8 @@
 
                 <!-- Inspect Questions button -->
                 <button class="btn btn-secondary btn-block modal-action-btn" id="modalInspectQuestionsBtn">
-                    <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+                    <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2.5"
+                        stroke-linecap="round" stroke-linejoin="round">
                         <line x1="3" y1="6" x2="13" y2="6"></line>
                         <line x1="3" y1="12" x2="10" y2="12"></line>
                         <line x1="3" y1="18" x2="10" y2="18"></line>
@@ -1606,7 +1827,8 @@
 
                 <!-- Quick Access Management button -->
                 <button class="btn btn-secondary btn-block modal-action-btn" id="modalToggleQuickAccessBtn">
-                    <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+                    <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2.5"
+                        stroke-linecap="round" stroke-linejoin="round">
                         <path d="M19 21l-7-4-7 4V5a2 2 0 0 1 2-2h10a2 2 0 0 1 2 2v16z"></path>
                     </svg>
                     <span id="modalToggleQuickAccessLabel" data-i18n="qs_manage_for_source">Hızlı Erişim Yönetimi</span>
@@ -1614,7 +1836,8 @@
 
                 <!-- Focus Pool Management button -->
                 <button class="btn btn-secondary btn-block modal-action-btn" id="modalFocusPoolBtn">
-                    <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+                    <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2.5"
+                        stroke-linecap="round" stroke-linejoin="round">
                         <circle cx="12" cy="12" r="10"></circle>
                         <circle cx="12" cy="12" r="6"></circle>
                         <circle cx="12" cy="12" r="2"></circle>
@@ -1625,23 +1848,41 @@
                 <!-- 2-column action buttons grid -->
                 <div class="modal-grid-2col" style="display: grid; grid-template-columns: 1fr 1fr; gap: 0.5rem;">
                     <button class="btn btn-secondary btn-block modal-action-btn" id="modalDownloadBtn">
-                        <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path><polyline points="7 10 12 15 17 10"></polyline><line x1="12" y1="15" x2="12" y2="3"></line></svg>
+                        <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor"
+                            stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+                            <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
+                            <polyline points="7 10 12 15 17 10"></polyline>
+                            <line x1="12" y1="15" x2="12" y2="3"></line>
+                        </svg>
                         <span data-i18n="download">İndir</span>
                     </button>
-                    
+
                     <button class="btn btn-secondary btn-block modal-action-btn" id="modalShareBtn">
-                        <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="18" cy="5" r="3"></circle><circle cx="6" cy="12" r="3"></circle><circle cx="18" cy="19" r="3"></circle><line x1="8.59" y1="13.51" x2="15.42" y2="17.49"></line><line x1="15.41" y1="6.51" x2="8.59" y2="10.49"></line></svg>
+                        <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor"
+                            stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+                            <circle cx="18" cy="5" r="3"></circle>
+                            <circle cx="6" cy="12" r="3"></circle>
+                            <circle cx="18" cy="19" r="3"></circle>
+                            <line x1="8.59" y1="13.51" x2="15.42" y2="17.49"></line>
+                            <line x1="15.41" y1="6.51" x2="8.59" y2="10.49"></line>
+                        </svg>
                         <span data-i18n="share_source">Paylaş</span>
                     </button>
 
                     <!-- Delete button in grid -->
                     <button class="btn btn-danger btn-block modal-action-btn" id="modalDeleteBtn">
-                        <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="3 6 5 6 21 6"></polyline><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path></svg>
+                        <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor"
+                            stroke-width="2.5">
+                            <polyline points="3 6 5 6 21 6"></polyline>
+                            <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2">
+                            </path>
+                        </svg>
                         <span data-i18n="delete">Sil</span>
                     </button>
 
                     <button class="btn btn-secondary btn-block modal-action-btn" id="modalArchiveBtn">
-                        <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+                        <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor"
+                            stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
                             <polyline points="21 8 21 21 3 21 3 8"></polyline>
                             <rect x="1" y="3" width="22" height="5"></rect>
                             <line x1="10" y1="12" x2="14" y2="12"></line>
@@ -1652,7 +1893,11 @@
 
                 <!-- Reset button at the bottom as full-width warning button -->
                 <button class="btn btn-warning-soft btn-block modal-action-btn" id="modalResetBtn">
-                    <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M23 4v6h-6"></path><path d="M20.49 15a9 9 0 1 1-2.12-9.36L23 10"></path></svg>
+                    <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor"
+                        stroke-width="2.5">
+                        <path d="M23 4v6h-6"></path>
+                        <path d="M20.49 15a9 9 0 1 1-2.12-9.36L23 10"></path>
+                    </svg>
                     <span data-i18n="reset">Sıfırla</span>
                 </button>
             </div>
@@ -1665,10 +1910,14 @@
     <!-- Source Quick Access Presets Selection Modal -->
     <div id="sourceQuickPresetsOverlay" class="modal-overlay" style="z-index: 10001;">
         <div class="modal-card">
-            <div class="modal-header" style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.75rem;">
+            <div class="modal-header"
+                style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.75rem;">
                 <div>
-                    <h3 id="sourceQuickPresetsTitle" data-i18n="qs_manage_for_source_title" style="margin: 0;">Hızlı Erişim Yönetimi</h3>
-                    <p id="sourceQuickPresetsSub" style="font-size: 0.85rem; color: var(--text-secondary); margin-top: 4px; font-weight: 500;"></p>
+                    <h3 id="sourceQuickPresetsTitle" data-i18n="qs_manage_for_source_title" style="margin: 0;">Hızlı
+                        Erişim Yönetimi</h3>
+                    <p id="sourceQuickPresetsSub"
+                        style="font-size: 0.85rem; color: var(--text-secondary); margin-top: 4px; font-weight: 500;">
+                    </p>
                 </div>
                 <button class="icon-btn" id="sourceQuickPresetsCloseXBtn">
                     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="18" height="18">
@@ -1678,48 +1927,72 @@
                 </button>
             </div>
             <div class="modal-body" style="padding: 0.25rem 0;">
-                <div id="sourceQuickPresetsList" class="sqp-presets-list" style="display: flex; flex-direction: column; gap: 0.5rem; max-height: 350px; overflow-y: auto;">
+                <div id="sourceQuickPresetsList" class="sqp-presets-list"
+                    style="display: flex; flex-direction: column; gap: 0.5rem; max-height: 350px; overflow-y: auto;">
                     <!-- JS populated -->
                 </div>
             </div>
         </div>
     </div>
-    
+
     <!-- Share Options Modal -->
     <div id="shareOptionsOverlay" class="modal-overlay" style="z-index: 10002;">
         <div class="modal-card">
             <div class="modal-header">
                 <h3 data-i18n="share_options_title">Paylaşım Yöntemi</h3>
-                <p id="shareOptionsSourceName" style="font-size: 0.85rem; color: var(--text-secondary); margin-top: 4px; font-weight: 500;"></p>
+                <p id="shareOptionsSourceName"
+                    style="font-size: 0.85rem; color: var(--text-secondary); margin-top: 4px; font-weight: 500;"></p>
             </div>
             <div class="modal-body" style="display: flex; flex-direction: column; gap: 0.75rem; margin: 1.25rem 0;">
                 <!-- Large Data Hint Box -->
-                <div id="shareLargeDataHint" style="display: none; padding: 0.75rem 1rem; background-color: var(--accent-bg, rgba(79, 70, 229, 0.1)); border-left: 3px solid var(--accent-color, #4f46e5); border-radius: var(--radius-sm, 6px); font-size: 0.85rem; color: var(--text-primary); gap: 0.5rem; align-items: flex-start;">
-                    <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" style="flex-shrink: 0; margin-top: 2px;"><circle cx="12" cy="12" r="10"></circle><line x1="12" y1="8" x2="12" y2="12"></line><line x1="12" y1="16" x2="12.01" y2="16"></line></svg>
+                <div id="shareLargeDataHint"
+                    style="display: none; padding: 0.75rem 1rem; background-color: var(--accent-bg, rgba(79, 70, 229, 0.1)); border-left: 3px solid var(--accent-color, #4f46e5); border-radius: var(--radius-sm, 6px); font-size: 0.85rem; color: var(--text-primary); gap: 0.5rem; align-items: flex-start;">
+                    <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2"
+                        style="flex-shrink: 0; margin-top: 2px;">
+                        <circle cx="12" cy="12" r="10"></circle>
+                        <line x1="12" y1="8" x2="12" y2="12"></line>
+                        <line x1="12" y1="16" x2="12.01" y2="16"></line>
+                    </svg>
                     <span id="shareLargeDataHintText"></span>
                 </div>
 
                 <!-- Option 1: Copy to Clipboard -->
                 <button class="btn btn-secondary btn-block modal-action-btn" id="shareCopyClipboardBtn">
-                    <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path></svg>
+                    <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2.5"
+                        stroke-linecap="round" stroke-linejoin="round">
+                        <rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect>
+                        <path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path>
+                    </svg>
                     <span data-i18n="share_copy_clipboard">Panoya Kopyala</span>
                 </button>
 
                 <!-- Option 2: Share as Text -->
                 <button class="btn btn-secondary btn-block modal-action-btn" id="shareAsTextBtn">
-                    <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"></path></svg>
+                    <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2.5"
+                        stroke-linecap="round" stroke-linejoin="round">
+                        <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"></path>
+                    </svg>
                     <span data-i18n="share_as_text">Metin Olarak Paylaş</span>
                 </button>
 
                 <!-- Option 3: Share as JSON File -->
                 <button class="btn btn-secondary btn-block modal-action-btn" id="shareAsFileBtn">
-                    <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path><polyline points="14 2 14 8 20 8"></polyline></svg>
+                    <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2.5"
+                        stroke-linecap="round" stroke-linejoin="round">
+                        <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path>
+                        <polyline points="14 2 14 8 20 8"></polyline>
+                    </svg>
                     <span data-i18n="share_as_file">JSON Dosyası Paylaş</span>
                 </button>
 
                 <!-- Option 4: Open in Browser -->
                 <button class="btn btn-secondary btn-block modal-action-btn" id="shareViewBrowserBtn">
-                    <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"></path><polyline points="15 3 21 3 21 9"></polyline><line x1="10" y1="14" x2="21" y2="3"></line></svg>
+                    <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2.5"
+                        stroke-linecap="round" stroke-linejoin="round">
+                        <path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"></path>
+                        <polyline points="15 3 21 3 21 9"></polyline>
+                        <line x1="10" y1="14" x2="21" y2="3"></line>
+                    </svg>
                     <span data-i18n="share_view_in_browser">Tarayıcıda Aç</span>
                 </button>
             </div>
@@ -1728,7 +2001,7 @@
             </div>
         </div>
     </div>
-    
+
     <!-- Edit Metadata Modal -->
     <div id="editMetadataOverlay" class="modal-overlay" style="z-index: 10001;">
         <div class="modal-card">
@@ -1738,15 +2011,18 @@
             <div class="modal-body" style="display: flex; flex-direction: column; gap: 1rem; margin: 1.5rem 0;">
                 <div class="input-group">
                     <label data-i18n="source_title">Kaynak Başlığı</label>
-                    <input type="text" id="editMetaTitle" data-i18n-placeholder="ph_meta_title" placeholder="örn: Yeni Sınav Başlığı">
+                    <input type="text" id="editMetaTitle" data-i18n-placeholder="ph_meta_title"
+                        placeholder="örn: Yeni Sınav Başlığı">
                 </div>
                 <div class="input-group">
                     <label data-i18n="source_category">Kategori</label>
-                    <input type="text" id="editMetaCategory" data-i18n-placeholder="ph_meta_category" placeholder="örn: Matematik, Genel">
+                    <input type="text" id="editMetaCategory" data-i18n-placeholder="ph_meta_category"
+                        placeholder="örn: Matematik, Genel">
                 </div>
                 <div class="input-group">
                     <label data-i18n="source_description">Açıklama</label>
-                    <textarea id="editMetaDescription" data-i18n-placeholder="ph_meta_desc" placeholder="Kaynak hakkında kısa bir açıklama yazın..." style="min-height: 80px;"></textarea>
+                    <textarea id="editMetaDescription" data-i18n-placeholder="ph_meta_desc"
+                        placeholder="Kaynak hakkında kısa bir açıklama yazın..." style="min-height: 80px;"></textarea>
                 </div>
             </div>
             <div class="modal-footer" style="display: flex; gap: 0.75rem;">
@@ -1755,22 +2031,25 @@
             </div>
         </div>
     </div>
-    
+
     <!-- Merge Sources Selection Modal -->
     <div id="mergeSourcesOverlay" class="modal-overlay" style="z-index: 9999;">
         <div class="modal-card">
             <div class="modal-header">
                 <h3 data-i18n="merge_sources">Kaynakları Birleştir</h3>
-                <p data-i18n="select_sources_to_merge" style="font-size: 0.85rem; color: var(--text-secondary); margin-top: 4px;"></p>
+                <p data-i18n="select_sources_to_merge"
+                    style="font-size: 0.85rem; color: var(--text-secondary); margin-top: 4px;"></p>
             </div>
-            <div class="modal-body" style="margin: 1.5rem 0; max-height: 50vh; overflow-y: auto; padding-right: 0.4rem;">
+            <div class="modal-body"
+                style="margin: 1.5rem 0; max-height: 50vh; overflow-y: auto; padding-right: 0.4rem;">
                 <div id="mergeSourcesList" style="display: flex; flex-direction: column; gap: 0.75rem;">
                     <!-- Populated by JS -->
                 </div>
             </div>
             <div class="modal-footer" style="display: flex; gap: 0.75rem;">
                 <button class="btn btn-secondary btn-flex" id="mergeSourcesCancelBtn" data-i18n="cancel">Vazgeç</button>
-                <button class="btn btn-primary btn-flex" id="mergeSourcesConfirmBtn" data-i18n="merge" disabled>Birleştir</button>
+                <button class="btn btn-primary btn-flex" id="mergeSourcesConfirmBtn" data-i18n="merge"
+                    disabled>Birleştir</button>
             </div>
         </div>
     </div>
@@ -1787,8 +2066,7 @@
             <textarea id="customPromptInput" style="min-height: 200px; margin-bottom: 1.5rem;"></textarea>
             <div style="display: flex; gap: 0.75rem;">
                 <button class="btn btn-subtle btn-flex" id="promptResetBtn" data-i18n="reset">Sıfırla</button>
-                <button class="btn btn-secondary btn-flex" id="promptCancelBtn"
-                    data-i18n="cancel">Vazgeç</button>
+                <button class="btn btn-secondary btn-flex" id="promptCancelBtn" data-i18n="cancel">Vazgeç</button>
                 <button class="btn btn-primary btn-flex" id="promptSaveBtn" data-i18n="save">Kaydet</button>
             </div>
         </div>
@@ -1806,13 +2084,19 @@
                     </svg>
                 </button>
             </div>
-            
-            <div id="aiProvidersList" style="max-height: 250px; overflow-y: auto; margin-bottom: 1rem; display: flex; flex-direction: column; gap: 0.5rem;"></div>
+
+            <div id="aiProvidersList"
+                style="max-height: 250px; overflow-y: auto; margin-bottom: 1rem; display: flex; flex-direction: column; gap: 0.5rem;">
+            </div>
 
             <div style="border-top: 1px solid var(--border-color); padding-top: 1rem; margin-top: 0.5rem;">
-                <h4 style="font-size: 0.9rem; margin-bottom: 0.75rem; color: var(--text-primary);" data-i18n="add_ai_provider">Yeni AI Servisi Ekle</h4>
-                <input type="text" id="newAiNameInput" data-i18n-placeholder="ph_ai_name" placeholder="Servis Adı (ör: Gemini)" style="margin-bottom: 0.5rem; width: 100%;">
-                <input type="text" id="newAiUrlInput" data-i18n-placeholder="ph_ai_url" placeholder="URL Kalıbı (ör: https://.../search?q={PROMPT})" style="margin-bottom: 0.75rem; width: 100%;">
+                <h4 style="font-size: 0.9rem; margin-bottom: 0.75rem; color: var(--text-primary);"
+                    data-i18n="add_ai_provider">Yeni AI Servisi Ekle</h4>
+                <input type="text" id="newAiNameInput" data-i18n-placeholder="ph_ai_name"
+                    placeholder="Servis Adı (ör: Gemini)" style="margin-bottom: 0.5rem; width: 100%;">
+                <input type="text" id="newAiUrlInput" data-i18n-placeholder="ph_ai_url"
+                    placeholder="URL Kalıbı (ör: https://.../search?q={PROMPT})"
+                    style="margin-bottom: 0.75rem; width: 100%;">
                 <button class="btn btn-primary btn-block" id="addAiProviderBtn" data-i18n="add">Ekle</button>
             </div>
         </div>
@@ -1824,7 +2108,8 @@
             <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1rem;">
                 <div style="display: flex; align-items: center; gap: 0.5rem;">
                     <svg viewBox="0 0 24 24" width="22" height="22" fill="currentColor">
-                        <path d="M12 0C5.37 0 0 5.37 0 12c0 5.31 3.435 9.795 8.205 11.385.6.105.825-.255.825-.57 0-.285-.015-1.23-.015-2.235-3.015.555-3.795-.735-4.035-1.41-.135-.345-.72-1.41-1.23-1.695-.42-.225-1.02-.78-.015-.795.945-.015 1.62.87 1.845 1.23 1.08 1.815 2.805 1.305 3.495.99.105-.78.42-1.305.765-1.605-2.67-.3-5.46-1.335-5.46-5.925 0-1.305.465-2.385 1.23-3.225-.12-.3-.54-1.53.12-3.18 0 0 1.005-.315 3.3 1.23.96-.27 1.98-.405 3-.405s2.04.135 3 .405c2.295-1.56 3.3-1.23 3.3-1.23.66 1.65.24 2.88.12 3.18.765.84 1.23 1.905 1.23 3.225 0 4.605-2.805 5.625-5.475 5.925.435.375.81 1.095.81 2.22 0 1.605-.015 2.895-.015 3.3 0 .315.225.69.825.57A12.02 12.02 0 0024 12c0-6.63-5.37-12-12-12z"/>
+                        <path
+                            d="M12 0C5.37 0 0 5.37 0 12c0 5.31 3.435 9.795 8.205 11.385.6.105.825-.255.825-.57 0-.285-.015-1.23-.015-2.235-3.015.555-3.795-.735-4.035-1.41-.135-.345-.72-1.41-1.23-1.695-.42-.225-1.02-.78-.015-.795.945-.015 1.62.87 1.845 1.23 1.08 1.815 2.805 1.305 3.495.99.105-.78.42-1.305.765-1.605-2.67-.3-5.46-1.335-5.46-5.925 0-1.305.465-2.385 1.23-3.225-.12-.3-.54-1.53.12-3.18 0 0 1.005-.315 3.3 1.23.96-.27 1.98-.405 3-.405s2.04.135 3 .405c2.295-1.56 3.3-1.23 3.3-1.23.66 1.65.24 2.88.12 3.18.765.84 1.23 1.905 1.23 3.225 0 4.605-2.805 5.625-5.475 5.925.435.375.81 1.095.81 2.22 0 1.605-.015 2.895-.015 3.3 0 .315.225.69.825.57A12.02 12.02 0 0024 12c0-6.63-5.37-12-12-12z" />
                     </svg>
                     <h3 style="margin: 0; font-size: 1.1rem;" data-i18n="github_sync">GitHub Sync</h3>
                 </div>
@@ -1835,29 +2120,37 @@
                     </svg>
                 </button>
             </div>
-            
-            <p style="font-size: 0.85rem; color: var(--text-secondary); margin-bottom: 1.25rem; line-height: 1.5;" data-i18n="github_oauth_hint">
+
+            <p style="font-size: 0.85rem; color: var(--text-secondary); margin-bottom: 1.25rem; line-height: 1.5;"
+                data-i18n="github_oauth_hint">
                 GitHub hesabınızla giriş yaparak tüm cihazlarınızdaki soru ve istatistikleri senkronize edin.
             </p>
 
             <button class="btn btn-primary btn-block" id="githubOAuthLoginBtn" style="margin-bottom: 1rem;">
                 <svg viewBox="0 0 24 24" width="20" height="20" fill="currentColor">
-                    <path d="M12 0C5.37 0 0 5.37 0 12c0 5.31 3.435 9.795 8.205 11.385.6.105.825-.255.825-.57 0-.285-.015-1.23-.015-2.235-3.015.555-3.795-.735-4.035-1.41-.135-.345-.72-1.41-1.23-1.695-.42-.225-1.02-.78-.015-.795.945-.015 1.62.87 1.845 1.23 1.08 1.815 2.805 1.305 3.495.99.105-.78.42-1.305.765-1.605-2.67-.3-5.46-1.335-5.46-5.925 0-1.305.465-2.385 1.23-3.225-.12-.3-.54-1.53.12-3.18 0 0 1.005-.315 3.3 1.23.96-.27 1.98-.405 3-.405s2.04.135 3 .405c2.295-1.56 3.3-1.23 3.3-1.23.66 1.65.24 2.88.12 3.18.765.84 1.23 1.905 1.23 3.225 0 4.605-2.805 5.625-5.475 5.925.435.375.81 1.095.81 2.22 0 1.605-.015 2.895-.015 3.3 0 .315.225.69.825.57A12.02 12.02 0 0024 12c0-6.63-5.37-12-12-12z"/>
+                    <path
+                        d="M12 0C5.37 0 0 5.37 0 12c0 5.31 3.435 9.795 8.205 11.385.6.105.825-.255.825-.57 0-.285-.015-1.23-.015-2.235-3.015.555-3.795-.735-4.035-1.41-.135-.345-.72-1.41-1.23-1.695-.42-.225-1.02-.78-.015-.795.945-.015 1.62.87 1.845 1.23 1.08 1.815 2.805 1.305 3.495.99.105-.78.42-1.305.765-1.605-2.67-.3-5.46-1.335-5.46-5.925 0-1.305.465-2.385 1.23-3.225-.12-.3-.54-1.53.12-3.18 0 0 1.005-.315 3.3 1.23.96-.27 1.98-.405 3-.405s2.04.135 3 .405c2.295-1.56 3.3-1.23 3.3-1.23.66 1.65.24 2.88.12 3.18.765.84 1.23 1.905 1.23 3.225 0 4.605-2.805 5.625-5.475 5.925.435.375.81 1.095.81 2.22 0 1.605-.015 2.895-.015 3.3 0 .315.225.69.825.57A12.02 12.02 0 0024 12c0-6.63-5.37-12-12-12z" />
                 </svg>
                 <span data-i18n="github_login_oauth">GitHub ile Giriş Yap</span>
             </button>
 
             <!-- Manual PAT Alternative (Expandable) -->
-            <div style="border-top: 1px solid var(--border-color); padding-top: 0.75rem; margin-top: 0.5rem; text-align: center;">
+            <div
+                style="border-top: 1px solid var(--border-color); padding-top: 0.75rem; margin-top: 0.5rem; text-align: center;">
                 <button id="githubTogglePatBtn" class="btn btn-subtle btn-xs btn-link">
                     <span data-i18n="github_pat_fallback">Gelişmiş / Manuel Token Girişi</span>
                 </button>
             </div>
 
-            <div id="githubPatSection" style="display: none; margin-top: 0.75rem; padding-top: 0.75rem; border-top: 1px dashed var(--border-color);">
-                <label style="display: block; font-size: 0.8rem; font-weight: 600; margin-bottom: 0.4rem;" data-i18n="github_token_label">Personal Access Token (PAT)</label>
-                <input type="password" id="githubTokenInput" class="menu-select" style="width: 100%; padding: 0.6rem 0.8rem; font-family: monospace; margin-bottom: 0.75rem;" data-i18n-placeholder="github_token_placeholder" placeholder="ghp_ veya github_pat_...">
-                <button class="btn btn-secondary btn-block" id="githubConnectPatBtn" data-i18n="github_connect">Token ile Bağlan</button>
+            <div id="githubPatSection"
+                style="display: none; margin-top: 0.75rem; padding-top: 0.75rem; border-top: 1px dashed var(--border-color);">
+                <label style="display: block; font-size: 0.8rem; font-weight: 600; margin-bottom: 0.4rem;"
+                    data-i18n="github_token_label">Personal Access Token (PAT)</label>
+                <input type="password" id="githubTokenInput" class="menu-select"
+                    style="width: 100%; padding: 0.6rem 0.8rem; font-family: monospace; margin-bottom: 0.75rem;"
+                    data-i18n-placeholder="github_token_placeholder" placeholder="ghp_ veya github_pat_...">
+                <button class="btn btn-secondary btn-block" id="githubConnectPatBtn" data-i18n="github_connect">Token
+                    ile Bağlan</button>
             </div>
         </div>
     </div>
@@ -1865,7 +2158,8 @@
     <!-- Folder Management Modal -->
     <div id="folderManageOverlay" class="modal-overlay">
         <div class="modal-card">
-            <div class="modal-header" style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1rem;">
+            <div class="modal-header"
+                style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1rem;">
                 <h3 id="folderModalTitle" data-i18n="add_folder" style="margin: 0;">Klasör Ekle</h3>
                 <button class="icon-btn" id="folderManageCloseBtn">
                     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="18" height="18">
@@ -1877,22 +2171,27 @@
             <div class="modal-body">
                 <div class="input-group">
                     <label data-i18n="folder_name">Klasör Adı</label>
-                    <input type="text" id="folderNameInput" data-i18n-placeholder="ph_folder_name" placeholder="Örn: Çalışma Dosyaları">
+                    <input type="text" id="folderNameInput" data-i18n-placeholder="ph_folder_name"
+                        placeholder="Örn: Çalışma Dosyaları">
                 </div>
                 <div class="input-group">
                     <label data-i18n="folder_color">Klasör Rengi</label>
-                    <div style="display: flex; flex-wrap: nowrap; justify-content: space-between; overflow-x: auto; gap: 0.35rem; margin-top: 0.25rem; padding-bottom: 0.25rem; scrollbar-width: none; -ms-overflow-style: none; -webkit-overflow-scrolling: touch;" id="folderColorPicker" class="hide-scrollbar">
+                    <div style="display: flex; flex-wrap: nowrap; justify-content: space-between; overflow-x: auto; gap: 0.35rem; margin-top: 0.25rem; padding-bottom: 0.25rem; scrollbar-width: none; -ms-overflow-style: none; -webkit-overflow-scrolling: touch;"
+                        id="folderColorPicker" class="hide-scrollbar">
                         <!-- Colors will be dynamically generated here -->
                     </div>
                     <input type="hidden" id="folderColorInput" value="#3b82f6">
                 </div>
                 <div class="input-group">
                     <label data-i18n="folder_desc">Klasör Açıklaması (Opsiyonel)</label>
-                    <input type="text" id="folderDescInput" data-i18n-placeholder="ph_folder_desc" placeholder="Örn: 1. Dönem Sınavları">
+                    <input type="text" id="folderDescInput" data-i18n-placeholder="ph_folder_desc"
+                        placeholder="Örn: 1. Dönem Sınavları">
                 </div>
-                
-                <button class="btn btn-secondary btn-block" id="folderFocusPoolBtn" style="margin-top: 1rem; display: none;">
-                    <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+
+                <button class="btn btn-secondary btn-block" id="folderFocusPoolBtn"
+                    style="margin-top: 1rem; display: none;">
+                    <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2.5"
+                        stroke-linecap="round" stroke-linejoin="round">
                         <circle cx="12" cy="12" r="10"></circle>
                         <circle cx="12" cy="12" r="6"></circle>
                         <circle cx="12" cy="12" r="2"></circle>
@@ -1902,11 +2201,20 @@
             </div>
             <div class="modal-footer modal-footer-grid">
                 <button class="btn btn-danger" id="folderManageDeleteBtn" style="display: none;">
-                    <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 6 5 6 21 6"></polyline><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path></svg>
+                    <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2.5"
+                        stroke-linecap="round" stroke-linejoin="round">
+                        <polyline points="3 6 5 6 21 6"></polyline>
+                        <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path>
+                    </svg>
                     <span data-i18n="delete">Sil</span>
                 </button>
                 <button class="btn btn-secondary" id="folderManageArchiveBtn" style="display: none;">
-                    <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="21 8 21 21 3 21 3 8"></polyline><rect x="1" y="3" width="22" height="5"></rect><line x1="10" y1="12" x2="14" y2="12"></line></svg>
+                    <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2.5"
+                        stroke-linecap="round" stroke-linejoin="round">
+                        <polyline points="21 8 21 21 3 21 3 8"></polyline>
+                        <rect x="1" y="3" width="22" height="5"></rect>
+                        <line x1="10" y1="12" x2="14" y2="12"></line>
+                    </svg>
                     <span data-i18n="archive_action">Arşivle</span>
                 </button>
                 <button class="btn btn-subtle" id="folderManageCancelBtn" data-i18n="cancel">İptal</button>
@@ -1920,21 +2228,27 @@
         <div class="modal-card">
             <div class="modal-header">
                 <h3 id="focusPoolTitle" data-i18n="focus_streak_add">Odak Seriye Ekle</h3>
-                <p id="focusPoolDesc" style="font-size: 0.85rem; color: var(--text-secondary); margin-top: 4px; font-weight: 500;"></p>
+                <p id="focusPoolDesc"
+                    style="font-size: 0.85rem; color: var(--text-secondary); margin-top: 4px; font-weight: 500;"></p>
             </div>
             <div class="modal-body" style="margin: 1.5rem 0;">
                 <div style="display: flex; justify-content: space-between; align-items: center; gap: 1rem;">
                     <span style="font-weight: 600;">Soru Sayısı:</span>
                     <div style="display: flex; align-items: center; gap: 0.5rem;">
-                        <button class="icon-btn" id="focusPoolDecBtn" style="width: 2rem; height: 2rem; background: var(--surface-hover);">-</button>
-                        <span id="focusPoolCount" style="font-size: 1.25rem; font-weight: bold; min-width: 2rem; text-align: center;">3</span>
-                        <button class="icon-btn" id="focusPoolIncBtn" style="width: 2rem; height: 2rem; background: var(--surface-hover);">+</button>
+                        <button class="icon-btn" id="focusPoolDecBtn"
+                            style="width: 2rem; height: 2rem; background: var(--surface-hover);">-</button>
+                        <span id="focusPoolCount"
+                            style="font-size: 1.25rem; font-weight: bold; min-width: 2rem; text-align: center;">3</span>
+                        <button class="icon-btn" id="focusPoolIncBtn"
+                            style="width: 2rem; height: 2rem; background: var(--surface-hover);">+</button>
                     </div>
                 </div>
-                <p id="focusPoolWarning" style="color: var(--danger-color); font-size: 0.8rem; margin-top: 1rem; display: none;"></p>
+                <p id="focusPoolWarning"
+                    style="color: var(--danger-color); font-size: 0.8rem; margin-top: 1rem; display: none;"></p>
             </div>
             <div class="modal-footer" style="display: flex; gap: 0.75rem; justify-content: flex-end;">
-                <button class="btn btn-danger" id="focusPoolRemoveBtn" style="display: none; margin-right: auto;">Kaldır</button>
+                <button class="btn btn-danger" id="focusPoolRemoveBtn"
+                    style="display: none; margin-right: auto;">Kaldır</button>
                 <button class="btn btn-secondary" id="focusPoolCancelBtn" data-i18n="cancel">Vazgeç</button>
                 <button class="btn btn-primary" id="focusPoolSaveBtn" data-i18n="save">Kaydet</button>
             </div>
@@ -1944,7 +2258,8 @@
     <!-- Folder Delete Options Modal -->
     <div id="folderDeleteOverlay" class="modal-overlay">
         <div class="modal-card">
-            <div class="modal-header" style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1rem;">
+            <div class="modal-header"
+                style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1rem;">
                 <h3 data-i18n="delete_folder" style="margin: 0;">Klasörü Sil</h3>
                 <button class="icon-btn" id="folderDeleteCloseBtn">
                     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="18" height="18">
@@ -1954,12 +2269,16 @@
                 </button>
             </div>
             <div class="modal-body">
-                <p style="margin-bottom: 1rem; color: var(--text-primary);" data-i18n="delete_folder_confirm">Bu klasörü silmek istiyor musunuz?</p>
-                <p style="margin-bottom: 0.5rem; font-size: 0.85rem; color: var(--text-secondary);" data-i18n="delete_folder_options">İçindeki dosyaları ne yapmak istersiniz?</p>
+                <p style="margin-bottom: 1rem; color: var(--text-primary);" data-i18n="delete_folder_confirm">Bu klasörü
+                    silmek istiyor musunuz?</p>
+                <p style="margin-bottom: 0.5rem; font-size: 0.85rem; color: var(--text-secondary);"
+                    data-i18n="delete_folder_options">İçindeki dosyaları ne yapmak istersiniz?</p>
             </div>
             <div class="modal-footer" style="display: flex; flex-direction: column; gap: 0.5rem;">
-                <button class="btn btn-primary btn-block" id="folderDeleteMoveRootBtn" data-i18n="move_to_root">Kök dizine taşı</button>
-                <button class="btn btn-danger-soft btn-block" id="folderDeleteDeleteItemsBtn" data-i18n="delete_items">Dosyaları da sil</button>
+                <button class="btn btn-primary btn-block" id="folderDeleteMoveRootBtn" data-i18n="move_to_root">Kök
+                    dizine taşı</button>
+                <button class="btn btn-danger-soft btn-block" id="folderDeleteDeleteItemsBtn"
+                    data-i18n="delete_items">Dosyaları da sil</button>
                 <button class="btn btn-subtle btn-block" id="folderDeleteCancelBtn" data-i18n="cancel">İptal</button>
             </div>
         </div>
@@ -1968,10 +2287,12 @@
     <!-- Archive Modal -->
     <div id="archiveOverlay" class="modal-overlay" style="z-index: 10001;">
         <div class="modal-card">
-            <div class="modal-header" style="display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 1rem;">
+            <div class="modal-header"
+                style="display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 1rem;">
                 <div>
                     <h3 style="margin: 0;" data-i18n="archive_title">Arşiv</h3>
-                    <p style="font-size: 0.78rem; color: var(--text-secondary); margin-top: 4px;" data-i18n="archive_subtitle">Arşivlenen kaynaklar teste dahil edilmez.</p>
+                    <p style="font-size: 0.78rem; color: var(--text-secondary); margin-top: 4px;"
+                        data-i18n="archive_subtitle">Arşivlenen kaynaklar teste dahil edilmez.</p>
                 </div>
                 <button class="icon-btn" id="archiveCloseBtn">
                     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="18" height="18">
@@ -1981,16 +2302,25 @@
                 </button>
             </div>
             <div class="modal-body" style="max-height: 55vh; overflow-y: auto; padding-right: 0.4rem;">
-                <div id="archiveEmpty" style="display: none; padding: 2rem 1rem; text-align: center; color: var(--text-secondary); font-size: 0.88rem;" data-i18n="archive_empty">Arşiv boş.</div>
-                <div id="archiveLocalHint" style="display: none; padding: 0.6rem 0.8rem; margin-bottom: 0.75rem; background-color: var(--accent-bg, rgba(79, 70, 229, 0.1)); border-left: 3px solid var(--accent-color, #4f46e5); border-radius: var(--radius-sm, 6px); font-size: 0.78rem; color: var(--text-primary);" data-i18n="archive_local_hint">GitHub bağlı değil: arşiv bu cihazda tutuluyor.</div>
+                <div id="archiveEmpty"
+                    style="display: none; padding: 2rem 1rem; text-align: center; color: var(--text-secondary); font-size: 0.88rem;"
+                    data-i18n="archive_empty">Arşiv boş.</div>
+                <div id="archiveLocalHint"
+                    style="display: none; padding: 0.6rem 0.8rem; margin-bottom: 0.75rem; background-color: var(--accent-bg, rgba(79, 70, 229, 0.1)); border-left: 3px solid var(--accent-color, #4f46e5); border-radius: var(--radius-sm, 6px); font-size: 0.78rem; color: var(--text-primary);"
+                    data-i18n="archive_local_hint">GitHub bağlı değil: arşiv bu cihazda tutuluyor.</div>
                 <div id="archiveList"></div>
             </div>
             <div class="modal-footer" style="display: flex; gap: 0.5rem; align-items: center;">
-                <a id="archiveGistLink" href="#" target="_blank" rel="noopener" class="btn btn-subtle" style="display: none; align-items: center; gap: 0.4rem; font-size: 0.8rem; text-decoration: none;">
-                    <svg viewBox="0 0 24 24" width="16" height="16" fill="currentColor"><path d="M12 0C5.37 0 0 5.37 0 12c0 5.31 3.435 9.795 8.205 11.385.6.105.825-.255.825-.57 0-.285-.015-1.23-.015-2.235-3.015.555-3.795-.735-4.035-1.41-.135-.345-.72-1.41-1.23-1.695-.42-.225-1.02-.78-.015-.795.945-.015 1.62.87 1.845 1.23 1.08 1.815 2.805 1.305 3.495.99.105-.78.42-1.305.765-1.605-2.67-.3-5.46-1.335-5.46-5.925 0-1.305.465-2.385 1.23-3.225-.12-.3-.54-1.53.12-3.18 0 0 1.005-.315 3.3 1.23.96-.27 1.98-.405 3-.405s2.04.135 3 .405c2.295-1.56 3.3-1.23 3.3-1.23.66 1.65.24 2.88.12 3.18.765.84 1.23 1.905 1.23 3.225 0 4.605-2.805 5.625-5.475 5.925.435.375.81 1.095.81 2.22 0 1.605-.015 2.895-.015 3.3 0 .315.225.69.825.57A12.02 12.02 0 0024 12c0-6.63-5.37-12-12-12z"/></svg>
+                <a id="archiveGistLink" href="#" target="_blank" rel="noopener" class="btn btn-subtle"
+                    style="display: none; align-items: center; gap: 0.4rem; font-size: 0.8rem; text-decoration: none;">
+                    <svg viewBox="0 0 24 24" width="16" height="16" fill="currentColor">
+                        <path
+                            d="M12 0C5.37 0 0 5.37 0 12c0 5.31 3.435 9.795 8.205 11.385.6.105.825-.255.825-.57 0-.285-.015-1.23-.015-2.235-3.015.555-3.795-.735-4.035-1.41-.135-.345-.72-1.41-1.23-1.695-.42-.225-1.02-.78-.015-.795.945-.015 1.62.87 1.845 1.23 1.08 1.815 2.805 1.305 3.495.99.105-.78.42-1.305.765-1.605-2.67-.3-5.46-1.335-5.46-5.925 0-1.305.465-2.385 1.23-3.225-.12-.3-.54-1.53.12-3.18 0 0 1.005-.315 3.3 1.23.96-.27 1.98-.405 3-.405s2.04.135 3 .405c2.295-1.56 3.3-1.23 3.3-1.23.66 1.65.24 2.88.12 3.18.765.84 1.23 1.905 1.23 3.225 0 4.605-2.805 5.625-5.475 5.925.435.375.81 1.095.81 2.22 0 1.605-.015 2.895-.015 3.3 0 .315.225.69.825.57A12.02 12.02 0 0024 12c0-6.63-5.37-12-12-12z" />
+                    </svg>
                     <span data-i18n="archive_open_github">GitHub'da Aç</span>
                 </a>
-                <button class="btn btn-subtle" id="archiveDoneBtn" style="margin-left: auto;" data-i18n="close">Kapat</button>
+                <button class="btn btn-subtle" id="archiveDoneBtn" style="margin-left: auto;"
+                    data-i18n="close">Kapat</button>
             </div>
         </div>
     </div>
@@ -1998,10 +2328,13 @@
     <!-- Archived Source Preview -->
     <div id="archivePreviewOverlay" class="modal-overlay" style="z-index: 10003;">
         <div class="modal-card">
-            <div class="modal-header" style="display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 1rem;">
+            <div class="modal-header"
+                style="display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 1rem;">
                 <div style="min-width: 0;">
                     <h3 style="margin: 0;" data-i18n="archive_preview">Önizleme</h3>
-                    <p id="archivePreviewName" class="truncate" style="font-size: 0.82rem; color: var(--text-secondary); margin-top: 4px; font-weight: 500;"></p>
+                    <p id="archivePreviewName" class="truncate"
+                        style="font-size: 0.82rem; color: var(--text-secondary); margin-top: 4px; font-weight: 500;">
+                    </p>
                 </div>
                 <button class="icon-btn" id="archivePreviewCloseBtn">
                     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="18" height="18">
@@ -2020,14 +2353,19 @@
     <!-- Factory / Multi-Scope Reset Modal -->
     <div id="resetAppModalOverlay" class="modal-overlay" style="z-index: 10005; display: none;">
         <div class="modal-card" style="max-width: 480px; border-top: 4px solid var(--danger-color, #ef4444);">
-            <div class="modal-header" style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.75rem;">
+            <div class="modal-header"
+                style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.75rem;">
                 <div style="display: flex; align-items: center; gap: 0.5rem; color: #ef4444;">
-                    <svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="2.5">
-                        <path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"></path>
+                    <svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor"
+                        stroke-width="2.5">
+                        <path
+                            d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z">
+                        </path>
                         <line x1="12" y1="9" x2="12" y2="13"></line>
                         <line x1="12" y1="17" x2="12.01" y2="17"></line>
                     </svg>
-                    <h3 style="margin: 0; font-size: 1.1rem; color: var(--text-primary);" data-i18n="reset_app_modal_title">Uygulamayı Sıfırla</h3>
+                    <h3 style="margin: 0; font-size: 1.1rem; color: var(--text-primary);"
+                        data-i18n="reset_app_modal_title">Uygulamayı Sıfırla</h3>
                 </div>
                 <button class="icon-btn" id="resetAppCloseBtn">
                     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="18" height="18">
@@ -2039,33 +2377,49 @@
 
             <!-- STEP 1: Selection View -->
             <div id="resetStep1" class="modal-body" style="padding: 0.25rem 0;">
-                <p style="font-size: 0.85rem; color: var(--text-secondary); margin: 0 0 0.85rem 0;" data-i18n="reset_app_select_mode_title">Lütfen yapmak istediğiniz sıfırlama kapsamını seçin:</p>
-                
+                <p style="font-size: 0.85rem; color: var(--text-secondary); margin: 0 0 0.85rem 0;"
+                    data-i18n="reset_app_select_mode_title">Lütfen yapmak istediğiniz sıfırlama kapsamını seçin:</p>
+
                 <div class="reset-option-list" style="display: flex; flex-direction: column; gap: 0.65rem;">
                     <!-- Option 1: Progress & Stats -->
-                    <label class="reset-option-card active" data-reset-mode="progress" style="display: flex; gap: 0.75rem; align-items: flex-start; padding: 0.75rem 0.85rem; border: 2px solid var(--primary-color, #3b82f6); background: rgba(59, 130, 246, 0.05); border-radius: 8px; cursor: pointer; transition: all 0.2s;">
-                        <input type="radio" name="resetMode" value="progress" checked style="margin-top: 3px; accent-color: var(--primary-color, #3b82f6);">
+                    <label class="reset-option-card active" data-reset-mode="progress"
+                        style="display: flex; gap: 0.75rem; align-items: flex-start; padding: 0.75rem 0.85rem; border: 2px solid var(--primary-color, #3b82f6); background: rgba(59, 130, 246, 0.05); border-radius: 8px; cursor: pointer; transition: all 0.2s;">
+                        <input type="radio" name="resetMode" value="progress" checked
+                            style="margin-top: 3px; accent-color: var(--primary-color, #3b82f6);">
                         <div>
-                            <div style="font-weight: 700; font-size: 0.9rem; color: var(--text-primary);" data-i18n="reset_mode_progress_title">İlerleme & İstatistikleri Sıfırla</div>
-                            <div style="font-size: 0.78rem; color: var(--text-secondary); line-height: 1.4; margin-top: 2px;" data-i18n="reset_mode_progress_desc">Kaynaklar ve klasörler korunur. FSRS algoritma verileri, seri (streak), dondurma hakları ve test geçmişi sıfırlanır.</div>
+                            <div style="font-weight: 700; font-size: 0.9rem; color: var(--text-primary);"
+                                data-i18n="reset_mode_progress_title">İlerleme & İstatistikleri Sıfırla</div>
+                            <div style="font-size: 0.78rem; color: var(--text-secondary); line-height: 1.4; margin-top: 2px;"
+                                data-i18n="reset_mode_progress_desc">Kaynaklar ve klasörler korunur. FSRS algoritma
+                                verileri, seri (streak), dondurma hakları ve test geçmişi sıfırlanır.</div>
                         </div>
                     </label>
 
                     <!-- Option 2: Sources Only -->
-                    <label class="reset-option-card" data-reset-mode="sources" style="display: flex; gap: 0.75rem; align-items: flex-start; padding: 0.75rem 0.85rem; border: 1px solid var(--border-color, #cbd5e1); background: var(--bg-hover, rgba(0,0,0,0.02)); border-radius: 8px; cursor: pointer; transition: all 0.2s;">
-                        <input type="radio" name="resetMode" value="sources" style="margin-top: 3px; accent-color: var(--primary-color, #3b82f6);">
+                    <label class="reset-option-card" data-reset-mode="sources"
+                        style="display: flex; gap: 0.75rem; align-items: flex-start; padding: 0.75rem 0.85rem; border: 1px solid var(--border-color, #cbd5e1); background: var(--bg-hover, rgba(0,0,0,0.02)); border-radius: 8px; cursor: pointer; transition: all 0.2s;">
+                        <input type="radio" name="resetMode" value="sources"
+                            style="margin-top: 3px; accent-color: var(--primary-color, #3b82f6);">
                         <div>
-                            <div style="font-weight: 700; font-size: 0.9rem; color: var(--text-primary);" data-i18n="reset_mode_sources_title">Tüm Kaynakları & Klasörleri Sil</div>
-                            <div style="font-size: 0.78rem; color: var(--text-secondary); line-height: 1.4; margin-top: 2px;" data-i18n="reset_mode_sources_desc">Eklenmiş tüm soru kaynakları, klasörler ve hızlı hazır setler silinir.</div>
+                            <div style="font-weight: 700; font-size: 0.9rem; color: var(--text-primary);"
+                                data-i18n="reset_mode_sources_title">Tüm Kaynakları & Klasörleri Sil</div>
+                            <div style="font-size: 0.78rem; color: var(--text-secondary); line-height: 1.4; margin-top: 2px;"
+                                data-i18n="reset_mode_sources_desc">Eklenmiş tüm soru kaynakları, klasörler ve hızlı
+                                hazır setler silinir.</div>
                         </div>
                     </label>
 
                     <!-- Option 3: Full Factory Reset -->
-                    <label class="reset-option-card" data-reset-mode="full" style="display: flex; gap: 0.75rem; align-items: flex-start; padding: 0.75rem 0.85rem; border: 1px solid var(--border-color, #cbd5e1); background: var(--bg-hover, rgba(0,0,0,0.02)); border-radius: 8px; cursor: pointer; transition: all 0.2s;">
-                        <input type="radio" name="resetMode" value="full" style="margin-top: 3px; accent-color: var(--danger-color, #ef4444);">
+                    <label class="reset-option-card" data-reset-mode="full"
+                        style="display: flex; gap: 0.75rem; align-items: flex-start; padding: 0.75rem 0.85rem; border: 1px solid var(--border-color, #cbd5e1); background: var(--bg-hover, rgba(0,0,0,0.02)); border-radius: 8px; cursor: pointer; transition: all 0.2s;">
+                        <input type="radio" name="resetMode" value="full"
+                            style="margin-top: 3px; accent-color: var(--danger-color, #ef4444);">
                         <div>
-                            <div style="font-weight: 700; font-size: 0.9rem; color: #ef4444;" data-i18n="reset_mode_full_title">Tam Fabrika Ayarlarına Sıfırla</div>
-                            <div style="font-size: 0.78rem; color: var(--text-secondary); line-height: 1.4; margin-top: 2px;" data-i18n="reset_mode_full_desc">Tüm kaynaklar, klasörler, istatistikler ve ayarlar kalıcı olarak tamamen temizlenir.</div>
+                            <div style="font-weight: 700; font-size: 0.9rem; color: #ef4444;"
+                                data-i18n="reset_mode_full_title">Tam Fabrika Ayarlarına Sıfırla</div>
+                            <div style="font-size: 0.78rem; color: var(--text-secondary); line-height: 1.4; margin-top: 2px;"
+                                data-i18n="reset_mode_full_desc">Tüm kaynaklar, klasörler, istatistikler ve ayarlar
+                                kalıcı olarak tamamen temizlenir.</div>
                         </div>
                     </label>
                 </div>
@@ -2073,22 +2427,32 @@
 
             <!-- STEP 2: Confirmation View -->
             <div id="resetStep2" class="modal-body" style="padding: 0.25rem 0; display: none;">
-                <div id="resetWarningBanner" style="background-color: rgba(239, 68, 68, 0.1); border-left: 3px solid #ef4444; border-radius: 6px; padding: 0.75rem; margin-bottom: 1rem;">
-                    <div id="resetWarningTitle" style="font-weight: 600; color: #ef4444; font-size: 0.88rem; margin-bottom: 0.25rem;" data-i18n="reset_app_warning_title">Dikkat: İşlem Geri Alınamaz!</div>
-                    <div id="resetWarningText" style="font-size: 0.8rem; color: var(--text-secondary); line-height: 1.45;" data-i18n="reset_app_warning_full">Bu işlem tüm yerel verilerinizi kalıcı olarak siler ve varsayılan fabrika ayarlarına döndürür.</div>
+                <div id="resetWarningBanner"
+                    style="background-color: rgba(239, 68, 68, 0.1); border-left: 3px solid #ef4444; border-radius: 6px; padding: 0.75rem; margin-bottom: 1rem;">
+                    <div id="resetWarningTitle"
+                        style="font-weight: 600; color: #ef4444; font-size: 0.88rem; margin-bottom: 0.25rem;"
+                        data-i18n="reset_app_warning_title">Dikkat: İşlem Geri Alınamaz!</div>
+                    <div id="resetWarningText"
+                        style="font-size: 0.8rem; color: var(--text-secondary); line-height: 1.45;"
+                        data-i18n="reset_app_warning_full">Bu işlem tüm yerel verilerinizi kalıcı olarak siler ve
+                        varsayılan fabrika ayarlarına döndürür.</div>
                 </div>
                 <div style="font-size: 0.84rem; color: var(--text-primary); margin-bottom: 0.75rem;">
-                    <span data-i18n="reset_app_word_instruction">Silme işlemini onaylamak için lütfen aşağıdaki kutuya gösterilen şehir adını yazın:</span>
+                    <span data-i18n="reset_app_word_instruction">Silme işlemini onaylamak için lütfen aşağıdaki kutuya
+                        gösterilen şehir adını yazın:</span>
                     <strong id="resetAppWordDisplay" class="reset-word-badge" style="margin-left: 4px;">---</strong>
                 </div>
-                <input type="text" id="resetAppConfirmInput" autocomplete="off" spellcheck="false" class="reset-input-field" placeholder="Kelimeyi buraya yazın..." data-i18n-placeholder="reset_app_placeholder">
+                <input type="text" id="resetAppConfirmInput" autocomplete="off" spellcheck="false"
+                    class="reset-input-field" placeholder="Kelimeyi buraya yazın..."
+                    data-i18n-placeholder="reset_app_placeholder">
             </div>
 
             <!-- Modal Footer -->
             <div class="modal-footer" style="display: flex; gap: 0.5rem; justify-content: flex-end; margin-top: 1rem;">
                 <button class="btn btn-subtle" id="resetAppCancelBtn" data-i18n="reset_app_cancel_btn">Vazgeç</button>
                 <button class="btn btn-primary" id="resetAppNextBtn" data-i18n="reset_next_btn">İleri →</button>
-                <button class="btn btn-danger" id="resetAppConfirmBtn" disabled style="display: none;" data-i18n="reset_app_confirm_btn">Verileri Sil ve Sıfırla</button>
+                <button class="btn btn-danger" id="resetAppConfirmBtn" disabled style="display: none;"
+                    data-i18n="reset_app_confirm_btn">Verileri Sil ve Sıfırla</button>
             </div>
         </div>
     </div>
@@ -2098,7 +2462,8 @@
     <!-- Quick Presets Manage Modal -->
     <div id="quickPresetsManageOverlay" class="modal-overlay">
         <div class="modal-card">
-            <div class="modal-header" style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1rem;">
+            <div class="modal-header"
+                style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1rem;">
                 <h3 data-i18n="quick_sources_title" style="margin: 0;">Hızlı Erişim</h3>
                 <button class="icon-btn" id="qpmCloseBtn">
                     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="18" height="18">
@@ -2112,8 +2477,10 @@
                     <!-- JS content -->
                 </div>
 
-                <button class="btn btn-secondary btn-block modal-action-btn" id="qsAddCurrentBtn" style="margin-top: 1rem; display: flex; align-items: center; justify-content: center; gap: 0.5rem; width: 100%;">
-                    <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+                <button class="btn btn-secondary btn-block modal-action-btn" id="qsAddCurrentBtn"
+                    style="margin-top: 1rem; display: flex; align-items: center; justify-content: center; gap: 0.5rem; width: 100%;">
+                    <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2.5"
+                        stroke-linecap="round" stroke-linejoin="round">
                         <line x1="12" y1="5" x2="12" y2="19"></line>
                         <line x1="5" y1="12" x2="19" y2="12"></line>
                     </svg>
@@ -2128,10 +2495,15 @@
 
     <!-- Info & Freeze Popup Modal (Backdrop or Button click to close) -->
     <div id="infoPopupOverlay" class="modal-overlay" style="display: none; z-index: 10010;">
-        <div class="modal-card info-popup-card" style="max-width: 460px; width: 92%; position: relative; padding: 1.25rem;">
-            <div class="modal-header" style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.75rem; border-bottom: 1px solid var(--border-color); padding-bottom: 0.5rem;">
-                <h3 id="infoPopupTitle" style="margin: 0; font-size: 1.05rem; font-weight: 700; color: var(--text-primary);"></h3>
-                <button id="infoPopupCloseBtn" class="icon-btn" style="background: transparent; border: none; color: var(--text-secondary); cursor: pointer; padding: 4px; display: flex; align-items: center; justify-content: center; border-radius: 6px;" title="Kapat">
+        <div class="modal-card info-popup-card"
+            style="max-width: 460px; width: 92%; position: relative; padding: 1.25rem;">
+            <div class="modal-header"
+                style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.75rem; border-bottom: 1px solid var(--border-color); padding-bottom: 0.5rem;">
+                <h3 id="infoPopupTitle"
+                    style="margin: 0; font-size: 1.05rem; font-weight: 700; color: var(--text-primary);"></h3>
+                <button id="infoPopupCloseBtn" class="icon-btn"
+                    style="background: transparent; border: none; color: var(--text-secondary); cursor: pointer; padding: 4px; display: flex; align-items: center; justify-content: center; border-radius: 6px;"
+                    title="Kapat">
                     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="18" height="18">
                         <line x1="18" y1="6" x2="6" y2="18"></line>
                         <line x1="6" y1="6" x2="18" y2="18"></line>
@@ -2141,7 +2513,8 @@
             <div id="infoPopupBody" class="modal-body" style="padding: 0.25rem 0;">
                 <!-- Content injected dynamically -->
             </div>
-            <div id="infoPopupFooter" class="modal-footer" style="display: flex; justify-content: flex-end; gap: 0.5rem; margin-top: 1rem; padding-top: 0.75rem; border-top: 1px solid var(--border-color, rgba(255,255,255,0.1));">
+            <div id="infoPopupFooter" class="modal-footer"
+                style="display: flex; justify-content: flex-end; gap: 0.5rem; margin-top: 1rem; padding-top: 0.75rem; border-top: 1px solid var(--border-color, rgba(255,255,255,0.1));">
                 <!-- Buttons injected dynamically -->
             </div>
         </div>
@@ -2150,10 +2523,13 @@
     <!-- Odak Seri source picker: the sources-screen layout, selection only -->
     <div class="modal" id="focusSourceModal" aria-hidden="true" style="display: none;">
         <div class="modal-content card" style="max-width: 480px; width: 90%;">
-            <div class="modal-header" style="display: flex; align-items: flex-start; justify-content: space-between; gap: 0.5rem;">
+            <div class="modal-header"
+                style="display: flex; align-items: flex-start; justify-content: space-between; gap: 0.5rem;">
                 <div style="min-width: 0;">
-                    <h3 class="modal-title" style="margin: 0; font-size: 1.1rem; font-weight: 700;">Odak Seri Kaynakları</h3>
-                    <span id="focusSourceSelectionCount" style="font-size: 0.72rem; color: var(--text-secondary); opacity: 0.8; display: block; margin-top: 2px;"></span>
+                    <h3 class="modal-title" style="margin: 0; font-size: 1.1rem; font-weight: 700;">Odak Seri Kaynakları
+                    </h3>
+                    <span id="focusSourceSelectionCount"
+                        style="font-size: 0.72rem; color: var(--text-secondary); opacity: 0.8; display: block; margin-top: 2px;"></span>
                 </div>
                 <button class="icon-btn" id="focusSourceModalCloseBtn">
                     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="18" height="18">
@@ -2165,7 +2541,8 @@
             <!-- No save button: the selection is committed once when the popup
                  closes, so the whole height belongs to the source list. -->
             <div class="modal-body" style="padding: 0.5rem 0 0 0;">
-                <div id="focusSourceList" style="max-height: min(60vh, 460px); overflow-y: auto; padding-right: 0.25rem;">
+                <div id="focusSourceList"
+                    style="max-height: min(60vh, 460px); overflow-y: auto; padding-right: 0.25rem;">
                     <!-- Populated dynamically by renderSourcePicker -->
                 </div>
             </div>
@@ -2174,10 +2551,13 @@
 
     <div class="modal" id="streakRunModal" aria-hidden="true" style="display: none;">
         <div class="modal-content card" style="max-width: 460px; width: 90%;">
-            <div class="modal-header" style="display: flex; align-items: flex-start; justify-content: space-between; gap: 0.5rem;">
+            <div class="modal-header"
+                style="display: flex; align-items: flex-start; justify-content: space-between; gap: 0.5rem;">
                 <div style="min-width: 0;">
-                    <h3 class="modal-title" id="streakRunModalTitle" style="margin: 0; font-size: 1.1rem; font-weight: 700;">Günün Tekrarı</h3>
-                    <span id="streakRunModalSubtitle" style="font-size: 0.72rem; color: var(--text-secondary); opacity: 0.85; display: block; margin-top: 2px;"></span>
+                    <h3 class="modal-title" id="streakRunModalTitle"
+                        style="margin: 0; font-size: 1.1rem; font-weight: 700;">Günün Tekrarı</h3>
+                    <span id="streakRunModalSubtitle"
+                        style="font-size: 0.72rem; color: var(--text-secondary); opacity: 0.85; display: block; margin-top: 2px;"></span>
                 </div>
                 <button class="icon-btn" id="streakRunModalCloseBtn">
                     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="18" height="18">
@@ -2191,11 +2571,13 @@
                      the run directly next time and this popup stays optional. -->
                 <button class="streak-mode-option" data-streak-order="mixed" type="button">
                     <span class="streak-mode-name">Soruları FSRS sırasına göre getir</span>
-                    <span class="streak-mode-desc">Kaynak ve klasörden tamamen bağımsız. En acil tekrar edilmesi gereken soru başta olmak üzere, FSRS'in hesabına göre sıralanır.</span>
+                    <span class="streak-mode-desc">Kaynak ve klasörden tamamen bağımsız. En acil tekrar edilmesi gereken
+                        soru başta olmak üzere, FSRS'in hesabına göre sıralanır.</span>
                 </button>
                 <button class="streak-mode-option" data-streak-order="grouped" type="button">
                     <span class="streak-mode-name">Kaynak / klasör bazlı gruplayarak getir</span>
-                    <span class="streak-mode-desc">Yine en acil sorudan başlar, ama o sorunun kaynağını ve aynı klasördeki kaynakları bir arada tutar. İlişkili konular birlikte çalışılır.</span>
+                    <span class="streak-mode-desc">Yine en acil sorudan başlar, ama o sorunun kaynağını ve aynı
+                        klasördeki kaynakları bir arada tutar. İlişkili konular birlikte çalışılır.</span>
                 </button>
             </div>
         </div>
@@ -2208,7 +2590,7 @@
                 for (let registration of registrations) {
                     registration.unregister();
                 }
-            }).catch(() => {});
+            }).catch(() => { });
         }
     </script>
 </body>

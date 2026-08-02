@@ -28,10 +28,10 @@ let currentSlideIndex = 0;
 
 export function renderContinuityBlock() {
     renderGlobalCharts();
-    
+
     const wrapper = document.getElementById('continuityCarouselWrapper');
     if (!wrapper) return;
-    
+
     // The whole library, not just the active sources: the Genel Seri is
     // source-independent, so its target must be measured over everything the
     // streak run can actually draw from.
@@ -40,9 +40,9 @@ export function renderContinuityBlock() {
         wrapper.style.display = 'none';
         return;
     }
-    
+
     wrapper.style.display = 'block';
-    
+
     renderGlobalSlide(liveQ);
     renderFocusSlide();
     renderMotivationSlide();
@@ -266,19 +266,6 @@ function updateCometRing(container, spinGroup, progress, color) {
         headEl.style.boxShadow = `0 0 12px 3px ${rgba(0.9)}`;
     }
 
-    // ── 4. Progress fill arc (behind comet) — conic-gradient from 12 o'clock, clockwise ──
-    const fillEl = container.querySelector('.ring-progress-fill');
-    if (fillEl) {
-        if (progress <= 0) {
-            fillEl.style.background = 'transparent';
-        } else {
-            const pct = Math.min(progress, 100);
-            // Softer fill: semi-transparent so it blends with the comet glow on top
-            fillEl.style.background =
-                `conic-gradient(from -90deg, ${rgba(0.55)} ${pct}%, transparent ${pct}%)`;
-        }
-    }
-
     // App.tsx: always spinning — no pause state
 }
 
@@ -289,14 +276,14 @@ function renderGlobalSlide(liveQ) {
     // Streak
     const streak = calculateGlobalStreak();
     updateStreakCountDisplay('continuityStreakCount', streak);
-    
+
     // Ring Progress
     const ring = document.getElementById('continuityRing');
     const todayAct = initTodayActivity();
     const overdueCount = getDailyOverdueSnapshot(liveQ);
     const req = getDailyRequirement(overdueCount);
     const solved = todayAct.questionCount || 0;
-    
+
     // Overdue text & Progress Ring
     const textEl = document.getElementById('continuityOverdueText');
     const container = document.getElementById('globalRingContainer');
@@ -318,7 +305,7 @@ function renderGlobalSlide(liveQ) {
             textEl.textContent = `Seri için: ${solved}/${overdueCount} FSRS sorusu`;
         }
     }
-    
+
     // Tokens — read real state from AppState
     const tokensEl = document.getElementById('continuityTokens');
     tokensEl.innerHTML = '';
@@ -332,7 +319,7 @@ function renderGlobalSlide(liveQ) {
     // Index 1 = Kızıl Kar Tanesi: active when tier2 is earned and at least one token remains
     const crimsonActive = globalTier2Earned && globalRemaining > 0;
 
-    const blueLabel   = blueActive   ? 'Aktif' : 'Pasif';
+    const blueLabel = blueActive ? 'Aktif' : 'Pasif';
     const crimsonLabel = crimsonActive ? 'Aktif' : 'Pasif';
 
     tokensEl.title = `Kalan Dondurma: ${globalRemaining}/${globalTokens.total ?? 1}\n` +
@@ -388,7 +375,7 @@ function renderFocusSlide() {
             const progress = Math.min(100, Math.round((solved / req) * 100));
             textEl.style.color = 'var(--text-secondary)';
             updateCometRing(focusContainer, focusSpinGroup, progress, 'var(--trend-line-focus, #8b5cf6)');
-            textEl.textContent = selectedNames 
+            textEl.textContent = selectedNames
                 ? `Seri için: ${solved}/${req} soru (${selectedNames})`
                 : `Seri için: ${solved}/${req} soru (${focusSources.length} kaynak)`;
         }
@@ -403,11 +390,11 @@ function renderFocusSlide() {
     const focusTier2Earned = focusTokens.tier2Earned ?? false;
 
     // Index 0 = Mavi Kar Tanesi: active when there is at least one focus token remaining
-    const focusBlueActive    = focusRemaining > 0;
+    const focusBlueActive = focusRemaining > 0;
     // Index 1 = Kızıl Kar Tanesi: active when tier2 is earned and at least one token remains
     const focusCrimsonActive = focusTier2Earned && focusRemaining > 0;
 
-    const focusBlueLabel    = focusBlueActive    ? 'Aktif' : 'Pasif';
+    const focusBlueLabel = focusBlueActive ? 'Aktif' : 'Pasif';
     const focusCrimsonLabel = focusCrimsonActive ? 'Aktif' : 'Pasif';
 
     tokensEl.title = `Kalan Odak Dondurma: ${focusRemaining}/${focusTokens.total ?? 1}\n` +
@@ -445,7 +432,7 @@ export function renderMotivationSlide() {
 
     const lang = AppState.language || 'tr';
     const currentId = card.dataset.quoteId ? parseInt(card.dataset.quoteId, 10) : null;
-    const quote = currentId 
+    const quote = currentId
         ? (MOTIVATION_QUOTES.find(q => q.id === currentId) || getDailyQuote(lang))
         : getDailyQuote(lang);
 
@@ -580,15 +567,15 @@ export function getSnowflakeSvgHtml(tokenIndex, active = true, width = 24, heigh
 
     return `<svg viewBox="0 0 1800 1800" width="${width}" height="${height}" ${classAttr} style="vertical-align: middle; display: inline-block; cursor: pointer; ${opacityStyle} ${filterStyle}">` +
         `<defs>` +
-            `<linearGradient id="${gradientId}" x1="0%" y1="0%" x2="100%" y2="100%">` +
-                `<stop offset="0%" stop-color="${stopStart}"/>` +
-                `<stop offset="100%" stop-color="${stopEnd}"/>` +
-            `</linearGradient>` +
+        `<linearGradient id="${gradientId}" x1="0%" y1="0%" x2="100%" y2="100%">` +
+        `<stop offset="0%" stop-color="${stopStart}"/>` +
+        `<stop offset="100%" stop-color="${stopEnd}"/>` +
+        `</linearGradient>` +
         `</defs>` +
         `<g transform="translate(0.000000,1800.000000) scale(0.100000,-0.100000)" stroke="none">` +
-            `<path d="${mainBodyD}" fill="url(#${gradientId})"/>` +
+        `<path d="${mainBodyD}" fill="url(#${gradientId})"/>` +
         `</g>` +
-    `</svg>`;
+        `</svg>`;
 }
 
 function updateStreakCountDisplay(elementId, count) {
@@ -1026,7 +1013,7 @@ function renderHeatmapCard() {
     const heatmapCard = document.getElementById('homeHeatmapCard');
     if (heatmapCard) {
         heatmapCard.style.display = 'block';
-        
+
         if (!heatmapCard.dataset.observerBound) {
             // Small delay or IntersectionObserver to prevent blocking main thread
             const observer = new IntersectionObserver((entries) => {
@@ -1136,9 +1123,9 @@ function renderHeatmapYearly() {
     const colorLevel2 = isDark ? '#006d32' : '#40c463';
     const colorLevel3 = isDark ? '#26a641' : '#30a14e';
     const colorLevel4 = isDark ? '#39d353' : '#216e39';
-    const colorEmpty  = isDark ? 'rgba(255, 255, 255, 0.05)' : '#ebedf0';
+    const colorEmpty = isDark ? 'rgba(255, 255, 255, 0.05)' : '#ebedf0';
     const colorFrozen = isDark ? '#38bdf8' : '#3b82f6';
-    
+
     // Roughly the width of a three-letter month at this font size.
     const MIN_LABEL_GAP = 26;
     let lastLabelLeft = -Infinity;
@@ -1169,13 +1156,13 @@ function renderHeatmapYearly() {
 
         const dateStr = getLocalDateStr(currentDate);
         const act = activities[dateStr];
-        
+
         const rect = document.createElement('div');
         rect.style.borderRadius = '2px';
         rect.title = dateStr;
         rect.style.width = `${cell}px`; // strictly sized to avoid flex stretching
         rect.style.height = `${cell}px`;
-        
+
         if (act) {
             if (act.studied) {
                 if (act.questionCount > 40) rect.style.backgroundColor = colorLevel4;
@@ -1190,11 +1177,11 @@ function renderHeatmapYearly() {
         } else {
             rect.style.backgroundColor = colorEmpty;
         }
-        
+
         heatmapEl.appendChild(rect);
         currentDate.setDate(currentDate.getDate() + 1);
     }
-    
+
     if (placeholder) placeholder.style.display = 'none';
     bindHeatmapResize();
     if (!wrapper) return;
@@ -1239,10 +1226,10 @@ function bindHeatmapResize() {
 export function showDailyMotivationToast() {
     const liveQ = buildQuestionPool({ scope: 'all' });
     if (!liveQ || liveQ.length === 0) return;
-    
+
     const todayAct = initTodayActivity();
     const overdueCount = getDailyOverdueSnapshot(liveQ);
-    
+
     if (overdueCount > 0 && !todayAct.studied) {
         const remaining = Math.max(0, overdueCount - todayAct.questionCount);
         if (remaining > 0) {
@@ -1451,9 +1438,9 @@ function renderActivityCharts() {
 
     let diffCounts = { easy: 0, medium: 0, hard: 0, veryHard: 0, unsolved: 0 };
     let totalQuestions = 0;
-    
-    const targetSources = currentItem.isAll 
-        ? liveSources() 
+
+    const targetSources = currentItem.isAll
+        ? liveSources()
         : liveSources().filter(s => s.id === currentItem.id);
 
     const allQuestions = [];
@@ -1567,8 +1554,8 @@ export function buildWeeklyTrendBuckets(activities) {
     const isTr = lang.startsWith('tr');
     const isDe = lang.startsWith('de');
     const dayLabels = isTr ? ['Paz', 'Pzt', 'Sal', 'Çar', 'Per', 'Cum', 'Cmt'] :
-                      isDe ? ['So', 'Mo', 'Di', 'Mi', 'Do', 'Fr', 'Sa'] :
-                             ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
+        isDe ? ['So', 'Mo', 'Di', 'Mi', 'Do', 'Fr', 'Sa'] :
+            ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
 
     const buckets = [];
     for (let i = 0; i < numDays; i++) {
@@ -1679,7 +1666,7 @@ function renderTrendChart(buckets, yAxisId, barsId, xAxisId) {
         xLbl.style.flex = '1';
         xLbl.style.textAlign = 'center';
         xAxisEl.appendChild(xLbl);
-        
+
         const barWrap = document.createElement('div');
         barWrap.style.flex = '1';
         barWrap.style.height = '100%';
@@ -1687,7 +1674,7 @@ function renderTrendChart(buckets, yAxisId, barsId, xAxisId) {
         barWrap.style.flexDirection = 'column-reverse';
         barWrap.style.alignItems = 'center';
         barWrap.style.padding = '0 8px';
-        
+
         const barInner = document.createElement('div');
         barInner.style.width = '100%';
         barInner.style.maxWidth = '24px';
@@ -1695,15 +1682,15 @@ function renderTrendChart(buckets, yAxisId, barsId, xAxisId) {
         barInner.style.display = 'flex';
         barInner.style.flexDirection = 'column-reverse';
         barInner.style.position = 'relative';
-        
+
         if (d.total > 0) {
             const hPerc = (d.total / topLimit) * 100;
             barInner.style.height = `${hPerc}%`;
-            
+
             const wPerc = (d.wrong / d.total) * 100;
             const uPerc = (d.empty / d.total) * 100;
             const cPerc = (d.correct / d.total) * 100;
-            
+
             if (wPerc > 0) {
                 const wDiv = document.createElement('div');
                 wDiv.style.height = `${wPerc}%`;
@@ -1728,7 +1715,7 @@ function renderTrendChart(buckets, yAxisId, barsId, xAxisId) {
                 cDiv.style.borderRadius = '4px 4px 0 0';
                 barInner.appendChild(cDiv);
             }
-            
+
             const topLbl = document.createElement('span');
             topLbl.textContent = d.total;
             topLbl.style.position = 'absolute';
@@ -1744,7 +1731,7 @@ function renderTrendChart(buckets, yAxisId, barsId, xAxisId) {
             topLbl.style.textShadow = '0 0 3px var(--surface-color), 0 0 3px var(--surface-color), 0 0 2px var(--surface-color)';
             barInner.appendChild(topLbl);
         }
-        
+
         barWrap.appendChild(barInner);
         barsEl.appendChild(barWrap);
     });
@@ -1886,7 +1873,7 @@ function openInfoPopupModal(title, htmlContent, actionBtnConfig = null) {
 export function showSingleTokenModal(type, tokenIndex) {
     const isGlobal = type === 'global';
     const seriesTitle = isGlobal ? 'Genel FSRS Serisi' : 'Odak Seri';
-    
+
     if (tokenIndex === 0) {
         // 1st Snowflake: Mavi Kar Tanesi
         const active = isGlobal ? false : true;
@@ -2158,15 +2145,19 @@ export function showContinuityProgressModal(type) {
                     </div>
                     <div style="text-align: right;">
                         <div style="font-size: 0.78rem; color: var(--text-secondary);">Günün İlerlemesi</div>
-                        <div style="font-size: 1.1rem; font-weight: 700; color: ${isMet ? 'var(--success-color, #10b981)' : 'var(--text-primary)'};">
-                            ${solved} / ${req} Soru
+                        <div style="font-size: 1.1rem; font-weight: 700; color: ${isMet ? 'var(--success-color, #10b981)' : 'var(--text-primary)'};"
+                        >
+                            ${isMet
+                                ? `✅ ${solved} çözüldü ${req > 0 && solved < req * 2 ? `(hedef: ${req})` : ''}`
+                                : `${solved} / ${req} Soru`
+                            }
                         </div>
                     </div>
                 </div>
                 <p style="margin: 0; font-size: 0.83rem; color: var(--text-secondary); line-height: 1.45;">
-                    ${isMet 
-                        ? 'Tebrikler! Bugünün FSRS soru hedefini tamamladınız ve serinizi korudunuz. 🎉' 
-                        : `Bugün serinizi korumak için ${req - solved} soru daha çözmeniz gerekmektedir.`}
+                    ${isMet
+                ? 'Tebrikler! Bugünün FSRS soru hedefini tamamladınız ve serinizi korudunuz. 🎉'
+                : `Bugün serinizi korumak için ${req - solved} soru daha çözmeniz gerekmektedir.`}
                 </p>
             </div>
         `;
@@ -2189,15 +2180,21 @@ export function showContinuityProgressModal(type) {
                     </div>
                     <div style="text-align: right;">
                         <div style="font-size: 0.78rem; color: var(--text-secondary);">Günün İlerlemesi</div>
-                        <div style="font-size: 1.1rem; font-weight: 700; color: ${isMet ? 'var(--success-color, #10b981)' : 'var(--text-primary)'};">
-                            ${solved} / ${req} Soru
+                        <div style="font-size: 1.1rem; font-weight: 700; color: ${isMet ? 'var(--success-color, #10b981)' : solved > 0 ? 'var(--text-primary)' : 'var(--text-secondary)'};"
+                        >
+                            ${!focusOverdue && !solved
+                                ? '<span style="font-size:0.9rem;">— (Kaynak seçilmedi)</span>'
+                                : isMet
+                                    ? `✅ ${solved} çözüldü${req > 0 && solved < req * 2 ? ` (hedef: ${req})` : ''}`
+                                    : `${solved} / ${req} Soru`
+                            }
                         </div>
                     </div>
                 </div>
                 <p style="margin: 0; font-size: 0.83rem; color: var(--text-secondary); line-height: 1.45;">
-                    ${isMet 
-                        ? 'Tebrikler! Seçili odak kaynaklarınızdan bugünün hedefini tamamladınız. 🎉' 
-                        : `Odak serinizi korumak için seçili kaynaklardan ${req - solved} soru daha çözmeniz gerekmektedir.`}
+                    ${isMet
+                ? 'Tebrikler! Seçili odak kaynaklarınızdan bugünün hedefini tamamladınız. 🎉'
+                : `Odak serinizi korumak için seçili kaynaklardan ${req - solved} soru daha çözmeniz gerekmektedir.`}
                 </p>
             </div>
         `;

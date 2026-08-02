@@ -405,7 +405,7 @@ main {
     justify-content: safe center;
 }
 
-#homeView.empty-state > .card {
+#homeView.empty-state>.card {
     margin-top: auto;
     margin-bottom: auto;
 }
@@ -796,17 +796,20 @@ textarea {
 
 /* Grid items default to min-width:auto, so a nowrap label would spill past
    its own track instead of shrinking with it. */
-.btn-row > .btn {
+.btn-row>.btn {
     min-width: 0;
     overflow: hidden;
 }
 
-.btn-row[data-count="1"] { --btn-row-cols: 1; }
+.btn-row[data-count="1"] {
+    --btn-row-cols: 1;
+}
+
 /* 2+ → 2-up. The rows stay even because every button is --btn-h tall. */
 
 /* An odd count leaves a single button on the last row; let it take the full
    width so the row reads as deliberate rather than as a gap. */
-.btn-row > .btn:nth-child(odd):last-child {
+.btn-row>.btn:nth-child(odd):last-child {
     grid-column: 1 / -1;
 }
 
@@ -5580,10 +5583,12 @@ body.dnd-active {
         transform: scale(1);
         filter: brightness(1);
     }
+
     40% {
         transform: scale(1.15);
         filter: brightness(1.8) drop-shadow(0 0 4px var(--text-primary, #ffffff));
     }
+
     100% {
         transform: scale(1);
         filter: brightness(1);
@@ -5928,18 +5933,7 @@ body.dnd-active {
     border-radius: 50%;
     overflow: hidden;
     background: #2a3441;
-    box-shadow: inset 0 2px 12px rgba(0,0,0,0.4);
-}
-
-/* Progress fill — static conic-gradient arc behind the comet.
-   Starts at 12 o'clock (from -90deg), fills clockwise.
-   JS sets: conic-gradient(from -90deg, COLOR X%, transparent X%) */
-.ring-progress-fill {
-    position: absolute;
-    inset: 0;
-    border-radius: 50%;
-    background: transparent;
-    transition: background 0.5s ease;
+    box-shadow: inset 0 2px 12px rgba(0, 0, 0, 0.4);
 }
 
 /* Spinning comet wrapper — App.tsx: animate-[spin_4s_linear_infinite] — ALWAYS spins */
@@ -5950,8 +5944,13 @@ body.dnd-active {
 }
 
 @keyframes ringClockwise {
-    from { transform: rotate(0deg); }
-    to   { transform: rotate(360deg); }
+    from {
+        transform: rotate(0deg);
+    }
+
+    to {
+        transform: rotate(360deg);
+    }
 }
 
 /* Blurred glow tail — default cyan; JS overrides with the correct color per ring */
@@ -5963,9 +5962,9 @@ body.dnd-active {
     filter: blur(3px);
     transform: scale(1.05);
     background: conic-gradient(from 0deg,
-        transparent 0%, transparent 20%,
-        rgba(6,182,212,0) 40%, rgba(6,182,212,0.4) 75%,
-        rgb(6,182,212) 100%);
+            transparent 0%, transparent 20%,
+            rgba(6, 182, 212, 0) 40%, rgba(6, 182, 212, 0.4) 75%,
+            rgb(6, 182, 212) 100%);
 }
 
 /* Sharp core tail — default cyan; JS overrides */
@@ -5974,9 +5973,9 @@ body.dnd-active {
     inset: 0;
     border-radius: 50%;
     background: conic-gradient(from 0deg,
-        transparent 0%, transparent 40%,
-        rgba(6,182,212,0) 60%, rgba(6,182,212,0.8) 95%,
-        rgb(6,182,212) 100%);
+            transparent 0%, transparent 40%,
+            rgba(6, 182, 212, 0) 60%, rgba(6, 182, 212, 0.8) 95%,
+            rgb(6, 182, 212) 100%);
 }
 
 /* Comet head dot — default cyan; JS overrides */
@@ -5988,8 +5987,8 @@ body.dnd-active {
     width: 7px;
     height: 7px;
     border-radius: 50%;
-    background: rgb(6,182,212);
-    box-shadow: 0 0 12px 3px rgba(6,182,212,0.9);
+    background: rgb(6, 182, 212);
+    box-shadow: 0 0 12px 3px rgba(6, 182, 212, 0.9);
 }
 
 /* Inner mask — top layer, creates the donut hole, holds content */
@@ -6003,7 +6002,7 @@ body.dnd-active {
     flex-direction: column;
     align-items: center;
     justify-content: center;
-    box-shadow: inset 0 2px 12px rgba(0,0,0,0.2);
+    box-shadow: inset 0 2px 12px rgba(0, 0, 0, 0.2);
 }
 
 
@@ -6012,9 +6011,12 @@ body.dnd-active {
     display: flex;
     align-items: center;
     justify-content: center;
-    gap: 2px;           /* gap-0.5 = 2px */
-    margin-left: 4px;   /* ml-1 = 4px */
-    margin-top: 2px;    /* mt-0.5 = 2px */
+    gap: 2px;
+    /* gap-0.5 = 2px */
+    margin-left: 4px;
+    /* ml-1 = 4px */
+    margin-top: 2px;
+    /* mt-0.5 = 2px */
 }
 
 /* App.tsx: text-[28px] font-black tracking-tighter leading-none */
@@ -6039,11 +6041,13 @@ body.dnd-active {
 /* App.tsx: text-slate-400 text-[10px] font-bold uppercase tracking-widest mt-0.5 */
 .streak-unit-label {
     font-size: 10px;
-    color: #94a3b8;     /* slate-400 */
+    color: #94a3b8;
+    /* slate-400 */
     line-height: 1;
     font-weight: 700;
     margin-top: 2px;
-    letter-spacing: 0.1em;  /* tracking-widest */
+    letter-spacing: 0.1em;
+    /* tracking-widest */
     text-transform: uppercase;
 }
 
@@ -6181,6 +6185,7 @@ body.dnd-active {
         opacity: 0;
         transform: scale(0.95) translateY(10px);
     }
+
     to {
         opacity: 1;
         transform: scale(1) translateY(0);
@@ -6201,8 +6206,8 @@ body.dnd-active {
     }
 }
 
-.home-charts-grid > .card,
-.home-charts-grid > .chart-flip-card {
+.home-charts-grid>.card,
+.home-charts-grid>.chart-flip-card {
     margin-top: 0 !important;
     margin-bottom: 0 !important;
     height: 100%;
@@ -6302,11 +6307,9 @@ body.dnd-active {
 }
 
 .trend-legend-swatch.is-focus {
-    background: repeating-linear-gradient(
-        90deg,
-        var(--trend-line-focus) 0 5px,
-        transparent 5px 9px
-    );
+    background: repeating-linear-gradient(90deg,
+            var(--trend-line-focus) 0 5px,
+            transparent 5px 9px);
 }
 
 /* Frameless Icon-Only Controls matching openFocusSourceModalBtn (.continuity-icon-btn) */
@@ -6434,8 +6437,13 @@ body.dnd-active {
    Instead we fade the whole card in via opacity after the image loads.
    JS adds .motivation-img-ready once the Image() preload fires onload. */
 @keyframes motivationFadeIn {
-    from { opacity: 0; }
-    to   { opacity: 1; }
+    from {
+        opacity: 0;
+    }
+
+    to {
+        opacity: 1;
+    }
 }
 
 .motivation-card-art {
@@ -6445,7 +6453,8 @@ body.dnd-active {
     /* background-position set via inline style by JS (top/center/bottom zones) */
     background-position: center center;
     background-repeat: no-repeat !important;
-    opacity: 0; /* hidden until image is ready */
+    opacity: 0;
+    /* hidden until image is ready */
     transition: opacity 0.55s ease;
 }
 
@@ -6477,7 +6486,7 @@ body.dnd-active {
     font-size: 0.68rem;
     color: #e2e8f0;
     font-style: italic;
-    text-shadow: 0 1px 3px #000, 0 1px 5px rgba(0,0,0,0.9);
+    text-shadow: 0 1px 3px #000, 0 1px 5px rgba(0, 0, 0, 0.9);
     max-width: 65%;
     position: absolute;
     left: -50px;
@@ -6501,7 +6510,7 @@ body.dnd-active {
     font-size: 0.76rem;
     font-weight: 700;
     color: #38bdf8;
-    text-shadow: 0 1px 3px #000, 0 2px 6px rgba(0,0,0,0.95);
+    text-shadow: 0 1px 3px #000, 0 2px 6px rgba(0, 0, 0, 0.95);
     text-align: right;
     white-space: nowrap;
     overflow: hidden;
@@ -6548,7 +6557,7 @@ body.dnd-active {
     background: var(--surface-color);
     border: 1px solid var(--border-color);
     border-radius: 20px;
-    box-shadow: 0 20px 60px rgba(0,0,0,0.4), 0 4px 16px rgba(0,0,0,0.2);
+    box-shadow: 0 20px 60px rgba(0, 0, 0, 0.4), 0 4px 16px rgba(0, 0, 0, 0.2);
     transform: translateY(24px);
     transition: transform 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);
     display: flex;
