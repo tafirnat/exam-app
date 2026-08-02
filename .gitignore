@@ -33,6 +33,9 @@ build_error.log
 test_results*.json
 test_visualization_suite.json
 
+# Temporary AI example code (delete after use)
+public/examples/html_temp/
+
 # Agent & Local Tools
 .agents/
 

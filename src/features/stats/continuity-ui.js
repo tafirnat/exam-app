@@ -200,6 +200,47 @@ function bindStreakRunModalEvents() {
         startStreakRun(pendingStreakScope, order);
     });
 }
+/**
+ * Updates the CSS comet ring for a given ring container.
+ * @param {HTMLElement} container - The .streak-ring-container element
+ * @param {HTMLElement} spinGroup - The .ring-comet-spin element
+ * @param {number} progress - 0–100
+ * @param {string} color - CSS color string or var()
+ */
+function updateCometRing(container, spinGroup, progress, color) {
+    if (!container) return;
+
+    // Convert progress (0–100) to degrees (0–360), starting from top (0° = 12-o'clock)
+    const deg = Math.round((progress / 100) * 360);
+
+    container.style.setProperty('--ring-progress-deg', `${deg}deg`);
+    container.style.setProperty('--ring-color', color);
+
+    // Update comet color layers directly for CSS var() fallback compatibility
+    const blurEl = container.querySelector('.ring-comet-blur');
+    const sharpEl = container.querySelector('.ring-comet-sharp');
+    const headEl = container.querySelector('.ring-comet-head');
+
+    // Resolve actual color value for filter/box-shadow (CSS vars don't work in box-shadow directly)
+    // We use a data attribute so CSS can pick it up, and set inline where needed
+    if (blurEl) blurEl.style.setProperty('--ring-color', color);
+    if (sharpEl) sharpEl.style.setProperty('--ring-color', color);
+    if (headEl) {
+        headEl.style.setProperty('--ring-color', color);
+        // box-shadow needs a real color — resolve var() via getComputedStyle if needed
+        headEl.style.background = color;
+        headEl.style.boxShadow = `0 0 10px 3px ${color}`;
+    }
+
+    // Spin only when progress is between 1–99; static at 0 and 100
+    if (spinGroup) {
+        if (progress > 0 && progress < 100) {
+            spinGroup.classList.remove('ring-spin-paused');
+        } else {
+            spinGroup.classList.add('ring-spin-paused');
+        }
+    }
+}
 
 function renderGlobalSlide(liveQ) {
     const card = document.getElementById('continuityCard');
@@ -218,23 +259,16 @@ function renderGlobalSlide(liveQ) {
     
     // Overdue text & Progress Ring
     const textEl = document.getElementById('continuityOverdueText');
+    const container = document.getElementById('globalRingContainer');
     const spinGroup = document.getElementById('globalRingSpinGroup');
     if (isActivityRequirementMet(todayAct)) {
         textEl.textContent = 'Günün serisi korundu 🎉';
         textEl.style.color = 'var(--success-color, #10b981)';
-        ring.style.stroke = 'var(--success-color, #10b981)';
-        ring.setAttribute('stroke-dasharray', '100, 100');
-        if (spinGroup) spinGroup.classList.add('ring-spin-paused');
+        updateCometRing(container, spinGroup, 100, 'var(--success-color, #10b981)');
     } else {
         const progress = Math.min(100, Math.round((solved / req) * 100));
-        ring.setAttribute('stroke-dasharray', `${progress}, 100`);
-        ring.style.stroke = 'var(--trend-line-normal, #0891b2)';
         textEl.style.color = 'var(--text-secondary)';
-        // Spin only when there's meaningful progress (not 0%)
-        if (spinGroup) {
-            if (progress > 0) spinGroup.classList.remove('ring-spin-paused');
-            else spinGroup.classList.add('ring-spin-paused');
-        }
+        updateCometRing(container, spinGroup, progress, 'var(--trend-line-normal, #0891b2)');
 
         if (overdueCount === 0) {
             textEl.textContent = `Seri için: ${solved}/15 soru`;
@@ -283,13 +317,13 @@ function renderFocusSlide() {
     const focusSources = getFocusSources();
 
     const textEl = document.getElementById('focusContinuityOverdueText');
+    const focusContainer = document.getElementById('focusRingContainer');
     const focusSpinGroup = document.getElementById('focusRingSpinGroup');
 
     if (!focusSources || focusSources.length === 0) {
         textEl.textContent = 'Kaynak seçilmedi. ⚙️ ikonuna dokunun.';
         textEl.style.color = 'var(--text-secondary)';
-        ring.setAttribute('stroke-dasharray', '0, 100');
-        if (focusSpinGroup) focusSpinGroup.classList.add('ring-spin-paused');
+        updateCometRing(focusContainer, focusSpinGroup, 0, 'var(--trend-line-focus, #8b5cf6)');
     } else {
         const focusOverdue = getDailyFocusOverdueSnapshot();
         const req = getDailyRequirement(focusOverdue);
@@ -309,18 +343,11 @@ function renderFocusSlide() {
         if (isFocusActivityRequirementMet(todayAct)) {
             textEl.textContent = selectedNames ? `Odak serisi korundu 🎉 (${selectedNames})` : 'Odak serisi korundu 🎉';
             textEl.style.color = 'var(--success-color, #10b981)';
-            ring.style.stroke = 'var(--success-color, #10b981)';
-            ring.setAttribute('stroke-dasharray', '100, 100');
-            if (focusSpinGroup) focusSpinGroup.classList.add('ring-spin-paused');
+            updateCometRing(focusContainer, focusSpinGroup, 100, 'var(--success-color, #10b981)');
         } else {
             const progress = Math.min(100, Math.round((solved / req) * 100));
-            ring.setAttribute('stroke-dasharray', `${progress}, 100`);
-            ring.style.stroke = 'var(--trend-line-focus, #8b5cf6)';
             textEl.style.color = 'var(--text-secondary)';
-            if (focusSpinGroup) {
-                if (progress > 0) focusSpinGroup.classList.remove('ring-spin-paused');
-                else focusSpinGroup.classList.add('ring-spin-paused');
-            }
+            updateCometRing(focusContainer, focusSpinGroup, progress, 'var(--trend-line-focus, #8b5cf6)');
             textEl.textContent = selectedNames 
                 ? `Seri için: ${solved}/${req} soru (${selectedNames})`
                 : `Seri için: ${solved}/${req} soru (${focusSources.length} kaynak)`;
