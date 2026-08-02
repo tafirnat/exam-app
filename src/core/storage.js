@@ -147,3 +147,62 @@ export function readFloat(key, fallback) {
 export function _resetQuotaWarning() {
     quotaAlertShown = false;
 }
+
+/* ── Measuring what is stored ────────────────────────────────────────────────
+   reportQuotaFull() above is the last line of defence: by the time it fires the
+   write has already been refused. Measuring lets a warning arrive while the user
+   can still act on it.
+
+   navigator.storage.estimate() is the wrong instrument here. It reports the
+   whole origin - IndexedDB, the cache API, service worker payloads - against a
+   quota that is a share of free disk, often hundreds of megabytes. localStorage
+   has its own, far smaller ceiling that estimate() says nothing about, so a page
+   can read "0.4% used" and still throw QuotaExceededError on the next write.
+   Walking the store is the only number that predicts the failure. */
+
+/** localStorage stores UTF-16, so one JS string unit costs two bytes. */
+const BYTES_PER_CHAR = 2;
+
+/* Browsers do not publish the localStorage ceiling and it differs between them
+   (~5 MB is the common floor, some go to 10). Assuming the floor is the safe
+   direction to be wrong in: it makes the warning early rather than late. */
+export const ASSUMED_QUOTA_BYTES = 5 * 1024 * 1024;
+
+/**
+ * Walks every key and adds up what it costs.
+ *
+ * @returns {{usedBytes: number, quotaBytes: number, ratio: number,
+ *            largestValueBytes: number}}
+ *          `largestValueBytes` is the biggest single value - the question
+ *          library, usually. A rewrite of it needs that much room free on top of
+ *          what is already stored, which is why the practical wall sits well
+ *          below 100%.
+ */
+export function measureStorageUsage() {
+    let usedBytes = 0;
+    let largestValueBytes = 0;
+
+    try {
+        for (let i = 0; i < localStorage.length; i++) {
+            const key = localStorage.key(i);
+            if (key === null) continue;
+            const value = localStorage.getItem(key) || '';
+            usedBytes += (key.length + value.length) * BYTES_PER_CHAR;
+            const valueBytes = value.length * BYTES_PER_CHAR;
+            if (valueBytes > largestValueBytes) largestValueBytes = valueBytes;
+        }
+    } catch (err) {
+        /* Storage disabled or blocked. Reporting zero keeps every caller on the
+           "nothing to warn about" path, which is right: a store that cannot be
+           read cannot be filled either. */
+        console.warn('[storage] Could not measure usage:', err);
+        return { usedBytes: 0, quotaBytes: ASSUMED_QUOTA_BYTES, ratio: 0, largestValueBytes: 0 };
+    }
+
+    return {
+        usedBytes,
+        quotaBytes: ASSUMED_QUOTA_BYTES,
+        ratio: usedBytes / ASSUMED_QUOTA_BYTES,
+        largestValueBytes
+    };
+}

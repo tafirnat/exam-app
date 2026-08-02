@@ -131,11 +131,19 @@ export function thawStatsOnRestore(source) {
     return shifted;
 }
 
-export async function archiveSource(sourceId) {
+/**
+ * @param {string} sourceId
+ * @param {{confirm?: boolean}} [options] `confirm: false` for callers whose own
+ *        UI is already the confirmation - the storage warning offers archiving
+ *        as a one-click action, and a second dialog on top of it is friction,
+ *        not safety. Archiving stays reversible either way.
+ */
+export async function archiveSource(sourceId, options = {}) {
     const source = AppState.sources.find(s => s.id === sourceId);
     if (!source || source.archived) return false;
 
-    if (!await showConfirm(t('archive_source_confirm', { name: source.name }), t('archive_title'))) return false;
+    const { confirm = true } = options;
+    if (confirm && !await showConfirm(t('archive_source_confirm', { name: source.name }), t('archive_title'))) return false;
 
     const folder = AppState.folders.find(f => f.id === source.folderId) || null;
     markArchived(source, folder);
@@ -442,7 +450,10 @@ export async function previewArchivedSource(sourceId) {
 
 // --- Archive screen ------------------------------------------------------------
 
-function archiveRow({ title, subtitle, badge, actions }) {
+/* Exported so the storage warning can list sources in exactly the same shape as
+   the archive screen. A second row design for the same kind of row is how two
+   screens drift apart. */
+export function archiveRow({ title, subtitle, badge, actions }) {
     const row = document.createElement('div');
     row.style.display = 'flex';
     row.style.alignItems = 'center';
@@ -476,7 +487,7 @@ function archiveRow({ title, subtitle, badge, actions }) {
     return row;
 }
 
-function iconButton(title, svg, onClick, danger = false) {
+export function iconButton(title, svg, onClick, danger = false) {
     const btn = document.createElement('button');
     btn.className = 'icon-btn';
     btn.title = title;
@@ -486,7 +497,8 @@ function iconButton(title, svg, onClick, danger = false) {
     return btn;
 }
 
-const ICONS = {
+export const ICONS = {
+    archive: '<svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="21 8 21 21 3 21 3 8"></polyline><rect x="1" y="3" width="22" height="5"></rect><line x1="10" y1="12" x2="14" y2="12"></line></svg>',
     restore: '<svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M3 12a9 9 0 1 0 3-6.7L3 8"></path><polyline points="3 3 3 8 8 8"></polyline></svg>',
     preview: '<svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M1 12s4-7 11-7 11 7 11 7-4 7-11 7-11-7-11-7z"></path><circle cx="12" cy="12" r="3"></circle></svg>',
     download: '<svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path><polyline points="7 10 12 15 17 10"></polyline><line x1="12" y1="15" x2="12" y2="3"></line></svg>',

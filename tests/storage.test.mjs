@@ -130,12 +130,34 @@ function jsFiles(dir) {
     });
 }
 
+/** Every module except the gate itself. */
+function modulesUnderTheRule() {
+    return jsFiles(SRC).filter(file => !file.endsWith(join('core', 'storage.js')));
+}
+
+/**
+ * Lines of real code that touch localStorage, with prose left out.
+ *
+ * Comment lines are skipped so that explaining the rule does not break it - the
+ * files below are full of sentences containing the word. The pattern demands an
+ * identifier immediately after the dot, so a sentence ending in "...from
+ * localStorage." is prose, while `localStorage.getItem` is not.
+ */
+function rawAccesses(code) {
+    const hits = [];
+    code.split('\n').forEach((line, i) => {
+        const trimmed = line.trim();
+        if (trimmed.startsWith('*') || trimmed.startsWith('//') || trimmed.startsWith('/*')) return;
+        const m = trimmed.match(/localStorage(\.[A-Za-z_$][\w$]*|\s*\[)/);
+        if (m) hits.push(`${i + 1}: ${trimmed.slice(0, 90)}`);
+    });
+    return hits;
+}
+
 test('storage.js is the only module that writes to localStorage directly', () => {
     const offenders = [];
 
-    for (const file of jsFiles(SRC)) {
-        if (file.endsWith(`core${join('', 'storage.js')}`) || file.endsWith('storage.js')) continue;
-
+    for (const file of modulesUnderTheRule()) {
         const code = readFileSync(file, 'utf8');
         for (const call of ['localStorage.setItem', 'localStorage.removeItem']) {
             if (code.includes(call)) offenders.push(`${file.slice(SRC.length)}: ${call}`);
@@ -147,4 +169,34 @@ test('storage.js is the only module that writes to localStorage directly', () =>
         [],
         `raw localStorage writes bypass the quota handling:\n  ${offenders.join('\n  ')}`
     );
+});
+
+/* The gate covered writes only for a long time, and reads drifted: eighteen bare
+   getItem calls accumulated, each with its own idea of what to do about a
+   missing or corrupt value - or, twice on the home screen, no idea at all, so a
+   damaged record threw before anything was drawn. Reading through the same door
+   makes "the stored value is nonsense" one behaviour instead of eighteen. */
+test('storage.js is the only module that reads localStorage directly', () => {
+    const offenders = [];
+
+    for (const file of modulesUnderTheRule()) {
+        const hits = rawAccesses(readFileSync(file, 'utf8'));
+        hits.forEach(hit => offenders.push(`${file.slice(SRC.length)}:${hit}`));
+    }
+
+    assert.deepEqual(
+        offenders,
+        [],
+        'read through readJSON / readString / readInt / readFloat instead - a raw '
+        + `read decides on its own what a corrupt value means:\n  ${offenders.join('\n  ')}`
+    );
+});
+
+test('the scan can tell code from the prose that describes it', () => {
+    // Guards the guard: a rule this cheap to satisfy is worth nothing if it
+    // fires on its own documentation, because the next person deletes it.
+    assert.deepEqual(rawAccesses(' * Safely reads and parses a JSON item from localStorage.'), []);
+    assert.deepEqual(rawAccesses('// never call localStorage.getItem here'), []);
+    assert.equal(rawAccesses('const raw = localStorage.getItem("k");').length, 1);
+    assert.equal(rawAccesses('localStorage["k"] = 1;').length, 1);
 });

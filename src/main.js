@@ -4,7 +4,7 @@ import { updateStaticTranslations, t, targetLanguages, translations } from './co
 import { showToast, showConfirm, getCorrectAnswers, highlightText, escapeHTML } from './core/utils.js';
 import { migrateOldData, migrateFolderColors, sanitizeStudyActivity } from './core/migration.js';
 import { getQuestionCategory } from './core/question-rules.js';
-import { persist } from './core/storage.js';
+import { persist, readJSON, readString } from './core/storage.js';
 import * as store from './core/store.js';
 import { emit, Slice } from './core/store.js';
 import { registerUIBindings, paintAll, notifyViewChanged } from './core/ui-bindings.js';
@@ -18,6 +18,7 @@ import { processJSON, loadFromUrl, loadFromFile, normalizeQuestions, mergeSource
 import { renderSourcesList, showMergeModal, closeAllSourcesModals, showSourceOptionsModal, renderHomeActiveSources } from './features/sources/sources-ui.js';
 import { renderContinuityBlock, renderGlobalCharts, showDailyMotivationToast } from './features/stats/continuity-ui.js';
 import { initArchiveUI } from './features/sources/archive.js';
+import { initStorageNoticeUI, maybeShowStorageNotice } from './features/sources/storage-notice.js';
 import { prepareTest, finishTest, prepareRetake, buildQuestionPool } from './features/test/test-engine.js';
 import { flushInProgressAnswers } from './features/stats/continuity-engine.js';
 import { renderQuestion, handleCheckAnswer, updateIndicators, handleTranslation, handleDifficultyRating, handleFlashcardRating, renderTestResults, handleTtsToggle, getIsAudioPlaying, stopAudio, decorateReadingSections } from './features/test/test-ui.js';
@@ -278,6 +279,7 @@ const initApp = () => {
         console.log('Rendering sources list...');
         renderSourcesList();
         initArchiveUI();
+        initStorageNoticeUI();
 
         // Robust fix: Normalize all questions from existing sources on startup
         console.log('Normalizing existing sources...');
@@ -411,7 +413,7 @@ const initApp = () => {
         // source in the reader's own language. The flag is cleared by
         // clearLocalStudyData(), so a reset brings it back rather than leaving
         // someone staring at an empty app.
-        if (!localStorage.getItem(SAMPLE_LOADED_KEY)) {
+        if (!readString(SAMPLE_LOADED_KEY)) {
             const lang = ['tr', 'en', 'de'].includes(AppState.language) ? AppState.language : 'en';
             loadFromUrl(`./examples/sample-${lang}.json`, { active: true, silent: true }).then(source => {
                 if (source) {
@@ -442,6 +444,14 @@ const initApp = () => {
         setTimeout(() => {
             startOnboarding(false);
         }, 600);
+
+        /* The storage warning goes last and late: onboarding, the sample import
+           and the first paint all get the screen first. It declines to appear
+           while anything else owns the screen, and switchView('home') gives it
+           another chance once that clears. */
+        setTimeout(() => {
+            maybeShowStorageNotice();
+        }, 1800);
 
         // --- History API popstate listener ---
         window.onpopstate = (e) => {
@@ -1546,7 +1556,7 @@ function setupEventListeners() {
             settings: {
                 language: AppState.language,
                 translationTarget: AppState.translationTarget,
-                theme: localStorage.getItem('focus_app_theme') || 'light'
+                theme: readString('focus_app_theme') || 'light'
             }
         };
         const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' });
@@ -1990,6 +2000,9 @@ function switchView(view, isBack = false) {
         document.getElementById('headerTitle').innerText = 'Exam App';
         updateHomeStats();
         checkActiveTest();
+        // Deferred here on purpose: the warning asks the user to make a decision
+        // about their library, which is the one thing they are not doing mid-test.
+        maybeShowStorageNotice();
     } else if (view === 'sources') {
         const titleText = (typeof getI18nText === 'function' ? getI18nText('saved_sources') : '') || 'Kayıtlı Kaynaklar';
         document.getElementById('headerTitle').innerText = titleText;
@@ -2061,7 +2074,11 @@ function checkActiveTest() {
         activeData = AppState.presetSessions[matchedPresetId];
         persist('focus_app_active_test', activeData);
     } else {
-        activeData = JSON.parse(localStorage.getItem('focus_app_active_test') || 'null');
+        /* Through readJSON. A bare JSON.parse here threw on a corrupted record,
+           and this runs from switchView('home') as well as from boot - where
+           nothing catches it - so a damaged record broke every return to the
+           home screen. The worst it can do now is offer no test to resume. */
+        activeData = readJSON('focus_app_active_test', null);
     }
 
     const resumeBtn = document.getElementById('resumeBtn');
@@ -2098,7 +2115,7 @@ function checkActiveTest() {
 }
 
 function resumeActiveTest() {
-    const activeData = JSON.parse(localStorage.getItem('focus_app_active_test') || 'null');
+    const activeData = readJSON('focus_app_active_test', null);
     if (!activeData) return;
 
     // Restore AppState

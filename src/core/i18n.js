@@ -1,5 +1,8 @@
 
 import { AppState } from './state.js';
+/* Safe in this direction: storage.js has no static imports of its own, so it
+   cannot close a cycle back onto i18n.js. */
+import { readString } from './storage.js';
 
 export const targetLanguages = [
     { code: 'ar', name: 'العربية' },
@@ -430,6 +433,22 @@ export const translations = {
         archive_folder_gone: "Silinmiş klasör: {name}",
         archive_on_github: "GitHub'da",
         archive_on_device: "Bu cihazda",
+        quota_title_suggest: "Depolama alanı azalıyor",
+        quota_title_critical: "Depolama alanı doldu sayılır",
+        quota_body: "Yaklaşık {count} soruluk yer kaldı. En uzun süredir çalışmadığınız kaynaklar:",
+        quota_body_full: "Kaydedilebilir alan neredeyse doldu. En uzun süredir çalışmadığınız kaynaklar:",
+        quota_archive_unavailable: "GitHub bağlı olmadığı için arşivleme bu cihazda yer açmaz. \"İndir ve Sil\" bir kopyayı bilgisayarınıza indirir, sonra cihazdan siler.",
+        quota_action_archive: "Arşivle (GitHub'a taşı)",
+        quota_action_download_delete: "İndir ve Sil",
+        quota_download_delete_confirm: "\"{name}\" bir dosya olarak indirildi. Şimdi bu cihazdan silinsin mi?",
+        quota_delete_confirm: "\"{name}\" bu cihazdan tamamen silinecek. Geri alınamaz. Devam edilsin mi?",
+        quota_removed: "\"{name}\" cihazdan silindi",
+        quota_freed: "Yer açıldı",
+        quota_never_studied: "hiç çalışılmadı",
+        quota_studied_today: "bugün çalışıldı",
+        quota_no_candidates: "Önerilecek kullanılmayan kaynak yok.",
+        quota_open_archive: "Arşivi Aç",
+        quota_dismiss: "Şimdi Değil",
         archive_source_confirm: "\"{name}\" arşivlensin mi? Testlerden çıkarılır, istatistikleri korunur.",
         archive_folder_confirm: "\"{name}\" klasörü ve içindeki {count} kaynak arşivlensin mi?",
         archive_done_remote: "Arşivlendi ve GitHub'a taşındı.",
@@ -946,6 +965,22 @@ export const translations = {
         archive_folder_gone: "Deleted folder: {name}",
         archive_on_github: "On GitHub",
         archive_on_device: "On this device",
+        quota_title_suggest: "Storage is filling up",
+        quota_title_critical: "Storage is practically full",
+        quota_body: "Room for about {count} more questions. The sources you have gone longest without studying:",
+        quota_body_full: "There is almost no room left for new saves. The sources you have gone longest without studying:",
+        quota_archive_unavailable: "GitHub is not connected, so archiving frees no space on this device. \"Download & Delete\" saves a copy to your computer first, then removes it from the device.",
+        quota_action_archive: "Archive (move to GitHub)",
+        quota_action_download_delete: "Download & Delete",
+        quota_download_delete_confirm: "\"{name}\" has been downloaded as a file. Remove it from this device now?",
+        quota_delete_confirm: "\"{name}\" will be deleted from this device for good. This cannot be undone. Continue?",
+        quota_removed: "\"{name}\" removed from this device",
+        quota_freed: "Space freed",
+        quota_never_studied: "never studied",
+        quota_studied_today: "studied today",
+        quota_no_candidates: "No unused sources to suggest.",
+        quota_open_archive: "Open Archive",
+        quota_dismiss: "Not Now",
         archive_source_confirm: "Archive \"{name}\"? It will be excluded from tests, its statistics are kept.",
         archive_folder_confirm: "Archive the folder \"{name}\" and its {count} source(s)?",
         archive_done_remote: "Archived and moved to GitHub.",
@@ -1462,6 +1497,22 @@ export const translations = {
         archive_folder_gone: "Gelöschter Ordner: {name}",
         archive_on_github: "Auf GitHub",
         archive_on_device: "Auf diesem Gerät",
+        quota_title_suggest: "Der Speicher wird knapp",
+        quota_title_critical: "Der Speicher ist so gut wie voll",
+        quota_body: "Platz für etwa {count} weitere Fragen. Die Quellen, die Sie am längsten nicht bearbeitet haben:",
+        quota_body_full: "Für neue Speicherungen ist fast kein Platz mehr. Die Quellen, die Sie am längsten nicht bearbeitet haben:",
+        quota_archive_unavailable: "GitHub ist nicht verbunden, daher schafft Archivieren auf diesem Gerät keinen Platz. \"Herunterladen & Löschen\" speichert zuerst eine Kopie auf Ihrem Computer und entfernt sie dann vom Gerät.",
+        quota_action_archive: "Archivieren (zu GitHub verschieben)",
+        quota_action_download_delete: "Herunterladen & Löschen",
+        quota_download_delete_confirm: "\"{name}\" wurde als Datei heruntergeladen. Jetzt von diesem Gerät entfernen?",
+        quota_delete_confirm: "\"{name}\" wird endgültig von diesem Gerät gelöscht. Das kann nicht rückgängig gemacht werden. Fortfahren?",
+        quota_removed: "\"{name}\" wurde vom Gerät entfernt",
+        quota_freed: "Speicher freigegeben",
+        quota_never_studied: "nie bearbeitet",
+        quota_studied_today: "heute bearbeitet",
+        quota_no_candidates: "Keine ungenutzten Quellen vorhanden.",
+        quota_open_archive: "Archiv öffnen",
+        quota_dismiss: "Nicht jetzt",
         archive_source_confirm: "\"{name}\" archivieren? Die Quelle wird aus Tests ausgeschlossen, die Statistiken bleiben erhalten.",
         archive_folder_confirm: "Ordner \"{name}\" mit {count} Quelle(n) archivieren?",
         archive_done_remote: "Archiviert und zu GitHub verschoben.",
@@ -1569,7 +1620,7 @@ export function t(key, params = {}) {
 }
 
 export function detectLanguage() {
-    const saved = localStorage.getItem('focus_app_lang');
+    const saved = readString('focus_app_lang');
     if (saved && ['tr', 'en', 'de'].includes(saved)) return saved;
 
     // Default to English as per user request
@@ -1577,7 +1628,7 @@ export function detectLanguage() {
 }
 
 export function detectTranslationTarget() {
-    const saved = localStorage.getItem('focus_app_target_lang');
+    const saved = readString('focus_app_target_lang');
     if (saved) return saved;
     return 'de'; // Default to German as per user request
 }

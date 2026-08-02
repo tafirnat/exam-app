@@ -1779,7 +1779,11 @@
     </div>
 
     <!-- Custom Professional Modal -->
-    <div id="customModalOverlay" class="modal-overlay" style="z-index: 9999;">
+    <!-- The shared confirm/alert dialog. It must outrank every other overlay:
+         any screen can open it, and a confirm that opens behind the modal that
+         asked for it reads as "the button did nothing" - which is what deleting
+         from the archive screen used to look like. -->
+    <div id="customModalOverlay" class="modal-overlay" style="z-index: 10100;">
         <div class="modal-card">
             <div id="modalHeader" class="modal-header" style="display: none; margin-bottom: 0.75rem;">
                 <h3 id="modalTitle" style="margin: 0;"></h3>
@@ -2322,6 +2326,43 @@
                 </a>
                 <button class="btn btn-subtle" id="archiveDoneBtn" style="margin-left: auto;"
                     data-i18n="close">Kapat</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Storage quota warning. Deliberately BELOW customModalOverlay (9999): the
+         delete confirmations it opens have to land on top of it. -->
+    <div id="storageNoticeOverlay" class="modal-overlay" style="z-index: 9990;">
+        <div class="modal-card">
+            <div class="modal-header"
+                style="display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 1rem;">
+                <div>
+                    <h3 style="margin: 0;" id="storageNoticeTitle" data-i18n="quota_title_suggest">Depolama alanı
+                        azalıyor</h3>
+                    <p style="font-size: 0.78rem; color: var(--text-secondary); margin-top: 4px;"
+                        id="storageNoticeSubtitle"></p>
+                </div>
+                <button class="icon-btn" id="storageNoticeCloseBtn">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="18" height="18">
+                        <line x1="18" y1="6" x2="6" y2="18"></line>
+                        <line x1="6" y1="6" x2="18" y2="18"></line>
+                    </svg>
+                </button>
+            </div>
+            <div class="modal-body" style="max-height: 55vh; overflow-y: auto; padding-right: 0.4rem;">
+                <div id="storageNoticeHint"
+                    style="display: none; padding: 0.6rem 0.8rem; margin-bottom: 0.75rem; background-color: var(--accent-bg, rgba(79, 70, 229, 0.1)); border-left: 3px solid var(--warning-color); border-radius: var(--radius-sm, 6px); font-size: 0.78rem; color: var(--text-primary);">
+                </div>
+                <div id="storageNoticeEmpty"
+                    style="display: none; padding: 2rem 1rem; text-align: center; color: var(--text-secondary); font-size: 0.88rem;"
+                    data-i18n="quota_no_candidates">Önerilecek kullanılmayan kaynak yok.</div>
+                <div id="storageNoticeList"></div>
+            </div>
+            <div class="modal-footer" style="display: flex; gap: 0.5rem; align-items: center;">
+                <button class="btn btn-subtle" id="storageNoticeArchiveBtn" style="font-size: 0.8rem;"
+                    data-i18n="quota_open_archive">Arşivi Aç</button>
+                <button class="btn btn-subtle" id="storageNoticeDismissBtn" style="margin-left: auto;"
+                    data-i18n="quota_dismiss">Şimdi Değil</button>
             </div>
         </div>
     </div>

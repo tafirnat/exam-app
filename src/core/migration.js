@@ -1,6 +1,6 @@
 
 import { AppState, saveSources, saveStats, saveCurrentSource, saveFolders, saveStudyActivity, touch } from './state.js';
-import { persist, persistRemove } from './storage.js';
+import { persist, persistRemove, readString } from './storage.js';
 
 // Folders store their colour, so replacing the picker's palette left existing
 // folders on the retired colours - several of which wash out on the light
@@ -27,7 +27,7 @@ const FOLDER_PALETTE_FLAG = 'focus_app_folder_palette_v3';
  * retired colours back.
  */
 export function migrateFolderColors({ force = false } = {}) {
-    if (!force && localStorage.getItem(FOLDER_PALETTE_FLAG) === '1') return 0;
+    if (!force && readString(FOLDER_PALETTE_FLAG) === '1') return 0;
 
     let changed = 0;
     (AppState.folders || []).forEach(f => {
@@ -127,8 +127,12 @@ export function sanitizeStudyActivity() {
 }
 
 export function migrateOldData() {
-    // Legacy migration from v1.5 and earlier
-    const oldJSON = localStorage.getItem('focusAppSavedJSON');
+    /* Legacy migration from v1.5 and earlier. Read as a string, not parsed by
+       readJSON: the raw text is re-persisted verbatim below, and the parse has
+       to stay inside the try - a corrupt legacy record aborts the migration and
+       leaves the old keys in place, so the data survives for another attempt
+       rather than being cleaned up on the way out. */
+    const oldJSON = readString('focusAppSavedJSON');
     if (!oldJSON) return;
 
     try {
@@ -158,7 +162,7 @@ export function migrateOldData() {
         persist('focusAppData_' + key, oldJSON);
 
         // Migrate stats
-        const oldStatsStr = localStorage.getItem('focusAppStats');
+        const oldStatsStr = readString('focusAppStats');
         if (oldStatsStr) {
             const oldStats = JSON.parse(oldStatsStr);
             const migratedStats = {};

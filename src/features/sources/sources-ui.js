@@ -2,7 +2,7 @@ import { AppState, saveSources, saveStats, saveFolders, liveSources, liveFolders
 import { t } from '../../core/i18n.js';
 import { showConfirm, showAlert, showToast, escapeHTML } from '../../core/utils.js';
 import { syncQuickPresetsWithLiveSources } from './quick-presets.js';
-import { persist } from '../../core/storage.js';
+import { persist, readString } from '../../core/storage.js';
 
 export function toggleSource(id) {
     let activeCount = 0;
@@ -42,6 +42,24 @@ export async function removeSource(id) {
     if (!await showConfirm(t('confirm_remove_source', { name: '' }))) return;
     const oldName = source.name;
 
+    purgeSource(id);
+
+    showAlert(t('source_removed_msg', { name: oldName }), t('info_title'));
+}
+
+/**
+ * Removes a source and everything keyed to it. Asks nothing and says nothing -
+ * the caller owns the dialogs.
+ *
+ * Split out of removeSource() so the storage warning can delete from its own
+ * list without stacking a confirm and an alert on top of the dialog the user is
+ * already looking at. Both paths run this same body, so deletion cannot drift
+ * into two versions that purge different things.
+ */
+export function purgeSource(id) {
+    const source = AppState.sources.find(s => s.id === id);
+    if (!source) return false;
+
     // 1. Purge related stats
     Object.keys(AppState.stats).forEach(key => {
         if (key.startsWith(`${id}_`)) {
@@ -59,7 +77,7 @@ export async function removeSource(id) {
     AppState.sources = AppState.sources.filter(s => s.id !== id);
     import('../../core/state.js').then(m => {
         if (typeof m.trackDeletedSource === 'function') m.trackDeletedSource(id);
-        if (m.SAMPLE_LOADED_KEY && !localStorage.getItem(m.SAMPLE_LOADED_KEY)) {
+        if (m.SAMPLE_LOADED_KEY && !readString(m.SAMPLE_LOADED_KEY)) {
             persist(m.SAMPLE_LOADED_KEY, AppState.language || 'user_deleted');
         }
     }).catch(() => {});
@@ -73,7 +91,7 @@ export async function removeSource(id) {
     syncQuickPresetsWithLiveSources();
     renderSourcesList();
     if (window.onSourcesUpdated) window.onSourcesUpdated();
-    showAlert(t('source_removed_msg', { name: oldName }), t('info_title'));
+    return true;
 }
 
 export async function resetSourceStats(id) {

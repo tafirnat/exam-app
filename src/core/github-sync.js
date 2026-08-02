@@ -326,12 +326,12 @@ export async function readRemotePayload(gist) {
  * Initializes the GitHub sync state on app startup and handles OAuth redirect callbacks.
  */
 export async function initSync() {
-    AppState.githubToken = localStorage.getItem('focus_app_github_token') || null;
-    AppState.githubGistId = localStorage.getItem('focus_app_github_gist_id') || null;
-    AppState.githubGistUrl = localStorage.getItem('focus_app_github_gist_url') || null;
-    AppState.githubUser = JSON.parse(localStorage.getItem('focus_app_github_user') || 'null');
-    AppState.lastSyncTime = parseInt(localStorage.getItem('focus_app_last_sync') || '0', 10);
-
+    /* The token, gist id, gist url, user and last-sync time used to be read out
+       of localStorage again right here. initState() already loads every one of
+       them, so this was a second reader of the same five keys - and a second
+       place to keep in step, with its own JSON.parse that would have thrown on a
+       corrupted user record. Boot order guarantees initState() has run
+       (main.js initApp, first statement); AppState is the only source now. */
     setupSyncDOMListeners();
 
     // Check if coming back from GitHub OAuth redirect (?code=...)
@@ -484,7 +484,9 @@ async function completeLoginWithToken(rawToken) {
     };
 
     // Check if switching from a different previously logged-in GitHub account
-    const previousUser = AppState.lastGithubUser || localStorage.getItem('focus_app_last_github_user');
+    // initState() loads this key into lastGithubUser; re-reading it here only
+    // gave two ways to be wrong about the same thing.
+    const previousUser = AppState.lastGithubUser;
     let shouldReplaceLocalData = false;
 
     if (previousUser && previousUser.toLowerCase() !== userObj.login.toLowerCase()) {

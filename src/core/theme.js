@@ -1,4 +1,4 @@
-import { persist } from './storage.js';
+import { persist, readString } from './storage.js';
 
 
 // The attribute goes on <html>, not <body>: :root-level custom properties that
@@ -6,7 +6,7 @@ import { persist } from './storage.js';
 // them, so a theme flag below :root leaves those tokens stuck on the light
 // palette. See the comment above <html> in index.html.
 export function initTheme() {
-    const theme = localStorage.getItem('focus_theme') || 'dark';
+    const theme = readString('focus_theme') || 'dark';
     document.documentElement.setAttribute('data-theme', theme);
     updateThemeUI(theme);
 }

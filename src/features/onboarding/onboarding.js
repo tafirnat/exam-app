@@ -3,7 +3,7 @@
  */
 
 import { t } from '../../core/i18n.js';
-import { persist } from '../../core/storage.js';
+import { persist, readString } from '../../core/storage.js';
 
 const STORAGE_KEY = 'exam_app_onboarding_completed';
 
@@ -77,7 +77,7 @@ function getSteps() {
 }
 
 export function isOnboardingCompleted() {
-    return localStorage.getItem(STORAGE_KEY) === 'true';
+    return readString(STORAGE_KEY) === 'true';
 }
 
 export function startOnboarding(force = false) {
