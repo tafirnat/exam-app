@@ -199,6 +199,147 @@ test('repeated merges of a measured day stay put', () => {
     assert.equal(local.overdueSnapshotAt, 1000);
 });
 
+/* stability, difficulty, coeff, streak and learned are not five independent
+   values: one answer rewrites all of them together and lastReview is the moment
+   it did. Merged field by field - max on stability and streak, OR on learned -
+   the merge could only ever move a question towards "well known", and both of
+   those push it out of the overdue set the daily bar is measured from. */
+
+const reviewed = (at, extra = {}) => ({
+    correct: 0, wrong: 0, difficulty: 5, stability: 10, streak: 0, learned: false,
+    lastReview: at, ...extra
+});
+
+const OLD = '2026-07-20T10:00:00.000Z';
+const NEW = '2026-07-30T10:00:00.000Z';
+
+test('a wrong answer un-learns a question instead of the merge putting it back', () => {
+    // The lapse: device A got it wrong, which clears learned and drops stability.
+    const local = emptyPayload({
+        stats: { 'src_1': reviewed(NEW, { learned: false, stability: 2, streak: -1, wrong: 1 }) }
+    });
+    const remote = emptyPayload({
+        stats: { 'src_1': reviewed(OLD, { learned: true, stability: 40, streak: 6, correct: 6 }) }
+    });
+
+    const stat = mergeSyncData(local, remote).stats['src_1'];
+
+    // OR on learned put it straight back and the question left rotation for good.
+    assert.equal(stat.learned, false);
+    // max on stability kept the pre-lapse figure, so FSRS went on reporting the
+    // question as fresh and it never came due.
+    assert.equal(stat.stability, 2);
+    assert.equal(stat.streak, -1);
+});
+
+test('the newest review wins the whole record, not the most flattering fields', () => {
+    const local = emptyPayload({
+        stats: { 'src_1': reviewed(OLD, { stability: 40, streak: 6, learned: true, difficulty: 3 }) }
+    });
+    const remote = emptyPayload({
+        stats: { 'src_1': reviewed(NEW, { stability: 2, streak: -1, learned: false, difficulty: 8 }) }
+    });
+
+    const stat = mergeSyncData(local, remote).stats['src_1'];
+
+    // Every field comes from the same side: this is the only combination that
+    // was ever actually true of the question at one moment.
+    assert.equal(stat.stability, 2);
+    assert.equal(stat.streak, -1);
+    assert.equal(stat.learned, false);
+    assert.equal(stat.difficulty, 8);
+    assert.equal(stat.coeff, 4);
+    assert.equal(stat.lastReview, NEW);
+});
+
+test('a correct answer is taken just as readily as a lapse', () => {
+    /* The mirror of the case above, and the one that says the rule is "newest
+       review" rather than "always assume the worst": here the newer record is
+       the *stronger* one. A merge that quietly preferred the lower stability -
+       or that only ever moved a question towards due - would get this wrong,
+       and every case above would still pass, because in all of them the newer
+       review happens to be the weaker one too. */
+    const local = emptyPayload({
+        stats: { 'src_1': reviewed(NEW, { stability: 40, streak: 6, learned: true, correct: 6 }) }
+    });
+    const remote = emptyPayload({
+        stats: { 'src_1': reviewed(OLD, { stability: 2, streak: -1, learned: false, wrong: 1 }) }
+    });
+
+    const stat = mergeSyncData(local, remote).stats['src_1'];
+
+    assert.equal(stat.stability, 40);
+    assert.equal(stat.streak, 6);
+    assert.equal(stat.learned, true);
+});
+
+test('the record lands the same way whichever device merges', () => {
+    const a = reviewed(NEW, { stability: 2, learned: false, streak: -1 });
+    const b = reviewed(OLD, { stability: 40, learned: true, streak: 6 });
+
+    const fromA = mergeSyncData(emptyPayload({ stats: { q: a } }), emptyPayload({ stats: { q: b } })).stats.q;
+    const fromB = mergeSyncData(emptyPayload({ stats: { q: b } }), emptyPayload({ stats: { q: a } })).stats.q;
+
+    assert.deepEqual(fromA, fromB);
+});
+
+test('two reviews at the same instant resolve the same way on both devices', () => {
+    const a = reviewed(NEW, { stability: 40, learned: true });
+    const b = reviewed(NEW, { stability: 2, learned: false });
+
+    const fromA = mergeSyncData(emptyPayload({ stats: { q: a } }), emptyPayload({ stats: { q: b } })).stats.q;
+    const fromB = mergeSyncData(emptyPayload({ stats: { q: b } }), emptyPayload({ stats: { q: a } })).stats.q;
+
+    // Nothing separates these two records, so the rule has to be one that does
+    // not depend on which side is "local" - otherwise the two devices sit on
+    // different answers forever.
+    assert.deepEqual(fromA, fromB);
+    // Keeping the question in rotation is the safe direction to break a tie in.
+    assert.equal(fromA.stability, 2);
+    assert.equal(fromA.learned, false);
+});
+
+test('a newer local review is a local change, so the remote stops holding the old one', () => {
+    const merged = mergeSyncData(
+        emptyPayload({ stats: { 'src_1': reviewed(NEW, { stability: 2 }) } }),
+        emptyPayload({ stats: { 'src_1': reviewed(OLD, { stability: 40 }) } })
+    );
+
+    assert.equal(merged.hasLocalChanges, true);
+});
+
+test('answer counters still take the higher figure', () => {
+    const stat = mergeSyncData(
+        emptyPayload({ stats: { 'src_1': reviewed(NEW, { correct: 3, wrong: 2 }) } }),
+        emptyPayload({ stats: { 'src_1': reviewed(OLD, { correct: 5, wrong: 1 }) } })
+    ).stats['src_1'];
+
+    // These only ever go up; the higher figure has seen both devices' answers.
+    assert.equal(stat.correct, 5);
+    assert.equal(stat.wrong, 2);
+});
+
+test('a question neither side has reviewed falls back to whoever answered more', () => {
+    const stat = mergeSyncData(
+        emptyPayload({ stats: { 'src_1': { correct: 0, wrong: 0, difficulty: 5 } } }),
+        emptyPayload({ stats: { 'src_1': { correct: 1, wrong: 0, difficulty: 7 } } })
+    ).stats['src_1'];
+
+    assert.equal(stat.difficulty, 7);
+});
+
+test('the user marks survive from either side', () => {
+    const stat = mergeSyncData(
+        emptyPayload({ stats: { 'src_1': reviewed(NEW, { starred: true }) } }),
+        emptyPayload({ stats: { 'src_1': reviewed(OLD, { flagged: true, note: 'kalp kapakciklari' }) } })
+    ).stats['src_1'];
+
+    // No answer touches these, so they cannot ride along with the review.
+    assert.equal(stat.starred, true);
+    assert.equal(stat.flagged, true);
+    assert.equal(stat.note, 'kalp kapakciklari');
+});
+
 test('stats merge keeps lastReview as a usable date instead of NaN', () => {
     const older = '2026-07-20T10:00:00.000Z';
     const newer = '2026-07-30T10:00:00.000Z';

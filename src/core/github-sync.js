@@ -1328,6 +1328,52 @@ function pickSnapshot(lValue, lAt, rValue, rAt) {
  * and a NaN date makes calculateRetrievability() return NaN, so FSRS stopped
  * seeing anything as due. Compare as timestamps, keep the original value.
  */
+/** `lastReview` as a comparable instant. 0 when absent or unparseable. */
+function reviewTime(stat) {
+    const at = stat && stat.lastReview ? new Date(stat.lastReview).getTime() : 0;
+    return Number.isFinite(at) && at > 0 ? at : 0;
+}
+
+/**
+ * Chooses which side's FSRS record to take, whole.
+ *
+ * stability, difficulty, coeff, streak and learned are not five independent
+ * values - one answer rewrites all of them together, and `lastReview` is the
+ * moment it did. Merging them field by field took `Math.max` of stability and
+ * streak and `OR` of learned, which meant the merge could only ever move a
+ * question towards "well known":
+ *
+ *   - a wrong answer clears `learned`, and OR put it straight back, so the
+ *     question left rotation for good;
+ *   - a lapse lowers `stability`, and max kept the pre-lapse figure, so
+ *     calculateRetrievability() went on reporting the question as fresh.
+ *
+ * Both push a question out of the overdue set, which is what the daily bar is
+ * measured from - so this quietly fed the streak disagreement two levels up.
+ *
+ * The newest review wins the whole block, which is the only combination that
+ * was ever actually true of the question at one moment.
+ */
+function pickFsrsSide(lStat, rStat) {
+    const lAt = reviewTime(lStat);
+    const rAt = reviewTime(rStat);
+    if (lAt !== rAt) return lAt > rAt ? lStat : rStat;
+
+    if (lAt === 0) {
+        /* Neither side has ever been reviewed, so there is no FSRS record to
+           speak of. Fall back to what the merge used before: whichever side has
+           seen more answers. */
+        const lAnswers = (lStat.correct || 0) + (lStat.wrong || 0);
+        const rAnswers = (rStat.correct || 0) + (rStat.wrong || 0);
+        return lAnswers >= rAnswers ? lStat : rStat;
+    }
+
+    /* Reviewed at the same instant on both devices. Take the lower stability:
+       it keeps the question in rotation, and unlike "prefer local" it lands the
+       same way whichever device is doing the merging. */
+    return (lStat.stability || 0) <= (rStat.stability || 0) ? lStat : rStat;
+}
+
 function pickLastReview(a, b) {
     const aTime = a ? new Date(a).getTime() : 0;
     const bTime = b ? new Date(b).getTime() : 0;
@@ -1540,24 +1586,37 @@ export function mergeSyncData(local, remote) {
             mergedStats[qid] = lStat;
             hasLocalChanges = true;
         } else {
-            const localIsNewer = ((lStat.correct || 0) + (lStat.wrong || 0)) >= ((rStat.correct || 0) + (rStat.wrong || 0));
-            const difficulty = localIsNewer ? (lStat.difficulty ?? rStat.difficulty) : (rStat.difficulty ?? lStat.difficulty);
-            const mergedItem = {
+            /* The FSRS record moves as one - see pickFsrsSide(). Only the plain
+               counters and the user's own marks are merged field by field. */
+            const fsrs = pickFsrsSide(lStat, rStat);
+            const other = fsrs === lStat ? rStat : lStat;
+            const difficulty = fsrs.difficulty ?? other.difficulty;
+
+            if (fsrs === lStat && reviewTime(lStat) > reviewTime(rStat)) {
+                // The remote is holding an older review of this question.
+                hasLocalChanges = true;
+            }
+
+            mergedStats[qid] = {
+                /* Counters, not FSRS state: they only ever go up, and the higher
+                   figure is the one that has seen both devices' answers. */
                 correct: Math.max(lStat.correct || 0, rStat.correct || 0),
                 wrong: Math.max(lStat.wrong || 0, rStat.wrong || 0),
                 difficulty,
                 // Kept in step with difficulty: the stats list sorts on coeff, and
                 // dropping it here made every synced question read as average.
-                coeff: Number.isFinite(difficulty) ? difficulty / 2 : (localIsNewer ? lStat.coeff : rStat.coeff),
+                coeff: Number.isFinite(difficulty) ? difficulty / 2 : fsrs.coeff,
+                /* The user's own marks, which no answer touches and which
+                   therefore cannot ride along with the review. Still merged
+                   forgivingly: removing a star or a note does not propagate. */
                 note: lStat.note && lStat.note.trim() ? lStat.note : rStat.note,
                 starred: !!(lStat.starred || rStat.starred),
                 flagged: !!(lStat.flagged || rStat.flagged),
-                learned: !!(lStat.learned || rStat.learned),
-                streak: Math.max(lStat.streak || 0, rStat.streak || 0),
-                stability: Math.max(lStat.stability || 0, rStat.stability || 0),
+                learned: !!fsrs.learned,
+                streak: fsrs.streak || 0,
+                stability: fsrs.stability || 0,
                 lastReview: pickLastReview(lStat.lastReview, rStat.lastReview)
             };
-            mergedStats[qid] = mergedItem;
         }
     });
 
