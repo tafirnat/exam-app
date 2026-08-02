@@ -642,7 +642,8 @@ async function pullRemoteGistOnly() {
 
             if (remotePayload.continuityConfig && typeof remotePayload.continuityConfig === 'object') {
                 AppState.continuityConfig = remotePayload.continuityConfig;
-                saveContinuityConfig();
+                // Remote's stamps, adopted as they are - see syncFromGist().
+                saveContinuityConfig({ stamp: false });
             }
 
             recordSyncSuccess();
@@ -1030,7 +1031,11 @@ export async function syncFromGist(options = {}) {
 
             if (merged.continuityConfig && typeof merged.continuityConfig === 'object') {
                 AppState.continuityConfig = merged.continuityConfig;
-                saveContinuityConfig();
+                /* The merge result already carries the stamps each key won
+                   with. Stamping again here would date every pulled key to
+                   now, so this device would out-rank the device the value
+                   actually came from and push it straight back. */
+                saveContinuityConfig({ stamp: false });
             }
 
             /* The unfinished test. Written straight to storage rather than into
@@ -1193,6 +1198,89 @@ function pickActiveSession(local, remote, now = Date.now()) {
        the undated one is at best the same session seen earlier. */
     const localWins = (lSession.updatedAt || 0) > (rSession.updatedAt || 0);
     return { session: localWins ? lSession : rSession, localWins };
+}
+
+/* ── Continuity config ──────────────────────────────────────────────────────
+   This used to merge as one blob under "remote wins whenever it has anything",
+   and that rule could not carry a change off the device that made it. The push
+   path merges before it writes, so it folded remote's blob back over the very
+   change it was pushing; the next pull then reverted the change locally too.
+   Picking a focus source, earning a freeze token, spending one - each of them
+   died where it happened, and the three devices kept recomputing streaks from
+   three configs that never converged.
+
+   Now every top-level key is its own record with its own stamp and the newest
+   stamp wins. The keys are read off the objects rather than listed here on
+   purpose: a field added later merges correctly without anyone having to
+   remember to register it. */
+
+/** Stamp for one key. Missing means a record written before stamps existed. */
+function revisionOfKey(config, key) {
+    const rev = config && config.revisions && config.revisions[key];
+    return rev && Number.isFinite(rev.at) ? rev : { at: 0, by: null };
+}
+
+function isEmptyValue(value) {
+    if (value === null || value === undefined) return true;
+    if (Array.isArray(value)) return value.length === 0;
+    if (typeof value === 'object') return Object.keys(value).length === 0;
+    return false;
+}
+
+/**
+ * Merges two configs key by key, newest stamp winning.
+ *
+ * @returns {{config: object, localWins: boolean}} `localWins` is true when at
+ *          least one key was taken from local *and* differs from what the remote
+ *          holds - which is what tells the pull it has something to push back.
+ */
+function mergeContinuityConfig(localConfig, remoteConfig) {
+    const local = localConfig && typeof localConfig === 'object' ? localConfig : {};
+    const remote = remoteConfig && typeof remoteConfig === 'object' ? remoteConfig : {};
+
+    const keys = new Set([...Object.keys(local), ...Object.keys(remote)].filter(k => k !== 'revisions'));
+    const config = {};
+    const revisions = {};
+    let localWins = false;
+
+    keys.forEach(key => {
+        const lRev = revisionOfKey(local, key);
+        const rRev = revisionOfKey(remote, key);
+
+        let takeLocal;
+        if (lRev.at !== rRev.at) {
+            takeLocal = lRev.at > rRev.at;
+        } else if (lRev.at === 0) {
+            /* Neither side has ever stamped this key: both are pre-upgrade
+               records, or one side simply has no opinion. Content decides.
+               A real value beats an empty one; between two empty ones, a key
+               that exists beats one that does not, so `[]` is never replaced by
+               `undefined` and the config keeps its shape. A genuine tie goes to
+               the remote, which is what this merge did for every key before
+               stamps existed. The first stamped write settles it for good. */
+            const localEmpty = isEmptyValue(local[key]);
+            const remoteEmpty = isEmptyValue(remote[key]);
+            takeLocal = localEmpty !== remoteEmpty
+                ? !localEmpty
+                : local[key] !== undefined && remote[key] === undefined;
+        } else {
+            /* Same instant on two devices. Any rule works as long as both
+               devices reach the same one, so order on the writer's id: a
+               coin-flip that lands the same way everywhere. */
+            takeLocal = String(lRev.by || '') > String(rRev.by || '');
+        }
+
+        config[key] = takeLocal ? local[key] : remote[key];
+        const winning = takeLocal ? lRev : rRev;
+        if (winning.at > 0) revisions[key] = winning;
+
+        if (takeLocal && JSON.stringify(local[key] ?? null) !== JSON.stringify(remote[key] ?? null)) {
+            localWins = true;
+        }
+    });
+
+    config.revisions = revisions;
+    return { config, localWins };
 }
 
 /**
@@ -1554,9 +1642,9 @@ export function mergeSyncData(local, remote) {
     });
 
     // 6. Merge Continuity Config
-    // Prefer the version from the side that has a NEWER progress reset, because
-    // that device's config is the freshly-initialised factory state. Fall back to
-    // the remote as the authoritative base when no reset has occurred on either side.
+    // A deliberate progress reset still takes the whole config: the resetting
+    // device's factory state is the point of the reset, and letting individual
+    // keys survive it by revision would be undoing it one field at a time.
     let mergedContinuityConfig;
     if (localProgressResetAt >= remoteProgressResetAt && localProgressResetAt > 0) {
         // Local reset is at least as recent — local factory config wins
@@ -1566,15 +1654,10 @@ export function mergeSyncData(local, remote) {
         // Remote had a more recent reset — remote factory config wins
         mergedContinuityConfig = remote.continuityConfig;
     } else {
-        // No reset on either side: prefer remote as base, fall back to local
-        const remoteHasConfig = remote.continuityConfig && Object.keys(remote.continuityConfig).length > 0;
-        mergedContinuityConfig = remoteHasConfig ? remote.continuityConfig : local.continuityConfig;
-        // Falling back to local means the remote has no config at all; it needs
-        // this one, and only hasLocalChanges gets it there.
-        if (!remoteHasConfig && local.continuityConfig
-                && Object.keys(local.continuityConfig).length > 0) {
-            hasLocalChanges = true;
-        }
+        // No reset on either side: key by key, newest stamp wins.
+        const picked = mergeContinuityConfig(local.continuityConfig, remote.continuityConfig);
+        mergedContinuityConfig = picked.config;
+        if (picked.localWins) hasLocalChanges = true;
     }
 
     // Total stats: prefer whichever side had the most recent progress reset

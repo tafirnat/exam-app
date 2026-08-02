@@ -271,6 +271,12 @@ export function initState({ force = false } = {}) {
         deviceId: loadDeviceId()
     });
 
+    /* The config as loaded is the baseline, not an edit. Without this the first
+       save after an upgrade would find an empty base, stamp every key as
+       freshly changed, and hand this device's whole config authority over the
+       other devices' - the migration would be decided by whoever saved first. */
+    rebaseContinuityRevisions(AppState.continuityConfig);
+
     stateInitialized = true;
     return AppState;
 }
@@ -386,6 +392,8 @@ export function clearLocalStudyData() {
     persistRemove('focus_app_current_source');
     persistRemove('focus_app_active_test');
     persistRemove('focus_app_continuity_config');
+    // The config is back to factory defaults - see clearProgressData().
+    rebaseContinuityRevisions(AppState.continuityConfig);
     persistRemove('focus_app_study_activity');
     // Clear sample loaded key so the starter sample JSON for active language is auto-loaded on reset
     persistRemove(SAMPLE_LOADED_KEY);
@@ -432,6 +440,12 @@ export function clearProgressData() {
     persistRemove('focus_app_preset_sessions');
     persistRemove('focus_app_study_activity');
     persist('focus_app_continuity_config', AppState.continuityConfig);
+    /* Written straight past saveContinuityConfig(), so tell the revision base
+       what is on disk now - otherwise the next ordinary save diffs against the
+       pre-reset config and stamps keys the user never touched. Authority for
+       the reset itself comes from lastProgressResetTimestamp, which makes the
+       merge take this config whole. */
+    rebaseContinuityRevisions(AppState.continuityConfig);
     persist('focus_app_last_progress_reset', AppState.lastProgressResetTimestamp.toString());
 
     // Sources and folders survive a progress reset, so they are not emitted.
@@ -577,7 +591,63 @@ export function saveQuickPresets() {
     return ok;
 }
 
-export function saveContinuityConfig() {
+/* ── Continuity config revisions ────────────────────────────────────────────
+   The config used to sync as one blob under a "remote wins" rule, which meant a
+   device could not get its own change up: the push merged remote's blob back
+   over the change it was pushing, and the next pull then reverted the change
+   locally. Picking a focus source, earning a token, spending one - all of it
+   died on the device that did it, and the three devices settled on three
+   different answers because each kept recomputing from its own copy.
+
+   Every top-level key of the config is now its own record with its own stamp,
+   and the newest stamp wins. Deriving the groups from the keys themselves
+   rather than a hand-kept list is deliberate: a field added later gets merged
+   correctly without anyone remembering to register it. */
+
+/** The config as it stood at the last stamp, per key, serialised for comparison. */
+let continuityRevisionBase = new Map();
+
+/** Everything about the config except the stamps themselves. */
+function continuityGroups(config) {
+    return Object.keys(config || {}).filter(key => key !== 'revisions');
+}
+
+/**
+ * Stamps the keys whose value actually changed since the last save.
+ *
+ * Diffing rather than asking the caller which key it touched: a caller that
+ * forgets - or a new one that never knew - would write a change no other device
+ * could see, and nothing would fail loudly enough to notice.
+ */
+function stampContinuityRevisions(config) {
+    if (!config.revisions || typeof config.revisions !== 'object') config.revisions = {};
+    const now = Date.now();
+
+    continuityGroups(config).forEach(key => {
+        const serialised = JSON.stringify(config[key] ?? null);
+        if (continuityRevisionBase.get(key) === serialised) return;
+        config.revisions[key] = { at: now, by: AppState.deviceId || null };
+    });
+}
+
+/** Re-reads the comparison base, so the next save diffs against what is there now. */
+function rebaseContinuityRevisions(config) {
+    continuityRevisionBase = new Map(
+        continuityGroups(config).map(key => [key, JSON.stringify(config[key] ?? null)])
+    );
+}
+
+/**
+ * @param {{stamp?: boolean}} [options] `stamp: false` is for the sync apply
+ *        path, which is writing a merge result: those values already carry the
+ *        stamps they won with, and re-stamping them as local edits would make
+ *        every pull look like a change this device had just made.
+ */
+export function saveContinuityConfig({ stamp = true } = {}) {
+    if (!AppState.continuityConfig) AppState.continuityConfig = {};
+    if (stamp) stampContinuityRevisions(AppState.continuityConfig);
+    rebaseContinuityRevisions(AppState.continuityConfig);
+
     const { ok, changed } = persistIfChanged('focus_app_continuity_config', AppState.continuityConfig);
     if (!changed) return ok;
     emit(Slice.CONTINUITY);

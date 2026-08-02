@@ -11,8 +11,17 @@ let AppState,
 
 const DAY = 24 * 60 * 60 * 1000;
 
-function iso(daysAgo) {
-    return new Date(Date.now() - daysAgo * DAY).toISOString();
+/* Every question in one library is dated from a single instant.
+ *
+ * Reading the clock per question looked equivalent and was not: two questions
+ * both seeded "20 days ago" land 1ms apart whenever the calls straddle a
+ * millisecond boundary, and calculateRetrievability turns that into R values
+ * differing by ~1e-10. Cases that seed equal `due` values to reach the *next*
+ * sort key - difficulty, then id - then never reach it, because R already
+ * separated the questions. It failed roughly one full-suite run in three and
+ * never on its own, which is the worst way for a test to be wrong. */
+function isoFrom(now, daysAgo) {
+    return new Date(now - daysAgo * DAY).toISOString();
 }
 
 /**
@@ -33,6 +42,7 @@ function src(id, folderId, questions, { active = true } = {}) {
 }
 
 function seed(sources, folders = []) {
+    const now = Date.now();
     AppState.folders = [
         { id: UNCATEGORIZED_FOLDER_ID, name: 'Kategorisiz', isSystem: true, order: 99 },
         ...folders
@@ -48,7 +58,7 @@ function seed(sources, folders = []) {
                 stability: q.stability ?? 10,
                 difficulty: q.difficulty ?? 5,
                 learned: !!q.learned,
-                lastReview: iso(q.due)
+                lastReview: isoFrom(now, q.due)
             };
         });
     });
