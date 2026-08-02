@@ -5931,15 +5931,11 @@ body.dnd-active {
     box-shadow: inset 0 2px 12px rgba(0,0,0,0.4);
 }
 
-/* Spinning comet wrapper — middle layer, always full 360° */
+/* Spinning comet wrapper — App.tsx: animate-[spin_4s_linear_infinite] — ALWAYS spins */
 .ring-comet-spin {
     position: absolute;
     inset: 0;
-    animation: ringClockwise 12s linear infinite;
-}
-
-.ring-comet-spin.ring-spin-paused {
-    animation-play-state: paused;
+    animation: ringClockwise 4s linear infinite;
 }
 
 @keyframes ringClockwise {
@@ -5947,7 +5943,7 @@ body.dnd-active {
     to   { transform: rotate(360deg); }
 }
 
-/* Blurred glow tail — background set by JS with actual rgba values */
+/* Blurred glow tail — default cyan; JS overrides with the correct color per ring */
 .ring-comet-blur {
     position: absolute;
     inset: 0;
@@ -5955,16 +5951,24 @@ body.dnd-active {
     opacity: 0.8;
     filter: blur(3px);
     transform: scale(1.05);
+    background: conic-gradient(from 0deg,
+        transparent 0%, transparent 20%,
+        rgba(6,182,212,0) 40%, rgba(6,182,212,0.4) 75%,
+        rgb(6,182,212) 100%);
 }
 
-/* Sharp core tail — background set by JS with actual rgba values */
+/* Sharp core tail — default cyan; JS overrides */
 .ring-comet-sharp {
     position: absolute;
     inset: 0;
     border-radius: 50%;
+    background: conic-gradient(from 0deg,
+        transparent 0%, transparent 40%,
+        rgba(6,182,212,0) 60%, rgba(6,182,212,0.8) 95%,
+        rgb(6,182,212) 100%);
 }
 
-/* Comet head dot — top-0 left-1/2 -translate-x-1/2, colours set by JS */
+/* Comet head dot — default cyan; JS overrides */
 .ring-comet-head {
     position: absolute;
     top: 0;
@@ -5973,6 +5977,8 @@ body.dnd-active {
     width: 7px;
     height: 7px;
     border-radius: 50%;
+    background: rgb(6,182,212);
+    box-shadow: 0 0 12px 3px rgba(6,182,212,0.9);
 }
 
 /* Inner mask — top layer, creates the donut hole, holds content */

@@ -266,10 +266,7 @@ function updateCometRing(container, spinGroup, progress, color) {
         headEl.style.boxShadow = `0 0 12px 3px ${rgba(0.9)}`;
     }
 
-    // ── 4. Spin state: pause when no progress, spin otherwise ──
-    if (spinGroup) {
-        spinGroup.classList.toggle('ring-spin-paused', progress <= 0);
-    }
+    // App.tsx: always spinning — no pause state
 }
 
 function renderGlobalSlide(liveQ) {
