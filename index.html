@@ -501,20 +501,9 @@
                     <div class="card continuity-slide active" id="continuityCard">
                         <div style="display: flex; gap: 0.85rem; align-items: flex-start;">
                             <div id="globalRingContainer" class="streak-ring-container" title="Genel Seri İlerlemesi">
-                                <svg viewBox="0 0 36 36" class="streak-ring-svg" overflow="visible">
-                                    <defs>
-                                        <!-- Tail-fade mask: fades out near 12-o'clock (top center = ring start point) -->
-                                        <linearGradient id="ringTailFadeGlobal" x1="0" y1="1" x2="0" y2="0" gradientUnits="objectBoundingBox">
-                                            <stop offset="0%"   stop-color="white" stop-opacity="1"/>
-                                            <stop offset="72%"  stop-color="white" stop-opacity="1"/>
-                                            <stop offset="100%" stop-color="white" stop-opacity="0.18"/>
-                                        </linearGradient>
-                                        <mask id="ringMaskGlobal" maskContentUnits="objectBoundingBox">
-                                            <rect width="1" height="1" fill="url(#ringTailFadeGlobal)"/>
-                                        </mask>
-                                    </defs>
+                                <svg viewBox="0 0 36 36" class="streak-ring-svg">
                                     <path class="ring-bg" d="M18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831 a 15.9155 15.9155 0 0 1 0 -31.831" fill="none" stroke="var(--border-color)" stroke-width="3" />
-                                    <g class="ring-spin-group" id="globalRingSpinGroup" mask="url(#ringMaskGlobal)">
+                                    <g class="ring-spin-group" id="globalRingSpinGroup">
                                         <path id="continuityRing" class="ring-fg" d="M18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831 a 15.9155 15.9155 0 0 1 0 -31.831" fill="none" stroke="var(--trend-line-normal, #0891b2)" stroke-width="3" stroke-dasharray="0, 100" stroke-linecap="round" />
                                     </g>
                                 </svg>
@@ -579,19 +568,9 @@
                     <div class="card continuity-slide" id="focusContinuityCard">
                         <div style="display: flex; gap: 0.85rem; align-items: flex-start;">
                             <div id="focusRingContainer" class="streak-ring-container" title="Odak Seri İlerlemesi">
-                                <svg viewBox="0 0 36 36" class="streak-ring-svg" overflow="visible">
-                                    <defs>
-                                        <linearGradient id="ringTailFadeFocus" x1="0" y1="1" x2="0" y2="0" gradientUnits="objectBoundingBox">
-                                            <stop offset="0%"   stop-color="white" stop-opacity="1"/>
-                                            <stop offset="72%"  stop-color="white" stop-opacity="1"/>
-                                            <stop offset="100%" stop-color="white" stop-opacity="0.18"/>
-                                        </linearGradient>
-                                        <mask id="ringMaskFocus" maskContentUnits="objectBoundingBox">
-                                            <rect width="1" height="1" fill="url(#ringTailFadeFocus)"/>
-                                        </mask>
-                                    </defs>
+                                <svg viewBox="0 0 36 36" class="streak-ring-svg">
                                     <path class="ring-bg" d="M18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831 a 15.9155 15.9155 0 0 1 0 -31.831" fill="none" stroke="var(--border-color)" stroke-width="3" />
-                                    <g class="ring-spin-group" id="focusRingSpinGroup" mask="url(#ringMaskFocus)">
+                                    <g class="ring-spin-group" id="focusRingSpinGroup">
                                         <path id="focusContinuityRing" class="ring-fg" d="M18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831 a 15.9155 15.9155 0 0 1 0 -31.831" fill="none" stroke="var(--trend-line-focus, #8b5cf6)" stroke-width="3" stroke-dasharray="0, 100" stroke-linecap="round" />
                                     </g>
                                 </svg>

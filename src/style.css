@@ -5934,10 +5934,22 @@ body.dnd-active {
     to   { transform: rotate(360deg); }
 }
 
-/* ── Round linecap already set via HTML attribute; tail-fade via mask ── */
-.ring-fg {
-    /* Subtle glow on the active stroke */
-    filter: drop-shadow(0 0 1.5px currentColor);
+/* Trailing-end fade: conic mask makes the arc's tail dissolve softly */
+.ring-spin-group {
+    -webkit-mask-image: conic-gradient(
+        from 0deg,
+        transparent 0deg,
+        rgba(0,0,0,0.15) 18deg,
+        black 48deg,
+        black 360deg
+    );
+    mask-image: conic-gradient(
+        from 0deg,
+        transparent 0deg,
+        rgba(0,0,0,0.15) 18deg,
+        black 48deg,
+        black 360deg
+    );
 }
 
 
