@@ -866,7 +866,6 @@ function showResetStep(step) {
     const step1El = document.getElementById('resetStep1');
     const step2El = document.getElementById('resetStep2');
     const nextBtn = document.getElementById('resetAppNextBtn');
-    const backBtn = document.getElementById('resetAppBackBtn');
     const confirmBtn = document.getElementById('resetAppConfirmBtn');
 
     if (!step1El || !step2El) return;
@@ -875,14 +874,12 @@ function showResetStep(step) {
         step1El.style.display = 'block';
         step2El.style.display = 'none';
         if (nextBtn) nextBtn.style.display = 'inline-block';
-        if (backBtn) backBtn.style.display = 'none';
         if (confirmBtn) confirmBtn.style.display = 'none';
         updateResetOptionCardStyles();
     } else {
         step1El.style.display = 'none';
         step2El.style.display = 'block';
         if (nextBtn) nextBtn.style.display = 'none';
-        if (backBtn) backBtn.style.display = 'inline-block';
         if (confirmBtn) {
             confirmBtn.style.display = 'inline-block';
             confirmBtn.disabled = true;
@@ -981,7 +978,6 @@ function setupEventListeners() {
     setClick('resetAppCloseBtn', closeResetAppModal);
     setClick('resetAppCancelBtn', closeResetAppModal);
     setClick('resetAppNextBtn', () => showResetStep(2));
-    setClick('resetAppBackBtn', () => showResetStep(1));
     setClick('resetAppConfirmBtn', executeFactoryReset);
 
     // Option cards selection click listeners
