@@ -1,4 +1,4 @@
-import { AppState, saveStudyActivity, saveContinuityConfig } from '../../core/state.js';
+import { AppState, saveStudyActivity, saveContinuityConfig, saveActiveTest } from '../../core/state.js';
 import { calculateRetrievability } from '../test/test-engine.js';
 
 export function getLocalDateStr(d = new Date()) {
@@ -638,6 +638,11 @@ export function flushInProgressAnswers() {
     saveStudyActivity();
     evaluateFreezeTokenEligibility();
     evaluateFocusFreezeTokenEligibility();
+
+    // Persist the updated checkpoint counters to localStorage so that if the
+    // user closes the tab and later resumes, the same answers are NOT counted
+    // again by the next flushInProgressAnswers() call on exit.
+    saveActiveTest();
 }
 
 /**

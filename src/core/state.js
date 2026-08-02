@@ -150,6 +150,11 @@ export const AppState = {
     githubUser: null,
     lastGithubUser: null,
     lastSyncTime: 0,
+    // Consecutive failed sync attempts, and what kind the last one was (see
+    // SyncFailure in github-sync.js). Persisted, because the failure this is
+    // meant to surface - an expired token - outlives the session that hit it.
+    syncFailureCount: 0,
+    syncFailureKind: null,
     githubGistUrl: null,
     deletedSourceIds: [],
     deletedFolderIds: [],
@@ -251,6 +256,8 @@ export function initState({ force = false } = {}) {
         githubUser: readJSON('focus_app_github_user', null),
         lastGithubUser: readString('focus_app_last_github_user') || null,
         lastSyncTime: readInt('focus_app_last_sync', 0),
+        syncFailureCount: readInt('focus_app_sync_failures', 0),
+        syncFailureKind: readString('focus_app_sync_failure_kind') || null,
         githubGistUrl: readString('focus_app_github_gist_url') || null,
         deletedSourceIds: readJSON('focus_app_deleted_sources', []),
         deletedFolderIds: readJSON('focus_app_deleted_folders', []),

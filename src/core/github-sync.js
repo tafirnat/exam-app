@@ -53,6 +53,104 @@ let isSyncing = false;
 /** Scopes waiting for the debounced push to fire. */
 let pendingScopes = new Set();
 
+/* ── Sync health ────────────────────────────────────────────────────────────
+   Every scheduled push runs with `silent: true`, and that is right: it fires on
+   each answered question and must not interrupt. What was wrong is that the
+   *failure* was silent too - it went to console.error and nowhere else - while
+   `lastSyncTime`, the one number the UI ever showed, moves only on success. A
+   user whose token expired kept seeing a plausible "last sync" line for weeks
+   while the second copy of their library had quietly stopped being written.
+
+   The push stays silent. The state it leaves behind does not. */
+
+/** Why the last sync attempt failed. */
+export const SyncFailure = Object.freeze({
+    /** 401/403: the token is revoked, expired, or lost its gist scope.
+     *  Nothing retries its way out of this - the user has to reconnect. */
+    AUTH: 'auth',
+    /** Offline, DNS, 5xx, rate limit. Transient; the next push may well work. */
+    NETWORK: 'network'
+});
+
+/* How many consecutive network failures the badge tolerates before it says
+   anything. This app is offline-first: a push that fails on a train is normal,
+   and a badge that lights up for it teaches the user to ignore the badge. An
+   auth failure gets no such grace - it never fixes itself. */
+const NETWORK_FAILURE_BADGE_THRESHOLD = 3;
+
+/** Reads a response header without assuming a full Headers object (tests mock). */
+function readHeader(res, name) {
+    try {
+        return res && res.headers && typeof res.headers.get === 'function'
+            ? res.headers.get(name)
+            : null;
+    } catch {
+        return null;
+    }
+}
+
+/**
+ * Turns a failed response into an Error that still knows its status, so the
+ * catch block can tell "your token is dead" from "the network blipped".
+ */
+function httpError(res) {
+    const err = new Error(`HTTP error ${res.status}`);
+    err.status = res.status;
+    /* 403 is also how GitHub answers a rate-limited client. Reading that as a
+       dead token would tell the user to reconnect a token that is perfectly
+       fine - and the reconnect would not help, because the limit is the limit. */
+    err.rateLimited = res.status === 429
+        || (res.status === 403 && readHeader(res, 'x-ratelimit-remaining') === '0')
+        || (res.status === 403 && !!readHeader(res, 'retry-after'));
+    return err;
+}
+
+function classifyFailure(err) {
+    const status = err && err.status;
+    if ((status === 401 || status === 403) && !err.rateLimited) return SyncFailure.AUTH;
+    return SyncFailure.NETWORK;
+}
+
+/** The Gist was reached and written/read. Clears the failure streak. */
+function recordSyncSuccess() {
+    AppState.lastSyncTime = Date.now();
+    AppState.syncFailureCount = 0;
+    AppState.syncFailureKind = null;
+    persist('focus_app_last_sync', AppState.lastSyncTime.toString());
+    persistRemove('focus_app_sync_failures');
+    persistRemove('focus_app_sync_failure_kind');
+    emit(Slice.SYNC);
+}
+
+/** Note: `lastSyncTime` deliberately does not move here - it means last *success*. */
+function recordSyncFailure(err) {
+    AppState.syncFailureCount = (AppState.syncFailureCount || 0) + 1;
+    AppState.syncFailureKind = classifyFailure(err);
+    persist('focus_app_sync_failures', AppState.syncFailureCount.toString());
+    persist('focus_app_sync_failure_kind', AppState.syncFailureKind);
+    emit(Slice.SYNC);
+}
+
+/**
+ * The one place that answers "is the backup actually working?".
+ *
+ * @returns {{failureCount: number, kind: string|null, lastSuccessAt: number,
+ *            unhealthy: boolean}}
+ */
+export function getSyncHealth() {
+    const failureCount = AppState.syncFailureCount || 0;
+    const kind = failureCount > 0
+        ? (AppState.syncFailureKind || SyncFailure.NETWORK)
+        : null;
+    return {
+        failureCount,
+        kind,
+        lastSuccessAt: AppState.lastSyncTime || 0,
+        unhealthy: kind === SyncFailure.AUTH
+            || failureCount >= NETWORK_FAILURE_BADGE_THRESHOLD
+    };
+}
+
 /**
  * Prepares the complete JSON payload of local data for backup/sync.
  *
@@ -155,7 +253,7 @@ async function fetchGist() {
             'Accept': 'application/vnd.github+json'
         }
     });
-    if (!res.ok) throw new Error(`HTTP error ${res.status}`);
+    if (!res.ok) throw httpError(res);
     return res.json();
 }
 
@@ -176,7 +274,7 @@ async function readGistFile(gist, filename) {
     if (file.truncated || content === undefined || content === null) {
         if (!file.raw_url) throw new Error(`${filename} truncated without raw_url`);
         const rawRes = await fetch(file.raw_url);
-        if (!rawRes.ok) throw new Error(`HTTP error ${rawRes.status}`);
+        if (!rawRes.ok) throw httpError(rawRes);
         content = await rawRes.text();
     }
     return content;
@@ -450,12 +548,18 @@ export async function logout() {
     AppState.githubGistUrl = null;
     AppState.githubUser = null;
     AppState.lastSyncTime = 0;
+    // A health streak belongs to a connection. Leaving it behind would greet the
+    // next login with a warning about a token that is no longer even in use.
+    AppState.syncFailureCount = 0;
+    AppState.syncFailureKind = null;
 
     persistRemove('focus_app_github_token');
     persistRemove('focus_app_github_gist_id');
     persistRemove('focus_app_github_gist_url');
     persistRemove('focus_app_github_user');
     persistRemove('focus_app_last_sync');
+    persistRemove('focus_app_sync_failures');
+    persistRemove('focus_app_sync_failure_kind');
     emit(Slice.SYNC);
 
     updateSyncUI();
@@ -533,9 +637,7 @@ async function pullRemoteGistOnly() {
                 saveContinuityConfig();
             }
 
-            AppState.lastSyncTime = Date.now();
-            persist('focus_app_last_sync', AppState.lastSyncTime.toString());
-            emit(Slice.SYNC);
+            recordSyncSuccess();
 
             import('../features/test/test-engine.js').then(m => {
                 if (typeof m.buildQuestionPool === 'function') m.buildQuestionPool();
@@ -550,6 +652,8 @@ async function pullRemoteGistOnly() {
         }
     } catch (err) {
         console.error('pullRemoteGistOnly error:', err);
+        recordSyncFailure(err);
+        updateSyncUI();
     }
 }
 
@@ -761,22 +865,24 @@ export async function syncToGist(options = {}) {
         });
 
         if (!res.ok) {
-            throw new Error(`HTTP error ${res.status}`);
+            throw httpError(res);
         }
 
-        AppState.lastSyncTime = Date.now();
-        persist('focus_app_last_sync', AppState.lastSyncTime.toString());
-        emit(Slice.SYNC);
+        recordSyncSuccess();
         updateSyncUI();
 
         if (!options.silent) {
             showToast(t('github_sync_success'));
         }
+        return true;
     } catch (err) {
         console.error('syncToGist failed:', err);
+        recordSyncFailure(err);
+        updateSyncUI();
         if (!options.silent) {
             showToast(t('github_sync_error'));
         }
+        return false;
     } finally {
         setSyncingState(false);
     }
@@ -886,13 +992,18 @@ export async function syncFromGist(options = {}) {
             }
 
             // Push merged state back to Gist if local had newer changes
+            const failuresBefore = AppState.syncFailureCount || 0;
             if (merged.hasLocalChanges) {
                 await syncToGist({ silent: true });
             }
 
-            AppState.lastSyncTime = Date.now();
-            persist('focus_app_last_sync', AppState.lastSyncTime.toString());
-            emit(Slice.SYNC);
+            /* The pull reached the Gist, so this round trip counts as healthy -
+               unless the push nested in it failed. That push has already
+               recorded its own failure, and letting the pull's success clear it
+               would hide exactly the case this whole mechanism exists for. */
+            if ((AppState.syncFailureCount || 0) <= failuresBefore) {
+                recordSyncSuccess();
+            }
 
             // Rebuild question pool and questionMap for Test Engine & UI
             import('../features/test/test-engine.js').then(m => {
@@ -914,6 +1025,8 @@ export async function syncFromGist(options = {}) {
         }
     } catch (err) {
         console.error('syncFromGist failed:', err);
+        recordSyncFailure(err);
+        updateSyncUI();
         if (!options.silent) {
             showToast(t('github_sync_error'));
         }
@@ -1369,7 +1482,7 @@ export async function writeArchiveFile(archiveMap) {
         })
     });
 
-    if (!res.ok) throw new Error(`HTTP error ${res.status}`);
+    if (!res.ok) throw httpError(res);
     return true;
 }
 
@@ -1419,23 +1532,56 @@ function setSyncingState(syncing) {
     }
 }
 
+/** One line describing an unhealthy sync, for the badge tooltip and dropdown. */
+function syncHealthSummary(health) {
+    return health.kind === SyncFailure.AUTH
+        ? t('github_sync_auth_expired')
+        : t('github_sync_failing', { count: health.failureCount });
+}
+
+/**
+ * "14:32" for a sync that happened today, date and time for anything older.
+ *
+ * A bare clock time is what made a stale backup look current: "Son eşitleme:
+ * 14:32" reads as this afternoon whether it was today or five weeks ago.
+ */
+function formatSyncTime(timestamp) {
+    if (!timestamp) return null;
+    const then = new Date(timestamp);
+    const time = then.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+    return then.toDateString() === new Date().toDateString()
+        ? time
+        : `${then.toLocaleDateString()} ${time}`;
+}
+
 /**
  * Updates UI labels for the GitHub sync button.
+ *
+ * This is the whole render path for Slice.SYNC (see ui-bindings.js), so the
+ * dropdown is refreshed from here too rather than only when it is opened.
  */
 export function updateSyncUI() {
     const labelEl = document.getElementById('githubSyncLabel');
     const btn = document.getElementById('githubSyncBtn');
     if (!btn || !labelEl) return;
 
+    const health = getSyncHealth();
+
     if (AppState.githubToken && AppState.githubUser) {
         labelEl.innerText = AppState.githubUser.login;
         btn.classList.add('logged-in');
-        btn.setAttribute('title', t('github_connected_as', { user: AppState.githubUser.login }));
+        btn.classList.toggle('sync-unhealthy', health.unhealthy);
+        btn.setAttribute('title', health.unhealthy
+            ? syncHealthSummary(health)
+            : t('github_connected_as', { user: AppState.githubUser.login }));
     } else {
         labelEl.innerText = t('github_login');
         btn.classList.remove('logged-in');
+        btn.classList.remove('sync-unhealthy');
         btn.setAttribute('title', t('github_sync'));
     }
+
+    updateSyncDropdownInfo();
 }
 
 // --- DOM & Modal Handlers ---
@@ -1480,18 +1626,34 @@ export function togglePatManualSection(show) {
 function updateSyncDropdownInfo() {
     const userEl = document.getElementById('githubDropdownUser');
     const timeEl = document.getElementById('githubDropdownLastSync');
+    const healthEl = document.getElementById('githubDropdownHealth');
+    const health = getSyncHealth();
 
     if (userEl && AppState.githubUser) {
         userEl.innerText = AppState.githubUser.name || AppState.githubUser.login;
     }
 
     if (timeEl) {
-        if (AppState.lastSyncTime > 0) {
-            const dateStr = new Date(AppState.lastSyncTime).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
-            timeEl.innerText = t('github_last_sync', { time: dateStr });
-        } else {
-            timeEl.innerText = t('github_last_sync', { time: '-' });
-        }
+        // Always the last *successful* sync - the failure line below is what
+        // says whether anything has happened since.
+        const when = formatSyncTime(health.lastSuccessAt);
+        timeEl.innerText = when ? t('github_last_sync', { time: when }) : t('github_never_synced');
+    }
+
+    if (healthEl) {
+        const failing = health.failureCount > 0;
+        healthEl.innerText = failing ? syncHealthSummary(health) : '';
+        healthEl.style.display = failing ? 'block' : 'none';
+        healthEl.classList.toggle('critical', health.kind === SyncFailure.AUTH);
+
+        /* A warning with nowhere to go is noise. An expired token has exactly
+           one fix, so the line itself is the way to it. Assigning onclick (not
+           addEventListener) keeps re-renders from stacking handlers. */
+        const needsReconnect = health.kind === SyncFailure.AUTH;
+        healthEl.classList.toggle('actionable', needsReconnect);
+        healthEl.onclick = needsReconnect
+            ? () => { closeSyncDropdown(); showLoginModal(); }
+            : null;
     }
 }
 
