@@ -266,6 +266,19 @@ function updateCometRing(container, spinGroup, progress, color) {
         headEl.style.boxShadow = `0 0 12px 3px ${rgba(0.9)}`;
     }
 
+    // ── 4. Progress fill arc (behind comet) — conic-gradient from 12 o'clock, clockwise ──
+    const fillEl = container.querySelector('.ring-progress-fill');
+    if (fillEl) {
+        if (progress <= 0) {
+            fillEl.style.background = 'transparent';
+        } else {
+            const pct = Math.min(progress, 100);
+            // Softer fill: semi-transparent so it blends with the comet glow on top
+            fillEl.style.background =
+                `conic-gradient(from -90deg, ${rgba(0.55)} ${pct}%, transparent ${pct}%)`;
+        }
+    }
+
     // App.tsx: always spinning — no pause state
 }
 
