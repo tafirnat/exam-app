@@ -117,6 +117,10 @@ test('recordTestFinished only credits evaluated/answered questions and respects 
     // Total answered questions = 2 (q1 and q2). q3 is unanswered, so questionCount should be 2
     assert.equal(todayAct.questionCount, 2);
 
+    // Focus answered after timestamp = 1 (q2 only). q1 was answered before focus selection timestamp!
+    assert.equal(todayAct.focusQuestionCount, 1);
+});
+
 test('recordTestFinished deduplicates correct and wrong counts if flushInProgressAnswers was previously called', async () => {
     const engineMod = await import('../src/features/stats/continuity-engine.js');
     const { recordTestFinished, flushInProgressAnswers, getLocalDateStr } = engineMod;
