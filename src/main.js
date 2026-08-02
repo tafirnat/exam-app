@@ -370,6 +370,11 @@ const initApp = () => {
             }
         });
 
+        // The initial view is set up by index.html, not by switchView(), so the
+        // store would otherwise never learn which view is up and the gate would
+        // have nothing to compare against.
+        notifyViewChanged(history.state?.view || 'home');
+
         // First paint. From here on every save* emits and the store decides
         // what redraws - no mutation site needs to name a renderer.
         console.log('Painting initial UI...');

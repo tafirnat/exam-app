@@ -201,10 +201,9 @@ function bindStreakRunModalEvents() {
     });
 }
 /**
- * Resolves a CSS color value (including var()) to an actual hex/rgb string
- * by temporarily applying it to a hidden element and reading computedStyle.
+ * Resolves a CSS color (including var()) to an actual rgb() string.
  */
-const _colorResolveEl = (() => {
+const _colorProbe = (() => {
     const el = document.createElement('div');
     el.style.cssText = 'position:absolute;width:0;height:0;opacity:0;pointer-events:none;';
     document.documentElement.appendChild(el);
@@ -212,90 +211,72 @@ const _colorResolveEl = (() => {
 })();
 
 function resolveColor(cssValue) {
-    _colorResolveEl.style.color = cssValue;
-    return getComputedStyle(_colorResolveEl).color || cssValue;
+    _colorProbe.style.color = cssValue;
+    return getComputedStyle(_colorProbe).color || cssValue;
 }
 
 /**
- * Updates the CSS comet ring for a given ring container.
- * @param {HTMLElement} container - The .streak-ring-container element
- * @param {HTMLElement} spinGroup - The .ring-comet-spin element
- * @param {number} progress - 0–100
- * @param {string} color - CSS color string or var()
+ * Updates the comet ring — direct port of App.tsx logic.
+ *
+ * Layers (bottom to top):
+ *   1. SVG arc     → stroke-dasharray sets progress length
+ *   2. Comet spin  → always full 360°, no clipping
+ *   3. Inner mask  → creates donut hole (z-index: 10)
  */
 function updateCometRing(container, spinGroup, progress, color) {
     if (!container) return;
 
-    // Resolve actual RGB value from potential CSS var()
+    // Resolve actual rgb() value so we can build rgba() variants inline
     const rgb = resolveColor(color);
+    // rgb(r, g, b) → rgba(r, g, b, alpha)
+    const rgba = (a) => rgb.replace('rgb(', 'rgba(').replace(')', `, ${a})`);
 
-    // Convert progress (0–100) to degrees (0–360)
-    const deg = Math.round((progress / 100) * 360);
+    // ── 1. SVG progress arc ──
+    const arcEl = container.querySelector('.ring-fg');
+    if (arcEl) {
+        arcEl.setAttribute('stroke-dasharray', `${progress}, 100`);
+        arcEl.setAttribute('stroke', rgb);
+    }
 
-    // --- Comet blur layer (soft glow tail) ---
+    // ── 2. Comet blur tail (exact App.tsx values) ──
     const blurEl = container.querySelector('.ring-comet-blur');
     if (blurEl) {
-        // Tail fades from transparent → color as it approaches 360° (= head at 12-o'clock)
-        blurEl.style.background = `conic-gradient(
-            from 0deg,
-            transparent 0%,
-            transparent 55%,
-            ${rgb.replace(')', ', 0.15)').replace('rgb', 'rgba')} 68%,
-            ${rgb.replace(')', ', 0.5)').replace('rgb', 'rgba')}  85%,
-            ${rgb} 100%
-        )`;
+        blurEl.style.background = [
+            'conic-gradient(from 0deg,',
+            `  transparent 0%,`,
+            `  transparent 20%,`,
+            `  ${rgba(0)} 40%,`,
+            `  ${rgba(0.4)} 75%,`,
+            `  ${rgb} 100%`,
+            ')'
+        ].join(' ');
     }
 
-    // --- Comet sharp layer (crisp core arc) ---
+    // ── 3. Comet sharp tail (exact App.tsx values) ──
     const sharpEl = container.querySelector('.ring-comet-sharp');
     if (sharpEl) {
-        sharpEl.style.background = `conic-gradient(
-            from 0deg,
-            transparent 0%,
-            transparent 65%,
-            ${rgb.replace(')', ', 0.05)').replace('rgb', 'rgba')} 72%,
-            ${rgb.replace(')', ', 0.7)').replace('rgb', 'rgba')}  90%,
-            ${rgb} 100%
-        )`;
+        sharpEl.style.background = [
+            'conic-gradient(from 0deg,',
+            `  transparent 0%,`,
+            `  transparent 40%,`,
+            `  ${rgba(0)} 60%,`,
+            `  ${rgba(0.8)} 95%,`,
+            `  ${rgb} 100%`,
+            ')'
+        ].join(' ');
     }
 
-    // --- Comet head dot ---
+    // ── 4. Comet head dot (exact App.tsx: shadow-[0_0_12px_3px_rgba(...,0.9)]) ──
     const headEl = container.querySelector('.ring-comet-head');
     if (headEl) {
         headEl.style.background = rgb;
-        headEl.style.boxShadow = `0 0 8px 3px ${rgb}`;
-        headEl.style.display = (progress > 0 && progress < 100) ? 'block' : 'none';
+        headEl.style.boxShadow = `0 0 12px 3px ${rgba(0.9)}`;
     }
 
-    // --- Progress clip: transparent up to deg, then card-bg after ---
-    // This hides the comet portion beyond the current progress arc.
-    const clipEl = container.querySelector('.ring-progress-clip');
-    if (clipEl) {
-        if (progress <= 0) {
-            // Fully hidden — cover everything with card bg
-            clipEl.style.background = 'var(--card-bg, #1a2236)';
-        } else if (progress >= 100) {
-            // Fully visible — show full comet ring
-            clipEl.style.background = 'transparent';
-        } else {
-            // Get the card background color
-            const cardBg = getComputedStyle(document.documentElement)
-                .getPropertyValue('--card-bg').trim() || '#1a2236';
-            clipEl.style.background = `conic-gradient(
-                from 0deg,
-                transparent ${deg}deg,
-                ${cardBg} ${deg}deg
-            )`;
-        }
-    }
-
-    // --- Spin state ---
+    // ── 5. Spin state ──
+    // Pause when no progress (0%); spin otherwise (including 100% = success animation)
     if (spinGroup) {
-        if (progress > 0 && progress < 100) {
-            spinGroup.classList.remove('ring-spin-paused');
-        } else {
-            spinGroup.classList.add('ring-spin-paused');
-        }
+        spinGroup.classList.toggle('ring-spin-paused', progress <= 0);
     }
 }
 

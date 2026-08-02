@@ -501,23 +501,18 @@
                     <div class="card continuity-slide active" id="continuityCard">
                         <div style="display: flex; gap: 0.85rem; align-items: flex-start;">
                             <div id="globalRingContainer" class="streak-ring-container" title="Genel Seri İlerlemesi">
-                                <!-- Comet ring: pure CSS conic-gradient approach -->
-                                <!-- Hidden SVG path kept only for JS compatibility (stroke-dasharray sets progress) -->
-                                <svg style="position:absolute;width:0;height:0;pointer-events:none;" aria-hidden="true">
-                                    <path id="continuityRing" class="ring-fg" d="" fill="none" stroke-dasharray="0, 100" />
+                                <!-- Layer 1 (bottom): SVG progress arc -->
+                                <svg class="streak-ring-svg" viewBox="0 0 36 36">
+                                    <path class="ring-bg" d="M18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831 a 15.9155 15.9155 0 0 1 0 -31.831" fill="none" stroke="rgba(255,255,255,0.07)" stroke-width="3.5"/>
+                                    <path id="continuityRing" class="ring-fg" d="M18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831 a 15.9155 15.9155 0 0 1 0 -31.831" fill="none" stroke="#0891b2" stroke-width="3.5" stroke-dasharray="0, 100" stroke-linecap="round"/>
                                 </svg>
-                                <!-- Spinning comet layer -->
+                                <!-- Layer 2 (middle): Spinning comet — always full 360°, like App.tsx -->
                                 <div class="ring-comet-spin" id="globalRingSpinGroup">
-                                    <!-- Blurred tail glow -->
-                                    <div class="ring-comet-blur" id="globalCometBlur"></div>
-                                    <!-- Sharp core arc -->
-                                    <div class="ring-comet-sharp" id="globalCometSharp"></div>
-                                    <!-- Comet head dot -->
-                                    <div class="ring-comet-head" id="globalCometHead"></div>
+                                    <div class="ring-comet-blur"></div>
+                                    <div class="ring-comet-sharp"></div>
+                                    <div class="ring-comet-head"></div>
                                 </div>
-                                <!-- Progress clip: hides the arc beyond the current progress percentage -->
-                                <div class="ring-progress-clip" id="globalProgressClip"></div>
-                                <!-- Inner circle mask to create the ring hole (z-index on top) -->
+                                <!-- Layer 3 (top): Inner mask creates the donut hole -->
                                 <div class="ring-inner-mask">
                                     <div class="streak-ring-content">
                                         <div class="streak-count-row">
@@ -581,15 +576,15 @@
                     <div class="card continuity-slide" id="focusContinuityCard">
                         <div style="display: flex; gap: 0.85rem; align-items: flex-start;">
                             <div id="focusRingContainer" class="streak-ring-container" title="Odak Seri İlerlemesi">
-                                <svg style="position:absolute;width:0;height:0;pointer-events:none;" aria-hidden="true">
-                                    <path id="focusContinuityRing" class="ring-fg" d="" fill="none" stroke-dasharray="0, 100" />
+                                <svg class="streak-ring-svg" viewBox="0 0 36 36">
+                                    <path class="ring-bg" d="M18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831 a 15.9155 15.9155 0 0 1 0 -31.831" fill="none" stroke="rgba(255,255,255,0.07)" stroke-width="3.5"/>
+                                    <path id="focusContinuityRing" class="ring-fg" d="M18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831 a 15.9155 15.9155 0 0 1 0 -31.831" fill="none" stroke="#8b5cf6" stroke-width="3.5" stroke-dasharray="0, 100" stroke-linecap="round"/>
                                 </svg>
                                 <div class="ring-comet-spin" id="focusRingSpinGroup">
-                                    <div class="ring-comet-blur" id="focusCometBlur"></div>
-                                    <div class="ring-comet-sharp" id="focusCometSharp"></div>
-                                    <div class="ring-comet-head" id="focusCometHead"></div>
+                                    <div class="ring-comet-blur"></div>
+                                    <div class="ring-comet-sharp"></div>
+                                    <div class="ring-comet-head"></div>
                                 </div>
-                                <div class="ring-progress-clip" id="focusProgressClip"></div>
                                 <div class="ring-inner-mask">
                                     <div class="streak-ring-content">
                                         <div class="streak-count-row">

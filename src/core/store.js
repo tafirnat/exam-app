@@ -224,7 +224,12 @@ function intersects(a, b) {
 
 function isVisible(sub) {
     if (!sub.views) return true;
-    return activeView !== null && sub.views.has(activeView);
+    /* Nobody has told us which view is up yet. The gate is an optimisation, so
+       an unknown view has to mean "run it" - treating it as "nothing is
+       visible" silently withholds every gated update until the first
+       navigation, which is exactly the bug a real browser caught here. */
+    if (activeView === null) return true;
+    return sub.views.has(activeView);
 }
 
 /**

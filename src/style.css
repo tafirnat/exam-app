@@ -5902,29 +5902,47 @@ body.dnd-active {
 }
 
 
-/* Outer shell — clips everything, establishes stacking context */
+/* ══════════════════════════════════════════════
+   Comet Ring System — direct port of App.tsx
+   ══════════════════════════════════════════════ */
+
+/*
+  App.tsx structure (translated):
+  .streak-ring-container  → relative w-[92px] h-[92px] rounded-full bg-[#2a3441] overflow-hidden
+    .streak-ring-svg      → absolute inset-0 (SVG progress arc, bottom layer)
+    .ring-comet-spin      → absolute inset-0 animate-[spin_12s_linear_infinite]  (middle layer)
+      .ring-comet-blur    → absolute inset-0 rounded-full opacity-80 blur(3px) scale(1.05)
+      .ring-comet-sharp   → absolute inset-0 rounded-full
+      .ring-comet-head    → absolute top-0 left-1/2 -translate-x-1/2 w-[7px] h-[7px] rounded-full
+    .ring-inner-mask      → absolute inset-[7px] rounded-full bg-[card] z-10  (top layer, donut hole)
+*/
+
+/* Outer container: ring track colour + overflow clip */
 .streak-ring-container {
     position: relative;
     width: 78px;
     height: 78px;
     flex-shrink: 0;
-    margin-top: 0;
     cursor: pointer;
     border-radius: 50%;
-    overflow: hidden;
-    /* Card background fills the disc; ring track is the visible border edge */
-    background: var(--card-bg, #1a2236);
-    /* Visible inset track ring */
-    box-shadow:
-        inset 0 0 0 8px rgba(255,255,255,0.06),
-        inset 0 0 0 9px rgba(0,0,0,0.15);
+    overflow: hidden;                    /* clips comet to circle */
+    background: #2a3441;                 /* ring track colour (slightly lighter than card) */
+    box-shadow: inset 0 2px 8px rgba(0,0,0,0.3);
 }
 
-/* ── Spinning comet wrapper ── */
+/* SVG progress arc — bottom layer, absolutely positioned */
+.streak-ring-svg {
+    position: absolute;
+    inset: 0;
+    width: 100%;
+    height: 100%;
+    transform: rotate(-90deg);           /* arc starts at 12-o'clock */
+}
+
+/* Spinning comet wrapper — middle layer, always full 360° */
 .ring-comet-spin {
     position: absolute;
     inset: 0;
-    border-radius: 50%;
     animation: ringClockwise 12s linear infinite;
 }
 
@@ -5937,58 +5955,46 @@ body.dnd-active {
     to   { transform: rotate(360deg); }
 }
 
-/* Blurred tail glow — background set entirely by JS */
+/* Blurred glow tail — background set by JS with actual rgba values */
 .ring-comet-blur {
     position: absolute;
     inset: 0;
     border-radius: 50%;
-    opacity: 0.85;
-    /* background set by JS */
-    filter: blur(4px);
-    transform: scale(1.06);
+    opacity: 0.8;
+    filter: blur(3px);
+    transform: scale(1.05);
 }
 
-/* Sharp core arc — background set entirely by JS */
+/* Sharp core tail — background set by JS with actual rgba values */
 .ring-comet-sharp {
     position: absolute;
     inset: 0;
     border-radius: 50%;
-    /* background set by JS */
 }
 
-/* Comet head — glowing dot at top (12-o'clock position inside spinner) */
+/* Comet head dot — top-0 left-1/2 -translate-x-1/2, colours set by JS */
 .ring-comet-head {
     position: absolute;
-    top: 4px;
+    top: 0;
     left: 50%;
     transform: translateX(-50%);
-    width: 6px;
-    height: 6px;
+    width: 7px;
+    height: 7px;
     border-radius: 50%;
-    /* background + box-shadow set by JS */
 }
 
-/* Progress clip — covers the arc region beyond current progress.
-   background set entirely by JS to avoid conic-gradient var() issues. */
-.ring-progress-clip {
-    position: absolute;
-    inset: 0;
-    border-radius: 50%;
-    /* JS sets background; default covers everything */
-    background: var(--card-bg, #1a2236);
-    z-index: 5;
-}
-
-/* Inner mask — creates the ring "hole" and holds the content */
+/* Inner mask — top layer, creates the donut hole, holds content */
 .ring-inner-mask {
     position: absolute;
-    inset: 9px;
+    inset: 7px;
     border-radius: 50%;
     background: var(--card-bg, #1a2236);
     z-index: 10;
     display: flex;
+    flex-direction: column;
     align-items: center;
     justify-content: center;
+    box-shadow: inset 0 2px 12px rgba(0,0,0,0.2);
 }
 
 
