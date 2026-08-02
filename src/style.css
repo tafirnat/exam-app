@@ -2378,35 +2378,42 @@ textarea {
     transition: var(--btn-transition);
 }
 
-/* Resume Button ("Devam Et"): Custom Amber Olive mix with black text */
+/* Resume Button ("Devam Et"): Warm orange — contrasts with the blue Start
+   button and communicates "pick up where you left off" energy.
+   Light: rich orange gradient, white ink.
+   Dark:  glowing amber-orange, dark ink so it reads at low contrast. */
 #startBtnContainer #resumeBtn {
-    background-color: color-mix(in srgb, #ffd101 22%, #615a1b);
-    color: #000000;
-    border: 1px solid color-mix(in srgb, #ffd101 45%, transparent);
-    box-shadow: 0 2px 8px color-mix(in srgb, #ffd101 18%, transparent);
+    background: linear-gradient(135deg, #f97316 0%, #ea580c 100%);
+    color: #ffffff;
+    border: 1px solid rgba(234, 88, 12, 0.4);
+    box-shadow: 0 2px 10px rgba(249, 115, 22, 0.28), 0 1px 3px rgba(0,0,0,0.08);
+    text-shadow: 0 1px 2px rgba(0,0,0,0.18);
 }
 
 [data-theme="dark"] #startBtnContainer #resumeBtn {
-    background-color: color-mix(in srgb, #ffd101 22%, #615a1b);
-    color: #000000;
-    border: 1px solid color-mix(in srgb, #ffd101 40%, transparent);
-    box-shadow: 0 2px 8px color-mix(in srgb, #ffd101 20%, transparent);
+    background: linear-gradient(135deg, #fb923c 0%, #f97316 100%);
+    color: #1a0d00;
+    border: 1px solid rgba(251, 146, 60, 0.45);
+    box-shadow: 0 2px 12px rgba(251, 146, 60, 0.35), 0 0 0 0px rgba(251, 146, 60, 0);
+    text-shadow: none;
 }
 
 #startBtnContainer #resumeBtn:hover:not(:disabled) {
-    background-color: color-mix(in srgb, #ffd101 32%, #615a1b);
-    color: #000000;
-    border-color: color-mix(in srgb, #ffd101 65%, transparent);
+    background: linear-gradient(135deg, #fb923c 0%, #f97316 100%);
+    color: #ffffff;
+    border-color: rgba(234, 88, 12, 0.6);
     transform: var(--btn-lift);
-    box-shadow: 0 4px 14px color-mix(in srgb, #ffd101 35%, transparent);
+    box-shadow: 0 6px 20px rgba(249, 115, 22, 0.42), 0 2px 6px rgba(0,0,0,0.1);
 }
 
 [data-theme="dark"] #startBtnContainer #resumeBtn:hover:not(:disabled) {
-    background-color: color-mix(in srgb, #ffd101 35%, #615a1b);
-    color: #000000;
-    border-color: #ffd101;
-    box-shadow: 0 4px 14px color-mix(in srgb, #ffd101 40%, transparent);
+    background: linear-gradient(135deg, #fdba74 0%, #fb923c 100%);
+    color: #1a0d00;
+    border-color: rgba(251, 146, 60, 0.7);
+    transform: var(--btn-lift);
+    box-shadow: 0 6px 22px rgba(251, 146, 60, 0.52), 0 0 16px rgba(251, 146, 60, 0.22);
 }
+
 
 /* Start / New Test Button ("Başla" / "Yeni Test"): Vibrant Theme Primary Solid button */
 #startBtnContainer #startBtn {
