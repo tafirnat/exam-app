@@ -1147,6 +1147,8 @@ function renderHeatmapYearly() {
     const colorLevel4 = isDark ? '#39d353' : '#216e39';
     const colorEmpty = isDark ? 'rgba(255, 255, 255, 0.05)' : '#ebedf0';
     const colorFrozen = isDark ? '#38bdf8' : '#3b82f6';
+    // Partial: answered questions but daily threshold not yet met
+    const colorPartial = isDark ? '#4a3800' : '#fef3c7';
 
     // Roughly the width of a three-letter month at this font size.
     const MIN_LABEL_GAP = 26;
@@ -1191,8 +1193,16 @@ function renderHeatmapYearly() {
                 else if (act.questionCount > 20) rect.style.backgroundColor = colorLevel3;
                 else if (act.questionCount > 10) rect.style.backgroundColor = colorLevel2;
                 else rect.style.backgroundColor = colorLevel1;
+                rect.title = `${dateStr} — ${act.questionCount} soru`;
             } else if (act.frozen) {
                 rect.style.backgroundColor = colorFrozen;
+                rect.title = `${dateStr} — donduruldu`;
+            } else if ((act.questionCount || 0) > 0) {
+                // Partial study: threshold not met but questions were answered.
+                // Show a dimmed amber cell so the day is not invisible.
+                rect.style.backgroundColor = colorPartial;
+                rect.style.border = `1px solid ${isDark ? '#78350f' : '#fcd34d'}`;
+                rect.title = `${dateStr} — ${act.questionCount} soru (devam ediyor)`;
             } else {
                 rect.style.backgroundColor = colorEmpty;
             }
@@ -1622,7 +1632,11 @@ export function buildMonthlyTrendBuckets(activities) {
 
 /** Folds one day's activity record into a bucket's correct/wrong/empty totals. */
 function addActivityToBucket(bucket, act) {
-    if (!act || !act.studied) return;
+    // Include any day where at least one question was answered, regardless of
+    // whether the daily threshold was met (act.studied). Filtering on studied
+    // hid partial-study days entirely, making the bars appear empty even when
+    // the user had answered several questions that day.
+    if (!act || !(act.questionCount > 0)) return;
 
     const total = act.questionCount || 0;
     let correct = act.correctCount || 0;

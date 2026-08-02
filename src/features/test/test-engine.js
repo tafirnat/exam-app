@@ -2,7 +2,7 @@ import { AppState, saveStats, saveRecentTests, saveActiveTest, clearActiveTest, 
 import { shuffleArray, getCorrectAnswers } from '../../core/utils.js';
 import { getQuestionCategory } from '../../core/question-rules.js';
 import { gradeCloze } from '../../core/cloze.js';
-import { getDailyOverdueSnapshot, applyFocusPools, recordTestFinished } from '../stats/continuity-engine.js';
+import { getDailyOverdueSnapshot, applyFocusPools, recordTestFinished, commitOneAnswerToActivity } from '../stats/continuity-engine.js';
 
 // FSRS v4.5 Simplified Constants
 export const FSRS_W = [0.4, 0.9, 2.3, 10.9, 4.93, 0.94, 0.86, 0.01, 1.49, 0.14, 0.94, 2.18, 0.05, 0.34, 1.26, 0.26, 2.05];
@@ -546,6 +546,10 @@ export function updateFlashcardStats(sourceId, questionId, rating) {
 
     saveActiveTest();
     saveStats();
+
+    // Broadcast this answer to the activity counters so the heatmap and
+    // trend charts update in real-time via the store's Slice.ACTIVITY emit.
+    commitOneAnswerToActivity(rating >= 3);
 }
 
 export function updateStats(sourceId, questionId, isCorrect, userAnswer, feedback = undefined) {
@@ -649,4 +653,8 @@ export function updateStats(sourceId, questionId, isCorrect, userAnswer, feedbac
 
     saveActiveTest();
     saveStats();
+
+    // Broadcast this answer to the activity counters so the heatmap and
+    // trend charts update in real-time via the store's Slice.ACTIVITY emit.
+    commitOneAnswerToActivity(isCorrect);
 }

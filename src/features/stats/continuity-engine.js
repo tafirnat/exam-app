@@ -572,6 +572,12 @@ export function recordTestFinished(questionCount, correctCount = 0, wrongCount =
  *
  * Call this whenever the user leaves the test view without finishing
  * (view switch, browser back, page visibility change, etc.).
+ *
+ * Double-counting with commitOneAnswerToActivity:
+ * Per-answer live commits (commitOneAnswerToActivity) already advance
+ * activity.questionCount ahead of this function. To avoid counting those
+ * answers twice we only flush the slice that was NOT already live-committed.
+ * _liveCommitCount tracks how many answers went through the live path.
  */
 export function flushInProgressAnswers() {
     const tracking = AppState.testTracking;
@@ -586,16 +592,35 @@ export function flushInProgressAnswers() {
     const delta = answeredCount - alreadyFlushed;
     if (delta <= 0) return; // nothing new to commit
 
+    // How many of those delta answers were already committed via the live path?
+    // _liveCommitCount always equals answeredCount (it advances with each answer),
+    // so liveAhead is the number of live-commits that haven't been flushed yet.
+    const liveCommitted = tracking._liveCommitCount || 0;
+    const liveAhead = Math.max(0, liveCommitted - alreadyFlushed);
+
+    // The truly new (non-live-committed) answers go through the normal path.
+    const netDelta = Math.max(0, delta - liveAhead);
+
     const newSlice = answeredResults.slice(alreadyFlushed);
-    const newCorrect = newSlice.filter(r => r.isCorrect).length;
-    const newWrong = newSlice.filter(r => !r.isCorrect).length;
+    const allNewCorrect = newSlice.filter(r => r.isCorrect).length;
+    const allNewWrong   = newSlice.filter(r => !r.isCorrect).length;
+
+    // The already-live-committed correct/wrong were already written to activity,
+    // so only count the remainder.
+    const liveSlice    = newSlice.slice(0, liveAhead);
+    const liveCorrect  = liveSlice.filter(r => r.isCorrect).length;
+    const liveWrong    = liveSlice.filter(r => !r.isCorrect).length;
+    const newCorrect   = allNewCorrect - liveCorrect;
+    const newWrong     = allNewWrong   - liveWrong;
 
     const activity = initTodayActivity();
 
-    // Global track
-    activity.questionCount = (activity.questionCount || 0) + delta;
-    activity.correctCount = (activity.correctCount || 0) + newCorrect;
-    activity.wrongCount = (activity.wrongCount || 0) + newWrong;
+    // Global track — only add what was NOT already live-committed.
+    if (netDelta > 0) {
+        activity.questionCount = (activity.questionCount || 0) + netDelta;
+        activity.correctCount  = (activity.correctCount  || 0) + newCorrect;
+        activity.wrongCount    = (activity.wrongCount    || 0) + newWrong;
+    }
 
     const globalReq = getDailyRequirement(activity.overdueSnapshot);
     if (activity.questionCount >= globalReq) {
@@ -603,8 +628,8 @@ export function flushInProgressAnswers() {
     }
 
     // Advance checkpoints for global breakdown counts
-    tracking._flushedCorrectCount = (tracking._flushedCorrectCount || 0) + newCorrect;
-    tracking._flushedWrongCount = (tracking._flushedWrongCount || 0) + newWrong;
+    tracking._flushedCorrectCount = (tracking._flushedCorrectCount || 0) + allNewCorrect;
+    tracking._flushedWrongCount   = (tracking._flushedWrongCount   || 0) + allNewWrong;
 
     // Focus track
     const focusSources = getFocusSources();
@@ -733,4 +758,66 @@ export function applyFocusPools(selectedObjects, qsPool) {
     });
     
     return newSelected;
+}
+
+/**
+ * Commits a single answered question to today's activity counters in real-time.
+ *
+ * This is the per-answer counterpart of flushInProgressAnswers(). Where flush
+ * batches all in-progress answers on test-exit, this fires on *every* answer so
+ * the heatmap and trend charts always reflect the current session's progress —
+ * not yesterday's snapshot — without waiting for the test to finish or for the
+ * user to navigate home.
+ *
+ * Double-counting safety: we track a live commit checkpoint on AppState.testTracking
+ * (_liveCommitCount). flushInProgressAnswers already subtracts its own checkpoint
+ * (_flushedCount) before writing, so these two never add the same answer twice.
+ * recordTestFinished also subtracts _flushedCount (not _liveCommitCount), so it
+ * correctly handles whichever path the session takes.
+ *
+ * Focus-track counting is intentionally omitted here: the focus source membership
+ * check requires the full answered-results array, which is only available at
+ * flush/finish time. The focus bar therefore updates in batch (on exit or finish)
+ * rather than per-answer, which is acceptable since the global bar is what the
+ * user watches during a live session.
+ *
+ * @param {boolean} isCorrect  Whether the answer was marked correct.
+ */
+export function commitOneAnswerToActivity(isCorrect) {
+    // Guard: only commit during an active tracked session.
+    const tracking = AppState.testTracking;
+    if (!tracking) return;
+
+    // Checkpoint: how many live-commits have we already applied?
+    const alreadyCommitted = tracking._liveCommitCount || 0;
+    // The total answers seen so far (including the one just recorded).
+    const totalAnswered = (tracking.results || []).filter(
+        r => r.userAnswer !== null && r.userAnswer !== undefined
+    ).length;
+
+    if (totalAnswered <= alreadyCommitted) return; // nothing new
+
+    // Exactly one new answer since last commit.
+    const activity = initTodayActivity();
+
+    activity.questionCount = (activity.questionCount || 0) + 1;
+    if (isCorrect) {
+        activity.correctCount = (activity.correctCount || 0) + 1;
+    } else {
+        activity.wrongCount = (activity.wrongCount || 0) + 1;
+    }
+
+    // Mirror the studied flag logic from flushInProgressAnswers / recordTestFinished.
+    const globalReq = getDailyRequirement(activity.overdueSnapshot);
+    if (activity.questionCount >= globalReq) {
+        activity.studied = true;
+    }
+
+    // Advance checkpoint.
+    tracking._liveCommitCount = alreadyCommitted + 1;
+
+    // Persist — this emits Slice.ACTIVITY, which triggers home:charts (and
+    // stats:list after the ui-bindings change) via the store's broadcast.
+    saveStudyActivity();
+    evaluateFreezeTokenEligibility();
 }

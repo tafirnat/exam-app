@@ -107,7 +107,7 @@ const BINDINGS = [
     // ── Stats ───────────────────────────────────────────────────────────────
     {
         name: 'stats:list',
-        slices: [Slice.STATS, Slice.SOURCES, Slice.RECENT_TESTS, Slice.STATS_VIEW],
+        slices: [Slice.STATS, Slice.SOURCES, Slice.RECENT_TESTS, Slice.STATS_VIEW, Slice.ACTIVITY],
         run: redrawStatsList,
         views: [View.STATS]
     },
