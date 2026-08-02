@@ -3,7 +3,7 @@ import { showToast, showAlert } from './utils.js';
 import { t } from './i18n.js';
 import { migrateFolderColors, sanitizeActivityRecord } from './migration.js';
 import { persist, persistRemove, readJSON } from './storage.js';
-import { emit, Slice } from './store.js';
+import { emit, Slice, getActiveView } from './store.js';
 
 /* The Gist holds three files, and a PATCH only touches the ones it names. The
    split is by how big a file is against how often it is written:
@@ -945,6 +945,11 @@ export async function syncToGist(options = {}) {
 export async function syncFromGist(options = {}) {
     if (!AppState.githubToken || !AppState.githubGistId || isSyncing) return;
 
+    /* Every pull counts against the foreground-pull interval, whoever asked for
+       it. The boot pull and the sync button are pulls too, and a second read of
+       the same Gist seconds later would answer the same thing. */
+    lastPullAt = Date.now();
+
     setSyncingState(true);
     try {
         const gist = await fetchGist();
@@ -1096,6 +1101,57 @@ export async function syncFromGist(options = {}) {
         setSyncingState(false);
     }
 }
+
+/* ── Foreground pull ────────────────────────────────────────────────────────
+   A push fires on every answered question. A pull fired at boot and on the sync
+   button, and nowhere else - so three devices left open each kept their own view
+   of the day for as long as they stayed open. The Gist held the union the whole
+   time and none of them read it back, and because the streak, the ring and the
+   token count are all derived from local studyActivity, one body of work showed
+   up as three different numbers.
+
+   Coming back to the app is the moment worth spending a request on: it is when
+   the user is about to look at those numbers, and it is when the other device
+   has most likely just finished writing. */
+
+/** Shortest gap between two pulls. Long enough that alt-tabbing in and out of
+ *  the browser costs nothing, short enough to feel immediate on the switch that
+ *  actually matters - picking the phone up after working on the laptop. */
+const PULL_MIN_INTERVAL_MS = 30 * 1000;
+
+/** When the last pull of any kind started. */
+let lastPullAt = 0;
+
+/**
+ * Pulls when the app returns to the foreground, at most once per
+ * PULL_MIN_INTERVAL_MS.
+ *
+ * Silent, because it is not something the user asked for: a toast on every
+ * alt-tab would be noise, and a failure still lands in the health counter that
+ * the badge reads.
+ *
+ * Held back while a test session is live. A pull replaces AppState.stats and
+ * rebuilds the question pool, and doing that under someone who is mid-question
+ * is worse than showing them a stale streak for another minute. Nothing is lost
+ * by waiting: leaving the session flushes it, and pickActiveSession() would have
+ * protected the session record itself either way.
+ */
+function pullOnForeground() {
+    if (!AppState.githubToken || !AppState.githubGistId) return;
+    if (isSyncing) return;
+    if (typeof document !== 'undefined' && document.visibilityState === 'hidden') return;
+    /* The same two views switchView() declines to flush on, and for the same
+       reason: on both of them the session is still live and the user is coming
+       back to it. Naming only 'test' here would let a pull land the moment they
+       glanced at the stats preview mid-test. */
+    if (LIVE_SESSION_VIEWS.has(getActiveView())) return;
+    if (Date.now() - lastPullAt < PULL_MIN_INTERVAL_MS) return;
+
+    syncFromGist({ silent: true });
+}
+
+/** Views the user reaches without ending the test they are in. */
+const LIVE_SESSION_VIEWS = new Set(['test', 'statsPreview']);
 
 /**
  * How recently an unfinished test has to have been written for this device to
@@ -1641,12 +1697,15 @@ export function scheduleSync(delayMs = 1500, scope) {
     armSyncTimer(delayMs);
 }
 
-/** Test seam: drops the debounced push and whatever scopes it was carrying. */
+/** Test seam: drops the debounced push, whatever scopes it was carrying, and the
+ *  foreground-pull interval - a case that wants a pull should not have to wait
+ *  out the previous case's. */
 export function _resetSyncQueue() {
     clearTimeout(syncTimer);
     syncTimer = null;
     pendingScopes = new Set();
     isSyncing = false;
+    lastPullAt = 0;
 }
 
 /**
@@ -1840,6 +1899,17 @@ function setupSyncDOMListeners() {
             logout();
         };
     }
+
+    /* Three events for one question - "is the app in front of the user again?" -
+       because no single one of them answers it everywhere. visibilitychange
+       covers a switched tab and a backgrounded mobile browser; window focus
+       covers another application being brought to the front on a desktop, where
+       the tab never stops counting as visible; pageshow covers a bfcache restore,
+       which is how iOS returns to a page it froze days ago. The interval guard
+       inside makes the overlap between them free. */
+    document.addEventListener('visibilitychange', pullOnForeground);
+    window.addEventListener('focus', pullOnForeground);
+    window.addEventListener('pageshow', pullOnForeground);
 
     // Close dropdown on outside click
     document.addEventListener('click', (e) => {
