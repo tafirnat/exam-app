@@ -343,7 +343,8 @@ export async function finishTest() {
                     ...JSON.parse(JSON.stringify(q)),
                     userAnswer: result.userAnswer,
                     isCorrect: result.isCorrect,
-                    isUnanswered: false
+                    isUnanswered: false,
+                    answeredAt: result.answeredAt || Date.now()
                 };
             } else {
                 return {
@@ -379,12 +380,14 @@ export async function finishTest() {
             questions: sessionQuestions
         };
 
-        // Record for continuity / streak layer. The questions must travel with
-        // the counts: without them recordTestFinished falls back to crediting
-        // every answer to the Odak Seri, so a run that never touched a focus
-        // source would complete that streak too.
-        if (total > 0) {
-            recordTestFinished(total, correctCount, wrongCount, unansweredCount, sessionQuestions);
+        // Record for continuity / streak layer. Pass ONLY evaluated/answered questions
+        // so that unanswered questions in the test run do not count as solved.
+        const answeredQuestions = sessionQuestions.filter(q => !q.isUnanswered);
+        const answeredCount = answeredQuestions.length;
+        const answeredWrongCount = Math.max(0, answeredCount - correctCount);
+
+        if (answeredCount > 0 || (AppState.testTracking?._flushedCount || 0) > 0) {
+            recordTestFinished(answeredCount, correctCount, answeredWrongCount, 0, answeredQuestions);
         }
 
         if (!Array.isArray(AppState.recentTests)) AppState.recentTests = [];
@@ -507,9 +510,11 @@ export function updateFlashcardStats(sourceId, questionId, rating) {
         Object.keys(existingResult._preSessionState).forEach(prop => {
             stat[prop] = JSON.parse(JSON.stringify(existingResult._preSessionState[prop]));
         });
+        existingResult.answeredAt = Date.now();
     } else if (!existingResult) {
+        const q = AppState.questionMap?.[key];
         const snapshot = JSON.parse(JSON.stringify(stat));
-        existingResult = { questionId, isCorrect: rating >= 3, userAnswer: [String(rating)], _preSessionState: snapshot };
+        existingResult = { questionId, sourceId: q?.sourceId, answeredAt: Date.now(), isCorrect: rating >= 3, userAnswer: [String(rating)], _preSessionState: snapshot };
         if (AppState.testTracking) AppState.testTracking.results.push(existingResult);
     }
 
@@ -564,11 +569,14 @@ export function updateStats(sourceId, questionId, isCorrect, userAnswer, feedbac
         Object.keys(existingResult._preSessionState).forEach(prop => {
             stat[prop] = JSON.parse(JSON.stringify(existingResult._preSessionState[prop]));
         });
+        existingResult.answeredAt = Date.now();
     } else if (AppState.testTracking && !existingResult) {
         // First answer in this session: snapshot current state
         const snapshot = JSON.parse(JSON.stringify(stat));
         existingResult = {
             questionId,
+            sourceId,
+            answeredAt: Date.now(),
             isCorrect,
             userAnswer,
             streak: stat.streak,

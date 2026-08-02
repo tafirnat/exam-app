@@ -882,43 +882,26 @@ function renderSummarySection() {
     }
 
     document.getElementById('finishTestBtn').onclick = async () => {
-        // Auto-evaluate unchecked but answered questions
-        let interactionCount = 0;
+        // Count questions whose answers were explicitly evaluated/checked
+        let checkedCount = 0;
         AppState.currentTest.forEach((compositeId, idx) => {
-            const userAnswer = AppState.userAnswers[idx];
-            const hasAnswer = userAnswer && Array.isArray(userAnswer) && userAnswer.length > 0 && userAnswer.some(v => v !== null && v !== undefined && String(v).trim() !== '');
-
-            if (hasAnswer || AppState.isAnswerChecked[idx]) {
-                interactionCount++;
-            }
-
-            if (!AppState.isAnswerChecked[idx] && hasAnswer) {
-                const q = AppState.questionMap[compositeId];
-                const isCorrect = evaluateAnswer(idx, userAnswer);
-                AppState.isAnswerChecked[idx] = true;
-                updateStats(q.sourceId, q.id, isCorrect, userAnswer);
+            if (AppState.isAnswerChecked[idx]) {
+                checkedCount++;
             }
         });
         if (window.updateHomeStats) window.updateHomeStats();
 
-        // If absolutely nothing was answered, just go home silently
-        if (interactionCount === 0) {
-            // Custom event or direct call to view switch is tricky without export
-            // But we can dispatch a custom 'exit-test' or just trigger home button
+        // If no questions were evaluated/checked at all, go home silently without saving a test result
+        if (checkedCount === 0) {
             const homeBtn = document.getElementById('resHomeBtn');
             if (homeBtn) homeBtn.click();
             return;
         }
 
-        // Recalculate truly unanswered questions for confirmation
-        const trulyUnanswered = [];
-        AppState.currentTest.forEach((qId, idx) => {
-            if (!AppState.isAnswerChecked[idx]) {
-                trulyUnanswered.push(idx);
-            }
-        });
+        // Calculate truly unchecked questions for confirmation
+        const trulyUnansweredCount = AppState.currentTest.length - checkedCount;
 
-        if (trulyUnanswered.length > 0) {
+        if (trulyUnansweredCount > 0) {
             if (!await showConfirm(t('confirm_finish_test_unanswered'))) {
                 return;
             }

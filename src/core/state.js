@@ -68,6 +68,7 @@ export function createDefaultContinuityConfig() {
         focusPools: [],
         focusSources: [],
         focusSourceNames: {},
+        focusSourceTimestamps: {},
         notificationSettings: {
             enabled: false,          // Genel Seri bildirimi
             focusEnabled: false,     // Odak Serisi bildirimi (ayrı opt-in)
@@ -390,6 +391,7 @@ export function clearProgressData() {
         ...createDefaultContinuityConfig(),
         focusSources: AppState.continuityConfig?.focusSources || [],
         focusSourceNames: AppState.continuityConfig?.focusSourceNames || {},
+        focusSourceTimestamps: AppState.continuityConfig?.focusSourceTimestamps || {},
         notificationSettings: AppState.continuityConfig?.notificationSettings
             || createDefaultContinuityConfig().notificationSettings
     };

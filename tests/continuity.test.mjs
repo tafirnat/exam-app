@@ -91,3 +91,34 @@ test('initTodayActivity and checkAndReplenishTokens do not exceed maximum call s
     });
 });
 
+test('recordTestFinished only credits evaluated/answered questions and respects focus selection timestamp', async () => {
+    const engineMod = await import('../src/features/stats/continuity-engine.js');
+    const recordTestFinished = engineMod.recordTestFinished;
+
+    AppState.studyActivity = {};
+    AppState.continuityConfig = {
+        focusSources: ['srcFocus'],
+        focusSourceTimestamps: {
+            'srcFocus': 100000 // selected at t=100000
+        }
+    };
+
+    const questions = [
+        { sourceId: 'srcFocus', id: 'q1', isUnanswered: false, userAnswer: ['1'], answeredAt: 50000 }, // Before focus selection -> should not count for focus
+        { sourceId: 'srcFocus', id: 'q2', isUnanswered: false, userAnswer: ['1'], answeredAt: 150000 }, // After focus selection -> should count for focus
+        { sourceId: 'srcFocus', id: 'q3', isUnanswered: true, userAnswer: null } // Unanswered -> should not count for anything
+    ];
+
+    recordTestFinished(3, 2, 0, 1, questions);
+
+    const todayStr = engineMod.getLocalDateStr();
+    const todayAct = AppState.studyActivity[todayStr];
+
+    // Total answered questions = 2 (q1 and q2). q3 is unanswered, so questionCount should be 2
+    assert.equal(todayAct.questionCount, 2);
+
+    // Focus answered after timestamp = 1 (q2 only). q1 was answered before focus selection timestamp!
+    assert.equal(todayAct.focusQuestionCount, 1);
+});
+
+

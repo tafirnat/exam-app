@@ -990,6 +990,23 @@ function saveFocusSourceSelection(selectedIds) {
     if (!AppState.continuityConfig) AppState.continuityConfig = {};
     AppState.continuityConfig.focusSources = selectedIds;
 
+    // Track when each source was selected for Focus Streak.
+    // Only question solutions after this timestamp count towards Focus Streak.
+    const timestamps = { ...(AppState.continuityConfig.focusSourceTimestamps || {}) };
+    const now = Date.now();
+    selectedIds.forEach(id => {
+        if (!timestamps[id]) {
+            timestamps[id] = now;
+        }
+    });
+    // Remove timestamps for deselected sources
+    Object.keys(timestamps).forEach(id => {
+        if (!selectedIds.includes(id)) {
+            delete timestamps[id];
+        }
+    });
+    AppState.continuityConfig.focusSourceTimestamps = timestamps;
+
     // Names are snapshotted next to the ids so a card can still say which source
     // a streak came from after that source is archived or deleted. The streak
     // itself never depends on this - it lives in studyActivity, keyed by date.

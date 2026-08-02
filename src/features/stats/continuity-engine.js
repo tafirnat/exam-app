@@ -508,11 +508,15 @@ export function calculateFocusStreak() {
 export function recordTestFinished(questionCount, correctCount = 0, wrongCount = 0, unansweredCount = 0, testQuestions = []) {
     const activity = initTodayActivity();
 
+    // Ensure we only count questions that were actually answered/evaluated
+    const answeredQuestions = (testQuestions || []).filter(q => q && !q.isUnanswered && q.userAnswer !== null && q.userAnswer !== undefined);
+    const actualAnsweredCount = Math.min(questionCount, answeredQuestions.length > 0 ? answeredQuestions.length : questionCount);
+
     // Subtract the already-flushed in-progress count to avoid double-counting
     // when flushInProgressAnswers() was called before the test was finished.
     const flushed = AppState.testTracking?._flushedCount || 0;
     const flushedFocus = AppState.testTracking?._flushedFocusCount || 0;
-    const net = Math.max(0, questionCount - flushed);
+    const net = Math.max(0, actualAnsweredCount - flushed);
 
     // Global Track Update
     activity.questionCount = (activity.questionCount || 0) + net;
@@ -528,11 +532,17 @@ export function recordTestFinished(questionCount, correctCount = 0, wrongCount =
     // Focus Track Update
     const focusSources = getFocusSources();
     if (focusSources.length > 0) {
+        const timestamps = AppState.continuityConfig?.focusSourceTimestamps || {};
         let focusQuestionsSolved = 0;
-        if (testQuestions && testQuestions.length > 0) {
-            focusQuestionsSolved = testQuestions.filter(q => focusSources.includes(q.sourceId || q.q?.sourceId)).length;
-        } else {
-            focusQuestionsSolved = questionCount;
+
+        if (answeredQuestions.length > 0) {
+            focusQuestionsSolved = answeredQuestions.filter(q => {
+                const sid = q.sourceId || q.q?.sourceId;
+                if (!sid || !focusSources.includes(sid)) return false;
+                const sourceAddedAt = timestamps[sid] || 0;
+                const answeredAt = q.answeredAt || Date.now();
+                return answeredAt >= sourceAddedAt;
+            }).length;
         }
 
         const netFocus = Math.max(0, focusQuestionsSolved - flushedFocus);
@@ -586,11 +596,17 @@ export function flushInProgressAnswers() {
     // Focus track
     const focusSources = getFocusSources();
     if (focusSources.length > 0) {
+        const timestamps = AppState.continuityConfig?.focusSourceTimestamps || {};
         const focusDelta = answeredResults.slice(alreadyFlushed)
             .filter(r => {
                 const q = AppState.questionMap?.[`${r.sourceId || ''}_${r.questionId}`]
                     || Object.values(AppState.questionMap || {}).find(q => String(q.id) === String(r.questionId));
-                return q && focusSources.includes(q.sourceId);
+                if (!q) return false;
+                const sid = q.sourceId;
+                if (!sid || !focusSources.includes(sid)) return false;
+                const sourceAddedAt = timestamps[sid] || 0;
+                const answeredAt = r.answeredAt || Date.now();
+                return answeredAt >= sourceAddedAt;
             }).length;
 
         const alreadyFlushedFocus = tracking._flushedFocusCount || 0;
