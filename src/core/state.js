@@ -258,8 +258,8 @@ export function clearLocalStudyData() {
     localStorage.removeItem('focus_app_active_test');
     localStorage.removeItem('focus_app_continuity_config');
     localStorage.removeItem('focus_app_study_activity');
-    // Prevent auto-fetching starter sample after an explicit user reset
-    localStorage.setItem(SAMPLE_LOADED_KEY, 'reset');
+    // Clear sample loaded key so the starter sample JSON for active language is auto-loaded on reset
+    localStorage.removeItem(SAMPLE_LOADED_KEY);
 
     clearActiveTest();
 }
@@ -337,7 +337,7 @@ export function clearSourcesData() {
     localStorage.setItem('focus_app_sources', JSON.stringify(AppState.sources));
     localStorage.setItem('focus_app_quick_presets', JSON.stringify(AppState.quickPresets));
     localStorage.removeItem('focus_app_current_source');
-    localStorage.setItem(SAMPLE_LOADED_KEY, 'reset');
+    localStorage.removeItem(SAMPLE_LOADED_KEY);
     
     clearActiveTest();
 }

@@ -58,6 +58,9 @@ export async function removeSource(id) {
     AppState.sources = AppState.sources.filter(s => s.id !== id);
     import('../../core/state.js').then(m => {
         if (typeof m.trackDeletedSource === 'function') m.trackDeletedSource(id);
+        if (m.SAMPLE_LOADED_KEY && !localStorage.getItem(m.SAMPLE_LOADED_KEY)) {
+            localStorage.setItem(m.SAMPLE_LOADED_KEY, AppState.language || 'user_deleted');
+        }
     }).catch(() => {});
     
     if (AppState.currentSourceKey === id) {
@@ -967,9 +970,21 @@ export function renderSourcesList() {
             listDiv.style.display = 'none';
         }
         
-        folderSources.forEach(s => {
-            listDiv.appendChild(createSourceItemDOM(s, folder.id));
-        });
+        if (folderSources.length === 0) {
+            const emptyFolderDiv = document.createElement('div');
+            emptyFolderDiv.className = 'folder-empty-notice';
+            emptyFolderDiv.style.fontSize = '0.8rem';
+            emptyFolderDiv.style.color = 'var(--text-secondary)';
+            emptyFolderDiv.style.opacity = '0.7';
+            emptyFolderDiv.style.fontStyle = 'italic';
+            emptyFolderDiv.style.padding = '0.4rem 0.5rem';
+            emptyFolderDiv.textContent = t('no_sources_msg');
+            listDiv.appendChild(emptyFolderDiv);
+        } else {
+            folderSources.forEach(s => {
+                listDiv.appendChild(createSourceItemDOM(s, folder.id));
+            });
+        }
         
         folderEl.appendChild(listDiv);
         container.appendChild(folderEl);

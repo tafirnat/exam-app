@@ -66,7 +66,7 @@ test('clearSourcesData resets sources & folders but preserves state structure', 
     assert.deepEqual(AppState.quickPresets, []);
 });
 
-test('clearLocalStudyData performs a full factory reset and sets sample key', () => {
+test('clearLocalStudyData performs a full factory reset and clears sample key so sample JSON auto-loads', () => {
     clearLocalStudyData();
 
     assert.deepEqual(AppState.sources, []);
@@ -76,7 +76,7 @@ test('clearLocalStudyData performs a full factory reset and sets sample key', ()
     assert.deepEqual(AppState.studyActivity, {});
     assert.equal(AppState.folders.length, 1);
     assert.deepEqual(AppState.quickPresets, []);
-    assert.equal(global.localStorage.getItem('focus_app_sample_loaded'), 'reset');
+    assert.equal(global.localStorage.getItem('focus_app_sample_loaded'), null);
 });
 
 test('fresh state returns 0 streak without falsely auto-freezing yesterday', async () => {
