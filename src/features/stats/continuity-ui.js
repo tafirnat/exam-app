@@ -223,81 +223,64 @@ function resolveColor(cssValue) {
  *   2. Comet spin  → always full 360°, no clipping
  *   3. Inner mask  → creates donut hole (z-index: 10)
  */
+const CIRCUMFERENCE_92 = 267.035;
+
 function updateCometRing(container, spinGroup, progress, color) {
     if (!container) return;
 
-    const fillEl = container.querySelector('.ring-progress-fill');
-    const spinEl = spinGroup || container.querySelector('.ring-comet-spin');
-    const pct = Math.max(0, Math.min(100, progress || 0));
-
-    // 1. 100% Completion (e.g. 15/15) — stop rotation, solid fill in specified color
-    if (pct >= 100) {
-        if (spinEl) spinEl.style.display = 'none';
-        if (fillEl) {
-            fillEl.style.display = 'block';
-            fillEl.style.background = color;
-        }
-        return;
-    }
-
-    // 2. 0% Progress (e.g. 0/15) — hide both ring fill and spinning comet
-    if (pct <= 0) {
-        if (spinEl) spinEl.style.display = 'none';
-        if (fillEl) {
-            fillEl.style.display = 'none';
-            fillEl.style.background = 'transparent';
-        }
-        return;
-    }
-
-    // 3. Intermediate Progress (e.g. 1/15, 8/15, 14/15) — spin comet is active
-    if (spinEl) spinEl.style.display = 'block';
-
-    // Resolve actual rgb() value so we can build rgba() variants inline
+    const arcEl = container.querySelector('.streak-ring-arc');
+    const headEl = container.querySelector('.ring-head-dot');
     const rgb = resolveColor(color);
-    // rgb(r, g, b) → rgba(r, g, b, alpha)
     const rgba = (a) => rgb.replace('rgb(', 'rgba(').replace(')', `, ${a})`);
 
-    // Proportional progress fill arc starting from 12 o'clock (0deg), filling clockwise
-    if (fillEl) {
-        fillEl.style.display = 'block';
-        const deg = Math.round((pct / 100) * 360);
-        fillEl.style.background = `conic-gradient(from 0deg, ${rgb} 0deg ${deg}deg, transparent ${deg}deg 360deg)`;
+    const pct = Math.max(0, Math.min(100, progress || 0));
+
+    // 1. 0% Progress (0/15) — Hide arc and tip dot, keep dark ring track
+    if (pct <= 0) {
+        if (arcEl) {
+            arcEl.style.strokeDashoffset = CIRCUMFERENCE_92;
+            arcEl.style.display = 'none';
+        }
+        if (headEl) {
+            headEl.style.display = 'none';
+        }
+        return;
     }
 
-    // ── 1. Comet blur tail — App.tsx: conic-gradient opacity-80 blur(3px) scale(1.05) ──
-    const blurEl = container.querySelector('.ring-comet-blur');
-    if (blurEl) {
-        blurEl.style.background = [
-            'conic-gradient(from 0deg,',
-            `  transparent 0%,`,
-            `  transparent 70%,`,
-            `  ${rgba(0)} 80%,`,
-            `  ${rgba(0.4)} 95%,`,
-            `  ${rgb} 100%`,
-            ')'
-        ].join(' ');
+    // 2. 100% Completion (15/15) — Solid 100% ring, no tip dot, no rotation
+    if (pct >= 100) {
+        if (arcEl) {
+            arcEl.style.display = 'block';
+            arcEl.style.stroke = rgb;
+            arcEl.style.strokeDashoffset = '0';
+        }
+        if (headEl) {
+            headEl.style.display = 'none';
+        }
+        return;
     }
 
-    // ── 2. Comet sharp tail — App.tsx exact values ──
-    const sharpEl = container.querySelector('.ring-comet-sharp');
-    if (sharpEl) {
-        sharpEl.style.background = [
-            'conic-gradient(from 0deg,',
-            `  transparent 0%,`,
-            `  transparent 75%,`,
-            `  ${rgba(0)} 85%,`,
-            `  ${rgba(0.8)} 98%,`,
-            `  ${rgb} 100%`,
-            ')'
-        ].join(' ');
+    // 3. Intermediate Progress (1/15, 8/15, 14/15) — Proportional arc + glowing tip dot
+    if (arcEl) {
+        arcEl.style.display = 'block';
+        arcEl.style.stroke = rgb;
+        const offset = CIRCUMFERENCE_92 * (1 - pct / 100);
+        arcEl.style.strokeDashoffset = offset.toFixed(3);
     }
 
-    // ── 3. Comet head dot — App.tsx: shadow-[0_0_12px_3px_rgba(...,0.9)] ──
-    const headEl = container.querySelector('.ring-comet-head');
     if (headEl) {
-        headEl.style.background = rgb;
-        headEl.style.boxShadow = `0 0 12px 3px ${rgba(0.9)}`;
+        headEl.style.display = 'block';
+        headEl.style.backgroundColor = rgb;
+        headEl.style.boxShadow = `0 0 10px 3px ${rgba(0.95)}`;
+
+        // Calculate tip position (angle starts at -90° top 12 o'clock)
+        const angleDeg = -90 + (pct / 100) * 360;
+        const angleRad = (angleDeg * Math.PI) / 180;
+        const cx = 46 + 42.5 * Math.cos(angleRad);
+        const cy = 46 + 42.5 * Math.sin(angleRad);
+
+        headEl.style.left = `${cx.toFixed(2)}px`;
+        headEl.style.top = `${cy.toFixed(2)}px`;
     }
 }
 

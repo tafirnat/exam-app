@@ -558,14 +558,11 @@
                     <div class="card continuity-slide active" id="continuityCard">
                         <div style="display: flex; gap: 0.85rem; align-items: flex-start;">
                             <div id="globalRingContainer" class="streak-ring-container" title="Genel Seri İlerlemesi">
-                                <!-- Progress fill arc: conic-gradient set by JS based on solved/required ratio -->
-                                <div class="ring-progress-fill" id="globalRingProgress"></div>
-                                <!-- Spinning Comet — active when 0 < progress < 100 -->
-                                <div class="ring-comet-spin" id="globalRingSpinGroup">
-                                    <div class="ring-comet-blur"></div>
-                                    <div class="ring-comet-sharp"></div>
-                                    <div class="ring-comet-head"></div>
-                                </div>
+                                <svg class="streak-ring-svg" viewBox="0 0 92 92" width="92" height="92">
+                                    <circle class="streak-ring-track" cx="46" cy="46" r="42.5" fill="none" stroke="#2a3441" stroke-width="7" />
+                                    <circle class="streak-ring-arc" id="globalRingArc" cx="46" cy="46" r="42.5" fill="none" stroke="var(--trend-line-normal, #0891b2)" stroke-width="7" stroke-linecap="round" stroke-dasharray="267.035" stroke-dashoffset="267.035" transform="rotate(-90 46 46)" />
+                                </svg>
+                                <div class="ring-head-dot" id="globalRingHead"></div>
                                 <!-- Inner Mask: creates the donut hole, holds content -->
                                 <div class="ring-inner-mask">
                                     <div class="streak-count-row">
@@ -626,14 +623,11 @@
                     <div class="card continuity-slide" id="focusContinuityCard">
                         <div style="display: flex; gap: 0.85rem; align-items: flex-start;">
                             <div id="focusRingContainer" class="streak-ring-container" title="Odak Seri İlerlemesi">
-                                <!-- Progress fill arc: conic-gradient set by JS based on solved/required ratio -->
-                                <div class="ring-progress-fill" id="focusRingProgress"></div>
-                                <!-- Spinning Comet — active when 0 < progress < 100 -->
-                                <div class="ring-comet-spin" id="focusRingSpinGroup">
-                                    <div class="ring-comet-blur"></div>
-                                    <div class="ring-comet-sharp"></div>
-                                    <div class="ring-comet-head"></div>
-                                </div>
+                                <svg class="streak-ring-svg" viewBox="0 0 92 92" width="92" height="92">
+                                    <circle class="streak-ring-track" cx="46" cy="46" r="42.5" fill="none" stroke="#2a3441" stroke-width="7" />
+                                    <circle class="streak-ring-arc" id="focusRingArc" cx="46" cy="46" r="42.5" fill="none" stroke="var(--trend-line-focus, #8b5cf6)" stroke-width="7" stroke-linecap="round" stroke-dasharray="267.035" stroke-dashoffset="267.035" transform="rotate(-90 46 46)" />
+                                </svg>
+                                <div class="ring-head-dot" id="focusRingHead"></div>
                                 <!-- Inner Mask: creates the donut hole, holds content -->
                                 <div class="ring-inner-mask">
                                     <div class="streak-count-row">

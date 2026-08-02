@@ -5936,55 +5936,29 @@ body.dnd-active {
     box-shadow: inset 0 2px 12px rgba(0, 0, 0, 0.4);
 }
 
-/* Progress fill — static arc from 12 o'clock based on solved/required ratio */
-.ring-progress-fill {
+/* Streak ring SVG overlay */
+.streak-ring-svg {
     position: absolute;
     inset: 0;
+    width: 92px;
+    height: 92px;
+    pointer-events: none;
+}
+
+.streak-ring-arc {
+    transition: stroke-dashoffset 0.4s ease, stroke 0.3s ease;
+}
+
+/* Glowing head dot at progress tip */
+.ring-head-dot {
+    position: absolute;
+    width: 8px;
+    height: 8px;
     border-radius: 50%;
-    background: transparent;
-    transition: background 0.3s ease;
-}
-
-/* Spinning comet wrapper — App.tsx: animate-[spin_4s_linear_infinite] — ALWAYS spins */
-.ring-comet-spin {
-    position: absolute;
-    inset: 0;
-    animation: ringClockwise 4s linear infinite;
-}
-
-@keyframes ringClockwise {
-    from {
-        transform: rotate(0deg);
-    }
-
-    to {
-        transform: rotate(360deg);
-    }
-}
-
-/* Blurred glow tail — default cyan; JS overrides with the correct color per ring */
-.ring-comet-blur {
-    position: absolute;
-    inset: 0;
-    border-radius: 50%;
-    opacity: 0.8;
-    filter: blur(3px);
-    transform: scale(1.05);
-    background: conic-gradient(from 0deg,
-            transparent 0%, transparent 70%,
-            rgba(6, 182, 212, 0) 80%, rgba(6, 182, 212, 0.4) 95%,
-            rgb(6, 182, 212) 100%);
-}
-
-/* Sharp core tail — default cyan; JS overrides */
-.ring-comet-sharp {
-    position: absolute;
-    inset: 0;
-    border-radius: 50%;
-    background: conic-gradient(from 0deg,
-            transparent 0%, transparent 75%,
-            rgba(6, 182, 212, 0) 85%, rgba(6, 182, 212, 0.8) 98%,
-            rgb(6, 182, 212) 100%);
+    transform: translate(-50%, -50%);
+    pointer-events: none;
+    z-index: 5;
+    transition: left 0.4s ease, top 0.4s ease, background-color 0.3s ease, box-shadow 0.3s ease;
 }
 
 /* Comet head dot — default cyan; JS overrides */
