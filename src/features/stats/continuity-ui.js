@@ -234,8 +234,14 @@ function updateCometRing(container, spinGroup, progress, color) {
     // ── 1. SVG progress arc ──
     const arcEl = container.querySelector('.ring-fg');
     if (arcEl) {
-        arcEl.setAttribute('stroke-dasharray', `${progress}, 100`);
-        arcEl.setAttribute('stroke', rgb);
+        if (progress <= 0) {
+            // stroke-linecap="round" renders a dot even at 0 length — hide it completely
+            arcEl.setAttribute('stroke', 'none');
+            arcEl.setAttribute('stroke-dasharray', '0, 100');
+        } else {
+            arcEl.setAttribute('stroke-dasharray', `${progress}, 100`);
+            arcEl.setAttribute('stroke', rgb);
+        }
     }
 
     // ── 2. Comet blur tail (exact App.tsx values) ──
