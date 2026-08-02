@@ -1,0 +1,238 @@
+/**
+ * Daily activity accounting across the three paths that write it.
+ *
+ * Today's counters are written from three places: the live per-answer commit
+ * (commitOneAnswerToActivity), the mid-session flush (flushInProgressAnswers)
+ * and test completion (recordTestFinished). All three walk the *same* ordered
+ * `testTracking.results` array, so the only thing keeping an answer from being
+ * counted twice is the checkpoint each one leaves behind.
+ *
+ * Two defects lived in that arithmetic and both showed up as a streak that
+ * disagreed with itself:
+ *
+ *   - recordTestFinished subtracted only `_flushedCount`. Finishing a test
+ *     without ever leaving the test view means no flush ran, so every answer
+ *     the live path had already committed was added a second time - the global
+ *     day count ran at 2x.
+ *   - The live path counted the global track only. The focus track waited for
+ *     a flush or a finish, so the two tracks were never derived from the same
+ *     set of answers, and a session the browser ended (tab closed) contributed
+ *     to the global streak but not the focus one.
+ *
+ * Together those made "Genel" and "Odak" tell different stories from identical
+ * study, and once a device pushed the inflated number the max-merge in
+ * mergeSyncData() locked it in for every other device.
+ */
+
+import test, { before, beforeEach } from 'node:test';
+import assert from 'node:assert/strict';
+import { JSDOM } from 'jsdom';
+
+let AppState,
+    commitOneAnswerToActivity,
+    flushInProgressAnswers,
+    recordTestFinished,
+    initTodayActivity,
+    getLocalDateStr;
+
+const SOURCE = 'src-focus';
+const OTHER_SOURCE = 'src-other';
+
+before(async () => {
+    const dom = new JSDOM('<!doctype html><html><body></body></html>', { url: 'http://localhost/' });
+    global.window = dom.window;
+    global.document = dom.window.document;
+    global.localStorage = dom.window.localStorage;
+    Object.defineProperty(global, 'navigator', { value: dom.window.navigator, configurable: true });
+
+    const stateMod = await import('../src/core/state.js');
+    AppState = stateMod.AppState;
+
+    const engine = await import('../src/features/stats/continuity-engine.js');
+    commitOneAnswerToActivity = engine.commitOneAnswerToActivity;
+    flushInProgressAnswers = engine.flushInProgressAnswers;
+    recordTestFinished = engine.recordTestFinished;
+    initTodayActivity = engine.initTodayActivity;
+    getLocalDateStr = engine.getLocalDateStr;
+});
+
+/**
+ * A session of `n` answers, all from the focus source, all correct unless
+ * listed in `wrongIndexes`.
+ */
+function startSession(n, { wrongIndexes = [], sourceId = SOURCE } = {}) {
+    AppState.studyActivity = {};
+    AppState.questionMap = {};
+    AppState.testTracking = { results: [], mode: 'normal' };
+
+    const questions = [];
+    for (let i = 0; i < n; i++) {
+        const id = `q${i}`;
+        AppState.questionMap[`${sourceId}_${id}`] = { id, sourceId };
+        questions.push({ id, sourceId });
+    }
+    return questions;
+}
+
+/** Mirrors what updateStats() records, then the live commit that follows it. */
+function answer(questions, index, isCorrect) {
+    const q = questions[index];
+    AppState.testTracking.results.push({
+        questionId: q.id,
+        sourceId: q.sourceId,
+        answeredAt: Date.now(),
+        isCorrect,
+        userAnswer: ['x']
+    });
+    commitOneAnswerToActivity(isCorrect);
+}
+
+/** The shape finishTest() hands to recordTestFinished(). */
+function answeredQuestionsFor(questions) {
+    return AppState.testTracking.results.map(r => ({
+        id: r.questionId,
+        sourceId: r.sourceId,
+        userAnswer: r.userAnswer,
+        isCorrect: r.isCorrect,
+        isUnanswered: false,
+        answeredAt: r.answeredAt
+    }));
+}
+
+function today() {
+    return AppState.studyActivity[getLocalDateStr()];
+}
+
+function finish() {
+    const answered = answeredQuestionsFor();
+    const correct = answered.filter(q => q.isCorrect).length;
+    recordTestFinished(answered.length, correct, answered.length - correct, 0, answered);
+}
+
+beforeEach(() => {
+    AppState.continuityConfig = {
+        focusSources: [SOURCE],
+        focusSourceTimestamps: { [SOURCE]: 0 },
+        freezeTokens: { initialized: true, remaining: 0, tier1Earned: false, tier2Earned: false },
+        focusFreezeTokens: { initialized: true, remaining: 0, tier1Earned: false, tier2Earned: false }
+    };
+    AppState.studyActivity = {};
+    AppState.testTracking = null;
+});
+
+test('finishing a test counts each answer exactly once', () => {
+    const questions = startSession(6);
+    initTodayActivity();
+    for (let i = 0; i < 6; i++) answer(questions, i, i % 2 === 0);
+
+    // The live path has written all six already.
+    assert.equal(today().questionCount, 6, 'live commits should have written six');
+
+    finish();
+
+    assert.equal(today().questionCount, 6, 'finishing must not add the six a second time');
+    assert.equal(today().correctCount, 3);
+    assert.equal(today().wrongCount, 3);
+});
+
+test('flush then finish counts each answer exactly once', () => {
+    const questions = startSession(5);
+    initTodayActivity();
+    for (let i = 0; i < 3; i++) answer(questions, i, true);
+
+    flushInProgressAnswers();
+    assert.equal(today().questionCount, 3, 'flush must not re-add live-committed answers');
+
+    for (let i = 3; i < 5; i++) answer(questions, i, false);
+    finish();
+
+    assert.equal(today().questionCount, 5);
+    assert.equal(today().correctCount, 3);
+    assert.equal(today().wrongCount, 2);
+});
+
+test('repeated flushes are idempotent', () => {
+    const questions = startSession(4);
+    initTodayActivity();
+    for (let i = 0; i < 4; i++) answer(questions, i, true);
+
+    flushInProgressAnswers();
+    flushInProgressAnswers();
+    flushInProgressAnswers();
+
+    assert.equal(today().questionCount, 4);
+    assert.equal(today().correctCount, 4);
+});
+
+test('the focus track advances with every answer, not only at flush', () => {
+    const questions = startSession(3);
+    initTodayActivity();
+
+    answer(questions, 0, true);
+    assert.equal(today().focusQuestionCount, 1, 'focus must move with the first answer');
+
+    answer(questions, 1, true);
+    answer(questions, 2, false);
+    assert.equal(today().focusQuestionCount, 3);
+    assert.equal(today().questionCount, 3, 'global and focus must agree on the same answers');
+});
+
+test('a session the browser ends still has both tracks in step', () => {
+    const questions = startSession(4);
+    initTodayActivity();
+    for (let i = 0; i < 4; i++) answer(questions, i, true);
+
+    // pagehide / visibilitychange - the only handler that runs.
+    flushInProgressAnswers();
+
+    assert.equal(today().questionCount, 4);
+    assert.equal(today().focusQuestionCount, 4, 'focus must not be left behind by a closed tab');
+});
+
+test('answers outside the focus sources count globally but not for focus', () => {
+    const questions = startSession(2, { sourceId: OTHER_SOURCE });
+    initTodayActivity();
+    answer(questions, 0, true);
+    answer(questions, 1, true);
+
+    assert.equal(today().questionCount, 2);
+    assert.equal(today().focusQuestionCount, 0, 'a non-focus source must not feed the focus track');
+
+    finish();
+    assert.equal(today().questionCount, 2);
+    assert.equal(today().focusQuestionCount, 0);
+});
+
+test('focus counting ignores answers that predate the source being selected', () => {
+    const questions = startSession(2);
+    initTodayActivity();
+    // The source joined the focus set after these answers were given.
+    AppState.continuityConfig.focusSourceTimestamps = { [SOURCE]: Date.now() + 60_000 };
+
+    answer(questions, 0, true);
+    answer(questions, 1, true);
+
+    assert.equal(today().questionCount, 2);
+    assert.equal(today().focusQuestionCount, 0);
+});
+
+test('both tracks stay in step across live, flush and finish combined', () => {
+    const questions = startSession(7);
+    initTodayActivity();
+
+    answer(questions, 0, true);
+    answer(questions, 1, true);
+    flushInProgressAnswers();
+    answer(questions, 2, false);
+    flushInProgressAnswers();
+    answer(questions, 3, true);
+    answer(questions, 4, true);
+    answer(questions, 5, false);
+    answer(questions, 6, true);
+    finish();
+
+    assert.equal(today().questionCount, 7);
+    assert.equal(today().focusQuestionCount, 7, 'focus must equal global when every answer is a focus answer');
+    assert.equal(today().correctCount, 5);
+    assert.equal(today().wrongCount, 2);
+});

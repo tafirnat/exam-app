@@ -544,12 +544,25 @@ export function updateFlashcardStats(sourceId, questionId, rating) {
         existingResult.streak = stat.streak;
     }
 
+    persistAnswer();
+}
+
+/**
+ * The tail every path that records an answer shares.
+ *
+ * The order is the contract, not a preference: the result must already be on
+ * testTracking.results (both callers push it), the session and the stats are
+ * persisted, and only then does the activity commit run - it reads that same
+ * results array to decide what is new. Written once so the two callers cannot
+ * drift apart on it.
+ */
+function persistAnswer() {
     saveActiveTest();
     saveStats();
 
     // Broadcast this answer to the activity counters so the heatmap and
     // trend charts update in real-time via the store's Slice.ACTIVITY emit.
-    commitOneAnswerToActivity(rating >= 3);
+    commitOneAnswerToActivity();
 }
 
 export function updateStats(sourceId, questionId, isCorrect, userAnswer, feedback = undefined) {
@@ -651,10 +664,5 @@ export function updateStats(sourceId, questionId, isCorrect, userAnswer, feedbac
         }
     }
 
-    saveActiveTest();
-    saveStats();
-
-    // Broadcast this answer to the activity counters so the heatmap and
-    // trend charts update in real-time via the store's Slice.ACTIVITY emit.
-    commitOneAnswerToActivity(isCorrect);
+    persistAnswer();
 }

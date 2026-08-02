@@ -564,105 +564,114 @@ export function recordTestFinished(questionCount, correctCount = 0, wrongCount =
 }
 
 /**
- * Commits questions answered so far in an unfinished test to the daily streak.
+ * How many of `results` count towards the focus track.
  *
- * Safe to call multiple times — uses a checkpoint stored on testTracking so
- * only the *delta* since the last flush is added each time. finishTest() then
- * subtracts the flushed amount to avoid double-counting on proper completion.
- *
- * Call this whenever the user leaves the test view without finishing
- * (view switch, browser back, page visibility change, etc.).
- *
- * Double-counting with commitOneAnswerToActivity:
- * Per-answer live commits (commitOneAnswerToActivity) already advance
- * activity.questionCount ahead of this function. To avoid counting those
- * answers twice we only flush the slice that was NOT already live-committed.
- * _liveCommitCount tracks how many answers went through the live path.
+ * A question qualifies when its source is in the focus selection *and* it was
+ * answered after that source joined it - questions solved before the user
+ * picked the source were never part of the bargain.
  */
-export function flushInProgressAnswers() {
-    const tracking = AppState.testTracking;
-    if (!tracking || !Array.isArray(tracking.results)) return;
+function countFocusAnswers(results) {
+    const focusSources = getFocusSources();
+    if (focusSources.length === 0) return 0;
 
-    // Only count questions the user actually interacted with (have a result entry)
-    const answeredResults = tracking.results.filter(r => r.userAnswer !== null && r.userAnswer !== undefined);
-    const answeredCount = answeredResults.length;
+    const timestamps = AppState.continuityConfig?.focusSourceTimestamps || {};
+    return results.filter(r => {
+        /* The result carries its own sourceId; the questionMap lookup is the
+           fallback for records written before it did. */
+        const sid = r.sourceId
+            || AppState.questionMap?.[`${r.sourceId || ''}_${r.questionId}`]?.sourceId
+            || Object.values(AppState.questionMap || {})
+                .find(q => String(q.id) === String(r.questionId))?.sourceId;
+        if (!sid || !focusSources.includes(sid)) return false;
+        return (r.answeredAt || Date.now()) >= (timestamps[sid] || 0);
+    }).length;
+}
 
-    // Delta since last flush — prevents double-counting on repeated calls
-    const alreadyFlushed = tracking._flushedCount || 0;
-    const delta = answeredCount - alreadyFlushed;
-    if (delta <= 0) return; // nothing new to commit
+/**
+ * Writes every answer this session has not yet contributed into today's
+ * activity and moves the checkpoint past them.
+ *
+ * This is the *only* place today's counters are advanced from a session. The
+ * live per-answer path and the flush path both call it, which is what makes
+ * them safe to interleave in any order: the cursor `_flushedCount` walks one
+ * direction over one ordered array, so an answer behind it can never be
+ * counted again.
+ *
+ * That was not always so. The live path kept its own cursor (`_liveCommitCount`)
+ * while flush and recordTestFinished read `_flushedCount`, and the two were
+ * reconciled by arithmetic at each site. recordTestFinished subtracted only
+ * `_flushedCount`, so a test finished without ever leaving the test view - the
+ * ordinary case - re-added every answer the live path had already written and
+ * the day ran at double. The focus track escaped the doubling only because the
+ * live path did not count it at all, which is why Genel and Odak could disagree
+ * about identical study, and why a max-merge then froze the inflated number
+ * onto every other device.
+ *
+ * @returns {boolean} whether anything was committed.
+ */
+function commitAnsweredSlice(tracking) {
+    if (!tracking || !Array.isArray(tracking.results)) return false;
 
-    // How many of those delta answers were already committed via the live path?
-    // _liveCommitCount always equals answeredCount (it advances with each answer),
-    // so liveAhead is the number of live-commits that haven't been flushed yet.
-    const liveCommitted = tracking._liveCommitCount || 0;
-    const liveAhead = Math.max(0, liveCommitted - alreadyFlushed);
+    /* A session started by a build that still kept a separate live cursor may
+       be resumed under this one. Whatever that cursor reached is already in
+       today's totals, so the unified cursor has to start at least there. */
+    if (tracking._liveCommitCount > (tracking._flushedCount || 0)) {
+        tracking._flushedCount = tracking._liveCommitCount;
+    }
+    delete tracking._liveCommitCount;
 
-    // The truly new (non-live-committed) answers go through the normal path.
-    const netDelta = Math.max(0, delta - liveAhead);
-
-    const newSlice = answeredResults.slice(alreadyFlushed);
-    const allNewCorrect = newSlice.filter(r => r.isCorrect).length;
-    const allNewWrong   = newSlice.filter(r => !r.isCorrect).length;
-
-    // The already-live-committed correct/wrong were already written to activity,
-    // so only count the remainder.
-    const liveSlice    = newSlice.slice(0, liveAhead);
-    const liveCorrect  = liveSlice.filter(r => r.isCorrect).length;
-    const liveWrong    = liveSlice.filter(r => !r.isCorrect).length;
-    const newCorrect   = allNewCorrect - liveCorrect;
-    const newWrong     = allNewWrong   - liveWrong;
+    const answered = tracking.results.filter(r => r.userAnswer !== null && r.userAnswer !== undefined);
+    const alreadyCounted = tracking._flushedCount || 0;
+    const pending = answered.slice(alreadyCounted);
+    if (pending.length === 0) return false;
 
     const activity = initTodayActivity();
 
-    // Global track — only add what was NOT already live-committed.
-    if (netDelta > 0) {
-        activity.questionCount = (activity.questionCount || 0) + netDelta;
-        activity.correctCount  = (activity.correctCount  || 0) + newCorrect;
-        activity.wrongCount    = (activity.wrongCount    || 0) + newWrong;
-    }
+    const correct = pending.filter(r => r.isCorrect).length;
+    const wrong = pending.length - correct;
 
-    const globalReq = getDailyRequirement(activity.overdueSnapshot);
-    if (activity.questionCount >= globalReq) {
+    activity.questionCount = (activity.questionCount || 0) + pending.length;
+    activity.correctCount = (activity.correctCount || 0) + correct;
+    activity.wrongCount = (activity.wrongCount || 0) + wrong;
+    if (activity.questionCount >= getDailyRequirement(activity.overdueSnapshot)) {
         activity.studied = true;
     }
 
-    // Advance checkpoints for global breakdown counts
-    tracking._flushedCorrectCount = (tracking._flushedCorrectCount || 0) + allNewCorrect;
-    tracking._flushedWrongCount   = (tracking._flushedWrongCount   || 0) + allNewWrong;
-
-    // Focus track
-    const focusSources = getFocusSources();
-    if (focusSources.length > 0) {
-        const timestamps = AppState.continuityConfig?.focusSourceTimestamps || {};
-        const focusDelta = answeredResults.slice(alreadyFlushed)
-            .filter(r => {
-                const q = AppState.questionMap?.[`${r.sourceId || ''}_${r.questionId}`]
-                    || Object.values(AppState.questionMap || {}).find(q => String(q.id) === String(r.questionId));
-                if (!q) return false;
-                const sid = q.sourceId;
-                if (!sid || !focusSources.includes(sid)) return false;
-                const sourceAddedAt = timestamps[sid] || 0;
-                const answeredAt = r.answeredAt || Date.now();
-                return answeredAt >= sourceAddedAt;
-            }).length;
-
-        const alreadyFlushedFocus = tracking._flushedFocusCount || 0;
+    /* Counted from the same slice as the global track rather than at flush
+       time, so the two tracks are always derived from the same answers. A tab
+       the browser closes mid-session used to leave the focus track behind. */
+    const focusDelta = countFocusAnswers(pending);
+    if (focusDelta > 0) {
         activity.focusQuestionCount = (activity.focusQuestionCount || 0) + focusDelta;
-        tracking._flushedFocusCount = alreadyFlushedFocus + focusDelta;
-
-        const focusReq = getDailyRequirement(activity.focusOverdueSnapshot);
-        if (activity.focusQuestionCount >= focusReq) {
+        if (activity.focusQuestionCount >= getDailyRequirement(activity.focusOverdueSnapshot)) {
             activity.focusStudied = true;
         }
     }
 
-    // Advance checkpoint
-    tracking._flushedCount = answeredCount;
+    tracking._flushedCount = answered.length;
+    tracking._flushedCorrectCount = (tracking._flushedCorrectCount || 0) + correct;
+    tracking._flushedWrongCount = (tracking._flushedWrongCount || 0) + wrong;
+    tracking._flushedFocusCount = (tracking._flushedFocusCount || 0) + focusDelta;
 
     saveStudyActivity();
     evaluateFreezeTokenEligibility();
     evaluateFocusFreezeTokenEligibility();
+    return true;
+}
+
+/**
+ * Commits questions answered so far in an unfinished test to the daily streak.
+ *
+ * Safe to call multiple times - the checkpoint on testTracking means only the
+ * answers nothing has counted yet are added. recordTestFinished() then subtracts
+ * the same checkpoint, so completing the test does not re-add them.
+ *
+ * Call this whenever the user leaves the test view without finishing
+ * (view switch, browser back, page visibility change, etc.).
+ */
+export function flushInProgressAnswers() {
+    const tracking = AppState.testTracking;
+    if (!commitAnsweredSlice(tracking)) return;
 
     // Persist the updated checkpoint counters to localStorage so that if the
     // user closes the tab and later resumes, the same answers are NOT counted
@@ -761,63 +770,21 @@ export function applyFocusPools(selectedObjects, qsPool) {
 }
 
 /**
- * Commits a single answered question to today's activity counters in real-time.
+ * Commits the answer just recorded to today's activity counters in real-time.
  *
- * This is the per-answer counterpart of flushInProgressAnswers(). Where flush
- * batches all in-progress answers on test-exit, this fires on *every* answer so
- * the heatmap and trend charts always reflect the current session's progress —
- * not yesterday's snapshot — without waiting for the test to finish or for the
- * user to navigate home.
+ * The per-answer counterpart of flushInProgressAnswers(): where flush batches on
+ * test-exit, this fires on *every* answer so the heatmap and trend charts show
+ * the current session rather than yesterday's snapshot. Both go through
+ * commitAnsweredSlice(), so both tracks - Genel and Odak - advance from the same
+ * answers at the same moment, and neither path can count an answer the other
+ * already did.
  *
- * Double-counting safety: we track a live commit checkpoint on AppState.testTracking
- * (_liveCommitCount). flushInProgressAnswers already subtracts its own checkpoint
- * (_flushedCount) before writing, so these two never add the same answer twice.
- * recordTestFinished also subtracts _flushedCount (not _liveCommitCount), so it
- * correctly handles whichever path the session takes.
+ * The caller must have pushed the result onto testTracking.results first; the
+ * correctness of the answer is read from there rather than passed in, so the
+ * two can never disagree.
  *
- * Focus-track counting is intentionally omitted here: the focus source membership
- * check requires the full answered-results array, which is only available at
- * flush/finish time. The focus bar therefore updates in batch (on exit or finish)
- * rather than per-answer, which is acceptable since the global bar is what the
- * user watches during a live session.
- *
- * @param {boolean} isCorrect  Whether the answer was marked correct.
+ * Persisting emits Slice.ACTIVITY, which is what repaints the charts.
  */
-export function commitOneAnswerToActivity(isCorrect) {
-    // Guard: only commit during an active tracked session.
-    const tracking = AppState.testTracking;
-    if (!tracking) return;
-
-    // Checkpoint: how many live-commits have we already applied?
-    const alreadyCommitted = tracking._liveCommitCount || 0;
-    // The total answers seen so far (including the one just recorded).
-    const totalAnswered = (tracking.results || []).filter(
-        r => r.userAnswer !== null && r.userAnswer !== undefined
-    ).length;
-
-    if (totalAnswered <= alreadyCommitted) return; // nothing new
-
-    // Exactly one new answer since last commit.
-    const activity = initTodayActivity();
-
-    activity.questionCount = (activity.questionCount || 0) + 1;
-    if (isCorrect) {
-        activity.correctCount = (activity.correctCount || 0) + 1;
-    } else {
-        activity.wrongCount = (activity.wrongCount || 0) + 1;
-    }
-
-    // Mirror the studied flag logic from flushInProgressAnswers / recordTestFinished.
-    const globalReq = getDailyRequirement(activity.overdueSnapshot);
-    if (activity.questionCount >= globalReq) {
-        activity.studied = true;
-    }
-
-    // Advance checkpoint.
-    tracking._liveCommitCount = alreadyCommitted + 1;
-
-    // Persist — this emits Slice.ACTIVITY, which triggers home:charts (and
-    // stats:list after the ui-bindings change) via the store's broadcast.
-    saveStudyActivity();
-    evaluateFreezeTokenEligibility();
+export function commitOneAnswerToActivity() {
+    commitAnsweredSlice(AppState.testTracking);
 }

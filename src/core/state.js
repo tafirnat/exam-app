@@ -267,11 +267,31 @@ export function initState({ force = false } = {}) {
         lastProgressResetTimestamp: readInt('focus_app_last_progress_reset', 0),
         presetSessions: readJSON('focus_app_preset_sessions', {}),
         continuityConfig: readJSON('focus_app_continuity_config', createDefaultContinuityConfig()),
-        studyActivity: readJSON('focus_app_study_activity', {})
+        studyActivity: readJSON('focus_app_study_activity', {}),
+        deviceId: loadDeviceId()
     });
 
     stateInitialized = true;
     return AppState;
+}
+
+/**
+ * A stable id for this browser profile.
+ *
+ * The unfinished-test record is the one piece of synced state where "who wrote
+ * this" matters as much as "when": the device actually sitting in a test must
+ * keep its own session even if the other device's copy carries a later
+ * timestamp. Nothing else reads this, and it never leaves the Gist.
+ */
+function loadDeviceId() {
+    const existing = readString('focus_app_device_id');
+    if (existing) return existing;
+
+    const id = (typeof crypto !== 'undefined' && crypto.randomUUID)
+        ? crypto.randomUUID()
+        : `dev-${Date.now()}-${Math.random().toString(36).slice(2, 10)}`;
+    persist('focus_app_device_id', id);
+    return id;
 }
 
 /** Whether the stored data has been loaded yet. */
@@ -660,9 +680,14 @@ export function saveActiveTest() {
             isAnswerChecked: AppState.isAnswerChecked,
             shuffledOptionsMap: AppState.shuffledOptionsMap,
             testTracking: AppState.testTracking,
+            /* Who wrote this and when. The sync merge needs both to decide
+               between two devices' unfinished tests - see pickActiveSession(). */
+            deviceId: AppState.deviceId || null,
+            updatedAt: Date.now()
         };
         persist('focus_app_active_test', activeData);
         emit(Slice.ACTIVE_TEST);
+        import('./github-sync.js').then(m => m.scheduleSync(3000, m.SyncScope.PROGRESS)).catch(() => {});
 
         // A streak run is drawn from the whole library, so it belongs to no
         // preset. Filing it under whichever preset happens to match the active
@@ -678,7 +703,25 @@ export function saveActiveTest() {
     }, 300);
 }
 
+/**
+ * Ends the unfinished-test record.
+ *
+ * A tombstone rather than a delete. The record is synced now, and "this device
+ * has no session" and "this device has not written one yet" are indistinguishable
+ * once the key is simply gone - so finishing a test here would let the other
+ * device's stale copy come back on the next merge and offer to resume a test
+ * that is already in the history. A cleared record carries a timestamp, which
+ * the same newest-wins rule settles.
+ *
+ * Readers already treat it correctly: both checkActiveTest() and
+ * resumeActiveTest() key off currentTest having entries, and this has none.
+ */
 export function clearActiveTest() {
-    persistRemove('focus_app_active_test');
+    persist('focus_app_active_test', {
+        cleared: true,
+        deviceId: AppState.deviceId || null,
+        updatedAt: Date.now()
+    });
     emit(Slice.ACTIVE_TEST);
+    import('./github-sync.js').then(m => m.scheduleSync(300, m.SyncScope.PROGRESS)).catch(() => {});
 }

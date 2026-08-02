@@ -55,12 +55,27 @@ function connected() {
     AppState.githubGistId = 'test-gist';
 }
 
+/**
+ * The writes among the recorded calls.
+ *
+ * A push reads the Gist before it writes - it merges what is already up there
+ * into the payload rather than overwriting it - so the raw call list holds a GET
+ * per push. Every case below is about what gets *written*, so it counts these.
+ */
+function pushes(calls) {
+    return calls.filter(c => c.init.method === 'PATCH');
+}
+
 beforeEach(() => {
     sync._resetSyncQueue();
     AppState.sources = [];
     AppState.stats = {};
     AppState.studyActivity = {};
     AppState.deletedSourceIds = [];
+    /* The reset guards filter the merge, and a case that sets a reset timestamp
+       would otherwise leave it standing for every case after it. */
+    AppState.lastResetTimestamp = 0;
+    AppState.lastProgressResetTimestamp = 0;
     connected();
 });
 
@@ -114,10 +129,10 @@ test('a progress push does not re-upload the question library', async () => {
 
     await sync.syncToGist({ silent: true, scopes: sync.SyncScope.PROGRESS });
 
-    assert.equal(calls.length, 1);
-    assert.equal(calls[0].init.method, 'PATCH');
-    assert.deepEqual(Object.keys(calls[0].body.files), [BACKUP]);
-    assert.ok(!calls[0].init.body.includes('NEEDLE-QUESTION-BODY'),
+    const written = pushes(calls);
+    assert.equal(written.length, 1);
+    assert.deepEqual(Object.keys(written[0].body.files), [BACKUP]);
+    assert.ok(!written[0].init.body.includes('NEEDLE-QUESTION-BODY'),
         'a stats-sized save must not carry a single question over the wire');
 });
 
@@ -127,8 +142,8 @@ test('a sources push writes the sources file and leaves the rest alone', async (
 
     await sync.syncToGist({ silent: true, scopes: sync.SyncScope.SOURCES });
 
-    assert.deepEqual(Object.keys(calls[0].body.files), [SOURCES]);
-    assert.ok(calls[0].init.body.includes('NEEDLE-QUESTION-BODY'));
+    assert.deepEqual(Object.keys(pushes(calls)[0].body.files), [SOURCES]);
+    assert.ok(pushes(calls)[0].init.body.includes('NEEDLE-QUESTION-BODY'));
 });
 
 test('an unscoped push still writes everything, which is what a merge needs', async () => {
@@ -137,13 +152,13 @@ test('an unscoped push still writes everything, which is what a merge needs', as
 
     await sync.syncToGist({ silent: true });
 
-    assert.deepEqual(Object.keys(calls[0].body.files).sort(), [BACKUP, SOURCES].sort());
+    assert.deepEqual(Object.keys(pushes(calls)[0].body.files).sort(), [BACKUP, SOURCES].sort());
 });
 
 test('a push names no file it was not asked to write, so the archive is safe', async () => {
     const calls = captureFetch();
     await sync.syncToGist({ silent: true });
-    assert.ok(!(ARCHIVE in calls[0].body.files));
+    assert.ok(!(ARCHIVE in pushes(calls)[0].body.files));
 });
 
 test('the uploaded JSON is not pretty printed', async () => {
@@ -152,7 +167,7 @@ test('the uploaded JSON is not pretty printed', async () => {
 
     await sync.syncToGist({ silent: true, scopes: sync.SyncScope.PROGRESS });
 
-    assert.ok(!calls[0].body.files[BACKUP].content.includes('\n'),
+    assert.ok(!pushes(calls)[0].body.files[BACKUP].content.includes('\n'),
         'indentation is re-uploaded on every single save');
 });
 
@@ -166,8 +181,8 @@ test('scopes queued in one debounce window are pushed together', async () => {
     sync.scheduleSync(10, sync.SyncScope.SOURCES);
     await sleep(60);
 
-    assert.equal(calls.length, 1, 'one push, not one per scope');
-    assert.deepEqual(Object.keys(calls[0].body.files).sort(), [BACKUP, SOURCES].sort());
+    assert.equal(pushes(calls).length, 1, 'one push, not one per scope');
+    assert.deepEqual(Object.keys(pushes(calls)[0].body.files).sort(), [BACKUP, SOURCES].sort());
 });
 
 test('repeated progress saves stay a progress-only push', async () => {
@@ -179,8 +194,8 @@ test('repeated progress saves stay a progress-only push', async () => {
     sync.scheduleSync(10, sync.SyncScope.PROGRESS);
     await sleep(60);
 
-    assert.equal(calls.length, 1);
-    assert.deepEqual(Object.keys(calls[0].body.files), [BACKUP]);
+    assert.equal(pushes(calls).length, 1);
+    assert.deepEqual(Object.keys(pushes(calls)[0].body.files), [BACKUP]);
 });
 
 test('a push that arrives mid-flight is re-queued, not dropped', async () => {
@@ -205,7 +220,8 @@ test('a push that arrives mid-flight is re-queued, not dropped', async () => {
     sync.scheduleSync(10, sync.SyncScope.PROGRESS);
     await sleep(60);
 
-    const last = calls[calls.length - 1];
+    const written = pushes(calls);
+    const last = written[written.length - 1];
     assert.deepEqual(Object.keys(last.body.files).sort(), [BACKUP, SOURCES].sort(),
         'the dropped sources push would otherwise be the only one carrying that file');
 });
@@ -225,9 +241,9 @@ test('answering a question pushes progress only, not the library', async () => {
     saveStats();                       // debounced at 1500ms
     await sleep(1700);
 
-    assert.equal(calls.length, 1);
-    assert.deepEqual(Object.keys(calls[0].body.files), [BACKUP]);
-    assert.ok(!calls[0].init.body.includes('NEEDLE-QUESTION-BODY'));
+    assert.equal(pushes(calls).length, 1);
+    assert.deepEqual(Object.keys(pushes(calls)[0].body.files), [BACKUP]);
+    assert.ok(!pushes(calls)[0].init.body.includes('NEEDLE-QUESTION-BODY'));
 });
 
 test('a source edit is the one save that does push the library', async () => {
@@ -238,8 +254,8 @@ test('a source edit is the one save that does push the library', async () => {
     saveSources();                     // debounced at 300ms
     await sleep(500);
 
-    assert.equal(calls.length, 1);
-    assert.deepEqual(Object.keys(calls[0].body.files), [SOURCES]);
+    assert.equal(pushes(calls).length, 1);
+    assert.deepEqual(Object.keys(pushes(calls)[0].body.files), [SOURCES]);
 });
 
 test('a study-activity save pushes progress only', async () => {
@@ -251,8 +267,119 @@ test('a study-activity save pushes progress only', async () => {
     saveStudyActivity();
     await sleep(500);
 
-    assert.equal(calls.length, 1);
-    assert.deepEqual(Object.keys(calls[0].body.files), [BACKUP]);
+    assert.equal(pushes(calls).length, 1);
+    assert.deepEqual(Object.keys(pushes(calls)[0].body.files), [BACKUP]);
+});
+
+// ── A push must not overwrite what it has not seen ──────────────────────────
+/* A pull happens at boot and on an explicit sync; a push happens on every
+   answered question. So the pushing device is routinely behind the Gist, and a
+   push that simply serialised local state wrote that staleness over the other
+   device's work. The daily activity map is where it showed: the focus track is
+   written only when a session is flushed or finished, so it was the first thing
+   to be erased - which is exactly what "the two devices disagree about Odak
+   Seri" looked like from the outside. */
+
+/** Answers a GET with `remoteFiles` and accepts any PATCH. */
+function gistServer(remoteFiles) {
+    return async (url, init = {}) => {
+        if ((init.method || 'GET') === 'GET') {
+            return { ok: true, status: 200, json: async () => gistOf(remoteFiles) };
+        }
+        return { ok: true, status: 200, json: async () => ({}) };
+    };
+}
+
+/** The progress file a push wrote, parsed. */
+function writtenProgress(calls) {
+    return JSON.parse(pushes(calls)[0].body.files[BACKUP].content);
+}
+
+test('a push keeps the days only the remote knows about', async () => {
+    AppState.studyActivity = { '2026-08-02': { studied: true, questionCount: 20 } };
+    const calls = captureFetch(gistServer({
+        [BACKUP]: {
+            version: 4,
+            lastUpdated: 500,
+            studyActivity: { '2026-08-01': { studied: true, questionCount: 30 } }
+        }
+    }));
+
+    await sync.syncToGist({ silent: true, scopes: sync.SyncScope.PROGRESS });
+
+    const activity = writtenProgress(calls).studyActivity;
+    assert.ok(activity['2026-08-01'], 'the other device\'s day must survive this push');
+    assert.equal(activity['2026-08-01'].questionCount, 30);
+    assert.equal(activity['2026-08-02'].questionCount, 20);
+});
+
+test('a push does not erase the focus track the other device recorded', async () => {
+    /* Focus answers are a subset of all answers, so a record always has
+       focusQuestionCount <= questionCount; the fixtures keep that true. This
+       device answered 12 with no focus source running, the other answered 15
+       that all counted for focus. */
+    AppState.studyActivity = {
+        '2026-08-02': { studied: true, questionCount: 12, focusStudied: false, focusQuestionCount: 0 }
+    };
+    const calls = captureFetch(gistServer({
+        [BACKUP]: {
+            version: 4,
+            lastUpdated: 500,
+            studyActivity: {
+                '2026-08-02': { studied: true, questionCount: 15, focusStudied: true, focusQuestionCount: 15 }
+            }
+        }
+    }));
+
+    await sync.syncToGist({ silent: true, scopes: sync.SyncScope.PROGRESS });
+
+    const day = writtenProgress(calls).studyActivity['2026-08-02'];
+    assert.equal(day.focusQuestionCount, 15, 'the focus count must not be written back to zero');
+    assert.equal(day.focusStudied, true);
+    assert.equal(day.questionCount, 15);
+});
+
+test('a push keeps remote stats this device has never seen', async () => {
+    // No reset has ever happened here, so nothing filters the remote stats out.
+    AppState.lastProgressResetTimestamp = 0;
+    AppState.lastResetTimestamp = 0;
+    AppState.stats = { 'src-1_q0': { correct: 2, wrong: 0 } };
+    const calls = captureFetch(gistServer({
+        [BACKUP]: {
+            version: 4,
+            lastUpdated: 500,
+            stats: { 'src-1_q9': { correct: 7, wrong: 1 } }
+        }
+    }));
+
+    await sync.syncToGist({ silent: true, scopes: sync.SyncScope.PROGRESS });
+
+    const stats = writtenProgress(calls).stats;
+    assert.ok(stats['src-1_q9'], 'a stat only the remote had must survive the push');
+    assert.ok(stats['src-1_q0']);
+});
+
+test('a push that cannot read the remote does not write at all', async () => {
+    AppState.studyActivity = { '2026-08-02': { studied: true, questionCount: 5 } };
+    const calls = captureFetch(async (url, init = {}) => {
+        if ((init.method || 'GET') === 'GET') return { ok: false, status: 500, headers: new Map() };
+        return { ok: true, status: 200, json: async () => ({}) };
+    });
+
+    const ok = await sync.syncToGist({ silent: true, scopes: sync.SyncScope.PROGRESS });
+
+    assert.equal(ok, false);
+    assert.equal(pushes(calls).length, 0,
+        'an unreadable remote is the one case where writing would lose data');
+});
+
+test('the push that follows a merge does not re-read the Gist', async () => {
+    const calls = captureFetch(gistServer({ [BACKUP]: { version: 4, lastUpdated: 1 } }));
+
+    await sync.syncToGist({ silent: true, scopes: sync.SyncScope.PROGRESS, skipRemoteMerge: true });
+
+    assert.equal(calls.filter(c => (c.init.method || 'GET') === 'GET').length, 0);
+    assert.equal(pushes(calls).length, 1);
 });
 
 // ── Reading it back ─────────────────────────────────────────────────────────

@@ -2,7 +2,7 @@ import { AppState, saveSources, saveStats, saveRecentTests, saveFolders, saveQui
 import { showToast, showAlert } from './utils.js';
 import { t } from './i18n.js';
 import { migrateFolderColors, sanitizeActivityRecord } from './migration.js';
-import { persist, persistRemove } from './storage.js';
+import { persist, persistRemove, readJSON } from './storage.js';
 import { emit, Slice } from './store.js';
 
 /* The Gist holds three files, and a PATCH only touches the ones it names. The
@@ -191,6 +191,12 @@ export function getSyncPayload() {
         recentTests: AppState.recentTests || [],
         studyActivity: AppState.studyActivity || {},
         continuityConfig: AppState.continuityConfig || {},
+        /* The unfinished test, so the other device offers "Devam Et" instead of
+           "Yeniden Başlat". It stays small on purpose: currentTest is a list of
+           `sourceId_questionId` keys, not question bodies, so the receiving
+           device rebuilds the session from its own copy of the library. */
+        activeSession: readJSON('focus_app_active_test', null),
+        deviceId: AppState.deviceId || null,
         settings: {
             language: AppState.language,
             translationTarget: AppState.translationTarget,
@@ -829,11 +835,50 @@ function rememberGistUrl(url) {
 }
 
 /**
- * Pushes local data to GitHub Gist.
+ * The payload to write: local state with whatever is already on the remote
+ * folded into it.
  *
- * @param {{silent?: boolean, scopes?: string|string[]}} [options]
+ * A push used to serialise local state and PATCH it straight over the file.
+ * That is only safe if this device has seen everything the remote holds, and it
+ * has not: a pull happens at boot and on an explicit sync, while a push happens
+ * on every answered question. A device left open all day therefore wrote its own
+ * increasingly stale view over the other device's work, again and again. The
+ * daily activity map is where that showed: the global counters survived because
+ * whichever device wrote last usually had the larger numbers, but the focus
+ * track - written only when a session is flushed or finished - was routinely
+ * erased, so the two devices disagreed about Odak Seri indefinitely.
+ *
+ * Merging here rather than mutating AppState keeps the push a pure write: the
+ * remote ends up holding the union, and the local side picks it up on its next
+ * pull through the path that already knows how to apply a merge. Doing it the
+ * other way round would have every push run the pull's apply-and-save cascade,
+ * which re-enters scheduleSync().
+ *
+ * Throws when the remote cannot be read or parsed. That is deliberate: the
+ * caller's catch records a sync failure, which is the same thing a failed write
+ * would have done, and it means an unreadable remote blocks the write instead of
+ * being overwritten by it.
+ */
+async function payloadMergedWithRemote() {
+    const local = getSyncPayload();
+    const remote = await readRemotePayload(await fetchGist());
+    if (!remote) return local; // nothing up there yet
+
+    const { hasLocalChanges, ...merged } = mergeSyncData(local, remote);
+    /* mergeSyncData covers the shared domains only; version, timestamps and
+       settings stay as this device reports them. */
+    return { ...local, ...merged };
+}
+
+/**
+ * Pushes local data to GitHub Gist, merged with what the remote already holds.
+ *
+ * @param {{silent?: boolean, scopes?: string|string[], skipRemoteMerge?: boolean}} [options]
  *        `scopes` limits the push to the files that actually changed; omitted
  *        means every file, which is what a merge or a reset needs.
+ *        `skipRemoteMerge` is for the push that syncFromGist() makes right after
+ *        it has applied a merge - re-reading the same Gist would only cost a
+ *        request to reach the same answer.
  */
 export async function syncToGist(options = {}) {
     if (!AppState.githubToken || !AppState.githubGistId) return false;
@@ -851,6 +896,10 @@ export async function syncToGist(options = {}) {
 
     setSyncingState(true);
     try {
+        const payload = options.skipRemoteMerge
+            ? getSyncPayload()
+            : await payloadMergedWithRemote();
+
         const res = await fetch(`${GITHUB_API_BASE}/gists/${AppState.githubGistId}`, {
             method: 'PATCH',
             headers: {
@@ -862,7 +911,7 @@ export async function syncToGist(options = {}) {
                 description: GIST_DESCRIPTION,
                 // Only the named files are touched; the ones left out keep the
                 // content they already have.
-                files: serialiseFiles(scopes)
+                files: serialiseFiles(scopes, payload)
             })
         });
 
@@ -979,6 +1028,17 @@ export async function syncFromGist(options = {}) {
                 saveContinuityConfig();
             }
 
+            /* The unfinished test. Written straight to storage rather than into
+               AppState because that is where checkActiveTest() and
+               resumeActiveTest() read it from - the resume button needs no
+               further wiring. pickActiveSession() has already refused to replace
+               a session this device is in, so this cannot land under the user
+               mid-test. */
+            if (merged.activeSession && typeof merged.activeSession === 'object') {
+                persist('focus_app_active_test', merged.activeSession);
+                emit(Slice.ACTIVE_TEST);
+            }
+
             // Persist the most recent reset timestamps observed during this merge.
             // This keeps all devices aware of the latest reset even if they were
             // offline when it happened.
@@ -996,7 +1056,7 @@ export async function syncFromGist(options = {}) {
             // Push merged state back to Gist if local had newer changes
             const failuresBefore = AppState.syncFailureCount || 0;
             if (merged.hasLocalChanges) {
-                await syncToGist({ silent: true });
+                await syncToGist({ silent: true, skipRemoteMerge: true });
             }
 
             /* The pull reached the Gist, so this round trip counts as healthy -
@@ -1035,6 +1095,48 @@ export async function syncFromGist(options = {}) {
     } finally {
         setSyncingState(false);
     }
+}
+
+/**
+ * How recently an unfinished test has to have been written for this device to
+ * count as still sitting in it. saveActiveTest() fires on every answer and every
+ * navigation, so a session being worked on is never quiet for this long.
+ */
+const LIVE_SESSION_MS = 5 * 60 * 1000;
+
+/**
+ * Chooses between two devices' unfinished tests.
+ *
+ * Newest wins, with one exception that matters more than the timestamps: a
+ * session this device is *currently in* is never replaced. Without that, a pull
+ * landing mid-test - the boot sync of a second tab, an explicit sync tap - could
+ * swap the questions under the user at the moment they answer one.
+ *
+ * A finished test leaves a cleared record rather than no record, so "I finished
+ * mine" is a dated fact the same rule can weigh against the other device's copy.
+ * That is what stops a completed test from being resurrected by a stale peer.
+ *
+ * @returns {{session: object|null, localWins: boolean}}
+ */
+function pickActiveSession(local, remote, now = Date.now()) {
+    const lSession = local.activeSession || null;
+    const rSession = remote.activeSession || null;
+
+    if (!lSession && !rSession) return { session: null, localWins: false };
+    if (!rSession) return { session: lSession, localWins: true };
+    if (!lSession) return { session: rSession, localWins: false };
+
+    const isLive = lSession.deviceId
+        && lSession.deviceId === local.deviceId
+        && Array.isArray(lSession.currentTest) && lSession.currentTest.length > 0
+        && now - (lSession.updatedAt || 0) < LIVE_SESSION_MS;
+    if (isLive) return { session: lSession, localWins: true };
+
+    /* Records from builds before this carry no timestamp. Treating them as
+       oldest keeps a dated record authoritative, which is the safer direction:
+       the undated one is at best the same session seen earlier. */
+    const localWins = (lSession.updatedAt || 0) > (rSession.updatedAt || 0);
+    return { session: localWins ? lSession : rSession, localWins };
 }
 
 /**
@@ -1362,6 +1464,20 @@ export function mergeSyncData(local, remote) {
             // count on every single sync, which compounds into millions within a
             // few page loads and drags the streak, the ring and the weekly chart
             // along with it. The higher view wins instead.
+
+            /* Local holding the higher view is a local change, and saying so is
+               what makes the pull push it back. Without this the merge kept the
+               right numbers on this device and left the remote - and therefore
+               every other device - on the lower ones. */
+            if ((lAct.questionCount || 0) > (rAct.questionCount || 0)
+                || (lAct.focusQuestionCount || 0) > (rAct.focusQuestionCount || 0)
+                || (lAct.studied && !rAct.studied)
+                || (lAct.focusStudied && !rAct.focusStudied)
+                || (lAct.frozen && !rAct.frozen)
+                || (lAct.focusFrozen && !rAct.focusFrozen)) {
+                hasLocalChanges = true;
+            }
+
             mergedStudyActivity[dateKey] = sanitizeActivityRecord({
                 studied: lAct.studied || rAct.studied,
                 questionCount: Math.max(lAct.questionCount || 0, rAct.questionCount || 0),
@@ -1389,14 +1505,20 @@ export function mergeSyncData(local, remote) {
     if (localProgressResetAt >= remoteProgressResetAt && localProgressResetAt > 0) {
         // Local reset is at least as recent — local factory config wins
         mergedContinuityConfig = local.continuityConfig;
+        hasLocalChanges = true;
     } else if (remoteProgressResetAt > localProgressResetAt) {
         // Remote had a more recent reset — remote factory config wins
         mergedContinuityConfig = remote.continuityConfig;
     } else {
         // No reset on either side: prefer remote as base, fall back to local
-        mergedContinuityConfig = (remote.continuityConfig && Object.keys(remote.continuityConfig).length > 0)
-            ? remote.continuityConfig
-            : local.continuityConfig;
+        const remoteHasConfig = remote.continuityConfig && Object.keys(remote.continuityConfig).length > 0;
+        mergedContinuityConfig = remoteHasConfig ? remote.continuityConfig : local.continuityConfig;
+        // Falling back to local means the remote has no config at all; it needs
+        // this one, and only hasLocalChanges gets it there.
+        if (!remoteHasConfig && local.continuityConfig
+                && Object.keys(local.continuityConfig).length > 0) {
+            hasLocalChanges = true;
+        }
     }
 
     // Total stats: prefer whichever side had the most recent progress reset
@@ -1410,10 +1532,14 @@ export function mergeSyncData(local, remote) {
         mergedTotalStats = remote.totalStats || local.totalStats;
     }
 
+    const activeSession = pickActiveSession(local, remote);
+    if (activeSession.localWins) hasLocalChanges = true;
+
     return {
         sources: mergedSources,
         folders: mergedFolders,
         quickPresets: mergedQuickPresets,
+        activeSession: activeSession.session,
         stats: mergedStats,
         totalStats: mergedTotalStats,
         recentTests: mergedRecentTests,

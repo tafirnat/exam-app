@@ -2071,7 +2071,10 @@ function checkActiveTest() {
     const matchedPresetId = findMatchingPresetId();
     let activeData = null;
     if (matchedPresetId && AppState.presetSessions && AppState.presetSessions[matchedPresetId]) {
-        activeData = AppState.presetSessions[matchedPresetId];
+        /* Promoting a preset session to the active one is a write to a synced
+           record, so it has to be stamped like any other - an undated record
+           loses to the other device's copy in pickActiveSession(). */
+        activeData = { ...AppState.presetSessions[matchedPresetId], deviceId: AppState.deviceId || null, updatedAt: Date.now() };
         persist('focus_app_active_test', activeData);
     } else {
         /* Through readJSON. A bare JSON.parse here threw on a corrupted record,
@@ -2116,7 +2119,8 @@ function checkActiveTest() {
 
 function resumeActiveTest() {
     const activeData = readJSON('focus_app_active_test', null);
-    if (!activeData) return;
+    // A cleared record is a finished test, not a session - see clearActiveTest().
+    if (!activeData || !Array.isArray(activeData.currentTest) || activeData.currentTest.length === 0) return;
 
     // Restore AppState
     AppState.currentTest = activeData.currentTest;
