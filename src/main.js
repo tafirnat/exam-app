@@ -1,5 +1,5 @@
 import { AppState, initState, saveStats, saveSources, saveCurrentSource, saveCustomAIPrompt, saveAiProviders, DEFAULT_AI_PROVIDERS, saveActiveTest, clearActiveTest, clearLocalStudyData, clearProgressData, clearSourcesData, SAMPLE_LOADED_KEY, findMatchingPresetId } from './core/state.js';
-import { initTheme, toggleTheme } from './core/theme.js';
+import { initTheme, toggleTheme, getActiveTheme } from './core/theme.js';
 import { updateStaticTranslations, t, targetLanguages, translations } from './core/i18n.js';
 import { showToast, showConfirm, getCorrectAnswers, highlightText, escapeHTML } from './core/utils.js';
 import { migrateOldData, migrateFolderColors, sanitizeStudyActivity } from './core/migration.js';
@@ -1556,7 +1556,7 @@ function setupEventListeners() {
             settings: {
                 language: AppState.language,
                 translationTarget: AppState.translationTarget,
-                theme: readString('focus_app_theme') || 'light'
+                theme: getActiveTheme()
             }
         };
         const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' });

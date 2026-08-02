@@ -5,8 +5,20 @@ import { persist, readString } from './storage.js';
 // reference other theme variables are substituted on the element that declares
 // them, so a theme flag below :root leaves those tokens stuck on the light
 // palette. See the comment above <html> in index.html.
+/* One key, one default, one place. The backup export used to spell the key
+   'focus_app_theme' and default to 'light', so every exported backup recorded a
+   light theme no matter what the user was actually looking at - two copies of a
+   fact that only one module owns. */
+const THEME_KEY = 'focus_theme';
+const DEFAULT_THEME = 'dark';
+
+/** The theme in force. Anything that needs to know asks here. */
+export function getActiveTheme() {
+    return readString(THEME_KEY) || DEFAULT_THEME;
+}
+
 export function initTheme() {
-    const theme = readString('focus_theme') || 'dark';
+    const theme = getActiveTheme();
     document.documentElement.setAttribute('data-theme', theme);
     updateThemeUI(theme);
 }
@@ -15,7 +27,7 @@ export function toggleTheme() {
     const current = document.documentElement.getAttribute('data-theme');
     const next = current === 'dark' ? 'light' : 'dark';
     document.documentElement.setAttribute('data-theme', next);
-    persist('focus_theme', next);
+    persist(THEME_KEY, next);
     updateThemeUI(next);
 }
 
