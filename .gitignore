@@ -45,6 +45,7 @@ eklenecek_ozellikler.md
 
 # Local-only notes (debugging lessons, scratch findings)
 *.local.md
+CLAUDE.md
 
 # IDE & OS System Files
 .DS_Store

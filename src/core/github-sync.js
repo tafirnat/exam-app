@@ -5,14 +5,44 @@ import { migrateFolderColors, sanitizeActivityRecord } from './migration.js';
 import { persist, persistRemove } from './storage.js';
 import { emit, Slice } from './store.js';
 
+/* The Gist holds three files, and a PATCH only touches the ones it names. The
+   split is by how big a file is against how often it is written:
+
+     exam_app_backup.json    progress - stats, activity, tombstones, settings.
+                             Small, rewritten on nearly every save.
+     exam_app_sources.json   the question library. Large, rewritten only when a
+                             source actually changes.
+     exam_app_archive.json   questions of archived sources that were offloaded
+                             off the device. Large, rewritten only on archive
+                             changes.
+
+   Keeping the library out of the progress file is the point: answering one
+   question schedules a sync, and before the split that meant re-uploading every
+   question in the app - hundreds of kilobytes to megabytes - to record a single
+   correct answer. */
 const GIST_FILENAME = 'exam_app_backup.json';
-// The archive lives in its own file inside the same Gist. A Gist PATCH only
-// touches the files it names, so routine syncs of the backup file can never
-// overwrite or drop the archive - and the (large) archived questions never
-// travel with every single stats save.
+const SOURCES_FILENAME = 'exam_app_sources.json';
 const ARCHIVE_FILENAME = 'exam_app_archive.json';
 const GIST_DESCRIPTION = 'Exam App - User Study & Resource Data Sync';
 const GITHUB_API_BASE = 'https://api.github.com';
+
+/** Which file a scheduled push has to rewrite. */
+export const SyncScope = Object.freeze({
+    /** exam_app_backup.json: stats, activity, folders, presets, settings. */
+    PROGRESS: 'progress',
+    /** exam_app_sources.json: the question library. */
+    SOURCES: 'sources'
+});
+
+const ALL_SCOPES = Object.freeze([SyncScope.PROGRESS, SyncScope.SOURCES]);
+
+/** Accepts a scope, a list of scopes, or nothing (meaning: everything). */
+function normaliseScopes(scope) {
+    if (!scope) return [...ALL_SCOPES];
+    const list = (Array.isArray(scope) ? scope : [scope])
+        .filter(s => ALL_SCOPES.includes(s));
+    return list.length > 0 ? list : [...ALL_SCOPES];
+}
 
 // Environment variables from Vite (.env)
 const GITHUB_CLIENT_ID = import.meta.env?.VITE_GITHUB_CLIENT_ID || '';
@@ -20,13 +50,25 @@ const WORKER_URL = import.meta.env?.VITE_WORKER_URL || '';
 
 let syncTimer = null;
 let isSyncing = false;
+/** Scopes waiting for the debounced push to fire. */
+let pendingScopes = new Set();
 
 /**
  * Prepares the complete JSON payload of local data for backup/sync.
+ *
+ * This is the *logical* payload - one object holding every domain - and it stays
+ * that way because it is also what mergeSyncData() compares against a remote
+ * payload. splitSyncPayload() decides how it is laid out across Gist files.
  */
 export function getSyncPayload() {
     return {
-        version: 3,
+        /* 4: sources moved into their own file. A reader that finds this field
+           still expects the old single-file layout to be readable, and
+           readRemotePayload() keeps it so. */
+        version: 4,
+        // Names the file the sources were split into, so a reader can tell a
+        // split payload from an old one that genuinely had no sources.
+        sourcesFile: SOURCES_FILENAME,
         lastUpdated: Date.now(),
         // Timestamp of the most recent destructive reset on this device.
         // mergeSyncData() uses it to detect when local's intentionally-empty
@@ -65,6 +107,121 @@ export function getSyncPayload() {
             timerAutoCheckEnabled: AppState.timerAutoCheckEnabled
         }
     };
+}
+
+/**
+ * Lays the logical payload out across the Gist files that store it.
+ *
+ * @returns {{[filename: string]: object}} file name -> the object written there.
+ */
+export function splitSyncPayload(payload = getSyncPayload()) {
+    const { sources, ...progress } = payload;
+    return {
+        [GIST_FILENAME]: progress,
+        [SOURCES_FILENAME]: {
+            version: payload.version,
+            lastUpdated: payload.lastUpdated,
+            sources: sources || []
+        }
+    };
+}
+
+/**
+ * Serialises the files a push with these scopes has to send.
+ *
+ * Written without indentation. `null, 2` roughly doubles a payload whose bulk is
+ * short values on their own lines - question stats and per-day activity are
+ * exactly that shape - and every byte of it is uploaded again on the next save.
+ * Reading is unaffected: JSON.parse ignores whitespace, so files written by
+ * older builds keep working.
+ */
+function serialiseFiles(scopes, payload = getSyncPayload()) {
+    const split = splitSyncPayload(payload);
+    const files = {};
+    if (scopes.includes(SyncScope.PROGRESS)) {
+        files[GIST_FILENAME] = { content: JSON.stringify(split[GIST_FILENAME]) };
+    }
+    if (scopes.includes(SyncScope.SOURCES)) {
+        files[SOURCES_FILENAME] = { content: JSON.stringify(split[SOURCES_FILENAME]) };
+    }
+    return files;
+}
+
+/** GETs the Gist. Throws on transport failure so callers do not merge nothing. */
+async function fetchGist() {
+    const res = await fetch(`${GITHUB_API_BASE}/gists/${AppState.githubGistId}`, {
+        headers: {
+            'Authorization': `Bearer ${AppState.githubToken}`,
+            'Accept': 'application/vnd.github+json'
+        }
+    });
+    if (!res.ok) throw new Error(`HTTP error ${res.status}`);
+    return res.json();
+}
+
+/**
+ * Reads one file out of a Gist response.
+ *
+ * The API inlines at most 1MB; a larger file comes back flagged with its content
+ * omitted and has to be read from raw_url. Every file in this Gist can cross
+ * that line, so the fallback belongs here rather than at one call site.
+ *
+ * @returns {Promise<string|null>} null when the file does not exist.
+ */
+async function readGistFile(gist, filename) {
+    const file = gist.files && gist.files[filename];
+    if (!file) return null;
+
+    let content = file.content;
+    if (file.truncated || content === undefined || content === null) {
+        if (!file.raw_url) throw new Error(`${filename} truncated without raw_url`);
+        const rawRes = await fetch(file.raw_url);
+        if (!rawRes.ok) throw new Error(`HTTP error ${rawRes.status}`);
+        content = await rawRes.text();
+    }
+    return content;
+}
+
+/** Reads and parses one file. null when absent or empty. */
+async function readGistJSON(gist, filename) {
+    const content = await readGistFile(gist, filename);
+    if (content === null || !content.trim()) return null;
+    return JSON.parse(content);
+}
+
+/**
+ * Reassembles the logical payload from the files it is spread across, so
+ * everything downstream - above all mergeSyncData() - keeps seeing one object.
+ *
+ * @returns {Promise<object|null>} null when the Gist holds no backup file.
+ */
+export async function readRemotePayload(gist) {
+    const progress = await readGistJSON(gist, GIST_FILENAME);
+    if (!progress) return null;
+
+    const payload = { ...progress };
+    const inline = Array.isArray(progress.sources) ? progress.sources : [];
+    const sourcesFile = await readGistJSON(gist, SOURCES_FILENAME);
+    const split = sourcesFile && Array.isArray(sourcesFile.sources) ? sourcesFile.sources : null;
+
+    if (!split) {
+        // Old single-file layout, or a Gist this build has never pushed to.
+        payload.sources = inline;
+        return payload;
+    }
+
+    /* A device still running an older build writes the whole payload, sources
+       included, into the backup file - and does so without touching the sources
+       file. Whichever copy was written last is the live one. The next push from
+       this build rewrites the backup file without a sources key, which clears
+       the duplicate. */
+    const inlineAt = progress.lastUpdated || 0;
+    const splitAt = sourcesFile.lastUpdated || 0;
+    payload.sources = (inline.length > 0 && inlineAt > splitAt) ? inline : split;
+    // The freshness of the remote side as a whole, which the reset guards in
+    // mergeSyncData() compare local timestamps against.
+    payload.lastUpdated = Math.max(inlineAt, splitAt);
+    return payload;
 }
 
 /**
@@ -260,7 +417,7 @@ async function completeLoginWithToken(rawToken) {
 
     // 4. Perform initial sync
     if (shouldReplaceLocalData) {
-        await pullRemoteGistOnly(token, gistId);
+        await pullRemoteGistOnly();
     } else {
         await syncFromGist({ silent: false });
     }
@@ -307,25 +464,16 @@ export async function logout() {
 }
 
 /**
- * Fetches remote Gist data and overwrites local state cleanly without merging previous account data back to Gist.
+ * Fetches remote Gist data and overwrites local state cleanly without merging
+ * previous account data back to Gist. Reads through AppState, which the caller
+ * has already pointed at the new account.
  */
-async function pullRemoteGistOnly(token, gistId) {
+async function pullRemoteGistOnly() {
     try {
-        const res = await fetch(`${GITHUB_API_BASE}/gists/${gistId}`, {
-            headers: {
-                'Authorization': `Bearer ${token}`,
-                'Accept': 'application/vnd.github+json'
-            }
-        });
+        const gist = await fetchGist();
+        const remotePayload = await readRemotePayload(gist);
 
-        if (!res.ok) return;
-
-        const gist = await res.json();
-        const file = gist.files && gist.files[GIST_FILENAME];
-
-        if (file && file.content) {
-            const remotePayload = JSON.parse(file.content);
-
+        if (remotePayload) {
             if (Array.isArray(remotePayload.sources)) {
                 AppState.sources = remotePayload.sources;
                 import('../features/sources/sources-service.js').then(m => {
@@ -549,11 +697,9 @@ async function findOrCreateGist(token) {
         body: JSON.stringify({
             description: GIST_DESCRIPTION,
             public: false,
-            files: {
-                [GIST_FILENAME]: {
-                    content: JSON.stringify(getSyncPayload(), null, 2)
-                }
-            }
+            // Both files from the start, so a Gist created by this build is
+            // never in the old single-file shape.
+            files: serialiseFiles(ALL_SCOPES)
         })
     });
 
@@ -578,13 +724,27 @@ function rememberGistUrl(url) {
 
 /**
  * Pushes local data to GitHub Gist.
+ *
+ * @param {{silent?: boolean, scopes?: string|string[]}} [options]
+ *        `scopes` limits the push to the files that actually changed; omitted
+ *        means every file, which is what a merge or a reset needs.
  */
 export async function syncToGist(options = {}) {
-    if (!AppState.githubToken || !AppState.githubGistId || isSyncing) return;
+    if (!AppState.githubToken || !AppState.githubGistId) return false;
+
+    const scopes = normaliseScopes(options.scopes);
+
+    if (isSyncing) {
+        /* A push that arrives mid-flight used to be dropped outright. With a
+           scoped payload the dropped push may have been the only one carrying
+           its file, so re-queue rather than lose it. */
+        scopes.forEach(s => pendingScopes.add(s));
+        armSyncTimer(1500);
+        return false;
+    }
 
     setSyncingState(true);
     try {
-        const payload = getSyncPayload();
         const res = await fetch(`${GITHUB_API_BASE}/gists/${AppState.githubGistId}`, {
             method: 'PATCH',
             headers: {
@@ -594,11 +754,9 @@ export async function syncToGist(options = {}) {
             },
             body: JSON.stringify({
                 description: GIST_DESCRIPTION,
-                files: {
-                    [GIST_FILENAME]: {
-                        content: JSON.stringify(payload, null, 2)
-                    }
-                }
+                // Only the named files are touched; the ones left out keep the
+                // content they already have.
+                files: serialiseFiles(scopes)
             })
         });
 
@@ -632,22 +790,10 @@ export async function syncFromGist(options = {}) {
 
     setSyncingState(true);
     try {
-        const res = await fetch(`${GITHUB_API_BASE}/gists/${AppState.githubGistId}`, {
-            headers: {
-                'Authorization': `Bearer ${AppState.githubToken}`,
-                'Accept': 'application/vnd.github+json'
-            }
-        });
+        const gist = await fetchGist();
+        const remotePayload = await readRemotePayload(gist);
 
-        if (!res.ok) {
-            throw new Error(`HTTP error ${res.status}`);
-        }
-
-        const gist = await res.json();
-        const file = gist.files && gist.files[GIST_FILENAME];
-
-        if (file && file.content) {
-            const remotePayload = JSON.parse(file.content);
+        if (remotePayload) {
             const localPayload = getSyncPayload();
 
             const merged = mergeSyncData(localPayload, remotePayload);
@@ -1190,30 +1336,8 @@ export function getGistUrl() {
 export async function fetchArchiveFile() {
     if (!canUseRemoteArchive()) throw new Error('GitHub archive unavailable');
 
-    const res = await fetch(`${GITHUB_API_BASE}/gists/${AppState.githubGistId}`, {
-        headers: {
-            'Authorization': `Bearer ${AppState.githubToken}`,
-            'Accept': 'application/vnd.github+json'
-        }
-    });
-    if (!res.ok) throw new Error(`HTTP error ${res.status}`);
-
-    const gist = await res.json();
-    const file = gist.files && gist.files[ARCHIVE_FILENAME];
-    if (!file) return {};
-
-    // The API inlines at most 1MB; larger files come back flagged and must be
-    // read from raw_url or the archive would silently lose its tail.
-    let content = file.content;
-    if (file.truncated || content === undefined || content === null) {
-        if (!file.raw_url) throw new Error('Archive file truncated without raw_url');
-        const rawRes = await fetch(file.raw_url);
-        if (!rawRes.ok) throw new Error(`HTTP error ${rawRes.status}`);
-        content = await rawRes.text();
-    }
-
-    if (!content.trim()) return {};
-    const parsed = JSON.parse(content);
+    const gist = await fetchGist();
+    const parsed = await readGistJSON(gist, ARCHIVE_FILENAME);
     return (parsed && typeof parsed === 'object' && !Array.isArray(parsed)) ? parsed : {};
 }
 
@@ -1249,16 +1373,39 @@ export async function writeArchiveFile(archiveMap) {
     return true;
 }
 
-/**
- * Debounced background sync trigger (default 1.5s delay, customizable).
- */
-export function scheduleSync(delayMs = 1500) {
-    if (!AppState.githubToken || !AppState.githubGistId) return;
-
+/** (Re)starts the debounce window for whatever scopes are queued. */
+function armSyncTimer(delayMs) {
     clearTimeout(syncTimer);
     syncTimer = setTimeout(() => {
-        syncToGist({ silent: true });
+        const scopes = [...pendingScopes];
+        pendingScopes.clear();
+        syncToGist({ silent: true, scopes });
     }, delayMs);
+}
+
+/**
+ * Debounced background sync trigger (default 1.5s delay, customizable).
+ *
+ * @param {number} [delayMs]
+ * @param {string|string[]} [scope] Which file the caller changed - see
+ *        SyncScope. Omitting it pushes everything, which is correct but costs
+ *        the whole question library on a save that never touched it, so the
+ *        frequent callers in state.js name their scope. Scopes queued inside one
+ *        debounce window are pushed together.
+ */
+export function scheduleSync(delayMs = 1500, scope) {
+    if (!AppState.githubToken || !AppState.githubGistId) return;
+
+    normaliseScopes(scope).forEach(s => pendingScopes.add(s));
+    armSyncTimer(delayMs);
+}
+
+/** Test seam: drops the debounced push and whatever scopes it was carrying. */
+export function _resetSyncQueue() {
+    clearTimeout(syncTimer);
+    syncTimer = null;
+    pendingScopes = new Set();
+    isSyncing = false;
 }
 
 /**

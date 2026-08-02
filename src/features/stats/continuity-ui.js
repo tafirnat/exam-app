@@ -237,9 +237,9 @@ function updateCometRing(container, spinGroup, progress, color) {
         blurEl.style.background = [
             'conic-gradient(from 0deg,',
             `  transparent 0%,`,
-            `  transparent 20%,`,
-            `  ${rgba(0)} 40%,`,
-            `  ${rgba(0.4)} 75%,`,
+            `  transparent 70%,`,
+            `  ${rgba(0)} 80%,`,
+            `  ${rgba(0.4)} 95%,`,
             `  ${rgb} 100%`,
             ')'
         ].join(' ');
@@ -251,9 +251,9 @@ function updateCometRing(container, spinGroup, progress, color) {
         sharpEl.style.background = [
             'conic-gradient(from 0deg,',
             `  transparent 0%,`,
-            `  transparent 40%,`,
-            `  ${rgba(0)} 60%,`,
-            `  ${rgba(0.8)} 95%,`,
+            `  transparent 75%,`,
+            `  ${rgba(0)} 85%,`,
+            `  ${rgba(0.8)} 98%,`,
             `  ${rgb} 100%`,
             ')'
         ].join(' ');

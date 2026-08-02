@@ -3,7 +3,7 @@ import {
     archivedSources, trackDeletedSource, trackDeletedFolder
 } from '../../core/state.js';
 import {
-    canUseRemoteArchive, fetchArchiveFile, writeArchiveFile, getGistUrl, scheduleSync
+    canUseRemoteArchive, fetchArchiveFile, writeArchiveFile, getGistUrl, scheduleSync, SyncScope
 } from '../../core/github-sync.js';
 import { showToast, showAlert, showConfirm, escapeHTML } from '../../core/utils.js';
 import { t } from '../../core/i18n.js';
@@ -597,8 +597,9 @@ export function showArchiveModal() {
         if (closeBtn) closeBtn.onclick = null;
         if (doneBtn) doneBtn.onclick = null;
         overlay.onclick = null;
-        // Archived entries changed the payload; make sure the backup file follows.
-        scheduleSync(300);
+        /* Archiving rewrites source records and can delete them outright, which
+           moves both the library and the tombstone list - so both files. */
+        scheduleSync(300, [SyncScope.SOURCES, SyncScope.PROGRESS]);
     };
     if (closeBtn) closeBtn.onclick = close;
     if (doneBtn) doneBtn.onclick = close;
