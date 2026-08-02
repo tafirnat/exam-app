@@ -124,7 +124,22 @@ export const AppState = {
     presetSessions: safeJSONParse('focus_app_preset_sessions', {}),
     activePresetId: null,
     continuityConfig: safeJSONParse('focus_app_continuity_config', {
-        freezeTokens: { total: 2, remaining: 2, weekStart: null },
+        // Genel Seri dondurma tokenleri
+        freezeTokens: {
+            total: 1,
+            remaining: 1,
+            tier1Earned: false,
+            tier2Earned: false,
+            initialized: true
+        },
+        // Odak Seri dondurma tokenleri
+        focusFreezeTokens: {
+            total: 1,
+            remaining: 1,
+            tier1Earned: false,
+            tier2Earned: false,
+            initialized: true
+        },
         focusPools: [],
         focusSources: [],
         focusSourceNames: {},
@@ -190,7 +205,22 @@ export function clearLocalStudyData() {
     AppState.currentSourceKey = null;
     AppState.presetSessions = {};
     AppState.continuityConfig = {
-        freezeTokens: { total: 2, remaining: 2, weekStart: null },
+        // Genel Seri dondurma tokenleri
+        freezeTokens: {
+            total: 1,
+            remaining: 1,
+            tier1Earned: false,
+            tier2Earned: false,
+            initialized: true
+        },
+        // Odak Seri dondurma tokenleri
+        focusFreezeTokens: {
+            total: 1,
+            remaining: 1,
+            tier1Earned: false,
+            tier2Earned: false,
+            initialized: true
+        },
         focusPools: [],
         focusSources: [],
         focusSourceNames: {},

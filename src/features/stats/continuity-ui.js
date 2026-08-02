@@ -238,22 +238,28 @@ function renderGlobalSlide(liveQ) {
         }
     }
     
-    // Tokens - ALWAYS render both tokens (Normal & Super/Joker)
+    // Tokens — read real state from AppState
     const tokensEl = document.getElementById('continuityTokens');
     tokensEl.innerHTML = '';
-    
-    const stats7 = getFsrsStatsForRange(7);
-    const stats14 = getFsrsStatsForRange(14);
 
-    tokensEl.title = `Kalan Dondurma: 0/2 (Test Modu: Pasif)\n` +
-        `• 1. Mavi Kar Tanesi: Pasif\n` +
-        `• 2. Kızıl Kar Tanesi: Pasif`;
+    const globalTokens = AppState.continuityConfig?.freezeTokens || {};
+    const globalRemaining = globalTokens.remaining ?? 0;
+    const globalTier2Earned = globalTokens.tier2Earned ?? false;
 
-    for (let i = 0; i < 2; i++) {
-        const isActive = false;
-        const svg = createTokenSvg(i, isActive);
-        tokensEl.appendChild(svg);
-    }
+    // Index 0 = Mavi Kar Tanesi: active when there is at least one token remaining
+    const blueActive = globalRemaining > 0;
+    // Index 1 = Kızıl Kar Tanesi: active when tier2 is earned and at least one token remains
+    const crimsonActive = globalTier2Earned && globalRemaining > 0;
+
+    const blueLabel   = blueActive   ? 'Aktif' : 'Pasif';
+    const crimsonLabel = crimsonActive ? 'Aktif' : 'Pasif';
+
+    tokensEl.title = `Kalan Dondurma: ${globalRemaining}/${globalTokens.total ?? 1}\n` +
+        `• 1. Mavi Kar Tanesi: ${blueLabel}\n` +
+        `• 2. Kızıl Kar Tanesi: ${crimsonLabel}`;
+
+    tokensEl.appendChild(createTokenSvg(0, blueActive));
+    tokensEl.appendChild(createTokenSvg(1, crimsonActive));
 
     renderStreakRunButton('global');
 }
@@ -307,21 +313,28 @@ function renderFocusSlide() {
         }
     }
 
-    // Focus Tokens - ALWAYS render both tokens (Normal & Super/Joker)
+    // Focus Tokens — read real state from AppState
     const tokensEl = document.getElementById('focusContinuityTokens');
     tokensEl.innerHTML = '';
-    const stats7 = getFocusStatsForRange(7);
-    const stats14 = getFocusStatsForRange(14);
 
-    tokensEl.title = `Kalan Odak Dondurma: 2/2 (Test Modu: Aktif)\n` +
-        `• 1. Mavi Kar Tanesi: Aktif\n` +
-        `• 2. Kızıl Kar Tanesi: Aktif`;
+    const focusTokens = AppState.continuityConfig?.focusFreezeTokens || {};
+    const focusRemaining = focusTokens.remaining ?? 0;
+    const focusTier2Earned = focusTokens.tier2Earned ?? false;
 
-    for (let i = 0; i < 2; i++) {
-        const isActive = true;
-        const svg = createTokenSvg(i, isActive);
-        tokensEl.appendChild(svg);
-    }
+    // Index 0 = Mavi Kar Tanesi: active when there is at least one focus token remaining
+    const focusBlueActive    = focusRemaining > 0;
+    // Index 1 = Kızıl Kar Tanesi: active when tier2 is earned and at least one token remains
+    const focusCrimsonActive = focusTier2Earned && focusRemaining > 0;
+
+    const focusBlueLabel    = focusBlueActive    ? 'Aktif' : 'Pasif';
+    const focusCrimsonLabel = focusCrimsonActive ? 'Aktif' : 'Pasif';
+
+    tokensEl.title = `Kalan Odak Dondurma: ${focusRemaining}/${focusTokens.total ?? 1}\n` +
+        `• 1. Mavi Kar Tanesi: ${focusBlueLabel}\n` +
+        `• 2. Kızıl Kar Tanesi: ${focusCrimsonLabel}`;
+
+    tokensEl.appendChild(createTokenSvg(0, focusBlueActive));
+    tokensEl.appendChild(createTokenSvg(1, focusCrimsonActive));
 
     renderStreakRunButton('focus');
 }

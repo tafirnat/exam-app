@@ -31,6 +31,7 @@ checkIDs.cjs
 output.txt
 build_error.log
 test_results*.json
+test_visualization_suite.json
 
 # Agent & Local Tools
 .agents/
