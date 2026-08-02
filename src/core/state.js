@@ -39,90 +39,16 @@ export function createUncategorizedFolderRecord() {
     };
 }
 
-export const AppState = {
-    rawQuestions: [],
-    currentTest: [],
-    currentIndex: 0,
-    userAnswers: {},
-    isAnswerChecked: {},
-    shuffledOptionsMap: {},
-    stats: safeJSONParse('focus_app_stats_local', {}),
-    folders: (() => {
-        let folders = safeJSONParse('focus_app_folders', null);
-        if (!Array.isArray(folders)) folders = [];
-
-        let hasUncategorized = false;
-        folders = folders.map(f => {
-            if (f.id === 'default-folder') {
-                hasUncategorized = true;
-                return { ...f, id: UNCATEGORIZED_FOLDER_ID, name: 'Kategorisiz Kaynaklar', color: '#8a99ad', isSystem: true };
-            }
-            if (f.id === UNCATEGORIZED_FOLDER_ID) {
-                hasUncategorized = true;
-                return { ...f, name: 'Kategorisiz Kaynaklar', color: '#8a99ad', isSystem: true };
-            }
-            return f;
-        });
-
-        if (!hasUncategorized) {
-            folders.unshift(createUncategorizedFolderRecord());
-        }
-
-        persist('focus_app_folders', folders);
-        return folders;
-    })(),
-    // Starts empty on a fresh install; main.js fetches the sample for the
-    // detected language right after boot and renders it in.
-    sources: (() => {
-        const sources = safeJSONParse('focus_app_sources', null);
-        return Array.isArray(sources) ? sources.filter(s => s && s.questions && Array.isArray(s.questions)) : [];
-    })(),
-    totalStats: safeJSONParse('focus_app_stats_global', {}),
-    currentSourceKey: readString('focus_app_current_source') || null,
-    examTitle: 'Exam App',
-    language: detectLanguage(),
-    translationTarget: detectTranslationTarget(),
-    translationEnabled: safeJSONParse('focus_app_translation_enabled', true),
-    recentTests: safeJSONParse('focus_app_recent_tests', []).slice(0, 10),
-    testTracking: null,
-    previewQuestion: null,
-    searchKeyword: '',
-    lastStatsScrollPos: 0,
-    activeStatsFilter: 'all',
-    activeStatsSortField: 'original', // 'original', 'coeff', 'success', 'wrong'
-    activeStatsSortDir: 'asc', // 'asc', 'desc'
-    customAIPrompt: readString('focus_app_custom_ai_prompt', '') || '',
-    aiProviders: safeJSONParse('focus_app_ai_providers', DEFAULT_AI_PROVIDERS),
-    ttsEnabled: safeJSONParse('focus_app_tts_enabled', false),
-    ttsAutoplay: safeJSONParse('focus_app_tts_autoplay', false),
-    ttsSpeed: readFloat('focus_app_tts_speed', 0.5),
-    timerStopwatchEnabled: safeJSONParse('focus_app_timer_stopwatch', false),
-    timerCountdownEnabled: safeJSONParse('focus_app_timer_countdown', false),
-    timerCountdownLimit: readInt('focus_app_timer_limit', 59),
-    timerAutoCheckEnabled: safeJSONParse('focus_app_timer_auto_check', true), // Default to true
-    currentTtsVoice: null, // Randomly selected at test start
-    navigationSourceView: null, // View to return to from Tag Mode
-    activeTagFilter: null, // Currently active tag Filter for stats view
-    questionMap: {}, // composite key (sourceId_questionId) → question object
-    githubToken: readString('focus_app_github_token') || null,
-    githubGistId: readString('focus_app_github_gist_id') || null,
-    githubUser: safeJSONParse('focus_app_github_user', null),
-    lastGithubUser: readString('focus_app_last_github_user') || null,
-    lastSyncTime: readInt('focus_app_last_sync', 0),
-    deletedSourceIds: safeJSONParse('focus_app_deleted_sources', []),
-    deletedFolderIds: safeJSONParse('focus_app_deleted_folders', []),
-    quickPresets: safeJSONParse('focus_app_quick_presets', []),
-    deletedQuickPresetIds: safeJSONParse('focus_app_deleted_quick_presets', []),
-    // Timestamp of the last destructive reset on this device (sources/full reset).
-    lastResetTimestamp: readInt('focus_app_last_reset', 0),
-    // Timestamp of the last progress reset on this device (progress/full reset).
-    // Used by mergeSyncData() to prevent stale stats, study activity, streaks
-    // and continuity data from a remote Gist overwriting a deliberate clear.
-    lastProgressResetTimestamp: readInt('focus_app_last_progress_reset', 0),
-    githubGistUrl: readString('focus_app_github_gist_url') || null,
-    presetSessions: safeJSONParse('focus_app_preset_sessions', {}),
-    activePresetId: null,
-    continuityConfig: safeJSONParse('focus_app_continuity_config', {
+/**
+ * The continuity record a device starts from: two independent freeze-token
+ * tracks, the focus selection and the notification settings.
+ *
+ * One function rather than a literal per call site, because a fresh install, a
+ * factory reset and a progress reset all have to produce exactly this shape and
+ * three hand-maintained copies drift.
+ */
+export function createDefaultContinuityConfig() {
+    return {
         // Genel Seri dondurma tokenleri
         freezeTokens: {
             total: 1,
@@ -160,9 +86,190 @@ export const AppState = {
             optInDismissedAt: null,      // Opt-in "Hayır" tarihi
             optInFocusDismissedAt: null  // Odak opt-in "Hayır" tarihi
         }
-    }),
-    studyActivity: safeJSONParse('focus_app_study_activity', {})
+    };
+}
+
+/**
+ * The whole of the app's state, in one object every module holds a reference to.
+ * It is never reassigned - only mutated - which is what lets those references
+ * stay valid for the life of the page.
+ *
+ * Declared here with defaults only: what a fresh install looks like. Nothing at
+ * this level touches storage. Reading the user's data is initState()'s job and
+ * happens once, from boot, at a point the caller chooses.
+ */
+export const AppState = {
+    // ── Session-only. Never stored, never restored. ─────────────────────────
+    rawQuestions: [],
+    currentTest: [],
+    currentIndex: 0,
+    userAnswers: {},
+    isAnswerChecked: {},
+    shuffledOptionsMap: {},
+    examTitle: 'Exam App',
+    testTracking: null,
+    previewQuestion: null,
+    searchKeyword: '',
+    lastStatsScrollPos: 0,
+    activeStatsFilter: 'all',
+    activeStatsSortField: 'original', // 'original', 'coeff', 'success', 'wrong'
+    activeStatsSortDir: 'asc', // 'asc', 'desc'
+    currentTtsVoice: null, // Randomly selected at test start
+    navigationSourceView: null, // View to return to from Tag Mode
+    activeTagFilter: null, // Currently active tag Filter for stats view
+    questionMap: {}, // composite key (sourceId_questionId) → question object
+    activePresetId: null,
+
+    // ── Loaded from storage by initState(). ─────────────────────────────────
+    // The values below are what a device that has never run the app holds, so
+    // anything that reads AppState before boot sees an empty app rather than
+    // undefined.
+    stats: {},
+    folders: [],
+    // Empty on a fresh install; main.js fetches the sample for the detected
+    // language right after boot and renders it in.
+    sources: [],
+    totalStats: {},
+    currentSourceKey: null,
+    language: 'en',
+    translationTarget: 'de',
+    translationEnabled: true,
+    recentTests: [],
+    customAIPrompt: '',
+    aiProviders: DEFAULT_AI_PROVIDERS,
+    ttsEnabled: false,
+    ttsAutoplay: false,
+    ttsSpeed: 0.5,
+    timerStopwatchEnabled: false,
+    timerCountdownEnabled: false,
+    timerCountdownLimit: 59,
+    timerAutoCheckEnabled: true, // Default to true
+    githubToken: null,
+    githubGistId: null,
+    githubUser: null,
+    lastGithubUser: null,
+    lastSyncTime: 0,
+    githubGistUrl: null,
+    deletedSourceIds: [],
+    deletedFolderIds: [],
+    quickPresets: [],
+    deletedQuickPresetIds: [],
+    // Timestamp of the last destructive reset on this device (sources/full reset).
+    lastResetTimestamp: 0,
+    // Timestamp of the last progress reset on this device (progress/full reset).
+    // Used by mergeSyncData() to prevent stale stats, study activity, streaks
+    // and continuity data from a remote Gist overwriting a deliberate clear.
+    lastProgressResetTimestamp: 0,
+    presetSessions: {},
+    continuityConfig: createDefaultContinuityConfig(),
+    studyActivity: {}
 };
+
+/**
+ * Reads the folder list and repairs it on the way in: the pre-rename
+ * `default-folder` becomes the uncategorised system folder, and a library
+ * missing that folder gets one.
+ *
+ * The repair is written back only when it actually changed something.
+ * Unconditionally persisting here is what used to put a storage *write* into
+ * module evaluation - importing this file was enough to touch the user's disk.
+ */
+function loadFolders() {
+    let folders = readJSON('focus_app_folders', null);
+    if (!Array.isArray(folders)) folders = [];
+
+    let hasUncategorized = false;
+    folders = folders.map(f => {
+        if (f.id === 'default-folder') {
+            hasUncategorized = true;
+            return { ...f, id: UNCATEGORIZED_FOLDER_ID, name: 'Kategorisiz Kaynaklar', color: '#8a99ad', isSystem: true };
+        }
+        if (f.id === UNCATEGORIZED_FOLDER_ID) {
+            hasUncategorized = true;
+            return { ...f, name: 'Kategorisiz Kaynaklar', color: '#8a99ad', isSystem: true };
+        }
+        return f;
+    });
+
+    if (!hasUncategorized) {
+        folders.unshift(createUncategorizedFolderRecord());
+    }
+
+    persistIfChanged('focus_app_folders', folders);
+    return folders;
+}
+
+let stateInitialized = false;
+
+/**
+ * Loads the user's data into AppState. Call once, from boot, before anything
+ * renders or syncs.
+ *
+ * This used to happen implicitly, in the property initialisers of the AppState
+ * literal, which meant the mere act of importing this module read the whole of
+ * localStorage and wrote a folder repair back to it. Two things came out of
+ * that: the boot order was whatever the import graph happened to be, and every
+ * test file had to stand up a jsdom localStorage *before* its first import or
+ * watch the module blow up. Making the read an explicit call is also what makes
+ * a future asynchronous storage backend possible - there was previously no
+ * place to await.
+ *
+ * Idempotent: a second call is ignored unless `force` says otherwise, which is
+ * for tests that change what is stored and want it read again.
+ *
+ * @returns {typeof AppState} the same object, now populated.
+ */
+export function initState({ force = false } = {}) {
+    if (stateInitialized && !force) return AppState;
+
+    const sources = readJSON('focus_app_sources', null);
+
+    Object.assign(AppState, {
+        stats: readJSON('focus_app_stats_local', {}),
+        folders: loadFolders(),
+        sources: Array.isArray(sources)
+            ? sources.filter(s => s && s.questions && Array.isArray(s.questions))
+            : [],
+        totalStats: readJSON('focus_app_stats_global', {}),
+        currentSourceKey: readString('focus_app_current_source') || null,
+        language: detectLanguage(),
+        translationTarget: detectTranslationTarget(),
+        translationEnabled: readJSON('focus_app_translation_enabled', true),
+        recentTests: readJSON('focus_app_recent_tests', []).slice(0, 10),
+        customAIPrompt: readString('focus_app_custom_ai_prompt', '') || '',
+        aiProviders: readJSON('focus_app_ai_providers', DEFAULT_AI_PROVIDERS),
+        ttsEnabled: readJSON('focus_app_tts_enabled', false),
+        ttsAutoplay: readJSON('focus_app_tts_autoplay', false),
+        ttsSpeed: readFloat('focus_app_tts_speed', 0.5),
+        timerStopwatchEnabled: readJSON('focus_app_timer_stopwatch', false),
+        timerCountdownEnabled: readJSON('focus_app_timer_countdown', false),
+        timerCountdownLimit: readInt('focus_app_timer_limit', 59),
+        timerAutoCheckEnabled: readJSON('focus_app_timer_auto_check', true),
+        githubToken: readString('focus_app_github_token') || null,
+        githubGistId: readString('focus_app_github_gist_id') || null,
+        githubUser: readJSON('focus_app_github_user', null),
+        lastGithubUser: readString('focus_app_last_github_user') || null,
+        lastSyncTime: readInt('focus_app_last_sync', 0),
+        githubGistUrl: readString('focus_app_github_gist_url') || null,
+        deletedSourceIds: readJSON('focus_app_deleted_sources', []),
+        deletedFolderIds: readJSON('focus_app_deleted_folders', []),
+        quickPresets: readJSON('focus_app_quick_presets', []),
+        deletedQuickPresetIds: readJSON('focus_app_deleted_quick_presets', []),
+        lastResetTimestamp: readInt('focus_app_last_reset', 0),
+        lastProgressResetTimestamp: readInt('focus_app_last_progress_reset', 0),
+        presetSessions: readJSON('focus_app_preset_sessions', {}),
+        continuityConfig: readJSON('focus_app_continuity_config', createDefaultContinuityConfig()),
+        studyActivity: readJSON('focus_app_study_activity', {})
+    });
+
+    stateInitialized = true;
+    return AppState;
+}
+
+/** Whether the stored data has been loaded yet. */
+export function isStateInitialized() {
+    return stateInitialized;
+}
 
 /**
  * Sources the user still works with: everything except the archive.
@@ -227,45 +334,7 @@ export function clearLocalStudyData() {
     AppState.deletedQuickPresetIds = allDeletedPresetIds;
     AppState.currentSourceKey = null;
     AppState.presetSessions = {};
-    AppState.continuityConfig = {
-        // Genel Seri dondurma tokenleri
-        freezeTokens: {
-            total: 1,
-            remaining: 1,
-            tier1Earned: false,
-            tier2Earned: false,
-            initialized: true
-        },
-        // Odak Seri dondurma tokenleri
-        focusFreezeTokens: {
-            total: 1,
-            remaining: 1,
-            tier1Earned: false,
-            tier2Earned: false,
-            initialized: true
-        },
-        focusPools: [],
-        focusSources: [],
-        focusSourceNames: {},
-        notificationSettings: {
-            enabled: false,
-            focusEnabled: false,
-            quietHoursStart: '22:00',
-            quietHoursEnd: '08:00',
-            dailyScheduleHour: 9,
-            dailyScheduleMinute: 0,
-            focusScheduleHour: 19,
-            focusScheduleMinute: 0,
-            lastNotifiedDate: null,
-            lastFocusNotifiedDate: null,
-            ignoreStreakA: 0,
-            ignoreStreakB: 0,
-            pausedUntilA: null,
-            pausedUntilB: null,
-            optInDismissedAt: null,
-            optInFocusDismissedAt: null
-        }
-    };
+    AppState.continuityConfig = createDefaultContinuityConfig();
     AppState.studyActivity = {};
     // Record the reset wall-clock time so mergeSyncData() can recognise that
     // an intentionally-empty local state must not be overwritten by remote data
@@ -314,42 +383,15 @@ export function clearProgressData() {
     AppState.recentTests = [];
     AppState.presetSessions = {};
     AppState.studyActivity = {};
+    /* A progress reset clears the streak, not the setup: the chosen focus
+       sources and the notification preferences are configuration the user made
+       deliberately and did not ask to lose. */
     AppState.continuityConfig = {
-        freezeTokens: {
-            total: 1,
-            remaining: 1,
-            tier1Earned: false,
-            tier2Earned: false,
-            initialized: true
-        },
-        focusFreezeTokens: {
-            total: 1,
-            remaining: 1,
-            tier1Earned: false,
-            tier2Earned: false,
-            initialized: true
-        },
-        focusPools: [],
+        ...createDefaultContinuityConfig(),
         focusSources: AppState.continuityConfig?.focusSources || [],
         focusSourceNames: AppState.continuityConfig?.focusSourceNames || {},
-        notificationSettings: AppState.continuityConfig?.notificationSettings || {
-            enabled: false,
-            focusEnabled: false,
-            quietHoursStart: '22:00',
-            quietHoursEnd: '08:00',
-            dailyScheduleHour: 9,
-            dailyScheduleMinute: 0,
-            focusScheduleHour: 19,
-            focusScheduleMinute: 0,
-            lastNotifiedDate: null,
-            lastFocusNotifiedDate: null,
-            ignoreStreakA: 0,
-            ignoreStreakB: 0,
-            pausedUntilA: null,
-            pausedUntilB: null,
-            optInDismissedAt: null,
-            optInFocusDismissedAt: null
-        }
+        notificationSettings: AppState.continuityConfig?.notificationSettings
+            || createDefaultContinuityConfig().notificationSettings
     };
     // Record the progress-reset wall-clock time so mergeSyncData() knows not to
     // pull back stats / activity / continuity data that predates this clear.

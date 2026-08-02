@@ -5936,6 +5936,25 @@ body.dnd-active {
     box-shadow: inset 0 2px 12px rgba(0, 0, 0, 0.4);
 }
 
+@keyframes ringClockwise {
+    from {
+        transform: rotate(0deg);
+    }
+    to {
+        transform: rotate(360deg);
+    }
+}
+
+.streak-ring-spin {
+    position: absolute;
+    inset: 0;
+    width: 92px;
+    height: 92px;
+    pointer-events: none;
+    transform-origin: center center;
+    animation: ringClockwise 4s linear infinite;
+}
+
 /* Streak ring SVG overlay */
 .streak-ring-svg {
     position: absolute;

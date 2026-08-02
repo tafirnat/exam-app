@@ -15,6 +15,9 @@ before(async () => {
     AppState = stateModule.AppState;
     UNCATEGORIZED_FOLDER_ID = stateModule.UNCATEGORIZED_FOLDER_ID;
     createUncategorizedFolderRecord = stateModule.createUncategorizedFolderRecord;
+    /* Importing no longer loads the user's data - boot does, explicitly. These
+       cases are about what that load produces, so they have to ask for it. */
+    stateModule.initState();
 
     const archiveModule = await import('../src/features/sources/archive.js');
     archiveFolder = archiveModule.archiveFolder;

@@ -1,4 +1,4 @@
-import { AppState, saveStats, saveSources, saveCurrentSource, saveCustomAIPrompt, saveAiProviders, DEFAULT_AI_PROVIDERS, saveActiveTest, clearActiveTest, clearLocalStudyData, clearProgressData, clearSourcesData, SAMPLE_LOADED_KEY, findMatchingPresetId } from './core/state.js';
+import { AppState, initState, saveStats, saveSources, saveCurrentSource, saveCustomAIPrompt, saveAiProviders, DEFAULT_AI_PROVIDERS, saveActiveTest, clearActiveTest, clearLocalStudyData, clearProgressData, clearSourcesData, SAMPLE_LOADED_KEY, findMatchingPresetId } from './core/state.js';
 import { initTheme, toggleTheme } from './core/theme.js';
 import { updateStaticTranslations, t, targetLanguages, translations } from './core/i18n.js';
 import { showToast, showConfirm, getCorrectAnswers, highlightText, escapeHTML } from './core/utils.js';
@@ -124,7 +124,13 @@ const initApp = () => {
     if (isAppInitialized) return;
     isAppInitialized = true;
     console.log('initApp start');
-    
+
+    /* First, and before anything reads AppState: loading the user's data is an
+       explicit step now, not something that happened while the import graph was
+       being evaluated. Everything below - migrations, sync, the first paint -
+       assumes it has already run. */
+    initState();
+
     // Backwards compatibility helper to make contenteditable divs act like textareas
     const setupDivInput = (id) => {
         const el = document.getElementById(id);

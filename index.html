@@ -558,11 +558,13 @@
                     <div class="card continuity-slide active" id="continuityCard">
                         <div style="display: flex; gap: 0.85rem; align-items: flex-start;">
                             <div id="globalRingContainer" class="streak-ring-container" title="Genel Seri İlerlemesi">
-                                <svg class="streak-ring-svg" viewBox="0 0 92 92" width="92" height="92">
-                                    <circle class="streak-ring-track" cx="46" cy="46" r="42.5" fill="none" stroke="#2a3441" stroke-width="7" />
-                                    <circle class="streak-ring-arc" id="globalRingArc" cx="46" cy="46" r="42.5" fill="none" stroke="var(--trend-line-normal, #0891b2)" stroke-width="7" stroke-linecap="round" stroke-dasharray="267.035" stroke-dashoffset="267.035" transform="rotate(-90 46 46)" />
-                                </svg>
-                                <div class="ring-head-dot" id="globalRingHead"></div>
+                                <div class="streak-ring-spin" id="globalRingSpinGroup">
+                                    <svg class="streak-ring-svg" viewBox="0 0 92 92" width="92" height="92">
+                                        <circle class="streak-ring-track" cx="46" cy="46" r="42.5" fill="none" stroke="#2a3441" stroke-width="7" />
+                                        <circle class="streak-ring-arc" id="globalRingArc" cx="46" cy="46" r="42.5" fill="none" stroke="var(--trend-line-normal, #0891b2)" stroke-width="7" stroke-linecap="round" stroke-dasharray="267.035" stroke-dashoffset="267.035" transform="rotate(-90 46 46)" />
+                                    </svg>
+                                    <div class="ring-head-dot" id="globalRingHead"></div>
+                                </div>
                                 <!-- Inner Mask: creates the donut hole, holds content -->
                                 <div class="ring-inner-mask">
                                     <div class="streak-count-row">
@@ -619,15 +621,17 @@
                         </div>
                     </div>
 
-                    <!-- Slide 2: Odak Seri -->
+<!-- Slide 2: Odak Seri -->
                     <div class="card continuity-slide" id="focusContinuityCard">
                         <div style="display: flex; gap: 0.85rem; align-items: flex-start;">
                             <div id="focusRingContainer" class="streak-ring-container" title="Odak Seri İlerlemesi">
-                                <svg class="streak-ring-svg" viewBox="0 0 92 92" width="92" height="92">
-                                    <circle class="streak-ring-track" cx="46" cy="46" r="42.5" fill="none" stroke="#2a3441" stroke-width="7" />
-                                    <circle class="streak-ring-arc" id="focusRingArc" cx="46" cy="46" r="42.5" fill="none" stroke="var(--trend-line-focus, #8b5cf6)" stroke-width="7" stroke-linecap="round" stroke-dasharray="267.035" stroke-dashoffset="267.035" transform="rotate(-90 46 46)" />
-                                </svg>
-                                <div class="ring-head-dot" id="focusRingHead"></div>
+                                <div class="streak-ring-spin" id="focusRingSpinGroup">
+                                    <svg class="streak-ring-svg" viewBox="0 0 92 92" width="92" height="92">
+                                        <circle class="streak-ring-track" cx="46" cy="46" r="42.5" fill="none" stroke="#2a3441" stroke-width="7" />
+                                        <circle class="streak-ring-arc" id="focusRingArc" cx="46" cy="46" r="42.5" fill="none" stroke="var(--trend-line-focus, #8b5cf6)" stroke-width="7" stroke-linecap="round" stroke-dasharray="267.035" stroke-dashoffset="267.035" transform="rotate(-90 46 46)" />
+                                    </svg>
+                                    <div class="ring-head-dot" id="focusRingHead"></div>
+                                </div>
                                 <!-- Inner Mask: creates the donut hole, holds content -->
                                 <div class="ring-inner-mask">
                                     <div class="streak-count-row">

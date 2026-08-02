@@ -228,6 +228,7 @@ const CIRCUMFERENCE_92 = 267.035;
 function updateCometRing(container, spinGroup, progress, color) {
     if (!container) return;
 
+    const spinEl = spinGroup || container.querySelector('.streak-ring-spin');
     const arcEl = container.querySelector('.streak-ring-arc');
     const headEl = container.querySelector('.ring-head-dot');
     const rgb = resolveColor(color);
@@ -235,11 +236,14 @@ function updateCometRing(container, spinGroup, progress, color) {
 
     const pct = Math.max(0, Math.min(100, progress || 0));
 
-    // 1. 0% Progress (0/15) — Hide arc and tip dot, keep dark ring track
+    // 1. 0% Progress (0/15) — Hide spinning group & arc, show dark ring track
     if (pct <= 0) {
+        if (spinEl) {
+            spinEl.style.display = 'none';
+            spinEl.style.animation = 'none';
+        }
         if (arcEl) {
             arcEl.style.strokeDashoffset = CIRCUMFERENCE_92;
-            arcEl.style.display = 'none';
         }
         if (headEl) {
             headEl.style.display = 'none';
@@ -247,8 +251,12 @@ function updateCometRing(container, spinGroup, progress, color) {
         return;
     }
 
-    // 2. 100% Completion (15/15) — Solid 100% ring, no tip dot, no rotation
+    // 2. 100% Completion (15/15) — Solid 100% ring, stop rotation, no tip dot
     if (pct >= 100) {
+        if (spinEl) {
+            spinEl.style.display = 'block';
+            spinEl.style.animation = 'none';
+        }
         if (arcEl) {
             arcEl.style.display = 'block';
             arcEl.style.stroke = rgb;
@@ -260,7 +268,12 @@ function updateCometRing(container, spinGroup, progress, color) {
         return;
     }
 
-    // 3. Intermediate Progress (1/15, 8/15, 14/15) — Proportional arc + glowing tip dot
+    // 3. Intermediate Progress (1/15, 8/15, 14/15) — Proportional arc + rotating spin + glowing tip dot
+    if (spinEl) {
+        spinEl.style.display = 'block';
+        spinEl.style.animation = 'ringClockwise 4s linear infinite';
+    }
+
     if (arcEl) {
         arcEl.style.display = 'block';
         arcEl.style.stroke = rgb;
