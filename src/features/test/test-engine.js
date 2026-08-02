@@ -386,6 +386,11 @@ export async function finishTest() {
         const answeredCount = answeredQuestions.length;
         const answeredWrongCount = Math.max(0, answeredCount - correctCount);
 
+        if (answeredCount === 0 && (AppState.testTracking?._flushedCount || 0) === 0) {
+            console.log("finishTest: Discarding empty test session with 0 answered questions.");
+            return;
+        }
+
         if (answeredCount > 0 || (AppState.testTracking?._flushedCount || 0) > 0) {
             recordTestFinished(answeredCount, correctCount, answeredWrongCount, 0, answeredQuestions);
         }
@@ -505,20 +510,20 @@ export function updateFlashcardStats(sourceId, questionId, rating) {
     const stat = AppState.stats[key];
 
     // Snapshot for toggle logic
-    let existingResult = AppState.testTracking?.results?.find(r => String(r.questionId) === String(questionId));
+    let existingResult = AppState.testTracking?.results?.find(r =>
+        String(r.questionId) === String(questionId) && String(r.sourceId || q?.sourceId) === String(q?.sourceId)
+    );
     if (existingResult && existingResult._preSessionState) {
         Object.keys(existingResult._preSessionState).forEach(prop => {
             stat[prop] = JSON.parse(JSON.stringify(existingResult._preSessionState[prop]));
         });
         existingResult.answeredAt = Date.now();
     } else if (!existingResult) {
-        const q = AppState.questionMap?.[key];
         const snapshot = JSON.parse(JSON.stringify(stat));
         existingResult = { questionId, sourceId: q?.sourceId, answeredAt: Date.now(), isCorrect: rating >= 3, userAnswer: [String(rating)], _preSessionState: snapshot };
         if (AppState.testTracking) AppState.testTracking.results.push(existingResult);
     }
 
-    const q = AppState.questionMap?.[key];
     applyFSRS(stat, rating, q?.difficulty);
 
     // Streak and learned
@@ -561,7 +566,9 @@ export function updateStats(sourceId, questionId, isCorrect, userAnswer, feedbac
 
     let existingResult = null;
     if (AppState.testTracking && AppState.testTracking.results) {
-        existingResult = AppState.testTracking.results.find(r => String(r.questionId) === String(questionId));
+        existingResult = AppState.testTracking.results.find(r =>
+            String(r.questionId) === String(questionId) && String(r.sourceId || sourceId) === String(sourceId)
+        );
     }
 
     // Toggle Logic: restore to pre-session state before re-applying

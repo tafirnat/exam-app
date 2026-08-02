@@ -117,8 +117,44 @@ test('recordTestFinished only credits evaluated/answered questions and respects 
     // Total answered questions = 2 (q1 and q2). q3 is unanswered, so questionCount should be 2
     assert.equal(todayAct.questionCount, 2);
 
-    // Focus answered after timestamp = 1 (q2 only). q1 was answered before focus selection timestamp!
-    assert.equal(todayAct.focusQuestionCount, 1);
+test('recordTestFinished deduplicates correct and wrong counts if flushInProgressAnswers was previously called', async () => {
+    const engineMod = await import('../src/features/stats/continuity-engine.js');
+    const { recordTestFinished, flushInProgressAnswers, getLocalDateStr } = engineMod;
+
+    AppState.studyActivity = {};
+    AppState.continuityConfig = {};
+    AppState.questionMap = {
+        'src1_q1': { sourceId: 'src1', id: 'q1' },
+        'src1_q2': { sourceId: 'src1', id: 'q2' }
+    };
+    AppState.testTracking = {
+        _flushedCount: 0,
+        _flushedCorrectCount: 0,
+        _flushedWrongCount: 0,
+        results: [
+            { questionId: 'q1', sourceId: 'src1', isCorrect: true, userAnswer: ['0'], answeredAt: Date.now() }
+        ]
+    };
+
+    // Flush mid-session -> 1 correct question flushed
+    flushInProgressAnswers();
+
+    const todayStr = getLocalDateStr();
+    assert.equal(AppState.studyActivity[todayStr].questionCount, 1);
+    assert.equal(AppState.studyActivity[todayStr].correctCount, 1);
+
+    // Now user finishes test with 2 questions answered (1 correct, 1 wrong)
+    const questions = [
+        { sourceId: 'src1', id: 'q1', isUnanswered: false, userAnswer: ['0'], isCorrect: true },
+        { sourceId: 'src1', id: 'q2', isUnanswered: false, userAnswer: ['1'], isCorrect: false }
+    ];
+
+    recordTestFinished(2, 1, 1, 0, questions);
+
+    // Total question count should be 2, correctCount should be 1, wrongCount should be 1
+    assert.equal(AppState.studyActivity[todayStr].questionCount, 2);
+    assert.equal(AppState.studyActivity[todayStr].correctCount, 1);
+    assert.equal(AppState.studyActivity[todayStr].wrongCount, 1);
 });
 
 

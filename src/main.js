@@ -2134,8 +2134,8 @@ function nextQuestion() {
         saveActiveTest();
         renderQuestion();
     } else {
-        showToast(t('test_completed'));
-        finishTest();
+        const finishBtn = document.getElementById('finishTestBtn');
+        if (finishBtn) finishBtn.click();
     }
 }
 

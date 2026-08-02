@@ -719,7 +719,9 @@ export function renderQuestion(isRefresh = false) {
             if (flashcardRatingBar) flashcardRatingBar.style.display = 'none';
 
             // Show current feedback if already given
-            const result = AppState.testTracking?.results.find(r => String(r.questionId) === String(q.id));
+            const result = AppState.testTracking?.results.find(r =>
+                String(r.questionId) === String(q.id) && String(r.sourceId || q.sourceId) === String(q.sourceId)
+            );
             const hardBtn = document.getElementById('diffHardBtn');
             const easyBtn = document.getElementById('diffEasyBtn');
             if (hardBtn && easyBtn) {
@@ -1042,6 +1044,8 @@ export function selectOption(id, type) {
 export const handleCheckAnswer = (forceCheck = false) => {
     window.handleCheckAnswer = handleCheckAnswer;
     const qIndex = AppState.currentIndex;
+    if (AppState.isAnswerChecked[qIndex]) return;
+
     const q = AppState.questionMap[AppState.currentTest[qIndex]];
     let userAnswer = AppState.userAnswers[qIndex] || [];
 
@@ -1235,7 +1239,9 @@ export function handleDifficultyRating(rating) {
     const targetRating = isCurrentlyActive ? undefined : rating; // undefined = "no special feedback"
 
     // Special case: switching from hard → easy stars the question
-    const existingResult = AppState.testTracking?.results.find(r => String(r.questionId) === String(q.id));
+    const existingResult = AppState.testTracking?.results.find(r =>
+        String(r.questionId) === String(q.id) && String(r.sourceId || q.sourceId) === String(q.sourceId)
+    );
     if (!isCurrentlyActive && rating === 'easy' && existingResult?.feedback === 'hard') {
         const statKey = `${q.sourceId}_${q.id}`;
         if (!AppState.stats[statKey]) AppState.stats[statKey] = { difficulty: 5.0, correct: 0, wrong: 0 };

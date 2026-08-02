@@ -512,16 +512,21 @@ export function recordTestFinished(questionCount, correctCount = 0, wrongCount =
     const answeredQuestions = (testQuestions || []).filter(q => q && !q.isUnanswered && q.userAnswer !== null && q.userAnswer !== undefined);
     const actualAnsweredCount = Math.min(questionCount, answeredQuestions.length > 0 ? answeredQuestions.length : questionCount);
 
-    // Subtract the already-flushed in-progress count to avoid double-counting
+    // Subtract the already-flushed in-progress counts to avoid double-counting
     // when flushInProgressAnswers() was called before the test was finished.
     const flushed = AppState.testTracking?._flushedCount || 0;
+    const flushedCorrect = AppState.testTracking?._flushedCorrectCount || 0;
+    const flushedWrong = AppState.testTracking?._flushedWrongCount || 0;
     const flushedFocus = AppState.testTracking?._flushedFocusCount || 0;
+
     const net = Math.max(0, actualAnsweredCount - flushed);
+    const netCorrect = Math.max(0, correctCount - flushedCorrect);
+    const netWrong = Math.max(0, wrongCount - flushedWrong);
 
     // Global Track Update
     activity.questionCount = (activity.questionCount || 0) + net;
-    activity.correctCount = (activity.correctCount || 0) + correctCount;
-    activity.wrongCount = (activity.wrongCount || 0) + wrongCount;
+    activity.correctCount = (activity.correctCount || 0) + netCorrect;
+    activity.wrongCount = (activity.wrongCount || 0) + netWrong;
     activity.unansweredCount = (activity.unansweredCount || 0) + unansweredCount;
     
     const globalReq = getDailyRequirement(activity.overdueSnapshot);
@@ -581,17 +586,25 @@ export function flushInProgressAnswers() {
     const delta = answeredCount - alreadyFlushed;
     if (delta <= 0) return; // nothing new to commit
 
+    const newSlice = answeredResults.slice(alreadyFlushed);
+    const newCorrect = newSlice.filter(r => r.isCorrect).length;
+    const newWrong = newSlice.filter(r => !r.isCorrect).length;
+
     const activity = initTodayActivity();
 
     // Global track
     activity.questionCount = (activity.questionCount || 0) + delta;
-    activity.correctCount = (activity.correctCount || 0) +
-        answeredResults.slice(alreadyFlushed).filter(r => r.isCorrect).length;
+    activity.correctCount = (activity.correctCount || 0) + newCorrect;
+    activity.wrongCount = (activity.wrongCount || 0) + newWrong;
 
     const globalReq = getDailyRequirement(activity.overdueSnapshot);
     if (activity.questionCount >= globalReq) {
         activity.studied = true;
     }
+
+    // Advance checkpoints for global breakdown counts
+    tracking._flushedCorrectCount = (tracking._flushedCorrectCount || 0) + newCorrect;
+    tracking._flushedWrongCount = (tracking._flushedWrongCount || 0) + newWrong;
 
     // Focus track
     const focusSources = getFocusSources();
