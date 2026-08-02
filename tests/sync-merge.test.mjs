@@ -83,6 +83,122 @@ test('snapshot merge treats null as unmeasured and keeps a real zero', () => {
     assert.equal(merged.studyActivity.d2.overdueSnapshot, 0);
 });
 
+/* The day's bar is defined as the backlog at the start of the day, and two
+   devices each measure it once from their own view of the library. Taking the
+   larger of the two could raise the bar after the fact and retract a day that
+   had already been earned - which is one of the ways three devices ended up
+   disagreeing about a streak while holding the same activity. The earlier
+   measurement is the start-of-day one, so the earlier measurement wins. */
+
+/** A day one device measured, with the moment it measured it. */
+const measured = (snapshot, at, extra = {}) => ({
+    studied: false, questionCount: 0, correctCount: 0, wrongCount: 0, unansweredCount: 0,
+    overdueSnapshot: snapshot, overdueSnapshotAt: at, ...extra
+});
+
+test('the earlier measurement sets the day, not the larger one', () => {
+    const merged = mergeSyncData(
+        emptyPayload({ studyActivity: { d1: measured(8, 1000) } }),
+        emptyPayload({ studyActivity: { d1: measured(20, 5000) } })
+    );
+
+    assert.equal(merged.studyActivity.d1.overdueSnapshot, 8);
+    assert.equal(merged.studyActivity.d1.overdueSnapshotAt, 1000);
+});
+
+test('the earlier measurement wins from whichever side it arrives on', () => {
+    const merged = mergeSyncData(
+        emptyPayload({ studyActivity: { d1: measured(20, 5000) } }),
+        emptyPayload({ studyActivity: { d1: measured(8, 1000) } })
+    );
+
+    // A rule that depended on which side was "local" would leave the two
+    // devices permanently disagreeing about the same day.
+    assert.equal(merged.studyActivity.d1.overdueSnapshot, 8);
+});
+
+test('a day earned against the morning bar survives the afternoon measurement', () => {
+    // The regression in full: 8 overdue at 09:00, eight answered, day earned.
+    // The old max merge raised the bar to 20 - requirement 15 - and the day went.
+    const local = emptyPayload({
+        studyActivity: {
+            d1: measured(8, 1000, { studied: true, questionCount: 8, correctCount: 8 })
+        }
+    });
+    const remote = emptyPayload({ studyActivity: { d1: measured(20, 5000) } });
+
+    const day = mergeSyncData(local, remote).studyActivity.d1;
+    const requirement = day.overdueSnapshot >= 15 ? 15 : (day.overdueSnapshot > 0 ? day.overdueSnapshot : 15);
+
+    assert.equal(day.studied && day.questionCount >= requirement, true);
+});
+
+test('local measuring first is a local change, so the remote hears about it', () => {
+    const merged = mergeSyncData(
+        emptyPayload({ studyActivity: { d1: measured(8, 1000) } }),
+        emptyPayload({ studyActivity: { d1: measured(20, 5000) } })
+    );
+
+    // Measuring first is worth nothing if it never leaves the device.
+    assert.equal(merged.hasLocalChanges, true);
+});
+
+test('the only measurement whose time is known wins over an undated one', () => {
+    const merged = mergeSyncData(
+        emptyPayload({ studyActivity: { d1: measured(20, 4000) } }),
+        emptyPayload({ studyActivity: { d1: { overdueSnapshot: 8 } } })
+    );
+
+    // An undated record predates this build; it cannot be compared to anything,
+    // including the next device's measurement.
+    assert.equal(merged.studyActivity.d1.overdueSnapshot, 20);
+});
+
+test('two undated measurements keep the old behaviour rather than invent an order', () => {
+    const merged = mergeSyncData(
+        emptyPayload({ studyActivity: { d1: { overdueSnapshot: 8 } } }),
+        emptyPayload({ studyActivity: { d1: { overdueSnapshot: 20 } } })
+    );
+
+    assert.equal(merged.studyActivity.d1.overdueSnapshot, 20);
+    // Absent, not null: a day with nothing to stamp is left exactly as it was.
+    assert.equal('overdueSnapshotAt' in merged.studyActivity.d1, false);
+});
+
+test('the focus track is measured on the same rule', () => {
+    const merged = mergeSyncData(
+        emptyPayload({ studyActivity: { d1: { focusOverdueSnapshot: 7, focusOverdueSnapshotAt: 1000 } } }),
+        emptyPayload({ studyActivity: { d1: { focusOverdueSnapshot: 15, focusOverdueSnapshotAt: 5000 } } })
+    );
+
+    assert.equal(merged.studyActivity.d1.focusOverdueSnapshot, 7);
+    assert.equal(merged.studyActivity.d1.focusOverdueSnapshotAt, 1000);
+});
+
+test('a stamp whose measurement did not survive is dropped', () => {
+    // Ranking a value that is no longer there ahead of a real one would be worse
+    // than having no stamp at all.
+    const repaired = sanitizeActivityRecord({ overdueSnapshot: null, overdueSnapshotAt: 1000 });
+
+    assert.equal(repaired.overdueSnapshot, null);
+    assert.equal('overdueSnapshotAt' in repaired, false);
+});
+
+test('repeated merges of a measured day stay put', () => {
+    let local = measured(8, 1000, { studied: true, questionCount: 8 });
+    const remote = measured(20, 5000);
+
+    for (let i = 0; i < 5; i++) {
+        local = mergeSyncData(
+            emptyPayload({ studyActivity: { d1: local } }),
+            emptyPayload({ studyActivity: { d1: remote } })
+        ).studyActivity.d1;
+    }
+
+    assert.equal(local.overdueSnapshot, 8);
+    assert.equal(local.overdueSnapshotAt, 1000);
+});
+
 test('stats merge keeps lastReview as a usable date instead of NaN', () => {
     const older = '2026-07-20T10:00:00.000Z';
     const newer = '2026-07-30T10:00:00.000Z';

@@ -1280,15 +1280,46 @@ function mergeContinuityConfig(localConfig, remoteConfig) {
 }
 
 /**
- * Daily snapshots are taken once per day and then frozen, so `null` means "not
- * measured yet" while `0` is a real answer. A real number always beats null.
+ * Chooses between two devices' measurements of a day's bar.
+ *
+ * The snapshot is taken once per day and then frozen - `null` means "not
+ * measured yet" while `0` is a real answer, so a real number always beats null.
+ * Between two real numbers the *earlier* measurement wins, because the bar is
+ * defined as the backlog at the start of the day and that is what the user has
+ * been running against.
+ *
+ * This used to take the larger of the two, which could raise the bar after the
+ * fact and retract a day already earned: a device that measured 8 overdue in
+ * the morning, answered its 8 and had the day, would lose it the moment a
+ * second device measured 20 that afternoon - requirement 15, only 8 answered,
+ * day gone. Three devices therefore disagreed about the streak while all of
+ * them held the same activity.
+ *
+ * @returns {{value: number|null, at: number|null}}
  */
-function pickSnapshot(a, b) {
-    const aNum = Number.isFinite(a) ? a : null;
-    const bNum = Number.isFinite(b) ? b : null;
-    if (aNum === null) return bNum;
-    if (bNum === null) return aNum;
-    return Math.max(aNum, bNum);
+function pickSnapshot(lValue, lAt, rValue, rAt) {
+    const left = Number.isFinite(lValue) ? lValue : null;
+    const right = Number.isFinite(rValue) ? rValue : null;
+    const leftAt = Number.isFinite(lAt) && lAt > 0 ? lAt : null;
+    const rightAt = Number.isFinite(rAt) && rAt > 0 ? rAt : null;
+
+    if (left === null) return { value: right, at: right === null ? null : rightAt };
+    if (right === null) return { value: left, at: leftAt };
+
+    if (leftAt !== null && rightAt !== null) {
+        return leftAt <= rightAt ? { value: left, at: leftAt } : { value: right, at: rightAt };
+    }
+    /* One side was written by a build that did not record the time. The other
+       is the only measurement whose moment is known, so it is the only one that
+       can be compared to anything - including the next device's. */
+    if (leftAt !== null) return { value: left, at: leftAt };
+    if (rightAt !== null) return { value: right, at: rightAt };
+
+    /* Neither side has a time: both predate this build. Keep what the merge did
+       before rather than invent an order the records cannot support - these
+       records stop appearing as soon as every device has measured a day under
+       this build. */
+    return { value: Math.max(left, right), at: null };
 }
 
 /**
@@ -1605,16 +1636,27 @@ export function mergeSyncData(local, remote) {
             // few page loads and drags the streak, the ring and the weekly chart
             // along with it. The higher view wins instead.
 
+            const overdue = pickSnapshot(
+                lAct.overdueSnapshot, lAct.overdueSnapshotAt,
+                rAct.overdueSnapshot, rAct.overdueSnapshotAt);
+            const focusOverdue = pickSnapshot(
+                lAct.focusOverdueSnapshot, lAct.focusOverdueSnapshotAt,
+                rAct.focusOverdueSnapshot, rAct.focusOverdueSnapshotAt);
+
             /* Local holding the higher view is a local change, and saying so is
                what makes the pull push it back. Without this the merge kept the
                right numbers on this device and left the remote - and therefore
-               every other device - on the lower ones. */
+               every other device - on the lower ones. The snapshots are in here
+               for the same reason: local having measured the day first is worth
+               nothing if the remote never hears about it. */
             if ((lAct.questionCount || 0) > (rAct.questionCount || 0)
                 || (lAct.focusQuestionCount || 0) > (rAct.focusQuestionCount || 0)
                 || (lAct.studied && !rAct.studied)
                 || (lAct.focusStudied && !rAct.focusStudied)
                 || (lAct.frozen && !rAct.frozen)
-                || (lAct.focusFrozen && !rAct.focusFrozen)) {
+                || (lAct.focusFrozen && !rAct.focusFrozen)
+                || overdue.value !== (Number.isFinite(rAct.overdueSnapshot) ? rAct.overdueSnapshot : null)
+                || focusOverdue.value !== (Number.isFinite(rAct.focusOverdueSnapshot) ? rAct.focusOverdueSnapshot : null)) {
                 hasLocalChanges = true;
             }
 
@@ -1625,14 +1667,18 @@ export function mergeSyncData(local, remote) {
                 wrongCount: Math.max(lAct.wrongCount || 0, rAct.wrongCount || 0),
                 unansweredCount: Math.max(lAct.unansweredCount || 0, rAct.unansweredCount || 0),
                 frozen: lAct.frozen || rAct.frozen,
-                overdueSnapshot: pickSnapshot(lAct.overdueSnapshot, rAct.overdueSnapshot),
+                overdueSnapshot: overdue.value,
+                // Carried with the value it belongs to, so the next device can
+                // still tell which measurement came first.
+                overdueSnapshotAt: overdue.at,
                 // The focus track lived only on whichever device wrote it last
                 // until now: dropping these keys reset the custom focus streak
                 // to zero after every sync.
                 focusStudied: lAct.focusStudied || rAct.focusStudied,
                 focusQuestionCount: Math.max(lAct.focusQuestionCount || 0, rAct.focusQuestionCount || 0),
                 focusFrozen: lAct.focusFrozen || rAct.focusFrozen,
-                focusOverdueSnapshot: pickSnapshot(lAct.focusOverdueSnapshot, rAct.focusOverdueSnapshot)
+                focusOverdueSnapshot: focusOverdue.value,
+                focusOverdueSnapshotAt: focusOverdue.at
             });
         }
     });

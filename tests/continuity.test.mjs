@@ -10,6 +10,9 @@ let getDailyRequirement,
     calculateFocusStreak,
     checkAndReplenishTokens,
     initTodayActivity,
+    getDailyOverdueSnapshot,
+    getDailyFocusOverdueSnapshot,
+    getLocalDateStr,
     AppState;
 
 before(async () => {
@@ -31,6 +34,59 @@ before(async () => {
     calculateFocusStreak = engineMod.calculateFocusStreak;
     checkAndReplenishTokens = engineMod.checkAndReplenishTokens;
     initTodayActivity = engineMod.initTodayActivity;
+    getDailyOverdueSnapshot = engineMod.getDailyOverdueSnapshot;
+    getDailyFocusOverdueSnapshot = engineMod.getDailyFocusOverdueSnapshot;
+    getLocalDateStr = engineMod.getLocalDateStr;
+});
+
+/* The day's bar is measured once per device and then frozen. The merge decides
+   between two devices' measurements by which came first, so a measurement
+   without a time cannot be compared to anything - and every record would be
+   undated if the engine stopped writing the stamp, which would leave the merge
+   silently back on "take the larger" without a single failing case to say so. */
+
+test('measuring the day records when it was measured', () => {
+    AppState.studyActivity = {};
+    AppState.stats = {};
+    AppState.sources = [];
+    AppState.continuityConfig = { focusSources: [] };
+
+    const before = Date.now();
+    getDailyOverdueSnapshot([]);
+    const day = AppState.studyActivity[getLocalDateStr()];
+
+    assert.equal(day.overdueSnapshot, 0, 'an empty library really has nothing overdue');
+    assert.ok(day.overdueSnapshotAt >= before, 'and the moment it was measured is on the record');
+});
+
+test('the focus bar is stamped the same way', () => {
+    AppState.studyActivity = {};
+    AppState.stats = {};
+    AppState.sources = [];
+    AppState.continuityConfig = { focusSources: [] };
+
+    const before = Date.now();
+    getDailyFocusOverdueSnapshot();
+    const day = AppState.studyActivity[getLocalDateStr()];
+
+    assert.equal(day.focusOverdueSnapshot, 15);
+    assert.ok(day.focusOverdueSnapshotAt >= before);
+});
+
+test('a measured day is not measured again', () => {
+    AppState.studyActivity = {};
+    AppState.stats = {};
+    AppState.sources = [];
+    AppState.continuityConfig = { focusSources: [] };
+
+    getDailyOverdueSnapshot([]);
+    const firstAt = AppState.studyActivity[getLocalDateStr()].overdueSnapshotAt;
+
+    getDailyOverdueSnapshot([]);
+
+    // Re-measuring would move the bar the user is already running at, and would
+    // hand this device a later stamp than the one it earned the day under.
+    assert.equal(AppState.studyActivity[getLocalDateStr()].overdueSnapshotAt, firstAt);
 });
 
 test('getDailyRequirement calculates correct limits', () => {

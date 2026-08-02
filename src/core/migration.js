@@ -66,6 +66,10 @@ export function sanitizeActivityRecord(act) {
 
     const num = (v) => (Number.isFinite(v) && v > 0 ? Math.floor(v) : 0);
     const snapshot = (v) => (Number.isFinite(v) && v >= 0 ? Math.min(Math.floor(v), CORRUPT_DAILY_COUNT) : null);
+    /* A measurement time is only meaningful next to a measurement. Keeping one
+       whose snapshot did not survive would let the merge rank a value that is
+       no longer there ahead of a real one. */
+    const stampFor = (value, at) => (value !== null && Number.isFinite(at) && at > 0 ? at : null);
 
     const correctCount = num(act.correctCount);
     const wrongCount = num(act.wrongCount);
@@ -85,8 +89,9 @@ export function sanitizeActivityRecord(act) {
     }
 
     const focusQuestionCount = Math.min(num(act.focusQuestionCount), questionCount);
+    const focusOverdueSnapshot = snapshot(act.focusOverdueSnapshot);
 
-    return {
+    const repaired = {
         ...act,
         studied: !!act.studied,
         questionCount,
@@ -98,8 +103,24 @@ export function sanitizeActivityRecord(act) {
         focusStudied: !!act.focusStudied,
         focusQuestionCount,
         focusFrozen: !!act.focusFrozen,
-        focusOverdueSnapshot: snapshot(act.focusOverdueSnapshot)
+        focusOverdueSnapshot
     };
+
+    /* Absent rather than null when there is nothing to stamp. Writing the key
+       anyway would touch every day already stored - a year of history rewritten
+       on the first boot after the upgrade, reported as a repair it is not, and
+       pushed to the Gist for no reason. Deleting rather than skipping matters
+       too: the spread above would otherwise carry a stale time next to a
+       snapshot that did not survive. */
+    setOrDrop(repaired, 'overdueSnapshotAt', stampFor(overdueSnapshot, act.overdueSnapshotAt));
+    setOrDrop(repaired, 'focusOverdueSnapshotAt', stampFor(focusOverdueSnapshot, act.focusOverdueSnapshotAt));
+
+    return repaired;
+}
+
+function setOrDrop(target, key, value) {
+    if (value === null) delete target[key];
+    else target[key] = value;
 }
 
 /**

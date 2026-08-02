@@ -139,12 +139,14 @@ export function getDailyFocusOverdueSnapshot() {
     const focusSources = getLiveFocusSources();
     if (!focusSources || focusSources.length === 0) {
         activity.focusOverdueSnapshot = 15;
+        activity.focusOverdueSnapshotAt = Date.now();
         saveStudyActivity();
         return 15;
     }
 
     const distInfo = calculateFocusTargetDistribution(focusSources);
     activity.focusOverdueSnapshot = distInfo.totalTarget;
+    activity.focusOverdueSnapshotAt = Date.now();
     saveStudyActivity();
     return distInfo.totalTarget;
 }
@@ -703,6 +705,13 @@ export function getDailyOverdueSnapshot(rawQuestions) {
     }
     
     activity.overdueSnapshot = currentOverdueCount;
+    /* When the measurement was taken, not just what it said. The day's bar is
+       meant to be fixed at the start of the day; two devices each measure it
+       once from their own view of the library, and the merge has to be able to
+       tell which of those two measurements was the start-of-day one. Without a
+       time there was nothing to compare and the merge took the larger, which
+       could raise the bar above a target the user had already hit. */
+    activity.overdueSnapshotAt = Date.now();
     saveStudyActivity();
     return currentOverdueCount;
 }
