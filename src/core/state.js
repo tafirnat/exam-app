@@ -130,7 +130,6 @@ export const AppState = {
     // Empty on a fresh install; main.js fetches the sample for the detected
     // language right after boot and renders it in.
     sources: [],
-    totalStats: {},
     currentSourceKey: null,
     language: 'en',
     translationTarget: 'de',
@@ -236,7 +235,6 @@ export function initState({ force = false } = {}) {
         sources: Array.isArray(sources)
             ? sources.filter(s => s && s.questions && Array.isArray(s.questions))
             : [],
-        totalStats: readJSON('focus_app_stats_global', {}),
         currentSourceKey: readString('focus_app_current_source') || null,
         language: detectLanguage(),
         translationTarget: detectTranslationTarget(),
@@ -360,7 +358,6 @@ export function clearLocalStudyData() {
     AppState.folders = [createUncategorizedFolderRecord()];
     AppState.sources = [];
     AppState.stats = {};
-    AppState.totalStats = {};
     AppState.recentTests = [];
     AppState.deletedSourceIds = allDeletedSourceIds;
     AppState.deletedFolderIds = allDeletedFolderIds;
@@ -415,7 +412,6 @@ export function clearLocalStudyData() {
  */
 export function clearProgressData() {
     AppState.stats = {};
-    AppState.totalStats = {};
     AppState.recentTests = [];
     AppState.presetSessions = {};
     AppState.studyActivity = {};
@@ -664,12 +660,11 @@ export function saveStudyActivity() {
 }
 
 export function saveStats() {
-    const local = persistIfChanged('focus_app_stats_local', AppState.stats);
-    const global = persistIfChanged('focus_app_stats_global', AppState.totalStats);
-    if (!local.changed && !global.changed) return local.ok && global.ok;
+    const { ok, changed } = persistIfChanged('focus_app_stats_local', AppState.stats);
+    if (!changed) return ok;
     emit(Slice.STATS);
     import('./github-sync.js').then(m => m.scheduleSync(1500, m.SyncScope.PROGRESS)).catch(() => {});
-    return local.ok && global.ok;
+    return ok;
 }
 
 export function saveCustomAIPrompt() {

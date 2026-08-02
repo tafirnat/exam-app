@@ -32,7 +32,7 @@ function payload(continuityConfig, extra = {}) {
     return {
         sources: [], folders: [], quickPresets: [],
         deletedSourceIds: [], deletedFolderIds: [], deletedQuickPresetIds: [],
-        stats: {}, recentTests: [], studyActivity: {}, totalStats: {},
+        stats: {}, recentTests: [], studyActivity: {},
         lastResetTimestamp: 0, lastProgressResetTimestamp: 0, lastUpdated: 0,
         continuityConfig,
         ...extra

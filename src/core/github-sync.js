@@ -187,7 +187,13 @@ export function getSyncPayload() {
         deletedFolderIds: AppState.deletedFolderIds || [],
         deletedQuickPresetIds: AppState.deletedQuickPresetIds || [],
         stats: AppState.stats || {},
-        totalStats: AppState.totalStats || {},
+        /* No totalStats. It was carried here for years without a single
+           reader or writer outside this file - nothing in features/ ever
+           touched it, and the manual backup export never included it - while
+           its merge rule (remote wins outright, not even a max) meant a
+           device's own totals could never reach the Gist. A payload from an
+           older build may still carry the field; it is ignored on the way in.
+           The real per-question counts live in `stats`. */
         recentTests: AppState.recentTests || [],
         studyActivity: AppState.studyActivity || {},
         continuityConfig: AppState.continuityConfig || {},
@@ -621,11 +627,6 @@ async function pullRemoteGistOnly() {
                 saveStats();
             }
 
-            if (remotePayload.totalStats && typeof remotePayload.totalStats === 'object') {
-                AppState.totalStats = remotePayload.totalStats;
-                persist('focus_app_stats_global', AppState.totalStats);
-            }
-
             if (Array.isArray(remotePayload.recentTests)) {
                 AppState.recentTests = remotePayload.recentTests.slice(0, 10);
                 saveRecentTests();
@@ -1010,11 +1011,6 @@ export async function syncFromGist(options = {}) {
             if (merged.stats && typeof merged.stats === 'object') {
                 AppState.stats = merged.stats;
                 saveStats();
-            }
-
-            if (merged.totalStats && typeof merged.totalStats === 'object') {
-                AppState.totalStats = merged.totalStats;
-                persist('focus_app_stats_global', AppState.totalStats);
             }
 
             // Apply merged recent tests
@@ -1660,17 +1656,6 @@ export function mergeSyncData(local, remote) {
         if (picked.localWins) hasLocalChanges = true;
     }
 
-    // Total stats: prefer whichever side had the most recent progress reset
-    // (their cleared state is the authority); otherwise take the larger values.
-    let mergedTotalStats;
-    if (localProgressResetAt >= remoteProgressResetAt && localProgressResetAt > 0) {
-        mergedTotalStats = local.totalStats || {};
-    } else if (remoteProgressResetAt > localProgressResetAt) {
-        mergedTotalStats = remote.totalStats || {};
-    } else {
-        mergedTotalStats = remote.totalStats || local.totalStats;
-    }
-
     const activeSession = pickActiveSession(local, remote);
     if (activeSession.localWins) hasLocalChanges = true;
 
@@ -1680,7 +1665,6 @@ export function mergeSyncData(local, remote) {
         quickPresets: mergedQuickPresets,
         activeSession: activeSession.session,
         stats: mergedStats,
-        totalStats: mergedTotalStats,
         recentTests: mergedRecentTests,
         studyActivity: mergedStudyActivity,
         continuityConfig: mergedContinuityConfig,

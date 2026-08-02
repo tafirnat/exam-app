@@ -24,7 +24,6 @@ beforeEach(() => {
     AppState.sources = [{ id: 'src1', name: 'Source 1', questions: [{ id: 1 }] }];
     AppState.folders = [createUncategorizedFolderRecord(), { id: 'f1', name: 'Folder 1' }];
     AppState.stats = { src1_1: { stability: 5, difficulty: 3 } };
-    AppState.totalStats = { totalSolved: 10 };
     AppState.recentTests = [{ id: 'test1' }];
     AppState.quickPresets = [{ id: 'preset1', sourceIds: ['src1'] }];
     AppState.studyActivity = { '2026-08-01': { studied: true, questionCount: 15 } };
@@ -41,7 +40,6 @@ test('clearProgressData resets stats & streaks but keeps sources, folders, and p
 
     // Stats & Progress cleared
     assert.deepEqual(AppState.stats, {});
-    assert.deepEqual(AppState.totalStats, {});
     assert.deepEqual(AppState.recentTests, []);
     assert.deepEqual(AppState.studyActivity, {});
     
@@ -71,7 +69,6 @@ test('clearLocalStudyData performs a full factory reset and clears sample key so
 
     assert.deepEqual(AppState.sources, []);
     assert.deepEqual(AppState.stats, {});
-    assert.deepEqual(AppState.totalStats, {});
     assert.deepEqual(AppState.recentTests, []);
     assert.deepEqual(AppState.studyActivity, {});
     assert.equal(AppState.folders.length, 1);
