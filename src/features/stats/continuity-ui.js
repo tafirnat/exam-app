@@ -226,17 +226,44 @@ function resolveColor(cssValue) {
 function updateCometRing(container, spinGroup, progress, color) {
     if (!container) return;
 
+    const fillEl = container.querySelector('.ring-progress-fill');
     const spinEl = spinGroup || container.querySelector('.ring-comet-spin');
-    if (spinEl) {
-        spinEl.style.display = progress > 0 ? 'block' : 'none';
+    const pct = Math.max(0, Math.min(100, progress || 0));
+
+    // 1. 100% Completion (e.g. 15/15) — stop rotation, solid fill in specified color
+    if (pct >= 100) {
+        if (spinEl) spinEl.style.display = 'none';
+        if (fillEl) {
+            fillEl.style.display = 'block';
+            fillEl.style.background = color;
+        }
+        return;
     }
 
-    if (progress <= 0) return;
+    // 2. 0% Progress (e.g. 0/15) — hide both ring fill and spinning comet
+    if (pct <= 0) {
+        if (spinEl) spinEl.style.display = 'none';
+        if (fillEl) {
+            fillEl.style.display = 'none';
+            fillEl.style.background = 'transparent';
+        }
+        return;
+    }
+
+    // 3. Intermediate Progress (e.g. 1/15, 8/15, 14/15) — spin comet is active
+    if (spinEl) spinEl.style.display = 'block';
 
     // Resolve actual rgb() value so we can build rgba() variants inline
     const rgb = resolveColor(color);
     // rgb(r, g, b) → rgba(r, g, b, alpha)
     const rgba = (a) => rgb.replace('rgb(', 'rgba(').replace(')', `, ${a})`);
+
+    // Proportional progress fill arc starting from 12 o'clock (0deg), filling clockwise
+    if (fillEl) {
+        fillEl.style.display = 'block';
+        const deg = Math.round((pct / 100) * 360);
+        fillEl.style.background = `conic-gradient(from 0deg, ${rgb} 0deg ${deg}deg, transparent ${deg}deg 360deg)`;
+    }
 
     // ── 1. Comet blur tail — App.tsx: conic-gradient opacity-80 blur(3px) scale(1.05) ──
     const blurEl = container.querySelector('.ring-comet-blur');
@@ -272,8 +299,6 @@ function updateCometRing(container, spinGroup, progress, color) {
         headEl.style.background = rgb;
         headEl.style.boxShadow = `0 0 12px 3px ${rgba(0.9)}`;
     }
-
-    // App.tsx: always spinning — no pause state
 }
 
 function renderGlobalSlide(liveQ) {
@@ -300,7 +325,7 @@ function renderGlobalSlide(liveQ) {
         textEl.style.color = 'var(--success-color, #10b981)';
         updateCometRing(container, spinGroup, 100, 'var(--success-color, #10b981)');
     } else {
-        const progress = solved > 0 ? Math.max(1, Math.min(100, Math.round((solved / req) * 100))) : 0;
+        const progress = solved > 0 ? Math.max(1, Math.min(99, Math.round((solved / req) * 100))) : 0;
         textEl.style.color = 'var(--text-secondary)';
         updateCometRing(container, spinGroup, progress, 'var(--trend-line-normal, #0891b2)');
 
@@ -379,7 +404,7 @@ function renderFocusSlide() {
             textEl.style.color = 'var(--success-color, #10b981)';
             updateCometRing(focusContainer, focusSpinGroup, 100, 'var(--success-color, #10b981)');
         } else {
-            const progress = solved > 0 ? Math.max(1, Math.min(100, Math.round((solved / req) * 100))) : 0;
+            const progress = solved > 0 ? Math.max(1, Math.min(99, Math.round((solved / req) * 100))) : 0;
             textEl.style.color = 'var(--text-secondary)';
             updateCometRing(focusContainer, focusSpinGroup, progress, 'var(--trend-line-focus, #8b5cf6)');
             textEl.textContent = selectedNames

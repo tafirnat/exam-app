@@ -558,7 +558,9 @@
                     <div class="card continuity-slide active" id="continuityCard">
                         <div style="display: flex; gap: 0.85rem; align-items: flex-start;">
                             <div id="globalRingContainer" class="streak-ring-container" title="Genel Seri İlerlemesi">
-                                <!-- Spinning Comet — always full 360°, App.tsx: animate-[spin_4s_linear_infinite] -->
+                                <!-- Progress fill arc: conic-gradient set by JS based on solved/required ratio -->
+                                <div class="ring-progress-fill" id="globalRingProgress"></div>
+                                <!-- Spinning Comet — active when 0 < progress < 100 -->
                                 <div class="ring-comet-spin" id="globalRingSpinGroup">
                                     <div class="ring-comet-blur"></div>
                                     <div class="ring-comet-sharp"></div>
@@ -624,7 +626,9 @@
                     <div class="card continuity-slide" id="focusContinuityCard">
                         <div style="display: flex; gap: 0.85rem; align-items: flex-start;">
                             <div id="focusRingContainer" class="streak-ring-container" title="Odak Seri İlerlemesi">
-                                <!-- Spinning Comet — always full 360°, App.tsx: animate-[spin_4s_linear_infinite] -->
+                                <!-- Progress fill arc: conic-gradient set by JS based on solved/required ratio -->
+                                <div class="ring-progress-fill" id="focusRingProgress"></div>
+                                <!-- Spinning Comet — active when 0 < progress < 100 -->
                                 <div class="ring-comet-spin" id="focusRingSpinGroup">
                                     <div class="ring-comet-blur"></div>
                                     <div class="ring-comet-sharp"></div>
