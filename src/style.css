@@ -5917,7 +5917,8 @@ body.dnd-active {
     .ring-inner-mask      → absolute inset-[7px] rounded-full bg-[card] z-10  (top layer, donut hole)
 */
 
-/* Outer container: ring track colour + overflow clip */
+/* Outer container: ring track colour + overflow clip
+   App.tsx: relative w-[92px] h-[92px] rounded-full bg-[#2a3441] shrink-0 overflow-hidden shadow-inner */
 .streak-ring-container {
     position: relative;
     width: 92px;
@@ -5925,18 +5926,9 @@ body.dnd-active {
     flex-shrink: 0;
     cursor: pointer;
     border-radius: 50%;
-    overflow: hidden;                    /* clips comet to circle */
-    background: #2a3441;                 /* ring track colour (slightly lighter than card) */
-    box-shadow: inset 0 2px 12px rgba(0,0,0,0.35);
-}
-
-/* SVG progress arc — bottom layer, absolutely positioned */
-.streak-ring-svg {
-    position: absolute;
-    inset: 0;
-    width: 100%;
-    height: 100%;
-    transform: rotate(-90deg);           /* arc starts at 12-o'clock */
+    overflow: hidden;
+    background: #2a3441;
+    box-shadow: inset 0 2px 12px rgba(0,0,0,0.4);
 }
 
 /* Spinning comet wrapper — middle layer, always full 360° */
@@ -5998,70 +5990,43 @@ body.dnd-active {
 }
 
 
-.streak-ring-content {
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    flex-direction: column;
-    padding: 2px;
-    box-sizing: border-box;
-    width: 100%;
-}
-
+/* App.tsx: flex items-center gap-0.5 ml-1 mt-0.5 */
 .streak-count-row {
     display: flex;
     align-items: center;
     justify-content: center;
-    gap: 2px;
-    margin-left: 3px;
-    margin-top: 2px;
+    gap: 2px;           /* gap-0.5 = 2px */
+    margin-left: 4px;   /* ml-1 = 4px */
+    margin-top: 2px;    /* mt-0.5 = 2px */
 }
 
+/* App.tsx: text-[28px] font-black tracking-tighter leading-none */
 .streak-count-text {
+    font-size: 28px;
     font-weight: 900;
-    font-size: 1.75rem;  /* matches App.tsx text-[28px] font-black */
+    letter-spacing: -0.05em;
     line-height: 1;
-    color: var(--text-primary);
-    letter-spacing: -0.03em;
+    color: #ffffff;
     transition: font-size 0.15s ease;
 }
 
-.streak-flame-icon {
-    width: 20px;
-    height: 20px;
-    display: inline-block;
+/* App.tsx: text-[18px] drop-shadow-[0_0_12px_rgba(249,115,22,0.8)] brightness(1.1) */
+.streak-flame-emoji {
+    font-size: 18px;
+    line-height: 1;
     flex-shrink: 0;
-    filter: brightness(1.1) drop-shadow(0 0 8px rgba(249, 115, 22, 0.8));
-    animation: flameFlicker 1.8s ease-in-out infinite;
-    transform-origin: center bottom;
+    filter: brightness(1.1) drop-shadow(0 0 12px rgba(249, 115, 22, 0.8));
+    display: inline-block;
 }
 
-@keyframes flameFlicker {
-    0%, 100% {
-        transform: scale(1) rotate(0deg);
-        filter: brightness(1.1) drop-shadow(0 0 6px rgba(255, 76, 13, 0.7));
-    }
-    25% {
-        transform: scale(1.08) rotate(-2deg);
-        filter: brightness(1.15) drop-shadow(0 0 10px rgba(252, 149, 2, 0.9));
-    }
-    50% {
-        transform: scale(0.95) rotate(2deg);
-        filter: brightness(1.05) drop-shadow(0 0 8px rgba(255, 76, 13, 0.8));
-    }
-    75% {
-        transform: scale(1.06) rotate(-1deg);
-        filter: brightness(1.2) drop-shadow(0 0 12px rgba(252, 226, 2, 0.9));
-    }
-}
-
+/* App.tsx: text-slate-400 text-[10px] font-bold uppercase tracking-widest mt-0.5 */
 .streak-unit-label {
-    font-size: 0.6rem;
-    color: var(--text-secondary);
+    font-size: 10px;
+    color: #94a3b8;     /* slate-400 */
     line-height: 1;
     font-weight: 700;
     margin-top: 2px;
-    letter-spacing: 0.8px;
+    letter-spacing: 0.1em;  /* tracking-widest */
     text-transform: uppercase;
 }
 

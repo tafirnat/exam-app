@@ -231,20 +231,7 @@ function updateCometRing(container, spinGroup, progress, color) {
     // rgb(r, g, b) → rgba(r, g, b, alpha)
     const rgba = (a) => rgb.replace('rgb(', 'rgba(').replace(')', `, ${a})`);
 
-    // ── 1. SVG progress arc ──
-    const arcEl = container.querySelector('.ring-fg');
-    if (arcEl) {
-        if (progress <= 0) {
-            // stroke-linecap="round" renders a dot even at 0 length — hide it completely
-            arcEl.setAttribute('stroke', 'none');
-            arcEl.setAttribute('stroke-dasharray', '0, 100');
-        } else {
-            arcEl.setAttribute('stroke-dasharray', `${progress}, 100`);
-            arcEl.setAttribute('stroke', rgb);
-        }
-    }
-
-    // ── 2. Comet blur tail (exact App.tsx values) ──
+    // ── 1. Comet blur tail — App.tsx: conic-gradient opacity-80 blur(3px) scale(1.05) ──
     const blurEl = container.querySelector('.ring-comet-blur');
     if (blurEl) {
         blurEl.style.background = [
@@ -258,7 +245,7 @@ function updateCometRing(container, spinGroup, progress, color) {
         ].join(' ');
     }
 
-    // ── 3. Comet sharp tail (exact App.tsx values) ──
+    // ── 2. Comet sharp tail — App.tsx exact values ──
     const sharpEl = container.querySelector('.ring-comet-sharp');
     if (sharpEl) {
         sharpEl.style.background = [
@@ -272,15 +259,14 @@ function updateCometRing(container, spinGroup, progress, color) {
         ].join(' ');
     }
 
-    // ── 4. Comet head dot (exact App.tsx: shadow-[0_0_12px_3px_rgba(...,0.9)]) ──
+    // ── 3. Comet head dot — App.tsx: shadow-[0_0_12px_3px_rgba(...,0.9)] ──
     const headEl = container.querySelector('.ring-comet-head');
     if (headEl) {
         headEl.style.background = rgb;
         headEl.style.boxShadow = `0 0 12px 3px ${rgba(0.9)}`;
     }
 
-    // ── 5. Spin state ──
-    // Pause when no progress (0%); spin otherwise (including 100% = success animation)
+    // ── 4. Spin state: pause when no progress, spin otherwise ──
     if (spinGroup) {
         spinGroup.classList.toggle('ring-spin-paused', progress <= 0);
     }
@@ -600,13 +586,7 @@ function updateStreakCountDisplay(elementId, count) {
     if (!el) return;
     el.textContent = count;
     const len = String(count).length;
-    if (len >= 3) {
-        el.style.fontSize = '1.1rem';
-    } else if (len === 2) {
-        el.style.fontSize = '1.4rem';
-    } else {
-        el.style.fontSize = '1.75rem';
-    }
+    el.style.fontSize = len >= 3 ? '16px' : len === 2 ? '22px' : '28px';
 }
 
 function createTokenSvg(tokenIndex, active) {
