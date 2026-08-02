@@ -201,6 +201,22 @@ function bindStreakRunModalEvents() {
     });
 }
 /**
+ * Resolves a CSS color value (including var()) to an actual hex/rgb string
+ * by temporarily applying it to a hidden element and reading computedStyle.
+ */
+const _colorResolveEl = (() => {
+    const el = document.createElement('div');
+    el.style.cssText = 'position:absolute;width:0;height:0;opacity:0;pointer-events:none;';
+    document.documentElement.appendChild(el);
+    return el;
+})();
+
+function resolveColor(cssValue) {
+    _colorResolveEl.style.color = cssValue;
+    return getComputedStyle(_colorResolveEl).color || cssValue;
+}
+
+/**
  * Updates the CSS comet ring for a given ring container.
  * @param {HTMLElement} container - The .streak-ring-container element
  * @param {HTMLElement} spinGroup - The .ring-comet-spin element
@@ -210,29 +226,70 @@ function bindStreakRunModalEvents() {
 function updateCometRing(container, spinGroup, progress, color) {
     if (!container) return;
 
-    // Convert progress (0–100) to degrees (0–360), starting from top (0° = 12-o'clock)
+    // Resolve actual RGB value from potential CSS var()
+    const rgb = resolveColor(color);
+
+    // Convert progress (0–100) to degrees (0–360)
     const deg = Math.round((progress / 100) * 360);
 
-    container.style.setProperty('--ring-progress-deg', `${deg}deg`);
-    container.style.setProperty('--ring-color', color);
-
-    // Update comet color layers directly for CSS var() fallback compatibility
+    // --- Comet blur layer (soft glow tail) ---
     const blurEl = container.querySelector('.ring-comet-blur');
-    const sharpEl = container.querySelector('.ring-comet-sharp');
-    const headEl = container.querySelector('.ring-comet-head');
-
-    // Resolve actual color value for filter/box-shadow (CSS vars don't work in box-shadow directly)
-    // We use a data attribute so CSS can pick it up, and set inline where needed
-    if (blurEl) blurEl.style.setProperty('--ring-color', color);
-    if (sharpEl) sharpEl.style.setProperty('--ring-color', color);
-    if (headEl) {
-        headEl.style.setProperty('--ring-color', color);
-        // box-shadow needs a real color — resolve var() via getComputedStyle if needed
-        headEl.style.background = color;
-        headEl.style.boxShadow = `0 0 10px 3px ${color}`;
+    if (blurEl) {
+        // Tail fades from transparent → color as it approaches 360° (= head at 12-o'clock)
+        blurEl.style.background = `conic-gradient(
+            from 0deg,
+            transparent 0%,
+            transparent 55%,
+            ${rgb.replace(')', ', 0.15)').replace('rgb', 'rgba')} 68%,
+            ${rgb.replace(')', ', 0.5)').replace('rgb', 'rgba')}  85%,
+            ${rgb} 100%
+        )`;
     }
 
-    // Spin only when progress is between 1–99; static at 0 and 100
+    // --- Comet sharp layer (crisp core arc) ---
+    const sharpEl = container.querySelector('.ring-comet-sharp');
+    if (sharpEl) {
+        sharpEl.style.background = `conic-gradient(
+            from 0deg,
+            transparent 0%,
+            transparent 65%,
+            ${rgb.replace(')', ', 0.05)').replace('rgb', 'rgba')} 72%,
+            ${rgb.replace(')', ', 0.7)').replace('rgb', 'rgba')}  90%,
+            ${rgb} 100%
+        )`;
+    }
+
+    // --- Comet head dot ---
+    const headEl = container.querySelector('.ring-comet-head');
+    if (headEl) {
+        headEl.style.background = rgb;
+        headEl.style.boxShadow = `0 0 8px 3px ${rgb}`;
+        headEl.style.display = (progress > 0 && progress < 100) ? 'block' : 'none';
+    }
+
+    // --- Progress clip: transparent up to deg, then card-bg after ---
+    // This hides the comet portion beyond the current progress arc.
+    const clipEl = container.querySelector('.ring-progress-clip');
+    if (clipEl) {
+        if (progress <= 0) {
+            // Fully hidden — cover everything with card bg
+            clipEl.style.background = 'var(--card-bg, #1a2236)';
+        } else if (progress >= 100) {
+            // Fully visible — show full comet ring
+            clipEl.style.background = 'transparent';
+        } else {
+            // Get the card background color
+            const cardBg = getComputedStyle(document.documentElement)
+                .getPropertyValue('--card-bg').trim() || '#1a2236';
+            clipEl.style.background = `conic-gradient(
+                from 0deg,
+                transparent ${deg}deg,
+                ${cardBg} ${deg}deg
+            )`;
+        }
+    }
+
+    // --- Spin state ---
     if (spinGroup) {
         if (progress > 0 && progress < 100) {
             spinGroup.classList.remove('ring-spin-paused');

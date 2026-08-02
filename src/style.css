@@ -5901,7 +5901,6 @@ body.dnd-active {
     flex-shrink: 0;
 }
 
-/* ── Comet Ring System (CSS conic-gradient approach) ── */
 
 /* Outer shell — clips everything, establishes stacking context */
 .streak-ring-container {
@@ -5913,9 +5912,12 @@ body.dnd-active {
     cursor: pointer;
     border-radius: 50%;
     overflow: hidden;
-    /* Subtle inset track ring via box-shadow on a pseudo; actual track is background */
-    background: var(--card-bg, #1e2532);
-    box-shadow: inset 0 0 0 7px var(--border-color, rgba(255,255,255,0.08));
+    /* Card background fills the disc; ring track is the visible border edge */
+    background: var(--card-bg, #1a2236);
+    /* Visible inset track ring */
+    box-shadow:
+        inset 0 0 0 8px rgba(255,255,255,0.06),
+        inset 0 0 0 9px rgba(0,0,0,0.15);
 }
 
 /* ── Spinning comet wrapper ── */
@@ -5935,81 +5937,58 @@ body.dnd-active {
     to   { transform: rotate(360deg); }
 }
 
-/* Blurred tail glow layer (matches App.tsx blur layer) */
+/* Blurred tail glow — background set entirely by JS */
 .ring-comet-blur {
     position: absolute;
     inset: 0;
     border-radius: 50%;
-    opacity: 0.8;
-    /* color set by JS via --ring-color */
-    background: conic-gradient(
-        from 0deg,
-        transparent 0%,
-        transparent 20%,
-        color-mix(in srgb, var(--ring-color, #06b6d4) 0%, transparent)  40%,
-        color-mix(in srgb, var(--ring-color, #06b6d4) 40%, transparent) 75%,
-        var(--ring-color, #06b6d4) 100%
-    );
-    filter: blur(3px);
-    transform: scale(1.05);
+    opacity: 0.85;
+    /* background set by JS */
+    filter: blur(4px);
+    transform: scale(1.06);
 }
 
-/* Sharp core arc layer */
+/* Sharp core arc — background set entirely by JS */
 .ring-comet-sharp {
     position: absolute;
     inset: 0;
     border-radius: 50%;
-    background: conic-gradient(
-        from 0deg,
-        transparent 0%,
-        transparent 40%,
-        color-mix(in srgb, var(--ring-color, #06b6d4) 0%, transparent)  60%,
-        color-mix(in srgb, var(--ring-color, #06b6d4) 80%, transparent) 95%,
-        var(--ring-color, #06b6d4) 100%
-    );
+    /* background set by JS */
 }
 
-/* Comet head — glowing dot at 12-o'clock (top center) */
+/* Comet head — glowing dot at top (12-o'clock position inside spinner) */
 .ring-comet-head {
     position: absolute;
-    top: 0;
+    top: 4px;
     left: 50%;
     transform: translateX(-50%);
-    width: 7px;
-    height: 7px;
+    width: 6px;
+    height: 6px;
     border-radius: 50%;
-    background: var(--ring-color, #06b6d4);
-    box-shadow: 0 0 10px 3px var(--ring-color, #06b6d4);
+    /* background + box-shadow set by JS */
 }
 
-/* Progress clip — a conic-gradient mask that hides the arc beyond progress.
-   JS sets --ring-progress-deg (0–360) on the container.
-   The clip sits on top of the comet, covering the "empty" region. */
+/* Progress clip — covers the arc region beyond current progress.
+   background set entirely by JS to avoid conic-gradient var() issues. */
 .ring-progress-clip {
     position: absolute;
     inset: 0;
     border-radius: 50%;
-    /* By default hides everything; JS updates --ring-progress-deg */
-    background: conic-gradient(
-        from 0deg,
-        transparent var(--ring-progress-deg, 0deg),
-        var(--card-bg, #1e2532) var(--ring-progress-deg, 0deg)
-    );
-    /* Sits between comet (z1) and inner mask (z10) */
+    /* JS sets background; default covers everything */
+    background: var(--card-bg, #1a2236);
     z-index: 5;
 }
 
 /* Inner mask — creates the ring "hole" and holds the content */
 .ring-inner-mask {
     position: absolute;
-    inset: 7px;
+    inset: 9px;
     border-radius: 50%;
-    background: var(--card-bg, #1e2532);
+    background: var(--card-bg, #1a2236);
     z-index: 10;
     display: flex;
     align-items: center;
     justify-content: center;
-    box-shadow: inset 0 2px 10px rgba(0,0,0,0.2);
 }
 
 
