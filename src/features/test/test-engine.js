@@ -508,10 +508,11 @@ export function updateFlashcardStats(sourceId, questionId, rating) {
         };
     }
     const stat = AppState.stats[key];
+    const q = AppState.questionMap?.[key];
 
     // Snapshot for toggle logic
     let existingResult = AppState.testTracking?.results?.find(r =>
-        String(r.questionId) === String(questionId) && String(r.sourceId || q?.sourceId) === String(q?.sourceId)
+        String(r.questionId) === String(questionId) && String(r.sourceId || sourceId) === String(sourceId)
     );
     if (existingResult && existingResult._preSessionState) {
         Object.keys(existingResult._preSessionState).forEach(prop => {
@@ -520,7 +521,7 @@ export function updateFlashcardStats(sourceId, questionId, rating) {
         existingResult.answeredAt = Date.now();
     } else if (!existingResult) {
         const snapshot = JSON.parse(JSON.stringify(stat));
-        existingResult = { questionId, sourceId: q?.sourceId, answeredAt: Date.now(), isCorrect: rating >= 3, userAnswer: [String(rating)], _preSessionState: snapshot };
+        existingResult = { questionId, sourceId, answeredAt: Date.now(), isCorrect: rating >= 3, userAnswer: [String(rating)], _preSessionState: snapshot };
         if (AppState.testTracking) AppState.testTracking.results.push(existingResult);
     }
 
