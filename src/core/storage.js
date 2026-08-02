@@ -71,6 +71,26 @@ export function persist(key, value) {
 }
 
 /**
+ * Writes only when the value actually differs from what is stored.
+ *
+ * Several renderers memoise a daily value into state and persist it as a side
+ * effect of drawing - getDailyOverdueSnapshot() is one. With an unconditional
+ * save that turns into a loop the moment saving also notifies the UI: render →
+ * save → emit → render. Comparing first breaks the cycle at its source instead
+ * of asking every such call site to remember not to write.
+ *
+ * The saved write and the skipped sync are the secondary benefit; the primary
+ * one is that `changed` is honest.
+ *
+ * @returns {{ok: boolean, changed: boolean}}
+ */
+export function persistIfChanged(key, value) {
+    const next = typeof value === 'string' ? value : JSON.stringify(value);
+    if (readString(key, null) === next) return { ok: true, changed: false };
+    return { ok: persist(key, next), changed: true };
+}
+
+/**
  * Removes a key. Never throws - a removal that fails leaves a stale value, which
  * every caller already tolerates better than an exception mid-reset.
  */

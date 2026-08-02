@@ -1,5 +1,5 @@
 import { detectLanguage, detectTranslationTarget } from './i18n.js';
-import { persist, persistRemove, readJSON, readString, readInt, readFloat } from './storage.js';
+import { persist, persistIfChanged, persistRemove, readJSON, readString, readInt, readFloat } from './storage.js';
 import { emit, Slice } from './store.js';
 
 /**
@@ -494,32 +494,36 @@ export function trackDeletedQuickPreset(id) {
    given slice redraws. */
 
 export function saveQuickPresets() {
-    const ok = persist('focus_app_quick_presets', AppState.quickPresets);
+    const { ok, changed } = persistIfChanged('focus_app_quick_presets', AppState.quickPresets);
+    if (!changed) return ok;
     emit(Slice.PRESETS);
     import('./github-sync.js').then(m => m.scheduleSync(300)).catch(() => {});
     return ok;
 }
 
 export function saveContinuityConfig() {
-    const ok = persist('focus_app_continuity_config', AppState.continuityConfig);
+    const { ok, changed } = persistIfChanged('focus_app_continuity_config', AppState.continuityConfig);
+    if (!changed) return ok;
     emit(Slice.CONTINUITY);
     import('./github-sync.js').then(m => m.scheduleSync(300)).catch(() => {});
     return ok;
 }
 
 export function saveStudyActivity() {
-    const ok = persist('focus_app_study_activity', AppState.studyActivity);
+    const { ok, changed } = persistIfChanged('focus_app_study_activity', AppState.studyActivity);
+    if (!changed) return ok;
     emit(Slice.ACTIVITY);
     import('./github-sync.js').then(m => m.scheduleSync(300)).catch(() => {});
     return ok;
 }
 
 export function saveStats() {
-    const localOk = persist('focus_app_stats_local', AppState.stats);
-    const globalOk = persist('focus_app_stats_global', AppState.totalStats);
+    const local = persistIfChanged('focus_app_stats_local', AppState.stats);
+    const global = persistIfChanged('focus_app_stats_global', AppState.totalStats);
+    if (!local.changed && !global.changed) return local.ok && global.ok;
     emit(Slice.STATS);
     import('./github-sync.js').then(m => m.scheduleSync(1500)).catch(() => {});
-    return localOk && globalOk;
+    return local.ok && global.ok;
 }
 
 export function saveCustomAIPrompt() {
@@ -557,14 +561,16 @@ export function saveTimerSettings() {
 }
 
 export function saveSources() {
-    const ok = persist('focus_app_sources', AppState.sources);
+    const { ok, changed } = persistIfChanged('focus_app_sources', AppState.sources);
+    if (!changed) return ok;
     emit(Slice.SOURCES);
     import('./github-sync.js').then(m => m.scheduleSync(300)).catch(() => {});
     return ok;
 }
 
 export function saveFolders() {
-    const ok = persist('focus_app_folders', AppState.folders);
+    const { ok, changed } = persistIfChanged('focus_app_folders', AppState.folders);
+    if (!changed) return ok;
     emit(Slice.FOLDERS);
     import('./github-sync.js').then(m => m.scheduleSync(300)).catch(() => {});
     return ok;
@@ -578,7 +584,8 @@ export function saveCurrentSource(key) {
 }
 
 export function saveRecentTests() {
-    const ok = persist('focus_app_recent_tests', AppState.recentTests);
+    const { ok, changed } = persistIfChanged('focus_app_recent_tests', AppState.recentTests);
+    if (!changed) return ok;
     emit(Slice.RECENT_TESTS);
     import('./github-sync.js').then(m => m.scheduleSync(300)).catch(() => {});
     return ok;

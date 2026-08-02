@@ -43,7 +43,7 @@ async function evaluate(expression) {
    the bindings measures nothing. */
 for (let i = 0; i < 40; i++) {
     const n = await evaluate(`(async () => {
-        const s = await import('/src/core/store.js');
+        const s = window.appStore;
         return s._inspect().subscribers.length;
     })()`);
     if (n > 0) break;
@@ -58,7 +58,7 @@ function check(name, pass, detail = '') {
 
 // ── 1. Are the bindings actually installed in the running app? ───────────────
 const inspect = await evaluate(`(async () => {
-    const store = await import('/src/core/store.js');
+    const store = window.appStore;
     return JSON.stringify(store._inspect());
 })()`);
 const state = JSON.parse(inspect);
@@ -69,8 +69,8 @@ check('charts bound to activity',
 
 // ── 2. Does an activity change repaint the heatmap, with no reload? ─────────
 const repaint = await evaluate(`(async () => {
-    const store = await import('/src/core/store.js');
-    const st = await import('/src/core/state.js');
+    const store = window.appStore;
+    const st = { AppState: window.AppState, saveStudyActivity: window.__saveStudyActivity, saveTtsSettings: window.__saveTtsSettings };
 
     const host = document.getElementById('continuityHeatmapContainer')
               || document.getElementById('homeHeatmapCard');
@@ -108,8 +108,8 @@ if (r2.error) {
 
 // ── 3. Does the view gate defer work for a hidden view, then catch up? ──────
 const gate = await evaluate(`(async () => {
-    const store = await import('/src/core/store.js');
-    const st = await import('/src/core/state.js');
+    const store = window.appStore;
+    const st = { AppState: window.AppState, saveStudyActivity: window.__saveStudyActivity, saveTtsSettings: window.__saveTtsSettings };
 
     let runs = 0;
     store.subscribe('probe:gated', [store.Slice.ACTIVITY], () => { runs++; }, { views: ['home'] });
@@ -130,8 +130,8 @@ check('hidden view catches up on return', r3.afterReturn === 1, `runs=${r3.after
 
 // ── 4. Are unrelated slices really independent? ─────────────────────────────
 const isolation = await evaluate(`(async () => {
-    const store = await import('/src/core/store.js');
-    const st = await import('/src/core/state.js');
+    const store = window.appStore;
+    const st = { AppState: window.AppState, saveStudyActivity: window.__saveStudyActivity, saveTtsSettings: window.__saveTtsSettings };
 
     let chartRuns = 0;
     store.subscribe('probe:charts', [store.Slice.ACTIVITY], () => { chartRuns++; });

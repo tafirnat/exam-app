@@ -5,8 +5,15 @@ import { showToast, showConfirm, getCorrectAnswers, highlightText, escapeHTML } 
 import { migrateOldData, migrateFolderColors, sanitizeStudyActivity } from './core/migration.js';
 import { getQuestionCategory } from './core/question-rules.js';
 import { persist } from './core/storage.js';
+import * as store from './core/store.js';
 import { emit, Slice } from './core/store.js';
 import { registerUIBindings, paintAll, notifyViewChanged } from './core/ui-bindings.js';
+
+/* Exposed like the other debugging handles this file already hangs on window.
+   Without it there is no way to inspect the live store from DevTools or a CDP
+   session: a dynamic import() gets Vite's version-stamped copy of the module,
+   which is a different instance with an empty subscriber table. */
+window.appStore = store;
 import { processJSON, loadFromUrl, loadFromFile, normalizeQuestions, mergeSources } from './features/sources/sources-service.js';
 import { renderSourcesList, showMergeModal, closeAllSourcesModals, showSourceOptionsModal, renderHomeActiveSources } from './features/sources/sources-ui.js';
 import { renderContinuityBlock, renderGlobalCharts, showDailyMotivationToast } from './features/stats/continuity-ui.js';
