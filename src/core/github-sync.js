@@ -1060,16 +1060,22 @@ export function mergeSyncData(local, remote) {
         ? new Date(latestProgressResetAt).toISOString().slice(0, 10)
         : null;
     const mergedStudyActivity = {};
-    // Start from remote activity filtered by the progress floor
+    // Start from remote activity filtered by the progress floor.
+    // NOTE: dateKey === resetDateStr (same day as reset) is also excluded from remote
+    // because the reset happened DURING that day — any pre-reset activity stored on
+    // remote (e.g. 7 questions) must not survive the reset. The local side (which
+    // was intentionally cleared) is the authority for the reset day itself.
     Object.keys(remote.studyActivity || {}).forEach(dateKey => {
-        if (resetDateStr && dateKey < resetDateStr) return; // predates reset floor
+        if (resetDateStr && dateKey <= resetDateStr) return; // predates or equals reset floor
         mergedStudyActivity[dateKey] = sanitizeActivityRecord((remote.studyActivity || {})[dateKey]);
     });
     const localStudyActivity = local.studyActivity || {};
     Object.keys(localStudyActivity).forEach(dateKey => {
         if (resetDateStr && dateKey < resetDateStr) return; // predates reset floor
+        // On the reset day itself (dateKey === resetDateStr): local (cleared) wins
+        // unconditionally — do not take Math.max with a stale remote value.
         const lAct = localStudyActivity[dateKey];
-        const rAct = mergedStudyActivity[dateKey];
+        const rAct = mergedStudyActivity[dateKey]; // will be undefined for reset-day entries
         if (!rAct) {
             mergedStudyActivity[dateKey] = sanitizeActivityRecord(lAct);
             hasLocalChanges = true;
