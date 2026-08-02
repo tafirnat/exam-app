@@ -5,6 +5,8 @@ import { showToast, showConfirm, getCorrectAnswers, highlightText, escapeHTML } 
 import { migrateOldData, migrateFolderColors, sanitizeStudyActivity } from './core/migration.js';
 import { getQuestionCategory } from './core/question-rules.js';
 import { persist } from './core/storage.js';
+import { emit, Slice } from './core/store.js';
+import { registerUIBindings, paintAll, notifyViewChanged } from './core/ui-bindings.js';
 import { processJSON, loadFromUrl, loadFromFile, normalizeQuestions, mergeSources } from './features/sources/sources-service.js';
 import { renderSourcesList, showMergeModal, closeAllSourcesModals, showSourceOptionsModal, renderHomeActiveSources } from './features/sources/sources-ui.js';
 import { renderContinuityBlock, renderGlobalCharts, showDailyMotivationToast } from './features/stats/continuity-ui.js';
@@ -97,12 +99,14 @@ window.executeAiSearch = executeAiSearch;
 window.copyQuestionText = copyQuestionText;
 window.checkActiveTest = checkActiveTest;
 window.renderQuestion = renderQuestion;
+/* The hand-rolled predecessor of the store: 14 call sites reached this through
+   `window` to fan one change out to five renderers. The fan-out is now the
+   store's job, so this only announces the change. checkActiveTest() stays
+   because it is control flow, not rendering - it can resume or discard a test
+   session, which is not something a redraw should ever do on its own. */
 window.onSourcesUpdated = () => {
-    syncQuickPresetsWithLiveSources();
-    updateQuickSourcesDot();
+    emit(Slice.SOURCES);
     checkActiveTest();
-    updateHomeStats();
-    if (typeof renderGlobalCharts === 'function') renderGlobalCharts();
 };
 
 
@@ -234,6 +238,12 @@ const initApp = () => {
     checkActiveTest();
 
     try {
+        // Registered before anything that mutates state, so no early emit -
+        // a migration repair, or the first Gist pull - is announced to an
+        // empty subscriber table and lost.
+        console.log('Registering UI bindings...');
+        registerUIBindings();
+
         console.log('Migrating old data...');
         migrateOldData();
         migrateFolderColors();
@@ -360,11 +370,10 @@ const initApp = () => {
             }
         });
 
-        console.log('Rendering stats list...');
-        renderStatsList();
-
-        console.log('Updating home stats...');
-        updateHomeStats();
+        // First paint. From here on every save* emits and the store decides
+        // what redraws - no mutation site needs to name a renderer.
+        console.log('Painting initial UI...');
+        paintAll();
 
         console.log('Setting up event listeners...');
         setupEventListeners();
@@ -1880,6 +1889,10 @@ window.handleStatsBack = handleStatsBack;
 // --- View Management ---
 function switchView(view, isBack = false) {
     if (!view) return;
+
+    /* Told before the view is painted, so a consumer that fell behind while
+       its view was hidden catches up in the same frame the view appears. */
+    notifyViewChanged(view);
 
     // If leaving the test view mid-session, commit answered questions to the streak
     if (view !== 'test' && view !== 'statsPreview') {

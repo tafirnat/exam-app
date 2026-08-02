@@ -1,5 +1,6 @@
 import { detectLanguage, detectTranslationTarget } from './i18n.js';
 import { persist, persistRemove, readJSON, readString, readInt, readFloat } from './storage.js';
+import { emit, Slice } from './store.js';
 
 /**
  * Safely reads and parses a JSON item from localStorage.
@@ -294,6 +295,12 @@ export function clearLocalStudyData() {
     persist('focus_app_last_reset', AppState.lastResetTimestamp.toString());
     persist('focus_app_last_progress_reset', AppState.lastProgressResetTimestamp.toString());
 
+    // A factory reset invalidates everything the UI shows.
+    emit(
+        Slice.SOURCES, Slice.FOLDERS, Slice.STATS, Slice.ACTIVITY,
+        Slice.CONTINUITY, Slice.RECENT_TESTS, Slice.PRESETS
+    );
+
     clearActiveTest();
 }
 
@@ -355,6 +362,10 @@ export function clearProgressData() {
     persistRemove('focus_app_study_activity');
     persist('focus_app_continuity_config', AppState.continuityConfig);
     persist('focus_app_last_progress_reset', AppState.lastProgressResetTimestamp.toString());
+
+    // Sources and folders survive a progress reset, so they are not emitted.
+    emit(Slice.STATS, Slice.ACTIVITY, Slice.CONTINUITY, Slice.RECENT_TESTS, Slice.PRESETS);
+
     clearActiveTest();
 }
 
@@ -409,11 +420,16 @@ export function clearSourcesData() {
     persistRemove(SAMPLE_LOADED_KEY);
     persist('focus_app_last_reset', AppState.lastResetTimestamp.toString());
 
+    // Stats and activity survive a sources-only reset, so they are not emitted.
+    emit(Slice.SOURCES, Slice.FOLDERS, Slice.PRESETS);
+
     clearActiveTest();
 }
 
 export function savePresetSessions() {
-    persist('focus_app_preset_sessions', AppState.presetSessions || {});
+    const ok = persist('focus_app_preset_sessions', AppState.presetSessions || {});
+    emit(Slice.PRESETS);
+    return ok;
 }
 
 export function savePresetSessionData(presetId, sessionData) {
@@ -446,6 +462,7 @@ export function trackDeletedSource(id) {
     if (!AppState.deletedSourceIds.includes(id)) {
         AppState.deletedSourceIds.push(id);
         persist('focus_app_deleted_sources', AppState.deletedSourceIds);
+        emit(Slice.SOURCES);
     }
 }
 
@@ -454,6 +471,7 @@ export function trackDeletedFolder(id) {
     if (!AppState.deletedFolderIds.includes(id)) {
         AppState.deletedFolderIds.push(id);
         persist('focus_app_deleted_folders', AppState.deletedFolderIds);
+        emit(Slice.FOLDERS);
     }
 }
 
@@ -462,28 +480,36 @@ export function trackDeletedQuickPreset(id) {
     if (!AppState.deletedQuickPresetIds.includes(id)) {
         AppState.deletedQuickPresetIds.push(id);
         persist('focus_app_deleted_quick_presets', AppState.deletedQuickPresetIds);
+        emit(Slice.PRESETS);
     }
 }
 
 /* Each save* returns whether the value actually reached disk. A false means the
    change lives in memory only and will be gone on reload - the Gist push is
    still scheduled either way, because when local storage is full the remote
-   copy is the user's only way of getting the data back. */
+   copy is the user's only way of getting the data back.
+
+   Each also announces its slice, which is the entire contract these functions
+   have with the UI. No save* names a renderer; ui-bindings.js decides what a
+   given slice redraws. */
 
 export function saveQuickPresets() {
     const ok = persist('focus_app_quick_presets', AppState.quickPresets);
+    emit(Slice.PRESETS);
     import('./github-sync.js').then(m => m.scheduleSync(300)).catch(() => {});
     return ok;
 }
 
 export function saveContinuityConfig() {
     const ok = persist('focus_app_continuity_config', AppState.continuityConfig);
+    emit(Slice.CONTINUITY);
     import('./github-sync.js').then(m => m.scheduleSync(300)).catch(() => {});
     return ok;
 }
 
 export function saveStudyActivity() {
     const ok = persist('focus_app_study_activity', AppState.studyActivity);
+    emit(Slice.ACTIVITY);
     import('./github-sync.js').then(m => m.scheduleSync(300)).catch(() => {});
     return ok;
 }
@@ -491,55 +517,69 @@ export function saveStudyActivity() {
 export function saveStats() {
     const localOk = persist('focus_app_stats_local', AppState.stats);
     const globalOk = persist('focus_app_stats_global', AppState.totalStats);
+    emit(Slice.STATS);
     import('./github-sync.js').then(m => m.scheduleSync(1500)).catch(() => {});
     return localOk && globalOk;
 }
 
 export function saveCustomAIPrompt() {
-    return persist('focus_app_custom_ai_prompt', AppState.customAIPrompt);
+    const ok = persist('focus_app_custom_ai_prompt', AppState.customAIPrompt);
+    emit(Slice.SETTINGS);
+    return ok;
 }
 
 
 export function saveAiProviders() {
-    return persist('focus_app_ai_providers', AppState.aiProviders);
+    const ok = persist('focus_app_ai_providers', AppState.aiProviders);
+    emit(Slice.SETTINGS);
+    return ok;
 }
 
 export function saveTtsSettings() {
-    return [
+    const ok = [
         persist('focus_app_tts_enabled', AppState.ttsEnabled),
         persist('focus_app_tts_autoplay', AppState.ttsAutoplay),
         persist('focus_app_tts_speed', AppState.ttsSpeed.toString())
     ].every(Boolean);
+    emit(Slice.SETTINGS);
+    return ok;
 }
 
 export function saveTimerSettings() {
-    return [
+    const ok = [
         persist('focus_app_timer_stopwatch', AppState.timerStopwatchEnabled),
         persist('focus_app_timer_countdown', AppState.timerCountdownEnabled),
         persist('focus_app_timer_limit', AppState.timerCountdownLimit.toString()),
         persist('focus_app_timer_auto_check', AppState.timerAutoCheckEnabled)
     ].every(Boolean);
+    emit(Slice.SETTINGS);
+    return ok;
 }
 
 export function saveSources() {
     const ok = persist('focus_app_sources', AppState.sources);
+    emit(Slice.SOURCES);
     import('./github-sync.js').then(m => m.scheduleSync(300)).catch(() => {});
     return ok;
 }
 
 export function saveFolders() {
     const ok = persist('focus_app_folders', AppState.folders);
+    emit(Slice.FOLDERS);
     import('./github-sync.js').then(m => m.scheduleSync(300)).catch(() => {});
     return ok;
 }
 
 export function saveCurrentSource(key) {
     AppState.currentSourceKey = key;
-    return persist('focus_app_current_source', key || '');
+    const ok = persist('focus_app_current_source', key || '');
+    emit(Slice.SOURCES);
+    return ok;
 }
 
 export function saveRecentTests() {
     const ok = persist('focus_app_recent_tests', AppState.recentTests);
+    emit(Slice.RECENT_TESTS);
     import('./github-sync.js').then(m => m.scheduleSync(300)).catch(() => {});
     return ok;
 }
@@ -557,6 +597,7 @@ export function saveActiveTest() {
             testTracking: AppState.testTracking,
         };
         persist('focus_app_active_test', activeData);
+        emit(Slice.ACTIVE_TEST);
 
         // A streak run is drawn from the whole library, so it belongs to no
         // preset. Filing it under whichever preset happens to match the active
@@ -574,4 +615,5 @@ export function saveActiveTest() {
 
 export function clearActiveTest() {
     persistRemove('focus_app_active_test');
+    emit(Slice.ACTIVE_TEST);
 }

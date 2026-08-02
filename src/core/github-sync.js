@@ -3,6 +3,7 @@ import { showToast, showAlert } from './utils.js';
 import { t } from './i18n.js';
 import { migrateFolderColors, sanitizeActivityRecord } from './migration.js';
 import { persist, persistRemove } from './storage.js';
+import { emit, Slice } from './store.js';
 
 const GIST_FILENAME = 'exam_app_backup.json';
 // The archive lives in its own file inside the same Gist. A Gist PATCH only
@@ -255,6 +256,7 @@ async function completeLoginWithToken(rawToken) {
     persist('focus_app_github_gist_id', gistId);
     persist('focus_app_github_user', userObj);
     persist('focus_app_last_github_user', userObj.login);
+    emit(Slice.SYNC);
 
     // 4. Perform initial sync
     if (shouldReplaceLocalData) {
@@ -278,9 +280,12 @@ export async function logout() {
         import('../features/test/test-engine.js').then(m => {
             if (typeof m.buildQuestionPool === 'function') m.buildQuestionPool();
         }).catch(() => {});
-        if (typeof window.renderSourcesList === 'function') window.renderSourcesList();
-        if (typeof window.renderStatsList === 'function') window.renderStatsList();
-        if (typeof window.updateHomeStats === 'function') window.updateHomeStats();
+        // A merge can touch every domain at once; the store works out which
+        // renderers that implicates and coalesces them into one repaint.
+        emit(
+            Slice.SOURCES, Slice.FOLDERS, Slice.STATS, Slice.ACTIVITY,
+            Slice.CONTINUITY, Slice.RECENT_TESTS, Slice.PRESETS
+        );
     }
 
     AppState.githubToken = null;
@@ -294,6 +299,7 @@ export async function logout() {
     persistRemove('focus_app_github_gist_url');
     persistRemove('focus_app_github_user');
     persistRemove('focus_app_last_sync');
+    emit(Slice.SYNC);
 
     updateSyncUI();
     closeSyncDropdown();
@@ -381,14 +387,18 @@ async function pullRemoteGistOnly(token, gistId) {
 
             AppState.lastSyncTime = Date.now();
             persist('focus_app_last_sync', AppState.lastSyncTime.toString());
+            emit(Slice.SYNC);
 
             import('../features/test/test-engine.js').then(m => {
                 if (typeof m.buildQuestionPool === 'function') m.buildQuestionPool();
             }).catch(() => {});
 
-            if (typeof window.renderSourcesList === 'function') window.renderSourcesList();
-            if (typeof window.renderStatsList === 'function') window.renderStatsList();
-            if (typeof window.updateHomeStats === 'function') window.updateHomeStats();
+            // A merge can touch every domain at once; the store works out which
+            // renderers that implicates and coalesces them into one repaint.
+            emit(
+                Slice.SOURCES, Slice.FOLDERS, Slice.STATS, Slice.ACTIVITY,
+                Slice.CONTINUITY, Slice.RECENT_TESTS, Slice.PRESETS
+            );
         }
     } catch (err) {
         console.error('pullRemoteGistOnly error:', err);
@@ -563,6 +573,7 @@ function rememberGistUrl(url) {
     if (!url) return;
     AppState.githubGistUrl = url;
     persist('focus_app_github_gist_url', url);
+    emit(Slice.SYNC);
 }
 
 /**
@@ -597,6 +608,7 @@ export async function syncToGist(options = {}) {
 
         AppState.lastSyncTime = Date.now();
         persist('focus_app_last_sync', AppState.lastSyncTime.toString());
+        emit(Slice.SYNC);
         updateSyncUI();
 
         if (!options.silent) {
@@ -734,16 +746,19 @@ export async function syncFromGist(options = {}) {
 
             AppState.lastSyncTime = Date.now();
             persist('focus_app_last_sync', AppState.lastSyncTime.toString());
+            emit(Slice.SYNC);
 
             // Rebuild question pool and questionMap for Test Engine & UI
             import('../features/test/test-engine.js').then(m => {
                 if (typeof m.buildQuestionPool === 'function') m.buildQuestionPool();
             }).catch(() => {});
 
-            // Re-render UI components if available globally
-            if (typeof window.renderSourcesList === 'function') window.renderSourcesList();
-            if (typeof window.renderStatsList === 'function') window.renderStatsList();
-            if (typeof window.updateHomeStats === 'function') window.updateHomeStats();
+            // A merge can touch every domain at once; the store works out which
+            // renderers that implicates and coalesces them into one repaint.
+            emit(
+                Slice.SOURCES, Slice.FOLDERS, Slice.STATS, Slice.ACTIVITY,
+                Slice.CONTINUITY, Slice.RECENT_TESTS, Slice.PRESETS
+            );
 
             updateSyncUI();
 
