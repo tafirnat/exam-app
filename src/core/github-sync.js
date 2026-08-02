@@ -30,6 +30,10 @@ export function getSyncPayload() {
         // mergeSyncData() uses it to detect when local's intentionally-empty
         // state is newer than a stale remote payload and must not be overwritten.
         lastResetTimestamp: AppState.lastResetTimestamp || 0,
+        // Timestamp of the most recent deliberate progress clear on this device.
+        // mergeSyncData() uses it to prevent remote stats / activity / continuity
+        // data from overwriting a deliberate progress reset.
+        lastProgressResetTimestamp: AppState.lastProgressResetTimestamp || 0,
         // Offloaded archive entries are stubs here on purpose: their questions
         // live in ARCHIVE_FILENAME only.
         sources: (AppState.sources || []).map(s => (
@@ -708,13 +712,18 @@ export async function syncFromGist(options = {}) {
                 saveContinuityConfig();
             }
 
-            // Persist the most recent reset timestamp observed during this merge.
+            // Persist the most recent reset timestamps observed during this merge.
             // This keeps all devices aware of the latest reset even if they were
             // offline when it happened.
             if (typeof merged.lastResetTimestamp === 'number'
                     && merged.lastResetTimestamp > (AppState.lastResetTimestamp || 0)) {
                 AppState.lastResetTimestamp = merged.lastResetTimestamp;
                 localStorage.setItem('focus_app_last_reset', merged.lastResetTimestamp.toString());
+            }
+            if (typeof merged.lastProgressResetTimestamp === 'number'
+                    && merged.lastProgressResetTimestamp > (AppState.lastProgressResetTimestamp || 0)) {
+                AppState.lastProgressResetTimestamp = merged.lastProgressResetTimestamp;
+                localStorage.setItem('focus_app_last_progress_reset', merged.lastProgressResetTimestamp.toString());
             }
 
             // Push merged state back to Gist if local had newer changes
@@ -923,15 +932,58 @@ export function mergeSyncData(local, remote) {
 
     const mergedFolders = Array.from(foldersMap.values());
 
-    // 2. Merge Stats (excluding stats for deleted sources)
-    const mergedStats = { ...(remote.stats || {}) };
-    const localStats = local.stats || {};
+    // ── Progress-reset guard ──────────────────────────────────────────────
+    // Mirrors the source-reset guard above but covers stats, study activity,
+    // recent tests, total stats and continuity config.
+    // Strategy: use the MOST RECENT progress reset (from either side) as an
+    // authoritative "floor". Any stat/activity entry that predates that floor
+    // is dropped. Entries earned AFTER the floor (detectable via lastReview /
+    // timestamp / date key) are kept, so data from a second device that kept
+    // working AFTER the reset is not silently discarded.
+    const localProgressResetAt  = local.lastProgressResetTimestamp  || 0;
+    const remoteProgressResetAt = remote.lastProgressResetTimestamp || 0;
+    // The authoritative floor: max of both sides.
+    const latestProgressResetAt = Math.max(localProgressResetAt, remoteProgressResetAt);
+    // When local has a newer progress reset than remote knows about, push immediately.
+    if (localProgressResetAt > remoteProgressResetAt) {
+        hasLocalChanges = true;
+    }
+    // ────────────────────────────────────────────────────────────────────────
 
+    // 2. Merge Stats (excluding stats for deleted sources, respecting progress-reset floor)
+    // When there has been a reset on either side, only include a stat entry if
+    // its lastReview timestamp is on or after the reset floor (meaning it was
+    // actively earned AFTER the reset). Entries with no lastReview are kept only
+    // if they carry user annotations (starred / flagged / note) and even then
+    // their progress counters are zeroed so they do not inflate charts.
+    const passesProgressFloor = (stat) => {
+        if (!latestProgressResetAt) return true; // no reset ever happened
+        const reviewTime = stat && stat.lastReview
+            ? new Date(stat.lastReview).getTime()
+            : 0;
+        return Number.isFinite(reviewTime) && reviewTime >= latestProgressResetAt;
+    };
+
+    const mergedStats = {};
+    // Start from remote stats, filtered by the progress floor
+    Object.entries(remote.stats || {}).forEach(([qid, rStat]) => {
+        if (!rStat) return;
+        const sourceId = qid.split('_')[0];
+        if (mergedDeletedIds.includes(sourceId)) return;
+        if (passesProgressFloor(rStat)) {
+            mergedStats[qid] = rStat;
+        }
+    });
+
+    // Merge local stats (also filtered by progress floor)
+    const localStats = local.stats || {};
     Object.keys(localStats).forEach(qid => {
         const sourceId = qid.split('_')[0];
         if (mergedDeletedIds.includes(sourceId)) return;
 
         const lStat = localStats[qid];
+        if (!passesProgressFloor(lStat)) return; // predates the reset floor
+
         const rStat = mergedStats[qid];
 
         if (!rStat) {
@@ -967,12 +1019,12 @@ export function mergeSyncData(local, remote) {
         }
     });
 
-    // 3. Merge Recent Tests (excluding deleted sources)
+    // 3. Merge Recent Tests (excluding deleted sources, respecting progress-reset floor)
     const testMap = new Map();
     [...(remote.recentTests || []), ...(local.recentTests || [])].forEach(t => {
-        if (t && t.id && !mergedDeletedIds.includes(t.sourceId)) {
-            testMap.set(t.id, t);
-        }
+        if (!t || !t.id || mergedDeletedIds.includes(t.sourceId)) return;
+        if (latestProgressResetAt && (t.timestamp || 0) < latestProgressResetAt) return;
+        testMap.set(t.id, t);
     });
     const mergedRecentTests = Array.from(testMap.values())
         .sort((a, b) => (b.timestamp || 0) - (a.timestamp || 0))
@@ -1002,10 +1054,20 @@ export function mergeSyncData(local, remote) {
 
     const mergedQuickPresets = Array.from(quickPresetsMap.values());
 
-    // 5. Merge Study Activity (Union by date key)
-    const mergedStudyActivity = { ...(remote.studyActivity || {}) };
+    // 5. Merge Study Activity (Union by date key, respecting progress-reset floor)
+    // Convert the reset floor timestamp to a date string for date-key comparison.
+    const resetDateStr = latestProgressResetAt
+        ? new Date(latestProgressResetAt).toISOString().slice(0, 10)
+        : null;
+    const mergedStudyActivity = {};
+    // Start from remote activity filtered by the progress floor
+    Object.keys(remote.studyActivity || {}).forEach(dateKey => {
+        if (resetDateStr && dateKey < resetDateStr) return; // predates reset floor
+        mergedStudyActivity[dateKey] = sanitizeActivityRecord((remote.studyActivity || {})[dateKey]);
+    });
     const localStudyActivity = local.studyActivity || {};
     Object.keys(localStudyActivity).forEach(dateKey => {
+        if (resetDateStr && dateKey < resetDateStr) return; // predates reset floor
         const lAct = localStudyActivity[dateKey];
         const rAct = mergedStudyActivity[dateKey];
         if (!rAct) {
@@ -1036,34 +1098,50 @@ export function mergeSyncData(local, remote) {
         }
     });
 
-    // Days only the remote knows about still travel through the old additive
-    // build on other devices, so they get cleaned on the way in as well.
-    Object.keys(mergedStudyActivity).forEach(dateKey => {
-        if (!localStudyActivity[dateKey]) {
-            mergedStudyActivity[dateKey] = sanitizeActivityRecord(mergedStudyActivity[dateKey]);
-        }
-    });
-
     // 6. Merge Continuity Config
-    // Last writer wins (prefer remote as base, or keep local if remote is missing)
-    const mergedContinuityConfig = remote.continuityConfig && Object.keys(remote.continuityConfig).length > 0 
-        ? remote.continuityConfig 
-        : local.continuityConfig;
+    // Prefer the version from the side that has a NEWER progress reset, because
+    // that device's config is the freshly-initialised factory state. Fall back to
+    // the remote as the authoritative base when no reset has occurred on either side.
+    let mergedContinuityConfig;
+    if (localProgressResetAt >= remoteProgressResetAt && localProgressResetAt > 0) {
+        // Local reset is at least as recent — local factory config wins
+        mergedContinuityConfig = local.continuityConfig;
+    } else if (remoteProgressResetAt > localProgressResetAt) {
+        // Remote had a more recent reset — remote factory config wins
+        mergedContinuityConfig = remote.continuityConfig;
+    } else {
+        // No reset on either side: prefer remote as base, fall back to local
+        mergedContinuityConfig = (remote.continuityConfig && Object.keys(remote.continuityConfig).length > 0)
+            ? remote.continuityConfig
+            : local.continuityConfig;
+    }
+
+    // Total stats: prefer whichever side had the most recent progress reset
+    // (their cleared state is the authority); otherwise take the larger values.
+    let mergedTotalStats;
+    if (localProgressResetAt >= remoteProgressResetAt && localProgressResetAt > 0) {
+        mergedTotalStats = local.totalStats || {};
+    } else if (remoteProgressResetAt > localProgressResetAt) {
+        mergedTotalStats = remote.totalStats || {};
+    } else {
+        mergedTotalStats = remote.totalStats || local.totalStats;
+    }
 
     return {
         sources: mergedSources,
         folders: mergedFolders,
         quickPresets: mergedQuickPresets,
         stats: mergedStats,
-        totalStats: remote.totalStats || local.totalStats,
+        totalStats: mergedTotalStats,
         recentTests: mergedRecentTests,
         studyActivity: mergedStudyActivity,
         continuityConfig: mergedContinuityConfig,
         deletedSourceIds: mergedDeletedIds,
         deletedFolderIds: mergedDeletedFolderIds,
         deletedQuickPresetIds: mergedDeletedQuickPresetIds,
-        // Propagate the most recent reset timestamp so all devices stay in sync
+        // Propagate the most recent reset timestamps so all devices stay in sync
         lastResetTimestamp: Math.max(localResetAt, remoteResetAt),
+        lastProgressResetTimestamp: Math.max(localProgressResetAt, remoteProgressResetAt),
         hasLocalChanges
     };
 }

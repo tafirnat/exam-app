@@ -120,10 +120,12 @@ export const AppState = {
     deletedFolderIds: safeJSONParse('focus_app_deleted_folders', []),
     quickPresets: safeJSONParse('focus_app_quick_presets', []),
     deletedQuickPresetIds: safeJSONParse('focus_app_deleted_quick_presets', []),
-    // Timestamp of the last destructive reset on this device. Used by
-    // mergeSyncData() to recognise that an intentionally-empty local state
-    // should not be overwritten by stale remote data.
+    // Timestamp of the last destructive reset on this device (sources/full reset).
     lastResetTimestamp: parseInt(localStorage.getItem('focus_app_last_reset') || '0', 10),
+    // Timestamp of the last progress reset on this device (progress/full reset).
+    // Used by mergeSyncData() to prevent stale stats, study activity, streaks
+    // and continuity data from a remote Gist overwriting a deliberate clear.
+    lastProgressResetTimestamp: parseInt(localStorage.getItem('focus_app_last_progress_reset') || '0', 10),
     githubGistUrl: localStorage.getItem('focus_app_github_gist_url') || null,
     presetSessions: safeJSONParse('focus_app_preset_sessions', {}),
     activePresetId: null,
@@ -276,6 +278,9 @@ export function clearLocalStudyData() {
     // an intentionally-empty local state must not be overwritten by remote data
     // that predates this reset.
     AppState.lastResetTimestamp = Date.now();
+    // Full reset also clears all progress data — mark it so the progress-reset
+    // guard in mergeSyncData() fires for stats / activity / continuity as well.
+    AppState.lastProgressResetTimestamp = AppState.lastResetTimestamp;
 
     localStorage.removeItem('focus_app_preset_sessions');
     localStorage.setItem('focus_app_folders', JSON.stringify(AppState.folders));
@@ -295,6 +300,7 @@ export function clearLocalStudyData() {
     // Clear sample loaded key so the starter sample JSON for active language is auto-loaded on reset
     localStorage.removeItem(SAMPLE_LOADED_KEY);
     localStorage.setItem('focus_app_last_reset', AppState.lastResetTimestamp.toString());
+    localStorage.setItem('focus_app_last_progress_reset', AppState.lastProgressResetTimestamp.toString());
 
     clearActiveTest();
 }
@@ -346,6 +352,9 @@ export function clearProgressData() {
             optInFocusDismissedAt: null
         }
     };
+    // Record the progress-reset wall-clock time so mergeSyncData() knows not to
+    // pull back stats / activity / continuity data that predates this clear.
+    AppState.lastProgressResetTimestamp = Date.now();
 
     localStorage.removeItem('focus_app_stats_local');
     localStorage.removeItem('focus_app_stats_global');
@@ -353,6 +362,7 @@ export function clearProgressData() {
     localStorage.removeItem('focus_app_preset_sessions');
     localStorage.removeItem('focus_app_study_activity');
     localStorage.setItem('focus_app_continuity_config', JSON.stringify(AppState.continuityConfig));
+    localStorage.setItem('focus_app_last_progress_reset', AppState.lastProgressResetTimestamp.toString());
     clearActiveTest();
 }
 
