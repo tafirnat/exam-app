@@ -26,6 +26,10 @@ export function getSyncPayload() {
     return {
         version: 3,
         lastUpdated: Date.now(),
+        // Timestamp of the most recent destructive reset on this device.
+        // mergeSyncData() uses it to detect when local's intentionally-empty
+        // state is newer than a stale remote payload and must not be overwritten.
+        lastResetTimestamp: AppState.lastResetTimestamp || 0,
         // Offloaded archive entries are stubs here on purpose: their questions
         // live in ARCHIVE_FILENAME only.
         sources: (AppState.sources || []).map(s => (
@@ -704,6 +708,15 @@ export async function syncFromGist(options = {}) {
                 saveContinuityConfig();
             }
 
+            // Persist the most recent reset timestamp observed during this merge.
+            // This keeps all devices aware of the latest reset even if they were
+            // offline when it happened.
+            if (typeof merged.lastResetTimestamp === 'number'
+                    && merged.lastResetTimestamp > (AppState.lastResetTimestamp || 0)) {
+                AppState.lastResetTimestamp = merged.lastResetTimestamp;
+                localStorage.setItem('focus_app_last_reset', merged.lastResetTimestamp.toString());
+            }
+
             // Push merged state back to Gist if local had newer changes
             if (merged.hasLocalChanges) {
                 await syncToGist({ silent: true });
@@ -772,6 +785,24 @@ function pickLastReview(a, b) {
 export function mergeSyncData(local, remote) {
     let hasLocalChanges = false;
 
+    // ── Reset-timestamp guard ──────────────────────────────────────────────────
+    // A destructive reset on one device must not be undone by stale data that
+    // arrives from the Gist or another device later. The tombstone lists that
+    // clearLocalStudyData / clearSourcesData now populate are the primary
+    // defence; lastResetTimestamp provides an additional signal:
+    //   - If local reset happened AFTER the remote payload was last written,
+    //     flag hasLocalChanges so the clean local state gets pushed immediately.
+    //   - The source / folder / preset merge sections below also consult this
+    //     flag to skip importing remote items that predate the local reset.
+    const localResetAt      = local.lastResetTimestamp  || 0;
+    const remoteResetAt     = remote.lastResetTimestamp || 0;
+    const remoteLastUpdated = remote.lastUpdated || 0;
+
+    // True when local performed a reset more recently than the remote payload
+    // was written — local's intentionally-clean state is the authority.
+    const localResetIsNewer = localResetAt > 0 && localResetAt > remoteLastUpdated;
+    // ────────────────────────────────────────────────────────────────────────
+
     // 0. Combine Tombstone Deletion Trackers
     const mergedDeletedIds = Array.from(new Set([
         ...(remote.deletedSourceIds || []),
@@ -793,15 +824,36 @@ export function mergeSyncData(local, remote) {
         ...(AppState.deletedQuickPresetIds || [])
     ]));
 
+    // If the merged tombstone sets are larger than what local already knew about,
+    // local needs to push the updated state back to the Gist.
+    if (
+        mergedDeletedIds.length          > (local.deletedSourceIds       || []).length ||
+        mergedDeletedFolderIds.length    > (local.deletedFolderIds        || []).length ||
+        mergedDeletedQuickPresetIds.length > (local.deletedQuickPresetIds || []).length
+    ) {
+        hasLocalChanges = true;
+    }
+
+    // If local reset is newer than the remote payload, flag a push immediately
+    // so the clean state is not silently replaced on the next sync cycle.
+    if (localResetIsNewer) {
+        hasLocalChanges = true;
+    }
+
     const revisionOf = (r) => r.updatedAt || r.lastUsed || 0;
 
-    // 1. Merge Sources (by ID, respecting Tombstones)
+    // 1. Merge Sources (by ID, respecting Tombstones and Reset Guard)
     const sourcesMap = new Map();
-    (remote.sources || []).forEach(s => {
-        if (s && s.id && !mergedDeletedIds.includes(s.id)) {
-            sourcesMap.set(s.id, s);
-        }
-    });
+
+    // Remote sources are skipped entirely when local has a newer reset,
+    // because those remote items were part of what the reset cleared.
+    if (!localResetIsNewer) {
+        (remote.sources || []).forEach(s => {
+            if (s && s.id && !mergedDeletedIds.includes(s.id)) {
+                sourcesMap.set(s.id, s);
+            }
+        });
+    }
 
     (local.sources || []).forEach(s => {
         if (!s || !s.id || mergedDeletedIds.includes(s.id)) return;
@@ -847,13 +899,15 @@ export function mergeSyncData(local, remote) {
 
     const mergedSources = Array.from(sourcesMap.values());
 
-    // 1b. Merge Folders (by ID, respecting Folder Tombstones)
+    // 1b. Merge Folders (by ID, respecting Folder Tombstones and Reset Guard)
     const foldersMap = new Map();
-    (remote.folders || []).forEach(f => {
-        if (f && f.id && !mergedDeletedFolderIds.includes(f.id)) {
-            foldersMap.set(f.id, f);
-        }
-    });
+    if (!localResetIsNewer) {
+        (remote.folders || []).forEach(f => {
+            if (f && f.id && !mergedDeletedFolderIds.includes(f.id)) {
+                foldersMap.set(f.id, f);
+            }
+        });
+    }
 
     (local.folders || []).forEach(f => {
         if (!f || !f.id || mergedDeletedFolderIds.includes(f.id)) return;
@@ -924,13 +978,15 @@ export function mergeSyncData(local, remote) {
         .sort((a, b) => (b.timestamp || 0) - (a.timestamp || 0))
         .slice(0, 10);
 
-    // 4. Merge Quick Presets (by ID, respecting Quick Preset Tombstones)
+    // 4. Merge Quick Presets (by ID, respecting Quick Preset Tombstones and Reset Guard)
     const quickPresetsMap = new Map();
-    (remote.quickPresets || []).forEach(p => {
-        if (p && p.id && !mergedDeletedQuickPresetIds.includes(p.id)) {
-            quickPresetsMap.set(p.id, p);
-        }
-    });
+    if (!localResetIsNewer) {
+        (remote.quickPresets || []).forEach(p => {
+            if (p && p.id && !mergedDeletedQuickPresetIds.includes(p.id)) {
+                quickPresetsMap.set(p.id, p);
+            }
+        });
+    }
 
     (local.quickPresets || []).forEach(p => {
         if (!p || !p.id || mergedDeletedQuickPresetIds.includes(p.id)) return;
@@ -1006,6 +1062,8 @@ export function mergeSyncData(local, remote) {
         deletedSourceIds: mergedDeletedIds,
         deletedFolderIds: mergedDeletedFolderIds,
         deletedQuickPresetIds: mergedDeletedQuickPresetIds,
+        // Propagate the most recent reset timestamp so all devices stay in sync
+        lastResetTimestamp: Math.max(localResetAt, remoteResetAt),
         hasLocalChanges
     };
 }

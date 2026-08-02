@@ -120,6 +120,10 @@ export const AppState = {
     deletedFolderIds: safeJSONParse('focus_app_deleted_folders', []),
     quickPresets: safeJSONParse('focus_app_quick_presets', []),
     deletedQuickPresetIds: safeJSONParse('focus_app_deleted_quick_presets', []),
+    // Timestamp of the last destructive reset on this device. Used by
+    // mergeSyncData() to recognise that an intentionally-empty local state
+    // should not be overwritten by stale remote data.
+    lastResetTimestamp: parseInt(localStorage.getItem('focus_app_last_reset') || '0', 10),
     githubGistUrl: localStorage.getItem('focus_app_github_gist_url') || null,
     presetSessions: safeJSONParse('focus_app_preset_sessions', {}),
     activePresetId: null,
@@ -193,15 +197,39 @@ export function touch(record) {
 }
 
 export function clearLocalStudyData() {
+    // ── Collect tombstones BEFORE clearing ──────────────────────────────────
+    // Every ID that exists right now must be recorded as deleted so that the
+    // sync merge cannot resurrect these items from a remote Gist or another
+    // device that has not yet seen this reset.
+    const priorSourceIds = (AppState.sources || []).map(s => s.id).filter(Boolean);
+    const priorFolderIds = (AppState.folders || [])
+        .filter(f => f && f.id && !f.isSystem && f.id !== UNCATEGORIZED_FOLDER_ID)
+        .map(f => f.id);
+    const priorPresetIds = (AppState.quickPresets || []).map(p => p.id).filter(Boolean);
+
+    const allDeletedSourceIds = Array.from(new Set([
+        ...(AppState.deletedSourceIds || []),
+        ...priorSourceIds
+    ]));
+    const allDeletedFolderIds = Array.from(new Set([
+        ...(AppState.deletedFolderIds || []),
+        ...priorFolderIds
+    ]));
+    const allDeletedPresetIds = Array.from(new Set([
+        ...(AppState.deletedQuickPresetIds || []),
+        ...priorPresetIds
+    ]));
+    // ────────────────────────────────────────────────────────────────────────
+
     AppState.folders = [createUncategorizedFolderRecord()];
     AppState.sources = [];
     AppState.stats = {};
     AppState.totalStats = {};
     AppState.recentTests = [];
-    AppState.deletedSourceIds = [];
-    AppState.deletedFolderIds = [];
+    AppState.deletedSourceIds = allDeletedSourceIds;
+    AppState.deletedFolderIds = allDeletedFolderIds;
     AppState.quickPresets = [];
-    AppState.deletedQuickPresetIds = [];
+    AppState.deletedQuickPresetIds = allDeletedPresetIds;
     AppState.currentSourceKey = null;
     AppState.presetSessions = {};
     AppState.continuityConfig = {
@@ -244,22 +272,29 @@ export function clearLocalStudyData() {
         }
     };
     AppState.studyActivity = {};
+    // Record the reset wall-clock time so mergeSyncData() can recognise that
+    // an intentionally-empty local state must not be overwritten by remote data
+    // that predates this reset.
+    AppState.lastResetTimestamp = Date.now();
+
     localStorage.removeItem('focus_app_preset_sessions');
     localStorage.setItem('focus_app_folders', JSON.stringify(AppState.folders));
     localStorage.setItem('focus_app_sources', JSON.stringify(AppState.sources));
     localStorage.removeItem('focus_app_stats_local');
     localStorage.removeItem('focus_app_stats_global');
     localStorage.removeItem('focus_app_recent_tests');
-    localStorage.removeItem('focus_app_deleted_sources');
-    localStorage.removeItem('focus_app_deleted_folders');
-    localStorage.removeItem('focus_app_quick_presets');
-    localStorage.removeItem('focus_app_deleted_quick_presets');
+    // Persist tombstones (not removeItem!) so the next sync push carries them
+    localStorage.setItem('focus_app_deleted_sources', JSON.stringify(allDeletedSourceIds));
+    localStorage.setItem('focus_app_deleted_folders', JSON.stringify(allDeletedFolderIds));
+    localStorage.setItem('focus_app_quick_presets', JSON.stringify([]));
+    localStorage.setItem('focus_app_deleted_quick_presets', JSON.stringify(allDeletedPresetIds));
     localStorage.removeItem('focus_app_current_source');
     localStorage.removeItem('focus_app_active_test');
     localStorage.removeItem('focus_app_continuity_config');
     localStorage.removeItem('focus_app_study_activity');
     // Clear sample loaded key so the starter sample JSON for active language is auto-loaded on reset
     localStorage.removeItem(SAMPLE_LOADED_KEY);
+    localStorage.setItem('focus_app_last_reset', AppState.lastResetTimestamp.toString());
 
     clearActiveTest();
 }
@@ -326,19 +361,52 @@ export function clearProgressData() {
  * while leaving global configuration intact.
  */
 export function clearSourcesData() {
+    // ── Collect tombstones BEFORE clearing ──────────────────────────────────
+    // Mirror the same logic used in clearLocalStudyData(): every existing ID
+    // becomes a tombstone so that a future sync cannot bring these items back
+    // from a Gist that still has the old copy.
+    const priorSourceIds = (AppState.sources || []).map(s => s.id).filter(Boolean);
+    const priorFolderIds = (AppState.folders || [])
+        .filter(f => f && f.id && !f.isSystem && f.id !== UNCATEGORIZED_FOLDER_ID)
+        .map(f => f.id);
+    const priorPresetIds = (AppState.quickPresets || []).map(p => p.id).filter(Boolean);
+
+    const allDeletedSourceIds = Array.from(new Set([
+        ...(AppState.deletedSourceIds || []),
+        ...priorSourceIds
+    ]));
+    const allDeletedFolderIds = Array.from(new Set([
+        ...(AppState.deletedFolderIds || []),
+        ...priorFolderIds
+    ]));
+    const allDeletedPresetIds = Array.from(new Set([
+        ...(AppState.deletedQuickPresetIds || []),
+        ...priorPresetIds
+    ]));
+    // ────────────────────────────────────────────────────────────────────────
+
     AppState.folders = [createUncategorizedFolderRecord()];
     AppState.sources = [];
     AppState.quickPresets = [];
+    AppState.deletedSourceIds = allDeletedSourceIds;
+    AppState.deletedFolderIds = allDeletedFolderIds;
+    AppState.deletedQuickPresetIds = allDeletedPresetIds;
     AppState.currentSourceKey = null;
     AppState.presetSessions = {};
-    
+    AppState.lastResetTimestamp = Date.now();
+
     localStorage.removeItem('focus_app_preset_sessions');
     localStorage.setItem('focus_app_folders', JSON.stringify(AppState.folders));
     localStorage.setItem('focus_app_sources', JSON.stringify(AppState.sources));
-    localStorage.setItem('focus_app_quick_presets', JSON.stringify(AppState.quickPresets));
+    localStorage.setItem('focus_app_quick_presets', JSON.stringify([]));
+    // Persist tombstones so the next sync push carries them
+    localStorage.setItem('focus_app_deleted_sources', JSON.stringify(allDeletedSourceIds));
+    localStorage.setItem('focus_app_deleted_folders', JSON.stringify(allDeletedFolderIds));
+    localStorage.setItem('focus_app_deleted_quick_presets', JSON.stringify(allDeletedPresetIds));
     localStorage.removeItem('focus_app_current_source');
     localStorage.removeItem(SAMPLE_LOADED_KEY);
-    
+    localStorage.setItem('focus_app_last_reset', AppState.lastResetTimestamp.toString());
+
     clearActiveTest();
 }
 
