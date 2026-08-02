@@ -5968,17 +5968,7 @@ body.dnd-active {
     transition: stroke-dashoffset 0.4s ease, stroke 0.3s ease;
 }
 
-/* Glowing head dot at progress tip */
-.ring-head-dot {
-    position: absolute;
-    width: 8px;
-    height: 8px;
-    border-radius: 50%;
-    transform: translate(-50%, -50%);
-    pointer-events: none;
-    z-index: 5;
-    transition: left 0.4s ease, top 0.4s ease, background-color 0.3s ease, box-shadow 0.3s ease;
-}
+
 
 /* Comet head dot — default cyan; JS overrides */
 .ring-comet-head {

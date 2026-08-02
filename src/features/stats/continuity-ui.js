@@ -230,9 +230,7 @@ function updateCometRing(container, spinGroup, progress, color) {
 
     const spinEl = spinGroup || container.querySelector('.streak-ring-spin');
     const arcEl = container.querySelector('.streak-ring-arc');
-    const headEl = container.querySelector('.ring-head-dot');
     const rgb = resolveColor(color);
-    const rgba = (a) => rgb.replace('rgb(', 'rgba(').replace(')', `, ${a})`);
 
     const pct = Math.max(0, Math.min(100, progress || 0));
 
@@ -245,13 +243,10 @@ function updateCometRing(container, spinGroup, progress, color) {
         if (arcEl) {
             arcEl.style.strokeDashoffset = CIRCUMFERENCE_92;
         }
-        if (headEl) {
-            headEl.style.display = 'none';
-        }
         return;
     }
 
-    // 2. 100% Completion (15/15) — Solid 100% ring, stop rotation, no tip dot
+    // 2. 100% Completion (15/15) — Solid 100% ring, stop rotation
     if (pct >= 100) {
         if (spinEl) {
             spinEl.style.display = 'block';
@@ -262,13 +257,10 @@ function updateCometRing(container, spinGroup, progress, color) {
             arcEl.style.stroke = rgb;
             arcEl.style.strokeDashoffset = '0';
         }
-        if (headEl) {
-            headEl.style.display = 'none';
-        }
         return;
     }
 
-    // 3. Intermediate Progress (1/15, 8/15, 14/15) — Proportional arc + rotating spin + glowing tip dot
+    // 3. Intermediate Progress (1/15, 8/15, 14/15) — Proportional arc + rotating spin
     if (spinEl) {
         spinEl.style.display = 'block';
         spinEl.style.animation = 'ringClockwise 4s linear infinite';
@@ -279,21 +271,6 @@ function updateCometRing(container, spinGroup, progress, color) {
         arcEl.style.stroke = rgb;
         const offset = CIRCUMFERENCE_92 * (1 - pct / 100);
         arcEl.style.strokeDashoffset = offset.toFixed(3);
-    }
-
-    if (headEl) {
-        headEl.style.display = 'block';
-        headEl.style.backgroundColor = rgb;
-        headEl.style.boxShadow = `0 0 10px 3px ${rgba(0.95)}`;
-
-        // Calculate tip position (angle starts at -90° top 12 o'clock)
-        const angleDeg = -90 + (pct / 100) * 360;
-        const angleRad = (angleDeg * Math.PI) / 180;
-        const cx = 46 + 42.5 * Math.cos(angleRad);
-        const cy = 46 + 42.5 * Math.sin(angleRad);
-
-        headEl.style.left = `${cx.toFixed(2)}px`;
-        headEl.style.top = `${cy.toFixed(2)}px`;
     }
 }
 
