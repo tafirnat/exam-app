@@ -1716,6 +1716,25 @@ function renderTrendChart(buckets, yAxisId, barsId, xAxisId) {
     // The line overlay is absolutely positioned inside the bar strip.
     barsEl.style.position = 'relative';
 
+    const tooltip = document.createElement('div');
+    tooltip.style.position = 'absolute';
+    tooltip.style.display = 'none';
+    tooltip.style.backgroundColor = 'var(--surface-color)';
+    tooltip.style.border = '1px solid var(--border-color)';
+    tooltip.style.borderRadius = '4px';
+    tooltip.style.padding = '4px 6px';
+    tooltip.style.fontSize = '0.7rem';
+    tooltip.style.color = 'var(--text-primary)';
+    tooltip.style.zIndex = '10';
+    tooltip.style.pointerEvents = 'none';
+    tooltip.style.boxShadow = '0 2px 4px rgba(0,0,0,0.2)';
+    tooltip.style.whiteSpace = 'nowrap';
+    tooltip.style.textAlign = 'center';
+    tooltip.style.lineHeight = '1.3';
+    barsEl.appendChild(tooltip);
+
+    barsEl.addEventListener('mouseleave', () => { tooltip.style.display = 'none'; });
+
     for (let i = 0; i <= 5; i++) {
         const val = Math.round((topLimit / 5) * i);
         const line = document.createElement('div');
@@ -1806,36 +1825,34 @@ function renderTrendChart(buckets, yAxisId, barsId, xAxisId) {
             topLbl.style.textShadow = '0 0 3px var(--surface-color), 0 0 3px var(--surface-color), 0 0 2px var(--surface-color)';
             barInner.appendChild(topLbl);
 
-            barInner.style.cursor = 'pointer';
-            barInner.addEventListener('click', (e) => {
-                e.stopPropagation();
-                openInfoPopupModal(
-                    `📊 ${d.label} İstatistikleri`,
-                    `
-                    <div style="display:flex; flex-direction:column; gap:12px; font-size:0.9rem; color:var(--text-primary);">
-                        <div style="display:flex; justify-content:space-between; padding:8px; background:var(--surface-hover); border-radius:6px;">
-                            <span>Tekil Soru Sayısı:</span>
-                            <strong>${d.total}</strong>
-                        </div>
-                        <div style="display:flex; justify-content:space-between; padding:8px; background:var(--surface-hover); border-radius:6px;">
-                            <span>Toplam Efor (Hacim):</span>
-                            <strong>${d.volumeTotal}</strong>
-                        </div>
-                        <div style="display:flex; justify-content:space-between; padding:8px; background:rgba(34, 197, 94, 0.1); border-left:3px solid #22c55e; border-radius:6px;">
-                            <span>Doğru Adedi:</span>
-                            <strong>${d.effortCorrect}</strong>
-                        </div>
-                        <div style="display:flex; justify-content:space-between; padding:8px; background:rgba(239, 68, 68, 0.1); border-left:3px solid #ef4444; border-radius:6px;">
-                            <span>Yanlış Adedi:</span>
-                            <strong>${d.effortWrong}</strong>
-                        </div>
-                        <div style="display:flex; justify-content:space-between; padding:8px; background:rgba(100, 116, 139, 0.1); border-left:3px solid #64748b; border-radius:6px;">
-                            <span>Boş Bırakılan:</span>
-                            <strong>${d.effortEmpty}</strong>
-                        </div>
-                    </div>
-                    `
-                );
+            barWrap.style.cursor = 'pointer';
+            barWrap.addEventListener('mouseenter', () => {
+                tooltip.innerHTML = `Tekil: <b>${d.total}</b> | Hacim: <b>${d.volumeTotal}</b><br><span style="color:#22c55e">D:${d.effortCorrect}</span> &nbsp;<span style="color:#ef4444">Y:${d.effortWrong}</span> &nbsp;<span style="color:#64748b">B:${d.effortEmpty}</span>`;
+                tooltip.style.display = 'block';
+                
+                const rect = barWrap.getBoundingClientRect();
+                const containerRect = barsEl.getBoundingClientRect();
+                const barRect = barInner.getBoundingClientRect();
+                
+                let left = (rect.left - containerRect.left) + (rect.width / 2);
+                let top = (barRect.top - containerRect.top) - 36;
+                if (top < 4) top = 4;
+                
+                tooltip.style.top = `${top}px`;
+                tooltip.style.left = `${left}px`;
+                tooltip.style.transform = 'translateX(-50%)';
+                
+                const leftPerc = left / containerRect.width;
+                if (leftPerc < 0.2) {
+                    tooltip.style.transform = 'translateX(0)';
+                    tooltip.style.left = `${rect.left - containerRect.left}px`;
+                } else if (leftPerc > 0.8) {
+                    tooltip.style.transform = 'translateX(-100%)';
+                    tooltip.style.left = `${rect.right - containerRect.left}px`;
+                }
+            });
+            barWrap.addEventListener('mouseleave', () => {
+                tooltip.style.display = 'none';
             });
         }
 
