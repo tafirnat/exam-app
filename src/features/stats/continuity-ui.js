@@ -16,6 +16,7 @@ import {
     getFocusSourceLabel,
     calculateFocusTargetDistribution
 } from './continuity-engine.js';
+import { getDayAnchor } from '../../core/daily-activity.js';
 import { buildQuestionPool } from '../test/test-engine.js';
 import { buildStreakRun, prepareStreakRun, resolveStreakCount } from './streak-run.js';
 import { renderSourcePicker } from '../sources/sources-ui.js';
@@ -1086,7 +1087,7 @@ export function getHeatmapDayLabels(lang = 'tr') {
  * starts on a Monday, so every column is a whole week - anything else would put
  * a different weekday in row 0 depending on the screen width.
  */
-export function buildHeatmapWindow(weeks, today = new Date()) {
+export function buildHeatmapWindow(weeks, today = getDayAnchor()) {
     const todayCol = (today.getDay() + 6) % 7; // Monday-first index
     const start = new Date(today);
     start.setDate(start.getDate() - todayCol - (weeks - 1) * 7);
@@ -1579,7 +1580,7 @@ function bindTrendFlip() {
 /** One bucket per day for the last 7 days, oldest first. */
 export function buildWeeklyTrendBuckets(activities) {
     const numDays = 7;
-    const currentDate = new Date();
+    const currentDate = getDayAnchor();
     currentDate.setDate(currentDate.getDate() - numDays + 1);
 
     const lang = document.documentElement.lang || 'tr';
@@ -1605,7 +1606,7 @@ export function buildMonthlyTrendBuckets(activities) {
     const lang = document.documentElement.lang || 'tr';
     const monthFormatter = new Intl.DateTimeFormat(lang, { month: 'short' });
 
-    const today = new Date();
+    const today = getDayAnchor();
     const buckets = [];
     const bucketByKey = {};
 

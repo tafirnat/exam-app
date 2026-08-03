@@ -23,6 +23,7 @@ import {
     getLocalDateStr,
     initTodayActivity
 } from '../features/stats/continuity-engine.js';
+import { shiftDateStr } from './daily-activity.js';
 import { t } from './i18n.js';
 
 /* ------------------------------------------------------------------ */
@@ -74,12 +75,15 @@ function dayOfYear() {
 /** Returns today's YYYY-MM-DD string. */
 function today() { return getLocalDateStr(); }
 
-/** Adds N calendar days to a YYYY-MM-DD string. */
-function addDays(dateStr, n) {
-    const d = new Date(dateStr + 'T00:00:00');
-    d.setDate(d.getDate() + n);
-    return getLocalDateStr(d);
-}
+/**
+ * Adds N calendar days to a YYYY-MM-DD string.
+ *
+ * Parsing the key back into a Date read it as *device* midnight and then
+ * formatted it as an app day, so on any device east of the day zone every
+ * result came back a day early - the key went in as one day and out as the one
+ * before it, with n = 0. Calendar arithmetic on the key never leaves the zone.
+ */
+const addDays = shiftDateStr;
 
 /* ------------------------------------------------------------------ */
 /* Quiet-hours check                                                    */

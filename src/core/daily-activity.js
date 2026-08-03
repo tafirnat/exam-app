@@ -180,7 +180,42 @@ export function mergeDayBuckets(left, right) {
 }
 
 /**
- * The calendar day `date` falls on, in the viewer's own timezone.
+ * The timezone the app's day begins and ends in.
+ *
+ * A day key used to be read off whatever timezone the device happened to be
+ * set to, which quietly made "today" a per-device notion: the same instant is
+ * the 3rd on a phone at UTC+3 and still the 2nd on a laptop at UTC+2, so the
+ * two devices filed the same study session under different keys. Nothing in
+ * the merge can repair that - the records are simply about different days - and
+ * the visible symptom is a streak that reads differently on each device, plus a
+ * day that can be "missed" on one of them and auto-frozen for a token.
+ *
+ * Anchoring the day to one zone makes the key a function of the instant alone,
+ * which is what every other part of the sync already assumes.
+ */
+export const DAY_ZONE = 'Europe/Berlin';
+
+let dayFormatter;
+function getDayFormatter() {
+    if (dayFormatter === undefined) {
+        try {
+            dayFormatter = new Intl.DateTimeFormat('en-CA', {
+                timeZone: DAY_ZONE, year: 'numeric', month: '2-digit', day: '2-digit'
+            });
+        } catch {
+            /* An environment without this zone in its timezone data. Falling
+               back to device time loses the cross-device guarantee, but the
+               alternative here is throwing during boot. */
+            dayFormatter = null;
+        }
+    }
+    return dayFormatter;
+}
+
+const pad = (n) => String(n).padStart(2, '0');
+
+/**
+ * The calendar day `date` falls on, in the app's day zone - see DAY_ZONE.
  *
  * Every key in studyActivity is one of these, so anything that compares a
  * timestamp against those keys has to come through here. The progress-reset
@@ -190,10 +225,49 @@ export function mergeDayBuckets(left, right) {
  * so the guard cleared the wrong day: the previous one went, and the pre-reset
  * activity from the day the user actually reset on survived on the remote and
  * came straight back.
+ *
+ * Named "local" from when it was, and kept because 22 call sites and the stored
+ * keys they produce both read better as one word than as a rename would leave
+ * them; "local" now means local to the app, not to the device.
  */
 export function getLocalDateStr(date = new Date()) {
-    const yyyy = date.getFullYear();
-    const mm = String(date.getMonth() + 1).padStart(2, '0');
-    const dd = String(date.getDate()).padStart(2, '0');
-    return `${yyyy}-${mm}-${dd}`;
+    const formatter = getDayFormatter();
+    if (!formatter) return `${date.getFullYear()}-${pad(date.getMonth() + 1)}-${pad(date.getDate())}`;
+
+    const parts = formatter.formatToParts(date);
+    const part = (type) => parts.find(p => p.type === type)?.value;
+    return `${part('year')}-${part('month')}-${part('day')}`;
+}
+
+/**
+ * Steps a YYYY-MM-DD key by whole calendar days.
+ *
+ * Walking the streak by mutating a Date and re-formatting it looks equivalent
+ * and is not: the Date steps in *device* days while the format reads *app*
+ * days, and on the two nights a year the zones' offsets move apart that walk
+ * can repeat or skip a key. Doing the arithmetic on the key itself - in UTC,
+ * which has no such nights - keeps a run of days a run of days.
+ */
+export function shiftDateStr(dateStr, days) {
+    const [y, m, d] = String(dateStr).split('-').map(Number);
+    const shifted = new Date(Date.UTC(y, m - 1, d) + days * 86400000);
+    return `${shifted.getUTCFullYear()}-${pad(shifted.getUTCMonth() + 1)}-${pad(shifted.getUTCDate())}`;
+}
+
+/**
+ * A Date standing in for an app day, for the calendar drawing to walk.
+ *
+ * The heatmap and the trend bars pick a weekday column, a month label and a
+ * first-of-month tick off a Date, then key the cell with getLocalDateStr(). Seed
+ * that walk with `new Date()` and the two disagree for exactly as long as the
+ * device's date differs from the day zone's - one hour a night at UTC+3 - and
+ * the grid draws itself one day out of step with the data it is showing.
+ *
+ * Anchoring at midday means the Date's own year/month/day *are* the app day, so
+ * the geometry and the key come from one calendar. Midday also survives adding
+ * and subtracting days across a clock change, which midnight does not.
+ */
+export function getDayAnchor(dateStr = getLocalDateStr()) {
+    const [y, m, d] = String(dateStr).split('-').map(Number);
+    return new Date(y, m - 1, d, 12, 0, 0, 0);
 }

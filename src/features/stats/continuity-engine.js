@@ -1,6 +1,6 @@
 import { AppState, saveStudyActivity, saveContinuityConfig, saveActiveTest } from '../../core/state.js';
 import { calculateRetrievability } from '../test/test-engine.js';
-import { getDailyRequirement, addToDay, getLocalDateStr } from '../../core/daily-activity.js';
+import { getDailyRequirement, addToDay, getLocalDateStr, shiftDateStr } from '../../core/daily-activity.js';
 import { spendName, chargeSpend, grantToken, recomputeRemaining } from '../../core/freeze-tokens.js';
 
 /* Re-exported so the many callers that already ask the engine for the day's
@@ -195,15 +195,14 @@ export function getFsrsStatsForRange(days = 7) {
     let totalSolved = 0;
     let streakSustained = true;
 
-    let currentDate = new Date();
-    const todayStr = getLocalDateStr(currentDate);
+    const todayStr = getLocalDateStr();
+    let dateStr = todayStr;
     const todayAct = activities[todayStr];
     if (todayAct && !isActivityRequirementMet(todayAct)) {
-        currentDate.setDate(currentDate.getDate() - 1);
+        dateStr = shiftDateStr(dateStr, -1);
     }
 
     for (let i = 0; i < days; i++) {
-        const dateStr = getLocalDateStr(currentDate);
         const act = activities[dateStr];
 
         if (!act || (!act.studied && !act.frozen)) {
@@ -217,7 +216,7 @@ export function getFsrsStatsForRange(days = 7) {
         totalTarget += target;
         totalSolved += solved;
 
-        currentDate.setDate(currentDate.getDate() - 1);
+        dateStr = shiftDateStr(dateStr, -1);
     }
 
     const rate = totalTarget > 0 ? Math.round((totalSolved / totalTarget) * 100) : 100;
@@ -233,15 +232,14 @@ export function getFocusStatsForRange(days = 7) {
     let totalTarget = 0;
     let streakSustained = true;
 
-    let currentDate = new Date();
-    const todayStr = getLocalDateStr(currentDate);
+    const todayStr = getLocalDateStr();
+    let dateStr = todayStr;
     const todayAct = activities[todayStr];
     if (todayAct && !isFocusActivityRequirementMet(todayAct)) {
-        currentDate.setDate(currentDate.getDate() - 1);
+        dateStr = shiftDateStr(dateStr, -1);
     }
 
     for (let i = 0; i < days; i++) {
-        const dateStr = getLocalDateStr(currentDate);
         const act = activities[dateStr];
 
         if (!act || (!act.focusStudied && !act.focusFrozen)) {
@@ -255,7 +253,7 @@ export function getFocusStatsForRange(days = 7) {
         totalTarget += target;
         totalSolved += solved;
 
-        currentDate.setDate(currentDate.getDate() - 1);
+        dateStr = shiftDateStr(dateStr, -1);
     }
 
     const rate = totalTarget > 0 ? Math.round((totalSolved / totalTarget) * 100) : 100;
@@ -409,13 +407,9 @@ function freezeMissedDaysIfPossible() {
         }
     };
 
-    const yesterday = new Date();
-    yesterday.setDate(yesterday.getDate() - 1);
-    checkAndFreeze(getLocalDateStr(yesterday));
-
-    const dayBefore = new Date();
-    dayBefore.setDate(dayBefore.getDate() - 2);
-    checkAndFreeze(getLocalDateStr(dayBefore));
+    const today = getLocalDateStr();
+    checkAndFreeze(shiftDateStr(today, -1));
+    checkAndFreeze(shiftDateStr(today, -2));
 }
 
 export function initTodayActivity() {
@@ -447,13 +441,12 @@ export function calculateGlobalStreak() {
     const activities = AppState.studyActivity || {};
     let streak = 0;
     
-    let currentDate = new Date();
+    let dateStr = getLocalDateStr();
     let firstDay = true;
-    
+
     for (let i = 0; i < 365; i++) {
-        const dateStr = getLocalDateStr(currentDate);
         const act = activities[dateStr];
-        
+
         if (act && isActivityRequirementMet(act)) {
             streak++;
         } else if (firstDay) {
@@ -461,9 +454,9 @@ export function calculateGlobalStreak() {
         } else {
             break;
         }
-        
+
         firstDay = false;
-        currentDate.setDate(currentDate.getDate() - 1);
+        dateStr = shiftDateStr(dateStr, -1);
     }
     
     return streak;
@@ -477,11 +470,10 @@ export function calculateFocusStreak() {
     const activities = AppState.studyActivity || {};
     let streak = 0;
 
-    let currentDate = new Date();
+    let dateStr = getLocalDateStr();
     let firstDay = true;
 
     for (let i = 0; i < 365; i++) {
-        const dateStr = getLocalDateStr(currentDate);
         const act = activities[dateStr];
 
         if (act && isFocusActivityRequirementMet(act)) {
@@ -493,7 +485,7 @@ export function calculateFocusStreak() {
         }
 
         firstDay = false;
-        currentDate.setDate(currentDate.getDate() - 1);
+        dateStr = shiftDateStr(dateStr, -1);
     }
 
     return streak;
