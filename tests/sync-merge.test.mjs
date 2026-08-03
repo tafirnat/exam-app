@@ -2,7 +2,7 @@ import test, { before } from 'node:test';
 import assert from 'node:assert/strict';
 import { JSDOM } from 'jsdom';
 
-let AppState, mergeSyncData, sanitizeActivityRecord, sanitizeStudyActivity;
+let AppState, mergeSyncData, sanitizeActivityRecord, sanitizeStudyActivity, getLocalDateStr;
 
 before(async () => {
     const dom = new JSDOM('<!doctype html><html><body></body></html>', { url: 'http://localhost/' });
@@ -16,6 +16,8 @@ before(async () => {
 
     const syncMod = await import('../src/core/github-sync.js');
     mergeSyncData = syncMod.mergeSyncData;
+
+    getLocalDateStr = (await import('../src/core/daily-activity.js')).getLocalDateStr;
 
     const migrationMod = await import('../src/core/migration.js');
     sanitizeActivityRecord = migrationMod.sanitizeActivityRecord;
@@ -475,4 +477,56 @@ test('sanitizeStudyActivity repairs stored days and reports the count', () => {
     assert.equal(AppState.studyActivity['2026-07-30'].questionCount, 15);
     // And it happens once - the second pass finds nothing left to do.
     assert.equal(sanitizeStudyActivity(), 0);
+});
+
+/* Every key in studyActivity is a *local* calendar day, so anything comparing a
+   timestamp against those keys has to speak the same language. The progress
+   reset guard did not: it turned the reset instant into a day with
+   toISOString(), which is UTC. East of Greenwich the two disagree for the first
+   hours of every day, and the guard then cleared the wrong one - the previous
+   day went, while the pre-reset activity from the day the user actually reset
+   on survived on the remote and came straight back.
+
+   These run against whatever timezone the machine is in. They only *discriminate*
+   away from UTC, where the two readings coincide and there is no bug to have. */
+
+const DAY_MS = 24 * 60 * 60 * 1000;
+
+test('the reset day is read in local time, not UTC', () => {
+    // Half past midnight: the window where a UTC reading names the day before.
+    const resetAt = new Date();
+    resetAt.setHours(0, 30, 0, 0);
+
+    assert.equal(getLocalDateStr(resetAt), getLocalDateStr(new Date(resetAt.getTime())));
+    if (resetAt.getTimezoneOffset() < 0) {
+        assert.notEqual(getLocalDateStr(resetAt), resetAt.toISOString().slice(0, 10),
+            'east of UTC the two readings must differ - that is the whole defect');
+    }
+});
+
+test('a reset just after local midnight clears its own day, not the one before', () => {
+    const resetAt = new Date();
+    resetAt.setHours(0, 30, 0, 0);
+    const resetDay = getLocalDateStr(resetAt);
+    const dayBefore = getLocalDateStr(new Date(resetAt.getTime() - DAY_MS));
+    const dayAfter = getLocalDateStr(new Date(resetAt.getTime() + DAY_MS));
+
+    const merged = mergeSyncData(
+        // The device that reset: intentionally empty, and newer.
+        emptyPayload({ studyActivity: {}, lastProgressResetTimestamp: resetAt.getTime() }),
+        // A peer still holding what was there before the reset, plus a later day.
+        emptyPayload({
+            studyActivity: {
+                [dayBefore]: { studied: true, questionCount: 15 },
+                [resetDay]: { studied: true, questionCount: 7 },
+                [dayAfter]: { studied: true, questionCount: 9 }
+            },
+            lastProgressResetTimestamp: 0
+        })
+    ).studyActivity;
+
+    assert.equal(merged[dayBefore], undefined, 'days before the reset go');
+    assert.equal(merged[resetDay], undefined, 'and so does the reset day itself');
+    // Work done after the reset on another device is not what a reset clears.
+    assert.equal(merged[dayAfter]?.questionCount, 9);
 });

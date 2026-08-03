@@ -145,3 +145,22 @@ export function mergeDayBuckets(left, right) {
 
     return merged;
 }
+
+/**
+ * The calendar day `date` falls on, in the viewer's own timezone.
+ *
+ * Every key in studyActivity is one of these, so anything that compares a
+ * timestamp against those keys has to come through here. The progress-reset
+ * guard in the sync merge did not: it turned the reset instant into a day with
+ * toISOString(), which is UTC. East of Greenwich the two disagree for the first
+ * hours of every day - at UTC+3 a reset performed at 01:00 reads as *yesterday*,
+ * so the guard cleared the wrong day: the previous one went, and the pre-reset
+ * activity from the day the user actually reset on survived on the remote and
+ * came straight back.
+ */
+export function getLocalDateStr(date = new Date()) {
+    const yyyy = date.getFullYear();
+    const mm = String(date.getMonth() + 1).padStart(2, '0');
+    const dd = String(date.getDate()).padStart(2, '0');
+    return `${yyyy}-${mm}-${dd}`;
+}

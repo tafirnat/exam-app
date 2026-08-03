@@ -2,7 +2,7 @@ import { AppState, saveSources, saveStats, saveRecentTests, saveFolders, saveQui
 import { showToast, showAlert } from './utils.js';
 import { t } from './i18n.js';
 import { migrateFolderColors, sanitizeActivityRecord } from './migration.js';
-import { mergeDayBuckets, recomputeDayTotals, bucketsOf } from './daily-activity.js';
+import { mergeDayBuckets, recomputeDayTotals, bucketsOf, getLocalDateStr } from './daily-activity.js';
 import { persist, persistRemove, readJSON } from './storage.js';
 import { emit, Slice, getActiveView } from './store.js';
 
@@ -1666,8 +1666,14 @@ export function mergeSyncData(local, remote) {
 
     // 5. Merge Study Activity (Union by date key, respecting progress-reset floor)
     // Convert the reset floor timestamp to a date string for date-key comparison.
+    /* The reset instant as a *local* day, because that is what the keys it is
+       compared against are. toISOString() gave a UTC day here, and east of
+       Greenwich the two disagree for the first hours of every day: at UTC+3 a
+       reset performed at 01:00 read as yesterday, so this guard cleared the
+       wrong day - the previous one went, and the pre-reset activity from the
+       day the user actually reset on survived on the remote and came back. */
     const resetDateStr = latestProgressResetAt
-        ? new Date(latestProgressResetAt).toISOString().slice(0, 10)
+        ? getLocalDateStr(new Date(latestProgressResetAt))
         : null;
     const mergedStudyActivity = {};
     // Start from remote activity filtered by the progress floor.

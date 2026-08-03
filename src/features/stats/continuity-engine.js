@@ -1,19 +1,14 @@
 import { AppState, saveStudyActivity, saveContinuityConfig, saveActiveTest } from '../../core/state.js';
 import { calculateRetrievability } from '../test/test-engine.js';
-import { getDailyRequirement, addToDay } from '../../core/daily-activity.js';
+import { getDailyRequirement, addToDay, getLocalDateStr } from '../../core/daily-activity.js';
 
 /* Re-exported so the many callers that already ask the engine for the day's
    requirement keep working; the rule itself lives in core/daily-activity.js,
    which is the one place the engine, migration.js and the sync merge can all
    reach without importing each other. */
-export { getDailyRequirement };
+export { getDailyRequirement, getLocalDateStr };
 
-export function getLocalDateStr(d = new Date()) {
-    const yyyy = d.getFullYear();
-    const mm = String(d.getMonth() + 1).padStart(2, '0');
-    const dd = String(d.getDate()).padStart(2, '0');
-    return `${yyyy}-${mm}-${dd}`;
-}
+
 
 /**
  * Checks if global activity record meets streak requirement.
