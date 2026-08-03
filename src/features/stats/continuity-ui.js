@@ -1591,7 +1591,7 @@ export function buildWeeklyTrendBuckets(activities) {
 
     const buckets = [];
     for (let i = 0; i < numDays; i++) {
-        const bucket = { label: dayLabels[currentDate.getDay()], correct: 0, wrong: 0, empty: 0, focus: 0, total: 0 };
+        const bucket = { label: dayLabels[currentDate.getDay()], correct: 0, neutral: 0, wrong: 0, empty: 0, focus: 0, total: 0, volumeTotal: 0, volumeFocus: 0, effortCorrect: 0, effortWrong: 0, effortEmpty: 0 };
         addActivityToBucket(bucket, activities[getLocalDateStr(currentDate)]);
         buckets.push(bucket);
         currentDate.setDate(currentDate.getDate() + 1);
@@ -1613,7 +1613,7 @@ export function buildMonthlyTrendBuckets(activities) {
         const monthDate = new Date(today.getFullYear(), today.getMonth() - i, 1);
         const bucket = {
             label: monthFormatter.format(monthDate),
-            correct: 0, wrong: 0, empty: 0, focus: 0, total: 0
+            correct: 0, neutral: 0, wrong: 0, empty: 0, focus: 0, total: 0, volumeTotal: 0, volumeFocus: 0, effortCorrect: 0, effortWrong: 0, effortEmpty: 0
         };
         // Keyed by year-month so activity dates land in the right bucket even
         // when the range spans a year boundary.
@@ -1638,26 +1638,58 @@ function addActivityToBucket(bucket, act) {
     // the user had answered several questions that day.
     if (!act || !(act.questionCount > 0)) return;
 
-    const total = act.questionCount || 0;
-    let correct = act.correctCount || 0;
-    let wrong = act.wrongCount || 0;
-    let empty = act.unansweredCount || 0;
+    const deviceBuckets = act.byDevice ? Object.values(act.byDevice) : [];
+    const hasQuestionLog = deviceBuckets.some(b => b.questionLog);
 
-    // Older records only carry a question count; treat those as unanswered so
-    // the bar still reflects the day's volume.
-    if (total > 0 && correct === 0 && wrong === 0 && empty === 0) {
-        empty = total;
+    bucket.volumeTotal += act.questionCount || 0;
+    bucket.volumeFocus += Math.min(act.focusQuestionCount || 0, act.questionCount || 0);
+
+    bucket.effortCorrect += act.correctCount || 0;
+    bucket.effortWrong += act.wrongCount || 0;
+    bucket.effortEmpty += act.unansweredCount || 0;
+    if ((act.questionCount || 0) > 0 && (act.correctCount || 0) === 0 && (act.wrongCount || 0) === 0 && (act.unansweredCount || 0) === 0) {
+        bucket.effortEmpty += act.questionCount || 0;
     }
 
-    bucket.correct += correct;
-    bucket.wrong += wrong;
-    bucket.empty += empty;
-    bucket.total += total;
+    if (!hasQuestionLog) {
+        const total = act.questionCount || 0;
+        let correct = act.correctCount || 0;
+        let wrong = act.wrongCount || 0;
+        let empty = act.unansweredCount || 0;
 
-    // The focus track only ever counts a subset of the day's questions, so it is
-    // clamped to the day's volume - a stale focusQuestionCount must not draw a
-    // line above the bar it belongs to.
-    bucket.focus += Math.min(act.focusQuestionCount || 0, total);
+        if (total > 0 && correct === 0 && wrong === 0 && empty === 0) {
+            empty = total;
+        }
+
+        bucket.correct += correct;
+        bucket.wrong += wrong;
+        bucket.empty += empty;
+        bucket.total += total;
+    } else {
+        const combinedLog = {};
+        deviceBuckets.forEach(b => {
+            if (!b.questionLog) return;
+            for (const [qId, stats] of Object.entries(b.questionLog)) {
+                if (!combinedLog[qId]) {
+                    combinedLog[qId] = { correct: 0, wrong: 0, empty: 0 };
+                }
+                combinedLog[qId].correct += stats.correct || 0;
+                combinedLog[qId].wrong += stats.wrong || 0;
+                combinedLog[qId].empty += stats.empty || 0;
+            }
+        });
+
+        const uniqueQuestions = Object.values(combinedLog);
+        bucket.total += uniqueQuestions.length;
+
+        uniqueQuestions.forEach(q => {
+            const bad = q.wrong + q.empty;
+            if (q.correct > bad) bucket.correct++;
+            else if (q.correct === bad) bucket.neutral++;
+            else if (q.correct < bad && (q.correct > 0 || q.wrong > 0)) bucket.wrong++;
+            else bucket.empty++;
+        });
+    }
 }
 
 /** Draws the stacked bar chart shared by the weekly and monthly trend faces. */
@@ -1672,7 +1704,7 @@ function renderTrendChart(buckets, yAxisId, barsId, xAxisId) {
     barsEl.innerHTML = '';
     xAxisEl.innerHTML = '';
 
-    const maxCount = buckets.reduce((max, b) => Math.max(max, b.total), 0);
+    const maxCount = buckets.reduce((max, b) => Math.max(max, b.total, b.volumeTotal || 0), 0);
     const topLimit = Math.max(10, Math.ceil(maxCount / 5) * 5);
 
     // Monthly totals run into the hundreds, so the axis gutter grows with the
@@ -1724,6 +1756,7 @@ function renderTrendChart(buckets, yAxisId, barsId, xAxisId) {
             barInner.style.height = `${hPerc}%`;
 
             const wPerc = (d.wrong / d.total) * 100;
+            const nPerc = (d.neutral / d.total) * 100;
             const uPerc = (d.empty / d.total) * 100;
             const cPerc = (d.correct / d.total) * 100;
 
@@ -1732,8 +1765,16 @@ function renderTrendChart(buckets, yAxisId, barsId, xAxisId) {
                 wDiv.style.height = `${wPerc}%`;
                 wDiv.style.background = '#ef4444';
                 wDiv.style.width = '100%';
-                if (uPerc === 0 && cPerc === 0) wDiv.style.borderRadius = '4px 4px 0 0';
+                if (nPerc === 0 && uPerc === 0 && cPerc === 0) wDiv.style.borderRadius = '4px 4px 0 0';
                 barInner.appendChild(wDiv);
+            }
+            if (nPerc > 0) {
+                const nDiv = document.createElement('div');
+                nDiv.style.height = `${nPerc}%`;
+                nDiv.style.background = '#eab308';
+                nDiv.style.width = '100%';
+                if (uPerc === 0 && cPerc === 0) nDiv.style.borderRadius = '4px 4px 0 0';
+                barInner.appendChild(nDiv);
             }
             if (uPerc > 0) {
                 const uDiv = document.createElement('div');
@@ -1761,11 +1802,41 @@ function renderTrendChart(buckets, yAxisId, barsId, xAxisId) {
             topLbl.style.fontSize = '0.7rem';
             topLbl.style.fontWeight = 'bold';
             topLbl.style.color = 'var(--text-primary)';
-            // The line series pass straight through this label on a low bar, so
-            // it sits above the overlay and carries a surface-coloured halo.
             topLbl.style.zIndex = '3';
             topLbl.style.textShadow = '0 0 3px var(--surface-color), 0 0 3px var(--surface-color), 0 0 2px var(--surface-color)';
             barInner.appendChild(topLbl);
+
+            barInner.style.cursor = 'pointer';
+            barInner.addEventListener('click', (e) => {
+                e.stopPropagation();
+                openInfoPopupModal(
+                    `📊 ${d.label} İstatistikleri`,
+                    `
+                    <div style="display:flex; flex-direction:column; gap:12px; font-size:0.9rem; color:var(--text-primary);">
+                        <div style="display:flex; justify-content:space-between; padding:8px; background:var(--surface-hover); border-radius:6px;">
+                            <span>Tekil Soru Sayısı:</span>
+                            <strong>${d.total}</strong>
+                        </div>
+                        <div style="display:flex; justify-content:space-between; padding:8px; background:var(--surface-hover); border-radius:6px;">
+                            <span>Toplam Efor (Hacim):</span>
+                            <strong>${d.volumeTotal}</strong>
+                        </div>
+                        <div style="display:flex; justify-content:space-between; padding:8px; background:rgba(34, 197, 94, 0.1); border-left:3px solid #22c55e; border-radius:6px;">
+                            <span>Doğru Adedi:</span>
+                            <strong>${d.effortCorrect}</strong>
+                        </div>
+                        <div style="display:flex; justify-content:space-between; padding:8px; background:rgba(239, 68, 68, 0.1); border-left:3px solid #ef4444; border-radius:6px;">
+                            <span>Yanlış Adedi:</span>
+                            <strong>${d.effortWrong}</strong>
+                        </div>
+                        <div style="display:flex; justify-content:space-between; padding:8px; background:rgba(100, 116, 139, 0.1); border-left:3px solid #64748b; border-radius:6px;">
+                            <span>Boş Bırakılan:</span>
+                            <strong>${d.effortEmpty}</strong>
+                        </div>
+                    </div>
+                    `
+                );
+            });
         }
 
         barWrap.appendChild(barInner);
@@ -1787,8 +1858,8 @@ function renderTrendLines(barsEl, buckets, topLimit, gutter) {
     if (!buckets.length) return;
 
     const series = [
-        { key: 'total', color: 'var(--trend-line-normal)', dash: '' },
-        { key: 'focus', color: 'var(--trend-line-focus)', dash: '5 4' }
+        { key: 'volumeTotal', color: 'var(--trend-line-normal)', dash: '' },
+        { key: 'volumeFocus', color: 'var(--trend-line-focus)', dash: '5 4' }
     ];
 
     // The viewBox is a plain 0-100 square stretched to the bar strip, so points

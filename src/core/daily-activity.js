@@ -114,6 +114,20 @@ export function addToDay(activity, deviceKey, delta) {
         if (amount > 0) bucket[name] = count(bucket[name]) + amount;
     });
 
+    if (delta && delta.questionLog) {
+        if (!bucket.questionLog) bucket.questionLog = {};
+        for (const qId of Object.keys(delta.questionLog)) {
+            const stats = delta.questionLog[qId];
+            if (!bucket.questionLog[qId]) {
+                bucket.questionLog[qId] = { correct: 0, wrong: 0, empty: 0, isFocus: false };
+            }
+            if (stats.correct) bucket.questionLog[qId].correct += stats.correct;
+            if (stats.wrong) bucket.questionLog[qId].wrong += stats.wrong;
+            if (stats.empty) bucket.questionLog[qId].empty += stats.empty;
+            if (stats.isFocus) bucket.questionLog[qId].isFocus = true;
+        }
+    }
+
     return recomputeDayTotals(activity);
 }
 
@@ -140,7 +154,26 @@ export function mergeDayBuckets(left, right) {
             const value = Math.max(count(l[name]), count(r[name]));
             if (value > 0) bucket[name] = value;
         });
-        if (bucketHasCounts(bucket)) merged[key] = bucket;
+
+        const qLogL = l.questionLog || {};
+        const qLogR = r.questionLog || {};
+        const qKeys = new Set([...Object.keys(qLogL), ...Object.keys(qLogR)]);
+        
+        if (qKeys.size > 0) {
+            bucket.questionLog = {};
+            qKeys.forEach(qId => {
+                const sl = qLogL[qId] || { correct: 0, wrong: 0, empty: 0, isFocus: false };
+                const sr = qLogR[qId] || { correct: 0, wrong: 0, empty: 0, isFocus: false };
+                bucket.questionLog[qId] = {
+                    correct: Math.max(sl.correct || 0, sr.correct || 0),
+                    wrong: Math.max(sl.wrong || 0, sr.wrong || 0),
+                    empty: Math.max(sl.empty || 0, sr.empty || 0),
+                    isFocus: sl.isFocus || sr.isFocus || false
+                };
+            });
+        }
+
+        if (bucketHasCounts(bucket) || bucket.questionLog) merged[key] = bucket;
     });
 
     return merged;

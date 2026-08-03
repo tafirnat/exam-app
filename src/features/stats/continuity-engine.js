@@ -1,6 +1,7 @@
 import { AppState, saveStudyActivity, saveContinuityConfig, saveActiveTest } from '../../core/state.js';
 import { calculateRetrievability } from '../test/test-engine.js';
 import { getDailyRequirement, addToDay, getLocalDateStr } from '../../core/daily-activity.js';
+import { spendName, chargeSpend, grantToken, recomputeRemaining } from '../../core/freeze-tokens.js';
 
 /* Re-exported so the many callers that already ask the engine for the day's
    requirement keep working; the rule itself lives in core/daily-activity.js,
@@ -158,9 +159,12 @@ export function checkAndReplenishTokens() {
                 remaining: 1,
                 tier1Earned: false,
                 tier2Earned: false,
-                initialized: true
+                initialized: true,
+                spentOn: []
             };
         }
+        // Records from before the ledger get one built from their own count.
+        recomputeRemaining(config.freezeTokens);
 
         if (!config.focusFreezeTokens || !config.focusFreezeTokens.initialized) {
             config.focusFreezeTokens = {
@@ -168,9 +172,11 @@ export function checkAndReplenishTokens() {
                 remaining: 1,
                 tier1Earned: false,
                 tier2Earned: false,
-                initialized: true
+                initialized: true,
+                spentOn: []
             };
         }
+        recomputeRemaining(config.focusFreezeTokens);
 
         saveContinuityConfig();
         evaluateFreezeTokenEligibility();
@@ -278,7 +284,7 @@ export function evaluateFreezeTokenEligibility() {
         if (stats7.rate >= 70 && stats7.streakSustained) {
             tokens.tier1Earned = true;
             tokens.total = Math.max(tokens.total, 1);
-            tokens.remaining = Math.min(tokens.total, tokens.remaining + 1);
+            grantToken(tokens);
             updated = true;
         }
     }
@@ -288,7 +294,7 @@ export function evaluateFreezeTokenEligibility() {
         if (stats14.rate >= 80 && stats14.streakSustained) {
             tokens.tier2Earned = true;
             tokens.total = 2;
-            tokens.remaining = Math.min(2, tokens.remaining + 1);
+            grantToken(tokens);
             updated = true;
         }
     }
@@ -318,7 +324,7 @@ export function evaluateFocusFreezeTokenEligibility() {
         if (stats7.streakSustained) {
             tokens.tier1Earned = true;
             tokens.total = Math.max(tokens.total, 1);
-            tokens.remaining = Math.min(tokens.total, tokens.remaining + 1);
+            grantToken(tokens);
             updated = true;
         }
     }
@@ -328,7 +334,7 @@ export function evaluateFocusFreezeTokenEligibility() {
         if (stats14.streakSustained) {
             tokens.tier2Earned = true;
             tokens.total = 2;
-            tokens.remaining = Math.min(2, tokens.remaining + 1);
+            grantToken(tokens);
             updated = true;
         }
     }
@@ -374,30 +380,30 @@ function freezeMissedDaysIfPossible() {
             activities[dateStr] = act;
         }
 
-        // Global Track Freeze
+        /* Global Track Freeze. The charge is named for the day and the track
+           it protects, so the same freeze made on a second device is the same
+           entry and costs nothing - see core/freeze-tokens.js. */
         if (!isActivityRequirementMet(act) && !act.frozen) {
-            if (globalTokens && globalTokens.remaining > 0) {
+            const name = spendName('global', dateStr);
+            if (globalTokens && chargeSpend(globalTokens, name)) {
                 act.frozen = true;
-                globalTokens.remaining--;
                 saveContinuityConfig();
-            } else if (focusTokens && focusTokens.tier2Earned && focusTokens.remaining > 0) {
+            } else if (focusTokens && focusTokens.tier2Earned && chargeSpend(focusTokens, name)) {
                 // Use Cross-Streak Tier 2 Focus Token as Joker!
                 act.frozen = true;
-                focusTokens.remaining--;
                 saveContinuityConfig();
             }
         }
 
         // Focus Track Freeze
         if (!isFocusActivityRequirementMet(act) && !act.focusFrozen) {
-            if (focusTokens && focusTokens.remaining > 0) {
+            const name = spendName('focus', dateStr);
+            if (focusTokens && chargeSpend(focusTokens, name)) {
                 act.focusFrozen = true;
-                focusTokens.remaining--;
                 saveContinuityConfig();
-            } else if (globalTokens && globalTokens.tier2Earned && globalTokens.remaining > 0) {
+            } else if (globalTokens && globalTokens.tier2Earned && chargeSpend(globalTokens, name)) {
                 // Use Cross-Streak Tier 2 Global Token as Joker!
                 act.focusFrozen = true;
-                globalTokens.remaining--;
                 saveContinuityConfig();
             }
         }
@@ -517,8 +523,8 @@ export function recordTestFinished(questionCount, correctCount = 0, wrongCount =
     // Focus Track: worked out before the write so both tracks land together.
     let netFocus = 0;
     const focusSources = getFocusSources();
+    const timestamps = AppState.continuityConfig?.focusSourceTimestamps || {};
     if (focusSources.length > 0 && answeredQuestions.length > 0) {
-        const timestamps = AppState.continuityConfig?.focusSourceTimestamps || {};
         const focusQuestionsSolved = answeredQuestions.filter(q => {
             const sid = q.sourceId || q.q?.sourceId;
             if (!sid || !focusSources.includes(sid)) return false;
@@ -529,13 +535,31 @@ export function recordTestFinished(questionCount, correctCount = 0, wrongCount =
         netFocus = Math.max(0, focusQuestionsSolved - flushedFocus);
     }
 
+    const questionLog = {};
+    const unansweredQuestions = (testQuestions || []).filter(q => q && (q.isUnanswered || q.userAnswer === null || q.userAnswer === undefined));
+    unansweredQuestions.forEach(q => {
+        const qId = String(q.id || q.q?.id);
+        if (!questionLog[qId]) {
+            questionLog[qId] = { correct: 0, wrong: 0, empty: 0, isFocus: false };
+        }
+        questionLog[qId].empty++;
+
+        const sid = q.sourceId || q.q?.sourceId;
+        if (sid && focusSources.includes(sid)) {
+            if (Date.now() >= (timestamps[sid] || 0)) {
+                questionLog[qId].isFocus = true;
+            }
+        }
+    });
+
     // Into this device's bucket - see commitAnsweredSlice().
     addToDay(activity, AppState.deviceId, {
         questionCount: net,
         correctCount: netCorrect,
         wrongCount: netWrong,
         unansweredCount,
-        focusQuestionCount: netFocus
+        focusQuestionCount: netFocus,
+        questionLog: Object.keys(questionLog).length > 0 ? questionLog : undefined
     });
 
     saveStudyActivity();
@@ -615,6 +639,30 @@ function commitAnsweredSlice(tracking) {
        the browser closes mid-session used to leave the focus track behind. */
     const focusDelta = countFocusAnswers(pending);
 
+    const questionLog = {};
+    const focusSources = getFocusSources();
+    const timestamps = AppState.continuityConfig?.focusSourceTimestamps || {};
+    
+    pending.forEach(r => {
+        const qId = String(r.questionId);
+        if (!questionLog[qId]) {
+            questionLog[qId] = { correct: 0, wrong: 0, empty: 0, isFocus: false };
+        }
+        if (r.isCorrect) questionLog[qId].correct++;
+        else questionLog[qId].wrong++;
+
+        const sid = r.sourceId
+            || AppState.questionMap?.[`${r.sourceId || ''}_${r.questionId}`]?.sourceId
+            || Object.values(AppState.questionMap || {})
+                .find(q => String(q.id) === String(r.questionId))?.sourceId;
+        
+        if (sid && focusSources.includes(sid)) {
+            if ((r.answeredAt || Date.now()) >= (timestamps[sid] || 0)) {
+                questionLog[qId].isFocus = true;
+            }
+        }
+    });
+
     /* Into this device's own bucket. The day's totals are the sum across
        buckets, so the other device's answers to the same day are added to
        these rather than competing with them. */
@@ -622,7 +670,8 @@ function commitAnsweredSlice(tracking) {
         questionCount: pending.length,
         correctCount: correct,
         wrongCount: wrong,
-        focusQuestionCount: focusDelta
+        focusQuestionCount: focusDelta,
+        questionLog: Object.keys(questionLog).length > 0 ? questionLog : undefined
     });
 
     tracking._flushedCount = answered.length;

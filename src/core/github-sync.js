@@ -3,6 +3,7 @@ import { showToast, showAlert } from './utils.js';
 import { t } from './i18n.js';
 import { migrateFolderColors, sanitizeActivityRecord } from './migration.js';
 import { mergeDayBuckets, recomputeDayTotals, bucketsOf, getLocalDateStr } from './daily-activity.js';
+import { mergeFreezeTokens } from './freeze-tokens.js';
 import { persist, persistRemove, readJSON } from './storage.js';
 import { emit, Slice, getActiveView } from './store.js';
 
@@ -1231,6 +1232,9 @@ function isEmptyValue(value) {
  *          least one key was taken from local *and* differs from what the remote
  *          holds - which is what tells the pull it has something to push back.
  */
+/** Config keys holding a freeze-token record rather than a plain value. */
+const TOKEN_KEYS = new Set(['freezeTokens', 'focusFreezeTokens']);
+
 function mergeContinuityConfig(localConfig, remoteConfig) {
     const local = localConfig && typeof localConfig === 'object' ? localConfig : {};
     const remote = remoteConfig && typeof remoteConfig === 'object' ? remoteConfig : {};
@@ -1267,11 +1271,19 @@ function mergeContinuityConfig(localConfig, remoteConfig) {
             takeLocal = String(lRev.by || '') > String(rRev.by || '');
         }
 
-        config[key] = takeLocal ? local[key] : remote[key];
+        /* The token records are the one thing here that is not a plain value.
+           Their scalars follow the stamp like everything else, but what they
+           have *spent* is a ledger, and a ledger merges by union - a spend made
+           on the device that happened to write second is still a spend. See
+           core/freeze-tokens.js for why a bare `remaining` could not survive
+           last-writer-wins at all. */
+        config[key] = TOKEN_KEYS.has(key)
+            ? mergeFreezeTokens(local[key], remote[key], takeLocal)
+            : (takeLocal ? local[key] : remote[key]);
         const winning = takeLocal ? lRev : rRev;
         if (winning.at > 0) revisions[key] = winning;
 
-        if (takeLocal && JSON.stringify(local[key] ?? null) !== JSON.stringify(remote[key] ?? null)) {
+        if (JSON.stringify(config[key] ?? null) !== JSON.stringify(remote[key] ?? null)) {
             localWins = true;
         }
     });
