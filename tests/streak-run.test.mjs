@@ -7,7 +7,8 @@ let AppState,
     buildStreakRun,
     resolveStreakCount,
     MIN_STREAK_QUESTIONS,
-    shuffleArraySeeded;
+    shuffleArraySeeded,
+    calculateRetrievability;
 
 const DAY = 24 * 60 * 60 * 1000;
 
@@ -83,6 +84,8 @@ before(async () => {
     const utilsMod = await import('../src/core/utils.js');
     shuffleArraySeeded = utilsMod.shuffleArraySeeded;
 
+    calculateRetrievability = (await import('../src/features/test/test-engine.js')).calculateRetrievability;
+
     const runMod = await import('../src/features/stats/streak-run.js');
     buildStreakRun = runMod.buildStreakRun;
     resolveStreakCount = runMod.resolveStreakCount;
@@ -145,6 +148,65 @@ test('questions marked learned stay out of rotation', () => {
 
     const ids = buildStreakRun({ order: 'mixed', count: 5 });
     assert.deepEqual(ids, ['A_1'.replace('1', '2')]);
+});
+
+/* R is the primary sort key everywhere, and calculateRetrievability() used to
+   read the clock itself on every call. Two questions with the same stability
+   and the same lastReview therefore came out ~1e-10 apart whenever the loop
+   crossed a millisecond, so the tie-breakers behind R - difficulty descending,
+   then id - were only reached when the clock happened not to tick. The case
+   below is the one that noticed, and it noticed by failing about one full-suite
+   run in three while passing every time on its own. */
+
+test('two identical questions measured in one pass get identical R', () => {
+    const lastReview = new Date(Date.now() - 20 * DAY).toISOString();
+    const at = Date.now();
+
+    // The same instant for both, which is what every looping caller now passes.
+    const first = calculateRetrievability(10, lastReview, at);
+    const second = calculateRetrievability(10, lastReview, at);
+
+    assert.equal(first, second);
+});
+
+test('a millisecond between two reads is enough to separate them', () => {
+    // Why the parameter has to exist at all: this is the gap that used to open
+    // up inside a single pass over the library.
+    const lastReview = new Date(Date.now() - 20 * DAY).toISOString();
+    const at = Date.now();
+
+    assert.notEqual(
+        calculateRetrievability(10, lastReview, at),
+        calculateRetrievability(10, lastReview, at + 1));
+});
+
+test('the run measures the whole pass at one instant', () => {
+    seed([
+        src('A', 'f1', [
+            { id: 1, due: 20, difficulty: 3 },
+            { id: 2, due: 20, difficulty: 9 },
+            { id: 3, due: 20, difficulty: 6 }
+        ])
+    ]);
+
+    /* The clock made to tick on every read, which is the whole defect forced
+       into the open. Waiting for a real millisecond boundary is not a test - it
+       is a race that a fast machine wins, and this one did: reverting the fix
+       left a repeat-200-times version of this case perfectly green.
+
+       With one instant per pass all three questions keep the same R and the
+       run falls through to the documented tie-breakers. Reading the clock per
+       question instead makes each successive question look staler than the last,
+       so the run comes back in evaluation order and difficulty never gets a say. */
+    const realNow = Date.now;
+    let tick = realNow();
+    Date.now = () => ++tick;
+
+    try {
+        assert.deepEqual(buildStreakRun({ order: 'mixed', count: 3 }), ['A_2', 'A_3', 'A_1']);
+    } finally {
+        Date.now = realNow;
+    }
 });
 
 test('equal retrievability breaks on difficulty, then id - never on library order', () => {

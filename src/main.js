@@ -21,7 +21,7 @@ import { initArchiveUI } from './features/sources/archive.js';
 import { initStorageNoticeUI, maybeShowStorageNotice } from './features/sources/storage-notice.js';
 import { prepareTest, finishTest, prepareRetake, buildQuestionPool } from './features/test/test-engine.js';
 import { flushInProgressAnswers } from './features/stats/continuity-engine.js';
-import { renderQuestion, handleCheckAnswer, updateIndicators, handleTranslation, handleDifficultyRating, handleFlashcardRating, renderTestResults, handleTtsToggle, getIsAudioPlaying, stopAudio, decorateReadingSections } from './features/test/test-ui.js';
+import { renderQuestion, handleCheckAnswer, updateIndicators, handleTranslation, handleDifficultyRating, handleFlashcardRating, renderTestResults, handleTtsToggle, getIsAudioPlaying, stopAudio, decorateReadingSections, renderResumeButton } from './features/test/test-ui.js';
 import { renderStatsList, updateHomeStats, setupStatsEventListeners } from './features/stats/stats-module.js';
 import { openQuestionEditor, closeQuestionEditor } from './features/stats/question-editor.js';
 import { initTimer, stopTimer } from './features/test/timer-module.js';
@@ -2067,54 +2067,33 @@ function startTest() {
     }
 }
 
+/**
+ * Control flow, not rendering: decides whether the session saved under the
+ * currently selected preset should become *the* unfinished test, and only then
+ * asks for a redraw.
+ *
+ * The two halves are separate on purpose. This one writes - and the write
+ * stamps the record with this device's id and the current time, which is what
+ * pickActiveSession() reads to decide who is sitting in the test. Running it in
+ * response to data arriving would have this device claim the other's live
+ * session the instant it synced. It belongs on the navigation path, where it is
+ * answering "which preset is selected", not "what changed".
+ */
 function checkActiveTest() {
     const matchedPresetId = findMatchingPresetId();
-    let activeData = null;
     if (matchedPresetId && AppState.presetSessions && AppState.presetSessions[matchedPresetId]) {
-        /* Promoting a preset session to the active one is a write to a synced
-           record, so it has to be stamped like any other - an undated record
-           loses to the other device's copy in pickActiveSession(). */
-        activeData = { ...AppState.presetSessions[matchedPresetId], deviceId: AppState.deviceId || null, updatedAt: Date.now() };
-        persist('focus_app_active_test', activeData);
-    } else {
-        /* Through readJSON. A bare JSON.parse here threw on a corrupted record,
-           and this runs from switchView('home') as well as from boot - where
-           nothing catches it - so a damaged record broke every return to the
-           home screen. The worst it can do now is offer no test to resume. */
-        activeData = readJSON('focus_app_active_test', null);
+        persist('focus_app_active_test', {
+            ...AppState.presetSessions[matchedPresetId],
+            deviceId: AppState.deviceId || null,
+            updatedAt: Date.now()
+        });
+        emit(Slice.ACTIVE_TEST);
     }
 
-    const resumeBtn = document.getElementById('resumeBtn');
-    const startBtn = document.getElementById('startBtn');
-    const startBtnContainer = document.getElementById('startBtnContainer');
-
-    if (activeData && activeData.currentTest && activeData.currentTest.length > 0) {
-        if (resumeBtn) {
-            resumeBtn.style.display = 'block';
-            resumeBtn.style.flex = '1';
-        }
-        if (startBtn) {
-            startBtn.innerText = t('new_test');
-            startBtn.setAttribute('data-i18n', 'new_test');
-            startBtn.style.width = 'auto';
-            startBtn.style.flex = '1';
-        }
-        if (startBtnContainer) {
-            startBtnContainer.style.flexDirection = 'row';
-            startBtnContainer.style.gap = '0.75rem';
-        }
-    } else {
-        if (resumeBtn) resumeBtn.style.display = 'none';
-        if (startBtn) {
-            startBtn.innerText = t('start_test');
-            startBtn.setAttribute('data-i18n', 'start_test');
-            startBtn.style.width = '100%';
-            startBtn.style.flex = '';
-        }
-        if (startBtnContainer) {
-            startBtnContainer.style.flexDirection = 'column';
-        }
-    }
+    /* Drawn straight away rather than left to the emit above, because the
+       common case is that nothing was promoted and there is nothing to
+       announce - the button still has to reflect the record. */
+    renderResumeButton();
 }
 
 function resumeActiveTest() {

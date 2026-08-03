@@ -7,9 +7,25 @@ import { getDailyOverdueSnapshot, applyFocusPools, recordTestFinished, commitOne
 // FSRS v4.5 Simplified Constants
 export const FSRS_W = [0.4, 0.9, 2.3, 10.9, 4.93, 0.94, 0.86, 0.01, 1.49, 0.14, 0.94, 2.18, 0.05, 0.34, 1.26, 0.26, 2.05];
 
-export function calculateRetrievability(stability, lastReviewDate) {
+/**
+ * @param {number} [now] the instant to measure from, in ms.
+ *
+ * Every caller that walks more than one question has to pass one instant for
+ * the whole pass. This used to read the clock itself, once per call, and two
+ * questions with the same stability and the same lastReview came out with R
+ * values ~1e-10 apart whenever the loop crossed a millisecond - which is often,
+ * on a library of any size.
+ *
+ * That is not a rounding curiosity. R is the primary sort key everywhere, and
+ * the tie-breakers behind it - difficulty descending, then id - are what the
+ * spec promises and what stops equal-R questions falling into library order.
+ * They were only reached when the clock happened not to tick. The stats list
+ * had it worse still: it read the clock twice inside a sort comparator, so the
+ * comparator was not even self-consistent.
+ */
+export function calculateRetrievability(stability, lastReviewDate, now = Date.now()) {
     if (!lastReviewDate || !stability) return 0;
-    const elapsedDays = (new Date() - new Date(lastReviewDate)) / (1000 * 60 * 60 * 24);
+    const elapsedDays = (now - new Date(lastReviewDate)) / (1000 * 60 * 60 * 24);
     return Math.pow(0.9, elapsedDays / stability);
 }
 
@@ -109,10 +125,12 @@ export function prepareTest(count) {
     getDailyOverdueSnapshot(rawQuestions);
 
     // FSRS Selection logic: Prioritize Overdue (R <= 0.9), then use Smart Selection
+    /* One instant for the whole selection pass - see calculateRetrievability. */
+    const measuredAt = Date.now();
     let qs = rawQuestions.map((q, idx) => {
         const key = `${q.sourceId}_${q.id}`;
         const stat = AppState.stats[key] || { difficulty: 5.0, learned: false };
-        const r = calculateRetrievability(stat.stability, stat.lastReview);
+        const r = calculateRetrievability(stat.stability, stat.lastReview, measuredAt);
         return {
             idx,
             q,

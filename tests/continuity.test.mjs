@@ -13,6 +13,7 @@ let getDailyRequirement,
     getDailyOverdueSnapshot,
     getDailyFocusOverdueSnapshot,
     getLocalDateStr,
+    getCurrentOverdueCount,
     AppState;
 
 before(async () => {
@@ -37,6 +38,7 @@ before(async () => {
     getDailyOverdueSnapshot = engineMod.getDailyOverdueSnapshot;
     getDailyFocusOverdueSnapshot = engineMod.getDailyFocusOverdueSnapshot;
     getLocalDateStr = engineMod.getLocalDateStr;
+    getCurrentOverdueCount = engineMod.getCurrentOverdueCount;
 });
 
 /* The day's bar is measured once per device and then frozen. The merge decides
@@ -218,3 +220,36 @@ test('recordTestFinished deduplicates correct and wrong counts if flushInProgres
 });
 
 
+
+test('the overdue scan measures every question at one instant', () => {
+    /* This count IS the day's bar. Reading the clock per question makes each
+       successive question look staler than the last, so questions sitting near
+       the R = 0.9 line fall on different sides of it depending only on where
+       they happened to be in the loop - and the same library measures a
+       different backlog twice in a row.
+
+       The clock is made to tick an hour per read rather than waiting for a real
+       boundary: a race a fast machine wins is not something a test can assert. */
+    const DAY = 24 * 60 * 60 * 1000;
+    const start = Date.now();
+    // Just short of due: stability 10 days against 9.9 elapsed, so R sits a
+    // hair above 0.9 and a few hours of drift is enough to push it under.
+    const lastReview = new Date(start - 9.9 * DAY).toISOString();
+
+    AppState.stats = {};
+    const questions = Array.from({ length: 5 }, (_, i) => ({ sourceId: 'src', id: i + 1 }));
+    questions.forEach(q => {
+        AppState.stats[`src_${q.id}`] = { stability: 10, lastReview, learned: false };
+    });
+
+    const realNow = Date.now;
+    let tick = start;
+    Date.now = () => (tick += 60 * 60 * 1000);
+
+    try {
+        // Measured together, not one of them has come due.
+        assert.equal(getCurrentOverdueCount(questions), 0);
+    } finally {
+        Date.now = realNow;
+    }
+});

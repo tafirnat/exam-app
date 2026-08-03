@@ -692,11 +692,16 @@ export function getDailyOverdueSnapshot(rawQuestions) {
     
     let currentOverdueCount = 0;
     if (rawQuestions && rawQuestions.length > 0) {
+        /* The whole count taken at one instant. Per-question clock reads put
+           questions either side of the R <= 0.9 line depending on where the
+           millisecond fell, so the same library could measure a different
+           backlog twice in a row - and this number is the day's bar. */
+        const measuredAt = Date.now();
         rawQuestions.forEach(q => {
             const key = `${q.sourceId}_${q.id}`;
             const stat = AppState.stats[key] || { learned: false };
             if (!stat.learned) {
-                const r = calculateRetrievability(stat.stability, stat.lastReview);
+                const r = calculateRetrievability(stat.stability, stat.lastReview, measuredAt);
                 if (r > 0 && r <= 0.9) {
                     currentOverdueCount++;
                 }
@@ -719,11 +724,16 @@ export function getDailyOverdueSnapshot(rawQuestions) {
 export function getCurrentOverdueCount(rawQuestions) {
     let currentOverdueCount = 0;
     if (rawQuestions && rawQuestions.length > 0) {
+        /* The whole count taken at one instant. Per-question clock reads put
+           questions either side of the R <= 0.9 line depending on where the
+           millisecond fell, so the same library could measure a different
+           backlog twice in a row - and this number is the day's bar. */
+        const measuredAt = Date.now();
         rawQuestions.forEach(q => {
             const key = `${q.sourceId}_${q.id}`;
             const stat = AppState.stats[key] || { learned: false };
             if (!stat.learned) {
-                const r = calculateRetrievability(stat.stability, stat.lastReview);
+                const r = calculateRetrievability(stat.stability, stat.lastReview, measuredAt);
                 if (r > 0 && r <= 0.9) {
                     currentOverdueCount++;
                 }

@@ -193,6 +193,9 @@ export function renderStatsList(filter = 'all', searchKeyword = '') {
     // Apply Sorting
     const field = AppState.activeStatsSortField || 'original';
     const dir = AppState.activeStatsSortDir === 'asc' ? 1 : -1;
+    /* One instant for the whole screen - the sort below and the percentages
+       it goes on to label. See the retrievability branch. */
+    const measuredAt = Date.now();
 
     filteredQuestions.sort((a, b) => {
         const sa = AppState.stats[`${a.sourceId}_${a.id}`] || { correct: 0, wrong: 0, difficulty: 5.0 };
@@ -214,8 +217,12 @@ export function renderStatsList(filter = 'all', searchKeyword = '') {
         } else if (field === 'wrong') {
             result = sa.wrong - sb.wrong;
         } else if (field === 'retrievability') {
-            const ra = calculateRetrievability(sa.stability, sa.lastReview) || 0;
-            const rb = calculateRetrievability(sb.stability, sb.lastReview) || 0;
+            /* Both sides measured from the same instant. Reading the clock
+               twice inside a comparator makes the comparator itself
+               inconsistent - a > b and b > a can both come out true across a
+               millisecond boundary, which is not an ordering at all. */
+            const ra = calculateRetrievability(sa.stability, sa.lastReview, measuredAt) || 0;
+            const rb = calculateRetrievability(sb.stability, sb.lastReview, measuredAt) || 0;
             result = ra - rb;
         }
         return result * dir;
@@ -258,7 +265,7 @@ export function renderStatsList(filter = 'all', searchKeyword = '') {
         const streak = s.streak || 0;
         const streakIcon = streak > 0 ? '🔥' : (streak < 0 ? '❄️' : '');
         const streakAbs = Math.abs(streak);
-        const r = calculateRetrievability(s.stability, s.lastReview);
+        const r = calculateRetrievability(s.stability, s.lastReview, measuredAt);
         const rPercent = r > 0 ? Math.round(r * 100) : null;
 
         const rawTags = q.tags || q.content?.tags || q.tag || [];

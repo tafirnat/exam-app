@@ -19,6 +19,7 @@ import { AppState } from './state.js';
 import { renderSourcesList, renderHomeActiveSources } from '../features/sources/sources-ui.js';
 import { renderContinuityBlock, renderGlobalCharts } from '../features/stats/continuity-ui.js';
 import { renderStatsList, updateHomeStats } from '../features/stats/stats-module.js';
+import { renderResumeButton } from '../features/test/test-ui.js';
 import { updateQuickSourcesDot } from '../features/sources/quick-presets-ui.js';
 import { syncQuickPresetsWithLiveSources } from '../features/sources/quick-presets.js';
 import { updateSyncUI } from './github-sync.js';
@@ -56,6 +57,19 @@ const BINDINGS = [
         name: 'home:summary',
         slices: [Slice.SOURCES, Slice.STATS, Slice.ACTIVE_TEST],
         run: updateHomeStats,
+        views: [View.HOME]
+    },
+    {
+        /* "Devam Et" / "Yeni Test". The unfinished-test record is synced, so
+           this changes without anyone on this device touching it: the other
+           device leaves a test open, or finishes one and leaves a cleared
+           record behind. Until this row existed the button was only recomputed
+           on navigation, so the home screen could offer to resume a test that
+           had already been finished elsewhere - and a page refresh was the only
+           way to find out. */
+        name: 'home:resume',
+        slices: [Slice.ACTIVE_TEST],
+        run: renderResumeButton,
         views: [View.HOME]
     },
     {

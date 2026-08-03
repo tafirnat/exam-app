@@ -57,6 +57,12 @@ function bucketCandidates(pool, seed) {
     const fresh = [];
     const upcoming = [];
 
+    /* One instant for the whole pass. Reading the clock per question puts two
+       questions with identical stability and lastReview ~1e-10 apart, and R is
+       the primary sort key - the difficulty and id tie-breakers behind it were
+       only reached when the clock happened not to tick between them. */
+    const measuredAt = Date.now();
+
     pool.forEach(q => {
         const key = `${q.sourceId}_${q.id}`;
         const stat = AppState.stats[key];
@@ -64,7 +70,7 @@ function bucketCandidates(pool, seed) {
         // rotation until an incorrect answer puts it back.
         if (stat?.learned) return;
 
-        const r = calculateRetrievability(stat?.stability, stat?.lastReview);
+        const r = calculateRetrievability(stat?.stability, stat?.lastReview, measuredAt);
         const item = {
             key,
             sourceId: q.sourceId,

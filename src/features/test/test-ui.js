@@ -1,5 +1,6 @@
 
 import { AppState, saveStats } from '../../core/state.js';
+import { readJSON } from '../../core/storage.js';
 import { translateText, showToast, showConfirm, getCorrectAnswers, escapeHTML } from '../../core/utils.js';
 import { t, targetLanguages } from '../../core/i18n.js';
 import { evaluateAnswer, updateStats, updateFlashcardStats, finishTest, calculateRetrievability } from './test-engine.js';
@@ -1474,4 +1475,47 @@ export function updateFooterTags(tags, containerId) {
         };
         container.appendChild(tagEl);
     });
+}
+
+/**
+ * Draws the home screen's "Devam Et" / "Yeni Test" pair from whatever the
+ * unfinished-test record currently says.
+ *
+ * Pure read and DOM, which is what lets it be a store consumer. It used to be
+ * the tail of main.js's checkActiveTest(), together with the write that
+ * promotes a matching preset's saved session - and that write stamps the record
+ * with this device's id and the current time. Bound to Slice.ACTIVE_TEST in
+ * that shape, a session arriving from another device would have been re-stamped
+ * as this one's the moment it landed, which is exactly what pickActiveSession()
+ * reads to decide who is sitting in the test.
+ *
+ * Before this was a consumer, the button only recomputed on navigation. The
+ * record has been synced since the active session joined the payload, so the
+ * home screen could sit on a stale answer in both directions: no resume button
+ * for a test still open on the other device, or - worse - a resume button for
+ * one that device had already finished, since finishing leaves a cleared record
+ * rather than none.
+ */
+export function renderResumeButton() {
+    const activeData = readJSON('focus_app_active_test', null);
+    const resumable = !!(activeData && Array.isArray(activeData.currentTest) && activeData.currentTest.length > 0);
+
+    const resumeBtn = document.getElementById('resumeBtn');
+    const startBtn = document.getElementById('startBtn');
+    const startBtnContainer = document.getElementById('startBtnContainer');
+
+    if (resumeBtn) {
+        resumeBtn.style.display = resumable ? 'block' : 'none';
+        resumeBtn.style.flex = resumable ? '1' : '';
+    }
+    if (startBtn) {
+        startBtn.innerText = t(resumable ? 'new_test' : 'start_test');
+        startBtn.setAttribute('data-i18n', resumable ? 'new_test' : 'start_test');
+        startBtn.style.width = resumable ? 'auto' : '100%';
+        startBtn.style.flex = resumable ? '1' : '';
+    }
+    if (startBtnContainer) {
+        startBtnContainer.style.flexDirection = resumable ? 'row' : 'column';
+        startBtnContainer.style.gap = resumable ? '0.75rem' : '';
+    }
 }
