@@ -17,7 +17,7 @@ import { JSDOM } from 'jsdom';
  * The sequence is seeded, so a failure names a seed that reproduces it exactly.
  */
 
-let AppState, mergeSyncData;
+let AppState, mergeSyncData, addToDay;
 
 before(async () => {
     const dom = new JSDOM('<!doctype html><html><body></body></html>', { url: 'http://localhost/' });
@@ -28,6 +28,7 @@ before(async () => {
 
     AppState = (await import('../src/core/state.js')).AppState;
     mergeSyncData = (await import('../src/core/github-sync.js')).mergeSyncData;
+    addToDay = (await import('../src/core/daily-activity.js')).addToDay;
 });
 
 beforeEach(() => {
@@ -117,10 +118,11 @@ function world(seed) {
             day.overdueSnapshot = Math.floor(random() * 25);
             day.overdueSnapshotAt = at;
         }
-        day.questionCount++;
-        if (correct) day.correctCount++; else day.wrongCount++;
-        const requirement = day.overdueSnapshot >= 15 ? 15 : (day.overdueSnapshot > 0 ? day.overdueSnapshot : 15);
-        if (day.questionCount >= requirement) day.studied = true;
+        addToDay(day, device.id, {
+            questionCount: 1,
+            correctCount: correct ? 1 : 0,
+            wrongCount: correct ? 0 : 1
+        });
         device.studyActivity[dateKey] = day;
 
         const stat = device.stats[qid] || {
@@ -333,27 +335,34 @@ test('every question settles on the record from its most recent review', () => {
 });
 
 test('no answer is lost and none is counted twice', () => {
-    /* The counters have to end up at the highest single-device view, never the
-       sum. Summing is what doubled a day on every sync; dropping is what made
-       one device's afternoon vanish when another pushed over it. */
+    /* Two devices are two *parts* of a day, so the settled total is the sum of
+       what each one actually answered - not the larger of the two, which is
+       what Math.max gave and which simply lost the smaller side, and not the
+       sum of the flat totals re-added on every sync, which is how a day once
+       reached the millions. Counted here from the buckets themselves, which is
+       the only place the answers are recorded once each. */
     for (let seed = 1; seed <= 40; seed++) {
         const w = world(seed);
         for (let turn = 0; turn < 20; turn++) w.step(w.devices[turn % 3]);
 
-        // What each device believed about each day before anyone settled.
-        const highWater = {};
+        // Every bucket any device has seen, at its highest.
+        const answered = {};
         w.devices.forEach(device => {
             Object.entries(device.studyActivity).forEach(([dateKey, day]) => {
-                highWater[dateKey] = Math.max(highWater[dateKey] || 0, day.questionCount || 0);
+                const perBucket = answered[dateKey] || (answered[dateKey] = {});
+                Object.entries(day.byDevice || {}).forEach(([bucket, counts]) => {
+                    perBucket[bucket] = Math.max(perBucket[bucket] || 0, counts.questionCount || 0);
+                });
             });
         });
 
         w.settle();
 
-        Object.entries(highWater).forEach(([dateKey, expected]) => {
+        Object.entries(answered).forEach(([dateKey, perBucket]) => {
+            const expected = Object.values(perBucket).reduce((a, b) => a + b, 0);
             const settled = w.devices[0].studyActivity[dateKey];
             assert.equal(settled.questionCount, expected,
-                `seed ${seed}, ${dateKey}: settled at ${settled.questionCount}, highest view was ${expected}`);
+                `seed ${seed}, ${dateKey}: settled at ${settled.questionCount}, answers were ${expected}`);
         });
     }
 });

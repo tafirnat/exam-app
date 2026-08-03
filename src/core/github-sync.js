@@ -2,6 +2,7 @@ import { AppState, saveSources, saveStats, saveRecentTests, saveFolders, saveQui
 import { showToast, showAlert } from './utils.js';
 import { t } from './i18n.js';
 import { migrateFolderColors, sanitizeActivityRecord } from './migration.js';
+import { mergeDayBuckets, recomputeDayTotals, bucketsOf } from './daily-activity.js';
 import { persist, persistRemove, readJSON } from './storage.js';
 import { emit, Slice, getActiveView } from './store.js';
 
@@ -1702,14 +1703,21 @@ export function mergeSyncData(local, remote) {
                 lAct.focusOverdueSnapshot, lAct.focusOverdueSnapshotAt,
                 rAct.focusOverdueSnapshot, rAct.focusOverdueSnapshotAt);
 
+            /* Two devices are two *parts* of a day, not two views of it. Each
+               counts into its own bucket, so the day is the sum across buckets
+               and merging is max within a bucket - lossless, and unchanged by
+               running twice. Math.max over the flat totals used to be the whole
+               rule: five questions on the laptop and five on the phone came out
+               as five, and the losing five were gone. */
+            const mergedBuckets = mergeDayBuckets(bucketsOf(lAct), bucketsOf(rAct));
+
             /* Local holding the higher view is a local change, and saying so is
                what makes the pull push it back. Without this the merge kept the
                right numbers on this device and left the remote - and therefore
                every other device - on the lower ones. The snapshots are in here
                for the same reason: local having measured the day first is worth
                nothing if the remote never hears about it. */
-            if ((lAct.questionCount || 0) > (rAct.questionCount || 0)
-                || (lAct.focusQuestionCount || 0) > (rAct.focusQuestionCount || 0)
+            if (JSON.stringify(mergedBuckets) !== JSON.stringify(bucketsOf(rAct))
                 || (lAct.studied && !rAct.studied)
                 || (lAct.focusStudied && !rAct.focusStudied)
                 || (lAct.frozen && !rAct.frozen)
@@ -1719,12 +1727,9 @@ export function mergeSyncData(local, remote) {
                 hasLocalChanges = true;
             }
 
-            mergedStudyActivity[dateKey] = sanitizeActivityRecord({
+            mergedStudyActivity[dateKey] = sanitizeActivityRecord(recomputeDayTotals({
                 studied: lAct.studied || rAct.studied,
-                questionCount: Math.max(lAct.questionCount || 0, rAct.questionCount || 0),
-                correctCount: Math.max(lAct.correctCount || 0, rAct.correctCount || 0),
-                wrongCount: Math.max(lAct.wrongCount || 0, rAct.wrongCount || 0),
-                unansweredCount: Math.max(lAct.unansweredCount || 0, rAct.unansweredCount || 0),
+                byDevice: mergedBuckets,
                 frozen: lAct.frozen || rAct.frozen,
                 overdueSnapshot: overdue.value,
                 // Carried with the value it belongs to, so the next device can
@@ -1734,11 +1739,10 @@ export function mergeSyncData(local, remote) {
                 // until now: dropping these keys reset the custom focus streak
                 // to zero after every sync.
                 focusStudied: lAct.focusStudied || rAct.focusStudied,
-                focusQuestionCount: Math.max(lAct.focusQuestionCount || 0, rAct.focusQuestionCount || 0),
                 focusFrozen: lAct.focusFrozen || rAct.focusFrozen,
                 focusOverdueSnapshot: focusOverdue.value,
                 focusOverdueSnapshotAt: focusOverdue.at
-            });
+            }));
         }
     });
 

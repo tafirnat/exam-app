@@ -1,24 +1,18 @@
 import { AppState, saveStudyActivity, saveContinuityConfig, saveActiveTest } from '../../core/state.js';
 import { calculateRetrievability } from '../test/test-engine.js';
+import { getDailyRequirement, addToDay } from '../../core/daily-activity.js';
+
+/* Re-exported so the many callers that already ask the engine for the day's
+   requirement keep working; the rule itself lives in core/daily-activity.js,
+   which is the one place the engine, migration.js and the sync merge can all
+   reach without importing each other. */
+export { getDailyRequirement };
 
 export function getLocalDateStr(d = new Date()) {
     const yyyy = d.getFullYear();
     const mm = String(d.getMonth() + 1).padStart(2, '0');
     const dd = String(d.getDate()).padStart(2, '0');
     return `${yyyy}-${mm}-${dd}`;
-}
-
-/**
- * Calculates the required question count to maintain daily streak.
- * - If overdueSnapshot >= 15 -> 15 questions
- * - If 0 < overdueSnapshot < 15 -> overdueSnapshot questions
- * - If overdueSnapshot === 0 -> 15 questions
- */
-export function getDailyRequirement(overdueSnapshot) {
-    if (overdueSnapshot === null || overdueSnapshot === undefined) return 15;
-    if (overdueSnapshot >= 15) return 15;
-    if (overdueSnapshot > 0) return overdueSnapshot;
-    return 15;
 }
 
 /**
@@ -525,40 +519,29 @@ export function recordTestFinished(questionCount, correctCount = 0, wrongCount =
     const netCorrect = Math.max(0, correctCount - flushedCorrect);
     const netWrong = Math.max(0, wrongCount - flushedWrong);
 
-    // Global Track Update
-    activity.questionCount = (activity.questionCount || 0) + net;
-    activity.correctCount = (activity.correctCount || 0) + netCorrect;
-    activity.wrongCount = (activity.wrongCount || 0) + netWrong;
-    activity.unansweredCount = (activity.unansweredCount || 0) + unansweredCount;
-    
-    const globalReq = getDailyRequirement(activity.overdueSnapshot);
-    if (activity.questionCount >= globalReq) {
-        activity.studied = true;
-    }
-
-    // Focus Track Update
+    // Focus Track: worked out before the write so both tracks land together.
+    let netFocus = 0;
     const focusSources = getFocusSources();
-    if (focusSources.length > 0) {
+    if (focusSources.length > 0 && answeredQuestions.length > 0) {
         const timestamps = AppState.continuityConfig?.focusSourceTimestamps || {};
-        let focusQuestionsSolved = 0;
-
-        if (answeredQuestions.length > 0) {
-            focusQuestionsSolved = answeredQuestions.filter(q => {
-                const sid = q.sourceId || q.q?.sourceId;
-                if (!sid || !focusSources.includes(sid)) return false;
-                const sourceAddedAt = timestamps[sid] || 0;
-                const answeredAt = q.answeredAt || Date.now();
-                return answeredAt >= sourceAddedAt;
-            }).length;
-        }
-
-        const netFocus = Math.max(0, focusQuestionsSolved - flushedFocus);
-        activity.focusQuestionCount = (activity.focusQuestionCount || 0) + netFocus;
-        const focusReq = getDailyRequirement(activity.focusOverdueSnapshot);
-        if (activity.focusQuestionCount >= focusReq) {
-            activity.focusStudied = true;
-        }
+        const focusQuestionsSolved = answeredQuestions.filter(q => {
+            const sid = q.sourceId || q.q?.sourceId;
+            if (!sid || !focusSources.includes(sid)) return false;
+            const sourceAddedAt = timestamps[sid] || 0;
+            const answeredAt = q.answeredAt || Date.now();
+            return answeredAt >= sourceAddedAt;
+        }).length;
+        netFocus = Math.max(0, focusQuestionsSolved - flushedFocus);
     }
+
+    // Into this device's bucket - see commitAnsweredSlice().
+    addToDay(activity, AppState.deviceId, {
+        questionCount: net,
+        correctCount: netCorrect,
+        wrongCount: netWrong,
+        unansweredCount,
+        focusQuestionCount: netFocus
+    });
 
     saveStudyActivity();
     evaluateFreezeTokenEligibility();
@@ -632,23 +615,20 @@ function commitAnsweredSlice(tracking) {
     const correct = pending.filter(r => r.isCorrect).length;
     const wrong = pending.length - correct;
 
-    activity.questionCount = (activity.questionCount || 0) + pending.length;
-    activity.correctCount = (activity.correctCount || 0) + correct;
-    activity.wrongCount = (activity.wrongCount || 0) + wrong;
-    if (activity.questionCount >= getDailyRequirement(activity.overdueSnapshot)) {
-        activity.studied = true;
-    }
-
     /* Counted from the same slice as the global track rather than at flush
        time, so the two tracks are always derived from the same answers. A tab
        the browser closes mid-session used to leave the focus track behind. */
     const focusDelta = countFocusAnswers(pending);
-    if (focusDelta > 0) {
-        activity.focusQuestionCount = (activity.focusQuestionCount || 0) + focusDelta;
-        if (activity.focusQuestionCount >= getDailyRequirement(activity.focusOverdueSnapshot)) {
-            activity.focusStudied = true;
-        }
-    }
+
+    /* Into this device's own bucket. The day's totals are the sum across
+       buckets, so the other device's answers to the same day are added to
+       these rather than competing with them. */
+    addToDay(activity, AppState.deviceId, {
+        questionCount: pending.length,
+        correctCount: correct,
+        wrongCount: wrong,
+        focusQuestionCount: focusDelta
+    });
 
     tracking._flushedCount = answered.length;
     tracking._flushedCorrectCount = (tracking._flushedCorrectCount || 0) + correct;

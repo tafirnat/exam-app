@@ -1,6 +1,7 @@
 
 import { AppState, saveSources, saveStats, saveCurrentSource, saveFolders, saveStudyActivity, touch } from './state.js';
 import { persist, persistRemove, readString } from './storage.js';
+import { DAILY_TARGET, COUNTER_KEYS, bucketsOf, recomputeDayTotals } from './daily-activity.js';
 
 // Folders store their colour, so replacing the picker's palette left existing
 // folders on the retired colours - several of which wash out on the light
@@ -51,9 +52,10 @@ export function migrateFolderColors({ force = false } = {}) {
    an unusually long study session. */
 const CORRUPT_DAILY_COUNT = 500;
 
-/* Mirrors getDailyRequirement()'s ceiling in continuity-engine.js. Kept as a
-   literal so this module stays free of feature imports. */
-const DAILY_TARGET_CAP = 15;
+/* Was a literal here, with a comment admitting it mirrored getDailyRequirement().
+   The rule now lives in core/daily-activity.js, which holds no feature imports
+   either - so the copy was never buying anything. */
+const DAILY_TARGET_CAP = DAILY_TARGET;
 
 /**
  * Returns a repaired copy of one studyActivity day. Non-finite and negative
@@ -106,6 +108,19 @@ export function sanitizeActivityRecord(act) {
         focusOverdueSnapshot
     };
 
+    /* The buckets are the day's real numbers - the fields above are their sum -
+       so a repair that never reaches them repairs nothing that survives the next
+       recompute. Each bucket is one device's own running count and is held to
+       the rules the flat record was: no negatives, no fractions, and a total no
+       larger than the breakdown explaining it. Days from before per-device
+       counting carry their old figures in a single legacy bucket, so they come
+       out of here exactly as they used to. */
+    const buckets = bucketsOf(repaired);
+    Object.keys(buckets).forEach(key => {
+        buckets[key] = repairBucket(buckets[key]);
+    });
+    recomputeDayTotals(repaired);
+
     /* Absent rather than null when there is nothing to stamp. Writing the key
        anyway would touch every day already stored - a year of history rewritten
        on the first boot after the upgrade, reported as a repair it is not, and
@@ -115,6 +130,23 @@ export function sanitizeActivityRecord(act) {
     setOrDrop(repaired, 'overdueSnapshotAt', stampFor(overdueSnapshot, act.overdueSnapshotAt));
     setOrDrop(repaired, 'focusOverdueSnapshotAt', stampFor(focusOverdueSnapshot, act.focusOverdueSnapshotAt));
 
+    return repaired;
+}
+
+/** One device's counters for a day, held to the same rules as the flat record. */
+function repairBucket(bucket) {
+    const num = (v) => (Number.isFinite(v) && v > 0 ? Math.floor(v) : 0);
+    const repaired = {};
+    COUNTER_KEYS.forEach(key => { repaired[key] = num(bucket && bucket[key]); });
+
+    const breakdown = repaired.correctCount + repaired.wrongCount + repaired.unansweredCount;
+    if (breakdown > 0) {
+        repaired.questionCount = Math.min(repaired.questionCount, breakdown);
+    } else if (repaired.questionCount > CORRUPT_DAILY_COUNT) {
+        // Nothing left to reconstruct from - see the flat path above.
+        repaired.questionCount = DAILY_TARGET_CAP;
+    }
+    repaired.focusQuestionCount = Math.min(repaired.focusQuestionCount, repaired.questionCount);
     return repaired;
 }
 

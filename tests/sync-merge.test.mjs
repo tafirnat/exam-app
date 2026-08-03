@@ -28,20 +28,102 @@ const emptyPayload = (extra = {}) => ({
     ...extra
 });
 
-test('study activity merge keeps the higher count instead of summing it', () => {
-    const local = emptyPayload({
-        studyActivity: { '2026-07-31': { studied: true, questionCount: 7, correctCount: 5, wrongCount: 2, overdueSnapshot: 12 } }
-    });
-    const remote = emptyPayload({
-        studyActivity: { '2026-07-31': { studied: true, questionCount: 7, correctCount: 5, wrongCount: 2, overdueSnapshot: 12 } }
-    });
+/* Two devices are two *parts* of a day, not two views of it: answer five on the
+   laptop and five on the phone and the day is ten. Math.max over the flat
+   counters said five and the losing five were simply gone. But the opposite
+   reading is worse - adding the flat counters re-adds the same answers on every
+   sync, which is how a day once reached the millions - so each device counts
+   into its own bucket, the day is the sum across buckets, and merging is max
+   *within* a bucket. These cases pin both halves of that. */
 
-    const merged = mergeSyncData(local, remote);
-    const day = merged.studyActivity['2026-07-31'];
+const withBuckets = (byDevice, extra = {}) => ({
+    studied: false, frozen: false, focusStudied: false, focusFrozen: false,
+    byDevice, ...extra
+});
 
-    assert.equal(day.questionCount, 7);
-    assert.equal(day.correctCount, 5);
-    assert.equal(day.wrongCount, 2);
+test('two views of the same bucket do not add up', () => {
+    // The same day seen twice - one device, synced back to itself. Adding here
+    // is the doubling that once ran a day into the millions.
+    const day = { studied: true, questionCount: 7, correctCount: 5, wrongCount: 2, overdueSnapshot: 12 };
+    const merged = mergeSyncData(
+        emptyPayload({ studyActivity: { '2026-07-31': { ...day } } }),
+        emptyPayload({ studyActivity: { '2026-07-31': { ...day } } })
+    ).studyActivity['2026-07-31'];
+
+    assert.equal(merged.questionCount, 7);
+    assert.equal(merged.correctCount, 5);
+    assert.equal(merged.wrongCount, 2);
+});
+
+test('two devices working the same day add up', () => {
+    const merged = mergeSyncData(
+        emptyPayload({ studyActivity: { d1: withBuckets({ 'dev-a': { questionCount: 5, correctCount: 4, wrongCount: 1 } }) } }),
+        emptyPayload({ studyActivity: { d1: withBuckets({ 'dev-b': { questionCount: 5, correctCount: 3, wrongCount: 2 } }) } })
+    ).studyActivity.d1;
+
+    // Ten questions were answered, so the day is ten - not five.
+    assert.equal(merged.questionCount, 10);
+    assert.equal(merged.correctCount, 7);
+    assert.equal(merged.wrongCount, 3);
+});
+
+test('a day split across two devices still counts as earned', () => {
+    // Eight each against a fifteen-question bar. Neither device set `studied`,
+    // because neither reached the bar alone - the sum is what earns the day.
+    const merged = mergeSyncData(
+        emptyPayload({ studyActivity: { d1: withBuckets({ 'dev-a': { questionCount: 8, correctCount: 8 } }, { overdueSnapshot: 20 }) } }),
+        emptyPayload({ studyActivity: { d1: withBuckets({ 'dev-b': { questionCount: 8, correctCount: 8 } }, { overdueSnapshot: 20 }) } })
+    ).studyActivity.d1;
+
+    assert.equal(merged.questionCount, 16);
+    assert.equal(merged.studied, true);
+});
+
+test('a bucket that already synced is not counted again', () => {
+    const shared = { 'dev-a': { questionCount: 5, correctCount: 5 } };
+    let day = withBuckets(shared);
+
+    for (let i = 0; i < 10; i++) {
+        day = mergeSyncData(
+            emptyPayload({ studyActivity: { d1: day } }),
+            emptyPayload({ studyActivity: { d1: withBuckets({ ...shared }) } })
+        ).studyActivity.d1;
+    }
+
+    assert.equal(day.questionCount, 5);
+});
+
+test('a device that has fallen behind on its own bucket takes the higher figure', () => {
+    // Only dev-a writes dev-a's bucket, and it only grows, so the larger figure
+    // is simply the more recent one.
+    const merged = mergeSyncData(
+        emptyPayload({ studyActivity: { d1: withBuckets({ 'dev-a': { questionCount: 3 } }) } }),
+        emptyPayload({ studyActivity: { d1: withBuckets({ 'dev-a': { questionCount: 9 } }) } })
+    ).studyActivity.d1;
+
+    assert.equal(merged.questionCount, 9);
+});
+
+test('a day from before per-device counting keeps its figures and still accepts new ones', () => {
+    const merged = mergeSyncData(
+        // An old record: flat counters, no buckets.
+        emptyPayload({ studyActivity: { d1: { studied: true, questionCount: 12, correctCount: 12, overdueSnapshot: 15 } } }),
+        emptyPayload({ studyActivity: { d1: withBuckets({ 'dev-b': { questionCount: 4, correctCount: 4 } }) } })
+    ).studyActivity.d1;
+
+    // The old figures survive whole, in their own bucket, and the new device's
+    // work is added rather than compared against them.
+    assert.equal(merged.questionCount, 16);
+    assert.equal(merged.byDevice._legacy.questionCount, 12);
+});
+
+test('the focus track is counted per device too', () => {
+    const merged = mergeSyncData(
+        emptyPayload({ studyActivity: { d1: withBuckets({ 'dev-a': { questionCount: 6, focusQuestionCount: 6 } }) } }),
+        emptyPayload({ studyActivity: { d1: withBuckets({ 'dev-b': { questionCount: 4, focusQuestionCount: 4 } }) } })
+    ).studyActivity.d1;
+
+    assert.equal(merged.focusQuestionCount, 10);
 });
 
 test('repeated merges stay stable and never compound', () => {
@@ -383,8 +465,14 @@ test('sanitizeStudyActivity repairs stored days and reports the count', () => {
         '2026-07-31': { studied: true, questionCount: 999999999, correctCount: 4, wrongCount: 3, unansweredCount: 0 }
     };
 
-    assert.equal(sanitizeStudyActivity(), 1);
+    /* Two, not one: the clean day is rewritten as well, because per-device
+       counting moves a day's existing figures into a legacy bucket and every
+       stored day needs that once. It is a real migration rather than a field
+       appearing for its own sake - the buckets are where the numbers live from
+       here on, and a day without one would read as empty. */
+    assert.equal(sanitizeStudyActivity(), 2);
     assert.equal(AppState.studyActivity['2026-07-31'].questionCount, 7);
     assert.equal(AppState.studyActivity['2026-07-30'].questionCount, 15);
+    // And it happens once - the second pass finds nothing left to do.
     assert.equal(sanitizeStudyActivity(), 0);
 });

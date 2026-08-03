@@ -120,6 +120,61 @@ beforeEach(() => {
     AppState.testTracking = null;
 });
 
+/* Which bucket the day's answers land in is the load-bearing detail behind
+   per-device counting: the merge sums across buckets and takes the larger
+   figure within one. Writing into a shared bucket instead would put all three
+   devices back under Math.max - five answers on the laptop and five on the
+   phone reading as five - and every merge case would still pass, because the
+   merge would be doing exactly what it was told. */
+
+test("the day's answers land in this device's own bucket", () => {
+    AppState.deviceId = 'dev-x';
+    const questions = startSession(3);
+    initTodayActivity();
+    for (let i = 0; i < 3; i++) answer(questions, i, true);
+
+    const buckets = today().byDevice;
+    assert.deepEqual(Object.keys(buckets), ['dev-x']);
+    assert.equal(buckets['dev-x'].questionCount, 3);
+    assert.equal(today().questionCount, 3, 'and the day totals its buckets');
+});
+
+test('finishing a test writes to the same bucket the live path used', () => {
+    AppState.deviceId = 'dev-x';
+    const questions = startSession(4);
+    initTodayActivity();
+    for (let i = 0; i < 4; i++) answer(questions, i, true);
+    finish();
+
+    // A second bucket here would mean one device counted itself twice, which
+    // the merge cannot undo - the sum across buckets would be eight.
+    assert.deepEqual(Object.keys(today().byDevice), ['dev-x']);
+    assert.equal(today().questionCount, 4);
+});
+
+test('another device answering the same day writes a bucket of its own', () => {
+    AppState.deviceId = 'dev-x';
+    let questions = startSession(2);
+    initTodayActivity();
+    for (let i = 0; i < 2; i++) answer(questions, i, true);
+
+    /* The same browser profile is never two devices; this is what the other
+       device's writes look like once its record has been merged in. Deliberately
+       not startSession() - that clears the day, and the day is the thing under
+       test here. */
+    AppState.deviceId = 'dev-y';
+    AppState.testTracking = { results: [], mode: 'normal' };
+    questions = [0, 1, 2].map(i => {
+        const id = `y${i}`;
+        AppState.questionMap[`${SOURCE}_${id}`] = { id, sourceId: SOURCE };
+        return { id, sourceId: SOURCE };
+    });
+    for (let i = 0; i < 3; i++) answer(questions, i, true);
+
+    assert.deepEqual(Object.keys(today().byDevice).sort(), ['dev-x', 'dev-y']);
+    assert.equal(today().questionCount, 5, 'the day is the sum of both');
+});
+
 test('finishing a test counts each answer exactly once', () => {
     const questions = startSession(6);
     initTodayActivity();
