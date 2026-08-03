@@ -1827,7 +1827,7 @@ function renderTrendChart(buckets, yAxisId, barsId, xAxisId) {
 
             barWrap.style.cursor = 'pointer';
             barWrap.addEventListener('mouseenter', () => {
-                tooltip.innerHTML = `Tekil: <b>${d.total}</b> | Hacim: <b>${d.volumeTotal}</b><br><span style="color:#22c55e">D:${d.effortCorrect}</span> &nbsp;<span style="color:#ef4444">Y:${d.effortWrong}</span> &nbsp;<span style="color:#64748b">B:${d.effortEmpty}</span>`;
+                tooltip.innerHTML = `${t('chart_tooltip_unique')}: <b>${d.total}</b> | ${t('chart_tooltip_total')}: <b>${d.volumeTotal}</b><br><span style="color:#22c55e">${t('chart_tooltip_correct')}:${d.effortCorrect}</span> &nbsp;<span style="color:#ef4444">${t('chart_tooltip_wrong')}:${d.effortWrong}</span> &nbsp;<span style="color:#64748b">${t('chart_tooltip_empty')}:${d.effortEmpty}</span>`;
                 tooltip.style.display = 'block';
                 
                 const rect = barWrap.getBoundingClientRect();

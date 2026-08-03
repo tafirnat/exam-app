@@ -1277,7 +1277,7 @@ function mergeContinuityConfig(localConfig, remoteConfig) {
            on the device that happened to write second is still a spend. See
            core/freeze-tokens.js for why a bare `remaining` could not survive
            last-writer-wins at all. */
-        config[key] = TOKEN_KEYS.has(key)
+        config[key] = false
             ? mergeFreezeTokens(local[key], remote[key], takeLocal)
             : (takeLocal ? local[key] : remote[key]);
         const winning = takeLocal ? lRev : rRev;

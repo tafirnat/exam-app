@@ -149,6 +149,48 @@ test('initTodayActivity and checkAndReplenishTokens do not exceed maximum call s
     });
 });
 
+/* An auto-freeze has to say which day it bought, not just that a token went.
+   The engine could satisfy every count on this device with a bare `remaining--`
+   and nothing here or in the merge would complain - but a decrement is the one
+   shape last-writer-wins destroys: two devices freezing two different missed
+   days both go 2 -> 1, the merge keeps one of those, and a day ends up frozen
+   for free. The name is what makes the spend survive the trip, and it has to be
+   the day itself so the same freeze made twice is recognised as one. */
+
+test('an auto-freeze is charged by name, so another device can see what it paid for', () => {
+    const dayAgo = (n) => {
+        const d = new Date();
+        d.setDate(d.getDate() - n);
+        return getLocalDateStr(d);
+    };
+
+    AppState.continuityConfig = {
+        focusSources: [],
+        freezeTokens: {
+            initialized: true, total: 2, remaining: 2,
+            tier1Earned: true, tier2Earned: false, spentOn: []
+        },
+        focusFreezeTokens: {
+            initialized: true, total: 2, remaining: 0,
+            tier1Earned: false, tier2Earned: false, spentOn: []
+        }
+    };
+    // A studied day further back, so the two missed days sit inside a run.
+    AppState.studyActivity = { [dayAgo(5)]: { studied: true, questionCount: 20 } };
+
+    initTodayActivity();
+
+    assert.equal(AppState.studyActivity[dayAgo(1)].frozen, true);
+    assert.equal(AppState.studyActivity[dayAgo(2)].frozen, true);
+    assert.deepEqual(
+        AppState.continuityConfig.freezeTokens.spentOn.sort(),
+        [`global:${dayAgo(2)}`, `global:${dayAgo(1)}`].sort(),
+        'each freeze names the day and track it bought'
+    );
+    assert.equal(AppState.continuityConfig.freezeTokens.remaining, 0,
+        'and the count is derived from that ledger rather than decremented beside it');
+});
+
 test('recordTestFinished only credits evaluated/answered questions and respects focus selection timestamp', async () => {
     const engineMod = await import('../src/features/stats/continuity-engine.js');
     const recordTestFinished = engineMod.recordTestFinished;

@@ -52,6 +52,9 @@ const tokens = (remaining) => ({
     total: 2, remaining, tier1Earned: true, tier2Earned: true, initialized: true
 });
 
+/** A token record that names the freezes it bought, rather than just counting them. */
+const spent = (spentOn) => ({ ...tokens(2 - spentOn.length), spentOn });
+
 beforeEach(() => {
     localStorage.clear();
     AppState.deletedSourceIds = [];
@@ -174,6 +177,47 @@ test('a spent freeze token propagates - the decrement a max merge could never ca
 
     assert.equal(merged.continuityConfig.freezeTokens.remaining, 0);
     assert.equal(merged.hasLocalChanges, true);
+});
+
+/* The two cases below are the ones the per-key stamp rule cannot handle alone.
+   A token record is not a plain value: its scalars follow the stamp, but what it
+   has *spent* is a ledger, and last-writer-wins on a ledger throws away whatever
+   the losing device paid for. Both tracks have to be routed through the ledger
+   merge - wiring only the global one leaves the focus track silently regressed,
+   which is exactly the shape of bug nobody notices until a streak breaks. */
+
+test('a freeze spent on the device that lost the stamp is still charged', () => {
+    const local = stamped(
+        { freezeTokens: spent(['global:2026-07-30']) },
+        { freezeTokens: [1000, 'dev-a'] }
+    );
+    const remote = stamped(
+        { freezeTokens: spent(['global:2026-08-01']) },
+        { freezeTokens: [2000, 'dev-b'] }
+    );
+
+    const merged = mergeSyncData(payload(local), payload(remote)).continuityConfig;
+
+    assert.deepEqual(merged.freezeTokens.spentOn.sort(),
+        ['global:2026-07-30', 'global:2026-08-01'],
+        'taking the stamp winner whole would drop the older device\'s frozen day');
+    assert.equal(merged.freezeTokens.remaining, 0, 'and the count follows the ledger');
+});
+
+test('the focus track is routed through the ledger too, not just the global one', () => {
+    const local = stamped(
+        { focusFreezeTokens: spent(['focus:2026-07-30']) },
+        { focusFreezeTokens: [1000, 'dev-a'] }
+    );
+    const remote = stamped(
+        { focusFreezeTokens: spent(['focus:2026-08-01']) },
+        { focusFreezeTokens: [2000, 'dev-b'] }
+    );
+
+    const merged = mergeSyncData(payload(local), payload(remote)).continuityConfig;
+
+    assert.equal(merged.focusFreezeTokens.spentOn.length, 2);
+    assert.equal(merged.focusFreezeTokens.remaining, 0);
 });
 
 test('the winning value carries its stamp forward, so the next device compares fairly', () => {
