@@ -492,6 +492,21 @@ export function calculateFocusStreak() {
 }
 
 /**
+ * How one question is named inside a day's per-question log.
+ *
+ * The same composite key the question map and AppState.stats use, and for the
+ * same reason: `q.id` is only unique within its source, so two sources that
+ * both number their first question 1 are one question to anything keying on the
+ * bare id. The log is what the trend bars count distinct questions from, so
+ * that collision silently merged two questions into one bar unit - and it did
+ * so differently on each device, because which of the two was answered where
+ * decided what the day looked like.
+ */
+function questionLogKey(sourceId, questionId) {
+    return sourceId ? `${sourceId}_${questionId}` : String(questionId);
+}
+
+/**
  * Records test completion and updates both Global and Focus track activities.
  */
 export function recordTestFinished(questionCount, correctCount = 0, wrongCount = 0, unansweredCount = 0, testQuestions = []) {
@@ -530,16 +545,16 @@ export function recordTestFinished(questionCount, correctCount = 0, wrongCount =
     const questionLog = {};
     const unansweredQuestions = (testQuestions || []).filter(q => q && (q.isUnanswered || q.userAnswer === null || q.userAnswer === undefined));
     unansweredQuestions.forEach(q => {
-        const qId = String(q.id || q.q?.id);
-        if (!questionLog[qId]) {
-            questionLog[qId] = { correct: 0, wrong: 0, empty: 0, isFocus: false };
-        }
-        questionLog[qId].empty++;
-
         const sid = q.sourceId || q.q?.sourceId;
+        const qKey = questionLogKey(sid, q.id || q.q?.id);
+        if (!questionLog[qKey]) {
+            questionLog[qKey] = { correct: 0, wrong: 0, empty: 0, isFocus: false };
+        }
+        questionLog[qKey].empty++;
+
         if (sid && focusSources.includes(sid)) {
             if (Date.now() >= (timestamps[sid] || 0)) {
-                questionLog[qId].isFocus = true;
+                questionLog[qKey].isFocus = true;
             }
         }
     });
@@ -636,21 +651,21 @@ function commitAnsweredSlice(tracking) {
     const timestamps = AppState.continuityConfig?.focusSourceTimestamps || {};
     
     pending.forEach(r => {
-        const qId = String(r.questionId);
-        if (!questionLog[qId]) {
-            questionLog[qId] = { correct: 0, wrong: 0, empty: 0, isFocus: false };
-        }
-        if (r.isCorrect) questionLog[qId].correct++;
-        else questionLog[qId].wrong++;
-
         const sid = r.sourceId
             || AppState.questionMap?.[`${r.sourceId || ''}_${r.questionId}`]?.sourceId
             || Object.values(AppState.questionMap || {})
                 .find(q => String(q.id) === String(r.questionId))?.sourceId;
-        
+
+        const qKey = questionLogKey(sid, r.questionId);
+        if (!questionLog[qKey]) {
+            questionLog[qKey] = { correct: 0, wrong: 0, empty: 0, isFocus: false };
+        }
+        if (r.isCorrect) questionLog[qKey].correct++;
+        else questionLog[qKey].wrong++;
+
         if (sid && focusSources.includes(sid)) {
             if ((r.answeredAt || Date.now()) >= (timestamps[sid] || 0)) {
-                questionLog[qId].isFocus = true;
+                questionLog[qKey].isFocus = true;
             }
         }
     });

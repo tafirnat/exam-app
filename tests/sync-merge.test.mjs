@@ -530,3 +530,71 @@ test('a reset just after local midnight clears its own day, not the one before',
     // Work done after the reset on another device is not what a reset clears.
     assert.equal(merged[dayAfter]?.questionCount, 9);
 });
+
+/* ── The per-question log has to survive both repair and merge ───────────────
+   A day's buckets hold one thing beyond their counters: which questions were
+   worked, so the trend bars can count a question answered four times once. It
+   is written on the answering device and then passed through
+   sanitizeActivityRecord twice over - by the boot repair, and by every record
+   the Gist merge produces. A repair that rebuilds a bucket from the counter
+   list alone dropped it at both points, so the log never outlived the session
+   that wrote it and never reached another device at all. */
+
+const loggedDay = (deviceKey, log, counts) => ({
+    studied: false, frozen: false,
+    byDevice: { [deviceKey]: { unansweredCount: 0, focusQuestionCount: 0, ...counts, questionLog: log } }
+});
+
+test('repairing a day keeps its per-question log', () => {
+    const repaired = sanitizeActivityRecord(loggedDay('phone',
+        { 's1_1': { correct: 2, wrong: 1, empty: 0, isFocus: true } },
+        { questionCount: 3, correctCount: 2, wrongCount: 1 }));
+
+    assert.deepEqual(repaired.byDevice.phone.questionLog, {
+        's1_1': { correct: 2, wrong: 1, empty: 0, isFocus: true }
+    });
+    assert.equal(repaired.questionCount, 3, 'and still recomputes the totals from the counters');
+});
+
+test('a log entry with no answer behind it is dropped', () => {
+    const repaired = sanitizeActivityRecord(loggedDay('phone', {
+        's1_1': { correct: 1, wrong: 0, empty: 0, isFocus: false },
+        's1_2': { correct: 0, wrong: 0, empty: 0, isFocus: false },
+        's1_3': 'not a record'
+    }, { questionCount: 1, correctCount: 1 }));
+
+    assert.deepEqual(Object.keys(repaired.byDevice.phone.questionLog), ['s1_1']);
+});
+
+test('a bucket that logged nothing gains no empty log', () => {
+    const repaired = sanitizeActivityRecord({
+        studied: false, byDevice: { phone: { questionCount: 4, correctCount: 4 } }
+    });
+
+    // Absent, not {}: an empty log would read as "this device logged, and
+    // worked nothing", which is what sends its four questions off the chart.
+    assert.equal('questionLog' in repaired.byDevice.phone, false);
+});
+
+test('a Gist merge carries both devices logs through intact', () => {
+    const day = '2026-08-04';
+    const merged = mergeSyncData(
+        emptyPayload({
+            studyActivity: {
+                [day]: loggedDay('phone', { 's1_1': { correct: 1, wrong: 0, empty: 0, isFocus: false } },
+                    { questionCount: 1, correctCount: 1 })
+            }
+        }),
+        emptyPayload({
+            studyActivity: {
+                [day]: loggedDay('laptop', { 's1_2': { correct: 0, wrong: 1, empty: 0, isFocus: false } },
+                    { questionCount: 1, wrongCount: 1 })
+            }
+        })
+    ).studyActivity[day];
+
+    assert.deepEqual(Object.keys(merged.byDevice).sort(), ['laptop', 'phone']);
+    assert.deepEqual(merged.byDevice.phone.questionLog, { 's1_1': { correct: 1, wrong: 0, empty: 0, isFocus: false } });
+    assert.deepEqual(merged.byDevice.laptop.questionLog, { 's1_2': { correct: 0, wrong: 1, empty: 0, isFocus: false } });
+    assert.equal(merged.questionCount, 2, 'two devices are two parts of the day');
+});

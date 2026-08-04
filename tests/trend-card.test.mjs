@@ -82,7 +82,7 @@ test('a bucket carries the focus track alongside the day total', () => {
     const last = buckets[buckets.length - 1];
 
     assert.equal(last.total, 20, 'the normal line reads the day total');
-    assert.equal(last.focus, 8, 'the focus line reads the focus track only');
+    assert.equal(last.volumeFocus, 8, 'the focus line reads the focus track only');
 });
 
 test('a focus count larger than the day total is clamped to the bar', () => {
@@ -92,7 +92,7 @@ test('a focus count larger than the day total is clamped to the bar', () => {
     });
     const last = buckets[buckets.length - 1];
 
-    assert.equal(last.focus, 10, 'the focus line must never float above its bar');
+    assert.equal(last.volumeFocus, 10, 'the focus line must never float above its bar');
 });
 
 test('days without a focus track leave the focus line at zero', () => {
@@ -100,7 +100,7 @@ test('days without a focus track leave the focus line at zero', () => {
         [getLocalDateStr()]: { studied: true, questionCount: 12, correctCount: 12, wrongCount: 0, unansweredCount: 0 }
     });
 
-    assert.equal(buckets.reduce((sum, b) => sum + b.focus, 0), 0);
+    assert.equal(buckets.reduce((sum, b) => sum + b.volumeFocus, 0), 0);
 });
 
 test('legacy records without a breakdown still show their volume', () => {
@@ -127,7 +127,7 @@ test('the monthly face sums every day of a month into one bar', () => {
     assert.equal(buckets.length, 6, 'the monthly face covers six months');
     const current = buckets[buckets.length - 1];
     assert.deepEqual(
-        { correct: current.correct, wrong: current.wrong, empty: current.empty, total: current.total, focus: current.focus },
+        { correct: current.correct, wrong: current.wrong, empty: current.empty, total: current.total, focus: current.volumeFocus },
         { correct: 7, wrong: 3, empty: 2, total: 12, focus: 8 }
     );
 });
@@ -148,4 +148,90 @@ test('the monthly window keeps its months distinct across a year boundary', () =
     const labels = buckets.map(b => b.label);
 
     assert.equal(new Set(labels).size, 6, `expected six distinct month labels, got ${labels.join(', ')}`);
+});
+
+/* ── Per-question logs, and the day two devices share ────────────────────────
+   A bar counts distinct questions, which needs the day's per-question log. Only
+   some buckets carry one: days older than the feature have none, and so does a
+   device still on an older build. Counting only the buckets that logged made
+   the rest of the day disappear - one device drew a bar, the other drew nothing
+   from the same record. */
+
+const bucketWithLog = (log, counts = {}) => ({
+    questionCount: 0, correctCount: 0, wrongCount: 0, unansweredCount: 0, ...counts, questionLog: log
+});
+
+test('a question answered twice in a day counts once', () => {
+    const today = getLocalDateStr();
+    const buckets = buildWeeklyTrendBuckets({
+        [today]: {
+            studied: true, questionCount: 3, correctCount: 2, wrongCount: 1,
+            byDevice: {
+                phone: bucketWithLog({
+                    's1_1': { correct: 2, wrong: 1, empty: 0, isFocus: false }
+                }, { questionCount: 3, correctCount: 2, wrongCount: 1 })
+            }
+        }
+    });
+    const last = buckets[buckets.length - 1];
+
+    assert.equal(last.total, 1, 'three answers to one question are one question');
+    assert.equal(last.volumeTotal, 3, 'the volume line still reads every answer');
+});
+
+test('a day worked on two devices counts both, logged or not', () => {
+    const today = getLocalDateStr();
+    const buckets = buildWeeklyTrendBuckets({
+        [today]: {
+            studied: true, questionCount: 9, correctCount: 7, wrongCount: 2,
+            byDevice: {
+                phone: bucketWithLog({
+                    's1_1': { correct: 1, wrong: 0, empty: 0, isFocus: false },
+                    's1_2': { correct: 1, wrong: 0, empty: 0, isFocus: false }
+                }, { questionCount: 2, correctCount: 2 }),
+                // Still on a build that writes no log - or one whose log a
+                // repair dropped. Its seven questions are the ones that used to
+                // vanish the moment the other bucket carried a log.
+                laptop: { questionCount: 7, correctCount: 5, wrongCount: 2, unansweredCount: 0 }
+            }
+        }
+    });
+    const last = buckets[buckets.length - 1];
+
+    assert.equal(last.total, 9, 'the unlogged device must still reach the bar');
+    assert.equal(last.wrong, 2, 'and so must its breakdown');
+});
+
+test('the same question answered on both devices is still one question', () => {
+    const today = getLocalDateStr();
+    const buckets = buildWeeklyTrendBuckets({
+        [today]: {
+            studied: true, questionCount: 2, correctCount: 2,
+            byDevice: {
+                phone: bucketWithLog({ 's1_1': { correct: 1, wrong: 0, empty: 0, isFocus: false } },
+                    { questionCount: 1, correctCount: 1 }),
+                laptop: bucketWithLog({ 's1_1': { correct: 1, wrong: 0, empty: 0, isFocus: false } },
+                    { questionCount: 1, correctCount: 1 })
+            }
+        }
+    });
+
+    assert.equal(buckets[buckets.length - 1].total, 1);
+});
+
+test('two sources numbering their first question 1 are two questions', () => {
+    const today = getLocalDateStr();
+    const buckets = buildWeeklyTrendBuckets({
+        [today]: {
+            studied: true, questionCount: 2, correctCount: 2,
+            byDevice: {
+                phone: bucketWithLog({
+                    's1_1': { correct: 1, wrong: 0, empty: 0, isFocus: false },
+                    's2_1': { correct: 1, wrong: 0, empty: 0, isFocus: false }
+                }, { questionCount: 2, correctCount: 2 })
+            }
+        }
+    });
+
+    assert.equal(buckets[buckets.length - 1].total, 2, 'the log is keyed by source and question, not question alone');
 });

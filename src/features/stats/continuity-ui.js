@@ -1592,7 +1592,7 @@ export function buildWeeklyTrendBuckets(activities) {
 
     const buckets = [];
     for (let i = 0; i < numDays; i++) {
-        const bucket = { label: dayLabels[currentDate.getDay()], correct: 0, neutral: 0, wrong: 0, empty: 0, focus: 0, total: 0, volumeTotal: 0, volumeFocus: 0, effortCorrect: 0, effortWrong: 0, effortEmpty: 0 };
+        const bucket = { label: dayLabels[currentDate.getDay()], correct: 0, neutral: 0, wrong: 0, empty: 0, total: 0, volumeTotal: 0, volumeFocus: 0, effortCorrect: 0, effortWrong: 0, effortEmpty: 0 };
         addActivityToBucket(bucket, activities[getLocalDateStr(currentDate)]);
         buckets.push(bucket);
         currentDate.setDate(currentDate.getDate() + 1);
@@ -1614,7 +1614,7 @@ export function buildMonthlyTrendBuckets(activities) {
         const monthDate = new Date(today.getFullYear(), today.getMonth() - i, 1);
         const bucket = {
             label: monthFormatter.format(monthDate),
-            correct: 0, neutral: 0, wrong: 0, empty: 0, focus: 0, total: 0, volumeTotal: 0, volumeFocus: 0, effortCorrect: 0, effortWrong: 0, effortEmpty: 0
+            correct: 0, neutral: 0, wrong: 0, empty: 0, total: 0, volumeTotal: 0, volumeFocus: 0, effortCorrect: 0, effortWrong: 0, effortEmpty: 0
         };
         // Keyed by year-month so activity dates land in the right bucket even
         // when the range spans a year boundary.
@@ -1639,9 +1639,6 @@ function addActivityToBucket(bucket, act) {
     // the user had answered several questions that day.
     if (!act || !(act.questionCount > 0)) return;
 
-    const deviceBuckets = act.byDevice ? Object.values(act.byDevice) : [];
-    const hasQuestionLog = deviceBuckets.some(b => b.questionLog);
-
     bucket.volumeTotal += act.questionCount || 0;
     bucket.volumeFocus += Math.min(act.focusQuestionCount || 0, act.questionCount || 0);
 
@@ -1652,45 +1649,69 @@ function addActivityToBucket(bucket, act) {
         bucket.effortEmpty += act.questionCount || 0;
     }
 
-    if (!hasQuestionLog) {
-        const total = act.questionCount || 0;
-        let correct = act.correctCount || 0;
-        let wrong = act.wrongCount || 0;
-        let empty = act.unansweredCount || 0;
+    const deviceBuckets = act.byDevice && typeof act.byDevice === 'object'
+        ? Object.values(act.byDevice).filter(b => b && typeof b === 'object')
+        : [];
+    const logged = deviceBuckets.filter(b => b.questionLog && Object.keys(b.questionLog).length > 0);
 
-        if (total > 0 && correct === 0 && wrong === 0 && empty === 0) {
-            empty = total;
-        }
-
-        bucket.correct += correct;
-        bucket.wrong += wrong;
-        bucket.empty += empty;
-        bucket.total += total;
-    } else {
-        const combinedLog = {};
-        deviceBuckets.forEach(b => {
-            if (!b.questionLog) return;
-            for (const [qId, stats] of Object.entries(b.questionLog)) {
-                if (!combinedLog[qId]) {
-                    combinedLog[qId] = { correct: 0, wrong: 0, empty: 0 };
-                }
-                combinedLog[qId].correct += stats.correct || 0;
-                combinedLog[qId].wrong += stats.wrong || 0;
-                combinedLog[qId].empty += stats.empty || 0;
-            }
-        });
-
-        const uniqueQuestions = Object.values(combinedLog);
-        bucket.total += uniqueQuestions.length;
-
-        uniqueQuestions.forEach(q => {
-            const bad = q.wrong + q.empty;
-            if (q.correct > bad) bucket.correct++;
-            else if (q.correct === bad) bucket.neutral++;
-            else if (q.correct < bad && (q.correct > 0 || q.wrong > 0)) bucket.wrong++;
-            else bucket.empty++;
-        });
+    /* Nothing logged this day: written before the log existed, or by a device
+       still on an older build. The flat counters are all there is to draw. */
+    if (logged.length === 0) {
+        addFlatCounts(bucket, act);
+        return;
     }
+
+    const combinedLog = {};
+    logged.forEach(b => {
+        for (const [qKey, stats] of Object.entries(b.questionLog)) {
+            if (!combinedLog[qKey]) {
+                combinedLog[qKey] = { correct: 0, wrong: 0, empty: 0 };
+            }
+            combinedLog[qKey].correct += stats.correct || 0;
+            combinedLog[qKey].wrong += stats.wrong || 0;
+            combinedLog[qKey].empty += stats.empty || 0;
+        }
+    });
+
+    const uniqueQuestions = Object.values(combinedLog);
+    bucket.total += uniqueQuestions.length;
+
+    uniqueQuestions.forEach(q => {
+        const bad = q.wrong + q.empty;
+        if (q.correct > bad) bucket.correct++;
+        else if (q.correct === bad) bucket.neutral++;
+        else if (q.correct < bad && (q.correct > 0 || q.wrong > 0)) bucket.wrong++;
+        else bucket.empty++;
+    });
+
+    /* A device that logged nothing still studied that day, and its questions are
+       not in combinedLog. Drawing only the logged buckets made the other
+       device's work disappear from the bar the moment *one* bucket carried a
+       log - the same day then read differently on each device, and a day worked
+       only on the device whose log had been stripped read as nothing at all.
+       These questions cannot be deduplicated against the log, so they are taken
+       at face value; that is the same figure the whole bar used to show. */
+    deviceBuckets.forEach(b => {
+        if (!b.questionLog || Object.keys(b.questionLog).length === 0) addFlatCounts(bucket, b);
+    });
+}
+
+/** Folds a record's - or one device bucket's - plain counters into a bar. */
+function addFlatCounts(bucket, counts) {
+    const total = counts.questionCount || 0;
+    if (total <= 0) return;
+
+    let correct = counts.correctCount || 0;
+    let wrong = counts.wrongCount || 0;
+    let empty = counts.unansweredCount || 0;
+
+    // A total with no breakdown behind it predates the breakdown being kept.
+    if (correct === 0 && wrong === 0 && empty === 0) empty = total;
+
+    bucket.correct += correct;
+    bucket.wrong += wrong;
+    bucket.empty += empty;
+    bucket.total += total;
 }
 
 /** Draws the stacked bar chart shared by the weekly and monthly trend faces. */

@@ -147,7 +147,52 @@ function repairBucket(bucket) {
         repaired.questionCount = DAILY_TARGET_CAP;
     }
     repaired.focusQuestionCount = Math.min(repaired.focusQuestionCount, repaired.questionCount);
+
+    /* Carried over rather than rebuilt from COUNTER_KEYS alone. A bucket holds
+       one more thing than its counters - which questions it was, so the trend
+       bars can count a question the user answered four times once - and a
+       repair that rebuilds the bucket from the counter list drops it. It did:
+       this function runs over every day on every boot *and* over every record
+       the Gist merge produces, so the log was erased seconds after it was
+       written and always before another device could see it. The visible
+       symptom was two devices drawing the same day differently - the one that
+       had just answered counted unique questions, the one that had synced
+       counted raw answers. */
+    const log = repairQuestionLog(bucket && bucket.questionLog);
+    if (log) repaired.questionLog = log;
+
     return repaired;
+}
+
+/**
+ * One bucket's per-question log: `{ [questionKey]: {correct, wrong, empty, isFocus} }`.
+ *
+ * @returns {object|null} null when there is nothing worth keeping, so the caller
+ *          can leave the key off entirely - an empty log is not the same as a
+ *          bucket that never logged, and only the latter may fall back to the
+ *          flat counters.
+ */
+function repairQuestionLog(log) {
+    if (!log || typeof log !== 'object' || Array.isArray(log)) return null;
+
+    const num = (v) => (Number.isFinite(v) && v > 0 ? Math.floor(v) : 0);
+    const repaired = {};
+    Object.keys(log).forEach(qKey => {
+        const entry = log[qKey];
+        if (!entry || typeof entry !== 'object') return;
+
+        const correct = num(entry.correct);
+        const wrong = num(entry.wrong);
+        const empty = num(entry.empty);
+        /* No answer, right, wrong or skipped, is no evidence the question was
+           ever seen - and an entry like that still adds one to the unique-question
+           bar. Dropping it keeps the bar a count of questions actually worked. */
+        if (correct + wrong + empty === 0) return;
+
+        repaired[qKey] = { correct, wrong, empty, isFocus: !!entry.isFocus };
+    });
+
+    return Object.keys(repaired).length > 0 ? repaired : null;
 }
 
 function setOrDrop(target, key, value) {

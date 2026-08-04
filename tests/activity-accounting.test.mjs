@@ -291,3 +291,43 @@ test('both tracks stay in step across live, flush and finish combined', () => {
     assert.equal(today().correctCount, 5);
     assert.equal(today().wrongCount, 2);
 });
+
+/* ── What the day logged, question by question ───────────────────────────────
+   The trend bars count distinct questions, not answers, which needs the day to
+   record *which* questions were worked. The rest of the app names a question by
+   `sourceId_id` because `id` is only unique inside its source; the log was
+   keyed by the bare id, so two sources that both number their first question 1
+   were one question to the chart - and which of the two got answered decided
+   what the bar looked like on each device. */
+
+function logOf(activity) {
+    const buckets = Object.values(activity.byDevice || {});
+    return Object.assign({}, ...buckets.map(b => b.questionLog || {}));
+}
+
+test('the day names a logged question by its source and its id', () => {
+    AppState.studyActivity = {};
+    AppState.questionMap = {};
+    AppState.testTracking = { results: [], mode: 'normal' };
+
+    // Two different questions that happen to share an id, as sources do.
+    const questions = [{ id: 'q1', sourceId: SOURCE }, { id: 'q1', sourceId: OTHER_SOURCE }];
+    questions.forEach(q => { AppState.questionMap[`${q.sourceId}_${q.id}`] = q; });
+
+    answer(questions, 0, true);
+    answer(questions, 1, false);
+
+    assert.deepEqual(Object.keys(logOf(today())).sort(), [`${SOURCE}_q1`, `${OTHER_SOURCE}_q1`].sort());
+});
+
+test('a question answered twice in one day is logged once', () => {
+    const questions = startSession(1);
+
+    answer(questions, 0, false);
+    answer(questions, 0, true);
+
+    const log = logOf(today());
+    assert.deepEqual(Object.keys(log), [`${SOURCE}_q0`]);
+    assert.deepEqual(log[`${SOURCE}_q0`], { correct: 1, wrong: 1, empty: 0, isFocus: true });
+    assert.equal(today().questionCount, 2, 'the counters still count every answer');
+});
