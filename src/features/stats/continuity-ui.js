@@ -602,8 +602,8 @@ function createTokenSvg(tokenIndex, active) {
     span.style.justifyContent = 'center';
 
     const tokenLabel = tokenIndex === 1
-        ? `2. Kızıl Kar Tanesi — ${active ? 'Aktif' : 'Pasif'}`
-        : `1. Mavi Kar Tanesi — ${active ? 'Aktif' : 'Pasif'}`;
+        ? `${t('token_crimson_title')} — ${active ? t('active_status') : t('passive_status')}`
+        : `${t('token_blue_title')} — ${active ? t('active_status') : t('passive_status')}`;
 
     span.title = tokenLabel;
     span.innerHTML = getSnowflakeSvgHtml(tokenIndex, active, 24, 24);
@@ -965,7 +965,7 @@ let focusPickerHandle = null;
 
 function updateFocusSelectionCount(count) {
     const countEl = document.getElementById('focusSourceSelectionCount');
-    if (countEl) countEl.textContent = `${count} / ${MAX_FOCUS_SOURCES} kaynak seçildi`;
+    if (countEl) countEl.textContent = t('focus_sources_selected_count', { count, max: MAX_FOCUS_SOURCES });
 }
 
 function openFocusSourceModal() {
@@ -1194,16 +1194,16 @@ function renderHeatmapYearly() {
                 else if (act.questionCount > 20) rect.style.backgroundColor = colorLevel3;
                 else if (act.questionCount > 10) rect.style.backgroundColor = colorLevel2;
                 else rect.style.backgroundColor = colorLevel1;
-                rect.title = `${dateStr} — ${act.questionCount} soru`;
+                rect.title = t('heatmap_questions_count', { date: dateStr, count: act.questionCount });
             } else if (act.frozen) {
                 rect.style.backgroundColor = colorFrozen;
-                rect.title = `${dateStr} — donduruldu`;
+                rect.title = t('heatmap_frozen', { date: dateStr });
             } else if ((act.questionCount || 0) > 0) {
                 // Partial study: threshold not met but questions were answered.
                 // Show a dimmed amber cell so the day is not invisible.
                 rect.style.backgroundColor = colorPartial;
                 rect.style.border = `1px solid ${isDark ? '#78350f' : '#fcd34d'}`;
-                rect.title = `${dateStr} — ${act.questionCount} soru (devam ediyor)`;
+                rect.title = t('heatmap_questions_in_progress', { date: dateStr, count: act.questionCount });
             } else {
                 rect.style.backgroundColor = colorEmpty;
             }
@@ -1266,7 +1266,7 @@ export function showDailyMotivationToast() {
     if (overdueCount > 0 && !todayAct.studied) {
         const remaining = Math.max(0, overdueCount - todayAct.questionCount);
         if (remaining > 0) {
-            showToast(`Hadi! Bugün ${remaining} soru eksiğin var! Devamlılık senin elinde, tempoyu koru!`, 'info');
+            showToast(t('daily_motivation_toast', { remaining }), 'info');
         }
     }
 }
@@ -1989,7 +1989,7 @@ function openInfoPopupModal(title, htmlContent, actionBtnConfig = null) {
         dismissBtn.style.padding = '0.4rem 0.85rem';
         dismissBtn.style.borderRadius = '6px';
         dismissBtn.style.cursor = 'pointer';
-        dismissBtn.textContent = 'Anladım';
+        dismissBtn.textContent = t('got_it');
         dismissBtn.addEventListener('click', () => {
             overlay.style.display = 'none';
         });
@@ -2018,7 +2018,7 @@ function openInfoPopupModal(title, htmlContent, actionBtnConfig = null) {
 
 export function showSingleTokenModal(type, tokenIndex) {
     const isGlobal = type === 'global';
-    const seriesTitle = isGlobal ? t('onboarding_step3_title') : t('streak_guide_focus_title');
+    const seriesTitle = isGlobal ? t('streak_global_title') : t('streak_focus_title');
 
     if (tokenIndex === 0) {
         // 1st Snowflake: Mavi Kar Tanesi
@@ -2179,7 +2179,7 @@ export function showContinuityInfoModal(type) {
             </div>
         `;
         const actionConfig = {
-            text: '⚙️ Kaynakları Seç',
+            text: `⚙️ ${t('focus_select_sources_btn')}`,
             className: 'btn btn-primary',
             onClick: () => {
                 openFocusSourceModal();
@@ -2191,68 +2191,68 @@ export function showContinuityInfoModal(type) {
 
 export function showFreezeTokenModal(type) {
     if (type === 'global') {
-        const title = `<span style="vertical-align: middle; margin-right: 4px;">${getSnowflakeSvgHtml(0, true, 22, 22)}</span> Genel Seri Dondurma Hakları`;
+        const title = `<span style="vertical-align: middle; margin-right: 4px;">${getSnowflakeSvgHtml(0, true, 22, 22)}</span> ${t('freeze_tokens_title_global')}`;
         const html = `
             <div style="font-size: 0.88rem; color: var(--text-primary); text-align: left; display: flex; flex-direction: column; gap: 0.85rem;">
                 <div style="background: rgba(125, 211, 252, 0.1); padding: 0.75rem 0.9rem; border-radius: 8px; border-left: 3px solid #7dd3fc;">
                     <strong style="color: #7dd3fc; font-size: 0.92rem; display: flex; align-items: center; gap: 6px;">
-                        ${getSnowflakeSvgHtml(0, true, 18, 18)} 1. Mavi Kar Tanesi
+                        ${getSnowflakeSvgHtml(0, true, 18, 18)} ${t('token_blue_title')}
                     </strong>
                     <p style="margin: 0.25rem 0 0 0; color: var(--text-secondary); line-height: 1.45;">
-                        İlk dondurma hakkınız uygulamaya başlarken <strong>bir kereliğe mahsus hediye</strong> olarak verilir. Soru çözemediğiniz bir günde serinizi sıfırlanmaktan korur.
+                        ${t('freeze_blue_gift_desc_global')}
                     </p>
                 </div>
 
                 <div style="background: rgba(239, 68, 68, 0.08); padding: 0.75rem 0.9rem; border-radius: 8px; border-left: 3px solid #ef4444;">
                     <strong style="color: #ef4444; font-size: 0.92rem; display: flex; align-items: center; gap: 6px;">
-                        ${getSnowflakeSvgHtml(1, true, 18, 18)} 2. Kızıl Kar Tanesi
+                        ${getSnowflakeSvgHtml(1, true, 18, 18)} ${t('token_crimson_title')}
                     </strong>
                     <p style="margin: 0.25rem 0 0 0; color: var(--text-secondary); line-height: 1.45;">
-                        İkinci dondurma hakkı <strong>Kızıl Kar Tanesi</strong>'dir. Kullanıcı bu dondurma hakkını Odak Seri veya Genel Seri için kullanabilir.
+                        ${t('freeze_crimson_desc_global')}
                     </p>
                 </div>
 
                 <div>
                     <strong style="display: flex; align-items: center; gap: 0.35rem; margin-bottom: 0.35rem;">
-                        🏆 Dondurma Hakkı Kazanım Şartları:
+                        ${t('freeze_earn_conditions_title_global')}
                     </strong>
                     <ul style="margin: 0; padding-left: 1.2rem; color: var(--text-secondary); line-height: 1.5; font-size: 0.84rem;">
-                        <li><strong>1. Mavi Kar Tanesi:</strong> Başlangıçta 1 defalık hediye (Tüketilirse: 7 gün seri + %70 FSRS başarısı ile tekrar kazanılır).</li>
-                        <li><strong>2. Kızıl Kar Tanesi:</strong> Son 14 günde kesintisiz seri + %80 FSRS başarısı ile kazanılır.</li>
+                        <li>${t('freeze_blue_rule_global')}</li>
+                        <li>${t('freeze_crimson_rule_global')}</li>
                     </ul>
                 </div>
             </div>
         `;
         openInfoPopupModal(title, html);
     } else {
-        const title = `<span style="vertical-align: middle; margin-right: 4px;">${getSnowflakeSvgHtml(0, true, 22, 22)}</span> Odak Seri Dondurma Hakları`;
+        const title = `<span style="vertical-align: middle; margin-right: 4px;">${getSnowflakeSvgHtml(0, true, 22, 22)}</span> ${t('freeze_tokens_title_focus')}`;
         const html = `
             <div style="font-size: 0.88rem; color: var(--text-primary); text-align: left; display: flex; flex-direction: column; gap: 0.85rem;">
                 <div style="background: rgba(125, 211, 252, 0.1); padding: 0.75rem 0.9rem; border-radius: 8px; border-left: 3px solid #7dd3fc;">
                     <strong style="color: #7dd3fc; font-size: 0.92rem; display: flex; align-items: center; gap: 6px;">
-                        ${getSnowflakeSvgHtml(0, true, 18, 18)} 1. Mavi Kar Tanesi
+                        ${getSnowflakeSvgHtml(0, true, 18, 18)} ${t('token_blue_title')}
                     </strong>
                     <p style="margin: 0.25rem 0 0 0; color: var(--text-secondary); line-height: 1.45;">
-                        İlk odak dondurma hakkınız <strong>bir kereliğe mahsus hediye</strong> olarak verilir. Seçili odak kaynaklarınızdan soru çözemediğiniz bir günde odak serinizi korur.
+                        ${t('freeze_blue_gift_desc_focus')}
                     </p>
                 </div>
 
                 <div style="background: rgba(239, 68, 68, 0.08); padding: 0.75rem 0.9rem; border-radius: 8px; border-left: 3px solid #ef4444;">
                     <strong style="color: #ef4444; font-size: 0.92rem; display: flex; align-items: center; gap: 6px;">
-                        ${getSnowflakeSvgHtml(1, true, 18, 18)} 2. Kızıl Kar Tanesi
+                        ${getSnowflakeSvgHtml(1, true, 18, 18)} ${t('token_crimson_title')}
                     </strong>
                     <p style="margin: 0.25rem 0 0 0; color: var(--text-secondary); line-height: 1.45;">
-                        İkinci odak dondurma hakkı <strong>Kızıl Kar Tanesi</strong>'dir. Kullanıcı bu dondurma hakkını Odak Seri veya Genel Seri için kullanabilir.
+                        ${t('freeze_crimson_desc_focus')}
                     </p>
                 </div>
 
                 <div>
                     <strong style="display: flex; align-items: center; gap: 0.35rem; margin-bottom: 0.35rem;">
-                        🏆 Odak Seri Dondurma Hakkı Kazanım Şartları:
+                        ${t('freeze_earn_conditions_title_focus')}
                     </strong>
                     <ul style="margin: 0; padding-left: 1.2rem; color: var(--text-secondary); line-height: 1.5; font-size: 0.84rem;">
-                        <li><strong>1. Mavi Kar Tanesi:</strong> Başlangıçta 1 defalık hediye (Tüketilirse: 7 gün kesintisiz Odak Seri ile tekrar kazanılır).</li>
-                        <li><strong>2. Kızıl Kar Tanesi:</strong> Son 14 günde kesintisiz Odak Seri tamamlanarak kazanılır.</li>
+                        <li>${t('freeze_blue_rule_focus')}</li>
+                        <li>${t('freeze_crimson_rule_focus')}</li>
                     </ul>
                 </div>
             </div>
@@ -2271,29 +2271,29 @@ export function showContinuityProgressModal(type) {
         const solved = todayAct.questionCount || 0;
         const isMet = isActivityRequirementMet(todayAct);
 
-        const title = '📊 Genel Seri İlerleme Durumu';
+        const title = `📊 ${t('streak_progress_modal_title_global')}`;
         const html = `
             <div style="font-size: 0.88rem; color: var(--text-primary); text-align: left; display: flex; flex-direction: column; gap: 0.85rem;">
                 <div style="display: flex; align-items: center; justify-content: space-between; background: var(--bg-hover); padding: 0.75rem 0.9rem; border-radius: 8px;">
                     <div>
-                        <div style="font-size: 0.78rem; color: var(--text-secondary);">Mevcut Kesintisiz Seri</div>
-                        <div style="font-size: 1.25rem; font-weight: 800; color: var(--primary-color);">${streak} Gün 🔥</div>
+                        <div style="font-size: 0.78rem; color: var(--text-secondary);">${t('current_streak_label')}</div>
+                        <div style="font-size: 1.25rem; font-weight: 800; color: var(--primary-color);">${streak} ${t('days_unit')} 🔥</div>
                     </div>
                     <div style="text-align: right;">
-                        <div style="font-size: 0.78rem; color: var(--text-secondary);">Günün İlerlemesi</div>
+                        <div style="font-size: 0.78rem; color: var(--text-secondary);">${t('today_progress_label')}</div>
                         <div style="font-size: 1.1rem; font-weight: 700; color: ${isMet ? 'var(--success-color, #10b981)' : 'var(--text-primary)'};"
                         >
                             ${isMet
-                                ? `✅ ${solved} çözüldü ${req > 0 && solved < req * 2 ? `(hedef: ${req})` : ''}`
-                                : `${solved} / ${req} Soru`
+                                ? `${t('solved_count_format', { solved })} ${req > 0 && solved < req * 2 ? `(${t('target_label')}: ${req})` : ''}`
+                                : `${solved} / ${req} ${t('questions_unit')}`
                             }
                         </div>
                     </div>
                 </div>
                 <p style="margin: 0; font-size: 0.83rem; color: var(--text-secondary); line-height: 1.45;">
                     ${isMet
-                ? 'Tebrikler! Bugünün FSRS soru hedefini tamamladınız ve serinizi korudunuz. 🎉'
-                : `Bugün serinizi korumak için ${req - solved} soru daha çözmeniz gerekmektedir.`}
+                ? t('streak_progress_met_desc_global')
+                : t('streak_progress_unmet_desc_global', { remaining: req - solved })}
                 </p>
             </div>
         `;
@@ -2306,31 +2306,31 @@ export function showContinuityProgressModal(type) {
         const solved = todayAct.focusQuestionCount || 0;
         const isMet = isFocusActivityRequirementMet(todayAct);
 
-        const title = '🎯 Odak Seri İlerleme Durumu';
+        const title = `🎯 ${t('streak_progress_modal_title_focus')}`;
         const html = `
             <div style="font-size: 0.88rem; color: var(--text-primary); text-align: left; display: flex; flex-direction: column; gap: 0.85rem;">
                 <div style="display: flex; align-items: center; justify-content: space-between; background: var(--bg-hover); padding: 0.75rem 0.9rem; border-radius: 8px;">
                     <div>
-                        <div style="font-size: 0.78rem; color: var(--text-secondary);">Mevcut Odak Seri</div>
-                        <div style="font-size: 1.25rem; font-weight: 800; color: var(--info-color, #3b82f6);">${streak} Gün 🎯</div>
+                        <div style="font-size: 0.78rem; color: var(--text-secondary);">${t('current_focus_streak_label')}</div>
+                        <div style="font-size: 1.25rem; font-weight: 800; color: var(--info-color, #3b82f6);">${streak} ${t('days_unit')} 🎯</div>
                     </div>
                     <div style="text-align: right;">
-                        <div style="font-size: 0.78rem; color: var(--text-secondary);">Günün İlerlemesi</div>
+                        <div style="font-size: 0.78rem; color: var(--text-secondary);">${t('today_progress_label')}</div>
                         <div style="font-size: 1.1rem; font-weight: 700; color: ${isMet ? 'var(--success-color, #10b981)' : solved > 0 ? 'var(--text-primary)' : 'var(--text-secondary)'};"
                         >
                             ${!focusOverdue && !solved
-                                ? '<span style="font-size:0.9rem;">— (Kaynak seçilmedi)</span>'
+                                ? `<span style="font-size:0.9rem;">— (${t('no_source_selected')})</span>`
                                 : isMet
-                                    ? `✅ ${solved} çözüldü${req > 0 && solved < req * 2 ? ` (hedef: ${req})` : ''}`
-                                    : `${solved} / ${req} Soru`
+                                    ? `${t('solved_count_format', { solved })}${req > 0 && solved < req * 2 ? ` (${t('target_label')}: ${req})` : ''}`
+                                    : `${solved} / ${req} ${t('questions_unit')}`
                             }
                         </div>
                     </div>
                 </div>
                 <p style="margin: 0; font-size: 0.83rem; color: var(--text-secondary); line-height: 1.45;">
                     ${isMet
-                ? 'Tebrikler! Seçili odak kaynaklarınızdan bugünün hedefini tamamladınız. 🎉'
-                : `Odak serinizi korumak için seçili kaynaklardan ${req - solved} soru daha çözmeniz gerekmektedir.`}
+                ? t('streak_progress_met_desc_focus')
+                : t('streak_progress_unmet_desc_focus', { remaining: req - solved })}
                 </p>
             </div>
         `;
@@ -2342,18 +2342,18 @@ export function showContinuityTargetModal(type) {
     if (type === 'global') {
         const liveQ = buildQuestionPool() || [];
         const overdueCount = getDailyOverdueSnapshot(liveQ);
-        const title = '🎯 FSRS Günlük Hedef & Seri Kuralları';
+        const title = `🎯 ${t('streak_target_modal_title_global')}`;
         const html = `
             <div style="font-size: 0.88rem; color: var(--text-primary); text-align: left; display: flex; flex-direction: column; gap: 0.85rem;">
                 <div style="background: var(--bg-hover); padding: 0.75rem 0.9rem; border-radius: 8px; border-left: 3px solid var(--primary-color);">
-                    <strong style="color: var(--primary-color); font-size: 0.9rem;">FSRS Vadesi Gelen Sorular: ${overdueCount} Soru</strong>
+                    <strong style="color: var(--primary-color); font-size: 0.9rem;">${t('fsrs_overdue_questions_label', { count: overdueCount })}</strong>
                     <p style="margin: 0.35rem 0 0.5rem 0; color: var(--text-secondary); font-size: 0.83rem; line-height: 1.45;">
-                        Sistem hafıza eğrinize göre bugün tekrar etmeniz gereken soruları analiz eder.
+                        ${t('streak_target_desc_global_header')}
                     </p>
                     <ul style="margin: 0; padding-left: 1.1rem; color: var(--text-secondary); font-size: 0.82rem; line-height: 1.5;">
-                        <li><strong>Vadesi gelen 15 veya daha fazla ise:</strong> Seri için günlük hedef <strong>15 soru</strong>dur.</li>
-                        <li><strong>Vadesi gelen 15'in altında ise:</strong> Seriyi korumak için vadesi gelen soruların <strong>tamamı</strong> çözülmelidir.</li>
-                        <li><strong>Vadesi gelen soru yoksa:</strong> Seri koruması için <strong>15 soru</strong> hedeflenir.</li>
+                        <li>${t('streak_target_rule1_global')}</li>
+                        <li>${t('streak_target_rule2_global')}</li>
+                        <li>${t('streak_target_rule3_global')}</li>
                     </ul>
                 </div>
             </div>
@@ -2362,18 +2362,18 @@ export function showContinuityTargetModal(type) {
     } else {
         const focusOverdue = getDailyFocusOverdueSnapshot();
         const focusSources = getFocusSources();
-        const title = '⚙️ Odak Seri Hedef & Seri Kuralları';
+        const title = `⚙️ ${t('streak_target_modal_title_focus')}`;
         const html = `
             <div style="font-size: 0.88rem; color: var(--text-primary); text-align: left; display: flex; flex-direction: column; gap: 0.85rem;">
                 <div style="background: var(--bg-hover); padding: 0.75rem 0.9rem; border-radius: 8px; border-left: 3px solid var(--info-color, #3b82f6);">
-                    <strong style="color: var(--info-color, #3b82f6); font-size: 0.9rem;">Seçili Kaynak Vadesi: ${focusOverdue} Soru (${focusSources.length} Kaynak)</strong>
+                    <strong style="color: var(--info-color, #3b82f6); font-size: 0.9rem;">${t('fsrs_overdue_questions_label_focus', { count: focusOverdue, sources: focusSources.length })}</strong>
                     <p style="margin: 0.35rem 0 0.5rem 0; color: var(--text-secondary); font-size: 0.83rem; line-height: 1.45;">
-                        Yalnızca seçtiğiniz kaynaklardaki FSRS vadesi gelen sorular günlük hedefe dahil edilir. ⚙️ ikonu üzerinden kaynaklarınızı yönetebilirsiniz.
+                        ${t('streak_target_desc_focus_header')}
                     </p>
                     <ul style="margin: 0; padding-left: 1.1rem; color: var(--text-secondary); font-size: 0.82rem; line-height: 1.5;">
-                        <li><strong>Seçili vadesi 15 veya daha fazla ise:</strong> Seri için günlük hedef <strong>15 soru</strong>dur.</li>
-                        <li><strong>Seçili vadesi 15'in altında ise:</strong> Seriyi korumak için vadesi gelen soruların <strong>tamamı</strong> çözülmelidir.</li>
-                        <li><strong>Vadesi gelen soru yoksa:</strong> Günlük <strong>15 soru</strong> çözülerek seri sürdürülür.</li>
+                        <li>${t('streak_target_rule1_focus')}</li>
+                        <li>${t('streak_target_rule2_focus')}</li>
+                        <li>${t('streak_target_rule3_focus')}</li>
                     </ul>
                 </div>
             </div>
