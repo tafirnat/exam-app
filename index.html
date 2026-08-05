@@ -844,9 +844,16 @@
 
                         <div id="homeActiveSourcesSection"
                             style="margin-top: 1.25rem; padding-top: 1rem; border-top: 1px solid var(--border-color); display: none;">
-                            <div style="font-size: 0.82rem; font-weight: 600; color: var(--text-secondary); margin-bottom: 0.6rem; letter-spacing: 0.04em;"
-                                data-i18n="active_sources_title">Kullanılan Kaynaklar</div>
-                            <div id="homeActiveSourcesList" style="display: flex; flex-direction: column; gap: 0.4rem;">
+                            <div id="homeActiveSourcesHeader" class="home-active-sources-toggle" role="button" aria-expanded="false" tabindex="0">
+                                <div style="display: flex; align-items: center; gap: 0.35rem; flex-wrap: wrap;">
+                                    <span data-i18n="active_sources_title">Kullanılan Kaynaklar</span>
+                                    <span id="homeActiveSourcesCount" style="font-weight: 500; opacity: 0.85;"></span>
+                                </div>
+                                <svg id="homeActiveSourcesChevron" class="chevron" viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="transition: transform 0.3s ease; transform: rotate(0deg); opacity: 0.7; flex-shrink: 0;">
+                                    <polyline points="6 9 12 15 18 9"></polyline>
+                                </svg>
+                            </div>
+                            <div id="homeActiveSourcesList" style="display: none; flex-direction: column; gap: 0.4rem;">
                             </div>
                         </div>
                     </div>

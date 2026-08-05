@@ -486,9 +486,30 @@ export function showSourceActions(source) {
     };
 }
 
+let isHomeActiveSourcesExpanded = false;
+
+function updateHomeActiveSourcesVisibility() {
+    const container = document.getElementById('homeActiveSourcesList');
+    const header = document.getElementById('homeActiveSourcesHeader');
+    const chevron = document.getElementById('homeActiveSourcesChevron');
+    if (!container) return;
+
+    if (isHomeActiveSourcesExpanded) {
+        container.style.display = 'flex';
+        if (header) header.setAttribute('aria-expanded', 'true');
+        if (chevron) chevron.style.transform = 'rotate(180deg)';
+    } else {
+        container.style.display = 'none';
+        if (header) header.setAttribute('aria-expanded', 'false');
+        if (chevron) chevron.style.transform = 'rotate(0deg)';
+    }
+}
+
 export function renderHomeActiveSources() {
     const container = document.getElementById('homeActiveSourcesList');
     const section = document.getElementById('homeActiveSourcesSection');
+    const header = document.getElementById('homeActiveSourcesHeader');
+    const countSpan = document.getElementById('homeActiveSourcesCount');
     if (!container || !section) return;
 
     const activeSources = liveSources().filter(s => s.active);
@@ -499,6 +520,27 @@ export function renderHomeActiveSources() {
     }
 
     section.style.display = 'block';
+
+    if (countSpan) {
+        countSpan.textContent = `(${t('active_sources_count', { count: activeSources.length })})`;
+    }
+
+    if (header && !header.dataset.listenerAttached) {
+        header.dataset.listenerAttached = 'true';
+        header.addEventListener('click', () => {
+            isHomeActiveSourcesExpanded = !isHomeActiveSourcesExpanded;
+            updateHomeActiveSourcesVisibility();
+        });
+        header.addEventListener('keydown', (e) => {
+            if (e.key === 'Enter' || e.key === ' ') {
+                e.preventDefault();
+                isHomeActiveSourcesExpanded = !isHomeActiveSourcesExpanded;
+                updateHomeActiveSourcesVisibility();
+            }
+        });
+    }
+
+    updateHomeActiveSourcesVisibility();
     container.innerHTML = '';
 
     const folders = liveFolders();

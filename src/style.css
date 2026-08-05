@@ -6788,3 +6788,32 @@ body.dnd-active {
     background: var(--surface-hover);
     color: var(--text-primary);
 }
+
+/* Home Active Sources Toggle Header */
+.home-active-sources-toggle {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    font-size: 0.82rem;
+    font-weight: 600;
+    color: var(--text-secondary);
+    margin-bottom: 0.6rem;
+    letter-spacing: 0.04em;
+    cursor: pointer;
+    user-select: none;
+    padding: 0.35rem 0.5rem;
+    margin-left: -0.5rem;
+    margin-right: -0.5rem;
+    border-radius: 6px;
+    transition: background-color 0.2s ease, color 0.2s ease;
+}
+
+.home-active-sources-toggle:hover {
+    background-color: var(--hover-bg, rgba(255, 255, 255, 0.05));
+    color: var(--text-primary);
+}
+
+.home-active-sources-toggle:hover .chevron {
+    color: var(--primary-color);
+    opacity: 1 !important;
+}
