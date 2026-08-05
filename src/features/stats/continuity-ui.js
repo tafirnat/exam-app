@@ -97,7 +97,7 @@ export function describeStreakRun(scope) {
     }).length;
 
     if (available === 0) {
-        return { available, enabled: false, label: 'Tekrar bekleyen soru yok' };
+        return { available, enabled: false, label: t('no_overdue_questions') };
     }
 
     const todayAct = initTodayActivity();
@@ -110,7 +110,7 @@ export function describeStreakRun(scope) {
     return {
         available,
         enabled: true,
-        label: met ? `FSRS ile Çalış (${available})` : `Seriyi Koru (${available})`
+        label: met ? t('streak_run_btn_fsrs', { available }) : t('streak_run_btn_protect', { available })
     };
 }
 
@@ -135,7 +135,7 @@ function startStreakRun(scope, order) {
     });
 
     if (!started) {
-        showToast('Bugün tekrar bekleyen soru yok');
+        showToast(t('toast_no_overdue'));
         return;
     }
 
@@ -164,8 +164,8 @@ function openStreakRunModal(scope) {
     if (subtitle) {
         const state = describeStreakRun(scope);
         subtitle.textContent = scope === 'focus'
-            ? `Odak Seri · ${state.available} soru hazır`
-            : `Genel Seri · ${state.available} soru hazır`;
+            ? t('streak_run_subtitle_focus', { count: state.available })
+            : t('streak_run_subtitle_global', { count: state.available });
     }
 
     const current = getStreakOrder();
@@ -295,7 +295,7 @@ function renderGlobalSlide(liveQ) {
     const container = document.getElementById('globalRingContainer');
     const spinGroup = document.getElementById('globalRingSpinGroup');
     if (isActivityRequirementMet(todayAct)) {
-        textEl.textContent = 'Günün serisi korundu 🎉';
+        textEl.textContent = t('streak_global_secured');
         textEl.style.color = 'var(--success-color, #10b981)';
         updateCometRing(container, spinGroup, 100, 'var(--success-color, #10b981)');
     } else {
@@ -304,11 +304,11 @@ function renderGlobalSlide(liveQ) {
         updateCometRing(container, spinGroup, progress, 'var(--trend-line-normal, #0891b2)');
 
         if (overdueCount === 0) {
-            textEl.textContent = `Seri için: ${solved}/15 soru`;
+            textEl.textContent = t('streak_for_progress', { solved, req: 15 });
         } else if (overdueCount > 15) {
-            textEl.textContent = `Seri için: ${solved}/15 soru (FSRS: ${overdueCount})`;
+            textEl.textContent = t('streak_for_progress_fsrs', { solved, req: 15, count: overdueCount });
         } else {
-            textEl.textContent = `Seri için: ${solved}/${overdueCount} FSRS sorusu`;
+            textEl.textContent = t('streak_for_progress_fsrs_all', { solved, count: overdueCount });
         }
     }
 
@@ -325,12 +325,12 @@ function renderGlobalSlide(liveQ) {
     // Index 1 = Kızıl Kar Tanesi: active when tier2 is earned and at least one token remains
     const crimsonActive = globalTier2Earned && globalRemaining > 0;
 
-    const blueLabel = blueActive ? 'Aktif' : 'Pasif';
-    const crimsonLabel = crimsonActive ? 'Aktif' : 'Pasif';
+    const blueLabel = blueActive ? t('active_status') : t('passive_status');
+    const crimsonLabel = crimsonActive ? t('active_status') : t('passive_status');
 
-    tokensEl.title = `Kalan Dondurma: ${globalRemaining}/${globalTokens.total ?? 1}\n` +
-        `• 1. Mavi Kar Tanesi: ${blueLabel}\n` +
-        `• 2. Kızıl Kar Tanesi: ${crimsonLabel}`;
+    tokensEl.title = `${t('tokens_tooltip_title', { remaining: globalRemaining, total: globalTokens.total ?? 1 })}\n` +
+        `• ${t('token_blue_title')}: ${blueLabel}\n` +
+        `• ${t('token_crimson_title')}: ${crimsonLabel}`;
 
     tokensEl.appendChild(createTokenSvg(0, blueActive));
     tokensEl.appendChild(createTokenSvg(1, crimsonActive));
@@ -354,7 +354,7 @@ function renderFocusSlide() {
     const focusSpinGroup = document.getElementById('focusRingSpinGroup');
 
     if (!focusSources || focusSources.length === 0) {
-        textEl.textContent = 'Kaynak seçilmedi. ⚙️ ikonuna dokunun.';
+        textEl.textContent = t('streak_focus_no_sources');
         textEl.style.color = 'var(--text-secondary)';
         updateCometRing(focusContainer, focusSpinGroup, 0, 'var(--trend-line-focus, #8b5cf6)');
     } else {
@@ -368,13 +368,13 @@ function renderFocusSlide() {
         const selectedNames = focusSources
             .map(id => {
                 const label = getFocusSourceLabel(id);
-                return liveFocusSources.includes(id) ? label : `${label} (kaynak yok)`;
+                return liveFocusSources.includes(id) ? label : `${label} (${t('source_missing')})`;
             })
             .filter(Boolean)
             .join(', ');
 
         if (isFocusActivityRequirementMet(todayAct)) {
-            textEl.textContent = selectedNames ? `Odak serisi korundu 🎉 (${selectedNames})` : 'Odak serisi korundu 🎉';
+            textEl.textContent = selectedNames ? t('streak_focus_secured_names', { names: selectedNames }) : t('streak_focus_secured');
             textEl.style.color = 'var(--success-color, #10b981)';
             updateCometRing(focusContainer, focusSpinGroup, 100, 'var(--success-color, #10b981)');
         } else {
@@ -382,8 +382,8 @@ function renderFocusSlide() {
             textEl.style.color = 'var(--text-secondary)';
             updateCometRing(focusContainer, focusSpinGroup, progress, 'var(--trend-line-focus, #8b5cf6)');
             textEl.textContent = selectedNames
-                ? `Seri için: ${solved}/${req} soru (${selectedNames})`
-                : `Seri için: ${solved}/${req} soru (${focusSources.length} kaynak)`;
+                ? t('streak_for_progress_focus_names', { solved, req, names: selectedNames })
+                : t('streak_for_progress_focus_count', { solved, req, count: focusSources.length });
         }
     }
 
@@ -400,12 +400,12 @@ function renderFocusSlide() {
     // Index 1 = Kızıl Kar Tanesi: active when tier2 is earned and at least one token remains
     const focusCrimsonActive = focusTier2Earned && focusRemaining > 0;
 
-    const focusBlueLabel = focusBlueActive ? 'Aktif' : 'Pasif';
-    const focusCrimsonLabel = focusCrimsonActive ? 'Aktif' : 'Pasif';
+    const focusBlueLabel = focusBlueActive ? t('active_status') : t('passive_status');
+    const focusCrimsonLabel = focusCrimsonActive ? t('active_status') : t('passive_status');
 
-    tokensEl.title = `Kalan Odak Dondurma: ${focusRemaining}/${focusTokens.total ?? 1}\n` +
-        `• 1. Mavi Kar Tanesi: ${focusBlueLabel}\n` +
-        `• 2. Kızıl Kar Tanesi: ${focusCrimsonLabel}`;
+    tokensEl.title = `${t('tokens_tooltip_title', { remaining: focusRemaining, total: focusTokens.total ?? 1 })}\n` +
+        `• ${t('token_blue_title')}: ${focusBlueLabel}\n` +
+        `• ${t('token_crimson_title')}: ${focusCrimsonLabel}`;
 
     tokensEl.appendChild(createTokenSvg(0, focusBlueActive));
     tokensEl.appendChild(createTokenSvg(1, focusCrimsonActive));
@@ -851,7 +851,7 @@ function closeFocusSourceModal() {
 
     saveFocusSourceSelection(selectedIds);
     renderFocusSlide();
-    if (changed) showToast('Odak Seri kaynakları güncellendi');
+    if (changed) showToast(t('toast_focus_updated'));
 }
 
 /**
@@ -2018,33 +2018,33 @@ function openInfoPopupModal(title, htmlContent, actionBtnConfig = null) {
 
 export function showSingleTokenModal(type, tokenIndex) {
     const isGlobal = type === 'global';
-    const seriesTitle = isGlobal ? 'Genel FSRS Serisi' : 'Odak Seri';
+    const seriesTitle = isGlobal ? t('onboarding_step3_title') : t('streak_guide_focus_title');
 
     if (tokenIndex === 0) {
         // 1st Snowflake: Mavi Kar Tanesi
         const active = isGlobal ? false : true;
         const iconSvg = getSnowflakeSvgHtml(0, active, 22, 22);
-        const title = `<span style="vertical-align: middle; margin-right: 4px;">${iconSvg}</span> 1. Mavi Kar Tanesi`;
+        const title = `<span style="vertical-align: middle; margin-right: 4px;">${iconSvg}</span> ${t('token_blue_title')}`;
         const html = `
             <div style="font-size: 0.88rem; color: var(--text-primary); text-align: left; display: flex; flex-direction: column; gap: 0.85rem;">
                 <div style="display: flex; align-items: center; justify-content: space-between; background: rgba(125, 211, 252, 0.1); padding: 0.75rem 0.9rem; border-radius: 8px; border-left: 3px solid #7dd3fc;">
                     <div>
                         <strong style="color: #7dd3fc; font-size: 0.92rem; display: flex; align-items: center; gap: 6px;">
-                            ${getSnowflakeSvgHtml(0, true, 18, 18)} Mavi Kar Tanesi
+                            ${getSnowflakeSvgHtml(0, true, 18, 18)} ${t('token_blue_title')}
                         </strong>
-                        <span style="font-size: 0.78rem; color: var(--text-secondary);">Ait Olduğu Seri: ${seriesTitle}</span>
+                        <span style="font-size: 0.78rem; color: var(--text-secondary);">${t('tokens_remaining_label', { series: seriesTitle })}</span>
                     </div>
                     <span style="font-size: 0.8rem; font-weight: 700; padding: 3px 8px; border-radius: 12px; background: ${active ? 'rgba(16, 185, 129, 0.2)' : 'rgba(148, 163, 184, 0.2)'}; color: ${active ? '#10b981' : 'var(--text-secondary)'};">
-                        ${active ? '● AKTİF' : '○ PASİF'}
+                        ${active ? `● ${t('active_status')}` : `○ ${t('passive_status')}`}
                     </span>
                 </div>
 
                 <div style="font-size: 0.83rem; color: var(--text-secondary); line-height: 1.5;">
                     <p style="margin: 0 0 0.5rem 0;">
-                        Mavi Kar Tanesi, uygulamaya başlarken hediye edilen standart dondurma hakkınızdır. Soru çözemediğiniz bir gün serinizi sıfırlanmaktan otomatik olarak korur.
+                        ${t('token_blue_desc')}
                     </p>
                     <ul style="margin: 0; padding-left: 1.1rem; line-height: 1.6;">
-                        <li><strong>Kazanım Şartı:</strong> Tüketilmesi halinde ${isGlobal ? '7 gün kesintisiz seri + %70 FSRS başarısı' : '7 gün kesintisiz Odak Seri'} tamamlanarak tekrar kazanılır.</li>
+                        <li>${isGlobal ? t('token_blue_earn_global') : t('token_blue_earn_focus')}</li>
                     </ul>
                 </div>
             </div>
@@ -2054,28 +2054,28 @@ export function showSingleTokenModal(type, tokenIndex) {
         // 2nd Snowflake: Kızıl Kar Tanesi
         const active = isGlobal ? false : true;
         const iconSvg = getSnowflakeSvgHtml(1, active, 22, 22);
-        const title = `<span style="vertical-align: middle; margin-right: 4px;">${iconSvg}</span> 2. Kızıl Kar Tanesi`;
+        const title = `<span style="vertical-align: middle; margin-right: 4px;">${iconSvg}</span> ${t('token_crimson_title')}`;
         const html = `
             <div style="font-size: 0.88rem; color: var(--text-primary); text-align: left; display: flex; flex-direction: column; gap: 0.85rem;">
                 <div style="display: flex; align-items: center; justify-content: space-between; background: rgba(239, 68, 68, 0.08); padding: 0.75rem 0.9rem; border-radius: 8px; border-left: 3px solid #ef4444;">
                     <div>
                         <strong style="color: #ef4444; font-size: 0.92rem; display: flex; align-items: center; gap: 6px;">
-                            ${getSnowflakeSvgHtml(1, true, 18, 18)} Kızıl Kar Tanesi
+                            ${getSnowflakeSvgHtml(1, true, 18, 18)} ${t('token_crimson_title')}
                         </strong>
-                        <span style="font-size: 0.78rem; color: var(--text-secondary);">Ait Olduğu Seri: ${seriesTitle}</span>
+                        <span style="font-size: 0.78rem; color: var(--text-secondary);">${t('tokens_remaining_label', { series: seriesTitle })}</span>
                     </div>
                     <span style="font-size: 0.8rem; font-weight: 700; padding: 3px 8px; border-radius: 12px; background: ${active ? 'rgba(239, 68, 68, 0.2)' : 'rgba(148, 163, 184, 0.2)'}; color: ${active ? '#ef4444' : 'var(--text-secondary)'};">
-                        ${active ? '● AKTİF' : '○ PASİF'}
+                        ${active ? `● ${t('active_status')}` : `○ ${t('passive_status')}`}
                     </span>
                 </div>
 
                 <div style="font-size: 0.83rem; color: var(--text-secondary); line-height: 1.5;">
                     <p style="margin: 0 0 0.5rem 0;">
-                        Kızıl Kar Tanesi dondurma hakkı, genel veya özel tüm serileriniz için ortak dondurma koruması sağlar.
+                        ${t('token_crimson_desc')}
                     </p>
                     <ul style="margin: 0; padding-left: 1.1rem; line-height: 1.6;">
-                        <li><strong>Kazanım Şartı:</strong> ${isGlobal ? 'Son 14 günde kesintisiz seri + %80 FSRS başarısı' : 'Son 14 günde kesintisiz Odak Seri'} tamamlanarak elde edilir.</li>
-                        <li><strong>Çapraz Joker Özelliği:</strong> Kullanıcı bu dondurma hakkını özel veya normal seri için kullanabilir.</li>
+                        <li>${isGlobal ? t('token_crimson_earn_global') : t('token_crimson_earn_focus')}</li>
+                        <li>${t('token_crimson_joker')}</li>
                     </ul>
                 </div>
             </div>
@@ -2086,13 +2086,13 @@ export function showSingleTokenModal(type, tokenIndex) {
 
 export function showContinuityInfoModal(type) {
     if (type === 'global') {
-        const title = '⚡ Genel FSRS Serisi Rehberi';
+        const title = t('streak_guide_global_title');
         const html = `
             <div style="font-size: 0.88rem; color: var(--text-primary); text-align: left; display: flex; flex-direction: column; gap: 0.85rem;">
                 <div style="background: var(--bg-hover, rgba(59,130,246,0.06)); padding: 0.8rem 0.95rem; border-radius: 8px; border-left: 3px solid var(--primary-color);">
-                    <strong style="color: var(--primary-color); font-size: 0.95rem; display: block; margin-bottom: 0.3rem;">⚡ Genel Seri Nedir?</strong>
+                    <strong style="color: var(--primary-color); font-size: 0.95rem; display: block; margin-bottom: 0.3rem;">${t('streak_guide_global_what')}</strong>
                     <p style="margin: 0; color: var(--text-secondary); line-height: 1.5;">
-                        Genel Seri, tüm soru bankanız genelinde FSRS (Aralıklı Tekrar) algoritmasına göre vadesi gelen soruları her gün düzenli çözerek çalışma alışkanlığı kazanmanızı sağlar.
+                        ${t('streak_guide_global_what_desc')}
                     </p>
                 </div>
 
@@ -2100,14 +2100,14 @@ export function showContinuityInfoModal(type) {
                     <div style="display: flex; gap: 0.6rem; align-items: flex-start;">
                         <span style="font-size: 1.1rem; line-height: 1;">🚀</span>
                         <div>
-                            <strong style="font-size: 0.88rem; color: var(--text-primary);">Seri Nasıl Oluşturulur ve Hedefler?</strong>
+                            <strong style="font-size: 0.88rem; color: var(--text-primary);">${t('streak_guide_global_how')}</strong>
                             <p style="margin: 0.15rem 0 0 0; font-size: 0.83rem; color: var(--text-secondary); line-height: 1.45;">
-                                Günlük soru hedefinizi tamamladığınızda seri gün sayacınız <strong>+1 gün</strong> artar. Günlük minimum hedefiniz vadesi gelen soru sayısına göre belirlenir:
+                                ${t('streak_guide_global_how_desc')}
                             </p>
                             <ul style="margin: 0.25rem 0 0 0; padding-left: 1.1rem; font-size: 0.8rem; color: var(--text-secondary); line-height: 1.5;">
-                                <li><strong>Vadesi gelen soru 15 veya fazla ise:</strong> En az 15 soru çözmek gereklidir.</li>
-                                <li><strong>Vadesi gelen soru 15'in altında ise:</strong> Seriyi korumak için vadesi gelen soruların <strong>tamamını</strong> çözmek gereklidir.</li>
-                                <li><strong>Vadesi gelen soru yoksa:</strong> Günlük 15 soru çözerek seri sürdürülür.</li>
+                                <li>${t('streak_guide_global_rule1')}</li>
+                                <li>${t('streak_guide_global_rule2')}</li>
+                                <li>${t('streak_guide_global_rule3')}</li>
                             </ul>
                         </div>
                     </div>
@@ -2115,9 +2115,9 @@ export function showContinuityInfoModal(type) {
                     <div style="display: flex; gap: 0.6rem; align-items: flex-start;">
                         <span style="font-size: 1.1rem; line-height: 1;">🛡️</span>
                         <div>
-                            <strong style="font-size: 0.88rem; color: var(--text-primary);">Seri Nasıl Korunur?</strong>
+                            <strong style="font-size: 0.88rem; color: var(--text-primary);">${t('streak_guide_global_protect')}</strong>
                             <p style="margin: 0.15rem 0 0 0; font-size: 0.83rem; color: var(--text-secondary); line-height: 1.45;">
-                                Günlük vadesi gelen soruları tamamladığınızda seriniz korunur. Çalışmaya ara verdiğiniz günlerde ise aktif Dondurma Jetonlarınız devreye girerek serinizi korur.
+                                ${t('streak_guide_global_protect_desc')}
                             </p>
                         </div>
                     </div>
@@ -2127,9 +2127,9 @@ export function showContinuityInfoModal(type) {
                             ${getSnowflakeSvgHtml(0, true, 16, 16)}
                         </span>
                         <div>
-                            <strong style="font-size: 0.88rem; color: var(--text-primary);">Dondurma Hakları</strong>
+                            <strong style="font-size: 0.88rem; color: var(--text-primary);">${t('streak_guide_global_tokens')}</strong>
                             <p style="margin: 0.15rem 0 0 0; font-size: 0.83rem; color: var(--text-secondary); line-height: 1.45;">
-                                1. öge ${getSnowflakeSvgHtml(0, true, 14, 14)} <strong style="color:#7dd3fc;">Mavi Kar Tanesi</strong> standart dondurma hakkıdır. 2. öge ${getSnowflakeSvgHtml(1, true, 14, 14)} <strong style="color:#ef4444;">Kızıl Kar Tanesi</strong> ise gelişmiş dondurma hakkıdır; kullanıcı bu dondurma hakkını Odak Seri veya Genel Seri için kullanabilir.
+                                ${t('streak_guide_global_tokens_desc')}
                             </p>
                         </div>
                     </div>
@@ -2138,13 +2138,13 @@ export function showContinuityInfoModal(type) {
         `;
         openInfoPopupModal(title, html);
     } else {
-        const title = '🎯 Odak Seri Rehberi';
+        const title = t('streak_guide_focus_title');
         const html = `
             <div style="font-size: 0.88rem; color: var(--text-primary); text-align: left; display: flex; flex-direction: column; gap: 0.85rem;">
                 <div style="background: var(--bg-hover, rgba(59,130,246,0.06)); padding: 0.8rem 0.95rem; border-radius: 8px; border-left: 3px solid var(--info-color, #3b82f6);">
-                    <strong style="color: var(--info-color, #3b82f6); font-size: 0.95rem; display: block; margin-bottom: 0.3rem;">🎯 Odak Seri Nedir?</strong>
+                    <strong style="color: var(--info-color, #3b82f6); font-size: 0.95rem; display: block; margin-bottom: 0.3rem;">${t('streak_guide_focus_what')}</strong>
                     <p style="margin: 0; color: var(--text-secondary); line-height: 1.5;">
-                        Odak Seri, seçtiğiniz en fazla 3 soru kaynağına yoğunlaşarak özelleştirilmiş günlük çalışma temposu sürdürmenizi sağlar. Seri geçmişiniz kaynaklardan bağımsız tutulur.
+                        ${t('streak_guide_focus_what_desc')}
                     </p>
                 </div>
 
@@ -2152,25 +2152,15 @@ export function showContinuityInfoModal(type) {
                     <div style="display: flex; gap: 0.6rem; align-items: flex-start;">
                         <span style="font-size: 1.1rem; line-height: 1;">🚀</span>
                         <div>
-                            <strong style="font-size: 0.88rem; color: var(--text-primary);">Seri Nasıl Oluşturulur ve Hedefler?</strong>
+                            <strong style="font-size: 0.88rem; color: var(--text-primary);">${t('streak_guide_focus_how')}</strong>
                             <p style="margin: 0.15rem 0 0 0; font-size: 0.83rem; color: var(--text-secondary); line-height: 1.45;">
-                                Kart üzerindeki ⚙️ ikonundan kaynaklarınızı seçtikten sonra günlük soru hedefini tamamladıkça Odak Seri sayacınız <strong>+1 gün</strong> artar:
+                                ${t('streak_guide_focus_how_desc')}
                             </p>
                             <ul style="margin: 0.25rem 0 0 0; padding-left: 1.1rem; font-size: 0.8rem; color: var(--text-secondary); line-height: 1.5;">
-                                <li><strong>Seçili kaynak vadesi 15 veya fazla ise:</strong> En az 15 soru çözmek gereklidir.</li>
-                                <li><strong>Seçili kaynak vadesi 15'in altında ise:</strong> Seçili kaynaklardaki vadesi gelen soruların <strong>tamamını</strong> çözmek gereklidir.</li>
-                                <li><strong>Vadesi gelen soru yoksa:</strong> Günlük 15 soru çözülerek seri sürdürülür.</li>
+                                <li>${t('streak_guide_focus_rule1')}</li>
+                                <li>${t('streak_guide_focus_rule2')}</li>
+                                <li>${t('streak_guide_focus_rule3')}</li>
                             </ul>
-                        </div>
-                    </div>
-
-                    <div style="display: flex; gap: 0.6rem; align-items: flex-start;">
-                        <span style="font-size: 1.1rem; line-height: 1;">🛡️</span>
-                        <div>
-                            <strong style="font-size: 0.88rem; color: var(--text-primary);">Seri Nasıl Korunur?</strong>
-                            <p style="margin: 0.15rem 0 0 0; font-size: 0.83rem; color: var(--text-secondary); line-height: 1.45;">
-                                Seçili kaynaklardaki günlük vadesi gelen soruları çözerek seriniz korunur. Çalışamadığınız günlerde Odak Dondurma Jetonları serinizi muhafaza eder.
-                            </p>
                         </div>
                     </div>
 
@@ -2179,9 +2169,9 @@ export function showContinuityInfoModal(type) {
                             ${getSnowflakeSvgHtml(0, true, 16, 16)}
                         </span>
                         <div>
-                            <strong style="font-size: 0.88rem; color: var(--text-primary);">Odak Dondurma Hakları</strong>
+                            <strong style="font-size: 0.88rem; color: var(--text-primary);">${t('streak_guide_global_tokens')}</strong>
                             <p style="margin: 0.15rem 0 0 0; font-size: 0.83rem; color: var(--text-secondary); line-height: 1.45;">
-                                1. Odak hakkı ${getSnowflakeSvgHtml(0, true, 14, 14)} <strong style="color:#7dd3fc;">Mavi Kar Tanesi</strong> seçili kaynaklarınız için dondurma sağlarken, 2. Odak hakkı ${getSnowflakeSvgHtml(1, true, 14, 14)} <strong style="color:#ef4444;">Kızıl Kar Tanesi</strong> Odak Seri veya Genel Seri için ortak dondurma hakkı sunar.
+                                ${t('streak_guide_focus_protect_desc')}
                             </p>
                         </div>
                     </div>

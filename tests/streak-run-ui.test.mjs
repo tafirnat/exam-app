@@ -57,6 +57,7 @@ before(async () => {
 });
 
 beforeEach(() => {
+    AppState.language = 'tr';
     AppState.sources = [];
     AppState.stats = {};
     AppState.studyActivity = {};
