@@ -1,6 +1,7 @@
 @import url('https://fonts.googleapis.com/css2?family=Black+Ops+One&family=Plaster&display=swap');
 
 :root {
+    color-scheme: light dark;
     /* Light Theme */
     --bg-color: #f8fafc;
     --surface-color: #ffffff;
@@ -148,6 +149,7 @@
 }
 
 [data-theme="dark"] {
+    color-scheme: dark;
     /* Dark Theme */
     --bg-color: #0b1120;
     --surface-color: #1e293b;
@@ -4616,18 +4618,50 @@ input:checked+.slider-small:before {
 }
 
 .order-toggle-btn.active {
-    background-color: rgba(99, 102, 241, 0.12);
-    border-color: var(--accent-color, #6366f1);
-    color: var(--accent-color, #6366f1);
+    background-color: rgba(132, 204, 22, 0.14);
+    border-color: #84cc16;
+    color: #3f6212;
+    font-weight: 600;
 }
 
 .order-toggle-btn.active .switch-small-pill {
-    background-color: var(--accent-color, #6366f1);
+    background-color: #65a30d;
 }
 
 .order-toggle-btn.active .switch-small-pill .slider-small-pill {
     transform: translateX(12px);
     background-color: #ffffff;
+}
+
+/* Dark theme & Brave Mobile auto dark mode compatibility */
+[data-theme="dark"] .order-toggle-btn.active {
+    background-color: rgba(163, 230, 53, 0.18);
+    border-color: #a3e635;
+    color: #bef264;
+}
+
+[data-theme="dark"] .order-toggle-btn.active .switch-small-pill {
+    background-color: #a3e635;
+}
+
+[data-theme="dark"] .order-toggle-btn.active .switch-small-pill .slider-small-pill {
+    background-color: #0f172a;
+}
+
+@media (prefers-color-scheme: dark) {
+    .order-toggle-btn.active {
+        background-color: rgba(163, 230, 53, 0.18);
+        border-color: #a3e635;
+        color: #bef264;
+    }
+
+    .order-toggle-btn.active .switch-small-pill {
+        background-color: #a3e635;
+    }
+
+    .order-toggle-btn.active .switch-small-pill .slider-small-pill {
+        background-color: #0f172a;
+    }
 }
 
 .modal-footer {
