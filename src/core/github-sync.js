@@ -988,6 +988,16 @@ export async function syncFromGist(options = {}) {
                 saveFolders();
             }
 
+            // Reconcile source folder references (non-existent -> default folder, archived folder -> archived with toast)
+            import('../features/sources/sources-service.js').then(m => {
+                if (typeof m.reconcileSourceFolder === 'function') {
+                    AppState.sources.forEach(s => {
+                        m.reconcileSourceFolder(s, { notify: !options.silent });
+                    });
+                    saveSources();
+                }
+            }).catch(() => {});
+
             // Apply merged deleted source IDs (Tombstones)
             if (Array.isArray(merged.deletedSourceIds)) {
                 AppState.deletedSourceIds = merged.deletedSourceIds;

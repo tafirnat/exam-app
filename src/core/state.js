@@ -275,6 +275,23 @@ export function initState({ force = false } = {}) {
        other devices' - the migration would be decided by whoever saved first. */
     rebaseContinuityRevisions(AppState.continuityConfig);
 
+    // Sanitize source folder references: invalid folder IDs cleared to null, archived folder sources moved to archive
+    AppState.sources.forEach(s => {
+        if (!s || !s.folderId || s.folderId === UNCATEGORIZED_FOLDER_ID) {
+            if (s) s.folderId = null;
+            return;
+        }
+        const folder = AppState.folders.find(f => f.id === s.folderId);
+        if (!folder) {
+            s.folderId = null;
+        } else if (folder.archived && !s.archived) {
+            s.archivedFrom = { folderId: folder.id, name: folder.name, color: folder.color };
+            s.archived = true;
+            s.active = false;
+            s.folderId = null;
+        }
+    });
+
     stateInitialized = true;
     return AppState;
 }

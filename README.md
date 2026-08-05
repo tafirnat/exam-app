@@ -88,6 +88,7 @@ Full UI in **English**, **Turkish**, and **German**. Integrated Google Translate
 
 - **Generate question sets**: Use the included prompt ([AI_AGENT_PROMPT.md](./AI_AGENT_PROMPT.md)) with ChatGPT, Claude, or Gemini to convert any text into Exam App JSON.
 - **Folder-targeted generation**: Include `"folderId": "folder_..."` in the JSON root to automatically place imported question banks inside a specific folder (copy folder IDs via the `id: ... 📋` button in the folder management modal).
+- **Sequential Order (`keepOrder`)**: For sequential reading materials or ordered topics, add `"keepOrder": true` (or `"preserveOrder": true`) in the JSON root or `exam_metadata` to prevent question shuffling. You can also toggle this anytime using the **Sequential** button in Source Actions.
 - **Ask AI about a question**: Send any question's context to ChatGPT, Claude, Gemini, DeepSeek, Kimi, etc. in one click, in your active UI language.
 
 ### 🔊 Text-to-Speech

@@ -88,6 +88,7 @@ Vollständige native Benutzeroberfläche auf **Englisch**, **Türkisch** und **D
 
 - **Fragensets generieren**: Nutzen Sie den mitgelieferten Prompt ([AI_AGENT_PROMPT.md](./AI_AGENT_PROMPT.md)) mit ChatGPT, Claude oder Gemini, um beliebigen Text in Exam App JSON umzuwandeln.
 - **Ordnerspezifische Generierung**: Fügen Sie `"folderId": "folder_..."` zum JSON-Root hinzu, um importierte Fragensets direkt einem Ordner zuzuweisen (Ordner-IDs können über die Schaltfläche `id: ... 📋` im Ordner-Verwaltungsmodal kopiert werden).
+- **Sequenzielle Reihenfolge (`keepOrder`)**: Für aufeinander folgende Lesematerialien können Sie `"keepOrder": true` (oder `"preserveOrder": true`) im JSON-Root oder in `exam_metadata` hinzufügen, um das Mischen der Fragen zu verhindern. Dies kann auch jederzeit über die Schaltfläche **Sortiert** in den Quellenaktionen umgeschaltet werden.
 - **KI zu einer Frage befragen**: Senden Sie den Kontext einer Frage mit einem Klick in Ihrer aktiven UI-Sprache an ChatGPT, Claude, Gemini, DeepSeek, Kimi usw.
 
 ### 🔊 Text-to-Speech

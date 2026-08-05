@@ -82,6 +82,7 @@ The JSON structure consists of a root object with two primary keys: `exam_metada
 | `folderId` | String | No | Target folder ID (e.g., `folder_1785739334920`). If provided, the source is automatically placed under this folder upon import. |
 | `description` | String | No | Short summary of the exam subject matter. |
 | `category` | String | No | Folder name / category for organization (e.g., `Computer Science`). |
+| `keepOrder` | Boolean | No | Set to `true` to preserve the exact question sequence and disable default question shuffling. Recommended for sequential reading materials or ordered topics. |
 
 ---
 

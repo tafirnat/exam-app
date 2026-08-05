@@ -380,6 +380,8 @@ export function showSourceActions(source) {
         if (fpBtn) fpBtn.onclick = null;
         const inspectBtn = document.getElementById('modalInspectQuestionsBtn');
         if (inspectBtn) inspectBtn.onclick = null;
+        const toggleOrderBtn = document.getElementById('modalToggleOrderBtn');
+        if (toggleOrderBtn) toggleOrderBtn.onclick = null;
     };
 
     const inspectQuestionsBtn = document.getElementById('modalInspectQuestionsBtn');
@@ -388,6 +390,30 @@ export function showSourceActions(source) {
             closeActions();
             const { inspectSourceQuestions } = await import('../stats/stats-module.js');
             inspectSourceQuestions(source.id);
+        };
+    }
+
+    const toggleOrderBtn = document.getElementById('modalToggleOrderBtn');
+    const toggleOrderLabel = document.getElementById('modalToggleOrderLabel');
+    const syncOrderBtnUI = () => {
+        if (!toggleOrderBtn || !toggleOrderLabel) return;
+        const isSequential = !!source.keepOrder;
+        toggleOrderBtn.classList.toggle('active', isSequential);
+        toggleOrderLabel.textContent = isSequential ? (t('order_mode_sequential') || 'Sıralı') : (t('order_mode_shuffled') || 'Karma');
+        toggleOrderBtn.title = isSequential ? (t('order_mode_changed_sequential') || 'Sıralı') : (t('order_mode_changed_shuffled') || 'Karma');
+    };
+    syncOrderBtnUI();
+
+    if (toggleOrderBtn) {
+        toggleOrderBtn.onclick = () => {
+            source.keepOrder = !source.keepOrder;
+            if (!source.metadata) source.metadata = {};
+            source.metadata.keepOrder = source.keepOrder;
+            touch(source);
+            saveSources();
+            syncOrderBtnUI();
+            const msgKey = source.keepOrder ? 'order_mode_changed_sequential' : 'order_mode_changed_shuffled';
+            showToast(t(msgKey));
         };
     }
 

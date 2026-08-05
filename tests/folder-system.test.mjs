@@ -48,3 +48,51 @@ test('archiveFolder refuses to archive uncategorized-folder', async () => {
     const systemFolder = AppState.folders.find(f => f.id === 'uncategorized-folder');
     assert.equal(systemFolder.archived, undefined);
 });
+
+test('reconcileSourceFolder clears folderId if folder does not exist in system', async () => {
+    const { reconcileSourceFolder } = await import('../src/features/sources/sources-service.js');
+    const source = { id: 'test-src-1', name: 'Test Source', folderId: 'non-existent-folder-id' };
+
+    reconcileSourceFolder(source, { notify: false });
+
+    assert.equal(source.folderId, null);
+});
+
+test('reconcileSourceFolder archives source if folder is archived', async () => {
+    const { reconcileSourceFolder } = await import('../src/features/sources/sources-service.js');
+
+    // Add an archived folder to AppState
+    AppState.folders.push({
+        id: 'archived-folder-123',
+        name: 'Arşivlenmiş Klasör',
+        color: '#ff0000',
+        archived: true
+    });
+
+    const source = {
+        id: 'test-src-2',
+        name: 'Test Source 2',
+        folderId: 'archived-folder-123',
+        questions: [{ id: 'q1', type: 'choice', text: 'Q1' }]
+    };
+
+    reconcileSourceFolder(source, { notify: false });
+
+    assert.equal(source.folderId, null);
+    assert.equal(source.archived, true);
+    assert.equal(source.archivedFrom.folderId, 'archived-folder-123');
+    assert.equal(source.archivedFrom.name, 'Arşivlenmiş Klasör');
+});
+
+test('processJSON clears missing folderId or archives source if folder is archived', async () => {
+    const { processJSON } = await import('../src/features/sources/sources-service.js');
+
+    const sampleJSON = {
+        folderId: 'ghost-folder-id',
+        questions: [{ id: 'q1', type: 'single_choice', text: 'Q1', options: [{ id: 'o1', text: 'Opt 1' }], answer: { optionId: 'o1' } }]
+    };
+
+    const importedSource = processJSON(sampleJSON, 'Imported Sample', { silent: true });
+    assert.ok(importedSource);
+    assert.equal(importedSource.folderId, null);
+});

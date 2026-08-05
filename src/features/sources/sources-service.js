@@ -1,8 +1,9 @@
 import { AppState, saveSources } from '../../core/state.js';
-import { getCorrectAnswers, showAlert } from '../../core/utils.js';
+import { getCorrectAnswers, showAlert, showToast } from '../../core/utils.js';
 import { t } from '../../core/i18n.js';
 import { KNOWN_TYPES, LEGACY_TYPE_ALIASES, canonicalType, findContentGaps } from '../../core/question-rules.js';
 import { showImportReport } from './import-report.js';
+import { markArchived } from './archive.js';
 
 // Files written against legacy type names stay importable; normalizeQuestions
 // rewrites them to their canonical spellings so only honest types reach storage.
@@ -148,11 +149,25 @@ export function processJSON(rawData, name, options = {}) {
         isActive = options.active;
     }
 
+    const targetFolderId = options.folderId || data.folderId || data.exam_metadata?.folderId || null;
+    const isKeepOrder = !!(
+        data.keepOrder ||
+        data.preserveOrder ||
+        data.sequential ||
+        data.exam_metadata?.keepOrder ||
+        data.exam_metadata?.preserveOrder ||
+        data.exam_metadata?.sequential ||
+        (data.exam_metadata?.shuffle === false) ||
+        (data.shuffle === false)
+    );
+
     const source = {
         id,
         name: title,
         questions: normalizedQuestions,
         active: isActive,
+        folderId: targetFolderId,
+        keepOrder: isKeepOrder,
         lastUsed: Date.now(),
         importDate: new Date().toLocaleDateString(),
         origin: {
@@ -161,6 +176,8 @@ export function processJSON(rawData, name, options = {}) {
         },
         metadata: data.exam_metadata || {}
     };
+
+    reconcileSourceFolder(source, { notify: !options.silent });
 
     AppState.sources.push(source);
 
@@ -172,11 +189,44 @@ export function processJSON(rawData, name, options = {}) {
         const gaps = findContentGaps(normalizedQuestions);
         if (gaps.length > 0) {
             showImportReport(source, gaps);
-        } else {
+        } else if (!source.archived) {
             showAlert(t('import_success_msg', { name: title, count: normalizedQuestions.length }), t('success_title'));
         }
     }
     return source;
+}
+
+/**
+ * Validates a source's folderId against AppState.folders:
+ * 1. If folderId is missing or no folder with that ID exists in system,
+ *    the folderId property is removed/cleared (source.folderId = null),
+ *    so it appears in the default uncategorized folder.
+ * 2. If folderId matches an archived folder (folder.archived === true),
+ *    the source is archived and a brief toast notification is shown if notify=true.
+ */
+export function reconcileSourceFolder(source, { notify = true } = {}) {
+    if (!source) return;
+
+    const folderId = source.folderId || null;
+    if (!folderId || folderId === 'uncategorized-folder') {
+        source.folderId = null;
+        return;
+    }
+
+    const folder = (AppState.folders || []).find(f => f.id === folderId);
+
+    if (!folder) {
+        // No matching folder in system: clear folderId (show in default folder)
+        source.folderId = null;
+    } else if (folder.archived) {
+        // Folder is archived: move source to archive
+        if (!source.archived) {
+            markArchived(source, folder);
+            if (notify) {
+                showToast(t('archived_folder_item_notice', { name: source.name, folder: folder.name }));
+            }
+        }
+    }
 }
 
 export async function loadFromUrl(url, options = {}) {

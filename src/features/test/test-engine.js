@@ -186,7 +186,11 @@ export function prepareTest(count) {
     // Apply Focus Pools (Silent Fallback)
     selectedObjects = applyFocusPools(selectedObjects, nonLearned);
 
-    selectedObjects = shuffleArray(selectedObjects);
+    const activeSources = (AppState.sources || []).filter(s => s.active && !s.archived);
+    const allActiveKeepOrder = activeSources.length > 0 && activeSources.every(s => s.keepOrder || s.metadata?.keepOrder);
+    if (!allActiveKeepOrder) {
+        selectedObjects = shuffleArray(selectedObjects);
+    }
 
     // Store composite IDs (sourceId_questionId) — stable regardless of rawQuestions order
     AppState.currentTest = selectedObjects.map(o => `${o.q.sourceId}_${o.q.id}`);
@@ -268,7 +272,18 @@ export function prepareFromCompositeIds(compositeIds, options = {}) {
     const known = (compositeIds || []).filter(cid => AppState.questionMap[cid]);
     if (known.length === 0) return null;
 
-    const ordered = shuffle ? shuffleArray(known) : known;
+    let shouldShuffle = shuffle;
+    if (shouldShuffle && known.length > 0) {
+        const sourceIds = new Set(known.map(cid => cid.split('_')[0]));
+        if (sourceIds.size > 0) {
+            const sources = (AppState.sources || []).filter(s => sourceIds.has(s.id));
+            if (sources.length > 0 && sources.every(s => s.keepOrder || s.metadata?.keepOrder)) {
+                shouldShuffle = false;
+            }
+        }
+    }
+
+    const ordered = shouldShuffle ? shuffleArray(known) : known;
 
     AppState.currentTest = ordered;
     AppState.currentIndex = 0;

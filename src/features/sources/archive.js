@@ -74,7 +74,7 @@ async function dropFromRemote(sourceIds) {
  * Marks a source archived in memory. Does not persist or offload on its own so
  * bulk folder archiving can share a single remote write.
  */
-function markArchived(source, folder) {
+export function markArchived(source, folder) {
     source.archivedFrom = {
         folderId: source.folderId || null,
         name: folder?.name || null,
