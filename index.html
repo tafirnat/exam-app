@@ -2175,7 +2175,17 @@
             </div>
             <div class="modal-body">
                 <div class="input-group">
-                    <label data-i18n="folder_name">Klasör Adı</label>
+                    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.35rem;">
+                        <label data-i18n="folder_name" style="margin-bottom: 0;">Klasör Adı</label>
+                        <button type="button" id="folderIdCopyBtn" class="folder-id-badge"
+                            style="background: var(--bg-secondary, rgba(255,255,255,0.08)); border: 1px solid var(--border-color, rgba(255,255,255,0.15)); border-radius: 6px; padding: 2px 8px; font-size: 0.75rem; font-family: monospace; color: var(--text-muted, #94a3b8); cursor: pointer; display: inline-flex; align-items: center; gap: 4px; transition: all 0.2s ease;">
+                            <span>id: <strong id="folderIdDisplay">...</strong></span>
+                            <svg viewBox="0 0 24 24" width="13" height="13" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="opacity: 0.85;">
+                                <rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect>
+                                <path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path>
+                            </svg>
+                        </button>
+                    </div>
                     <input type="text" id="folderNameInput" data-i18n-placeholder="ph_folder_name"
                         placeholder="Örn: Çalışma Dosyaları">
                 </div>

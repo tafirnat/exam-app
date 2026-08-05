@@ -1396,6 +1396,37 @@ export function showFolderManageModal(folder = null) {
         colorPicker.appendChild(d);
     });
 
+    const activeFolderId = folder ? folder.id : ('folder_' + Date.now());
+    const folderIdDisplay = document.getElementById('folderIdDisplay');
+    const folderIdCopyBtn = document.getElementById('folderIdCopyBtn');
+
+    if (folderIdDisplay) {
+        folderIdDisplay.textContent = activeFolderId;
+    }
+
+    if (folderIdCopyBtn) {
+        folderIdCopyBtn.onclick = async () => {
+            const currentName = nameInput ? nameInput.value.trim() : '';
+            const promptText = `Lütfen hazırlayacağın soru kaynağı JSON verisine "folderId": "${activeFolderId}"${currentName ? ` (Klasör Adı: "${currentName}")` : ''} alanını ekle. Böylece kaynak bu klasör altına aktarılacaktır.`;
+            try {
+                if (navigator.clipboard && navigator.clipboard.writeText) {
+                    await navigator.clipboard.writeText(promptText);
+                } else {
+                    const ta = document.createElement('textarea');
+                    ta.value = promptText;
+                    document.body.appendChild(ta);
+                    ta.select();
+                    document.execCommand('copy');
+                    document.body.removeChild(ta);
+                }
+                showToast(t('copy_success') || 'Kopyalandı');
+            } catch (err) {
+                console.error('Clipboard error:', err);
+                showToast(t('clipboard_error') || 'Kopyalama hatası');
+            }
+        };
+    }
+
     title.textContent = folder ? t('edit_folder') : t('add_folder');
     nameInput.value = folder ? folder.name : '';
     descInput.value = folder && folder.description ? folder.description : '';
@@ -1458,7 +1489,7 @@ export function showFolderManageModal(folder = null) {
             touch(folder);
         } else {
             AppState.folders.push(touch({
-                id: 'folder_' + Date.now(),
+                id: activeFolderId,
                 name: name,
                 description: descInput.value.trim(),
                 color: colorInput.value,
