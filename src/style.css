@@ -4581,6 +4581,55 @@ input:checked+.slider-small:before {
     transform: var(--btn-lift);
 }
 
+/* Order Mode Switch Toggle Button in Modal */
+.order-toggle-btn {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 0.65rem 0.75rem;
+    gap: 0.4rem;
+    transition: all 0.2s ease;
+}
+
+.order-toggle-btn .switch-small-pill {
+    position: relative;
+    display: inline-block;
+    width: 28px;
+    height: 16px;
+    background-color: var(--border-color, #334155);
+    border-radius: 16px;
+    transition: background-color 0.2s ease;
+    flex-shrink: 0;
+    margin-left: auto;
+}
+
+.order-toggle-btn .switch-small-pill .slider-small-pill {
+    position: absolute;
+    content: "";
+    height: 12px;
+    width: 12px;
+    left: 2px;
+    top: 2px;
+    background-color: var(--text-secondary, #94a3b8);
+    border-radius: 50%;
+    transition: transform 0.2s cubic-bezier(0.18, 0.89, 0.32, 1.28), background-color 0.2s ease;
+}
+
+.order-toggle-btn.active {
+    background-color: rgba(99, 102, 241, 0.12);
+    border-color: var(--accent-color, #6366f1);
+    color: var(--accent-color, #6366f1);
+}
+
+.order-toggle-btn.active .switch-small-pill {
+    background-color: var(--accent-color, #6366f1);
+}
+
+.order-toggle-btn.active .switch-small-pill .slider-small-pill {
+    transform: translateX(12px);
+    background-color: #ffffff;
+}
+
 .modal-footer {
     margin-top: 1rem;
     padding-top: 1rem;

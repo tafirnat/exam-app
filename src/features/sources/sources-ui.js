@@ -395,12 +395,20 @@ export function showSourceActions(source) {
 
     const toggleOrderBtn = document.getElementById('modalToggleOrderBtn');
     const toggleOrderLabel = document.getElementById('modalToggleOrderLabel');
+    const toggleOrderIconContainer = document.getElementById('modalToggleOrderIconContainer');
+
+    const shuffleSvg = `<svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="16 3 21 3 21 8"></polyline><line x1="4" y1="20" x2="21" y2="3"></line><polyline points="21 16 21 21 16 21"></polyline><line x1="15" y1="15" x2="21" y2="21"></line><line x1="4" y1="4" x2="9" y2="9"></line></svg>`;
+    const orderedSvg = `<svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="10" y1="6" x2="21" y2="6"></line><line x1="10" y1="12" x2="21" y2="12"></line><line x1="10" y1="18" x2="21" y2="18"></line><path d="M4 6h1v4"></path><path d="M4 10h2"></path><path d="M6 18H4c0-1 2-2 2-3s-1-1.5-2-1"></path></svg>`;
+
     const syncOrderBtnUI = () => {
         if (!toggleOrderBtn || !toggleOrderLabel) return;
         const isSequential = !!source.keepOrder;
         toggleOrderBtn.classList.toggle('active', isSequential);
-        toggleOrderLabel.textContent = isSequential ? (t('order_mode_sequential') || 'Sıralı') : (t('order_mode_shuffled') || 'Karma');
-        toggleOrderBtn.title = isSequential ? (t('order_mode_changed_sequential') || 'Sıralı') : (t('order_mode_changed_shuffled') || 'Karma');
+        if (toggleOrderIconContainer) {
+            toggleOrderIconContainer.innerHTML = isSequential ? orderedSvg : shuffleSvg;
+        }
+        toggleOrderLabel.textContent = isSequential ? (t('order_mode_sequential') || 'Sıralı') : (t('order_mode_shuffled') || 'Karışık');
+        toggleOrderBtn.title = isSequential ? (t('order_mode_changed_sequential') || 'Sıralı') : (t('order_mode_changed_shuffled') || 'Karışık');
     };
     syncOrderBtnUI();
 
