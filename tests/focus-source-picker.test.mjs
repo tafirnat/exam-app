@@ -19,7 +19,7 @@ const SOURCE_D = { id: 'srcD', name: 'Fizik', active: false, order: 1, questions
 
 function seedLibrary() {
     AppState.folders = [
-        { id: UNCATEGORIZED_FOLDER_ID, name: 'Kategorisiz Kaynaklar', isSystem: true, order: 1 },
+        { id: UNCATEGORIZED_FOLDER_ID, name: 'Uncategorized', isSystem: true, order: 1 },
         { id: 'f1', name: 'Dersler', color: '#3b82f6', order: 0 }
     ];
     AppState.sources = [

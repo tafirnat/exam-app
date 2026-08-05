@@ -31,9 +31,9 @@ export const UNCATEGORIZED_FOLDER_ID = 'uncategorized-folder';
 export function createUncategorizedFolderRecord() {
     return {
         id: UNCATEGORIZED_FOLDER_ID,
-        name: 'Kategorisiz Kaynaklar',
+        name: 'Uncategorized',
         color: '#8a99ad',
-        description: 'Kategorilenmemiş kaynaklar',
+        description: 'Uncategorized sources',
         order: 0,
         isSystem: true
     };
@@ -187,11 +187,11 @@ function loadFolders() {
     folders = folders.map(f => {
         if (f.id === 'default-folder') {
             hasUncategorized = true;
-            return { ...f, id: UNCATEGORIZED_FOLDER_ID, name: 'Kategorisiz Kaynaklar', color: '#8a99ad', isSystem: true };
+            return { ...f, id: UNCATEGORIZED_FOLDER_ID, name: 'Uncategorized', color: '#8a99ad', isSystem: true };
         }
         if (f.id === UNCATEGORIZED_FOLDER_ID) {
             hasUncategorized = true;
-            return { ...f, name: 'Kategorisiz Kaynaklar', color: '#8a99ad', isSystem: true };
+            return { ...f, name: 'Uncategorized', color: '#8a99ad', isSystem: true };
         }
         return f;
     });

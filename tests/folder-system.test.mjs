@@ -32,7 +32,7 @@ test('createUncategorizedFolderRecord returns system folder with gray color #8a9
     assert.equal(folder.id, 'uncategorized-folder');
     assert.equal(folder.color, '#8a99ad');
     assert.equal(folder.isSystem, true);
-    assert.equal(folder.name, 'Kategorisiz Kaynaklar');
+    assert.equal(folder.name, 'Uncategorized');
 });
 
 test('AppState initializes with uncategorized-folder present', () => {
