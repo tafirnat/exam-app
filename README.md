@@ -9,7 +9,7 @@
 
 Exam App lets you turn any study material into interactive quizzes and flashcards. It remembers which questions you struggle with and schedules them for review at the right time, using the science-backed FSRS spaced repetition algorithm. Your data stays locally on your device by default, with optional seamless cross-device synchronization (PC, phone, tablet) managed entirely under your control via your own private GitHub Gist.
 
-> 💡 Just want to try it? **[Open the live demo →](https://exam.rifatarslan.dev/)**
+> 💡 Just want to try it? **<a href="https://exam.rifatarslan.dev/" target="_blank" rel="noopener noreferrer">Open the live demo →</a>**
 
 ---
 
@@ -154,7 +154,7 @@ If you draft questions in Obsidian, the **[Obsidian ExamApp Gist Sync](https://g
 
 ## 📥 Getting Started (End Users)
 
-The easiest way to use Exam App is the **[hosted live demo](https://exam.rifatarslan.dev/)** — no installation needed. The app is a fully static, offline-capable PWA that can also be installed on your phone or desktop directly from the browser.
+The easiest way to use Exam App is the **<a href="https://exam.rifatarslan.dev/" target="_blank" rel="noopener noreferrer">hosted live demo</a>** — no installation needed. The app is a fully static, offline-capable PWA that can also be installed on your phone or desktop directly from the browser.
 
 To load your own questions, use the **Add Source** button on the home screen to import a JSON file. See the [JSON schema guide](./public/examples/schema-guide.md) for the data format, or use the [AI prompt](./AI_AGENT_PROMPT.md) to generate question sets automatically.
 

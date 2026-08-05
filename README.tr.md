@@ -9,7 +9,7 @@
 
 Exam App, herhangi bir çalışma materyalini etkileşimli sınavlara ve bilgi kartlarına dönüştürmenizi sağlar. Hangi sorularda zorlandığınızı hatırlayarak tekrarları bilim temelli FSRS algoritmasıyla doğru zamanda planlar. Varsayılan olarak tüm verileriniz yerel cihazınızda kalır; dilerseniz kendi özel GitHub Gist'iniz üzerinden farklı cihazlar (bilgisayar, telefon, tablet) arasında verilerinizi tamamen kendi kontrolünüzde senkronize edebilirsiniz.
 
-> 💡 Hemen denemek ister misiniz? **[Canlı demoya git →](https://exam.rifatarslan.dev/)**
+> 💡 Hemen denemek ister misiniz? **<a href="https://exam.rifatarslan.dev/" target="_blank" rel="noopener noreferrer">Canlı demoya git →</a>**
 
 ---
 
@@ -154,7 +154,7 @@ Obsidian'da soru hazırlıyorsanız **[Obsidian ExamApp Gist Sync](https://githu
 
 ## 📥 Kullanmaya Başlama (Son Kullanıcılar İçin)
 
-Exam App'i kullanmanın en kolay yolu **[canlı demo](https://exam.rifatarslan.dev/)** — kurulum gerekmez. Uygulama tamamen statik ve çevrimdışı çalışabilen bir PWA olup tarayıcıdan doğrudan telefonunuza veya masaüstünüze yüklenebilir.
+Exam App'i kullanmanın en kolay yolu **<a href="https://exam.rifatarslan.dev/" target="_blank" rel="noopener noreferrer">canlı demo</a>** — kurulum gerekmez. Uygulama tamamen statik ve çevrimdışı çalışabilen bir PWA olup tarayıcıdan doğrudan telefonunuza veya masaüstünüze yüklenebilir.
 
 Kendi sorularınızı yüklemek için ana ekrandaki **Kaynak Ekle** butonunu kullanarak JSON dosyanızı içe aktarın. Veri formatı için [JSON şema rehberi](./public/examples/schema-guide.md)'ne, otomatik soru seti oluşturmak için ise [AI promptuna](./AI_AGENT_PROMPT.md) başvurun.
 

@@ -9,7 +9,7 @@
 
 Exam App verwandelt jedes Lernmaterial in interaktive Quizze und Karteikarten. Die App merkt sich, welche Fragen Ihnen schwer fallen, und plant Wiederholungen mit dem wissenschaftlich fundierten FSRS-Algorithmus zum richtigen Zeitpunkt ein. Ihre Daten bleiben standardmäßig lokal auf Ihrem Gerät; optional können Sie Ihre Daten nahtlos zwischen verschiedenen Geräten (PC, Smartphone, Tablet) über Ihr eigenes privates GitHub Gist unter Ihrer vollständigen Kontrolle synchronisieren.
 
-> 💡 Einfach ausprobieren? **[Live-Demo öffnen →](https://exam.rifatarslan.dev/)**
+> 💡 Einfach ausprobieren? **<a href="https://exam.rifatarslan.dev/" target="_blank" rel="noopener noreferrer">Live-Demo öffnen →</a>**
 
 ---
 
@@ -154,7 +154,7 @@ Wenn Sie Fragen in Obsidian entwerfen, synchronisiert das Plugin **[Obsidian Exa
 
 ## 📥 Erste Schritte (für Endnutzer)
 
-Der einfachste Weg, Exam App zu nutzen, ist die **[Live-Demo](https://exam.rifatarslan.dev/)** — keine Installation erforderlich. Die App ist ein vollständig statisches, offline-fähiges PWA, das auch direkt vom Browser aus auf Ihrem Smartphone oder Desktop installiert werden kann.
+Der einfachste Weg, Exam App zu nutzen, ist die **<a href="https://exam.rifatarslan.dev/" target="_blank" rel="noopener noreferrer">Live-Demo</a>** — keine Installation erforderlich. Die App ist ein vollständig statisches, offline-fähiges PWA, das auch direkt vom Browser aus auf Ihrem Smartphone oder Desktop installiert werden kann.
 
 Um eigene Fragen zu laden, nutzen Sie die Schaltfläche **Quelle hinzufügen** auf dem Startbildschirm, um eine JSON-Datei zu importieren. Das Datenformat finden Sie im [JSON-Schema-Leitfaden](./public/examples/schema-guide.md); Fragensets können automatisch mit dem [KI-Prompt](./AI_AGENT_PROMPT.md) generiert werden.
 
