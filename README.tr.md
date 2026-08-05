@@ -5,9 +5,9 @@
 ![License](https://img.shields.io/badge/License-MIT-blue.svg)
 ![Tech Stack](https://img.shields.io/badge/Tech-HTML5%20%7C%20CSS3%20%7C%20JS-orange)
 
-**%100 çevrimdışı çalışan, kişisel ve gizli sınav & bilgi kartı uygulaması — hesap yok, abonelik yok, sunucuya gönderilen veri yok.**
+**Çevrimdışı öncelikli (Offline-First), cihazlar arası senkronizasyon destekli kişisel sınav & bilgi kartı uygulaması — hesap yok, abonelik yok, üçüncü taraf takip sunucusu yok.**
 
-Exam App, herhangi bir çalışma materyalini etkileşimli sınavlara ve bilgi kartlarına dönüştürmenizi sağlar. Hangi sorularda zorlandığınızı hatırlayarak tekrarları bilim temelli FSRS algoritmasıyla doğru zamanda planlar. Her şey cihazınızda kalır (ya da isteğe bağlı olarak kendi özel GitHub Gist'inize senkronize edilir).
+Exam App, herhangi bir çalışma materyalini etkileşimli sınavlara ve bilgi kartlarına dönüştürmenizi sağlar. Hangi sorularda zorlandığınızı hatırlayarak tekrarları bilim temelli FSRS algoritmasıyla doğru zamanda planlar. Varsayılan olarak tüm verileriniz yerel cihazınızda kalır; dilerseniz kendi özel GitHub Gist'iniz üzerinden farklı cihazlar (bilgisayar, telefon, tablet) arasında verilerinizi tamamen kendi kontrolünüzde senkronize edebilirsiniz.
 
 > 💡 Hemen denemek ister misiniz? **[Canlı demoya git →](https://exam.rifatarslan.dev/)**
 
@@ -95,9 +95,9 @@ Günde bir kez, hazır kart olduğunda çalışan opt-in hatırlatıcılar. İzi
 
 Soruları ve okuma kartlarını yerel tarayıcı konuşma sentezi ile sesli okur. Ayarlanabilir hız (×0.7–×1.3), gezinmede otomatik oynatma, yüzen oynatma kontrolleri.
 
-### 🔒 %100 Gizli — Sıfır Arka Plan
+### 🔒 Tam Veri Mülkiyeti & Gizlilik Odaklı Mimari
 
-Sunucu yok. Hesap yok. Abonelik yok. Çalışma verileri tarayıcının `localStorage`'ında saklanır. İsteğe bağlı cihazlar arası senkronizasyon kendi özel GitHub Gist'iniz üzerinden yapılır.
+Üçüncü taraf takip sunucusu veya merkezi veritabanı yok. Zorunlu hesap oluşturma ve abonelik ücretleri yok. Çalışma verileriniz varsayılan olarak yerel cihazınızda tutulur. Farklı cihazlar arası veri eşitlemesi ise doğrudan kendi özel GitHub Gist'iniz üzerinden uçtan uca kontrolünüzde gerçekleşir.
 
 ---
 

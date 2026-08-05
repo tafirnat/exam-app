@@ -5,9 +5,9 @@
 ![License](https://img.shields.io/badge/License-MIT-blue.svg)
 ![Tech Stack](https://img.shields.io/badge/Tech-HTML5%20%7C%20CSS3%20%7C%20JS-orange)
 
-**Ihre persönliche, private Lern-App für Prüfungen & Karteikarten — 100 % offline, kein Account, kein Abo, keine Daten auf fremden Servern.**
+**Offline-first persönliche & private Lern-App für Prüfungen & Karteikarten mit geräteübergreifender Synchronisierung — kein Account, kein Abo, kein Drittanbieter-Tracking.**
 
-Exam App verwandelt jedes Lernmaterial in interaktive Quizze und Karteikarten. Die App merkt sich, welche Fragen Ihnen schwer fallen, und plant Wiederholungen mit dem wissenschaftlich fundierten FSRS-Algorithmus zum richtigen Zeitpunkt ein. Alles bleibt auf Ihrem Gerät (oder synchronisiert optional mit Ihrem eigenen privaten GitHub Gist).
+Exam App verwandelt jedes Lernmaterial in interaktive Quizze und Karteikarten. Die App merkt sich, welche Fragen Ihnen schwer fallen, und plant Wiederholungen mit dem wissenschaftlich fundierten FSRS-Algorithmus zum richtigen Zeitpunkt ein. Ihre Daten bleiben standardmäßig lokal auf Ihrem Gerät; optional können Sie Ihre Daten nahtlos zwischen verschiedenen Geräten (PC, Smartphone, Tablet) über Ihr eigenes privates GitHub Gist unter Ihrer vollständigen Kontrolle synchronisieren.
 
 > 💡 Einfach ausprobieren? **[Live-Demo öffnen →](https://exam.rifatarslan.dev/)**
 
@@ -95,9 +95,9 @@ Vollständige native Benutzeroberfläche auf **Englisch**, **Türkisch** und **D
 
 Liest Fragen und Lesekarten mit nativer Browser-Sprachsynthese vor. Einstellbare Geschwindigkeit (×0,7–×1,3), automatische Wiedergabe bei Navigation, schwebende Steuerleiste.
 
-### 🔒 100 % Privat — Null Backend
+### 🔒 Datenschutz-Fokus & Volle Datensouveränität
 
-Keine Server. Kein Account. Kein Abo. Lerndaten werden im `localStorage` des Browsers gespeichert. Optionale geräteübergreifende Synchronisation über Ihren eigenen privaten GitHub Gist.
+Keine Drittanbieter-Tracking-Server oder zentrale Datenbanken. Kein Account-Zwang und keine Abos. Ihre Lerndaten werden standardmäßig lokal auf Ihrem Gerät gespeichert. Die geräteübergreifende Synchronisierung erfolgt sicher über Ihr eigenes privates GitHub Gist, sodass Ihre Daten vollständig unter Ihrer Kontrolle bleiben.
 
 ---
 

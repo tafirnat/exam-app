@@ -5,9 +5,9 @@
 ![License](https://img.shields.io/badge/License-MIT-blue.svg)
 ![Tech Stack](https://img.shields.io/badge/Tech-HTML5%20%7C%20CSS3%20%7C%20JS-orange)
 
-**Your personal, private exam & flashcard app that works 100% offline — no account, no subscription, no data sent to any server.**
+**Offline-first, personal, private exam & flashcard app with cross-device sync — no account, no subscription, no third-party data tracking.**
 
-Exam App lets you turn any study material into interactive quizzes and flashcards. It remembers which questions you struggle with and schedules them for review at the right time, using the science-backed FSRS spaced repetition algorithm. Everything stays on your device (or optionally syncs to your own private GitHub Gist).
+Exam App lets you turn any study material into interactive quizzes and flashcards. It remembers which questions you struggle with and schedules them for review at the right time, using the science-backed FSRS spaced repetition algorithm. Your data stays locally on your device by default, with optional seamless cross-device synchronization (PC, phone, tablet) managed entirely under your control via your own private GitHub Gist.
 
 > 💡 Just want to try it? **[Open the live demo →](https://exam.rifatarslan.dev/)**
 
@@ -95,9 +95,9 @@ Full UI in **English**, **Turkish**, and **German**. Integrated Google Translate
 
 Reads questions and reading cards aloud using native browser speech synthesis. Adjustable speed (×0.7–×1.3), autoplay on navigation, floating playback controls.
 
-### 🔒 100% Private — Zero Backend
+### 🔒 Privacy-First & Full Data Ownership
 
-No servers. No accounts. No subscription. Study data lives in your browser's `localStorage`. Optional cross-device sync via your own private GitHub Gist.
+No third-party tracking servers or central databases. No forced accounts or subscription fees. Your study data is stored locally on your device by default. Cross-device synchronization is handled securely via your own private GitHub Gist, keeping your personal study data entirely under your ownership and control.
 
 ---
 
