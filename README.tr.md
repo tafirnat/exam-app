@@ -1,4 +1,4 @@
-# 🎓 Exam App
+# Exam App
 
 [![Live Demo](https://img.shields.io/badge/Demo-Online-brightgreen.svg)](https://exam.rifatarslan.dev/)
 [![Build & Deploy](https://github.com/tafirnat/exam-app/actions/workflows/deploy.yml/badge.svg)](https://github.com/tafirnat/exam-app/actions/workflows/deploy.yml)
@@ -9,33 +9,33 @@
 
 Exam App, herhangi bir çalışma materyalini etkileşimli sınavlara ve bilgi kartlarına dönüştürmenizi sağlar. Hangi sorularda zorlandığınızı hatırlayarak tekrarları bilim temelli FSRS algoritmasıyla doğru zamanda planlar. Varsayılan olarak tüm verileriniz yerel cihazınızda kalır; dilerseniz kendi özel GitHub Gist'iniz üzerinden farklı cihazlar (bilgisayar, telefon, tablet) arasında verilerinizi tamamen kendi kontrolünüzde senkronize edebilirsiniz.
 
-> 💡 Hemen denemek ister misiniz? **<a href="https://exam.rifatarslan.dev/" target="_blank" rel="noopener noreferrer">Canlı demoya git →</a>**
+> Hemen denemek ister misiniz? **<a href="https://exam.rifatarslan.dev/" target="_blank" rel="noopener noreferrer">Canlı demoya git →</a>**
 
 ---
 
-## 🌐 Diller / Languages / Sprachen
+## Diller / Languages / Sprachen
 
-> ℹ️ **Not**: **İngilizce** sürüm ([`README.md`](./README.md)) her zaman **ana ve orijinal kaynaktır**.
+> **Not**: **İngilizce** sürüm ([`README.md`](./README.md)) her zaman **ana ve orijinal kaynaktır**.
 >
-> 🌐 **Diğer dillerde oku:**
-> - 🇬🇧 **[English README](./README.md)** *(Orijinal Kaynak)*
-> - 🇩🇪 **[Deutsch README](./README.de.md)**
+> **Diğer dillerde oku:**
+> - **[English README](./README.md)** *(Orijinal Kaynak)*
+> - **[Deutsch README](./README.de.md)**
 
 ---
 
-## 🤔 Bu Uygulama Kime Göre?
+## Bu Uygulama Kime Göre?
 
 Exam App, kendi materyallerinden öğrenen herkes için tasarlanmıştır:
 
-- 📚 Üniversite, meslek veya dil sınavlarına hazırlanan **öğrenciler**
-- 🧠 Obsidian gibi Markdown araçlarında not tutan ve bu notları pratik testlere dönüştürmek isteyen **bireysel öğreniciler**
-- 🔁 Anki, Quizlet veya benzeri uygulamalara abonelik ve bulut bağımlılığı olmadan **gizlilik odaklı bir alternatif** arayanlar
+- Üniversite, meslek veya dil sınavlarına hazırlanan **öğrenciler**
+- Obsidian gibi Markdown araçlarında not tutan ve bu notları pratik testlere dönüştürmek isteyen **bireysel öğreniciler**
+- Anki, Quizlet veya benzeri uygulamalara abonelik ve bulut bağımlılığı olmadan **gizlilik odaklı bir alternatif** arayanlar
 
 ---
 
-## ✨ Neler Yapabilir?
+## Özellikler
 
-### 📋 7 Soru Tipi — Tek Uygulamada
+### 7 Soru Tipi — Tek Uygulamada
 
 - **Tekli Seçim** — tek doğru seçenekli standart çoktan seçmeli format
 - **Çoklu Seçim** — iki veya daha fazla doğru seçim gerektiren sorular
@@ -45,85 +45,85 @@ Exam App, kendi materyallerinden öğrenen herkes için tasarlanmıştır:
 - **Bilgi Kartı (Flashcard)** — kendi hatırlama seviyenizi değerlendirdiğiniz klasik çevir-kart formatı
 - **Okuma Materyali** — not baskısı olmadan zengin Markdown çalışma notları *(eski adı: `topic_review`)*
 
-### 🧠 Akıllı Aralıklı Tekrar (FSRS v4.5)
+### Akıllı Aralıklı Tekrar (FSRS v4.5)
 
 Zorlandığınız sorular daha sık gelir. İyi bildiğiniz sorular daha seyrek tekrar eder. Anki'nin de kullandığı FSRS v4.5 algoritması, tekrar aralıklarını sabit bir takvime değil, gerçek hafıza performansınıza göre ayarlar.
 
-### ⚡ Tek Tıkla Günlük Tekrar
+### Tek Tıkla Günlük Tekrar
 
 Ana ekrandaki seri kartı, FSRS takviminize göre bugün kaç sorunun hazır olduğunu gösterir. Tek tıkla başlayın — kaynak aramaya gerek yok. **Saf FSRS sırası** (en acil soru başta) veya **kaynak/klasör bazlı gruplama** (bağlam içinde çalışmak için) arasında seçim yapın.
 
-### 🔥 Seri ve Devamlılık Takibi
+### Seri ve Devamlılık Takibi
 
 Global bir çalışma serisi ardışık aktif günleri sayar. Otomatik **dondurma tamponu**, haftada 2 güne kadar kaçırılan günleri sessizce affeder — yoğun bir gün serinizi kırmaz.
 
-### 📌 Odak Havuzları
+### Odak Havuzları
 
 Günlük odak havuzu olarak en fazla 3 kaynak veya klasör sabitleyin (havuz başına 1–5, toplamda en fazla 15 soru). Bu sorular, FSRS günlük seansınıza zaten dahil değilse sessizce eklenir — zorla kota yok, suçlama yok.
 
-### 📁 Klasör ve Arşiv Yönetimi
+### Klasör ve Arşiv Yönetimi
 
 Kaynakları renkli klasör hiyerarşilerinde düzenleyin. Tekil kaynakları veya tüm klasörleri arşivleyerek duraklatın — **arşivde FSRS saati donar**, dolayısıyla büyük bir arşivi geri almak günlük kuyruğu gecikmiş kartlarla asla tıkamaz.
 
-### 📊 İlerleme Analitiği
+### İlerleme Analitiği
 
 - **Aktivite Isı Haritası** — baskın klasöre göre renklendirilen GitHub tarzı günlük aktivite ızgarası
 - **Haftalık ve Aylık Trend Grafikleri** — zaman içindeki çalışma hacmini gösteren çubuk grafikler
 - **Soru Başına Analitik** — her soru için tam geçmiş, hatırlanabilirlik skoru ve zorluk
 - **Detaylı Kaynak Dökümü** — aktif ve arşivlenmiş kaynakları soru sayısıyla birlikte tek bakışta görün
 
-### 🔔 Akıllı Push Bildirimleri
+### Push Bildirimleri
 
 Günde bir kez, hazır kart olduğunda çalışan opt-in hatırlatıcılar. İzin yalnızca başarılı bir çalışma seansının ardından istenir — hiçbir zaman ilk açılışta. Yapılandırılabilir sessiz saatler (varsayılan: 22:00–08:00).
 
-### 🚀 Tanıtım Rehberi (Onboarding)
+### Tanıtım Rehberi (Onboarding)
 
 İlk açılışta (veya ayarlar menüsünden istediğiniz zaman) uygulamanın temel özelliklerini adım adım anlatan etkileşimli tur.
 
-### 🌐 Çok Dilli Arayüz
+### Çok Dilli Arayüz
 
 **İngilizce**, **Türkçe** ve **Almanca** dillerinde tam yerel kullanıcı arayüzü. Soru içeriklerini 10'dan fazla dile çevirmek için tümleşik Google Translate desteği.
 
-### 🤖 Yapay Zeka Entegrasyonu
+### Yapay Zeka Entegrasyonu
 
 - **Soru seti oluşturma**: [AI_AGENT_PROMPT.md](./AI_AGENT_PROMPT.md) içindeki promptu ChatGPT, Claude veya Gemini ile kullanarak herhangi bir metni Exam App JSON'una dönüştürün.
-- **Klasör Hedefli Üretim**: Soru kaynağı JSON root alanına `"folderId": "folder_..."` ekleyerek kaynağın doğrudan belirlenen klasör altında açılmasını sağlayın (Klasör ID'sini düzenleme modalındaki `id: ... 📋` butonundan kopyalayabilirsiniz).
+- **Klasör Hedefli Üretim**: Soru kaynağı JSON root alanına `"folderId": "folder_..."` ekleyerek kaynağın doğrudan belirlenen klasör altında açılmasını sağlayın (Klasör ID'sini düzenleme modalındaki `id: ...` butonundan kopyalayabilirsiniz).
 - **Sıralı Düzen (`keepOrder`)**: Sırasıyla takip edilmesi gereken okuma materyallerinde soruların karıştırılmasını önlemek için JSON root veya `exam_metadata` alanına `"keepOrder": true` (veya `"preserveOrder": true`) ekleyebilirsiniz. Kaynak ayarlarındaki **Sıralı** toggle butonu ile de dilediğiniz zaman değiştirebilirsiniz.
 - **Soru hakkında AI'ya sor**: Herhangi bir sorunun bağlamını ChatGPT, Claude, Gemini, DeepSeek, Kimi vb. servislere aktif UI dilinizde tek tıkla gönderin.
 
-### 🔊 Metin Okuma (TTS)
+### Metin Okuma (TTS)
 
 Soruları ve okuma kartlarını yerel tarayıcı konuşma sentezi ile sesli okur. Ayarlanabilir hız (×0.7–×1.3), gezinmede otomatik oynatma, yüzen oynatma kontrolleri.
 
-### 🔒 Tam Veri Mülkiyeti & Gizlilik Odaklı Mimari
+### Tam Veri Mülkiyeti & Gizlilik Odaklı Mimari
 
 Üçüncü taraf takip sunucusu veya merkezi veritabanı yok. Zorunlu hesap oluşturma ve abonelik ücretleri yok. Çalışma verileriniz varsayılan olarak yerel cihazınızda tutulur. Farklı cihazlar arası veri eşitlemesi ise doğrudan kendi özel GitHub Gist'iniz üzerinden uçtan uca kontrolünüzde gerçekleşir.
 
 ---
 
-## 📸 Ekran Görüntüleri
+## Ekran Görüntüleri
 
 <div align="center">
 
-### 🏠 Ana Panel ve Günlük Tekrar
+### Ana Panel ve Günlük Tekrar
 
 | Açık Tema | Koyu Tema |
 | :---: | :---: |
 | ![Dashboard Light](./docs/screenshots/dashboard-light.png) | ![Dashboard Dark](./docs/screenshots/dashboard-dark.png) |
 
-### 📝 Sınav Arayüzü ve Sonuçlar
+### Sınav Arayüzü ve Sonuçlar
 
 | Aktif Sınav Oturumu | Test Sonuçları & Analiz |
 | :---: | :---: |
 | ![Quiz Interface](./docs/screenshots/quiz-interface.png) | ![Test Results](./docs/screenshots/test-results.png) |
 
-### 📂 Kaynak Yönetimi ve Gezinme
+### Kaynak Yönetimi ve Gezinme
 
 | Kayıtlı Kaynaklar & Klasörler | Yan Menü ve Hızlı Erişim |
 | :---: | :---: |
 | ![Saved Sources](./docs/screenshots/saved-sources.png) | ![Sidebar Menu](./docs/screenshots/sidebar-menu.png) |
 
-### 📊 Detaylı Soru Analitiği
+### Detaylı Soru Analitiği
 
 | Soru Detayları & Geçmiş |
 | :---: |
@@ -133,7 +133,7 @@ Soruları ve okuma kartlarını yerel tarayıcı konuşma sentezi ile sesli okur
 
 ---
 
-## ☁️ Cihazlar Arası Senkronizasyon (GitHub Gist)
+## Cihazlar Arası Senkronizasyon (GitHub Gist)
 
 Tüm soru bankalarınızı, ilerlemenizi, istatistiklerinizi, notlarınızı ve tercihlerinizi üçüncü taraf sunucu olmadan cihazlar arasında senkronize edin:
 
@@ -141,18 +141,18 @@ Tüm soru bankalarınızı, ilerlemenizi, istatistiklerinizi, notlarınızı ve 
    - [GitHub Token Ayarları](https://github.com/settings/tokens?type=beta) sayfasına gidin
    - **Gists: Read and Write** izinlerine sahip İnce Taneli (Fine-grained) token oluşturun
 2. **Uygulamada Bağlanın**
-   - Üst bilgideki **GitHub ↗** simgesine tıklayın, tokenınızı yapıştırın ve **Bağlan & Senkronize Et** butonuna tıklayın
+   - Üst bilgideki **GitHub** butonuna tıklayın, tokenınızı yapıştırın ve **Bağlan & Senkronize Et** butonuna tıklayın
 3. **Otomatik Arka Plan Senkronizasyonu**
    - Uygulama otomatik olarak gizli bir Gist (`exam_app_backup.json`) oluşturur ve arka planda senkronize eder
    - Arşivlenen ögeler ayrı olarak senkronize edilir (`exam_app_archive.json`) — günlük senkronizasyonu hafif tutar
 
-### 🔗 Yoldaş Obsidian Eklentisi
+### Obsidian Eklentisi
 
 Obsidian'da soru hazırlıyorsanız **[Obsidian ExamApp Gist Sync](https://github.com/tafirnat/Obsidian-ExamApp-Sync)** eklentisi, Obsidian kasanızı doğrudan Gist üzerinden Exam App ile senkronize eder.
 
 ---
 
-## 📥 Kullanmaya Başlama (Son Kullanıcılar İçin)
+## Kullanmaya Başlama
 
 Exam App'i kullanmanın en kolay yolu **<a href="https://exam.rifatarslan.dev/" target="_blank" rel="noopener noreferrer">canlı demo</a>** — kurulum gerekmez. Uygulama tamamen statik ve çevrimdışı çalışabilen bir PWA olup tarayıcıdan doğrudan telefonunuza veya masaüstünüze yüklenebilir.
 
@@ -160,7 +160,7 @@ Kendi sorularınızı yüklemek için ana ekrandaki **Kaynak Ekle** butonunu kul
 
 ---
 
-## 🤖 AI ile Soru Seti Oluşturma
+## AI ile Soru Seti Oluşturma
 
 Herhangi bir ders kitabını, makaleyi veya ders notunu Exam App JSON'una dönüştürün:
 
@@ -170,7 +170,7 @@ Herhangi bir ders kitabını, makaleyi veya ders notunu Exam App JSON'una dönü
 
 ---
 
-## 📊 Veri Yapısı & JSON Şeması
+## Veri Yapısı & JSON Şeması
 
 Exam App, `exam_metadata` ve `questions` dizisinden oluşan temiz, insan tarafından okunabilir bir JSON şeması kullanır.
 
@@ -207,9 +207,9 @@ Exam App, `exam_metadata` ve `questions` dizisinden oluşan temiz, insan tarafı
 
 ---
 
-## ⚙️ Teknik Mimari
+## Teknik Mimari
 
-### 🛠️ Teknoloji Yığını
+### Teknoloji Yığını
 
 - **Vanilla JS (ES Modülleri) & HTML5** — Framework yükü yok; tree-shakeable import yapısıyla modüler mimari
 - **Özel CSS** — Glassmorfik koyu/açık tema için CSS özel özellikleri kullanan Tailwind'siz tasarım sistemi
@@ -218,14 +218,14 @@ Exam App, `exam_metadata` ve `questions` dizisinden oluşan temiz, insan tarafı
 - **GitHub Gist REST API** — Kullanıcının kendi özel Gist'i üzerinden isteğe bağlı cihazlar arası senkronizasyon
 - **Service Worker (PWA)** — Çevrimdışı destek ve push bildirim zamanlaması
 
-### 🧠 Temel Algoritmalar
+### Temel Algoritmalar
 
 - **FSRS v4.5** — Hafızaya uyarlanmış tekrar aralıkları için Free Spaced Repetition Scheduler
 - **Arşiv FSRS Dondurma** — Arşivde geçen süre sorunun takvimine işlenmez; büyük arşivi geri almak günlük kuyruğu asla taşırmaz
 
 ---
 
-## 📥 Yerel Geliştirme
+## Yerel Geliştirme
 
 ### Gereksinimler
 
@@ -246,7 +246,7 @@ npm install
 npm run dev
 ```
 
-### Tek Dosyalı Canlı Yayın Derlemesi
+### Derleme
 
 ```bash
 npm run build
@@ -256,21 +256,21 @@ Derlenen bağımsız dosya `dist/index.html` konumunda oluşturulur.
 
 ---
 
-## 🚀 CI/CD & Otomatik Dağıtım
+## CI/CD & Otomatik Dağıtım
 
 `main` dalına gönderilen her commit, bir GitHub Actions iş akışını ([deploy.yml](.github/workflows/deploy.yml)) tetikler; Vite tek dosya derlemesi çalışır ve `dist/index.html` otomatik olarak **GitHub Pages** (`gh-pages` dalı) üzerine dağıtılır.
 
 ---
 
-## 🤖 Geliştirme Şeffaflığı & Teşekkürler
+## Geliştirme Notları & Teşekkürler
 
-Bu uygulama, AI kodlama araçlarının (**Antigravity** & **Claude**) yardımıyla tasarlanmış ve geliştirilmiştir. Geri bildirimler ve hata bildirimleri her zaman memnuniyetle karşılanır!
-
----
-
-## 📄 Lisans
-
-**MIT Lisansı** altında dağıtılmaktadır. Detaylar için [LICENSE](LICENSE) dosyasına bakın.
+Bu uygulama, Antigravity ve Claude AI kodlama asistanlarının katkılarıyla tasarlanmış ve geliştirilmiştir.
 
 ---
-[tafirnat](https://github.com/tafirnat) tarafından ❤️ ile geliştirilmiştir.
+
+## Lisans
+
+MIT Lisansı altında dağıtılmaktadır. Detaylar için [LICENSE](LICENSE) dosyasına bakın.
+
+---
+Geliştirici: [tafirnat](https://github.com/tafirnat)
