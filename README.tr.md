@@ -87,6 +87,7 @@ Günde bir kez, hazır kart olduğunda çalışan opt-in hatırlatıcılar. İzi
 ### 🤖 Yapay Zeka Entegrasyonu
 
 - **Soru seti oluşturma**: [AI_AGENT_PROMPT.md](./AI_AGENT_PROMPT.md) içindeki promptu ChatGPT, Claude veya Gemini ile kullanarak herhangi bir metni Exam App JSON'una dönüştürün.
+- **Klasör Hedefli Üretim**: Soru kaynağı JSON root alanına `"folderId": "folder_..."` ekleyerek kaynağın doğrudan belirlenen klasör altında açılmasını sağlayın (Klasör ID'sini düzenleme modalındaki `id: ... 📋` butonundan kopyalayabilirsiniz).
 - **Soru hakkında AI'ya sor**: Herhangi bir sorunun bağlamını ChatGPT, Claude, Gemini, DeepSeek, Kimi vb. servislere aktif UI dilinizde tek tıkla gönderin.
 
 ### 🔊 Metin Okuma (TTS)

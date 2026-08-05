@@ -87,6 +87,7 @@ Full UI in **English**, **Turkish**, and **German**. Integrated Google Translate
 ### 🤖 AI Integration
 
 - **Generate question sets**: Use the included prompt ([AI_AGENT_PROMPT.md](./AI_AGENT_PROMPT.md)) with ChatGPT, Claude, or Gemini to convert any text into Exam App JSON.
+- **Folder-targeted generation**: Include `"folderId": "folder_..."` in the JSON root to automatically place imported question banks inside a specific folder (copy folder IDs via the `id: ... 📋` button in the folder management modal).
 - **Ask AI about a question**: Send any question's context to ChatGPT, Claude, Gemini, DeepSeek, Kimi, etc. in one click, in your active UI language.
 
 ### 🔊 Text-to-Speech

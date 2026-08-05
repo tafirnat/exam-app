@@ -87,6 +87,7 @@ Vollständige native Benutzeroberfläche auf **Englisch**, **Türkisch** und **D
 ### 🤖 KI-Integration
 
 - **Fragensets generieren**: Nutzen Sie den mitgelieferten Prompt ([AI_AGENT_PROMPT.md](./AI_AGENT_PROMPT.md)) mit ChatGPT, Claude oder Gemini, um beliebigen Text in Exam App JSON umzuwandeln.
+- **Ordnerspezifische Generierung**: Fügen Sie `"folderId": "folder_..."` zum JSON-Root hinzu, um importierte Fragensets direkt einem Ordner zuzuweisen (Ordner-IDs können über die Schaltfläche `id: ... 📋` im Ordner-Verwaltungsmodal kopiert werden).
 - **KI zu einer Frage befragen**: Senden Sie den Kontext einer Frage mit einem Klick in Ihrer aktiven UI-Sprache an ChatGPT, Claude, Gemini, DeepSeek, Kimi usw.
 
 ### 🔊 Text-to-Speech

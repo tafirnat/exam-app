@@ -68,16 +68,18 @@ The JSON structure consists of a root object with two primary keys: `exam_metada
 ```json
 {
   "exam_metadata": { ... },
+  "folderId": "folder_1785739334920",
   "questions": [ ... ]
 }
 ```
 
-### 1. `exam_metadata` Object
+### 1. `exam_metadata` Object & Root Options
 
 | Key | Type | Required | Description |
 | :--- | :--- | :--- | :--- |
 | `title` | String | **Yes** | Human-readable title of the exam/module shown in the UI. |
 | `id` | String | **Yes** | Unique string identifier (e.g., `exam_cybersec_101`). |
+| `folderId` | String | No | Target folder ID (e.g., `folder_1785739334920`). If provided, the source is automatically placed under this folder upon import. |
 | `description` | String | No | Short summary of the exam subject matter. |
 | `category` | String | No | Folder name / category for organization (e.g., `Computer Science`). |
 
