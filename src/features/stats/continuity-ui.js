@@ -2411,7 +2411,8 @@ export function showContinuityTargetModal(type) {
 
 function getAllNuggets() {
     const nuggets = [];
-    liveSources().forEach(source => {
+    const activeSources = (AppState.sources || []).filter(s => s.active && !s.archived);
+    activeSources.forEach(source => {
         if (source.nuggets && Array.isArray(source.nuggets)) {
             source.nuggets.forEach(n => {
                 nuggets.push({ ...n, sourceId: source.id, sourceName: source.name });
@@ -2428,10 +2429,21 @@ export function renderNuggetSlide() {
     
     if (!card || !textEl) return;
     
+    const activeSources = (AppState.sources || []).filter(s => s.active && !s.archived);
+    if (activeSources.length === 0) {
+        textEl.textContent = t('nugget_empty_no_source') || "Çalışmak için lütfen ana ekrandan bir kaynak seçin veya ekleyin.";
+        textEl.style.color = "var(--text-secondary)";
+        textEl.style.fontStyle = "italic";
+        if (editBtn) editBtn.style.display = 'none';
+        card.removeAttribute('data-nugget-id');
+        card.removeAttribute('data-source-id');
+        return;
+    }
+
     const nuggets = getAllNuggets();
     
     if (nuggets.length === 0) {
-        textEl.textContent = t('nugget_empty') || "Odaklanılan kaynaklardan rastgele bir hap bilgi burada gösterilir. Eklemek için + butonuna tıklayın.";
+        textEl.textContent = t('nugget_empty') || "Aktif kaynaklarınızdan derlenen ipuçları burada gösterilir. Eklemek için + butonuna tıklayın.";
         textEl.style.color = "var(--text-secondary)";
         textEl.style.fontStyle = "italic";
         if (editBtn) editBtn.style.display = 'none';
@@ -2461,18 +2473,25 @@ function openNuggetModal(sourceId = null, nugget = null) {
     if (!modal || !select || !input) return;
     
     select.innerHTML = '';
-    const sources = liveSources();
-    if (sources.length === 0) {
-        showToast(t('no_sources_available') || "Kaynak bulunamadı.");
+    const activeSources = (AppState.sources || []).filter(s => s.active && !s.archived);
+    if (activeSources.length === 0) {
+        showToast(t('no_active_sources_available') || "Lütfen önce çalışmak için bir kaynak seçin.");
         return;
     }
     
-    sources.forEach(s => {
+    activeSources.forEach(s => {
         const option = document.createElement('option');
         option.value = s.id;
         option.textContent = s.name;
         select.appendChild(option);
     });
+
+    const selectContainer = select.closest('.form-group') || select.parentElement;
+    if (activeSources.length === 1) {
+        if (selectContainer) selectContainer.style.display = 'none';
+    } else {
+        if (selectContainer) selectContainer.style.display = 'block';
+    }
     
     if (nugget) {
         title.textContent = t('nugget_edit_title_edit') || "Hap Bilgiyi Düzenle";
@@ -2483,7 +2502,7 @@ function openNuggetModal(sourceId = null, nugget = null) {
     } else {
         title.textContent = t('nugget_edit_title') || "Hap Bilgi Ekle";
         input.value = '';
-        select.value = sourceId || (AppState.currentSourceKey ? AppState.currentSourceKey : sources[0].id);
+        select.value = sourceId || activeSources[0].id;
         deleteBtn.style.display = 'none';
         delete modal.dataset.editingId;
     }
@@ -2506,7 +2525,7 @@ function saveNugget() {
     }
     
     const sourceId = select.value;
-    const source = liveSources().find(s => s.id === sourceId);
+    const source = (AppState.sources || []).find(s => s.id === sourceId);
     if (!source) return;
     
     if (!source.nuggets) source.nuggets = [];
@@ -2519,7 +2538,7 @@ function saveNugget() {
             source.nuggets[idx].text = text;
         } else {
             const oldSourceId = document.getElementById('nuggetContinuityCard')?.getAttribute('data-source-id');
-            const oldSource = liveSources().find(s => s.id === oldSourceId);
+            const oldSource = (AppState.sources || []).find(s => s.id === oldSourceId);
             if (oldSource && oldSource.nuggets) {
                 oldSource.nuggets = oldSource.nuggets.filter(n => n.id !== editingId);
                 touch(oldSource);
@@ -2546,7 +2565,7 @@ function deleteNugget() {
     const editingId = modal.dataset.editingId;
     if (!editingId) return;
     
-    liveSources().forEach(source => {
+    (AppState.sources || []).forEach(source => {
         if (source.nuggets) {
             const initialLength = source.nuggets.length;
             source.nuggets = source.nuggets.filter(n => n.id !== editingId);
