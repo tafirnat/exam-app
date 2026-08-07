@@ -1712,27 +1712,63 @@ ${m}`);n(y?"replace":"merge");return}const f=l.innerText,g=c.innerText;s.innerTe
                             <div style="position: absolute; left: 12px; top: 12px; bottom: 8px; width: 4px; border-radius: 4px; background: linear-gradient(to bottom, rgb(16 185 129 / 75%), rgb(245 158 11 / 60%)); box-shadow: 0 0 8px rgba(16, 185, 129, 0.4);"></div>
 
                             <!-- Başlık (Üst Kısım) -->
-                            <div style="display: flex; align-items: center; gap: 6px; margin-bottom: 4px;">
-                                <svg viewBox="0 0 40 64" fill="none" stroke="url(#nuggetGradientGreen)" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" width="12" height="19" style="filter: drop-shadow(0 2px 4px rgba(16, 185, 129, 0.3));">
-                                    <defs>
-                                        <linearGradient id="nuggetGradientGreen" x1="0%" y1="0%" x2="100%" y2="100%">
-                                            <stop offset="0%" stop-color="rgb(16 185 129 / 75%)" />
-                                            <stop offset="100%" stop-color="rgb(245 158 11 / 60%)" />
-                                        </linearGradient>
-                                    </defs>
-                                    <path d="M8.6,48l20.6-3c0-6.5,8.8-14.6,8.8-25.6C38,8.7,29.5,0,19,0S0,8.7,0,19.4c0,10.9,8.6,19,8.6,25.5V48L8.6,48z"/>
-                                    <path d="M10,52.3l18.8-2.9"/>
-                                    <path d="M10,56.2l18.8-2.9"/>
-                                    <path d="M26.3,59.1c0,1.6-3.1,2.9-7,2.9s-7-1.3-7-2.9"/>
-                                    <path d="M16.4,40.8c0-12.4-3.5-16.8-3.5-16.8s1.4,3.1,3,3.1c1.7,0,3-1.4,3-3.1c0,1.7,1.4,3.1,3,3.1c1.7,0,3-3.1,3-3.1s-2.8,6.7-2.8,16.8"/>
-                                </svg>
-                                <span style="font-size: 0.75rem; font-weight: 800; text-transform: uppercase; letter-spacing: 0.12em; background: linear-gradient(to bottom, rgb(16 185 129 / 75%), rgb(245 158 11 / 60%)); -webkit-background-clip: text; -webkit-text-fill-color: transparent;" data-i18n="toggle_nugget_slide">
-                                    Hızlı İpuçları
-                                </span>
+                            <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 4px;">
+                                <div style="display: flex; align-items: center; gap: 6px;">
+                                    <svg viewBox="0 0 40 64" fill="none" stroke="url(#nuggetGradientGreen)" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" width="12" height="19" style="filter: drop-shadow(0 2px 4px rgba(16, 185, 129, 0.3));">
+                                        <defs>
+                                            <linearGradient id="nuggetGradientGreen" x1="0%" y1="0%" x2="100%" y2="100%">
+                                                <stop offset="0%" stop-color="rgb(16 185 129 / 75%)" />
+                                                <stop offset="100%" stop-color="rgb(245 158 11 / 60%)" />
+                                            </linearGradient>
+                                        </defs>
+                                        <path d="M8.6,48l20.6-3c0-6.5,8.8-14.6,8.8-25.6C38,8.7,29.5,0,19,0S0,8.7,0,19.4c0,10.9,8.6,19,8.6,25.5V48L8.6,48z"/>
+                                        <path d="M10,52.3l18.8-2.9"/>
+                                        <path d="M10,56.2l18.8-2.9"/>
+                                        <path d="M26.3,59.1c0,1.6-3.1,2.9-7,2.9s-7-1.3-7-2.9"/>
+                                        <path d="M16.4,40.8c0-12.4-3.5-16.8-3.5-16.8s1.4,3.1,3,3.1c1.7,0,3-1.4,3-3.1c0,1.7,1.4,3.1,3,3.1c1.7,0,3-3.1,3-3.1s-2.8,6.7-2.8,16.8"/>
+                                    </svg>
+                                    <span style="font-size: 0.75rem; font-weight: 800; text-transform: uppercase; letter-spacing: 0.12em; background: linear-gradient(to bottom, rgb(16 185 129 / 75%), rgb(245 158 11 / 60%)); -webkit-background-clip: text; -webkit-text-fill-color: transparent;" data-i18n="toggle_nugget_slide">
+                                        Hızlı İpuçları
+                                    </span>
+                                </div>
+                                <!-- Play/Pause Butonu (Sağ Üstte, Arka plansız) -->
+                                <button class="btn btn-icon btn-subtle" id="pauseSliderBtn" style="padding: 0; width: 24px; height: 24px; background: transparent; border: none; color: #10b981; transition: all 0.2s; z-index: 5;" title="Otomatik Geçişi Durdur / Başlat">
+                                    <svg id="pauseSliderIcon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" width="14" height="14">
+                                        <rect x="6" y="4" width="4" height="16"></rect>
+                                        <rect x="14" y="4" width="4" height="16"></rect>
+                                    </svg>
+                                    <svg id="playSliderIcon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" width="14" height="14" style="display: none;">
+                                        <polygon points="5 3 19 12 5 21 5 3"></polygon>
+                                    </svg>
+                                </button>
                             </div>
 
+                            <!-- Bilgi Metni (Nugget Text) için Style -->
+                            <style>
+                                .nugget-scrollable-text {
+                                    max-height: 4.5rem;
+                                    overflow-y: auto;
+                                    padding-right: 12px;
+                                    margin-right: 16px;
+                                }
+                                .nugget-scrollable-text::-webkit-scrollbar {
+                                    width: 4px;
+                                }
+                                .nugget-scrollable-text::-webkit-scrollbar-track {
+                                    background: rgba(16, 185, 129, 0.05);
+                                    border-radius: 4px;
+                                }
+                                .nugget-scrollable-text::-webkit-scrollbar-thumb {
+                                    background: rgba(16, 185, 129, 0.3);
+                                    border-radius: 4px;
+                                }
+                                .nugget-scrollable-text::-webkit-scrollbar-thumb:hover {
+                                    background: rgba(16, 185, 129, 0.5);
+                                }
+                            </style>
+
                             <!-- Bilgi Metni (Nugget Text) -->
-                            <div id="nuggetText" style="font-size: 0.95rem; font-weight: 500; color: var(--text-primary); line-height: 1.4; padding-right: 36px; display: -webkit-box; -webkit-line-clamp: 3; -webkit-box-orient: vertical; overflow: hidden; text-shadow: 0 1px 1px rgba(0,0,0,0.03);">
+                            <div id="nuggetText" class="nugget-scrollable-text" style="font-size: 0.95rem; font-weight: 500; color: var(--text-primary); line-height: 1.4; text-shadow: 0 1px 1px rgba(0,0,0,0.03);">
                                 <!-- Text populated by JS -->
                             </div>
                         </div>
@@ -1754,15 +1790,6 @@ ${m}`);n(y?"replace":"merge");return}const f=l.innerText,g=c.innerText;s.innerTe
                                     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="16" height="16">
                                         <line x1="12" y1="5" x2="12" y2="19"></line>
                                         <line x1="5" y1="12" x2="19" y2="12"></line>
-                                    </svg>
-                                </button>
-                                <button class="btn btn-icon btn-subtle" id="pauseSliderBtn" style="padding: 0; width: 28px; height: 28px; background: transparent; border: none; color: #10b981; transition: all 0.2s;" title="Otomatik Geçişi Durdur / Başlat">
-                                    <svg id="pauseSliderIcon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" width="14" height="14">
-                                        <rect x="6" y="4" width="4" height="16"></rect>
-                                        <rect x="14" y="4" width="4" height="16"></rect>
-                                    </svg>
-                                    <svg id="playSliderIcon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" width="14" height="14" style="display: none;">
-                                        <polygon points="5 3 19 12 5 21 5 3"></polygon>
                                     </svg>
                                 </button>
                             </div>
