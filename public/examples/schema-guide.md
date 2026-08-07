@@ -14,7 +14,7 @@ The JSON must be a single object containing two main keys:
 | Key | Type | Description |
 | :--- | :--- | :--- |
 | `title` | String | The name of the exam shown in the UI. |
-| `id` | String | A unique identifier for the source (e.g., `ref_template_001`). |
+| `id` | String | A unique hybrid identifier for conflict-free sync in format `exam_[slug]_[timestamp/hash]` (e.g., `exam_topic_name_1785739334`). |
 | `description` | String | (Optional) Short summary of the exam content. |
 | `category` | String | (Optional) Folder-like grouping for management. |
 
@@ -109,7 +109,7 @@ a note shown alongside. (The legacy spelling `topic_review` is converted to `rea
 {
   "exam_metadata": {
     "title": "Topic Name",
-    "id": "unique_id_001"
+    "id": "exam_topic_name_1785739334"
   },
   "questions": [
     {

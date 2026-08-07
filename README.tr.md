@@ -172,13 +172,13 @@ Herhangi bir ders kitabını, makaleyi veya ders notunu Exam App JSON'una dönü
 
 ## Veri Yapısı & JSON Şeması
 
-Exam App, `exam_metadata` ve `questions` dizisinden oluşan temiz, insan tarafından okunabilir bir JSON şeması kullanır.
+Exam App, `exam_metadata` ve `questions` dizisinden oluşan temiz, insan tarafından okunabilir bir JSON şeması kullanır. Sınav kimlikleri (`id`), cihazlar arası senkronizasyon çakışmalarını önlemek için `exam_[slug]_[zaman_damgası/hash]` biçiminde **Hibrit ID** formatında saklanır ve değiştirilemezdir.
 
 ```json
 {
   "exam_metadata": {
     "title": "Bilgisayar Ağları 101",
-    "id": "exam_net_101",
+    "id": "exam_bilgisayar_aglari_101_1785739334",
     "category": "Bilgisayar Bilimleri",
     "description": "Temel ağ protokolleri ve kavramları."
   },

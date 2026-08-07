@@ -78,7 +78,7 @@ The JSON structure consists of a root object with two primary keys: `exam_metada
 | Key | Type | Required | Description |
 | :--- | :--- | :--- | :--- |
 | `title` | String | **Yes** | Human-readable title of the exam/module shown in the UI. |
-| `id` | String | **Yes** | Unique string identifier (e.g., `exam_cybersec_101`). |
+| `id` | String | **Yes** | Unique hybrid identifier in format `exam_[slug]_[timestamp/hash]` (e.g., `exam_cybersec_101_1785739334`). |
 | `folderId` | String | No | Target folder ID (e.g., `folder_1785739334920`). If provided, the source is automatically placed under this folder upon import. |
 | `description` | String | No | Short summary of the exam subject matter. |
 | `category` | String | No | Folder name / category for organization (e.g., `Computer Science`). |
@@ -308,7 +308,7 @@ When asked to generate an exam for a given topic or repository reference, produc
 {
   "exam_metadata": {
     "title": "Web Development & Web APIs Fundamentals",
-    "id": "web_dev_fundamentals_101",
+    "id": "exam_web_dev_fundamentals_101_1785739334",
     "category": "Software Engineering",
     "description": "Comprehensive evaluation covering HTTP, REST APIs, web security, and network layers."
   },

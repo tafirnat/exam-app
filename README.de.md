@@ -172,13 +172,13 @@ Wandeln Sie Lehrbücher, Artikel oder Notizen in Exam App JSON um:
 
 ## Datenformat & JSON-Schema
 
-Exam App nutzt ein sauberes, menschenlesbares JSON-Schema bestehend aus `exam_metadata` und einem `questions`-Array.
+Exam App nutzt ein sauberes, menschenlesbares JSON-Schema bestehend aus `exam_metadata` und einem `questions`-Array. Prüfungs-IDs (`id`) werden im unveränderlichen **Hybrid-ID-Format** (`exam_[slug]_[zeitstempel/hash]`) gespeichert, um Synchronisationskonflikte zwischen Geräten zu vermeiden.
 
 ```json
 {
   "exam_metadata": {
     "title": "Computernetzwerke 101",
-    "id": "exam_net_101",
+    "id": "exam_computernetzwerke_101_1785739334",
     "category": "Informatik",
     "description": "Grundlegende Netzwerkprotokolle und -konzepte."
   },
