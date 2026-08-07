@@ -679,6 +679,7 @@ export const translations = {
         nugget_empty_warn: "İpucu notu boş olamaz!",
         nugget_edit_title: "Yeni İpucu Ekle",
         nugget_edit_title_edit: "İpucunu Düzenle",
+        nugget_text_placeholder: "Örn: Everest Dağı dünyanın en yüksek zirvesidir.",
     },
     en: {
         theme_change: "Change Theme",
@@ -1243,6 +1244,7 @@ export const translations = {
         nugget_empty_warn: "Insight note cannot be empty!",
         nugget_edit_title: "New Insight",
         nugget_edit_title_edit: "Edit Insight",
+        nugget_text_placeholder: "e.g., Mount Everest is the highest peak in the world.",
         streak_run_btn_protect: "Protect Streak ({available})",
         streak_run_btn_fsrs: "Study with FSRS ({available})",
         no_overdue_questions: "No overdue questions",
@@ -2007,6 +2009,7 @@ export const translations = {
         nugget_empty_warn: "Die Notiz darf nicht leer sein!",
         nugget_edit_title: "Neuer Einblick",
         nugget_edit_title_edit: "Einblick bearbeiten",
+        nugget_text_placeholder: "Bsp: Der Mount Everest ist der höchste Berg der Welt.",
     },
 };
 
