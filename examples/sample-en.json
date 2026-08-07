@@ -43,10 +43,22 @@
         ]
       },
       "options": [
-        { "id": 1, "text": "Bamboo" },
-        { "id": 2, "text": "Eucalyptus leaves" },
-        { "id": 3, "text": "Fish" },
-        { "id": 4, "text": "Acacia bark" }
+        {
+          "id": 1,
+          "text": "Bamboo"
+        },
+        {
+          "id": 2,
+          "text": "Eucalyptus leaves"
+        },
+        {
+          "id": 3,
+          "text": "Fish"
+        },
+        {
+          "id": 4,
+          "text": "Acacia bark"
+        }
       ],
       "answer": {
         "correct_ids": [
@@ -66,11 +78,26 @@
         "text": "Which question types need an options list?"
       },
       "options": [
-        { "id": 1, "text": "`single_choice`" },
-        { "id": 2, "text": "`multiple_choice`" },
-        { "id": 3, "text": "`short_answer`" },
-        { "id": 4, "text": "`flashcard`" },
-        { "id": 5, "text": "`true_false`" }
+        {
+          "id": 1,
+          "text": "`single_choice`"
+        },
+        {
+          "id": 2,
+          "text": "`multiple_choice`"
+        },
+        {
+          "id": 3,
+          "text": "`short_answer`"
+        },
+        {
+          "id": 4,
+          "text": "`flashcard`"
+        },
+        {
+          "id": 5,
+          "text": "`true_false`"
+        }
       ],
       "answer": {
         "correct_ids": [
@@ -90,8 +117,14 @@
         "text": "A true_false question may have a third option."
       },
       "options": [
-        { "id": 1, "text": "True" },
-        { "id": 2, "text": "False" }
+        {
+          "id": 1,
+          "text": "True"
+        },
+        {
+          "id": 2,
+          "text": "False"
+        }
       ],
       "answer": {
         "correct_ids": [
@@ -143,6 +176,18 @@
       "answer": {
         "back": "Nothing is graded. Open the back, rate yourself **Again** / **Hard** / **Good** / **Easy**; that rating decides when the card comes back.\n\n- [x] no options to write\n- [x] no accepted answers to maintain\n- [ ] still needs an honest self-rating"
       }
+    }
+  ],
+  "nuggets": [
+    {
+      "id": "nugget-1",
+      "text": "This is a quick insight (Nugget). Instead of solving long tests, it is here to quickly grasp the most crucial detail of the topic currently being studied.",
+      "createdAt": 1786129643099
+    },
+    {
+      "id": "nugget-2",
+      "text": "When you don't fully understand a concept while solving a question, adding it here as an 'Insight' keeps it right in front of you instead of burying it in a single question.",
+      "createdAt": 1786129653099
     }
   ]
 }
