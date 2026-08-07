@@ -2,7 +2,7 @@ import { AppState, initState, saveStats, saveSources, saveCurrentSource, saveCus
 import { initTheme, toggleTheme, getActiveTheme } from './core/theme.js';
 import { updateStaticTranslations, t, targetLanguages, translations } from './core/i18n.js';
 import { showToast, showConfirm, getCorrectAnswers, highlightText, escapeHTML } from './core/utils.js';
-import { migrateOldData, migrateFolderColors, sanitizeStudyActivity } from './core/migration.js';
+import { migrateOldData, migrateFolderColors, sanitizeStudyActivity, migrateExamIds } from './core/migration.js';
 import { getQuestionCategory } from './core/question-rules.js';
 import { persist, readJSON, readString } from './core/storage.js';
 import * as store from './core/store.js';
@@ -261,6 +261,7 @@ const initApp = () => {
         console.log('Migrating old data...');
         migrateOldData();
         migrateFolderColors();
+        migrateExamIds();
 
         // Runs before anything reads studyActivity: the additive Gist merge left
         // inflated daily counters behind, and every streak, ring and chart on the

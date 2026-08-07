@@ -2,6 +2,7 @@
 import { AppState, saveSources, saveStats, saveCurrentSource, saveFolders, saveStudyActivity, touch } from './state.js';
 import { persist, persistRemove, readString } from './storage.js';
 import { DAILY_TARGET, COUNTER_KEYS, bucketsOf, recomputeDayTotals } from './daily-activity.js';
+import { generateHybridExamId } from '../features/sources/sources-service.js';
 
 // Folders store their colour, so replacing the picker's palette left existing
 // folders on the retired colours - several of which wash out on the light
@@ -284,3 +285,46 @@ export function migrateOldData() {
         console.error('Migration failed', e);
     }
 }
+
+/**
+ * Ensures every source in AppState.sources has an immutable ID in source.id and source.metadata.id.
+ * If source.id or source.metadata.id already exists, it is preserved strictly.
+ * If missing, a hybrid ID is generated ONCE and persisted.
+ */
+export function migrateExamIds() {
+    if (!Array.isArray(AppState.sources)) return 0;
+    let changed = 0;
+
+    AppState.sources.forEach(source => {
+        if (!source || typeof source !== 'object') return;
+
+        // Determine existing ID from source.id or source.metadata.id
+        let currentId = source.id || source.metadata?.id || null;
+
+        if (!currentId) {
+            currentId = generateHybridExamId(source.name || 'exam');
+            changed++;
+        }
+
+        if (source.id !== currentId) {
+            source.id = currentId;
+            changed++;
+        }
+
+        if (!source.metadata || typeof source.metadata !== 'object') {
+            source.metadata = {};
+            changed++;
+        }
+
+        if (source.metadata.id !== currentId) {
+            source.metadata.id = currentId;
+            changed++;
+        }
+    });
+
+    if (changed > 0) {
+        saveSources();
+    }
+    return changed;
+}
+

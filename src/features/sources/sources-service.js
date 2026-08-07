@@ -115,6 +115,36 @@ export function sanitizeImportedData(input) {
     return sanitized;
 }
 
+export function slugify(text) {
+    if (!text || typeof text !== 'string') return 'exam';
+    const trDeMap = {
+        'ç': 'c', 'Ç': 'c', 'ğ': 'g', 'Ğ': 'g', 'ı': 'i', 'İ': 'i',
+        'ö': 'o', 'Ö': 'o', 'ş': 's', 'Ş': 's', 'ü': 'u', 'Ü': 'u',
+        'ä': 'a', 'Ä': 'a', 'ß': 'ss'
+    };
+    let slug = text.split('').map(char => trDeMap[char] || char).join('');
+    slug = slug
+        .toLowerCase()
+        .replace(/[^a-z0-9]+/g, '_')
+        .replace(/^_+|_+$/g, '');
+    return slug || 'exam';
+}
+
+/**
+ * Generates or preserves a hybrid exam ID in format: exam_[slug]_[timestamp/hash]
+ * @param {string} title
+ * @param {string|null} existingId
+ * @returns {string}
+ */
+export function generateHybridExamId(title, existingId = null) {
+    if (existingId && typeof existingId === 'string' && existingId.trim().length > 0) {
+        return existingId.trim();
+    }
+    const cleanSlug = slugify(title);
+    const suffix = `${Date.now().toString(36)}_${Math.random().toString(36).substring(2, 6)}`;
+    return `exam_${cleanSlug}_${suffix}`;
+}
+
 export function processJSON(rawData, name, options = {}) {
     const data = sanitizeImportedData(rawData);
     const validation = validateExamSchema(data);
@@ -138,8 +168,9 @@ export function processJSON(rawData, name, options = {}) {
     }
     title = finalTitle;
 
-    // Generate a robust unique ID (UUID)
-    const id = crypto.randomUUID();
+    // Preserve existing exam_metadata.id or root id if provided, otherwise generate a hybrid ID
+    const existingId = data.exam_metadata?.id || data.id || null;
+    const id = generateHybridExamId(title, existingId);
 
     const sourceName = name || 'Unknown Source';
 
@@ -161,6 +192,11 @@ export function processJSON(rawData, name, options = {}) {
         (data.shuffle === false)
     );
 
+    const metadata = {
+        ...(data.exam_metadata || {}),
+        id: id
+    };
+
     const source = {
         id,
         name: title,
@@ -174,7 +210,7 @@ export function processJSON(rawData, name, options = {}) {
             display: sourceName,
             type: (typeof sourceName === 'string' && sourceName.startsWith('http')) ? 'url' : 'file'
         },
-        metadata: data.exam_metadata || {}
+        metadata
     };
 
     reconcileSourceFolder(source, { notify: !options.silent });
