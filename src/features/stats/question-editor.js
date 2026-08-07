@@ -880,13 +880,20 @@ function applyChangesToState() {
 
     const qIdx = source.questions.findIndex(q => q.id === currentEditingQuestion.id);
     if (qIdx !== -1) {
+        /* Dates the edit, on the question and on the pool that holds it.
+
+           The pool's stamp is what mergeSyncData() picks between two copies by;
+           without it the edited copy and the remote's older one scored equal, the
+           remote won, and - because the push merges before it writes - the edit
+           never left this device at all.
+
+           The question's own stamp is finer-grained, and it is what lets two
+           devices that edited *different* questions in the same pool both keep
+           their work instead of one copy of the pool overwriting the other. */
+        const now = Date.now();
+        currentEditingQuestion.updatedAt = now;
         source.questions[qIdx] = currentEditingQuestion;
-        /* Dates the edit. mergeSyncData() picks between two copies of a source
-           by updatedAt, so without this the edited copy and the remote's older
-           one scored equal and the remote won - and the push merges before it
-           writes, so the edit never left this device at all. Rewriting an
-           explanation here looked like it saved and was gone by the next pull. */
-        source.updatedAt = Date.now();
+        source.updatedAt = now;
         saveSources();
 
         const statKey = `${currentEditingQuestion.sourceId}_${currentEditingQuestion.id}`;

@@ -69,6 +69,11 @@ export function createDefaultContinuityConfig() {
         focusSources: [],
         focusSourceNames: {},
         focusSourceTimestamps: {},
+        displaySettings: {
+            showFocusSlide: true,
+            showNuggetSlide: true,
+            showMotivationSlide: true
+        },
         notificationSettings: {
             enabled: false,          // Genel Seri bildirimi
             focusEnabled: false,     // Odak Serisi bildirimi (ayrı opt-in)
@@ -440,6 +445,7 @@ export function clearProgressData() {
         focusSources: AppState.continuityConfig?.focusSources || [],
         focusSourceNames: AppState.continuityConfig?.focusSourceNames || {},
         focusSourceTimestamps: AppState.continuityConfig?.focusSourceTimestamps || {},
+        displaySettings: AppState.continuityConfig?.displaySettings || createDefaultContinuityConfig().displaySettings,
         notificationSettings: AppState.continuityConfig?.notificationSettings
             || createDefaultContinuityConfig().notificationSettings
     };
