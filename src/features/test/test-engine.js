@@ -274,7 +274,16 @@ export function prepareFromCompositeIds(compositeIds, options = {}) {
 
     let shouldShuffle = shuffle;
     if (shouldShuffle && known.length > 0) {
-        const sourceIds = new Set(known.map(cid => cid.split('_')[0]));
+        /* Read off the entry, not off the key. A composite id is
+           `<sourceId>_<questionId>` and a source id has underscores of its own -
+           generateHybridExamId() builds every one of them as
+           `exam_<slug>_<stamp>_<rand>` - so splitting on the first underscore
+           answered "exam" for every question in the app. No source matched, the
+           keepOrder check below never fired, and a pool that asked to be kept in
+           order was shuffled anyway. */
+        const sourceIds = new Set(
+            known.map(cid => AppState.questionMap[cid]?.sourceId).filter(Boolean)
+        );
         if (sourceIds.size > 0) {
             const sources = (AppState.sources || []).filter(s => sourceIds.has(s.id));
             if (sources.length > 0 && sources.every(s => s.keepOrder || s.metadata?.keepOrder)) {
