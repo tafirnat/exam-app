@@ -2563,7 +2563,7 @@ export function renderNuggetSlide(direction = 0) {
 
     const currentNugget = nuggets[currentNuggetIndex];
     textEl.textContent = currentNugget.text;
-    textEl.style.color = "var(--text-primary)";
+    textEl.style.color = "rgba(255, 255, 255, 0.85)";
     textEl.style.fontStyle = "normal";
     
     const sourceEl = document.getElementById('nuggetSourceTitle');
