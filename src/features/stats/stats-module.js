@@ -1,6 +1,9 @@
-import { AppState, liveSources } from '../../core/state.js';
+import { AppState, liveSources, getAvailableTags } from '../../core/state.js';
 import { t } from '../../core/i18n.js';
 import { showConfirm, escapeHTML } from '../../core/utils.js';
+import { readJSON } from '../../core/storage.js';
+import { getLocalDateStr } from '../../core/daily-activity.js';
+import { calculateExamReadiness, calculateGlobalStreak, calculateFocusStreak } from './continuity-engine.js';
 import { calculateRetrievability } from '../test/test-engine.js';
 import { plainText } from '../../core/markdown.js';
 import { renderContinuityBlock } from './continuity-ui.js';
@@ -643,6 +646,7 @@ export function updateHomeStats() {
 
     updateEl('homeStatTotal', total);
     updateEl('homeStatAvg', avgDiff);
+    updateEl('homeExamReadiness', `${calculateExamReadiness()}%`);
     updateEl('homeProgressPercent', pctText);
 
     // Update 3 segments

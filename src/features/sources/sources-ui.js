@@ -3,6 +3,7 @@ import { t } from '../../core/i18n.js';
 import { showConfirm, showAlert, showToast, escapeHTML } from '../../core/utils.js';
 import { syncQuickPresetsWithLiveSources } from './quick-presets.js';
 import { persist, readString } from '../../core/storage.js';
+import { calculateTopicMastery } from '../stats/continuity-engine.js';
 
 export function toggleSource(id) {
     let activeCount = 0;
@@ -1155,6 +1156,9 @@ function createSourceItemDOM(s, folderId) {
     const rateChip = successRate !== null ? `<span style="font-size:0.68rem; padding:1px 6px; border-radius:999px; background:var(--surface-hover); color:var(--text-secondary); border:1px solid var(--border-color);">✓ ${successRate}%</span>` : '';
     const coeffChip = avgCoeff !== null ? `<span style="font-size:0.68rem; padding:1px 6px; border-radius:999px; background:var(--surface-hover); color:var(--text-secondary); border:1px solid var(--border-color);">Ø ${avgCoeff}</span>` : '';
 
+    const mastery = calculateTopicMastery(s.id);
+    const masteryBar = `<div style="width: 100%; height: 4px; background: var(--border-color); border-radius: 2px; margin-top: 6px; overflow: hidden;" title="Konu Hakimiyeti: ${mastery}%"><div style="width: ${mastery}%; height: 100%; background: var(--primary-color);"></div></div>`;
+
     info.innerHTML = `
         <div style="font-weight:600; font-size:0.9rem; margin-bottom: 2px; display:flex; align-items:center; gap:0.4rem; min-width:0;">
             <span class="truncate">${escapeHTML(qText)}</span>
@@ -1164,9 +1168,11 @@ function createSourceItemDOM(s, folderId) {
             ${s.importDate ? `<span style="opacity:0.6;">• ${s.importDate}</span>` : ''}
             ${rateChip}${coeffChip}
         </div>
-        <div class="origin-tag" style="font-size:0.7rem; color:var(--primary-color); opacity:0.8; margin-top:4px; display: flex; align-items: center; gap: 6px; flex-wrap: wrap;">
+        <div class="origin-tag" style="font-size:0.7rem; color:var(--primary-color); opacity:0.8; margin-top:4px; display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap;">
             ${originContent}
+            <span style="font-size: 0.65rem; opacity: 0.7;">Mastery: ${mastery}%</span>
         </div>
+        ${masteryBar}
     `;
 
     const actionsBtn = document.createElement('button');

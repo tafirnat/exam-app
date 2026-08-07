@@ -29,7 +29,7 @@ Exam App, kendi materyallerinden öğrenen herkes için tasarlanmıştır:
 
 - Üniversite, meslek veya dil sınavlarına hazırlanan **öğrenciler**
 - Obsidian gibi Markdown araçlarında not tutan ve bu notları pratik testlere dönüştürmek isteyen **bireysel öğreniciler**
-- Anki, Quizlet veya benzeri uygulamalara abonelik ve bulut bağımlılığı olmadan **gizlilik odaklı bir alternatif** arayanlar
+- Anki, Quizlet vb. uygulamalara abonelik veya bulut kilitlenmesi yaşamadan, dikkat dağıtmayan ve **veri egemenliği (data sovereignty)** sunan bir alternatif arayan **herkes**
 
 ---
 
@@ -99,9 +99,9 @@ Günde bir kez, hazır kart olduğunda çalışan opt-in hatırlatıcılar. İzi
 
 Soruları ve okuma kartlarını yerel tarayıcı konuşma sentezi ile sesli okur. Ayarlanabilir hız (×0.7–×1.3), gezinmede otomatik oynatma, yüzen oynatma kontrolleri.
 
-### Tam Veri Mülkiyeti & Gizlilik Odaklı Mimari
+### Veri Egemenliği & Kendi Bulutunu Getir (BYOC)
 
-Üçüncü taraf takip sunucusu veya merkezi veritabanı yok. Zorunlu hesap oluşturma ve abonelik ücretleri yok. Çalışma verileriniz varsayılan olarak yerel cihazınızda tutulur. Farklı cihazlar arası veri eşitlemesi ise doğrudan kendi özel GitHub Gist'iniz üzerinden uçtan uca kontrolünüzde gerçekleşir.
+Üçüncü taraf takip sunucusu veya merkezi veritabanı yok. Zorunlu hesap oluşturma ve abonelik ücretleri yok. Çalışma verileriniz varsayılan olarak yerel cihazınızda tutulur. Farklı cihazlar arası veri eşitlemesi ise doğrudan **kendi özel GitHub Gist'iniz** üzerinden yapılarak ücretsiz ve kişisel bir bulut altyapısı (BYOC) sağlanır. Bu sayede verileriniz tamamen kendi GitHub hesabınızda ve kendi kontrolünüzde kalır.
 
 ---
 

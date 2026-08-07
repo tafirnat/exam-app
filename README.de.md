@@ -29,7 +29,7 @@ Exam App wurde für alle entwickelt, die aus eigenem Material lernen:
 
 - **Studierende**, die sich auf Uni-, Berufs- oder Sprachprüfungen vorbereiten
 - **Selbstlerner**, die Notizen in Obsidian oder ähnlichen Markdown-Tools führen und diese in Übungstests umwandeln möchten
-- **Alle**, die eine ablenkungsfreie, datenschutzorientierte Alternative zu Anki, Quizlet & Co. suchen — ohne Abos oder Cloud-Bindung
+- **Alle**, die eine ablenkungsfreie, auf Datensouveränität ausgerichtete Alternative zu Anki, Quizlet & Co. suchen — ohne Abos oder Cloud-Bindung
 
 ---
 
@@ -99,9 +99,9 @@ Vollständige native Benutzeroberfläche auf **Englisch**, **Türkisch** und **D
 
 Liest Fragen und Lesekarten mit nativer Browser-Sprachsynthese vor. Einstellbare Geschwindigkeit (×0,7–×1,3), automatische Wiedergabe bei Navigation, schwebende Steuerleiste.
 
-### Datenschutz-Fokus & Volle Datensouveränität
+### Datensouveränität & Bring-Your-Own-Cloud (BYOC)
 
-Keine Drittanbieter-Tracking-Server oder zentrale Datenbanken. Kein Account-Zwang und keine Abos. Ihre Lerndaten werden standardmäßig lokal auf Ihrem Gerät gespeichert. Die geräteübergreifende Synchronisierung erfolgt sicher über Ihr eigenes privates GitHub Gist, sodass Ihre Daten vollständig unter Ihrer Kontrolle bleiben.
+Keine Drittanbieter-Tracking-Server oder zentrale Datenbanken. Kein Account-Zwang und keine Abos. Ihre Lerndaten werden standardmäßig lokal auf Ihrem Gerät gespeichert. Die geräteübergreifende Synchronisierung erfolgt sicher über **Ihr eigenes privates GitHub Gist**, das als persönliche, kostenlose Cloud dient. So bleiben Ihre Daten vollständig in Ihrem eigenen GitHub-Account und unter Ihrer Kontrolle.
 
 ---
 

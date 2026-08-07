@@ -29,7 +29,7 @@ Exam App is built for anyone who learns from their own material:
 
 - **Students** preparing for university, professional, or language certification exams
 - **Self-learners** who keep notes in Obsidian or similar Markdown tools and want to turn them into practice tests
-- **Anyone** who wants a distraction-free, privacy-first alternative to Anki, Quizlet, or similar apps — without subscriptions or cloud lock-in
+- **Anyone** who wants a distraction-free, data-sovereign alternative to Anki, Quizlet, or similar apps — without subscriptions or cloud lock-in
 
 ---
 
@@ -99,9 +99,9 @@ Full UI in **English**, **Turkish**, and **German**. Integrated Google Translate
 
 Reads questions and reading cards aloud using native browser speech synthesis. Adjustable speed (×0.7–×1.3), autoplay on navigation, floating playback controls.
 
-### Privacy-First & Full Data Ownership
+### Data Sovereignty & BYOC (Bring-Your-Own-Cloud)
 
-No third-party tracking servers or central databases. No forced accounts or subscription fees. Your study data is stored locally on your device by default. Cross-device synchronization is handled securely via your own private GitHub Gist, keeping your personal study data entirely under your ownership and control.
+No third-party tracking servers or central databases. No forced accounts or subscription fees. Your study data is stored locally on your device by default. Cross-device synchronization is handled via **your own private GitHub Gist**, acting as a personal, free cloud backend. This ensures your data remains exclusively in your own GitHub account and under your control.
 
 ---
 

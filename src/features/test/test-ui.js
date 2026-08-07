@@ -1,5 +1,5 @@
 
-import { AppState, saveStats } from '../../core/state.js';
+import { AppState, saveStats, saveSources } from '../../core/state.js';
 import { readJSON } from '../../core/storage.js';
 import { translateText, showToast, showConfirm, getCorrectAnswers, escapeHTML } from '../../core/utils.js';
 import { t, targetLanguages } from '../../core/i18n.js';
@@ -392,6 +392,23 @@ export function renderQuestion(isRefresh = false) {
         qTextEl.innerHTML = clozeMarkup(rawQText);
     } else {
         qTextEl.innerHTML = renderMarkdown(rawQText);
+    }
+
+    const aiValidationBadge = document.getElementById('aiValidationBadge');
+    if (aiValidationBadge) {
+        if (q.ai_generated === true && q.verified !== true) {
+            aiValidationBadge.style.display = 'flex';
+            const markBtn = document.getElementById('markVerifiedBtn');
+            if (markBtn) {
+                markBtn.onclick = () => {
+                    q.verified = true;
+                    saveSources();
+                    renderQuestion(true);
+                };
+            }
+        } else {
+            aiValidationBadge.style.display = 'none';
+        }
     }
 
     // Handle Media (Images)

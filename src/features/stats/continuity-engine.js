@@ -838,3 +838,49 @@ export function applyFocusPools(selectedObjects, qsPool) {
 export function commitOneAnswerToActivity() {
     commitAnsweredSlice(AppState.testTracking);
 }
+
+/**
+ * Calculates Topic Mastery for a given source.
+ * Mastery is a normalized score (0-100) based on stability and retrievability.
+ */
+export function calculateTopicMastery(sourceId) {
+    if (!AppState.sources || !AppState.stats) return 0;
+    const source = AppState.sources.find(s => s.id === sourceId);
+    if (!source || !source.questions || source.questions.length === 0) return 0;
+    
+    let totalMastery = 0;
+    const now = Date.now();
+    let validQuestions = 0;
+    
+    source.questions.forEach(q => {
+        const statKey = `${sourceId}_${q.id}`;
+        const stat = AppState.stats[statKey];
+        if (stat && stat.lastReview && stat.stability) {
+            validQuestions++;
+            const r = calculateRetrievability(stat.stability, stat.lastReview, now);
+            // Blend retrievability and normalized stability (cap at 21 days for 100%)
+            const sFactor = Math.min(stat.stability / 21, 1.0);
+            totalMastery += (r * 0.4 + sFactor * 0.6);
+        }
+    });
+    
+    // If no questions have been reviewed, mastery is 0. 
+    // We base it on all questions in the source so unreviewed questions drag it down.
+    return Math.round((totalMastery / source.questions.length) * 100);
+}
+
+/**
+ * Calculates overall Exam Readiness based on the average Topic Mastery of all active sources.
+ */
+export function calculateExamReadiness() {
+    if (!AppState.sources) return 0;
+    const activeSources = AppState.sources.filter(s => s.active && !s.archived);
+    if (activeSources.length === 0) return 0;
+    
+    let totalMastery = 0;
+    activeSources.forEach(s => {
+        totalMastery += calculateTopicMastery(s.id);
+    });
+    
+    return Math.round(totalMastery / activeSources.length);
+}

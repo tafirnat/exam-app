@@ -4,8 +4,8 @@ import { getQuestionCategory } from '../../core/question-rules.js';
 import { gradeCloze } from '../../core/cloze.js';
 import { getDailyOverdueSnapshot, applyFocusPools, recordTestFinished, commitOneAnswerToActivity } from '../stats/continuity-engine.js';
 
-// FSRS v4.5 Simplified Constants
-export const FSRS_W = [0.4, 0.9, 2.3, 10.9, 4.93, 0.94, 0.86, 0.01, 1.49, 0.14, 0.94, 2.18, 0.05, 0.34, 1.26, 0.26, 2.05];
+// FSRS v5 Constants (19 parameters)
+export const FSRS_W = [0.40255, 1.18385, 3.173, 15.69105, 7.1949, 0.5345, 1.4604, 0.0046, 1.54575, 0.1192, 1.01925, 1.9395, 0.11, 0.29605, 2.2698, 0.2315, 2.9898, 0.51655, 0.6621];
 
 /**
  * @param {number} [now] the instant to measure from, in ms.
@@ -81,16 +81,17 @@ function applyFSRS(stat, rating, qDifficulty) {
             const baseD = Math.min(Math.max(qDifficulty * 2, 1), 10);
             stat.difficulty = Math.min(Math.max(baseD - FSRS_W[6] * (rating - 3), 1), 10);
         } else {
-            stat.difficulty = Math.min(Math.max(FSRS_W[4] - FSRS_W[5] * (rating - 3), 1), 10);
+            // FSRS v5 Initial Difficulty: D0(r) = w[4] - exp(w[5] * (r-1)) + 1
+            stat.difficulty = Math.min(Math.max(FSRS_W[4] - Math.exp(FSRS_W[5] * (rating - 1)) + 1, 1), 10);
         }
     } else {
         const retrievability = calculateRetrievability(stat.stability, stat.lastReview);
-        // FSRS v4.5: D' = D - w6*(r-3), ardından mean reversion: D_new = w7*D0(4) + (1-w7)*D'
-        const d0_easy = Math.min(Math.max(FSRS_W[4] - FSRS_W[5] * 1, 1), 10); // D0(rating=4)
+        // FSRS v5: D' = D - w6*(r-3), mean reversion: D_new = w7*D0(4) + (1-w7)*D'
+        const d0_easy = Math.min(Math.max(FSRS_W[4] - Math.exp(FSRS_W[5] * (4 - 1)) + 1, 1), 10); // D0(rating=4)
         const dPrime = stat.difficulty - FSRS_W[6] * (rating - 3);
         stat.difficulty = Math.min(Math.max(FSRS_W[7] * d0_easy + (1 - FSRS_W[7]) * dPrime, 1), 10);
         if (rating === 1) {
-            // FSRS v4.5: S'_f = w11 * D^(-w12) * ((S+1)^w13 - 1) * e^(w14*(1-R))
+            // FSRS v5: S'_f = w11 * D^(-w12) * ((S+1)^w13 - 1) * e^(w14*(1-R))
             const sf = FSRS_W[11]
                 * Math.pow(stat.difficulty, -FSRS_W[12])
                 * (Math.pow(stat.stability + 1, FSRS_W[13]) - 1)
@@ -99,8 +100,7 @@ function applyFSRS(stat, rating, qDifficulty) {
         } else {
             const hardFactor = rating === 2 ? FSRS_W[15] : 1;
             const easyFactor = rating === 4 ? FSRS_W[16] : 1;
-            // FSRS v4.5: S'_r = S * (1 + core * hardFactor * easyFactor)
-            // Cezalar/bonuslar sadece büyümeyi etkiler, temel stability'yi değil
+            // FSRS v5: S'_r = S * (1 + core * hardFactor * easyFactor)
             const core = Math.exp(FSRS_W[8]) * (11 - stat.difficulty) *
                 Math.pow(stat.stability, -FSRS_W[9]) *
                 (Math.exp(FSRS_W[10] * (1 - retrievability)) - 1);
