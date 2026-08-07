@@ -16,12 +16,13 @@
 }
 
 .editor-card {
-    width: 90%;
-    max-width: 600px;
-    max-height: 90vh;
+    width: 100%;
+    height: 100%;
+    max-width: none;
+    max-height: 100vh;
     background: var(--card-bg);
     border: 1px solid var(--border-color);
-    border-radius: 20px;
+    border-radius: 0;
     padding: 1.5rem;
     display: flex;
     flex-direction: column;

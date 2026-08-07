@@ -1166,6 +1166,12 @@ export function updateQuestionStatsInfo(sourceId, qid) {
                 </div>
             </div>
             <div class="test-bottom-actions">
+                <button type="button" class="test-action-btn edit-btn" id="testEditQuestionBtn" title="${t('edit') || 'Düzenle'}">
+                    <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+                        <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"></path>
+                        <path d="M18.5 2.5a2.121 2.121 0 1 1 3 3L12 15l-4 1 1-4 9.5-9.5z"></path>
+                    </svg>
+                </button>
                 <button type="button" class="test-action-btn home-btn" id="testHomeBtn" title="${t('go_home') || 'Ana Sayfa'}">
                     <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
                         <path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"></path>
@@ -1191,6 +1197,18 @@ export function updateQuestionStatsInfo(sourceId, qid) {
                     window.goHome();
                 } else if (window.switchView) {
                     window.switchView('home');
+                }
+            };
+        }
+
+        const editBtn = document.getElementById('testEditQuestionBtn');
+        if (editBtn) {
+            editBtn.onclick = (e) => {
+                e.stopPropagation();
+                if (window.openQuestionEditor) {
+                    const qIndex = AppState.currentIndex;
+                    const q = AppState.questionMap[AppState.currentTest[qIndex]];
+                    if (q) window.openQuestionEditor(q);
                 }
             };
         }

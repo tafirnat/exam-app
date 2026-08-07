@@ -702,10 +702,15 @@ function setupEditorListeners() {
         const ta = document.getElementById(textareaId);
         const prev = document.getElementById(previewId);
         if (ta && prev) {
+            let timeoutId;
             const update = () => {
                 prev.innerHTML = isInline ? renderInlineMarkdown(ta.value) : renderMarkdown(ta.value);
             };
-            ta.addEventListener('input', update);
+            const debouncedUpdate = () => {
+                clearTimeout(timeoutId);
+                timeoutId = setTimeout(update, 300);
+            };
+            ta.addEventListener('input', debouncedUpdate);
             update();
         }
     };
@@ -876,6 +881,12 @@ function applyChangesToState() {
     const qIdx = source.questions.findIndex(q => q.id === currentEditingQuestion.id);
     if (qIdx !== -1) {
         source.questions[qIdx] = currentEditingQuestion;
+        /* Dates the edit. mergeSyncData() picks between two copies of a source
+           by updatedAt, so without this the edited copy and the remote's older
+           one scored equal and the remote won - and the push merges before it
+           writes, so the edit never left this device at all. Rewriting an
+           explanation here looked like it saved and was gone by the next pull. */
+        source.updatedAt = Date.now();
         saveSources();
 
         const statKey = `${currentEditingQuestion.sourceId}_${currentEditingQuestion.id}`;
