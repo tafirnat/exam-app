@@ -1397,6 +1397,45 @@ function pickFsrsSide(lStat, rStat) {
     return (lStat.stability || 0) <= (rStat.stability || 0) ? lStat : rStat;
 }
 
+/**
+ * Chooses between two devices' copy of a question note.
+ *
+ * The rule used to be "whichever side has text, local on a tie", and it could
+ * not carry a deletion: a note cleared on the phone was simply written back by
+ * whichever device still held a copy, so it came back on every sync. It also
+ * dropped one side's rewrite silently whenever both sides had text.
+ *
+ * A note is stamped when it is written - see writeNote() in main.js - so the
+ * newest edit wins, including an edit to nothing. Records from before stamps
+ * existed carry none; between two of those the old rule still decides, which
+ * keeps a note that only one side has.
+ *
+ * @returns {{note: string|undefined, noteUpdatedAt: number|undefined}}
+ */
+function pickNote(lStat, rStat) {
+    const lAt = Number(lStat && lStat.noteUpdatedAt) || 0;
+    const rAt = Number(rStat && rStat.noteUpdatedAt) || 0;
+
+    let side;
+    if (lAt !== rAt) {
+        side = lAt > rAt ? lStat : rStat;
+    } else if (lAt === 0) {
+        const localHas = !!(lStat && lStat.note && lStat.note.trim());
+        side = localHas ? lStat : rStat;
+    } else {
+        /* Stamped in the same millisecond on two devices. Any rule works as
+           long as both devices reach the same one; the longer text keeps more
+           of what the user wrote, and both sides can measure it. */
+        const lLen = String((lStat && lStat.note) || '').length;
+        const rLen = String((rStat && rStat.note) || '').length;
+        side = lLen >= rLen ? lStat : rStat;
+    }
+
+    const note = side && side.note && side.note.trim() ? side.note : undefined;
+    const at = Number(side && side.noteUpdatedAt) || 0;
+    return { note, noteUpdatedAt: at || undefined };
+}
+
 function pickLastReview(a, b) {
     const aTime = a ? new Date(a).getTime() : 0;
     const bTime = b ? new Date(b).getTime() : 0;
@@ -1620,6 +1659,12 @@ export function mergeSyncData(local, remote) {
                 hasLocalChanges = true;
             }
 
+            const noteResult = pickNote(lStat, rStat);
+            if ((noteResult.note || '') !== (rStat.note || '')) {
+                // The remote is holding an older note, so the merge has to go back up.
+                hasLocalChanges = true;
+            }
+
             mergedStats[qid] = {
                 /* Counters, not FSRS state: they only ever go up, and the higher
                    figure is the one that has seen both devices' answers. */
@@ -1630,9 +1675,12 @@ export function mergeSyncData(local, remote) {
                 // dropping it here made every synced question read as average.
                 coeff: Number.isFinite(difficulty) ? difficulty / 2 : fsrs.coeff,
                 /* The user's own marks, which no answer touches and which
-                   therefore cannot ride along with the review. Still merged
-                   forgivingly: removing a star or a note does not propagate. */
-                note: lStat.note && lStat.note.trim() ? lStat.note : rStat.note,
+                   therefore cannot ride along with the review. The star and the
+                   flag are merged forgivingly - unsetting one does not
+                   propagate - while the note, which is writing rather than a
+                   toggle, follows its own stamp. See pickNote(). */
+                note: noteResult.note,
+                noteUpdatedAt: noteResult.noteUpdatedAt,
                 starred: !!(lStat.starred || rStat.starred),
                 flagged: !!(lStat.flagged || rStat.flagged),
                 learned: !!fsrs.learned,

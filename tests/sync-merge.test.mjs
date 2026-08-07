@@ -424,6 +424,54 @@ test('the user marks survive from either side', () => {
     assert.equal(stat.note, 'kalp kapakciklari');
 });
 
+/* ── Notes ──────────────────────────────────────────────────────────────────
+   A note is writing, not a toggle, so it cannot merge the way the star does.
+   "Whichever side has text" kept a note alive forever: clearing it on the phone
+   left the laptop's copy to win the next merge and put it straight back. Every
+   write stamps noteUpdatedAt, and the newest stamp wins - including a write to
+   nothing. */
+
+test('the newer note wins over the older one', () => {
+    const stat = mergeSyncData(
+        emptyPayload({ stats: { 'src_1': reviewed(NEW, { note: 'yeni not', noteUpdatedAt: 2000 }) } }),
+        emptyPayload({ stats: { 'src_1': reviewed(OLD, { note: 'eski not', noteUpdatedAt: 1000 }) } })
+    ).stats['src_1'];
+
+    assert.equal(stat.note, 'yeni not');
+    assert.equal(stat.noteUpdatedAt, 2000);
+});
+
+test('a note deleted on one device stays deleted', () => {
+    const merged = mergeSyncData(
+        emptyPayload({ stats: { 'src_1': reviewed(NEW, { note: '', noteUpdatedAt: 2000 }) } }),
+        emptyPayload({ stats: { 'src_1': reviewed(OLD, { note: 'silinmis not', noteUpdatedAt: 1000 }) } })
+    );
+
+    assert.equal(merged.stats['src_1'].note, undefined);
+    // The remote is still holding the deleted note, so this has to go back up.
+    assert.equal(merged.hasLocalChanges, true);
+});
+
+test('a note the remote deleted more recently does not come back', () => {
+    const stat = mergeSyncData(
+        emptyPayload({ stats: { 'src_1': reviewed(NEW, { note: 'yerel kopya', noteUpdatedAt: 1000 }) } }),
+        emptyPayload({ stats: { 'src_1': reviewed(OLD, { note: '', noteUpdatedAt: 2000 }) } })
+    ).stats['src_1'];
+
+    assert.equal(stat.note, undefined);
+});
+
+test('an unstamped note still survives from whichever side has one', () => {
+    // Records written before notes were stamped. The old rule decides, so a
+    // note that only one device holds is not lost on the upgrade.
+    const stat = mergeSyncData(
+        emptyPayload({ stats: { 'src_1': reviewed(NEW) } }),
+        emptyPayload({ stats: { 'src_1': reviewed(OLD, { note: 'damarlar' }) } })
+    ).stats['src_1'];
+
+    assert.equal(stat.note, 'damarlar');
+});
+
 test('stats merge keeps lastReview as a usable date instead of NaN', () => {
     const older = '2026-07-20T10:00:00.000Z';
     const newer = '2026-07-30T10:00:00.000Z';

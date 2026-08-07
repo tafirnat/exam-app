@@ -1830,16 +1830,30 @@ function setupEventListeners() {
         }
     });
 
+    /* Writes a note and dates it.
+     *
+     * The stamp is what the sync merge picks a winner by. Without one the merge
+     * could only ask "which side has text", and that rule cannot carry a
+     * *deletion*: a note cleared on the phone was written straight back by
+     * whichever device still held a copy. It is also what tells the Obsidian
+     * plugin whether the note it is holding is newer than this one. */
+    const writeNote = (statKey, value) => {
+        if (!AppState.stats[statKey]) AppState.stats[statKey] = { difficulty: 5.0, correct: 0, wrong: 0 };
+        const stat = AppState.stats[statKey];
+        const next = (value || '').trim();
+        if ((stat.note || '') === next) return;
+        stat.note = next;
+        stat.noteUpdatedAt = Date.now();
+        saveStats();
+    };
+
     // Note Input with autosave
     let noteTimeout;
     document.getElementById('noteInput').oninput = (e) => {
         clearTimeout(noteTimeout);
         noteTimeout = setTimeout(() => {
             const q = AppState.questionMap[AppState.currentTest[AppState.currentIndex]];
-            const statKey = `${q.sourceId}_${q.id}`;
-            if (!AppState.stats[statKey]) AppState.stats[statKey] = { difficulty: 5.0, correct: 0, wrong: 0 };
-            AppState.stats[statKey].note = e.target.value.trim();
-            saveStats();
+            writeNote(`${q.sourceId}_${q.id}`, e.target.value);
             updateIndicators();
         }, 500);
     };
@@ -1850,10 +1864,7 @@ function setupEventListeners() {
         previewNoteTimeout = setTimeout(() => {
             const q = AppState.previewQuestion;
             if (!q) return;
-            const statKey = `${q.sourceId}_${q.id}`;
-            if (!AppState.stats[statKey]) AppState.stats[statKey] = { difficulty: 5.0, correct: 0, wrong: 0 };
-            AppState.stats[statKey].note = e.target.value.trim();
-            saveStats();
+            writeNote(`${q.sourceId}_${q.id}`, e.target.value);
             updateIndicatorsPreview();
         }, 500);
     };
