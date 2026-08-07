@@ -1,4 +1,5 @@
 import { AppState, liveSources, liveFolders, touch, saveSources, UNCATEGORIZED_FOLDER_ID, saveContinuityConfig } from '../../core/state.js';
+import { handleTranslation } from '../test/test-ui.js';
 import {
     calculateGlobalStreak,
     calculateFocusStreak,
@@ -862,14 +863,67 @@ function initCarouselEvents() {
 
 function bindFocusModalEvents() {
     const openBtn = document.getElementById('openFocusSourceModalBtn');
+    const addBtn = document.getElementById('addNuggetBtn');
+    const editBtn = document.getElementById('editNuggetBtn');
     const modal = document.getElementById('focusSourceModal');
     const closeBtn = document.getElementById('focusSourceModalCloseBtn');
 
-    if (openBtn && !openBtn.dataset.bound) {
-        openBtn.dataset.bound = 'true';
-        openBtn.addEventListener('click', (e) => {
+    if (addBtn && !addBtn.dataset.bound) {
+        addBtn.dataset.bound = 'true';
+        addBtn.addEventListener('click', (e) => {
             e.stopPropagation();
-            openFocusSourceModal();
+            openNuggetModal();
+        });
+    }
+    
+    if (editBtn && !editBtn.dataset.bound) {
+        editBtn.dataset.bound = 'true';
+        editBtn.addEventListener('click', (e) => {
+            e.stopPropagation();
+            const card = document.getElementById('nuggetContinuityCard');
+            if (card) {
+                const sId = card.getAttribute('data-source-id');
+                const nId = card.getAttribute('data-nugget-id');
+                if (sId && nId) {
+                    const src = (AppState.sources || []).find(s => s.id === sId);
+                    if (src && src.nuggets) {
+                        const nug = src.nuggets.find(n => n.id === nId);
+                        if (nug) {
+                            openNuggetModal(sId, nug);
+                        }
+                    }
+                }
+            }
+        });
+    }
+
+    const prevBtn = document.getElementById('prevNuggetBtn');
+    if (prevBtn && !prevBtn.dataset.bound) {
+        prevBtn.dataset.bound = 'true';
+        prevBtn.addEventListener('click', (e) => {
+            e.stopPropagation();
+            renderNuggetSlide(-1);
+        });
+    }
+
+    const nextBtn = document.getElementById('nextNuggetBtn');
+    if (nextBtn && !nextBtn.dataset.bound) {
+        nextBtn.dataset.bound = 'true';
+        nextBtn.addEventListener('click', (e) => {
+            e.stopPropagation();
+            renderNuggetSlide(1);
+        });
+    }
+
+    const transBtn = document.getElementById('translateNuggetBtn');
+    if (transBtn && !transBtn.dataset.bound) {
+        transBtn.dataset.bound = 'true';
+        transBtn.addEventListener('click', (e) => {
+            e.stopPropagation();
+            const textEl = document.getElementById('nuggetText');
+            if (textEl && textEl.textContent.trim()) {
+                handleTranslation(transBtn, 'nuggetText', 'trans_nuggetText');
+            }
         });
     }
 
@@ -2455,7 +2509,10 @@ function getAllNuggets() {
     return nuggets;
 }
 
-export function renderNuggetSlide() {
+let currentNuggetIndex = 0;
+let currentNuggetList = [];
+
+export function renderNuggetSlide(direction = 0) {
     const card = document.getElementById('nuggetContinuityCard');
     const textEl = document.getElementById('nuggetText');
     const editBtn = document.getElementById('editNuggetBtn');
@@ -2474,6 +2531,7 @@ export function renderNuggetSlide() {
     }
 
     const nuggets = getAllNuggets();
+    currentNuggetList = nuggets;
     
     if (nuggets.length === 0) {
         textEl.textContent = t('nugget_empty') || "Aktif kaynaklarınızdan derlenen ipuçları burada gösterilir. Eklemek için + butonuna tıklayın.";
@@ -2485,20 +2543,52 @@ export function renderNuggetSlide() {
         return;
     }
     
-    const randomNugget = nuggets[Math.floor(Math.random() * nuggets.length)];
-    textEl.textContent = randomNugget.text;
+    // Yönlendirme (Navigation)
+    if (direction === 1) {
+        currentNuggetIndex++;
+        if (currentNuggetIndex >= nuggets.length) {
+            currentNuggetIndex = 0;
+        }
+    } else if (direction === -1) {
+        currentNuggetIndex--;
+        if (currentNuggetIndex < 0) {
+            currentNuggetIndex = nuggets.length - 1;
+        }
+    } else {
+        // Yönlendirme yoksa mevcut indeksi sınırla
+        if (currentNuggetIndex >= nuggets.length) {
+            currentNuggetIndex = 0;
+        }
+    }
+
+    const currentNugget = nuggets[currentNuggetIndex];
+    textEl.textContent = currentNugget.text;
     textEl.style.color = "var(--text-primary)";
     textEl.style.fontStyle = "normal";
     
     const sourceEl = document.getElementById('nuggetSourceTitle');
     if (sourceEl) {
-        sourceEl.textContent = randomNugget.sourceName || '';
+        // Gösterim: [Kaynak Adı] (Not X/Y)
+        const sourceNuggets = nuggets.filter(n => n.sourceId === currentNugget.sourceId);
+        const sourceIndex = sourceNuggets.findIndex(n => n.id === currentNugget.id) + 1;
+        sourceEl.textContent = `${currentNugget.sourceName || ''} (${sourceIndex}/${sourceNuggets.length})`;
     }
     
-    card.setAttribute('data-nugget-id', randomNugget.id);
-    card.setAttribute('data-source-id', randomNugget.sourceId);
+    card.setAttribute('data-nugget-id', currentNugget.id);
+    card.setAttribute('data-source-id', currentNugget.sourceId);
     
     if (editBtn) editBtn.style.display = 'inline-flex';
+
+    // Çeviri alanını sıfırla
+    const transEl = document.getElementById('trans_nuggetText');
+    if (transEl) {
+        transEl.innerText = '';
+        transEl.style.display = 'none';
+    }
+    const tBtn = document.getElementById('translateNuggetBtn');
+    if (tBtn) {
+        tBtn.classList.remove('active');
+    }
 }
 
 function openNuggetModal(sourceId = null, nugget = null) {
