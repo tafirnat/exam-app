@@ -834,7 +834,7 @@ function initCarouselEvents() {
                 }
             }
         }
-        pauseTemporarily(12000);
+        startTimer(); // Hemen süreyi sıfırla ve başlat
     }, { passive: true });
 
     // Dot click listeners
@@ -853,7 +853,7 @@ function initCarouselEvents() {
                 if (playIcon) playIcon.style.display = 'none';
             }
             
-            pauseTemporarily(12000);
+            startTimer(); // Hemen süreyi sıfırla ve baştan başlat
         });
     });
 
