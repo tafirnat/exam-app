@@ -843,6 +843,16 @@ function initCarouselEvents() {
             if (idx === currentSlideIndex) return;
             const dir = idx > currentSlideIndex ? 'next' : 'prev';
             goToSlide(idx, dir);
+            
+            // Eğer kullanıcı "pause" yaptıktan sonra bir dot'a tıklarsa pause iptal edilir
+            if (isUserPaused) {
+                isUserPaused = false;
+                const pauseIcon = document.getElementById('pauseSliderIcon');
+                const playIcon = document.getElementById('playSliderIcon');
+                if (pauseIcon) pauseIcon.style.display = 'block';
+                if (playIcon) playIcon.style.display = 'none';
+            }
+            
             pauseTemporarily(12000);
         });
     });
