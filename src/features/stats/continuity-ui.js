@@ -688,6 +688,15 @@ function initCarouselEvents() {
 
         currentSlideIndex = targetIndex;
 
+        // Auto-advance nugget when it becomes the active slide in the carousel loop
+        if (nextSlide.id === 'nuggetContinuityCard') {
+            setTimeout(() => {
+                if (typeof renderNuggetSlide === 'function') {
+                    renderNuggetSlide(1);
+                }
+            }, 300);
+        }
+
         setTimeout(() => {
             slides.forEach((s, idx) => {
                 s.classList.remove('slide-out-left', 'slide-out-right', 'slide-in-left', 'slide-in-right', 'slide-in-active');
