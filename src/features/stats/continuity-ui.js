@@ -699,9 +699,10 @@ function initCarouselEvents() {
     let isHovering = false;
     let isFocused = false;
     let touchPauseTimer = null;
+    let isUserPaused = false;
 
     function shouldPause() {
-        return isHovering || isFocused || Boolean(touchPauseTimer);
+        return isHovering || isFocused || Boolean(touchPauseTimer) || isUserPaused;
     }
 
     function startTimer() {
@@ -782,6 +783,28 @@ function initCarouselEvents() {
             }
         }, 50);
     });
+
+    const pauseBtn = document.getElementById('pauseSliderBtn');
+    if (pauseBtn) {
+        pauseBtn.addEventListener('click', (e) => {
+            e.preventDefault();
+            e.stopPropagation();
+            isUserPaused = !isUserPaused;
+            
+            const pauseIcon = document.getElementById('pauseSliderIcon');
+            const playIcon = document.getElementById('playSliderIcon');
+            
+            if (isUserPaused) {
+                stopTimer();
+                if (pauseIcon) pauseIcon.style.display = 'none';
+                if (playIcon) playIcon.style.display = 'block';
+            } else {
+                if (pauseIcon) pauseIcon.style.display = 'block';
+                if (playIcon) playIcon.style.display = 'none';
+                startTimer();
+            }
+        });
+    }
 
     // Touch swipe & Touch interaction handling for mobile
     let touchStartX = 0;
