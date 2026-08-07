@@ -2480,6 +2480,11 @@ export function renderNuggetSlide() {
     textEl.style.color = "var(--text-primary)";
     textEl.style.fontStyle = "normal";
     
+    const sourceEl = document.getElementById('nuggetSourceTitle');
+    if (sourceEl) {
+        sourceEl.textContent = randomNugget.sourceName || '';
+    }
+    
     card.setAttribute('data-nugget-id', randomNugget.id);
     card.setAttribute('data-source-id', randomNugget.sourceId);
     

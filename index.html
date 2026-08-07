@@ -738,7 +738,7 @@
                         <div style="position: absolute; top: -50%; left: -50%; width: 200%; height: 200%; background: radial-gradient(circle at 70% 30%, rgba(16, 185, 129, 0.08) 0%, transparent 40%), radial-gradient(circle at 30% 70%, rgba(245, 158, 11, 0.08) 0%, transparent 40%); z-index: 0; pointer-events: none;"></div>
                         
                         <!-- Büyük Dekoratif İkon Filigranı (Lightbulb Watermark) -->
-                        <div style="position: absolute; right: -20px; bottom: -40px; opacity: 0.03; color: #10b981; z-index: 0; pointer-events: none; transform: rotate(-10deg);">
+                        <div style="position: absolute; right: 40px; bottom: -20px; opacity: 0.05; color: #10b981; z-index: 0; pointer-events: none; transform: rotate(-10deg);">
                             <svg viewBox="0 0 40 64" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" width="220" height="220">
                                 <path d="M8.6,48l20.6-3c0-6.5,8.8-14.6,8.8-25.6C38,8.7,29.5,0,19,0S0,8.7,0,19.4c0,10.9,8.6,19,8.6,25.5V48L8.6,48z"/>
                                 <path d="M10,52.3l18.8-2.9"/>
@@ -777,6 +777,11 @@
                             <!-- Bilgi Metni (Nugget Text) -->
                             <div id="nuggetText" style="font-size: 0.95rem; font-weight: 500; color: var(--text-primary); line-height: 1.4; padding-right: 36px; display: -webkit-box; -webkit-line-clamp: 3; -webkit-box-orient: vertical; overflow: hidden; text-shadow: 0 1px 1px rgba(0,0,0,0.03);">
                                 <!-- Text populated by JS -->
+                            </div>
+                            
+                            <!-- Kaynak Adı (Source Title) -->
+                            <div id="nuggetSourceTitle" style="font-size: 0.65rem; color: var(--text-tertiary); margin-top: 6px; font-weight: 500; text-transform: uppercase; letter-spacing: 0.05em; opacity: 0.6;">
+                                <!-- Source Title populated by JS -->
                             </div>
 
                             <!-- Sağ Alt Yüzen Action Butonları (Edge-attached Glass Action Bar) -->
