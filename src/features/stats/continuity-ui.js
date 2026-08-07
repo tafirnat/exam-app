@@ -851,6 +851,7 @@ function bindFocusModalEvents() {
             if (e.target === modal) closeFocusSourceModal();
         });
     }
+}
 /**
  * Closing IS the commit: there is no save button, so whatever is ticked at this
  * moment becomes the selection. Runs exactly once per open - the handle is
