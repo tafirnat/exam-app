@@ -8,6 +8,7 @@ import { resetTimerForNewQuestion, stopTimer } from './timer-module.js';
 import { getQuestionCategory } from '../../core/question-rules.js';
 import { parseCloze, clozeMarkup, matchesBlank } from '../../core/cloze.js';
 import { renderMarkdown, renderInlineMarkdown, plainText } from '../../core/markdown.js';
+import { openQuestionEditor } from '../stats/question-editor.js';
 
 // --- TTS State Machine ---
 // States: 'IDLE' | 'SCHEDULED' | 'PLAYING'
@@ -1204,10 +1205,10 @@ export function updateQuestionStatsInfo(sourceId, qid) {
         if (editBtn) {
             editBtn.onclick = (e) => {
                 e.stopPropagation();
-                if (window.openQuestionEditor) {
+                if (openQuestionEditor) {
                     const qIndex = AppState.currentIndex;
                     const q = AppState.questionMap[AppState.currentTest[qIndex]];
-                    if (q) window.openQuestionEditor(q);
+                    if (q) openQuestionEditor(q);
                 }
             };
         }
