@@ -2749,18 +2749,14 @@ input:checked+.slider-small:before {
 
 .question-stats-left {
     display: flex;
-    flex-direction: column;
-    justify-content: center;
-    gap: 0.35rem;
+    flex-direction: row;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: 1.1rem;
     width: 100%;
 }
 
-.question-stats-left .stats-row {
-    display: flex;
-    align-items: center;
-    gap: 1.1rem;
-    flex-wrap: nowrap;
-}
+
 
 .question-stats-info span,
 .question-stats-left span {
