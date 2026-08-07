@@ -643,7 +643,7 @@ function initCarouselEvents() {
 
     const carousel = wrapper.querySelector('.continuity-carousel');
     const allSlides = Array.from(wrapper.querySelectorAll('.continuity-slide'));
-    const slides = allSlides.filter(s => getComputedStyle(s).display !== 'none');
+    const slides = allSlides.filter(s => s.style.display !== 'none');
     const dotsContainer = document.getElementById('continuityCarouselDots');
     
     if (dotsContainer) {
