@@ -43,10 +43,22 @@
         ]
       },
       "options": [
-        { "id": 1, "text": "Bambus" },
-        { "id": 2, "text": "Eukalyptusblätter" },
-        { "id": 3, "text": "Fisch" },
-        { "id": 4, "text": "Akazienrinde" }
+        {
+          "id": 1,
+          "text": "Bambus"
+        },
+        {
+          "id": 2,
+          "text": "Eukalyptusblätter"
+        },
+        {
+          "id": 3,
+          "text": "Fisch"
+        },
+        {
+          "id": 4,
+          "text": "Akazienrinde"
+        }
       ],
       "answer": {
         "correct_ids": [
@@ -66,11 +78,26 @@
         "text": "Welche Fragetypen brauchen eine Optionsliste?"
       },
       "options": [
-        { "id": 1, "text": "`single_choice`" },
-        { "id": 2, "text": "`multiple_choice`" },
-        { "id": 3, "text": "`short_answer`" },
-        { "id": 4, "text": "`flashcard`" },
-        { "id": 5, "text": "`true_false`" }
+        {
+          "id": 1,
+          "text": "`single_choice`"
+        },
+        {
+          "id": 2,
+          "text": "`multiple_choice`"
+        },
+        {
+          "id": 3,
+          "text": "`short_answer`"
+        },
+        {
+          "id": 4,
+          "text": "`flashcard`"
+        },
+        {
+          "id": 5,
+          "text": "`true_false`"
+        }
       ],
       "answer": {
         "correct_ids": [
@@ -90,8 +117,14 @@
         "text": "Eine true_false-Frage darf eine dritte Option haben."
       },
       "options": [
-        { "id": 1, "text": "Wahr" },
-        { "id": 2, "text": "Falsch" }
+        {
+          "id": 1,
+          "text": "Wahr"
+        },
+        {
+          "id": 2,
+          "text": "Falsch"
+        }
       ],
       "answer": {
         "correct_ids": [
@@ -143,6 +176,18 @@
       "answer": {
         "back": "Nichts wird bewertet. Öffnen Sie die Rückseite und bewerten Sie sich selbst mit **Nochmal** / **Schwer** / **Gut** / **Einfach**; diese Bewertung entscheidet, wann die Karte wiederkommt.\n\n- [x] keine Optionen zu schreiben\n- [x] keine akzeptierten Antworten zu pflegen\n- [ ] eine ehrliche Selbsteinschätzung ist trotzdem nötig"
       }
+    }
+  ],
+  "nuggets": [
+    {
+      "id": "nugget-1",
+      "text": "Dies ist ein kurzer Einblick (Nugget). Anstatt lange Tests zu lösen, dient er dazu, schnell das wichtigste Detail des gerade gelernten Themas zu erfassen.",
+      "createdAt": 1786129643099
+    },
+    {
+      "id": "nugget-2",
+      "text": "Wenn Sie ein Konzept beim Lösen einer Frage nicht ganz verstehen, hilft es, es hier als 'Einblick' hinzuzufügen, anstatt es in einer einzigen Frage zu verbergen.",
+      "createdAt": 1786129653099
     }
   ]
 }

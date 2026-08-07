@@ -43,10 +43,22 @@
         ]
       },
       "options": [
-        { "id": 1, "text": "Bambu" },
-        { "id": 2, "text": "Okaliptüs yaprağı" },
-        { "id": 3, "text": "Balık" },
-        { "id": 4, "text": "Akasya kabuğu" }
+        {
+          "id": 1,
+          "text": "Bambu"
+        },
+        {
+          "id": 2,
+          "text": "Okaliptüs yaprağı"
+        },
+        {
+          "id": 3,
+          "text": "Balık"
+        },
+        {
+          "id": 4,
+          "text": "Akasya kabuğu"
+        }
       ],
       "answer": {
         "correct_ids": [
@@ -66,11 +78,26 @@
         "text": "Hangi soru tipleri seçenek listesi gerektirir?"
       },
       "options": [
-        { "id": 1, "text": "`single_choice`" },
-        { "id": 2, "text": "`multiple_choice`" },
-        { "id": 3, "text": "`short_answer`" },
-        { "id": 4, "text": "`flashcard`" },
-        { "id": 5, "text": "`true_false`" }
+        {
+          "id": 1,
+          "text": "`single_choice`"
+        },
+        {
+          "id": 2,
+          "text": "`multiple_choice`"
+        },
+        {
+          "id": 3,
+          "text": "`short_answer`"
+        },
+        {
+          "id": 4,
+          "text": "`flashcard`"
+        },
+        {
+          "id": 5,
+          "text": "`true_false`"
+        }
       ],
       "answer": {
         "correct_ids": [
@@ -90,8 +117,14 @@
         "text": "Bir true_false sorusuna üçüncü bir şık eklenebilir."
       },
       "options": [
-        { "id": 1, "text": "Doğru" },
-        { "id": 2, "text": "Yanlış" }
+        {
+          "id": 1,
+          "text": "Doğru"
+        },
+        {
+          "id": 2,
+          "text": "Yanlış"
+        }
       ],
       "answer": {
         "correct_ids": [
@@ -143,6 +176,18 @@
       "answer": {
         "back": "Hiçbir şey puanlanmaz. Arka yüzü açın, kendinizi **Tekrar** / **Zor** / **İyi** / **Kolay** olarak değerlendirin; kartın ne zaman geri döneceğine bu değerlendirme karar verir.\n\n- [x] yazılacak seçenek yok\n- [x] bakımı yapılacak kabul edilen cevap yok\n- [ ] yine de dürüst bir öz değerlendirme gerekiyor"
       }
+    }
+  ],
+  "nuggets": [
+    {
+      "id": "nugget-1",
+      "text": "Bu bir hap bilgidir (Insight). Uzun uzun test çözmek yerine o an çalışılan konunun can alıcı detayını hızlıca öğrenmek için buradadır.",
+      "createdAt": 1786129643099
+    },
+    {
+      "id": "nugget-2",
+      "text": "Soru çözerken bir konuyu tam anlamadığınızda, onu sadece bir soruya hapsetmek yerine bir 'Hap Bilgi' olarak buraya eklerseniz her an gözünüzün önünde olur.",
+      "createdAt": 1786129653099
     }
   ]
 }

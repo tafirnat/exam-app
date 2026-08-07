@@ -45,8 +45,15 @@ for (const lang of LANGUAGES) {
     test(`sample-${lang} has the metadata the importer titles it from`, () => {
         const { exam_metadata: meta } = load(lang);
         assert.ok(meta?.title, 'a title, or the source is named after the file');
-        assert.equal(meta.id, `sample_${lang}`);
         assert.ok(meta.description);
+
+        /* The id is in the Hybrid form, `exam_<slug>_<suffix>` - see
+           generateHybridExamId(). A shipped sample has to carry one already,
+           because an id present on import is preserved verbatim: that is what
+           keeps the same sample the same source on every device that imports
+           it, rather than a new one per device. */
+        assert.match(meta.id, /^exam_[a-z0-9_]+$/, 'a Hybrid exam id');
+        assert.ok(meta.id.endsWith(`sample${lang}`), 'ending in the sample it is');
     });
 }
 

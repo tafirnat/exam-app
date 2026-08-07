@@ -61,6 +61,10 @@ A global study streak counts consecutive active days. An automatic **freeze buff
 
 Pin up to 3 sources or folders as daily focus pools with a custom question target (1–5 per pool, 15 total max). These questions are quietly blended into your daily FSRS session when they aren't already due — no forced quotas, no guilt-tripping.
 
+### Quick Insights (Nuggets)
+
+Not all learning happens through testing. Quick Insights allow you to capture the core essence of a topic—its "nugget" of truth—without the pressure of a question-and-answer format. They appear gracefully in the continuity stream while you study, providing a distraction-free way to absorb critical concepts. You can also prompt the AI to generate these insights to distill complex questions into bite-sized facts.
+
 ### Folder & Archive Management
 
 Organize sources into color-labeled folder hierarchies. Archive individual sources or entire folders to pause them — the FSRS clock **freezes while archived**, so restoring a large archive never floods your daily queue with overdue cards all at once.
