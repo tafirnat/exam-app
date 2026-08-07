@@ -61,6 +61,10 @@ Eine globale Lernserie zählt aufeinanderfolgende aktive Tage. Ein automatischer
 
 Heften Sie bis zu 3 Quellen oder Ordner als tägliche Fokus-Pools mit einem individuellen Fragenziel an (1–5 pro Pool, max. 15 gesamt). Diese Fragen werden still in Ihre tägliche FSRS-Sitzung eingemischt, wenn sie noch nicht fällig sind — keine erzwungenen Quoten, kein Schuldgefühl.
 
+### Schnelle Einblicke (Nuggets)
+
+Lernen findet nicht nur durch Tests statt. Mit Schnellen Einblicken (Nuggets) können Sie die Kernaussage eines Themas erfassen, ohne dem Druck eines Frage-Antwort-Formats ausgesetzt zu sein. Sie erscheinen während des Lernens elegant im kontinuierlichen Stream und bieten eine ablenkungsfreie Möglichkeit, kritische Konzepte aufzunehmen. Sie können auch die KI beauftragen, diese Einblicke zu generieren, um komplexe Fragen in mundgerechte Fakten zu destillieren.
+
 ### Ordner- & Archivverwaltung
 
 Organisieren Sie Quellen in farblich markierten Ordnerhierarchien. Archivieren Sie einzelne Quellen oder ganze Ordner zum Pausieren — die FSRS-Uhr **friert während der Archivierung ein**, sodass das Wiederherstellen eines großen Archivs Ihre tägliche Warteschlange nie mit überfälligen Karten überflutet.

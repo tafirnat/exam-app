@@ -61,6 +61,10 @@ Global bir çalışma serisi ardışık aktif günleri sayar. Otomatik **dondurm
 
 Günlük odak havuzu olarak en fazla 3 kaynak veya klasör sabitleyin (havuz başına 1–5, toplamda en fazla 15 soru). Bu sorular, FSRS günlük seansınıza zaten dahil değilse sessizce eklenir — zorla kota yok, suçlama yok.
 
+### Hızlı İpuçları (Nuggets)
+
+Öğrenme her zaman test çözmekle olmaz. Hızlı İpuçları, konunun özünü — "can alıcı hap bilgisini" — bir soru-cevap formatı baskısı olmadan yakalamanızı sağlar. Çalışmanız sırasında arka planda kayan akış ekranında (continuity stream) zarif bir şekilde belirir ve kritik kavramları dikkat dağıtmadan özümsemeniz için harika bir yol sunar. Dilerseniz, karmaşık soruları lokmalık hap bilgilere dönüştürmek için yapay zekadan da bu ipuçlarını oluşturmasını isteyebilirsiniz.
+
 ### Klasör ve Arşiv Yönetimi
 
 Kaynakları renkli klasör hiyerarşilerinde düzenleyin. Tekil kaynakları veya tüm klasörleri arşivleyerek duraklatın — **arşivde FSRS saati donar**, dolayısıyla büyük bir arşivi geri almak günlük kuyruğu gecikmiş kartlarla asla tıkamaz.
