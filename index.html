@@ -1706,10 +1706,10 @@ ${m}`);n(y?"replace":"merge");return}const f=l.innerText,g=c.innerText;s.innerTe
                         </div>
 
                         <!-- Ana İçerik Wrapper -->
-                        <div style="position: relative; z-index: 2; display: flex; flex-direction: column; justify-content: flex-start; height: 100%; min-height: 90px; padding: 0.5rem 0.6rem 0.5rem 2.2rem;">
+                        <div style="position: relative; z-index: 2; display: flex; flex-direction: column; justify-content: flex-start; height: 100%; min-height: 80px; padding: 0.5rem 0.6rem 1.6rem 2.2rem;">
                             
                             <!-- Sol taraf LED şerit (Accent Line) -->
-                            <div style="position: absolute; left: 12px; top: 15%; bottom: 15%; width: 4px; border-radius: 4px; background: linear-gradient(to bottom, rgb(16 185 129 / 75%), rgb(245 158 11 / 60%)); box-shadow: 0 0 8px rgba(16, 185, 129, 0.4);"></div>
+                            <div style="position: absolute; left: 12px; top: 12px; bottom: 8px; width: 4px; border-radius: 4px; background: linear-gradient(to bottom, rgb(16 185 129 / 75%), rgb(245 158 11 / 60%)); box-shadow: 0 0 8px rgba(16, 185, 129, 0.4);"></div>
 
                             <!-- Başlık (Üst Kısım) -->
                             <div style="display: flex; align-items: center; gap: 6px; margin-bottom: 4px;">
@@ -1735,11 +1735,12 @@ ${m}`);n(y?"replace":"merge");return}const f=l.innerText,g=c.innerText;s.innerTe
                             <div id="nuggetText" style="font-size: 0.95rem; font-weight: 500; color: var(--text-primary); line-height: 1.4; padding-right: 36px; display: -webkit-box; -webkit-line-clamp: 3; -webkit-box-orient: vertical; overflow: hidden; text-shadow: 0 1px 1px rgba(0,0,0,0.03);">
                                 <!-- Text populated by JS -->
                             </div>
-                            
-                            <!-- Kaynak Adı (Source Title) -->
-                            <div id="nuggetSourceTitle" style="position: absolute; bottom: 8px; left: 2.2rem; font-size: 0.60rem; color: rgba(255, 255, 255, 0.35); font-weight: 400; font-style: italic; text-transform: uppercase; letter-spacing: 0.05em; margin-right: 60px;">
-                                <!-- Source Title populated by JS -->
-                            </div>
+                        </div>
+
+                        <!-- Kaynak Adı (Source Title) - Layout olarak Ayrıldı -->
+                        <div id="nuggetSourceTitle" style="position: absolute; bottom: 8px; left: 2.2rem; font-size: 0.60rem; color: rgba(255, 255, 255, 0.35); font-weight: 400; font-style: italic; text-transform: uppercase; letter-spacing: 0.05em; z-index: 3; pointer-events: none; margin-right: 60px;">
+                            <!-- Source Title populated by JS -->
+                        </div>
 
                             <!-- Sağ Alt Yüzen Action Butonları (Edge-attached Glass Action Bar) -->
                             <div style="position: absolute; right: -24px; bottom: -9px; display: flex; flex-direction: row; align-items: center; gap: 0.1rem; background: rgba(16, 185, 129, 0.12); padding: 0px 8px 0px 12px; border-radius: 16px 0 0 16px; backdrop-filter: blur(8px); border-top: 1px solid rgba(16, 185, 129, 0.25); border-left: 1px solid rgba(16, 185, 129, 0.25); box-shadow: -2px -2px 8px rgba(0,0,0,0.04);">
