@@ -649,6 +649,28 @@ export function updateHomeStats() {
     updateEl('homeExamReadiness', `${calculateExamReadiness()}%`);
     updateEl('homeProgressPercent', pctText);
 
+    const readinessBtn = document.getElementById('examReadinessInfoBtn');
+    if (readinessBtn && !readinessBtn.dataset.bound) {
+        readinessBtn.dataset.bound = 'true';
+        readinessBtn.addEventListener('click', (e) => {
+            e.stopPropagation();
+            import('../../core/utils.js').then(({ showAlert }) => {
+                showAlert(t('exam_readiness_info_desc'), t('exam_readiness_info_title'));
+            });
+        });
+    }
+
+    const avgDiffBtn = document.getElementById('avgDiffInfoBtn');
+    if (avgDiffBtn && !avgDiffBtn.dataset.bound) {
+        avgDiffBtn.dataset.bound = 'true';
+        avgDiffBtn.addEventListener('click', (e) => {
+            e.stopPropagation();
+            import('../../core/utils.js').then(({ showAlert }) => {
+                showAlert(t('avg_diff_info_desc'), t('avg_diff_info_title'));
+            });
+        });
+    }
+
     // Update 3 segments
     updateStyle('pbSegLearned',  'width', learnedPct + '%');
     updateStyle('pbSegSolved',   'width', solvedOnlyPct + '%');
