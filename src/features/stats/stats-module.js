@@ -22,19 +22,16 @@ export function renderStatsList(filter = 'all', searchKeyword = '') {
     const isTagMode = filter.startsWith('tag:');
     const tagName = isTagMode ? filter.split('tag:')[1] : null;
 
-    // Restore/Update Title and Header Icon
-    const titleEl = document.getElementById('statsTitleText');
-    const headerIconEl = document.querySelector('#statsView .stats-header-icon');
+    // Restore/Update Top Header Title based on context
+    const topTitleEl = document.getElementById('headerTitle');
     
-    if (titleEl) {
-        titleEl.innerText = isTagMode ? `${t('tag_label') || 'Etiket'}: ${tagName}` : t('show_stats');
-    }
-
-    if (headerIconEl) {
+    if (topTitleEl) {
         if (isTagMode) {
-            headerIconEl.innerHTML = `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M20.59 13.41l-7.17 7.17a2 2 0 0 1-2.83 0L2 12V2h10l8.59 8.59a2 2 0 0 1 0 2.82z"></path><line x1="7" y1="7" x2="7.01" y2="7"></line></svg>`;
+            topTitleEl.removeAttribute('data-i18n');
+            topTitleEl.innerText = `${t('tag_label') || 'Etiket'}: ${tagName}`;
         } else {
-            headerIconEl.innerHTML = `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="20" x2="18" y2="10"></line><line x1="12" y1="20" x2="12" y2="4"></line><line x1="6" y1="20" x2="6" y2="14"></line><path d="M2 20h20"></path></svg>`;
+            topTitleEl.setAttribute('data-i18n', 'show_stats');
+            topTitleEl.innerText = t('show_stats') || 'Soru Detayları';
         }
     }
 
