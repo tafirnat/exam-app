@@ -751,31 +751,7 @@
                         <!-- Ana İçerik Wrapper -->
                         <div style="position: relative; z-index: 2; display: flex; flex-direction: column; justify-content: flex-start; height: 110px; padding: 12px 0.6rem 8px 3.5rem;">
                             
-                            <!-- Sol Menu / Butonlar (Düzenle, Ekle, Çeviri) -->
-                            <div style="position: absolute; left: -29px; top: -9px; bottom: 8px; display: flex; flex-direction: column; justify-content: space-around; align-items: center; background: rgba(16, 185, 129, 0.12); padding: 0 7px; border-radius: 0 16px 16px 0; backdrop-filter: blur(8px); border-top: 1px solid rgba(16, 185, 129, 0.25); border-right: 1px solid rgba(16, 185, 129, 0.25); border-bottom: 1px solid rgba(16, 185, 129, 0.25); box-shadow: 2px 0px 8px rgba(0, 0, 0, 0.04); z-index: 10; height: 130px;">
-                                <button class="continuity-icon-btn" id="editNuggetBtn" style="padding: 0; display: none; transition: all 0.2s;" title="Düzenle">
-                                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" width="14" height="14">
-                                        <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"></path>
-                                        <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"></path>
-                                    </svg>
-                                </button>
-                                <button class="continuity-icon-btn" id="addNuggetBtn" style="padding: 0; transition: all 0.2s;" title="Yeni Ekle">
-                                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="16" height="16">
-                                        <line x1="12" y1="5" x2="12" y2="19"></line>
-                                        <line x1="5" y1="12" x2="19" y2="12"></line>
-                                    </svg>
-                                </button>
-                                <button class="continuity-icon-btn" id="translateNuggetBtn" style="padding: 0; transition: all 0.2s;" title="Çevir">
-                                    <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                                        <path d="M5 8l6 6"></path>
-                                        <path d="M4 14l6-6 2-3"></path>
-                                        <path d="M2 5h12"></path>
-                                        <path d="M7 2h1"></path>
-                                        <path d="M22 22l-5-10-5 10"></path>
-                                        <path d="M14 18h6"></path>
-                                    </svg>
-                                </button>
-                            </div>
+
 
                             <!-- Sol taraf LED şerit (Accent Line) -->
                             <div style="position: absolute; left: 36px; top: 12px; bottom: 8px; width: 4px; border-radius: 4px; background: linear-gradient(to bottom, rgb(16 185 129 / 75%), rgb(245 158 11 / 60%)); box-shadow: 0 0 8px rgba(16, 185, 129, 0.4);"></div>
@@ -858,6 +834,67 @@
                         <div id="nuggetSourceTitle" style="position: absolute; bottom: 8px; left: 3.5rem; font-size: 0.60rem; color: rgba(255, 255, 255, 0.35); font-weight: 400; font-style: italic; text-transform: uppercase; letter-spacing: 0.05em; z-index: 3; pointer-events: none; margin-right: 60px;">
                             <!-- Source Title populated by JS -->
                         </div>
+
+                            <!-- Gizlenebilir Sağ Aksiyon Menüsü (Düzenle, Ekle, Çeviri) -->
+                            <div id="nuggetActionMenuWrapper" style="position: absolute; right: 1px; bottom: 48px; display: flex; flex-direction: row; align-items: center; justify-content: flex-end; gap: 0.2rem; background: rgba(16, 185, 129, 0.12); padding: 2px 4px; border-radius: 16px 0 0 16px; backdrop-filter: blur(8px); border-top: 1px solid rgba(16, 185, 129, 0.25); border-left: 1px solid rgba(16, 185, 129, 0.25); border-bottom: 1px solid rgba(16, 185, 129, 0.25); box-shadow: -2px 2px 8px rgba(0,0,0,0.04); z-index: 10; max-width: 32px; overflow: hidden; transition: max-width 0.35s cubic-bezier(0.4, 0, 0.2, 1), background-color 0.3s; cursor: pointer;" onclick="this.classList.toggle('expanded')">
+                                <style>
+                                    #nuggetActionMenuWrapper.expanded {
+                                        max-width: 140px;
+                                        background: rgba(16, 185, 129, 0.3) !important;
+                                    }
+                                    #nuggetActionMenuWrapper .inner-actions {
+                                        display: flex;
+                                        flex-direction: row;
+                                        align-items: center;
+                                        gap: 0.2rem;
+                                        opacity: 0;
+                                        transition: opacity 0.2s 0.1s;
+                                        pointer-events: none;
+                                        white-space: nowrap;
+                                    }
+                                    #nuggetActionMenuWrapper.expanded .inner-actions {
+                                        opacity: 1;
+                                        pointer-events: auto;
+                                    }
+                                    #nuggetActionMenuWrapper .trigger-icon {
+                                        transition: transform 0.3s ease;
+                                        flex-shrink: 0;
+                                    }
+                                    #nuggetActionMenuWrapper.expanded .trigger-icon {
+                                        transform: scale(-1, 1) rotate(90deg);
+                                    }
+                                </style>
+                                <div class="inner-actions">
+                                    <button class="continuity-icon-btn action-item" id="editNuggetBtn" style="padding: 4px; display: none; transition: all 0.2s;" title="Düzenle">
+                                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" width="16" height="16">
+                                            <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"></path>
+                                            <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"></path>
+                                        </svg>
+                                    </button>
+                                    <button class="continuity-icon-btn action-item" id="addNuggetBtn" style="padding: 4px; transition: all 0.2s;" title="Yeni Ekle">
+                                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="16" height="16">
+                                            <line x1="12" y1="5" x2="12" y2="19"></line>
+                                            <line x1="5" y1="12" x2="19" y2="12"></line>
+                                        </svg>
+                                    </button>
+                                    <button class="continuity-icon-btn action-item" id="translateNuggetBtn" style="padding: 4px; transition: all 0.2s;" title="Çevir">
+                                        <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                            <path d="M5 8l6 6"></path>
+                                            <path d="M4 14l6-6 2-3"></path>
+                                            <path d="M2 5h12"></path>
+                                            <path d="M7 2h1"></path>
+                                            <path d="M22 22l-5-10-5 10"></path>
+                                            <path d="M14 18h6"></path>
+                                        </svg>
+                                    </button>
+                                </div>
+                                <button class="continuity-icon-btn trigger-icon" id="nuggetActionTrigger" style="padding: 4px; flex-shrink: 0;" title="İşlemler">
+                                    <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" transform="scale(-1, 1)">
+                                        <line x1="22" y1="2" x2="11" y2="13"></line>
+                                        <polygon points="22 2 15 22 11 13 2 9 22 2"></polygon>
+                                    </svg>
+                                </button>
+                            </div>
 
                             <!-- Sağ Alt Yüzen Action Butonları (İleri / Geri Navigasyon) -->
                             <div style="position: absolute; right: 1px; bottom: 10px; display: flex; flex-direction: row; align-items: center; gap: 0.2rem; background: rgba(16, 185, 129, 0.12); padding: 2px 8px 2px 12px; border-radius: 16px 0 0 16px; backdrop-filter: blur(8px); border-top: 1px solid rgba(16, 185, 129, 0.25); border-left: 1px solid rgba(16, 185, 129, 0.25); border-bottom: 1px solid rgba(16, 185, 129, 0.25); box-shadow: -2px 2px 8px rgba(0,0,0,0.04); z-index: 10;">
