@@ -239,7 +239,7 @@ function resolveColor(cssValue) {
  *   2. Comet spin  → always full 360°, no clipping
  *   3. Inner mask  → creates donut hole (z-index: 10)
  */
-const CIRCUMFERENCE_92 = 267.035;
+const CIRCUMFERENCE_112 = 329.867;
 
 function updateCometRing(container, spinGroup, progress, color) {
     if (!container) return;
@@ -257,7 +257,7 @@ function updateCometRing(container, spinGroup, progress, color) {
             spinEl.style.animation = 'none';
         }
         if (arcEl) {
-            arcEl.style.strokeDashoffset = CIRCUMFERENCE_92;
+            arcEl.style.strokeDashoffset = CIRCUMFERENCE_112;
         }
         return;
     }
@@ -285,7 +285,7 @@ function updateCometRing(container, spinGroup, progress, color) {
     if (arcEl) {
         arcEl.style.display = 'block';
         arcEl.style.stroke = rgb;
-        const offset = CIRCUMFERENCE_92 * (1 - pct / 100);
+        const offset = CIRCUMFERENCE_112 * (1 - pct / 100);
         arcEl.style.strokeDashoffset = offset.toFixed(3);
     }
 }

@@ -6075,8 +6075,8 @@ body.dnd-active {
    App.tsx: relative w-[92px] h-[92px] rounded-full bg-[#2a3441] shrink-0 overflow-hidden shadow-inner */
 .streak-ring-container {
     position: relative;
-    width: 92px;
-    height: 92px;
+    width: 112px;
+    height: 112px;
     flex-shrink: 0;
     cursor: pointer;
     border-radius: 50%;
@@ -6097,8 +6097,8 @@ body.dnd-active {
 .streak-ring-spin {
     position: absolute;
     inset: 0;
-    width: 92px;
-    height: 92px;
+    width: 112px;
+    height: 112px;
     pointer-events: none;
     transform-origin: center center;
     animation: ringClockwise 4s linear infinite;
@@ -6108,8 +6108,8 @@ body.dnd-active {
 .streak-ring-svg {
     position: absolute;
     inset: 0;
-    width: 92px;
-    height: 92px;
+    width: 112px;
+    height: 112px;
     pointer-events: none;
 }
 
