@@ -2053,13 +2053,14 @@ function renderTrendLines(barsEl, buckets, topLimit, gutter) {
         el.style.strokeWidth = width;
         el.style.strokeLinejoin = 'round';
         el.style.strokeLinecap = 'round';
+        el.style.filter = 'drop-shadow(0px 2px 4px rgba(0, 0, 0, 0.4))';
         if (dash) el.style.strokeDasharray = dash;
         return el;
     };
 
     // Bare strokes, no outline: the two hues are far enough apart in CVD terms
     // that neither needs a halo to be told from the other or from a bar.
-    series.forEach(s => svg.appendChild(polyline(pointsOf(s), s.color, '2', s.dash)));
+    series.forEach(s => svg.appendChild(polyline(pointsOf(s), s.color, '3', s.dash)));
 
     overlay.appendChild(svg);
 
