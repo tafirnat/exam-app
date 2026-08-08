@@ -172,6 +172,11 @@ export function showConfirm(message, title = '') {
             headerEl.style.display = 'none';
         }
 
+        const footerEl = document.getElementById('modalFooter');
+        if (footerEl) footerEl.style.display = 'flex';
+        const closeIconBtn = document.getElementById('modalCloseIconBtn');
+        if (closeIconBtn) closeIconBtn.style.display = 'none';
+
         cancelBtn.style.display = 'inline-flex';
         overlay.classList.add('active');
 
@@ -225,6 +230,11 @@ export function showAlert(message, title = '') {
             headerEl.style.display = 'none';
         }
 
+        const footerEl = document.getElementById('modalFooter');
+        if (footerEl) footerEl.style.display = 'flex';
+        const closeIconBtn = document.getElementById('modalCloseIconBtn');
+        if (closeIconBtn) closeIconBtn.style.display = 'none';
+
         cancelBtn.style.display = 'none'; // Hide cancel button for alerts
         overlay.classList.add('active');
 
@@ -235,5 +245,69 @@ export function showAlert(message, title = '') {
         };
 
         confirmBtn.addEventListener('click', handleConfirm);
+    });
+}
+
+/**
+ * Shows an informational modal that can be closed by clicking outside or the close icon.
+ * @param {string} message The message to show.
+ * @param {string} title Optional title.
+ * @returns {Promise<void>} Resolves when the modal is closed.
+ */
+export function showInfoAlert(message, title = '') {
+    return new Promise((resolve) => {
+        const overlay = document.getElementById('customModalOverlay');
+        const titleEl = document.getElementById('modalTitle');
+        const headerEl = document.getElementById('modalHeader');
+        const messageEl = document.getElementById('modalMessage');
+        const footerEl = document.getElementById('modalFooter');
+        const closeIconBtn = document.getElementById('modalCloseIconBtn');
+
+        if (!overlay || !messageEl) {
+            window.alert(message);
+            resolve();
+            return;
+        }
+
+        messageEl.innerHTML = message;
+        if (title) {
+            titleEl.innerText = title;
+            headerEl.style.display = 'flex';
+            headerEl.style.justifyContent = 'space-between';
+            headerEl.style.alignItems = 'center';
+        } else {
+            headerEl.style.display = 'none';
+        }
+
+        if (footerEl) footerEl.style.display = 'none';
+        if (closeIconBtn) closeIconBtn.style.display = 'block';
+
+        overlay.classList.add('active');
+
+        const cleanup = () => {
+            if (closeIconBtn) closeIconBtn.removeEventListener('click', handleClose);
+            overlay.removeEventListener('click', handleOutsideClick);
+            overlay.classList.remove('active');
+            
+            // Restore default styles for other alerts
+            if (footerEl) footerEl.style.display = 'flex';
+            if (closeIconBtn) closeIconBtn.style.display = 'none';
+            if (headerEl.style.display === 'flex') headerEl.style.display = 'block';
+            
+            resolve();
+        };
+
+        const handleClose = () => {
+            cleanup();
+        };
+
+        const handleOutsideClick = (e) => {
+            if (e.target === overlay) {
+                cleanup();
+            }
+        };
+
+        if (closeIconBtn) closeIconBtn.addEventListener('click', handleClose);
+        overlay.addEventListener('click', handleOutsideClick);
     });
 }

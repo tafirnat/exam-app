@@ -1024,12 +1024,15 @@
 
                 <div id="homeStatsActiveBody">
                     <div class="stats-grid">
-                        <div class="stat-box" style="position: relative;">
+                        <div id="homeStatTotalBox" class="stat-box" style="position: relative; cursor: pointer;">
                             <div class="stat-value" id="homeStatTotal">0</div>
                             <div class="stat-label">
                                 <span class="desktop-text" data-i18n="total_questions">Toplam Soru</span>
                                 <span class="mobile-text" data-i18n="total_questions_short">Toplam</span>
                             </div>
+                            <button id="homeStatTotalInfoBtn" class="continuity-icon-btn" style="position: absolute; bottom: 6px; right: 6px; padding: 4px;" data-i18n-title="total_questions_info_title" title="Toplam Soru Hakkında">
+                                <span class="info-italic-icon">i</span>
+                            </button>
                         </div>
                         <div id="examReadinessStatBox" class="stat-box" style="position: relative; cursor: pointer;">
                             <div class="stat-value" id="homeExamReadiness" style="color: #10b981;">0%</div>
@@ -2056,6 +2059,12 @@
         <div class="modal-card">
             <div id="modalHeader" class="modal-header" style="display: none; margin-bottom: 0.75rem;">
                 <h3 id="modalTitle" style="margin: 0;"></h3>
+                <button id="modalCloseIconBtn" class="icon-btn" style="color: #ef4444; background: transparent; padding: 4px; display: none;" title="Kapat">
+                    <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                        <line x1="18" y1="6" x2="6" y2="18"></line>
+                        <line x1="6" y1="6" x2="18" y2="18"></line>
+                    </svg>
+                </button>
             </div>
             <div class="modal-body" style="margin-bottom: 1.5rem;">
                 <p id="modalMessage" style="margin: 0; line-height: 1.6;"></p>

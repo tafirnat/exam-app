@@ -649,12 +649,22 @@ export function updateHomeStats() {
     updateEl('homeExamReadiness', `${calculateExamReadiness()}%`);
     updateEl('homeProgressPercent', pctText);
 
+    const totalBox = document.getElementById('homeStatTotalBox');
+    if (totalBox && !totalBox.dataset.bound) {
+        totalBox.dataset.bound = 'true';
+        totalBox.addEventListener('click', () => {
+            import('../../core/utils.js').then(({ showInfoAlert }) => {
+                showInfoAlert(t('total_questions_info_desc') || "Bu metrik sistemde kayıtlı toplam soru sayısını ifade eder.", t('total_questions_info_title') || "Toplam Soru");
+            });
+        });
+    }
+
     const readinessBox = document.getElementById('examReadinessStatBox');
     if (readinessBox && !readinessBox.dataset.bound) {
         readinessBox.dataset.bound = 'true';
         readinessBox.addEventListener('click', () => {
-            import('../../core/utils.js').then(({ showAlert }) => {
-                showAlert(t('exam_readiness_info_desc'), t('exam_readiness_info_title'));
+            import('../../core/utils.js').then(({ showInfoAlert }) => {
+                showInfoAlert(t('exam_readiness_info_desc'), t('exam_readiness_info_title'));
             });
         });
     }
@@ -663,8 +673,8 @@ export function updateHomeStats() {
     if (avgDiffBox && !avgDiffBox.dataset.bound) {
         avgDiffBox.dataset.bound = 'true';
         avgDiffBox.addEventListener('click', () => {
-            import('../../core/utils.js').then(({ showAlert }) => {
-                showAlert(t('avg_diff_info_desc'), t('avg_diff_info_title'));
+            import('../../core/utils.js').then(({ showInfoAlert }) => {
+                showInfoAlert(t('avg_diff_info_desc'), t('avg_diff_info_title'));
             });
         });
     }
