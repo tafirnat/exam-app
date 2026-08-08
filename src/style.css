@@ -6965,3 +6965,27 @@ body.dnd-active {
 .heatmap-cell-frozen {
     background-color: var(--heatmap-frozen) !important;
 }
+
+/* --- Heatmap Legend --- */
+.heatmap-legend {
+    align-items: center;
+    justify-content: flex-end;
+    gap: 4px;
+    margin-top: 8px;
+    margin-right: 4px;
+    font-size: 0.7rem;
+    color: var(--text-secondary);
+}
+
+.heatmap-legend .heatmap-cell {
+    width: 10px;
+    height: 10px;
+}
+
+@media (max-width: 600px) {
+    .heatmap-legend {
+        justify-content: center;
+        margin-right: 0;
+        margin-top: 12px;
+    }
+}

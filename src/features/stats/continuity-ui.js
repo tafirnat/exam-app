@@ -1229,6 +1229,9 @@ function renderHeatmapYearly() {
     // Shown before measuring, not after: a display:none wrapper reports a
     // clientWidth of 0 and every column would be sized against nothing.
     if (wrapper) wrapper.style.display = 'block';
+    
+    const legend = document.getElementById('heatmapLegend');
+    if (legend) legend.style.display = 'flex';
 
     const lang = document.documentElement.lang || 'en';
 
