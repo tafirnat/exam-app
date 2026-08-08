@@ -1,4 +1,4 @@
-import { AppState, liveSources, getAvailableTags } from '../../core/state.js';
+import { AppState, liveSources } from '../../core/state.js';
 import { t } from '../../core/i18n.js';
 import { showConfirm, escapeHTML } from '../../core/utils.js';
 import { readJSON } from '../../core/storage.js';
