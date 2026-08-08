@@ -934,7 +934,10 @@ function renderSummarySection() {
         showToast(t('test_completed'));
         try {
             console.log("Finishing test...");
-            await finishTest();
+            const finished = await finishTest();
+            if (finished === false) {
+                if (window.switchView) window.switchView('home');
+            }
             console.log("Test finished successfully.");
         } catch (err) {
             console.error("Error finishing test:", err);

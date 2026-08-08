@@ -6832,3 +6832,33 @@ body.dnd-active {
     color: var(--primary-color);
     opacity: 1 !important;
 }
+
+/* --- Mobile Responsiveness for Results View --- */
+@media (max-width: 480px) {
+    #resultsView {
+        padding: 1rem 0.5rem;
+    }
+    .results-card {
+        padding: 1.5rem 1rem;
+        gap: 1.5rem;
+    }
+    .results-stats-grid {
+        gap: 0.5rem;
+    }
+    .res-stat-item {
+        padding: 0.75rem 0.5rem;
+    }
+    .res-stat-value {
+        font-size: 1.25rem;
+    }
+    .res-stat-label {
+        font-size: 0.65rem;
+    }
+    .results-actions {
+        flex-direction: column;
+        gap: 0.75rem;
+    }
+    .results-actions .btn {
+        width: 100%;
+    }
+}

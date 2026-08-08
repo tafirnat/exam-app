@@ -430,7 +430,7 @@ export async function finishTest() {
 
         if (answeredCount === 0 && (AppState.testTracking?._flushedCount || 0) === 0) {
             console.log("finishTest: Discarding empty test session with 0 answered questions.");
-            return;
+            return false;
         }
 
         if (answeredCount > 0 || (AppState.testTracking?._flushedCount || 0) > 0) {
@@ -485,6 +485,7 @@ export async function finishTest() {
         saveSources();
 
         window.dispatchEvent(new CustomEvent('test-finished', { detail: historyEntry }));
+        return true;
 
     } catch (err) {
         console.error("Critical error in finishTest:", err);
