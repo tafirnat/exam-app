@@ -65,7 +65,8 @@ Günlük seri sağlandıktan sonra buton kapanmaz, yalnızca etiketi değişir (
 - **Karıştırılmaz.** Sıra özelliğin kendisidir.
 - **Focus pool enjeksiyonu uygulanmaz** (sırayı ve soru sayısını bozardı).
 - **Hızlı Erişim oturumlarına yazılmaz ve onları silmez.** Koşu tüm kütüphaneden çekildiği için hiçbir preset'e ait değildir; `testTracking.mode === 'streak'` bayrağı bunu sağlar.
-- Aynı bayrak, yarıda bırakılan bir koşu "Devam Et" ile açıldığında geniş `questionMap`'in kurulmasını sağlar.
+- Aynı bayrak, yarıda bırakılan bir koşu "Devam Et" ile açıldığında geniş `questionMap`'in kurulmasını 
+sağlar.
 - Geçmiş kaydının başlığı, aktif kaynaklardan değil **gerçekten çözülen soruların kaynaklarından** türetilir (3'ten fazlaysa `A + B + C +N`).
 
 ---
@@ -95,15 +96,49 @@ Hem Genel Seri hem de Özel Odak Serisi için bağımsız dondurma jeton kümele
 - `freezeTokens`: Genel Seri jetonları
 - `focusFreezeTokens`: Özel Odak Serisi jetonları
 
+### Kapasite ve sayım
+Kapasite (`total`) başlangıçta 1'dir, 2. seviye kazanılınca 2 olur. **`remaining` saklanan
+bir sayaç değil, iki defterden türetilen bir görünümdür** — `spentOn` (harcamalar) ve
+`grants` (kazanımlar). Nedeni ve merge kuralları `src/core/freeze-tokens.js` başlığında.
+
 ### Jeton Seviyeleri:
 1. **1. Seviye Jeton (7 Günlük Başarı - Tier 1):**
    - **Genel Seri:** 7 gün seri + %70 FSRS oranı $\rightarrow$ 1. Genel Jeton.
-   - **Özel Seri:** 7 gün kesintisiz 15 soru çözümü $\rightarrow$ 1. Odak Jetonu.
+   - **Özel Seri:** 7 gün kesintisiz Odak hedefi $\rightarrow$ 1. Odak Jetonu.
    - *Kural:* 1. Seviye jetonlar **sadece ait olduğu seride** harcanabilir.
 2. **2. Seviye Jeton (14 Günlük Üst Düzey Başarı - Tier 2 / Joker Jeton):**
    - **Genel Seri:** 14 gün seri + %80 FSRS oranı $\rightarrow$ 2. Genel Jeton.
-   - **Özel Seri:** 14 gün kesintisiz 15 soru çözümü $\rightarrow$ 2. Odak Jetonu.
-   - **Çapraz Kullanım (Cross-Use):** 2. Seviye jetonlar **Evrensel/Joker** jetondur. Örneğin Özel Seri dondurma jetonu bittiğinde, Genel Seri'de kazanılmış 2. Seviye (Joker) jeton otomatik olarak Özel Seri'yi korumak için transfer edilebilir (veya tam tersi).
+   - **Özel Seri:** 14 gün kesintisiz Odak hedefi $\rightarrow$ 2. Odak Jetonu.
+   - **Çapraz Kullanım (Cross-Use):** 2. Seviye jetonlar **Evrensel/Joker** jetondur. Özel
+     Seri dondurma jetonu bittiğinde Genel Seri'de kazanılmış 2. Seviye jeton otomatik olarak
+     Özel Seri'yi korumak için kullanılır (veya tam tersi). Kullanıcıya sorulmaz.
+
+İlk jeton **hediyedir**: kapasite 1 ve defterler boş olarak başlanır, yani kullanıcı 7 gün
+beklemeden bir dondurma hakkına sahiptir. 1. seviyeyi kazanmak, harcanmış bir hakkı geri verir.
+
+### Kazanım penceresi: donmuş günler sayılmaz
+Donmuş bir gün **seriyi** sürdürür (jetonun satın aldığı şey budur) ama içinde iş yoktur.
+Kazanım penceresinde de sayılsaydı ikisi birbirini beslerdi: bir günü dondur, yerine jeton
+kazan, bir gün daha dondur. `earnedBy()` bu yüzden `frozenDays === 0` şartını koşuyor —
+"7 gün **kesintisiz** seri" ifadesinin karşılığı budur.
+
+### Harcama kararı (`freezeMissedDaysIfPossible`)
+Dün ve evvelsi gün taranır; bugün hiç dondurulmaz (henüz bitmemiştir).
+
+- **Odak izi, seçili canlı kaynak yoksa hiç dondurulmaz.** Seçim olmadan Odak hedefi
+  hiçbir gün karşılanamaz, yani her gün "kaçırılmış" okunur. Kapı olmadan, Odak'ı hiç
+  açmamış bir kullanıcı iki gün içinde **üç jetonunu birden** kaybediyordu — ikisi
+  `focus:` günlerine harcanan Genel joker'lardı — ve Genel Seri korumasız kalıyordu.
+  Seçili kaynakların tamamı arşivliyse de aynı kapı kapanır.
+- **İki geçiş, ve sıra kuralın kendisidir.** Önce her iz **kendi** jetonuyla denenir;
+  ancak ondan sonra kalan ihtiyaçlar için çapraz kullanım devreye girer. Tek geçişte
+  Genel iz, Odak'ın elindeki son jetonu joker olarak alıp Odak'ın tam da o jetonun
+  beklediği günü kaybetmesine yol açıyordu.
+- Harcama, satın aldığı **günün ve izin adını** taşır (`global:2026-08-01`), bu da onu
+  cihazlar arası idempotent yapar.
+
+`tests/freeze-decision.test.mjs` bu kararların tamamını kilitler; defterin kendi
+aritmetiği `tests/freeze-tokens.test.mjs`'te.
 
 ---
 

@@ -335,10 +335,7 @@ function renderGlobalSlide(liveQ) {
     const globalRemaining = globalTokens.remaining ?? 0;
     const globalTier2Earned = globalTokens.tier2Earned ?? false;
 
-    // Index 0 = Mavi Kar Tanesi: active when there is at least one token remaining
-    const blueActive = globalRemaining > 0;
-    // Index 1 = Kızıl Kar Tanesi: active when tier2 is earned and at least one token remains
-    const crimsonActive = globalTier2Earned && globalRemaining > 0;
+    const [blueActive, crimsonActive] = tokenIconStates(globalRemaining, globalTier2Earned);
 
     const blueLabel = blueActive ? t('active_status') : t('passive_status');
     const crimsonLabel = crimsonActive ? t('active_status') : t('passive_status');
@@ -410,10 +407,7 @@ function renderFocusSlide() {
     const focusRemaining = focusTokens.remaining ?? 0;
     const focusTier2Earned = focusTokens.tier2Earned ?? false;
 
-    // Index 0 = Mavi Kar Tanesi: active when there is at least one focus token remaining
-    const focusBlueActive = focusRemaining > 0;
-    // Index 1 = Kızıl Kar Tanesi: active when tier2 is earned and at least one token remains
-    const focusCrimsonActive = focusTier2Earned && focusRemaining > 0;
+    const [focusBlueActive, focusCrimsonActive] = tokenIconStates(focusRemaining, focusTier2Earned);
 
     const focusBlueLabel = focusBlueActive ? t('active_status') : t('passive_status');
     const focusCrimsonLabel = focusCrimsonActive ? t('active_status') : t('passive_status');
@@ -605,6 +599,22 @@ function updateStreakCountDisplay(elementId, count) {
     el.textContent = count;
     const len = String(count).length;
     el.style.fontSize = len >= 3 ? '16px' : len === 2 ? '22px' : '28px';
+}
+
+/**
+ * Which of the two snowflakes are lit, for a track holding `remaining` tokens.
+ *
+ * One icon per token held, so the row can be counted. The crimson one used to
+ * light whenever tier 2 had ever been earned *and* anything at all remained,
+ * which drew two snowflakes over a single token - a user down to their last
+ * freeze was shown the same row as one holding both.
+ *
+ * Tier 2 still gates the crimson icon rather than the count alone: capacity
+ * stays at 2 after a streak break resets the flag, and a pair of ordinary
+ * tokens is not a joker.
+ */
+function tokenIconStates(remaining, tier2Earned) {
+    return [remaining >= 1, Boolean(tier2Earned) && remaining >= 2];
 }
 
 function createTokenSvg(tokenIndex, active) {
@@ -2135,9 +2145,18 @@ export function showSingleTokenModal(type, tokenIndex) {
     const isGlobal = type === 'global';
     const seriesTitle = isGlobal ? t('streak_global_title') : t('streak_focus_title');
 
+    /* Read, not assumed. This was `isGlobal ? false : true` - a constant, so the
+       Genel card always said Pasif and the Odak card always said Aktif whatever
+       the user actually held, and the row's own tooltip contradicted it. */
+    const tokens = (isGlobal
+        ? AppState.continuityConfig?.freezeTokens
+        : AppState.continuityConfig?.focusFreezeTokens) || {};
+    const [blueActive, crimsonActive] = tokenIconStates(tokens.remaining ?? 0, tokens.tier2Earned ?? false);
+    const countLabel = t('tokens_tooltip_title', { remaining: tokens.remaining ?? 0, total: tokens.total ?? 1 });
+
     if (tokenIndex === 0) {
         // 1st Snowflake: Mavi Kar Tanesi
-        const active = isGlobal ? false : true;
+        const active = blueActive;
         const iconSvg = getSnowflakeSvgHtml(0, active, 22, 22);
         const title = `<span style="vertical-align: middle; margin-right: 4px;">${iconSvg}</span> ${t('token_blue_title')}`;
         const html = `
@@ -2147,7 +2166,7 @@ export function showSingleTokenModal(type, tokenIndex) {
                         <strong style="color: #7dd3fc; font-size: 0.92rem; display: flex; align-items: center; gap: 6px;">
                             ${getSnowflakeSvgHtml(0, true, 18, 18)} ${t('token_blue_title')}
                         </strong>
-                        <span style="font-size: 0.78rem; color: var(--text-secondary);">${t('tokens_remaining_label', { series: seriesTitle })}</span>
+                        <span style="font-size: 0.78rem; color: var(--text-secondary);">${t('tokens_remaining_label', { series: seriesTitle })} · ${countLabel}</span>
                     </div>
                     <span style="font-size: 0.8rem; font-weight: 700; padding: 3px 8px; border-radius: 12px; background: ${active ? 'rgba(16, 185, 129, 0.2)' : 'rgba(148, 163, 184, 0.2)'}; color: ${active ? '#10b981' : 'var(--text-secondary)'};">
                         ${active ? `● ${t('active_status')}` : `○ ${t('passive_status')}`}
@@ -2167,7 +2186,7 @@ export function showSingleTokenModal(type, tokenIndex) {
         openInfoPopupModal(title, html);
     } else {
         // 2nd Snowflake: Kızıl Kar Tanesi
-        const active = isGlobal ? false : true;
+        const active = crimsonActive;
         const iconSvg = getSnowflakeSvgHtml(1, active, 22, 22);
         const title = `<span style="vertical-align: middle; margin-right: 4px;">${iconSvg}</span> ${t('token_crimson_title')}`;
         const html = `
@@ -2177,7 +2196,7 @@ export function showSingleTokenModal(type, tokenIndex) {
                         <strong style="color: #ef4444; font-size: 0.92rem; display: flex; align-items: center; gap: 6px;">
                             ${getSnowflakeSvgHtml(1, true, 18, 18)} ${t('token_crimson_title')}
                         </strong>
-                        <span style="font-size: 0.78rem; color: var(--text-secondary);">${t('tokens_remaining_label', { series: seriesTitle })}</span>
+                        <span style="font-size: 0.78rem; color: var(--text-secondary);">${t('tokens_remaining_label', { series: seriesTitle })} · ${countLabel}</span>
                     </div>
                     <span style="font-size: 0.8rem; font-weight: 700; padding: 3px 8px; border-radius: 12px; background: ${active ? 'rgba(239, 68, 68, 0.2)' : 'rgba(148, 163, 184, 0.2)'}; color: ${active ? '#ef4444' : 'var(--text-secondary)'};">
                         ${active ? `● ${t('active_status')}` : `○ ${t('passive_status')}`}
@@ -2334,6 +2353,7 @@ export function showFreezeTokenModal(type) {
                     <ul style="margin: 0; padding-left: 1.2rem; color: var(--text-secondary); line-height: 1.5; font-size: 0.84rem;">
                         <li>${t('freeze_blue_rule_global')}</li>
                         <li>${t('freeze_crimson_rule_global')}</li>
+                        <li>${t('freeze_earn_frozen_note')}</li>
                     </ul>
                 </div>
             </div>
@@ -2368,6 +2388,7 @@ export function showFreezeTokenModal(type) {
                     <ul style="margin: 0; padding-left: 1.2rem; color: var(--text-secondary); line-height: 1.5; font-size: 0.84rem;">
                         <li>${t('freeze_blue_rule_focus')}</li>
                         <li>${t('freeze_crimson_rule_focus')}</li>
+                        <li>${t('freeze_earn_frozen_note')}</li>
                     </ul>
                 </div>
             </div>

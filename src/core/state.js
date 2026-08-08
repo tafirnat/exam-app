@@ -49,13 +49,20 @@ export function createUncategorizedFolderRecord() {
  */
 export function createDefaultContinuityConfig() {
     return {
+        /* `spentOn` and `grants` are the state; `remaining` is a view of the two
+           - see core/freeze-tokens.js. Spelled out here rather than left to be
+           filled in later so a reset writes a record of the current shape: an
+           absent `spentOn` is read as a pre-ledger record and gets one
+           synthesised from `remaining`, which is a different thing to mean. */
         // Genel Seri dondurma tokenleri
         freezeTokens: {
             total: 1,
             remaining: 1,
             tier1Earned: false,
             tier2Earned: false,
-            initialized: true
+            initialized: true,
+            spentOn: [],
+            grants: []
         },
         // Odak Seri dondurma tokenleri
         focusFreezeTokens: {
@@ -63,7 +70,9 @@ export function createDefaultContinuityConfig() {
             remaining: 1,
             tier1Earned: false,
             tier2Earned: false,
-            initialized: true
+            initialized: true,
+            spentOn: [],
+            grants: []
         },
         focusPools: [],
         focusSources: [],

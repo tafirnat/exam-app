@@ -1,7 +1,7 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import {
-    spendName, spendLedger, recomputeRemaining, chargeSpend, grantToken, mergeFreezeTokens
+    spendName, grantName, spendLedger, recomputeRemaining, chargeSpend, grantToken, mergeFreezeTokens
 } from '../src/core/freeze-tokens.js';
 
 /* `remaining` was a counter each device decremented on its own, merged
@@ -54,16 +54,90 @@ test('an empty account cannot spend', () => {
     assert.equal(t.remaining, 0);
 });
 
+// ── Earning ─────────────────────────────────────────────────────────────────
+
+/* Earning used to *delete* the oldest spend, and deletion is the one edit a
+   union cannot carry: the push path merges against the remote before writing,
+   the remote still holds the entry, and it comes straight back. Measured: a
+   device that spent its one token and then earned it back pushed remaining 0 and
+   pulled remaining 0, while tier1Earned latched true so the tier could never pay
+   out again - with sync on, the blue snowflake was spend-once-keep-forever.
+
+   So a grant is a named entry of its own, and it forgives one spend older than
+   itself. */
+
 test('earning a tier hands one back', () => {
     const t = tokens();
-    chargeSpend(t, spendName('global', '2026-08-01'));
     chargeSpend(t, spendName('global', '2026-07-30'));
+    chargeSpend(t, spendName('global', '2026-08-01'));
     assert.equal(t.remaining, 0);
 
-    grantToken(t);
+    grantToken(t, grantName('tier1', '2026-08-08'));
 
     assert.equal(t.remaining, 1);
-    assert.deepEqual(t.spentOn, ['global:2026-07-30'], 'the oldest spend is the one forgotten');
+    assert.deepEqual(t.spentOn, ['global:2026-07-30', 'global:2026-08-01'],
+        'and the spends stay on the record - forgiven, not erased');
+});
+
+test('an earned token survives the merge that follows it', () => {
+    /* The whole point of naming the grant. Both sides already hold the spend,
+       so a merge that only unions spends hands the freeze back and the earning
+       is silently undone. */
+    const spent = { total: 1, remaining: 0, tier1Earned: false, tier2Earned: false, initialized: true, spentOn: ['global:2026-07-20'], grants: [] };
+    const device = JSON.parse(JSON.stringify(spent));
+    const remote = JSON.parse(JSON.stringify(spent));
+
+    device.tier1Earned = true;
+    grantToken(device, grantName('tier1', '2026-08-08'));
+    assert.equal(device.remaining, 1);
+
+    const pushed = mergeFreezeTokens(device, remote, true);
+
+    assert.equal(pushed.remaining, 1, 'the grant outlives the union that restores the spend');
+    assert.equal(mergeFreezeTokens(pushed, pushed, true).remaining, 1, 'and re-merging keeps it');
+});
+
+test('earning while nothing is outstanding cannot be banked', () => {
+    /* A grant forgives a spend *older* than itself, so a credit earned today
+       does not quietly pay for a freeze made next week. Without that clause the
+       additive count leaves remaining at 1 through a spend that should empty it. */
+    const t = tokens({ total: 1 });
+    grantToken(t, grantName('tier1', '2026-08-08'));
+    assert.equal(t.remaining, 1, 'already full, so the grant changes nothing yet');
+
+    chargeSpend(t, spendName('global', '2026-08-20'));
+
+    assert.equal(t.remaining, 0, 'and it does not pay for the freeze that came after it');
+});
+
+test('the same tier earned on two devices the same day is one grant', () => {
+    const a = tokens({ total: 1, spentOn: ['global:2026-07-20'] });
+    const b = tokens({ total: 1, spentOn: ['global:2026-07-20'] });
+    grantToken(a, grantName('tier1', '2026-08-08'));
+    grantToken(b, grantName('tier1', '2026-08-08'));
+
+    const merged = mergeFreezeTokens(a, b, true);
+
+    assert.deepEqual(merged.grants, ['tier1:2026-08-08']);
+    assert.equal(merged.remaining, 1, 'one spend forgiven, not two');
+});
+
+test('grants merge as a union, so neither device loses one', () => {
+    const a = tokens({ spentOn: ['global:2026-07-20', 'global:2026-07-21'], grants: ['tier1:2026-08-01'] });
+    const b = tokens({ spentOn: ['global:2026-07-20', 'global:2026-07-21'], grants: ['tier2:2026-08-02'] });
+
+    const merged = mergeFreezeTokens(a, b, true);
+
+    assert.deepEqual(merged.grants, ['tier1:2026-08-01', 'tier2:2026-08-02']);
+    assert.equal(merged.remaining, 2, 'both spends forgiven');
+});
+
+test('a record from before grants existed reads exactly as it used to', () => {
+    // Its grants were applied by deleting spends, so its spend ledger is short
+    // already; an empty grant ledger has to leave that arithmetic alone.
+    const old = { total: 2, remaining: 1, tier1Earned: true, tier2Earned: true, initialized: true, spentOn: ['global:2026-07-20'] };
+
+    assert.equal(recomputeRemaining(old).remaining, 1);
 });
 
 // ── Merging ─────────────────────────────────────────────────────────────────
@@ -171,6 +245,20 @@ test('a spend made after the reset is kept', () => {
 
     assert.deepEqual(merged.spentOn, ['global:2026-08-04']);
     assert.equal(merged.remaining, 0);
+});
+
+test('the reset cuts grants on the same line as spends', () => {
+    /* A grant that forgave a voided spend has nothing left to forgive. Keeping
+       it while dropping the spend would leave a credit standing against a freeze
+       that no longer exists - the reset's refill, counted twice. */
+    const reset = tokens({ total: 2, spentOn: [], grants: [], remaining: 2 });
+    const missedIt = tokens({ total: 2, spentOn: ['global:2026-07-30'], grants: ['tier1:2026-07-31'] });
+
+    const merged = mergeFreezeTokens(reset, missedIt, true, '2026-08-01');
+
+    assert.deepEqual(merged.spentOn, []);
+    assert.deepEqual(merged.grants, []);
+    assert.equal(merged.remaining, 2);
 });
 
 test('a legacy entry names no day, so the reset voids it', () => {

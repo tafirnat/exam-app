@@ -1,7 +1,7 @@
 import { AppState, saveStudyActivity, saveContinuityConfig, saveActiveTest } from '../../core/state.js';
 import { calculateRetrievability } from '../test/test-engine.js';
 import { getDailyRequirement, addToDay, getLocalDateStr, shiftDateStr } from '../../core/daily-activity.js';
-import { spendName, chargeSpend, grantToken, recomputeRemaining } from '../../core/freeze-tokens.js';
+import { spendName, grantName, chargeSpend, grantToken, recomputeRemaining } from '../../core/freeze-tokens.js';
 
 /* Re-exported so the many callers that already ask the engine for the day's
    requirement keep working; the rule itself lives in core/daily-activity.js,
@@ -143,6 +143,45 @@ export function getDailyFocusOverdueSnapshot() {
 
 let isEvaluatingTokens = false;
 
+const freshTokenRecord = () => ({
+    total: 1,
+    remaining: 1,
+    tier1Earned: false,
+    tier2Earned: false,
+    initialized: true,
+    spentOn: [],
+    grants: []
+});
+
+/**
+ * Makes sure both token records exist, without deciding anything about them.
+ *
+ * Separate from the evaluation below because freezeMissedDaysIfPossible() needs
+ * the records and cannot wait for it: the eligibility pass walks the streak,
+ * which calls back into initTodayActivity(). This half has no such reach, so the
+ * day-open path can call it first and still have tokens to spend. It used to run
+ * afterwards, and a config that had never held the records - an older build, a
+ * record repaired by hand - therefore missed its first freeze entirely: measured
+ * at a 20-day streak dropping to 0 with a token sitting unspent.
+ */
+function ensureTokenRecords() {
+    if (!AppState.continuityConfig) AppState.continuityConfig = {};
+    const config = AppState.continuityConfig;
+
+    if (!config.freezeTokens || !config.freezeTokens.initialized) {
+        config.freezeTokens = freshTokenRecord();
+    }
+    // Records from before the ledger get one built from their own count.
+    recomputeRemaining(config.freezeTokens);
+
+    if (!config.focusFreezeTokens || !config.focusFreezeTokens.initialized) {
+        config.focusFreezeTokens = freshTokenRecord();
+    }
+    recomputeRemaining(config.focusFreezeTokens);
+
+    saveContinuityConfig();
+}
+
 /**
  * Initializes default freeze token configurations for both Global & Focus tracks.
  */
@@ -150,35 +189,7 @@ export function checkAndReplenishTokens() {
     if (isEvaluatingTokens) return;
     isEvaluatingTokens = true;
     try {
-        if (!AppState.continuityConfig) AppState.continuityConfig = {};
-        const config = AppState.continuityConfig;
-
-        if (!config.freezeTokens || !config.freezeTokens.initialized) {
-            config.freezeTokens = {
-                total: 1,
-                remaining: 1,
-                tier1Earned: false,
-                tier2Earned: false,
-                initialized: true,
-                spentOn: []
-            };
-        }
-        // Records from before the ledger get one built from their own count.
-        recomputeRemaining(config.freezeTokens);
-
-        if (!config.focusFreezeTokens || !config.focusFreezeTokens.initialized) {
-            config.focusFreezeTokens = {
-                total: 1,
-                remaining: 1,
-                tier1Earned: false,
-                tier2Earned: false,
-                initialized: true,
-                spentOn: []
-            };
-        }
-        recomputeRemaining(config.focusFreezeTokens);
-
-        saveContinuityConfig();
+        ensureTokenRecords();
         evaluateFreezeTokenEligibility();
         evaluateFocusFreezeTokenEligibility();
     } finally {
@@ -194,6 +205,7 @@ export function getFsrsStatsForRange(days = 7) {
     let totalTarget = 0;
     let totalSolved = 0;
     let streakSustained = true;
+    let frozenDays = 0;
 
     const todayStr = getLocalDateStr();
     let dateStr = todayStr;
@@ -208,6 +220,7 @@ export function getFsrsStatsForRange(days = 7) {
         if (!act || (!act.studied && !act.frozen)) {
             streakSustained = false;
         }
+        if (act?.frozen) frozenDays++;
 
         const snapshot = act?.overdueSnapshot ?? 0;
         const target = snapshot > 0 ? snapshot : 15;
@@ -220,7 +233,7 @@ export function getFsrsStatsForRange(days = 7) {
     }
 
     const rate = totalTarget > 0 ? Math.round((totalSolved / totalTarget) * 100) : 100;
-    return { rate, streakSustained, totalSolved, totalTarget };
+    return { rate, streakSustained, frozenDays, totalSolved, totalTarget };
 }
 
 /**
@@ -231,6 +244,7 @@ export function getFocusStatsForRange(days = 7) {
     let totalSolved = 0;
     let totalTarget = 0;
     let streakSustained = true;
+    let frozenDays = 0;
 
     const todayStr = getLocalDateStr();
     let dateStr = todayStr;
@@ -245,6 +259,7 @@ export function getFocusStatsForRange(days = 7) {
         if (!act || (!act.focusStudied && !act.focusFrozen)) {
             streakSustained = false;
         }
+        if (act?.focusFrozen) frozenDays++;
 
         const snapshot = act?.focusOverdueSnapshot ?? 15;
         const target = snapshot > 0 ? snapshot : 15;
@@ -257,7 +272,7 @@ export function getFocusStatsForRange(days = 7) {
     }
 
     const rate = totalTarget > 0 ? Math.round((totalSolved / totalTarget) * 100) : 100;
-    return { rate, streakSustained, totalSolved, totalTarget };
+    return { rate, streakSustained, frozenDays, totalSolved, totalTarget };
 }
 
 /**
@@ -276,28 +291,46 @@ export function evaluateFreezeTokenEligibility() {
     }
 
     let updated = false;
+    const today = getLocalDateStr();
 
     if (globalStreak >= 7 && !tokens.tier1Earned) {
         const stats7 = getFsrsStatsForRange(7);
-        if (stats7.rate >= 70 && stats7.streakSustained) {
+        if (earnedBy(stats7, 70)) {
             tokens.tier1Earned = true;
             tokens.total = Math.max(tokens.total, 1);
-            grantToken(tokens);
+            grantToken(tokens, grantName('tier1', today));
             updated = true;
         }
     }
 
     if (globalStreak >= 14 && !tokens.tier2Earned) {
         const stats14 = getFsrsStatsForRange(14);
-        if (stats14.rate >= 80 && stats14.streakSustained) {
+        if (earnedBy(stats14, 80)) {
             tokens.tier2Earned = true;
             tokens.total = 2;
-            grantToken(tokens);
+            grantToken(tokens, grantName('tier2', today));
             updated = true;
         }
     }
 
     if (updated) saveContinuityConfig();
+}
+
+/**
+ * Whether a window of days has earned a tier.
+ *
+ * The frozen-day clause is the part that keeps the economy closed. A frozen day
+ * counts towards the *streak* - that is what the token bought - but it is a day
+ * with no work in it, and letting it also count towards the next token makes the
+ * two feed each other: freeze a day, earn a replacement, freeze another. Both
+ * the spec and the card's own wording say "kesintisiz seri", and a coasted day
+ * is not that.
+ *
+ * @param {number} minRate The FSRS completion rate the track demands, or 0 for a
+ *        track whose requirement is already all-or-nothing per day.
+ */
+function earnedBy(stats, minRate) {
+    return stats.streakSustained && stats.frozenDays === 0 && stats.rate >= minRate;
 }
 
 /**
@@ -316,23 +349,24 @@ export function evaluateFocusFreezeTokenEligibility() {
     }
 
     let updated = false;
+    const today = getLocalDateStr();
 
+    /* No rate gate, unlike the global track: the focus requirement is met or it
+       is not, so a sustained window is already a window of full days. */
     if (focusStreak >= 7 && !tokens.tier1Earned) {
-        const stats7 = getFocusStatsForRange(7);
-        if (stats7.streakSustained) {
+        if (earnedBy(getFocusStatsForRange(7), 0)) {
             tokens.tier1Earned = true;
             tokens.total = Math.max(tokens.total, 1);
-            grantToken(tokens);
+            grantToken(tokens, grantName('tier1', today));
             updated = true;
         }
     }
 
     if (focusStreak >= 14 && !tokens.tier2Earned) {
-        const stats14 = getFocusStatsForRange(14);
-        if (stats14.streakSustained) {
+        if (earnedBy(getFocusStatsForRange(14), 0)) {
             tokens.tier2Earned = true;
             tokens.total = 2;
-            grantToken(tokens);
+            grantToken(tokens, grantName('tier2', today));
             updated = true;
         }
     }
@@ -349,6 +383,15 @@ function freezeMissedDaysIfPossible() {
     const globalTokens = AppState.continuityConfig.freezeTokens;
     const focusTokens = AppState.continuityConfig.focusFreezeTokens;
     const activities = AppState.studyActivity || {};
+
+    /* Whether the Odak track is a thing this user has. With no live selection
+       its requirement can never be met, so every past day reads as missed and
+       the freeze would run every single day against a streak that does not
+       exist. Measured before this gate: a user with a 20-day Genel streak who
+       had never opened Odak lost all three tokens in two day-opens - two of
+       them global jokers spent on `focus:` days - and the Genel streak was left
+       with no protection at all. */
+    const focusTrackIsLive = getLiveFocusSources().length > 0;
 
     const hasPriorActivityBefore = (targetDateStr) => {
         const keys = Object.keys(activities);
@@ -378,33 +421,50 @@ function freezeMissedDaysIfPossible() {
             activities[dateStr] = act;
         }
 
-        /* Global Track Freeze. The charge is named for the day and the track
-           it protects, so the same freeze made on a second device is the same
-           entry and costs nothing - see core/freeze-tokens.js. */
-        if (!isActivityRequirementMet(act) && !act.frozen) {
-            const name = spendName('global', dateStr);
-            if (globalTokens && chargeSpend(globalTokens, name)) {
-                act.frozen = true;
-                saveContinuityConfig();
-            } else if (focusTokens && focusTokens.tier2Earned && chargeSpend(focusTokens, name)) {
-                // Use Cross-Streak Tier 2 Focus Token as Joker!
-                act.frozen = true;
-                saveContinuityConfig();
+        /* The charge is named for the day and the track it protects, so the
+           same freeze made on a second device is the same entry and costs
+           nothing - see core/freeze-tokens.js. */
+        const tracks = [
+            {
+                flag: 'frozen',
+                name: spendName('global', dateStr),
+                own: globalTokens,
+                other: focusTokens,
+                needsFreeze: !isActivityRequirementMet(act) && !act.frozen
+            },
+            {
+                flag: 'focusFrozen',
+                name: spendName('focus', dateStr),
+                own: focusTokens,
+                other: globalTokens,
+                needsFreeze: focusTrackIsLive && !isFocusActivityRequirementMet(act) && !act.focusFrozen
             }
-        }
+        ];
 
-        // Focus Track Freeze
-        if (!isFocusActivityRequirementMet(act) && !act.focusFrozen) {
-            const name = spendName('focus', dateStr);
-            if (focusTokens && chargeSpend(focusTokens, name)) {
-                act.focusFrozen = true;
-                saveContinuityConfig();
-            } else if (globalTokens && globalTokens.tier2Earned && chargeSpend(globalTokens, name)) {
-                // Use Cross-Streak Tier 2 Global Token as Joker!
-                act.focusFrozen = true;
+        /* Two passes, and the order is the point. Resolving each track fully
+           before moving to the next let the first one reach across for a joker
+           while the second still had its own token unspent - measured: Genel
+           took the Odak track's last token as a joker, and Odak then lost the
+           very day that token was sitting there for. Cross-use is a fallback,
+           so nobody reaches across until everyone has been offered their own. */
+        tracks.forEach(track => {
+            if (!track.needsFreeze || !track.own) return;
+            if (chargeSpend(track.own, track.name)) {
+                act[track.flag] = true;
+                track.needsFreeze = false;
                 saveContinuityConfig();
             }
-        }
+        });
+
+        tracks.forEach(track => {
+            if (!track.needsFreeze) return;
+            // Only a Tier 2 (Joker) token crosses tracks.
+            if (track.other && track.other.tier2Earned && chargeSpend(track.other, track.name)) {
+                act[track.flag] = true;
+                track.needsFreeze = false;
+                saveContinuityConfig();
+            }
+        });
     };
 
     const today = getLocalDateStr();
@@ -426,6 +486,8 @@ export function initTodayActivity() {
             focusFrozen: false,
             focusOverdueSnapshot: null
         };
+        // Before the freeze, not after: it is what the freeze spends from.
+        ensureTokenRecords();
         freezeMissedDaysIfPossible();
         saveStudyActivity();
     }
