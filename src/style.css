@@ -6893,10 +6893,11 @@ body.dnd-active {
     #homeStatsActiveBody .stat-value {
         font-size: 2rem;
     }
-}/ *   - - -   M o b i l e   I n f o   I c o n s   - - -   * /  
- @ m e d i a   ( m a x - w i d t h :   6 0 0 p x )   {  
-         # e x a m R e a d i n e s s I n f o B t n ,   # a v g D i f f I n f o B t n   {  
-                 d i s p l a y :   n o n e   ! i m p o r t a n t ;  
-         }  
- }  
- 
+}
+
+/* --- Mobile Info Icons --- */
+@media (max-width: 600px) {
+    #examReadinessInfoBtn, #avgDiffInfoBtn {
+        display: none !important;
+    }
+}
