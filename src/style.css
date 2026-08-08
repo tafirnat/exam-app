@@ -21,8 +21,6 @@
     --heatmap-level-4: #216e39;
     --heatmap-empty: #ebedf0;
     --heatmap-frozen: #3b82f6;
-    --heatmap-partial: #fef3c7;
-    --heatmap-partial-border: #fcd34d;
 
     /* Light Theme - Doğru/Yanlış Renkleri */
     --success-color: #22c55e;
@@ -179,8 +177,6 @@
     --heatmap-level-4: #39d353;
     --heatmap-empty: rgba(255, 255, 255, 0.05);
     --heatmap-frozen: #38bdf8;
-    --heatmap-partial: #4a3800;
-    --heatmap-partial-border: #78350f;
 
     /* Dark Theme - İSTENEN ORİJİNAL VE NET RENKLER */
     --success-color: #4caf78;

@@ -1280,9 +1280,6 @@ function renderHeatmapYearly() {
     const colorLevel4 = 'var(--heatmap-level-4)';
     const colorEmpty = 'var(--heatmap-empty)';
     const colorFrozen = 'var(--heatmap-frozen)';
-    // Partial: answered questions but daily threshold not yet met
-    const colorPartial = 'var(--heatmap-partial)';
-    const colorPartialBorder = 'var(--heatmap-partial-border)';
 
     // Roughly the width of a three-letter month at this font size.
     const MIN_LABEL_GAP = 26;
@@ -1322,21 +1319,16 @@ function renderHeatmapYearly() {
         rect.style.height = `${cell}px`;
 
         if (act) {
-            if (act.studied) {
-                if (act.questionCount > 40) rect.style.backgroundColor = colorLevel4;
-                else if (act.questionCount > 20) rect.style.backgroundColor = colorLevel3;
-                else if (act.questionCount > 10) rect.style.backgroundColor = colorLevel2;
+            const count = act.questionCount || 0;
+            if (count > 0) {
+                if (count > 40) rect.style.backgroundColor = colorLevel4;
+                else if (count > 20) rect.style.backgroundColor = colorLevel3;
+                else if (count > 10) rect.style.backgroundColor = colorLevel2;
                 else rect.style.backgroundColor = colorLevel1;
-                rect.title = t('heatmap_questions_count', { date: dateStr, count: act.questionCount });
+                rect.title = t('heatmap_questions_count', { date: dateStr, count: count });
             } else if (act.frozen) {
                 rect.style.backgroundColor = colorFrozen;
                 rect.title = t('heatmap_frozen', { date: dateStr });
-            } else if ((act.questionCount || 0) > 0) {
-                // Partial study: threshold not met but questions were answered.
-                // Show a dimmed amber cell so the day is not invisible.
-                rect.style.backgroundColor = colorPartial;
-                rect.style.border = `1px solid ${colorPartialBorder}`;
-                rect.title = t('heatmap_questions_in_progress', { date: dateStr, count: act.questionCount });
             } else {
                 rect.style.backgroundColor = colorEmpty;
             }
