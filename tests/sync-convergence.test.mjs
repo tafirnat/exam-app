@@ -74,11 +74,42 @@ function newDevice(id) {
         stats: {},
         progressResetAt: 0,
         continuityConfig: {
-            freezeTokens: { total: 2, remaining: 2, tier1Earned: true, tier2Earned: true, initialized: true },
+            /* The gift token and nothing earned yet, which is where a real
+               install starts. Seeding both tiers as already earned - as this
+               did - meant no device ever ran the earning path, so the half of
+               the token account that a merge can silently undo never reached
+               the merge at all. */
+            freezeTokens: {
+                total: 1, remaining: 1, tier1Earned: false, tier2Earned: false,
+                initialized: true, spentOn: [], grants: []
+            },
             focusSources: [],
             revisions: {}
         }
     };
+}
+
+/** The day an entry bought or was earned on, read off its name. */
+const dayOf = (name) => name.slice(name.indexOf(':') + 1);
+
+/**
+ * How many freezes an account can still pay for, written out here rather than
+ * imported from core/freeze-tokens.js on purpose: importing the implementation
+ * to check the implementation only asserts that the function was called. This is
+ * the rule as the spec states it - a grant forgives one freeze older than
+ * itself - and the harness computes it from what the *run* did, not from what a
+ * device happens to be holding.
+ */
+function remainingFrom({ total, spentOn = [], grants = [] }) {
+    const spendDays = spentOn.map(dayOf).sort();
+    const grantDays = grants.map(dayOf).sort();
+
+    let forgiven = 0;
+    grantDays.forEach(grantDay => {
+        if (forgiven < spendDays.length && spendDays[forgiven] < grantDay) forgiven++;
+    });
+
+    return Math.max(0, Math.min(total, total - (spendDays.length - forgiven)));
 }
 
 function payloadOf(device, clock) {
@@ -172,6 +203,12 @@ function world(seed, { resetOnTurn = null } = {}) {
         device.continuityConfig.revisions.focusSources = { at: tick(), by: device.id };
     }
 
+    /* Everything the run actually did to the account, so a settled device can be
+       checked against what happened rather than against its own stored ledger -
+       which is the only way to see a merge quietly dropping an entry. */
+    const madeSpends = new Set();
+    const madeGrants = new Set();
+
     function freezeMissedDay(device) {
         const dateKey = pick(daysFor(device));
         const day = device.studyActivity[dateKey];
@@ -183,10 +220,49 @@ function world(seed, { resetOnTurn = null } = {}) {
         /* Named for the day it bought, which is what makes the same freeze made
            on two devices one spend - and what lets a reset tell which spends it
            voided. See core/freeze-tokens.js. */
-        tokens.spentOn = [...(tokens.spentOn || []), `global:${dateKey}`];
-        tokens.remaining = Math.max(0, tokens.total - tokens.spentOn.length);
+        const name = `global:${dateKey}`;
+        tokens.spentOn = [...(tokens.spentOn || []), name];
+        tokens.remaining = remainingFrom(tokens);
         device.continuityConfig.freezeTokens = tokens;
         device.continuityConfig.revisions.freezeTokens = { at: tick(), by: device.id };
+        madeSpends.add(name);
+    }
+
+    /**
+     * What evaluateFreezeTokenEligibility() does when a window comes good.
+     *
+     * The grant is recorded rather than applied by deleting a spend, because
+     * deletion is the one edit the union merge cannot carry: the push path
+     * merges against the remote before it writes, the remote still holds the
+     * spend, and the earning is undone on the way out. That is the defect this
+     * action exists to expose - and it is invisible to a single-device test,
+     * which is why it took three of them to find.
+     */
+    function earnToken(device) {
+        const tokens = { ...device.continuityConfig.freezeTokens };
+        const tier = !tokens.tier1Earned ? 'tier1' : (!tokens.tier2Earned ? 'tier2' : null);
+        if (!tier) return;
+
+        /* Named for the day it was earned on. Two devices reaching the same tier
+           on the same day write the same name and it is one grant; on different
+           days they are two, and the cap at `total` is what keeps that from
+           inflating. */
+        const name = `${tier}:${pick(daysFor(device))}`;
+        if ((tokens.grants || []).includes(name)) return;
+
+        device.continuityConfig = clone(device.continuityConfig);
+        tokens.grants = [...(tokens.grants || []), name];
+        if (tier === 'tier1') {
+            tokens.tier1Earned = true;
+            tokens.total = Math.max(tokens.total, 1);
+        } else {
+            tokens.tier2Earned = true;
+            tokens.total = 2;
+        }
+        tokens.remaining = remainingFrom(tokens);
+        device.continuityConfig.freezeTokens = tokens;
+        device.continuityConfig.revisions.freezeTokens = { at: tick(), by: device.id };
+        madeGrants.add(name);
     }
 
     /**
@@ -201,7 +277,7 @@ function world(seed, { resetOnTurn = null } = {}) {
             ...device.continuityConfig,
             freezeTokens: {
                 total: 1, remaining: 1, tier1Earned: false, tier2Earned: false,
-                initialized: true, spentOn: []
+                initialized: true, spentOn: [], grants: []
             }
         });
         device.continuityConfig.revisions.freezeTokens = { at, by: device.id };
@@ -242,10 +318,11 @@ function world(seed, { resetOnTurn = null } = {}) {
                 return;
             }
             const roll = random();
-            if (roll < 0.45) answer(device);
-            else if (roll < 0.55) chooseFocusSources(device);
-            else if (roll < 0.62) freezeMissedDay(device);
-            else if (roll < 0.82) push(device);
+            if (roll < 0.42) answer(device);
+            else if (roll < 0.52) chooseFocusSources(device);
+            else if (roll < 0.59) freezeMissedDay(device);
+            else if (roll < 0.65) earnToken(device);
+            else if (roll < 0.83) push(device);
             else pull(device);
         },
         /** Everyone stops working and syncs until nothing changes any more. */
@@ -255,7 +332,9 @@ function world(seed, { resetOnTurn = null } = {}) {
                 devices.forEach(pull);
             }
         },
-        get remote() { return remote; }
+        get remote() { return remote; },
+        /** Every spend and grant the run made, whoever made it. */
+        get made() { return { spends: [...madeSpends], grants: [...madeGrants] }; }
     };
 }
 
@@ -440,6 +519,90 @@ test('every question settles on the record from its most recent review', () => {
             assert.equal(settled.stability, stat.stability, `seed ${seed}, ${qid}: stability`);
             assert.equal(settled.streak, stat.streak, `seed ${seed}, ${qid}: streak`);
             assert.equal(settled.learned, stat.learned, `seed ${seed}, ${qid}: learned`);
+        });
+    }
+});
+
+/* ── The token account ──────────────────────────────────────────────────────
+   Spending was already exercised here; earning was not, and the two halves fail
+   in opposite directions. A lost *spend* shows up as a free freeze, which the
+   union merge was built to prevent. A lost *grant* shows up as a token that was
+   earned and never arrived - and because the tier flag latches, it never comes
+   back. That was live: with sync connected the blue snowflake could be spent
+   once and never re-earned, and no case in this file could see it, because every
+   device started with both tiers already earned. */
+
+test('no token that was earned is lost, and none is earned twice', () => {
+    for (let seed = 1; seed <= 60; seed++) {
+        const w = world(seed);
+        for (let turn = 0; turn < 24; turn++) {
+            const device = w.devices[turn % 3];
+            for (let i = 0; i < 5; i++) w.step(device);
+        }
+
+        w.settle();
+
+        const { grants, spends } = w.made;
+        w.devices.forEach(device => {
+            const settled = device.continuityConfig.freezeTokens;
+            grants.forEach(name => assert.ok((settled.grants || []).includes(name),
+                `seed ${seed}, ${device.id}: grant ${name} was earned and did not survive`));
+            spends.forEach(name => assert.ok((settled.spentOn || []).includes(name),
+                `seed ${seed}, ${device.id}: spend ${name} was made and did not survive`));
+
+            // A union, so nothing can appear twice however often it is merged.
+            assert.equal(new Set(settled.grants).size, (settled.grants || []).length,
+                `seed ${seed}, ${device.id}: a grant is recorded more than once`);
+            assert.equal(new Set(settled.spentOn).size, (settled.spentOn || []).length,
+                `seed ${seed}, ${device.id}: a spend is recorded more than once`);
+        });
+    }
+});
+
+test('the token count settles on what the run actually did', () => {
+    /* The correctness half. Convergence alone is satisfied by three devices
+       agreeing on a wrong number - and they would agree, because dropping a
+       grant is perfectly convergent too. Recomputed here from the run's own
+       record of every freeze and every tier, by a formula written independently
+       of the one under test. */
+    for (let seed = 1; seed <= 60; seed++) {
+        const w = world(seed);
+        for (let turn = 0; turn < 24; turn++) {
+            const device = w.devices[turn % 3];
+            for (let i = 0; i < 5; i++) w.step(device);
+        }
+
+        w.settle();
+
+        const { grants, spends } = w.made;
+        const total = w.devices[0].continuityConfig.freezeTokens.total;
+        const expected = remainingFrom({ total, spentOn: spends, grants });
+
+        w.devices.forEach(device => {
+            assert.equal(device.continuityConfig.freezeTokens.remaining, expected,
+                `seed ${seed}, ${device.id}: holds ${device.continuityConfig.freezeTokens.remaining} tokens, the run earned and spent its way to ${expected}`);
+        });
+    }
+});
+
+test('a reset voids the grants it cleared as well as the freezes', () => {
+    /* A grant that forgave a voided spend has nothing left to forgive. Keeping
+       it while dropping the spend leaves a credit standing against a freeze that
+       no longer exists - the reset's refill, counted a second time. */
+    for (let seed = 1; seed <= 40; seed++) {
+        const w = world(seed, { resetOnTurn: 9 });
+        for (let turn = 0; turn < 24; turn++) {
+            const device = w.devices[turn % 3];
+            for (let i = 0; i < 5; i++) w.step(device, turn);
+        }
+
+        w.settle();
+
+        w.devices.forEach(device => {
+            (device.continuityConfig.freezeTokens.grants || []).forEach(name => {
+                assert.ok(POST_RESET_DAYS.includes(dayOf(name)),
+                    `seed ${seed}, ${device.id}: ${name} was earned on a day the reset cleared`);
+            });
         });
     }
 });
