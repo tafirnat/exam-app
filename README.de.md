@@ -109,29 +109,30 @@ Keine Drittanbieter-Tracking-Server oder zentrale Datenbanken. Kein Account-Zwan
 
 <div align="center">
 
-### Dashboard & Tägliche Wiederholung
-
-| Hell-Modus | Dunkel-Modus |
+### Dashboard & Fortschritt
+| Dashboard | Fortschrittsdetails |
 | :---: | :---: |
-| ![Dashboard Light](./docs/screenshots/dashboard-light.png) | ![Dashboard Dark](./docs/screenshots/dashboard-dark.png) |
+| ![Dashboard](./docs/screenshots/dashboard.png) | ![Progress Details](./docs/screenshots/progress-details.png) |
 
 ### Quiz-Benutzeroberfläche & Ergebnisse
-
 | Aktive Lernsitzung | Testergebnisse & Analyse |
 | :---: | :---: |
 | ![Quiz Interface](./docs/screenshots/quiz-interface.png) | ![Test Results](./docs/screenshots/test-results.png) |
 
 ### Quellenverwaltung & Navigation
-
 | Gespeicherte Quellen & Ordner | Seitenleisten-Menü |
 | :---: | :---: |
 | ![Saved Sources](./docs/screenshots/saved-sources.png) | ![Sidebar Menu](./docs/screenshots/sidebar-menu.png) |
 
-### Detaillierte Fragen-Analytik
+### Organisation & Archivierung
+| Ordner Hinzufügen | Quelle Archivieren |
+| :---: | :---: |
+| ![Add Folder](./docs/screenshots/add-folder.png) | ![Archive Source](./docs/screenshots/archive-source.png) |
 
-| Fragedetails & Historie |
+### Detaillierte Analytik
+| Fragen-Analytik |
 | :---: |
-| ![Question Details](./docs/screenshots/question-details.png) |
+| ![Question Analytics](./docs/screenshots/question-analytics.png) |
 
 </div>
 

@@ -109,29 +109,30 @@ No third-party tracking servers or central databases. No forced accounts or subs
 
 <div align="center">
 
-### Dashboard & Daily Review
-
-| Light Mode | Dark Mode |
+### Dashboard & Progress
+| Dashboard | Progress Details |
 | :---: | :---: |
-| ![Dashboard Light](./docs/screenshots/dashboard-light.png) | ![Dashboard Dark](./docs/screenshots/dashboard-dark.png) |
+| ![Dashboard](./docs/screenshots/dashboard.png) | ![Progress Details](./docs/screenshots/progress-details.png) |
 
 ### Quiz Interface & Results
-
 | Active Quiz Session | Test Results & Analysis |
 | :---: | :---: |
 | ![Quiz Interface](./docs/screenshots/quiz-interface.png) | ![Test Results](./docs/screenshots/test-results.png) |
 
 ### Source Management & Navigation
-
 | Saved Sources & Folders | Sidebar Menu & Quick Actions |
 | :---: | :---: |
 | ![Saved Sources](./docs/screenshots/saved-sources.png) | ![Sidebar Menu](./docs/screenshots/sidebar-menu.png) |
 
-### Detailed Question Analytics
+### Organization & Archiving
+| Add Folder | Archive Source |
+| :---: | :---: |
+| ![Add Folder](./docs/screenshots/add-folder.png) | ![Archive Source](./docs/screenshots/archive-source.png) |
 
-| Question Details & History |
+### Detailed Analytics
+| Question Analytics |
 | :---: |
-| ![Question Details](./docs/screenshots/question-details.png) |
+| ![Question Analytics](./docs/screenshots/question-analytics.png) |
 
 </div>
 

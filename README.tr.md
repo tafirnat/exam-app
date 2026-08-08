@@ -109,29 +109,30 @@ Soruları ve okuma kartlarını yerel tarayıcı konuşma sentezi ile sesli okur
 
 <div align="center">
 
-### Ana Panel ve Günlük Tekrar
-
-| Açık Tema | Koyu Tema |
+### Ana Panel ve İlerleme
+| Ana Panel | İlerleme Detayları |
 | :---: | :---: |
-| ![Dashboard Light](./docs/screenshots/dashboard-light.png) | ![Dashboard Dark](./docs/screenshots/dashboard-dark.png) |
+| ![Dashboard](./docs/screenshots/dashboard.png) | ![Progress Details](./docs/screenshots/progress-details.png) |
 
 ### Sınav Arayüzü ve Sonuçlar
-
 | Aktif Sınav Oturumu | Test Sonuçları & Analiz |
 | :---: | :---: |
 | ![Quiz Interface](./docs/screenshots/quiz-interface.png) | ![Test Results](./docs/screenshots/test-results.png) |
 
 ### Kaynak Yönetimi ve Gezinme
-
 | Kayıtlı Kaynaklar & Klasörler | Yan Menü ve Hızlı Erişim |
 | :---: | :---: |
 | ![Saved Sources](./docs/screenshots/saved-sources.png) | ![Sidebar Menu](./docs/screenshots/sidebar-menu.png) |
 
-### Detaylı Soru Analitiği
+### Organizasyon ve Arşivleme
+| Klasör Ekleme | Kaynak Arşivleme |
+| :---: | :---: |
+| ![Add Folder](./docs/screenshots/add-folder.png) | ![Archive Source](./docs/screenshots/archive-source.png) |
 
-| Soru Detayları & Geçmiş |
+### Detaylı Analitik
+| Soru Analitiği |
 | :---: |
-| ![Question Details](./docs/screenshots/question-details.png) |
+| ![Question Analytics](./docs/screenshots/question-analytics.png) |
 
 </div>
 
