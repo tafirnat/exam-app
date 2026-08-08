@@ -1521,10 +1521,6 @@ function setupEventListeners() {
     // Results View
     document.getElementById('resHomeBtn').onclick = goHome;
     document.getElementById('resRetakeBtn').onclick = retakeSession;
-    const scBackBtn = document.getElementById('statsBackBtn');
-    if (scBackBtn) {
-        scBackBtn.onclick = handleStatsBack;
-    }
 
     const sourcesBackBtn = document.getElementById('sourcesBackBtn');
     if (sourcesBackBtn) {
@@ -2032,7 +2028,9 @@ function switchView(view, isBack = false) {
     }
 
     document.getElementById('menuToggleBtn').style.display = (view === 'home' || view === 'test' || view === 'sources') ? 'flex' : 'none';
-    document.getElementById('headerBackBtn').style.display = (view === 'stats' || view === 'statsPreview' || view === 'sources') ? 'flex' : 'none';
+    const headerBackBtn = document.getElementById('headerBackBtn');
+    headerBackBtn.style.display = (view === 'stats' || view === 'statsPreview' || view === 'sources') ? 'flex' : 'none';
+    headerBackBtn.onclick = (view === 'stats') ? handleStatsBack : goBack;
 
     // In preview mode, the inline icons are visible, so we don't need them in the burger menu.
     // Also hide when in home to keep it clean, but mainly for test and statsPreview redundancy.

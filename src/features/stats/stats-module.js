@@ -35,26 +35,6 @@ export function renderStatsList(filter = 'all', searchKeyword = '') {
         }
     }
 
-    const backBtn = document.getElementById('statsBackBtn');
-    if (backBtn) {
-        if (typeof window.handleStatsBack === 'function') {
-            backBtn.onclick = window.handleStatsBack;
-        } else if (isTagMode) {
-            backBtn.onclick = () => {
-                AppState.activeStatsFilter = 'all'; // Tag modundan çıkışta filtreyi sıfırla
-                if (AppState.navigationSourceView) {
-                    const source = AppState.navigationSourceView;
-                    AppState.navigationSourceView = null; // Clear to prevent loops later
-                    if (window.switchView) window.switchView(source);
-                } else {
-                    window.history.back();
-                }
-            };
-        } else if (window.goHome) {
-            backBtn.onclick = window.goHome;
-        }
-    }
-
     const filterTabs = document.getElementById('statsFilterBar');
     if (filterTabs) {
         filterTabs.style.display = isTagMode ? 'none' : 'flex';
