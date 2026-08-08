@@ -202,7 +202,7 @@ function formatStudied(studiedAt) {
     const days = Math.floor((Date.now() - studiedAt) / 86400000);
     if (days < 1) return t('quota_studied_today');
     try {
-        const rtf = new Intl.RelativeTimeFormat(AppState.language || 'tr', { numeric: 'auto' });
+        const rtf = new Intl.RelativeTimeFormat(AppState.language || 'en', { numeric: 'auto' });
         if (days < 30) return rtf.format(-days, 'day');
         if (days < 365) return rtf.format(-Math.floor(days / 30), 'month');
         return rtf.format(-Math.floor(days / 365), 'year');

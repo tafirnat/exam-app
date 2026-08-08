@@ -2049,6 +2049,14 @@ export function detectLanguage() {
     const saved = readString('focus_app_lang');
     if (saved && ['tr', 'en', 'de'].includes(saved)) return saved;
 
+    // Fallback to system language if supported
+    if (typeof navigator !== 'undefined' && navigator.language) {
+        const sysLang = navigator.language.split('-')[0].toLowerCase();
+        if (['tr', 'en', 'de'].includes(sysLang)) {
+            return sysLang;
+        }
+    }
+
     // Default to English as per user request
     return 'en';
 }
@@ -2061,7 +2069,7 @@ export function detectTranslationTarget() {
 
 export function updateStaticTranslations() {
     if (document.documentElement) {
-        document.documentElement.lang = AppState.language || 'tr';
+        document.documentElement.lang = AppState.language || 'en';
     }
 
     document.querySelectorAll('[data-i18n]').forEach(el => {

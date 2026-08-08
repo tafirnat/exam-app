@@ -478,10 +478,10 @@ export const MOTIVATION_QUOTES = [
 
 /**
  * Gets a deterministic daily quote based on local date string (YYYY-MM-DD).
- * @param {string} [lang='tr'] - Language code (tr, en, de)
+ * @param {string} [lang='en'] - Language code (tr, en, de)
  * @returns {{ id: number, author: string, text: string, artwork: Object }}
  */
-export function getDailyQuote(lang = 'tr') {
+export function getDailyQuote(lang = 'en') {
     const today = new Date();
     const dateStr = `${today.getFullYear()}-${today.getMonth() + 1}-${today.getDate()}`;
     
@@ -493,7 +493,7 @@ export function getDailyQuote(lang = 'tr') {
     
     const index = Math.abs(hash) % MOTIVATION_QUOTES.length;
     const item = MOTIVATION_QUOTES[index];
-    const safeLang = (item && item[lang]) ? lang : 'tr';
+    const safeLang = (item && item[lang]) ? lang : 'en';
     
     return {
         id: item.id,
@@ -507,12 +507,12 @@ export function getDailyQuote(lang = 'tr') {
  * Returns a random quote different from currentId and (optionally) from the same artwork URL.
  * This prevents the same image from reappearing on refresh by excluding any quote that
  * shares the current artwork URL.
- * @param {string} [lang='tr']
+ * @param {string} [lang='en']
  * @param {number} [excludeId]
  * @param {string|null} [excludeArtworkUrl] - artwork URL to also exclude
  * @returns {{ id: number, author: string, text: string, artwork: Object }}
  */
-export function getRandomQuote(lang = 'tr', excludeId = null, excludeArtworkUrl = null) {
+export function getRandomQuote(lang = 'en', excludeId = null, excludeArtworkUrl = null) {
     // Exclude by id and, if provided, by artwork URL (same image = boring repeat)
     let available = MOTIVATION_QUOTES.filter(q => {
         if (q.id === excludeId) return false;
@@ -528,7 +528,7 @@ export function getRandomQuote(lang = 'tr', excludeId = null, excludeArtworkUrl 
 
     const randomIndex = Math.floor(Math.random() * available.length);
     const item = available[randomIndex] || MOTIVATION_QUOTES[0];
-    const safeLang = (item && item[lang]) ? lang : 'tr';
+    const safeLang = (item && item[lang]) ? lang : 'en';
     
     return {
         id: item.id,

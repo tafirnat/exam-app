@@ -451,14 +451,14 @@ export function renderMotivationSlide() {
     const card = document.getElementById('motivationContinuityCard');
     if (!textEl || !authorEl || !card) return;
 
-    const lang = AppState.language || 'tr';
+    const lang = AppState.language || 'en';
     const currentId = card.dataset.quoteId ? parseInt(card.dataset.quoteId, 10) : null;
     const quote = currentId
         ? (MOTIVATION_QUOTES.find(q => q.id === currentId) || getDailyQuote(lang))
         : getDailyQuote(lang);
 
     card.dataset.quoteId = String(quote.id);
-    const safeLang = (quote[lang]) ? lang : 'tr';
+    const safeLang = (quote[lang]) ? lang : 'en';
     textEl.textContent = `"${quote[safeLang] || quote.text || quote.tr}"`;
     authorEl.textContent = `— ${quote.author}`;
 
@@ -520,13 +520,13 @@ export function bindMotivationEvents() {
         refreshBtn.dataset.bound = 'true';
         refreshBtn.addEventListener('click', () => {
             if (!textEl || !authorEl || !card) return;
-            const lang = AppState.language || 'tr';
+            const lang = AppState.language || 'en';
             const currentId = parseInt(card.dataset.quoteId || '0', 10);
             // Also exclude the current artwork URL so the same image never reappears on refresh
             const currentArtworkUrl = card.dataset.artworkUrl || null;
             const newQuote = getRandomQuote(lang, currentId, currentArtworkUrl);
             card.dataset.quoteId = String(newQuote.id);
-            const safeLang = (newQuote[lang]) ? lang : 'tr';
+            const safeLang = (newQuote[lang]) ? lang : 'en';
             textEl.textContent = `"${newQuote[safeLang] || newQuote.text || newQuote.tr}"`;
             authorEl.textContent = `— ${newQuote.author}`;
 
@@ -1195,7 +1195,7 @@ export function fitHeatmapWeeks(availableWidth, cell) {
  * that alternation: it closes the week, and an unnamed bottom row reads as an
  * offcut rather than as the end of the grid.
  */
-export function getHeatmapDayLabels(lang = 'tr') {
+export function getHeatmapDayLabels(lang = 'en') {
     if (lang.startsWith('tr')) return ['Pzt', '', 'Çar', '', 'Cum', '', 'Paz'];
     if (lang.startsWith('de')) return ['Mo', '', 'Mi', '', 'Fr', '', 'So'];
     return ['Mon', '', 'Wed', '', 'Fri', '', 'Sun'];
@@ -1230,7 +1230,7 @@ function renderHeatmapYearly() {
     // clientWidth of 0 and every column would be sized against nothing.
     if (wrapper) wrapper.style.display = 'block';
 
-    const lang = document.documentElement.lang || 'tr';
+    const lang = document.documentElement.lang || 'en';
 
     getHeatmapDayLabels(lang).forEach(label => {
         const div = document.createElement('div');
@@ -1715,7 +1715,7 @@ export function buildWeeklyTrendBuckets(activities) {
     const currentDate = getDayAnchor();
     currentDate.setDate(currentDate.getDate() - numDays + 1);
 
-    const lang = document.documentElement.lang || 'tr';
+    const lang = document.documentElement.lang || 'en';
     const isTr = lang.startsWith('tr');
     const isDe = lang.startsWith('de');
     const dayLabels = isTr ? ['Paz', 'Pzt', 'Sal', 'Çar', 'Per', 'Cum', 'Cmt'] :
@@ -1735,7 +1735,7 @@ export function buildWeeklyTrendBuckets(activities) {
 /** One bucket per calendar month for the last 6 months, oldest first. */
 export function buildMonthlyTrendBuckets(activities) {
     const numMonths = 6;
-    const lang = document.documentElement.lang || 'tr';
+    const lang = document.documentElement.lang || 'en';
     const monthFormatter = new Intl.DateTimeFormat(lang, { month: 'short' });
 
     const today = getDayAnchor();

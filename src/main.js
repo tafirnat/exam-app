@@ -2301,7 +2301,7 @@ function getFormattedPrompt(isPreview = false) {
     }
     if (!q) return '';
 
-    let promptLang = AppState.language || 'tr';
+    let promptLang = AppState.language || 'en';
     if (!['tr', 'en', 'de'].includes(promptLang)) {
         promptLang = 'en';
     }
@@ -2421,7 +2421,7 @@ function openPromptEditor() {
     const overlay = document.getElementById('promptEditorOverlay');
     const input = document.getElementById('customPromptInput');
 
-    let promptLang = AppState.language || 'tr';
+    let promptLang = AppState.language || 'en';
     if (!['tr', 'en', 'de'].includes(promptLang)) promptLang = 'en';
 
     const defaultPrompt = translations[promptLang]?.ai_prompt_template || translations['en']?.ai_prompt_template;
@@ -2446,7 +2446,7 @@ function saveCustomPrompt() {
 
 async function resetCustomPrompt() {
     if (await showConfirm(t('confirm_reset') || 'Varsayılan prompta dönmek istediğinize emin misiniz?')) {
-        let promptLang = AppState.language || 'tr';
+        let promptLang = AppState.language || 'en';
         if (!['tr', 'en', 'de'].includes(promptLang)) promptLang = 'en';
         const defaultPrompt = translations[promptLang]?.ai_prompt_template || translations['en']?.ai_prompt_template;
 

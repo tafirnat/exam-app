@@ -56,7 +56,7 @@ export function shuffleArraySeeded(arr, seed) {
 }
 
 export async function translateText(text, targetLang = null) {
-    const lang = targetLang || AppState.translationTarget || 'tr';
+    const lang = targetLang || AppState.translationTarget || 'de';
     try {
         const res = await fetch(`https://translate.googleapis.com/translate_a/single?client=gtx&sl=auto&tl=${lang}&dt=t&q=${encodeURIComponent(text)}`);
         const data = await res.json();
