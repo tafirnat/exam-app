@@ -649,22 +649,20 @@ export function updateHomeStats() {
     updateEl('homeExamReadiness', `${calculateExamReadiness()}%`);
     updateEl('homeProgressPercent', pctText);
 
-    const readinessBtn = document.getElementById('examReadinessInfoBtn');
-    if (readinessBtn && !readinessBtn.dataset.bound) {
-        readinessBtn.dataset.bound = 'true';
-        readinessBtn.addEventListener('click', (e) => {
-            e.stopPropagation();
+    const readinessBox = document.getElementById('examReadinessStatBox');
+    if (readinessBox && !readinessBox.dataset.bound) {
+        readinessBox.dataset.bound = 'true';
+        readinessBox.addEventListener('click', () => {
             import('../../core/utils.js').then(({ showAlert }) => {
                 showAlert(t('exam_readiness_info_desc'), t('exam_readiness_info_title'));
             });
         });
     }
 
-    const avgDiffBtn = document.getElementById('avgDiffInfoBtn');
-    if (avgDiffBtn && !avgDiffBtn.dataset.bound) {
-        avgDiffBtn.dataset.bound = 'true';
-        avgDiffBtn.addEventListener('click', (e) => {
-            e.stopPropagation();
+    const avgDiffBox = document.getElementById('avgDiffStatBox');
+    if (avgDiffBox && !avgDiffBox.dataset.bound) {
+        avgDiffBox.dataset.bound = 'true';
+        avgDiffBox.addEventListener('click', () => {
             import('../../core/utils.js').then(({ showAlert }) => {
                 showAlert(t('avg_diff_info_desc'), t('avg_diff_info_title'));
             });
