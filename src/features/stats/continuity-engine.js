@@ -730,12 +730,14 @@ export function getDailyOverdueSnapshot(rawQuestions) {
         const measuredAt = Date.now();
         rawQuestions.forEach(q => {
             const key = `${q.sourceId}_${q.id}`;
+            /* Counted whether or not the question is marked learned: selection
+               serves a due question either way, so the bar has to admit the
+               same work. Gating this on `learned` while the pools no longer do
+               would set a target out of questions the app would not hand over. */
             const stat = AppState.stats[key] || { learned: false };
-            if (!stat.learned) {
-                const r = calculateRetrievability(stat.stability, stat.lastReview, measuredAt);
-                if (r > 0 && r <= 0.9) {
-                    currentOverdueCount++;
-                }
+            const r = calculateRetrievability(stat.stability, stat.lastReview, measuredAt);
+            if (r > 0 && r <= 0.9) {
+                currentOverdueCount++;
             }
         });
     }
@@ -762,12 +764,14 @@ export function getCurrentOverdueCount(rawQuestions) {
         const measuredAt = Date.now();
         rawQuestions.forEach(q => {
             const key = `${q.sourceId}_${q.id}`;
+            /* Counted whether or not the question is marked learned: selection
+               serves a due question either way, so the bar has to admit the
+               same work. Gating this on `learned` while the pools no longer do
+               would set a target out of questions the app would not hand over. */
             const stat = AppState.stats[key] || { learned: false };
-            if (!stat.learned) {
-                const r = calculateRetrievability(stat.stability, stat.lastReview, measuredAt);
-                if (r > 0 && r <= 0.9) {
-                    currentOverdueCount++;
-                }
+            const r = calculateRetrievability(stat.stability, stat.lastReview, measuredAt);
+            if (r > 0 && r <= 0.9) {
+                currentOverdueCount++;
             }
         });
     }
@@ -777,6 +781,10 @@ export function getCurrentOverdueCount(rawQuestions) {
 export function getFocusPools() {
     return AppState.continuityConfig?.focusPools || [];
 }
+
+/* Same rule the main selection uses: due beats the learned flag, and the flag
+   only holds back questions that are not due yet. */
+const injectable = (item) => item.isOverdue || !item.learned;
 
 export function applyFocusPools(selectedObjects, qsPool) {
     const focusPools = getFocusPools();
@@ -790,9 +798,9 @@ export function applyFocusPools(selectedObjects, qsPool) {
         
         if (pool.targetType === 'folder') {
             const sourcesInFolder = AppState.sources.filter(s => s.folderId === pool.targetId).map(s => s.id);
-            matchingQs = qsPool.filter(item => sourcesInFolder.includes(item.q.sourceId) && !item.learned);
+            matchingQs = qsPool.filter(item => sourcesInFolder.includes(item.q.sourceId) && injectable(item));
         } else {
-            matchingQs = qsPool.filter(item => item.q.sourceId === pool.targetId && !item.learned);
+            matchingQs = qsPool.filter(item => item.q.sourceId === pool.targetId && injectable(item));
         }
         
         let alreadyIncluded = 0;

@@ -141,13 +141,18 @@ export function prepareTest(count) {
         };
     });
 
-    const nonLearned = qs.filter(item => !item.learned);
+    /* The due date decides whether a question is asked; `learned` does not get
+       to veto it. The flag used to drop a question from selection outright, so
+       the moment FSRS pushed stability past 30 days - the point where spacing
+       starts to pay - the question left circulation for good and the schedule
+       it had just earned was never honoured. Spaced repetition is the widening
+       interval, not a graduation ceremony.
 
-    // Primary Pool: Overdue questions
-    const overduePool = nonLearned.filter(item => item.isOverdue).sort((a, b) => a.retrievability - b.retrievability);
-
-    // Secondary Pool: Rest of the questions sorted by hardness (coeff)
-    const remainingPool = nonLearned.filter(item => !item.isOverdue).sort((a, b) => b.coeff - a.coeff);
+       The flag still has a job: among questions that are NOT due, consolidated
+       ones stay out of the filler, because a session with nothing due is better
+       spent on new and weak material than on re-drilling what already holds. */
+    const overduePool = qs.filter(item => item.isOverdue).sort((a, b) => a.retrievability - b.retrievability);
+    const remainingPool = qs.filter(item => !item.isOverdue && !item.learned).sort((a, b) => b.coeff - a.coeff);
 
     let selectedObjects = [];
     const actualCount = Math.min(count, qs.length);
@@ -183,8 +188,8 @@ export function prepareTest(count) {
         }
     }
 
-    // Apply Focus Pools (Silent Fallback)
-    selectedObjects = applyFocusPools(selectedObjects, nonLearned);
+    // Apply Focus Pools (Silent Fallback) - the pool applies the same due rule
+    selectedObjects = applyFocusPools(selectedObjects, qs);
 
     const activeSources = (AppState.sources || []).filter(s => s.active && !s.archived);
     const allActiveKeepOrder = activeSources.length > 0 && activeSources.every(s => s.keepOrder || s.metadata?.keepOrder);

@@ -141,13 +141,29 @@ test('archived sources are excluded outright', () => {
     assert.deepEqual(ids, ['A_1']);
 });
 
-test('questions marked learned stay out of rotation', () => {
+/* `learned` used to drop a question from the run outright, which meant FSRS
+   could push a question to a 40-day interval and then never ask it again - the
+   widening interval is the whole mechanism, so the flag was cancelling the
+   thing it was meant to reward. Due now wins; the flag only decides who fills
+   a run that has no backlog left. */
+
+test('a due question is scheduled even when it is marked learned', () => {
     seed([
         src('A', 'f1', [{ id: 1, due: 40, learned: true }, { id: 2, due: 12 }])
     ]);
 
     const ids = buildStreakRun({ order: 'mixed', count: 5 });
-    assert.deepEqual(ids, ['A_1'.replace('1', '2')]);
+    assert.deepEqual(ids, ['A_1', 'A_2'], 'and it leads, being the more overdue of the two');
+});
+
+test('a learned question that is not due yet stays out of the filler', () => {
+    // stability 10, reviewed 5 days ago -> R ~0.95, above the 0.9 due line.
+    seed([
+        src('A', 'f1', [{ id: 1, due: 5, learned: true }, { id: 2, due: 5 }])
+    ]);
+
+    const ids = buildStreakRun({ order: 'mixed', count: 5 });
+    assert.deepEqual(ids, ['A_2'], 'a slot with nothing due belongs to unconsolidated material');
 });
 
 /* R is the primary sort key everywhere, and calculateRetrievability() used to

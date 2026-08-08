@@ -66,10 +66,6 @@ function bucketCandidates(pool, seed) {
     pool.forEach(q => {
         const key = `${q.sourceId}_${q.id}`;
         const stat = AppState.stats[key];
-        // Matches the manual test flow: a question marked learned is out of
-        // rotation until an incorrect answer puts it back.
-        if (stat?.learned) return;
-
         const r = calculateRetrievability(stat?.stability, stat?.lastReview, measuredAt);
         const item = {
             key,
@@ -78,8 +74,17 @@ function bucketCandidates(pool, seed) {
             difficulty: Number.isFinite(stat?.difficulty) ? stat.difficulty : 5
         };
 
-        if (r <= 0) fresh.push(item);
-        else if (r <= 0.9) due.push(item);
+        /* Matches the manual test flow: a due question is due whether or not it
+           is marked learned - the flag used to drop it from the run entirely,
+           which is how a question could earn a 40-day interval and then never
+           be asked again. What the flag still does is keep consolidated
+           material out of the two not-due buckets, so a run with no backlog
+           reaches for new and weak questions instead. */
+        const consolidated = !!stat?.learned;
+
+        if (r > 0 && r <= 0.9) due.push(item);
+        else if (consolidated) return;
+        else if (r <= 0) fresh.push(item);
         else upcoming.push(item);
     });
 
