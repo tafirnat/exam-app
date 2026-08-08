@@ -19,6 +19,9 @@ export const targetLanguages = [
 
 export const translations = {
     tr: {
+        nugget_edit_title: "Hap Bilgi Ekle",
+        nugget_source_label: "Kaynak Seç",
+        nugget_text_placeholder: "Örn: Everest Dağı dünyanın en yüksek zirvesidir.",
         app_title: "Exam App - İnteraktif Sınav ve Çalışma Platformu",
         app_title_short: "ExamApp | Hedefine Odaklan",
         theme_change: "Görünümü Değiştir",
@@ -693,6 +696,9 @@ export const translations = {
         nugget_text_placeholder: "Örn: Everest Dağı dünyanın en yüksek zirvesidir.",
     },
     en: {
+        nugget_edit_title: "Add Nugget",
+        nugget_source_label: "Select Source",
+        nugget_text_placeholder: "e.g., Mount Everest is the highest peak in the world.",
         app_title: "Exam App - Interactive Exam & Study Platform",
         app_title_short: "ExamApp | Focus on Your Goal",
         theme_change: "Change Theme",
@@ -1367,6 +1373,9 @@ export const translations = {
         heatmap_questions_in_progress: "{date} — {count} questions (in progress)",
     },
     de: {
+        nugget_edit_title: "Wissenshappen hinzufügen",
+        nugget_source_label: "Quelle auswählen",
+        nugget_text_placeholder: "z.B. der Mount Everest ist der höchste Gipfel der Erde.",
         app_title: "Exam App - Interaktive Prüfungs- und Lernplattform",
         app_title_short: "ExamApp | Fokus auf dein Ziel",
         theme_change: "Design ändern",
