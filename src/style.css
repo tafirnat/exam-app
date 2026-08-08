@@ -15,6 +15,14 @@
     --streak-ring-bg: #e2e8f0;
     --nugget-text-color: rgb(32 63 42);
     --nugget-source-color: var(--text-secondary);
+    --heatmap-level-1: #9be9a8;
+    --heatmap-level-2: #40c463;
+    --heatmap-level-3: #30a14e;
+    --heatmap-level-4: #216e39;
+    --heatmap-empty: #ebedf0;
+    --heatmap-frozen: #3b82f6;
+    --heatmap-partial: #fef3c7;
+    --heatmap-partial-border: #fcd34d;
 
     /* Light Theme - Doğru/Yanlış Renkleri */
     --success-color: #22c55e;
@@ -165,6 +173,14 @@
     --streak-ring-bg: #2a3441;
     --nugget-text-color: rgb(150 222 173);
     --nugget-source-color: rgba(255, 255, 255, 0.35);
+    --heatmap-level-1: #0e4429;
+    --heatmap-level-2: #006d32;
+    --heatmap-level-3: #26a641;
+    --heatmap-level-4: #39d353;
+    --heatmap-empty: rgba(255, 255, 255, 0.05);
+    --heatmap-frozen: #38bdf8;
+    --heatmap-partial: #4a3800;
+    --heatmap-partial-border: #78350f;
 
     /* Dark Theme - İSTENEN ORİJİNAL VE NET RENKLER */
     --success-color: #4caf78;

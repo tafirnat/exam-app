@@ -1274,14 +1274,15 @@ function renderHeatmapYearly() {
     updateHeatmapTitle(weeks, numDays);
 
     const isDark = document.documentElement.getAttribute('data-theme') === 'dark';
-    const colorLevel1 = isDark ? '#0e4429' : '#9be9a8';
-    const colorLevel2 = isDark ? '#006d32' : '#40c463';
-    const colorLevel3 = isDark ? '#26a641' : '#30a14e';
-    const colorLevel4 = isDark ? '#39d353' : '#216e39';
-    const colorEmpty = isDark ? 'rgba(255, 255, 255, 0.05)' : '#ebedf0';
-    const colorFrozen = isDark ? '#38bdf8' : '#3b82f6';
+    const colorLevel1 = 'var(--heatmap-level-1)';
+    const colorLevel2 = 'var(--heatmap-level-2)';
+    const colorLevel3 = 'var(--heatmap-level-3)';
+    const colorLevel4 = 'var(--heatmap-level-4)';
+    const colorEmpty = 'var(--heatmap-empty)';
+    const colorFrozen = 'var(--heatmap-frozen)';
     // Partial: answered questions but daily threshold not yet met
-    const colorPartial = isDark ? '#4a3800' : '#fef3c7';
+    const colorPartial = 'var(--heatmap-partial)';
+    const colorPartialBorder = 'var(--heatmap-partial-border)';
 
     // Roughly the width of a three-letter month at this font size.
     const MIN_LABEL_GAP = 26;
@@ -1334,7 +1335,7 @@ function renderHeatmapYearly() {
                 // Partial study: threshold not met but questions were answered.
                 // Show a dimmed amber cell so the day is not invisible.
                 rect.style.backgroundColor = colorPartial;
-                rect.style.border = `1px solid ${isDark ? '#78350f' : '#fcd34d'}`;
+                rect.style.border = `1px solid ${colorPartialBorder}`;
                 rect.title = t('heatmap_questions_in_progress', { date: dateStr, count: act.questionCount });
             } else {
                 rect.style.backgroundColor = colorEmpty;
