@@ -175,7 +175,7 @@
     --heatmap-level-2: #006d32;
     --heatmap-level-3: #26a641;
     --heatmap-level-4: #39d353;
-    --heatmap-empty: rgba(255, 255, 255, 0.05);
+    --heatmap-empty: rgba(0, 0, 0, 0.3);
     --heatmap-frozen: #38bdf8;
 
     /* Dark Theme - İSTENEN ORİJİNAL VE NET RENKLER */
@@ -6936,4 +6936,32 @@ body.dnd-active {
     #homeStatTotalInfoBtn, #examReadinessInfoBtn, #avgDiffInfoBtn {
         display: none !important;
     }
+}
+
+/* --- Heatmap Cell Styles --- */
+.heatmap-cell {
+    border-radius: 2px;
+    width: 100%;
+    height: 100%;
+    background-color: var(--heatmap-empty);
+}
+
+.heatmap-cell-level-1 {
+    background-color: var(--heatmap-level-1) !important;
+}
+
+.heatmap-cell-level-2 {
+    background-color: var(--heatmap-level-2) !important;
+}
+
+.heatmap-cell-level-3 {
+    background-color: var(--heatmap-level-3) !important;
+}
+
+.heatmap-cell-level-4 {
+    background-color: var(--heatmap-level-4) !important;
+}
+
+.heatmap-cell-frozen {
+    background-color: var(--heatmap-frozen) !important;
 }

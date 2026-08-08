@@ -1273,13 +1273,6 @@ function renderHeatmapYearly() {
 
     updateHeatmapTitle(weeks, numDays);
 
-    const isDark = document.documentElement.getAttribute('data-theme') === 'dark';
-    const colorLevel1 = 'var(--heatmap-level-1)';
-    const colorLevel2 = 'var(--heatmap-level-2)';
-    const colorLevel3 = 'var(--heatmap-level-3)';
-    const colorLevel4 = 'var(--heatmap-level-4)';
-    const colorEmpty = 'var(--heatmap-empty)';
-    const colorFrozen = 'var(--heatmap-frozen)';
 
     // Roughly the width of a three-letter month at this font size.
     const MIN_LABEL_GAP = 26;
@@ -1313,27 +1306,21 @@ function renderHeatmapYearly() {
         const act = activities[dateStr];
 
         const rect = document.createElement('div');
-        rect.style.borderRadius = '2px';
+        rect.className = 'heatmap-cell';
         rect.title = dateStr;
-        rect.style.width = `${cell}px`; // strictly sized to avoid flex stretching
-        rect.style.height = `${cell}px`;
 
         if (act) {
             const count = act.questionCount || 0;
             if (count > 0) {
-                if (count > 40) rect.style.backgroundColor = colorLevel4;
-                else if (count > 20) rect.style.backgroundColor = colorLevel3;
-                else if (count > 10) rect.style.backgroundColor = colorLevel2;
-                else rect.style.backgroundColor = colorLevel1;
+                if (count > 40) rect.classList.add('heatmap-cell-level-4');
+                else if (count > 20) rect.classList.add('heatmap-cell-level-3');
+                else if (count > 10) rect.classList.add('heatmap-cell-level-2');
+                else rect.classList.add('heatmap-cell-level-1');
                 rect.title = t('heatmap_questions_count', { date: dateStr, count: count });
             } else if (act.frozen) {
-                rect.style.backgroundColor = colorFrozen;
+                rect.classList.add('heatmap-cell-frozen');
                 rect.title = t('heatmap_frozen', { date: dateStr });
-            } else {
-                rect.style.backgroundColor = colorEmpty;
             }
-        } else {
-            rect.style.backgroundColor = colorEmpty;
         }
 
         heatmapEl.appendChild(rect);
