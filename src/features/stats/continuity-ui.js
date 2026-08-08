@@ -2168,7 +2168,7 @@ export function showSingleTokenModal(type, tokenIndex) {
                         </strong>
                         <span style="font-size: 0.78rem; color: var(--text-secondary);">${t('tokens_remaining_label', { series: seriesTitle })} · ${countLabel}</span>
                     </div>
-                    <span style="font-size: 0.8rem; font-weight: 700; padding: 3px 8px; border-radius: 12px; background: ${active ? 'rgba(16, 185, 129, 0.2)' : 'rgba(148, 163, 184, 0.2)'}; color: ${active ? '#10b981' : 'var(--text-secondary)'};">
+                    <span style="font-size: 0.8rem; font-weight: 700; padding: 3px 8px; border-radius: 12px; background: ${active ? 'rgba(16, 185, 129, 0.2)' : 'rgba(148, 163, 184, 0.2)'}; color: ${active ? '#10b981' : 'var(--text-secondary)'}; white-space: nowrap;">
                         ${active ? `● ${t('active_status')}` : `○ ${t('passive_status')}`}
                     </span>
                 </div>
@@ -2198,7 +2198,7 @@ export function showSingleTokenModal(type, tokenIndex) {
                         </strong>
                         <span style="font-size: 0.78rem; color: var(--text-secondary);">${t('tokens_remaining_label', { series: seriesTitle })} · ${countLabel}</span>
                     </div>
-                    <span style="font-size: 0.8rem; font-weight: 700; padding: 3px 8px; border-radius: 12px; background: ${active ? 'rgba(239, 68, 68, 0.2)' : 'rgba(148, 163, 184, 0.2)'}; color: ${active ? '#ef4444' : 'var(--text-secondary)'};">
+                    <span style="font-size: 0.8rem; font-weight: 700; padding: 3px 8px; border-radius: 12px; background: ${active ? 'rgba(239, 68, 68, 0.2)' : 'rgba(148, 163, 184, 0.2)'}; color: ${active ? '#ef4444' : 'var(--text-secondary)'}; white-space: nowrap;">
                         ${active ? `● ${t('active_status')}` : `○ ${t('passive_status')}`}
                     </span>
                 </div>
