@@ -1579,20 +1579,6 @@
         <div id="statsView">
             <div class="card">
                 <div class="stats-sticky-controls">
-                    <div class="stats-card-header" style="margin-bottom: 1rem; min-height: auto; justify-content: flex-end;">
-
-
-
-                        <div class="stats-header-global-toggle" id="statsGlobalToggleWrapper">
-                            <span data-i18n="all_sources_stats"
-                                style="font-size: 0.72rem; color: var(--text-secondary); font-weight: 500;">Tüm
-                                Kaynaklar</span>
-                            <label class="switch-small">
-                                <input type="checkbox" id="statsGlobalToggle">
-                                <span class="slider-small"></span>
-                            </label>
-                        </div>
-                    </div>
                     <div class="stats-filter-container" id="statsFilterBar">
                         <button class="filter-btn active" data-filter="all">
                             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"
@@ -1711,6 +1697,18 @@
                             <span class="sort-dir"></span>
                         </button>
 
+                    </div>
+                    
+                    <div class="stats-search-row" id="statsSearchRow">
+                        <div class="stats-header-global-toggle" id="statsGlobalToggleWrapper">
+                            <span data-i18n="all_sources_stats"
+                                style="font-size: 0.72rem; color: var(--text-secondary); font-weight: 500;">Tüm
+                                Kaynaklar</span>
+                            <label class="switch-small">
+                                <input type="checkbox" id="statsGlobalToggle">
+                                <span class="slider-small"></span>
+                            </label>
+                        </div>
                         <div class="search-input-wrapper" id="statsSearchWrapper" style="margin-left: auto;">
                             <input type="text" id="statsSearchInput" data-i18n-placeholder="search_label"
                                 placeholder="Ara... (#etiket)">
