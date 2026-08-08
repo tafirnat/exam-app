@@ -19,6 +19,8 @@ export const targetLanguages = [
 
 export const translations = {
     tr: {
+        app_title: "Exam App - İnteraktif Sınav ve Çalışma Platformu",
+        app_title_short: "ExamApp | Hedefine Odaklan",
         theme_change: "Görünümü Değiştir",
         star: "Yıldızla",
         unstar: "Yıldızı Kaldır",
@@ -687,6 +689,8 @@ export const translations = {
         nugget_text_placeholder: "Örn: Everest Dağı dünyanın en yüksek zirvesidir.",
     },
     en: {
+        app_title: "Exam App - Interactive Exam & Study Platform",
+        app_title_short: "ExamApp | Focus on Your Goal",
         theme_change: "Change Theme",
         star: "Star",
         unstar: "Unstar",
@@ -1355,6 +1359,8 @@ export const translations = {
         heatmap_questions_in_progress: "{date} — {count} questions (in progress)",
     },
     de: {
+        app_title: "Exam App - Interaktive Prüfungs- und Lernplattform",
+        app_title_short: "ExamApp | Fokus auf dein Ziel",
         theme_change: "Design ändern",
         star: "Markieren",
         unstar: "Markierung aufheben",
@@ -2081,4 +2087,17 @@ export function updateStaticTranslations() {
         const key = el.getAttribute('data-i18n-aria-label');
         el.setAttribute('aria-label', t(key));
     });
+
+    updateDocumentTitle();
+}
+
+export function updateDocumentTitle(viewName = null) {
+    const testView = document.getElementById('testView');
+    const isTestActive = viewName === 'test' || (testView && testView.style.display === 'flex');
+    
+    if (isTestActive && AppState.testTracking && AppState.testTracking.sourceTitle) {
+        document.title = AppState.testTracking.sourceTitle;
+    } else {
+        document.title = t('app_title_short') || "ExamApp";
+    }
 }

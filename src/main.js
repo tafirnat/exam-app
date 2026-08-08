@@ -1,6 +1,6 @@
 import { AppState, initState, saveStats, saveSources, saveCurrentSource, saveCustomAIPrompt, saveAiProviders, DEFAULT_AI_PROVIDERS, saveActiveTest, clearActiveTest, clearLocalStudyData, clearProgressData, clearSourcesData, SAMPLE_LOADED_KEY, findMatchingPresetId } from './core/state.js';
 import { initTheme, toggleTheme, getActiveTheme } from './core/theme.js';
-import { updateStaticTranslations, t, targetLanguages, translations } from './core/i18n.js';
+import { updateStaticTranslations, updateDocumentTitle, t, targetLanguages, translations } from './core/i18n.js';
 import { showToast, showConfirm, getCorrectAnswers, highlightText, escapeHTML } from './core/utils.js';
 import { migrateOldData, migrateFolderColors, sanitizeStudyActivity, migrateExamIds } from './core/migration.js';
 import { getQuestionCategory } from './core/question-rules.js';
@@ -2023,6 +2023,10 @@ function switchView(view, isBack = false) {
     } else if (view === 'stats') {
         const titleText = (typeof getI18nText === 'function' ? getI18nText('show_stats') : '') || 'Soru Detayları';
         document.getElementById('headerTitle').innerText = titleText;
+    }
+
+    if (typeof updateDocumentTitle === 'function') {
+        updateDocumentTitle(view);
     }
 }
 
