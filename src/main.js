@@ -2047,7 +2047,9 @@ function switchView(view, isBack = false) {
     }
 
     if (view === 'home') {
-        document.getElementById('headerTitle').innerText = 'Exam App';
+        const headerTitle = document.getElementById('headerTitle');
+        headerTitle.removeAttribute('data-i18n');
+        headerTitle.innerText = 'Exam App';
         updateHomeStats();
         checkActiveTest();
         // Deferred here on purpose: the warning asks the user to make a decision
@@ -2055,11 +2057,15 @@ function switchView(view, isBack = false) {
         maybeShowStorageNotice();
     } else if (view === 'sources') {
         const titleText = (typeof getI18nText === 'function' ? getI18nText('saved_sources') : '') || 'Kayıtlı Kaynaklar';
-        document.getElementById('headerTitle').innerText = titleText;
+        const headerTitle = document.getElementById('headerTitle');
+        headerTitle.setAttribute('data-i18n', 'saved_sources');
+        headerTitle.innerText = titleText;
         renderSourcesList();
     } else if (view === 'stats') {
         const titleText = (typeof getI18nText === 'function' ? getI18nText('show_stats') : '') || 'Soru Detayları';
-        document.getElementById('headerTitle').innerText = titleText;
+        const headerTitle = document.getElementById('headerTitle');
+        headerTitle.setAttribute('data-i18n', 'show_stats');
+        headerTitle.innerText = titleText;
     }
 
     if (typeof updateDocumentTitle === 'function') {
