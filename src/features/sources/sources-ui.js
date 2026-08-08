@@ -572,8 +572,23 @@ export function renderHomeActiveSources() {
         countSpan.className = 'active-source-count';
         countSpan.textContent = `(${qCount})`;
 
+        /* The home readiness tile is the plain mean of these very numbers, over
+           this very set (`active && !archived` on both sides). Showing the terms
+           next to the average is what makes it auditable: a new topic reading 0%
+           explains the drop on its own. */
+        const mastery = calculateTopicMastery(s.id);
+        const masterySpan = document.createElement('span');
+        masterySpan.className = 'active-source-mastery';
+        masterySpan.textContent = `${mastery}%`;
+        masterySpan.title = `${t('topic_mastery')}: ${mastery}%`;
+
+        const meta = document.createElement('div');
+        meta.className = 'active-source-meta';
+        meta.appendChild(countSpan);
+        meta.appendChild(masterySpan);
+
         row.appendChild(leftDiv);
-        row.appendChild(countSpan);
+        row.appendChild(meta);
 
         row.addEventListener('click', (e) => {
             e.stopPropagation();

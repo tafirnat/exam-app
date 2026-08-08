@@ -5681,6 +5681,30 @@ body.dnd-active {
     margin-left: 0.5rem;
 }
 
+.active-source-meta {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    flex-shrink: 0;
+    margin-left: 0.5rem;
+}
+
+.active-source-meta .active-source-count {
+    margin-left: 0;
+}
+
+/* The topic's own mastery, sitting next to its question count. Reads as the
+   value of the row, so it carries the weight the count does not - but no hue
+   of its own: the number is not a verdict and there is no calibrated
+   threshold behind it. */
+.active-source-mastery {
+    font-size: 0.76rem;
+    font-weight: 600;
+    color: var(--text-primary);
+    flex-shrink: 0;
+    font-variant-numeric: tabular-nums;
+}
+
 /* Modal 2-Column Action Buttons Grid */
 .modal-grid-2col {
     display: grid;

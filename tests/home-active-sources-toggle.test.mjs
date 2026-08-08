@@ -50,6 +50,49 @@ test('renderHomeActiveSources displays active source count and defaults to close
     assert.match(countSpan.textContent, /\(.*\:\s*2\)/, 'Count span should show 2 active sources');
 });
 
+/* The home readiness tile is the mean of these rows. A row that renders its
+   own mastery is what lets the user check that mean against its terms, so the
+   number has to be the same calculation - not an approximation of it. */
+test('each active source row shows its own topic mastery', () => {
+    AppState.sources = [
+        { id: 's1', name: 'Studied', active: true, questions: [{ id: 1 }, { id: 2 }] },
+        { id: 's2', name: 'Untouched', active: true, questions: [{ id: 1 }] }
+    ];
+    /* stability 21 caps sFactor at 1 and a review of "now" puts r at 1, so the
+       question contributes a full point: one of two questions answered is 50%. */
+    AppState.stats = {
+        's1_1': { stability: 21, lastReview: new Date().toISOString() }
+    };
+
+    renderHomeActiveSources();
+
+    const rows = global.document.querySelectorAll('#homeActiveSourcesList .active-source-row');
+    assert.equal(rows.length, 2);
+
+    const mastery = [...rows].map(r => r.querySelector('.active-source-mastery')?.textContent);
+    assert.deepEqual(mastery, ['50%', '0%'], 'each row carries its own mastery');
+
+    assert.match(
+        rows[0].querySelector('.active-source-mastery').title,
+        /50%/,
+        'the value is reachable as a tooltip too'
+    );
+});
+
+/* Mastery comes out of AppState.stats, but this consumer used to subscribe to
+   sources and folders only. Without the stats slice the rows keep whatever
+   value they had when the library last changed, so a whole session of work
+   leaves them untouched - and nothing else on the home screen would say so.
+   The row-rendering test above passes either way, which is why the wiring
+   needs a case of its own. */
+test('the home active-sources consumer redraws on stats changes', async () => {
+    const bindings = readFileSync(new URL('../src/core/ui-bindings.js', import.meta.url), 'utf8');
+    const entry = bindings.slice(bindings.indexOf("name: 'home:activeSources'"));
+    const slices = entry.slice(entry.indexOf('slices:'), entry.indexOf(']', entry.indexOf('slices:')));
+
+    assert.match(slices, /Slice\.STATS/, 'home:activeSources must follow the stats slice');
+});
+
 test('clicking homeActiveSourcesHeader toggles list open and closed', () => {
     AppState.sources = [
         { id: 's1', name: 'Source 1', active: true, questions: [1] }

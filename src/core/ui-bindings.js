@@ -73,8 +73,14 @@ const BINDINGS = [
         views: [View.HOME]
     },
     {
+        /* STATS is in here for the per-topic mastery on each row: it is derived
+           from AppState.stats, so without this slice the percentages would sit
+           at the value they had when the source list last changed - a session's
+           work would not show until something else touched sources. The view
+           gate keeps the cost off the answer path; store defers a hidden
+           consumer and runs it once on the way back in. */
         name: 'home:activeSources',
-        slices: [Slice.SOURCES, Slice.FOLDERS],
+        slices: [Slice.SOURCES, Slice.FOLDERS, Slice.STATS],
         run: renderHomeActiveSources,
         views: [View.HOME]
     },
