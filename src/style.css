@@ -13,7 +13,7 @@
     --primary-hover: #2563eb;
     --ice-blue: #7dd3fc;
     --streak-ring-bg: #e2e8f0;
-    --nugget-text-color: rgb(49 50 6);
+    --nugget-text-color: rgb(32 63 42);
     --nugget-source-color: var(--text-secondary);
 
     /* Light Theme - Doğru/Yanlış Renkleri */
@@ -163,7 +163,7 @@
     --primary-color: #7fa4e6;
     --primary-hover: #60a5fa;
     --streak-ring-bg: #2a3441;
-    --nugget-text-color: rgb(193 195 114);
+    --nugget-text-color: rgb(150 222 173);
     --nugget-source-color: rgba(255, 255, 255, 0.35);
 
     /* Dark Theme - İSTENEN ORİJİNAL VE NET RENKLER */
