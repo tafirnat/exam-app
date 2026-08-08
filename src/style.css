@@ -1006,6 +1006,13 @@ textarea {
     hyphens: auto;
 }
 
+.stat-label .mobile-text {
+    display: none;
+}
+.stat-label .desktop-text {
+    display: inline;
+}
+
 /* --- Test View Specifics --- */
 #testView {
     display: none;
@@ -6872,5 +6879,18 @@ body.dnd-active {
     }
     .results-actions .btn {
         width: 100%;
+    }
+}
+
+/* --- Mobile Responsiveness for Home Stats Text --- */
+@media (max-width: 600px) {
+    #homeStatsActiveBody .stat-label .desktop-text {
+        display: none;
+    }
+    #homeStatsActiveBody .stat-label .mobile-text {
+        display: inline;
+    }
+    #homeStatsActiveBody .stat-value {
+        font-size: 2rem;
     }
 }
