@@ -1230,7 +1230,31 @@ function renderHeatmapYearly() {
     // clientWidth of 0 and every column would be sized against nothing.
     if (wrapper) wrapper.style.display = 'block';
 
-    const cell = window.innerWidth <= 600 ? 8 : 10;
+    const lang = document.documentElement.lang || 'tr';
+
+    getHeatmapDayLabels(lang).forEach(label => {
+        const div = document.createElement('div');
+        div.textContent = label;
+        yAxisEl.appendChild(div);
+    });
+
+    // The gutter is measured rather than assumed - the day labels differ in
+    // width per language, and guessing it wrong costs a whole column.
+    const gutter = Math.ceil(yAxisEl.getBoundingClientRect().width) + 4;
+    const availableW = (wrapper?.clientWidth || 0) - gutter;
+
+    let cell = 10;
+    if (window.innerWidth <= 600) {
+        cell = 8;
+    } else {
+        if (availableW > 0) {
+            const optimalCell = Math.floor(availableW / HEATMAP_MAX_WEEKS) - HEATMAP_GAP;
+            // Constrain the dynamically calculated cell size (e.g. min 10px, max 16px)
+            cell = Math.max(10, Math.min(16, optimalCell));
+        } else {
+            cell = 12; // Fallback if unable to measure
+        }
+    }
 
     heatmapEl.style.gridTemplateRows = `repeat(7, ${cell}px)`;
     heatmapEl.style.gridAutoFlow = 'column';
@@ -1240,21 +1264,10 @@ function renderHeatmapYearly() {
 
     const activities = AppState.studyActivity || {};
 
-    const lang = document.documentElement.lang || 'tr';
-
-    getHeatmapDayLabels(lang).forEach(label => {
-        const div = document.createElement('div');
-        div.textContent = label;
-        yAxisEl.appendChild(div);
-    });
-
     yAxisEl.style.gridTemplateRows = `repeat(7, ${cell}px)`;
     yAxisEl.style.lineHeight = `${cell}px`;
 
-    // The gutter is measured rather than assumed - the day labels differ in
-    // width per language, and guessing it wrong costs a whole column.
-    const gutter = Math.ceil(yAxisEl.getBoundingClientRect().width) + 4;
-    const weeks = fitHeatmapWeeks((wrapper?.clientWidth || 0) - gutter, cell);
+    const weeks = fitHeatmapWeeks(availableW, cell);
     const { start, numDays } = buildHeatmapWindow(weeks);
     const currentDate = start;
 
