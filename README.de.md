@@ -45,9 +45,9 @@ Exam App wurde für alle entwickelt, die aus eigenem Material lernen:
 - **Karteikarte (Flashcard)** — klassisches Flip-Karten-Format mit Selbstbewertung
 - **Lesematerial** — reichhaltige Markdown-Lernnotizen ohne Bewertungsdruck *(ehem. `topic_review`)*
 
-### Intelligentes Spaced Repetition (FSRS v4.5)
+### Intelligentes Spaced Repetition (FSRS v5)
 
-Schwierige Fragen kommen häufiger. Gut bekannte Fragen werden seltener wiederholt. Der FSRS v4.5-Algorithmus — auch von Anki genutzt — passt Wiederholungsintervalle an Ihr echtes Gedächtnis an, nicht an einen festen Plan.
+Schwierige Fragen kommen häufiger. Gut bekannte Fragen werden seltener wiederholt. Der FSRS v5-Algorithmus — auch von Anki genutzt — passt Wiederholungsintervalle an Ihr echtes Gedächtnis an, nicht an einen festen Plan.
 
 ### Tägliche Wiederholung mit einem Tipp
 
@@ -224,7 +224,7 @@ Exam App nutzt ein sauberes, menschenlesbares JSON-Schema bestehend aus `exam_me
 
 ### Kern-Algorithmen
 
-- **FSRS v4.5** — Free Spaced Repetition Scheduler für gedächtnisangepasste Wiederholungsintervalle
+- **FSRS v5** — Free Spaced Repetition Scheduler für gedächtnisangepasste Wiederholungsintervalle
 - **Archiv-FSRS-Einfrierung** — Die im Archiv verbrachte Zeit zählt nicht gegen Fragenschwellen; das Wiederherstellen großer Archive überflutet nie Ihre Warteschlange
 
 ---

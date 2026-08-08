@@ -45,9 +45,9 @@ Exam App, kendi materyallerinden öğrenen herkes için tasarlanmıştır:
 - **Bilgi Kartı (Flashcard)** — kendi hatırlama seviyenizi değerlendirdiğiniz klasik çevir-kart formatı
 - **Okuma Materyali** — not baskısı olmadan zengin Markdown çalışma notları *(eski adı: `topic_review`)*
 
-### Akıllı Aralıklı Tekrar (FSRS v4.5)
+### Akıllı Aralıklı Tekrar (FSRS v5)
 
-Zorlandığınız sorular daha sık gelir. İyi bildiğiniz sorular daha seyrek tekrar eder. Anki'nin de kullandığı FSRS v4.5 algoritması, tekrar aralıklarını sabit bir takvime değil, gerçek hafıza performansınıza göre ayarlar.
+Zorlandığınız sorular daha sık gelir. İyi bildiğiniz sorular daha seyrek tekrar eder. Anki'nin de kullandığı FSRS v5 algoritması, tekrar aralıklarını sabit bir takvime değil, gerçek hafıza performansınıza göre ayarlar.
 
 ### Tek Tıkla Günlük Tekrar
 
@@ -224,7 +224,7 @@ Exam App, `exam_metadata` ve `questions` dizisinden oluşan temiz, insan tarafı
 
 ### Temel Algoritmalar
 
-- **FSRS v4.5** — Hafızaya uyarlanmış tekrar aralıkları için Free Spaced Repetition Scheduler
+- **FSRS v5** — Hafızaya uyarlanmış tekrar aralıkları için Free Spaced Repetition Scheduler
 - **Arşiv FSRS Dondurma** — Arşivde geçen süre sorunun takvimine işlenmez; büyük arşivi geri almak günlük kuyruğu asla taşırmaz
 
 ---

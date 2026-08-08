@@ -45,9 +45,9 @@ Exam App is built for anyone who learns from their own material:
 - **Flashcard** — classic flip card with self-rated retention
 - **Reading Material** — rich Markdown study notes, no grading pressure *(alias: `topic_review`)*
 
-### Intelligent Spaced Repetition (FSRS v4.5)
+### Intelligent Spaced Repetition (FSRS v5)
 
-Questions you find hard come back sooner. Questions you know well are spaced further apart. The FSRS v4.5 algorithm — the same engine used by Anki — adapts review intervals to your actual memory, not a fixed timetable.
+Questions you find hard come back sooner. Questions you know well are spaced further apart. The FSRS v5 algorithm — the same engine used by Anki — adapts review intervals to your actual memory, not a fixed timetable.
 
 ### One-Tap Daily Review
 
@@ -224,7 +224,7 @@ Exam App uses a clean, human-readable JSON schema consisting of `exam_metadata` 
 
 ### Core Algorithms
 
-- **FSRS v4.5** — Free Spaced Repetition Scheduler for memory-adapted review intervals
+- **FSRS v5** — Free Spaced Repetition Scheduler for memory-adapted review intervals
 - **Archive FSRS Freezing** — Time spent in archive does not count against question schedules; restoring large archives never floods your queue
 
 ---
