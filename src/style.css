@@ -6897,7 +6897,7 @@ body.dnd-active {
 
 /* --- Mobile Info Icons --- */
 @media (max-width: 600px) {
-    #examReadinessInfoBtn, #avgDiffInfoBtn {
+    #homeStatTotalInfoBtn, #examReadinessInfoBtn, #avgDiffInfoBtn {
         display: none !important;
     }
 }
