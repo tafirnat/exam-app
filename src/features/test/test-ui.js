@@ -2,7 +2,7 @@
 import { AppState, saveStats, saveSources } from '../../core/state.js';
 import { readJSON } from '../../core/storage.js';
 import { translateText, showToast, showConfirm, getCorrectAnswers, escapeHTML } from '../../core/utils.js';
-import { t, targetLanguages } from '../../core/i18n.js';
+import { t, targetLanguages, updateDocumentTitle } from '../../core/i18n.js';
 import { evaluateAnswer, updateStats, updateFlashcardStats, finishTest, calculateRetrievability } from './test-engine.js';
 import { resetTimerForNewQuestion, stopTimer } from './timer-module.js';
 import { getQuestionCategory } from '../../core/question-rules.js';
@@ -552,6 +552,10 @@ export function renderQuestion(isRefresh = false) {
     updateFooterTags(q.tags, 'questionFooterTags');
     updateIndicators();
     updateQuestionStatsInfo(q.sourceId, q.id);
+
+    if (typeof updateDocumentTitle === 'function') {
+        updateDocumentTitle('test');
+    }
 
     if (q.type === 'flashcard') {
         if (isChecked) {

@@ -2095,9 +2095,25 @@ export function updateDocumentTitle(viewName = null) {
     const testView = document.getElementById('testView');
     const isTestActive = viewName === 'test' || (testView && testView.style.display === 'flex');
     
-    if (isTestActive && AppState.testTracking && AppState.testTracking.sourceTitle) {
-        document.title = AppState.testTracking.sourceTitle;
-    } else {
-        document.title = t('app_title_short') || "ExamApp";
+    if (isTestActive && AppState.testTracking) {
+        let title = AppState.testTracking.sourceTitle;
+        
+        if (AppState.currentTest && AppState.currentTest.length > 0 && typeof AppState.currentIndex === 'number') {
+            const currentQId = AppState.currentTest[AppState.currentIndex];
+            const currentQ = AppState.questionMap?.[currentQId];
+            if (currentQ && currentQ.sourceId && AppState.sources) {
+                const specificSource = AppState.sources.find(s => s.id === currentQ.sourceId);
+                if (specificSource && specificSource.name) {
+                    title = specificSource.name;
+                }
+            }
+        }
+        
+        if (title) {
+            document.title = title;
+            return;
+        }
     }
+    
+    document.title = t('app_title_short') || "ExamApp";
 }
