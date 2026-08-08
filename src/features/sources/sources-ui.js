@@ -327,10 +327,18 @@ export function showSourceActions(source) {
         if (actionsBody) actionsBody.prepend(moveContainer);
     }
     
-    const selectableFolders = liveFolders();
+    /* The uncategorised folder is a display bucket, not a destination. A source
+       that belongs nowhere carries `folderId === null` - initState flattens the
+       id to null on the way in (state.js) - so the "root" option below is the
+       one that writes the canonical value. Listing the system folder as well
+       offered the same place twice under the same name, and picking that copy
+       wrote an id that only the next boot would flatten: until then the `order`
+       count here reads folderId literally and would file the source into a
+       bucket of its own. Same filter the reset paths use. */
+    const selectableFolders = liveFolders().filter(f => !f.isSystem && f.id !== UNCATEGORIZED_FOLDER_ID);
     if (selectableFolders.length > 0) {
         let optionsHtml = `<option value="">-- ${t('move_to_folder')} --</option>`;
-        optionsHtml += `<option value="root">${t('root_folder')}</option>`;
+        optionsHtml += `<option value="root" ${!source.folderId ? 'selected' : ''}>${t('root_folder')}</option>`;
         selectableFolders.forEach(f => {
             optionsHtml += `<option value="${escapeHTML(f.id)}" ${source.folderId === f.id ? 'selected' : ''}>${escapeHTML(f.name)}</option>`;
         });
@@ -345,6 +353,10 @@ export function showSourceActions(source) {
         const selectEl = document.getElementById('moveToFolderSelect');
         selectEl.onchange = (e) => {
             const val = e.target.value;
+            /* The first option is the prompt, not a destination. It used to fall
+               through to the bookkeeping below, which renumbered the source and
+               closed the dialog without moving anything. */
+            if (!val) return;
             if (val === 'root') {
                 source.folderId = null;
             } else if (val) {
