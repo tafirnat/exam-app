@@ -32,6 +32,18 @@ export function spendName(track, dateKey) {
 }
 
 /**
+ * The day a spend bought, read back off its name.
+ *
+ * A legacy entry names no day, and `_legacy:0` sorts below every real day key,
+ * which is the right answer for it: it predates the ledger, so it predates any
+ * reset the caller is comparing against.
+ */
+function spendDay(name) {
+    const at = String(name).indexOf(':');
+    return at < 0 ? '' : String(name).slice(at + 1);
+}
+
+/**
  * The ledger, synthesising one from `remaining` the first time a record from an
  * older build comes through. Mutates `tokens`, because callers write into it.
  */
@@ -94,14 +106,37 @@ export function grantToken(tokens) {
  * *different* tracks - one had a global token, the other only a cross-use joker
  * - the union holds two spends for one frozen day. Bounded, rare, and the
  * alternative is a lock this storage cannot offer.
+ *
+ * @param {string|null} [voidBefore] The day a progress reset happened on, as a
+ *        day key. A spend buys one named day, and a reset drops every day record
+ *        *before* the one it happened on - so a spend naming one of those bought
+ *        something that no longer exists. Without this the union is the one rule
+ *        a reset cannot survive: it is unconditional, so any device that had not
+ *        yet seen the reset hands its pre-reset spends straight back and the
+ *        reset's refill is undone one entry at a time.
+ *
+ *        The reset day itself is kept, matching the day record, which survives
+ *        it too. A spend for that day cannot predate the reset in any case: a day
+ *        is only ever frozen once it is past - freezeMissedDaysIfPossible() looks
+ *        at yesterday and the day before, never today - so a charge naming the
+ *        reset day was necessarily made after the reset.
  */
-export function mergeFreezeTokens(local, remote, localWins) {
+export function mergeFreezeTokens(local, remote, localWins, voidBefore = null) {
     const l = local && typeof local === 'object' ? { ...local } : null;
     const r = remote && typeof remote === 'object' ? { ...remote } : null;
     if (!l) return r;
     if (!r) return l;
 
     const winner = { ...(localWins ? l : r) };
-    winner.spentOn = Array.from(new Set([...spendLedger(l), ...spendLedger(r)]));
+    /* Sorted, because the ledger is a set and the union's order is otherwise
+       whichever side went in first - so two devices holding the same spends
+       serialise differently. `remaining` is derived from the length either way,
+       but persistIfChanged() and the config merge both compare serialised
+       values, and a difference that is only an ordering reads as a change and
+       schedules a push that has nothing to say. */
+    const ledger = Array.from(new Set([...spendLedger(l), ...spendLedger(r)])).sort();
+    winner.spentOn = voidBefore
+        ? ledger.filter(name => spendDay(name) >= voidBefore)
+        : ledger;
     return recomputeRemaining(winner);
 }

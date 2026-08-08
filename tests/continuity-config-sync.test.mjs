@@ -14,7 +14,7 @@ import { JSDOM } from 'jsdom';
    that down: the stamping, the per-key pick, and the two boundaries that decide
    whether the change survives an upgrade or a reset. */
 
-let AppState, initState, saveContinuityConfig, mergeSyncData;
+let AppState, initState, saveContinuityConfig, clearProgressData, mergeSyncData;
 
 before(async () => {
     const dom = new JSDOM('<!doctype html><html><body></body></html>', { url: 'http://localhost/' });
@@ -23,7 +23,7 @@ before(async () => {
     global.localStorage = dom.window.localStorage;
     Object.defineProperty(global, 'navigator', { value: dom.window.navigator, configurable: true });
 
-    ({ AppState, initState, saveContinuityConfig } = await import('../src/core/state.js'));
+    ({ AppState, initState, saveContinuityConfig, clearProgressData } = await import('../src/core/state.js'));
     ({ mergeSyncData } = await import('../src/core/github-sync.js'));
 });
 
@@ -309,4 +309,130 @@ test('the remote wins the whole config when its progress reset is the newer one'
     );
 
     assert.deepEqual(merged.continuityConfig.focusSources, []);
+});
+
+/* The boundary above is a *window*, and the two cases that pinned it down were
+   both taken from inside it. The window has to close, and the case that says so
+   is the one below: the reset instant is propagated to every device by the pull,
+   so "both sides hold the same non-zero instant" is the permanent state of every
+   device that has ever seen a progress reset. Measured against the reset instants
+   alone, `local >= remote` was then true on all of them forever - each device
+   kept its own config and none ever adopted anything from the Gist, in both
+   directions, since the push path merges before it writes. On the three-device
+   harness one reset was enough to leave 60 of 60 seeded runs with the three
+   devices on three different focus selections, while the day records they were
+   derived from stayed identical. Which is exactly how it looked from the outside:
+   the daily FSRS synced, Odak Seri did not. */
+
+test('the config merges again once the reset has reached both sides', () => {
+    const local = stamped({ focusSources: [] }, {});
+    const remote = stamped({ focusSources: ['anatomy'] }, { focusSources: [12000, 'dev-b'] });
+
+    const merged = mergeSyncData(
+        payload(local, { lastProgressResetTimestamp: 10000 }),
+        // Written after the reset, so the resetting device has already pushed.
+        payload(remote, { lastProgressResetTimestamp: 10000, lastUpdated: 12500 })
+    );
+
+    assert.deepEqual(merged.continuityConfig.focusSources, ['anatomy']);
+});
+
+test('and a change made after the reset still gets off the device that made it', () => {
+    const local = stamped({ focusSources: ['anatomy'] }, { focusSources: [12000, 'dev-a'] });
+    const remote = stamped({ focusSources: [] }, {});
+
+    const merged = mergeSyncData(
+        payload(local, { lastProgressResetTimestamp: 10000 }),
+        payload(remote, { lastProgressResetTimestamp: 10000, lastUpdated: 12500 })
+    );
+
+    assert.deepEqual(merged.continuityConfig.focusSources, ['anatomy']);
+    assert.equal(merged.hasLocalChanges, true);
+});
+
+test('a reset the remote has not seen yet still takes the whole config', () => {
+    // The window itself: local reset after the remote payload was written, so
+    // remote is holding pre-reset values however they are stamped.
+    const local = stamped({ freezeTokens: tokens(1), focusSources: [] }, {});
+    const remote = stamped(
+        { freezeTokens: tokens(0), focusSources: ['anatomy'] },
+        { freezeTokens: [11000, 'dev-b'], focusSources: [11000, 'dev-b'] }
+    );
+
+    const merged = mergeSyncData(
+        payload(local, { lastProgressResetTimestamp: 12000 }),
+        payload(remote, { lastProgressResetTimestamp: 0, lastUpdated: 11500 })
+    );
+
+    assert.deepEqual(merged.continuityConfig.focusSources, []);
+    assert.equal(merged.continuityConfig.freezeTokens.remaining, 1);
+});
+
+test('a device that missed the reset cannot out-stamp it afterwards', () => {
+    /* Once the window has closed the per-key stamps are the only defence left,
+       which is why clearProgressData() stamps what it rewrites. dev-c here has
+       been offline since before the reset and comes back with its own older
+       stamps and a spent ledger.
+
+       A real instant, not the small integers the cases above use: the ledger
+       floor is this timestamp read as a *day*, so 12000ms would put the floor in
+       1970 and void nothing at all. */
+    const resetAt = Date.UTC(2026, 7, 1, 12, 0);
+    // What clearProgressData() leaves behind: one token, ledger emptied.
+    const factory = {
+        total: 1, remaining: 1, tier1Earned: false, tier2Earned: false,
+        initialized: true, spentOn: []
+    };
+    const local = stamped(
+        { freezeTokens: factory, focusSources: ['anatomy'] },
+        { freezeTokens: [resetAt, 'dev-a'], focusSources: [9000, 'dev-a'] }
+    );
+    const remote = stamped(
+        { freezeTokens: spent(['global:2026-07-30', 'global:2026-07-29']), focusSources: ['physio'] },
+        { freezeTokens: [resetAt - 1000, 'dev-c'], focusSources: [8000, 'dev-c'] }
+    );
+
+    const merged = mergeSyncData(
+        payload(local, { lastProgressResetTimestamp: resetAt }),
+        payload(remote, { lastProgressResetTimestamp: resetAt, lastUpdated: resetAt + 1000 })
+    );
+
+    // The reset's own record wins the scalars, and the ledger floor voids the
+    // spends dev-c is still carrying - a union alone would have handed them back.
+    assert.equal(merged.continuityConfig.freezeTokens.remaining, 1);
+    assert.deepEqual(merged.continuityConfig.freezeTokens.spentOn, []);
+    // The selection is configuration the reset deliberately keeps, so it is
+    // settled on stamps like any other key - and dev-a's is the newer one.
+    assert.deepEqual(merged.continuityConfig.focusSources, ['anatomy']);
+});
+
+test('a progress reset stamps the records it rewrites and nothing else', () => {
+    /* The write that feeds the rule above. Without it the reset leaves the token
+       records carrying the stamps of the spends it just cleared, and the case
+       above passes for the wrong reason - or not at all. */
+    const realNow = Date.now;
+    try {
+        initState({ force: true });
+        AppState.deviceId = 'dev-a';
+
+        Date.now = () => 5000;
+        AppState.continuityConfig.focusSources = ['anatomy'];
+        AppState.continuityConfig.freezeTokens = spent(['global:2026-07-30']);
+        AppState.continuityConfig.focusFreezeTokens = spent(['focus:2026-07-30']);
+        saveContinuityConfig();
+
+        Date.now = () => 9000;
+        clearProgressData();
+
+        const revisions = AppState.continuityConfig.revisions;
+        assert.equal(revisions.freezeTokens.at, 9000, 'the reset owns the ledger it emptied');
+        assert.equal(revisions.freezeTokens.by, 'dev-a');
+        assert.equal(revisions.focusFreezeTokens.at, 9000);
+        // The focus selection survives a progress reset by design, so the reset
+        // has no business claiming authority over it.
+        assert.equal(revisions.focusSources.at, 5000);
+        assert.deepEqual(AppState.continuityConfig.focusSources, ['anatomy']);
+    } finally {
+        Date.now = realNow;
+    }
 });

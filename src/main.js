@@ -1,4 +1,4 @@
-import { AppState, initState, saveStats, saveSources, saveCurrentSource, saveCustomAIPrompt, saveAiProviders, DEFAULT_AI_PROVIDERS, saveActiveTest, clearActiveTest, clearLocalStudyData, clearProgressData, clearSourcesData, SAMPLE_LOADED_KEY, findMatchingPresetId } from './core/state.js';
+import { AppState, initState, saveStats, saveSources, saveCurrentSource, saveCustomAIPrompt, saveAiProviders, saveLanguageSettings, DEFAULT_AI_PROVIDERS, saveActiveTest, clearActiveTest, clearLocalStudyData, clearProgressData, clearSourcesData, SAMPLE_LOADED_KEY, findMatchingPresetId } from './core/state.js';
 import { initTheme, toggleTheme, getActiveTheme } from './core/theme.js';
 import { updateStaticTranslations, updateDocumentTitle, t, targetLanguages, translations } from './core/i18n.js';
 import { showToast, showConfirm, getCorrectAnswers, highlightText, escapeHTML } from './core/utils.js';
@@ -1065,6 +1065,8 @@ function setupEventListeners() {
             const lang = btn.getAttribute('data-lang');
             AppState.language = lang;
             persist('focus_app_lang', lang);
+            // Stamps the key and schedules the push; the value is already written.
+            saveLanguageSettings();
             updateLangUI(); // Immediate UI feedback
 
             try {
@@ -1097,6 +1099,7 @@ function setupEventListeners() {
         transSelect.onchange = (e) => {
             AppState.translationTarget = e.target.value;
             persist('focus_app_target_lang', e.target.value);
+            saveLanguageSettings();
         };
     }
 
@@ -1110,6 +1113,7 @@ function setupEventListeners() {
         transToggle.onchange = (e) => {
             AppState.translationEnabled = e.target.checked;
             persist('focus_app_translation_enabled', e.target.checked);
+            saveLanguageSettings();
             updateTranslationUI();
         };
     }
@@ -1253,6 +1257,39 @@ function setupEventListeners() {
             import('./core/state.js').then(m => m.saveTimerSettings());
         };
     }
+
+    /* The settings now arrive from other devices as well as from these controls,
+       and every control above reads AppState exactly once, at wiring time. Without
+       this a pulled change sat in storage until the next reload - the toggle still
+       showed the old position and the chrome stayed in the old language.
+
+       Subscribed from here rather than added to ui-bindings.js, which is the usual
+       home for a row like this: the controls only exist in this closure, and
+       ui-bindings.js cannot import main.js without closing the cycle. */
+    const refreshSettingsControls = () => {
+        if (transSelect) transSelect.value = AppState.translationTarget;
+        if (transToggle) transToggle.checked = AppState.translationEnabled;
+        updateTranslationUI();
+
+        if (ttsToggle) ttsToggle.checked = AppState.ttsEnabled;
+        if (ttsAutoplayToggle) ttsAutoplayToggle.checked = AppState.ttsAutoplay;
+        if (ttsMenuSpeed) {
+            ttsMenuSpeed.value = AppState.ttsSpeed;
+            updateTtsTooltip(AppState.ttsSpeed);
+        }
+        updateTtsMenuUI();
+
+        if (stopwatchToggle) stopwatchToggle.checked = AppState.timerStopwatchEnabled;
+        if (countdownToggle) countdownToggle.checked = AppState.timerCountdownEnabled;
+        if (countdownLimitInput) countdownLimitInput.value = AppState.timerCountdownLimit;
+        if (countdownAutoCheckToggle) countdownAutoCheckToggle.checked = AppState.timerAutoCheckEnabled ?? true;
+        updateCountdownUI();
+
+        // The language decides every static label, not just this menu.
+        updateLangUI();
+        updateStaticTranslations();
+    };
+    store.subscribe('settings:controls', [Slice.SETTINGS], refreshSettingsControls);
 
     setupStatsEventListeners();
 

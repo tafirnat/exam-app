@@ -54,11 +54,25 @@ const DAYS = ['2026-07-29', '2026-07-30', '2026-07-31', '2026-08-01', '2026-08-0
 const QUESTIONS = ['src-a_1', 'src-a_2', 'src-b_1', 'src-b_2', 'src-b_3'];
 const SOURCES = ['src-a', 'src-b', 'src-c'];
 
+/* The reset scenario needs the clock to be a real instant, not a counter: the
+   progress-reset floor is a timestamp read as a *day*, so a counter would put
+   every reset in 1970 and the floor would void nothing. Anchored so that "now"
+   is 2026-08-03 - after every day in DAYS, which a reset therefore clears - and
+   the days worked afterwards are their own, later keys. */
+const CLOCK_EPOCH = Date.UTC(2026, 7, 3, 6, 0);
+/* The reset day is the first of these on purpose. It is the one day whose record
+   can be either pre- or post-reset, so it is where the floor is decided per side
+   rather than per day - and work done on it after the reset has to merge like any
+   other day's. Leaving it out would test only the easy part. */
+const RESET_DAY = '2026-08-03';
+const POST_RESET_DAYS = [RESET_DAY, '2026-08-04', '2026-08-05'];
+
 function newDevice(id) {
     return {
         id,
         studyActivity: {},
         stats: {},
+        progressResetAt: 0,
         continuityConfig: {
             freezeTokens: { total: 2, remaining: 2, tier1Earned: true, tier2Earned: true, initialized: true },
             focusSources: [],
@@ -72,7 +86,7 @@ function payloadOf(device, clock) {
         version: 4,
         lastUpdated: clock,
         lastResetTimestamp: 0,
-        lastProgressResetTimestamp: 0,
+        lastProgressResetTimestamp: device.progressResetAt || 0,
         sources: [], folders: [], quickPresets: [],
         deletedSourceIds: [], deletedFolderIds: [], deletedQuickPresetIds: [],
         recentTests: [],
@@ -91,20 +105,25 @@ function payloadOf(device, clock) {
  * millisecond without two writes ever colliding by accident - a real collision
  * is its own case, not something to stumble into here.
  */
-function world(seed) {
+function world(seed, { resetOnTurn = null } = {}) {
     const random = rng(seed);
     const devices = ['dev-a', 'dev-b', 'dev-c'].map(newDevice);
     let remote = null;
-    let clock = 1000;
+    let clock = CLOCK_EPOCH;
 
     const pick = (list) => list[Math.floor(random() * list.length)];
-    const tick = () => ++clock;
+    const tick = () => (clock += 1000);
+
+    /* A device that has reset works on days the reset did not clear. Mixing
+       post-reset work into a cleared day would be asking a different question -
+       the reset day is the one the merge deliberately leaves to whoever reset. */
+    const daysFor = (device) => (device.progressResetAt ? POST_RESET_DAYS : DAYS);
 
     /* A device answering a question: the day's counters move and the question's
        FSRS record is rewritten, both at the same instant, exactly as
        commitAnsweredSlice() and applyFSRS() do it. */
     function answer(device) {
-        const dateKey = pick(DAYS);
+        const dateKey = pick(daysFor(device));
         const qid = pick(QUESTIONS);
         const at = tick();
         const correct = random() > 0.35;
@@ -154,17 +173,39 @@ function world(seed) {
     }
 
     function freezeMissedDay(device) {
-        const dateKey = pick(DAYS);
+        const dateKey = pick(daysFor(device));
         const day = device.studyActivity[dateKey];
         if (!day || day.frozen) return;
         if (device.continuityConfig.freezeTokens.remaining <= 0) return;
         day.frozen = true;
         device.continuityConfig = clone(device.continuityConfig);
-        device.continuityConfig.freezeTokens = {
-            ...device.continuityConfig.freezeTokens,
-            remaining: device.continuityConfig.freezeTokens.remaining - 1
-        };
+        const tokens = { ...device.continuityConfig.freezeTokens };
+        /* Named for the day it bought, which is what makes the same freeze made
+           on two devices one spend - and what lets a reset tell which spends it
+           voided. See core/freeze-tokens.js. */
+        tokens.spentOn = [...(tokens.spentOn || []), `global:${dateKey}`];
+        tokens.remaining = Math.max(0, tokens.total - tokens.spentOn.length);
+        device.continuityConfig.freezeTokens = tokens;
         device.continuityConfig.revisions.freezeTokens = { at: tick(), by: device.id };
+    }
+
+    /**
+     * What clearProgressData() does: progress gone, the token ledger emptied and
+     * stamped, the focus selection deliberately kept with the stamp it had.
+     */
+    function progressReset(device) {
+        const at = tick();
+        device.stats = {};
+        device.studyActivity = {};
+        device.continuityConfig = clone({
+            ...device.continuityConfig,
+            freezeTokens: {
+                total: 1, remaining: 1, tier1Earned: false, tier2Earned: false,
+                initialized: true, spentOn: []
+            }
+        });
+        device.continuityConfig.revisions.freezeTokens = { at, by: device.id };
+        device.progressResetAt = at;
     }
 
     /** The push path: read the remote, merge into it, write the result. */
@@ -185,13 +226,21 @@ function world(seed) {
         device.stats = merged.stats;
         device.studyActivity = merged.studyActivity;
         device.continuityConfig = merged.continuityConfig;
+        /* Adopted, exactly as syncFromGist() persists it - which is the whole
+           reason the reset guard has to expire: within one sync every device
+           holds the same non-zero instant. */
+        device.progressResetAt = Math.max(device.progressResetAt, merged.lastProgressResetTimestamp || 0);
         if (merged.hasLocalChanges) push(device);
     }
 
     return {
         devices,
         random,
-        step(device) {
+        step(device, turn) {
+            if (resetOnTurn !== null && turn === resetOnTurn && !device.progressResetAt) {
+                progressReset(device);
+                return;
+            }
             const roll = random();
             if (roll < 0.45) answer(device);
             else if (roll < 0.55) chooseFocusSources(device);
@@ -235,6 +284,67 @@ test('three devices working in turn end up holding the same data', () => {
         const [a, b, c] = w.devices.map(visibleState);
         assert.deepEqual(a, b, `seed ${seed}: dev-a and dev-b disagree`);
         assert.deepEqual(b, c, `seed ${seed}: dev-b and dev-c disagree`);
+    }
+});
+
+test('a progress reset does not stop the devices converging afterwards', () => {
+    /* The reset instant is propagated to every device by the pull, so "both
+       sides hold the same non-zero instant" is where every device that has ever
+       seen a progress reset permanently lives. Deciding the config on those two
+       instants alone left the guard switched on there for good: every device
+       kept its own config and none ever adopted anything from the Gist - in both
+       directions, since the push path merges before it writes. All 60 seeds here
+       ended with the three devices on three different focus selections while the
+       day records they were derived from stayed identical, which is exactly how
+       it read from the outside: the daily FSRS synced, Odak Seri did not.
+
+       Nothing in this file caught it, because every case ran with the reset
+       instant at 0 - the one state a device leaves permanently the first time it
+       resets anything. */
+    for (let seed = 1; seed <= 60; seed++) {
+        const w = world(seed, { resetOnTurn: 9 });
+
+        for (let turn = 0; turn < 24; turn++) {
+            const device = w.devices[turn % w.devices.length];
+            for (let i = 0; i < 5; i++) w.step(device, turn);
+        }
+
+        w.settle();
+
+        // The reset has to have reached everyone, or the case below is asserting
+        // that three devices which never left the pre-reset state agree.
+        assert.ok(w.devices.every(d => d.progressResetAt > 0),
+            `seed ${seed}: the reset never reached all three devices`);
+
+        const [a, b, c] = w.devices.map(visibleState);
+        assert.deepEqual(a, b, `seed ${seed}: dev-a and dev-b disagree`);
+        assert.deepEqual(b, c, `seed ${seed}: dev-b and dev-c disagree`);
+    }
+});
+
+test('a reset voids the freezes it cleared, on every device', () => {
+    /* Convergence alone would be satisfied by three devices agreeing that the
+       pre-reset spends are still charged - and they would, because the ledger
+       merges by union and a union is unconditional. The days those freezes
+       bought are gone from studyActivity; the charge for them has to go too. */
+    for (let seed = 1; seed <= 40; seed++) {
+        const w = world(seed, { resetOnTurn: 9 });
+
+        for (let turn = 0; turn < 24; turn++) {
+            const device = w.devices[turn % w.devices.length];
+            for (let i = 0; i < 5; i++) w.step(device, turn);
+        }
+
+        w.settle();
+
+        w.devices.forEach(device => {
+            const spentOn = device.continuityConfig.freezeTokens.spentOn || [];
+            spentOn.forEach(name => {
+                const day = name.slice(name.indexOf(':') + 1);
+                assert.ok(POST_RESET_DAYS.includes(day),
+                    `seed ${seed}, ${device.id}: ${name} bought a day the reset cleared`);
+            });
+        });
     }
 });
 

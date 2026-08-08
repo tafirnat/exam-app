@@ -1,4 +1,4 @@
-import { AppState, saveSources, saveStats, saveRecentTests, saveFolders, saveQuickPresets, clearLocalStudyData, saveStudyActivity, saveContinuityConfig } from './state.js';
+import { AppState, saveSources, saveStats, saveRecentTests, saveFolders, saveQuickPresets, clearLocalStudyData, saveStudyActivity, saveContinuityConfig, getSettingsSnapshot, applySyncedSettings } from './state.js';
 import { showToast, showAlert } from './utils.js';
 import { t } from './i18n.js';
 import { migrateFolderColors, sanitizeActivityRecord } from './migration.js';
@@ -205,18 +205,14 @@ export function getSyncPayload() {
            device rebuilds the session from its own copy of the library. */
         activeSession: readJSON('focus_app_active_test', null),
         deviceId: AppState.deviceId || null,
+        /* Stamped, and merged like the continuity config. This block was carried
+           here for years with no reader at either end - nothing applied it on the
+           way in, so a setting changed on one device reached the Gist and stopped
+           there. It could not have been applied either: without a stamp the merge
+           has nothing to rank the two sides by. */
         settings: {
-            language: AppState.language,
-            translationTarget: AppState.translationTarget,
-            translationEnabled: AppState.translationEnabled,
-            ttsEnabled: AppState.ttsEnabled,
-            ttsAutoplay: AppState.ttsAutoplay,
-            ttsSpeed: AppState.ttsSpeed,
-            customAIPrompt: AppState.customAIPrompt,
-            timerStopwatchEnabled: AppState.timerStopwatchEnabled,
-            timerCountdownEnabled: AppState.timerCountdownEnabled,
-            timerCountdownLimit: AppState.timerCountdownLimit,
-            timerAutoCheckEnabled: AppState.timerAutoCheckEnabled
+            ...getSettingsSnapshot(),
+            revisions: AppState.settingsRevisions || {}
         }
     };
 }
@@ -649,6 +645,11 @@ async function pullRemoteGistOnly() {
                 saveContinuityConfig({ stamp: false });
             }
 
+            if (remotePayload.settings && typeof remotePayload.settings === 'object') {
+                const { revisions, ...values } = remotePayload.settings;
+                applySyncedSettings(values, revisions);
+            }
+
             recordSyncSuccess();
 
             import('../features/test/test-engine.js').then(m => {
@@ -1037,6 +1038,11 @@ export async function syncFromGist(options = {}) {
                 saveStudyActivity();
             }
 
+            if (merged.settings && typeof merged.settings === 'object') {
+                const { revisions, ...values } = merged.settings;
+                applySyncedSettings(values, revisions);
+            }
+
             if (merged.continuityConfig && typeof merged.continuityConfig === 'object') {
                 AppState.continuityConfig = merged.continuityConfig;
                 /* The merge result already carries the stamps each key won
@@ -1241,13 +1247,49 @@ function isEmptyValue(value) {
  * @returns {{config: object, localWins: boolean}} `localWins` is true when at
  *          least one key was taken from local *and* differs from what the remote
  *          holds - which is what tells the pull it has something to push back.
+ * @param {string|null} [resetDateStr] The day a progress reset happened on, so
+ *        the token ledgers can drop the spends it voided - see
+ *        mergeFreezeTokens(). Only the ledgers need it: every other key is a
+ *        plain value that the stamps already settle.
  */
 /** Config keys holding a freeze-token record rather than a plain value. */
 const TOKEN_KEYS = new Set(['freezeTokens', 'focusFreezeTokens']);
 
-function mergeContinuityConfig(localConfig, remoteConfig) {
-    const local = localConfig && typeof localConfig === 'object' ? localConfig : {};
-    const remote = remoteConfig && typeof remoteConfig === 'object' ? remoteConfig : {};
+function mergeContinuityConfig(localConfig, remoteConfig, resetDateStr = null) {
+    /* The token records are the one thing here that is not a plain value. Their
+       scalars follow the stamp like everything else, but what they have *spent*
+       is a ledger, and a ledger merges by union - a spend made on the device
+       that happened to write second is still a spend. See core/freeze-tokens.js
+       for why a bare `remaining` could not survive last-writer-wins at all. */
+    return mergeStampedRecord(localConfig, remoteConfig, (key, l, r, takeLocal) => (
+        TOKEN_KEYS.has(key)
+            ? mergeFreezeTokens(l, r, takeLocal, resetDateStr)
+            : (takeLocal ? l : r)
+    ));
+}
+
+/**
+ * The synced settings, which are plain values and merge on their stamps alone.
+ */
+function mergeSettings(localSettings, remoteSettings) {
+    return mergeStampedRecord(localSettings, remoteSettings, (key, l, r, takeLocal) => (
+        takeLocal ? l : r
+    ));
+}
+
+/**
+ * Merges any record whose top-level keys carry their own stamps under
+ * `revisions`. Both the continuity config and the synced settings are that
+ * shape, and the tie-breaks below are subtle enough that a second copy of them
+ * would drift.
+ *
+ * @param {(key: string, localValue: *, remoteValue: *, takeLocal: boolean) => *} pickValue
+ *        Given the winner of the stamp, produces the merged value - which is not
+ *        always simply the winner's, see the token ledgers.
+ */
+function mergeStampedRecord(localRecord, remoteRecord, pickValue) {
+    const local = localRecord && typeof localRecord === 'object' ? localRecord : {};
+    const remote = remoteRecord && typeof remoteRecord === 'object' ? remoteRecord : {};
 
     const keys = new Set([...Object.keys(local), ...Object.keys(remote)].filter(k => k !== 'revisions'));
     const config = {};
@@ -1281,15 +1323,7 @@ function mergeContinuityConfig(localConfig, remoteConfig) {
             takeLocal = String(lRev.by || '') > String(rRev.by || '');
         }
 
-        /* The token records are the one thing here that is not a plain value.
-           Their scalars follow the stamp like everything else, but what they
-           have *spent* is a ledger, and a ledger merges by union - a spend made
-           on the device that happened to write second is still a spend. See
-           core/freeze-tokens.js for why a bare `remaining` could not survive
-           last-writer-wins at all. */
-        config[key] = TOKEN_KEYS.has(key)
-            ? mergeFreezeTokens(local[key], remote[key], takeLocal)
-            : (takeLocal ? local[key] : remote[key]);
+        config[key] = pickValue(key, local[key], remote[key], takeLocal);
         const winning = takeLocal ? lRev : rRev;
         if (winning.at > 0) revisions[key] = winning;
 
@@ -1745,23 +1779,42 @@ export function mergeSyncData(local, remote) {
     const resetDateStr = latestProgressResetAt
         ? getLocalDateStr(new Date(latestProgressResetAt))
         : null;
+
+    /* Days before the reset day are gone from both sides - that part is a real
+       floor. The reset day itself is the one day whose record can be either pre-
+       or post-reset, so whether to drop it is a question about the *side*, not
+       about the day: a side is holding pre-reset work exactly when it had not yet
+       seen the reset at the time it was written. For the remote that means its
+       payload predates the reset instant; for the local, that it has not adopted
+       the instant yet. Same window as the config guard - see section 6.
+
+       Dropping the remote's copy unconditionally and keeping the local's
+       unconditionally was wrong in both directions, and measured so: work done on
+       the reset day after the reset never crossed devices (six answered on one
+       and nine on the other settled at nine, not fifteen), and a device that only
+       ever heard about someone else's reset never cleared that day at all - its
+       pre-reset fourteen survived every sync. It also marked hasLocalChanges on
+       every merge for ever, so each pull pushed a payload with nothing new. */
+    const remoteMissedReset = remoteLastUpdated < latestProgressResetAt;
+    const localMissedReset = localProgressResetAt < latestProgressResetAt;
+    const predatesReset = (dateKey, missedReset) => {
+        if (!resetDateStr) return false;
+        if (dateKey < resetDateStr) return true;
+        return dateKey === resetDateStr && missedReset;
+    };
+
     const mergedStudyActivity = {};
     // Start from remote activity filtered by the progress floor.
-    // NOTE: dateKey === resetDateStr (same day as reset) is also excluded from remote
-    // because the reset happened DURING that day — any pre-reset activity stored on
-    // remote (e.g. 7 questions) must not survive the reset. The local side (which
-    // was intentionally cleared) is the authority for the reset day itself.
     Object.keys(remote.studyActivity || {}).forEach(dateKey => {
-        if (resetDateStr && dateKey <= resetDateStr) return; // predates or equals reset floor
+        if (predatesReset(dateKey, remoteMissedReset)) return;
         mergedStudyActivity[dateKey] = sanitizeActivityRecord((remote.studyActivity || {})[dateKey]);
     });
     const localStudyActivity = local.studyActivity || {};
     Object.keys(localStudyActivity).forEach(dateKey => {
-        if (resetDateStr && dateKey < resetDateStr) return; // predates reset floor
-        // On the reset day itself (dateKey === resetDateStr): local (cleared) wins
-        // unconditionally — do not take Math.max with a stale remote value.
+        if (predatesReset(dateKey, localMissedReset)) return;
         const lAct = localStudyActivity[dateKey];
-        const rAct = mergedStudyActivity[dateKey]; // will be undefined for reset-day entries
+        // Undefined whenever the remote's copy of this day was filtered out above.
+        const rAct = mergedStudyActivity[dateKey];
         if (!rAct) {
             mergedStudyActivity[dateKey] = sanitizeActivityRecord(lAct);
             hasLocalChanges = true;
@@ -1826,17 +1879,34 @@ export function mergeSyncData(local, remote) {
     // A deliberate progress reset still takes the whole config: the resetting
     // device's factory state is the point of the reset, and letting individual
     // keys survive it by revision would be undoing it one field at a time.
+    //
+    /* The window is measured against when the *remote payload* was written, the
+       same way localResetIsNewer is - so it closes the moment the resetting
+       device has pushed. Comparing the two devices' reset instants instead made
+       the guard permanent: the pull propagates the instant with Math.max, so
+       within one sync every device holds the same non-zero value, and
+       `local >= remote` was then true on all of them forever. Every device kept
+       its own config and no device ever adopted anything from the Gist - in
+       both directions, since the push path merges before it writes. Measured on
+       the three-device harness: one progress reset, then 60 of 60 seeded runs
+       ended with the three devices on three different focus selections, while
+       the day records they were all derived from stayed identical. That is what
+       "Odak Seri does not reach the other devices while the daily FSRS does"
+       looks like from here. */
     let mergedContinuityConfig;
-    if (localProgressResetAt >= remoteProgressResetAt && localProgressResetAt > 0) {
-        // Local reset is at least as recent — local factory config wins
+    if (localProgressResetAt > 0 && localProgressResetAt > remoteLastUpdated) {
+        // Local reset is newer than the remote payload — local factory config wins
         mergedContinuityConfig = local.continuityConfig;
         hasLocalChanges = true;
     } else if (remoteProgressResetAt > localProgressResetAt) {
         // Remote had a more recent reset — remote factory config wins
         mergedContinuityConfig = remote.continuityConfig;
     } else {
-        // No reset on either side: key by key, newest stamp wins.
-        const picked = mergeContinuityConfig(local.continuityConfig, remote.continuityConfig);
+        /* Key by key, newest stamp wins. This is also where a device lands once
+           its own reset has been pushed, which is why the ledger floor is handed
+           down: the reset is no longer defended by the branch above. */
+        const picked = mergeContinuityConfig(
+            local.continuityConfig, remote.continuityConfig, resetDateStr);
         mergedContinuityConfig = picked.config;
         if (picked.localWins) hasLocalChanges = true;
     }
@@ -1844,7 +1914,14 @@ export function mergeSyncData(local, remote) {
     const activeSession = pickActiveSession(local, remote);
     if (activeSession.localWins) hasLocalChanges = true;
 
+    /* Not guarded by the progress reset: a reset is about progress, and the
+       language, the timer and the AI prompt are not progress. clearProgressData()
+       leaves them alone locally for the same reason. */
+    const mergedSettings = mergeSettings(local.settings, remote.settings);
+    if (mergedSettings.localWins) hasLocalChanges = true;
+
     return {
+        settings: mergedSettings.config,
         sources: mergedSources,
         folders: mergedFolders,
         quickPresets: mergedQuickPresets,

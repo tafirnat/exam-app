@@ -159,6 +159,8 @@ export const AppState = {
     // meant to surface - an expired token - outlives the session that hit it.
     syncFailureCount: 0,
     syncFailureKind: null,
+    // Per-key stamps for SYNCED_SETTINGS - see saveSyncedSettings().
+    settingsRevisions: {},
     githubGistUrl: null,
     deletedSourceIds: [],
     deletedFolderIds: [],
@@ -271,8 +273,14 @@ export function initState({ force = false } = {}) {
         presetSessions: readJSON('focus_app_preset_sessions', {}),
         continuityConfig: readJSON('focus_app_continuity_config', createDefaultContinuityConfig()),
         studyActivity: readJSON('focus_app_study_activity', {}),
+        settingsRevisions: readJSON('focus_app_settings_revisions', {}),
         deviceId: loadDeviceId()
     });
+
+    /* Same baseline rule as the continuity config: the settings as loaded are
+       what this device already had, not eleven fresh edits. Without it the first
+       save after an upgrade would claim every key at once. */
+    rebaseSettingsRevisions();
 
     /* The config as loaded is the baseline, not an edit. Without this the first
        save after an upgrade would find an empty base, stamp every key as
@@ -387,7 +395,16 @@ export function clearLocalStudyData() {
     AppState.deletedQuickPresetIds = allDeletedPresetIds;
     AppState.currentSourceKey = null;
     AppState.presetSessions = {};
-    AppState.continuityConfig = createDefaultContinuityConfig();
+    /* Factory values, but the revision map is carried over: a key this reset
+       genuinely changed is re-stamped by saveContinuityConfig() below and
+       outranks every other device, while a key that already held its default
+       keeps the stamp describing the value it still has. Dropping the map would
+       leave those reading as never-stamped, and the merge's content tie-break
+       then hands them back to a device that missed the reset. */
+    AppState.continuityConfig = {
+        ...createDefaultContinuityConfig(),
+        revisions: AppState.continuityConfig?.revisions || {}
+    };
     AppState.studyActivity = {};
     // Record the reset wall-clock time so mergeSyncData() can recognise that
     // an intentionally-empty local state must not be overwritten by remote data
@@ -411,8 +428,13 @@ export function clearLocalStudyData() {
     persistRemove('focus_app_current_source');
     persistRemove('focus_app_active_test');
     persistRemove('focus_app_continuity_config');
-    // The config is back to factory defaults - see clearProgressData().
-    rebaseContinuityRevisions(AppState.continuityConfig);
+    /* Factory config, stamped - see clearProgressData() for why the stamps are
+       what defends a reset once the merge's timestamp guard has expired. This
+       reset needs them more than that one does: createDefaultContinuityConfig()
+       carries no revisions at all, so every key would read as never-stamped, and
+       the merge's content tie-break gives a non-empty value the win - a device
+       that missed the reset hands its focus selection straight back. */
+    saveContinuityConfig();
     persistRemove('focus_app_study_activity');
     // Clear sample loaded key so the starter sample JSON for active language is auto-loaded on reset
     persistRemove(SAMPLE_LOADED_KEY);
@@ -447,7 +469,12 @@ export function clearProgressData() {
         focusSourceTimestamps: AppState.continuityConfig?.focusSourceTimestamps || {},
         displaySettings: AppState.continuityConfig?.displaySettings || createDefaultContinuityConfig().displaySettings,
         notificationSettings: AppState.continuityConfig?.notificationSettings
-            || createDefaultContinuityConfig().notificationSettings
+            || createDefaultContinuityConfig().notificationSettings,
+        /* Carried with the values above, which are the whole point of keeping
+           them: a selection the reset preserves has to keep the stamp that says
+           when it was made, or it reads as never-stamped and the merge lets
+           another device's older selection win it back. */
+        revisions: AppState.continuityConfig?.revisions || {}
     };
     // Record the progress-reset wall-clock time so mergeSyncData() knows not to
     // pull back stats / activity / continuity data that predates this clear.
@@ -458,13 +485,16 @@ export function clearProgressData() {
     persistRemove('focus_app_recent_tests');
     persistRemove('focus_app_preset_sessions');
     persistRemove('focus_app_study_activity');
-    persist('focus_app_continuity_config', AppState.continuityConfig);
-    /* Written straight past saveContinuityConfig(), so tell the revision base
-       what is on disk now - otherwise the next ordinary save diffs against the
-       pre-reset config and stamps keys the user never touched. Authority for
-       the reset itself comes from lastProgressResetTimestamp, which makes the
-       merge take this config whole. */
-    rebaseContinuityRevisions(AppState.continuityConfig);
+    /* Stamped like any other edit, because that is what it is. The
+       lastProgressResetTimestamp guard in the sync merge only holds until this
+       device has pushed - it has to, or it never expires and the config stops
+       syncing for good - so after that the per-key stamps are the only thing
+       standing between the reset and a device that missed it handing the spent
+       tokens back. The diff in stampContinuityRevisions() marks exactly the
+       keys the reset rewrote: the token records change and get the reset's
+       instant, while the focus selection and the notification settings are
+       carried over untouched above and keep whatever stamps they already had. */
+    saveContinuityConfig();
     persist('focus_app_last_progress_reset', AppState.lastProgressResetTimestamp.toString());
 
     // Sources and folders survive a progress reset, so they are not emitted.
@@ -690,14 +720,139 @@ export function saveStats() {
     return ok;
 }
 
+/* ── Synced settings ────────────────────────────────────────────────────────
+   These eleven follow the user across devices. They stay ordinary AppState
+   fields under their own storage keys - every reader and every settings screen
+   is untouched - and what is added is a stamp per key.
+
+   The stamp is not optional. A value with nothing to rank it by leaves the merge
+   only two rules, and both are broken: "remote wins" kills the change on the
+   device that made it at the next pull, and "local wins" means it never reaches
+   anyone. That is the same trap continuityConfig was in before (14), so this
+   uses the same shape and the same merge.
+
+   Diffing rather than asking each caller which key it touched, for the reason
+   spelled out at stampContinuityRevisions(): a caller that forgets writes a
+   change no other device can see, and nothing fails loudly enough to notice. */
+export const SYNCED_SETTINGS = Object.freeze([
+    'language', 'translationTarget', 'translationEnabled',
+    'ttsEnabled', 'ttsAutoplay', 'ttsSpeed', 'customAIPrompt',
+    'timerStopwatchEnabled', 'timerCountdownEnabled',
+    'timerCountdownLimit', 'timerAutoCheckEnabled'
+]);
+
+/** Where each synced setting already lives in storage. */
+const SETTINGS_STORAGE_KEYS = Object.freeze({
+    language: 'focus_app_lang',
+    translationTarget: 'focus_app_target_lang',
+    translationEnabled: 'focus_app_translation_enabled',
+    ttsEnabled: 'focus_app_tts_enabled',
+    ttsAutoplay: 'focus_app_tts_autoplay',
+    ttsSpeed: 'focus_app_tts_speed',
+    customAIPrompt: 'focus_app_custom_ai_prompt',
+    timerStopwatchEnabled: 'focus_app_timer_stopwatch',
+    timerCountdownEnabled: 'focus_app_timer_countdown',
+    timerCountdownLimit: 'focus_app_timer_limit',
+    timerAutoCheckEnabled: 'focus_app_timer_auto_check'
+});
+
+/** The synced settings as they stand, for the sync payload. */
+export function getSettingsSnapshot() {
+    const values = {};
+    SYNCED_SETTINGS.forEach(key => { values[key] = AppState[key]; });
+    return values;
+}
+
+/** The settings as they stood at the last stamp, serialised for comparison. */
+let settingsRevisionBase = new Map();
+
+function rebaseSettingsRevisions() {
+    settingsRevisionBase = new Map(
+        SYNCED_SETTINGS.map(key => [key, JSON.stringify(AppState[key] ?? null)])
+    );
+}
+
+/**
+ * Stamps whichever synced settings actually changed, and schedules the push.
+ *
+ * Called after the existing save paths have written the values themselves, so
+ * it never has to know how any single setting is stored.
+ */
+export function saveSyncedSettings() {
+    if (!AppState.settingsRevisions || typeof AppState.settingsRevisions !== 'object') {
+        AppState.settingsRevisions = {};
+    }
+    const now = Date.now();
+    let stamped = false;
+
+    SYNCED_SETTINGS.forEach(key => {
+        const serialised = JSON.stringify(AppState[key] ?? null);
+        if (settingsRevisionBase.get(key) === serialised) return;
+        AppState.settingsRevisions[key] = { at: now, by: AppState.deviceId || null };
+        stamped = true;
+    });
+    rebaseSettingsRevisions();
+    if (!stamped) return true;
+
+    const { ok } = persistIfChanged('focus_app_settings_revisions', AppState.settingsRevisions);
+    import('./github-sync.js').then(m => m.scheduleSync(300, m.SyncScope.PROGRESS)).catch(() => {});
+    return ok;
+}
+
+/**
+ * Applies a merged settings record - the pull's side of the same mechanism.
+ *
+ * Writes each value to the key its own reader already uses, so a value that
+ * arrives here is indistinguishable from one set on this device. The stamps are
+ * adopted as given rather than re-dated, for the reason saveContinuityConfig's
+ * `stamp: false` exists: re-stamping would make this device out-rank the one the
+ * value came from and push it straight back.
+ *
+ * @returns {boolean} whether anything changed, so the caller can decide to redraw.
+ */
+export function applySyncedSettings(values, revisions) {
+    if (!values || typeof values !== 'object') return false;
+    let changed = false;
+
+    SYNCED_SETTINGS.forEach(key => {
+        if (!(key in values)) return;
+        /* Only a key somebody has actually set. Every device carries all eleven
+           whether or not their values mean anything, so applying unstamped ones
+           would let the first device to push after the upgrade decide the
+           language and the timer for the other two - a setting nobody touched
+           changing by itself is the one behaviour this must not have. Once a key
+           is deliberately changed it is stamped, and from then on it travels. */
+        const rev = revisions && revisions[key];
+        if (!rev || !Number.isFinite(rev.at) || rev.at <= 0) return;
+
+        const next = values[key];
+        if (next === undefined || next === null) return;
+        if (JSON.stringify(AppState[key] ?? null) === JSON.stringify(next)) return;
+        AppState[key] = next;
+        persist(SETTINGS_STORAGE_KEYS[key], next);
+        changed = true;
+    });
+
+    if (revisions && typeof revisions === 'object') {
+        AppState.settingsRevisions = revisions;
+        persistIfChanged('focus_app_settings_revisions', revisions);
+    }
+    rebaseSettingsRevisions();
+
+    if (changed) emit(Slice.SETTINGS);
+    return changed;
+}
+
 export function saveCustomAIPrompt() {
     const ok = persist('focus_app_custom_ai_prompt', AppState.customAIPrompt);
+    saveSyncedSettings();
     emit(Slice.SETTINGS);
     return ok;
 }
 
 
 export function saveAiProviders() {
+    // Not synced: the provider list is a device's own set of external tools.
     const ok = persist('focus_app_ai_providers', AppState.aiProviders);
     emit(Slice.SETTINGS);
     return ok;
@@ -709,6 +864,7 @@ export function saveTtsSettings() {
         persist('focus_app_tts_autoplay', AppState.ttsAutoplay),
         persist('focus_app_tts_speed', AppState.ttsSpeed.toString())
     ].every(Boolean);
+    saveSyncedSettings();
     emit(Slice.SETTINGS);
     return ok;
 }
@@ -720,8 +876,18 @@ export function saveTimerSettings() {
         persist('focus_app_timer_limit', AppState.timerCountdownLimit.toString()),
         persist('focus_app_timer_auto_check', AppState.timerAutoCheckEnabled)
     ].every(Boolean);
+    saveSyncedSettings();
     emit(Slice.SETTINGS);
     return ok;
+}
+
+/**
+ * The language / translation settings, which the settings screen writes itself.
+ * Same stamping, one call rather than three.
+ */
+export function saveLanguageSettings() {
+    saveSyncedSettings();
+    emit(Slice.SETTINGS);
 }
 
 export function saveSources() {

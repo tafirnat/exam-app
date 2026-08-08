@@ -130,6 +130,70 @@ test('over-spending across devices settles at zero rather than going negative', 
     assert.equal(merged.remaining, 0);
 });
 
+// ── The progress-reset floor ────────────────────────────────────────────────
+
+/* The union is unconditional, which makes it the one rule a progress reset
+   cannot survive on its own: any device that has not yet seen the reset hands
+   its pre-reset spends back and the refill is undone one entry at a time. The
+   floor is the reset's day, because a spend names the day it bought and the sync
+   merge drops those same day records by the same line. */
+
+test('a spend for a day the reset cleared is not handed back', () => {
+    const reset = tokens({ total: 1, spentOn: [], remaining: 1 });
+    const missedIt = tokens({ total: 1, spentOn: ['global:2026-07-30'], remaining: 0 });
+
+    const merged = mergeFreezeTokens(reset, missedIt, true, '2026-08-01');
+
+    assert.deepEqual(merged.spentOn, []);
+    assert.equal(merged.remaining, 1);
+});
+
+test('a spend for the reset day itself is kept, because that day survives', () => {
+    /* The day record for the reset day is not dropped - work done on it after the
+       reset is real - so the charge for freezing it is real too. It also cannot
+       predate the reset: a day is only frozen once it is past, so a charge naming
+       the reset day was necessarily made after the reset. Voiding it would leave
+       the day frozen and the token refunded, which is a free freeze. */
+    const merged = mergeFreezeTokens(
+        tokens({ total: 1, spentOn: [] }),
+        tokens({ total: 1, spentOn: ['focus:2026-08-01'] }),
+        true, '2026-08-01');
+
+    assert.deepEqual(merged.spentOn, ['focus:2026-08-01']);
+    assert.equal(merged.remaining, 0);
+});
+
+test('a spend made after the reset is kept', () => {
+    const merged = mergeFreezeTokens(
+        tokens({ total: 1, spentOn: [] }),
+        tokens({ total: 1, spentOn: ['global:2026-08-04'] }),
+        true, '2026-08-01');
+
+    assert.deepEqual(merged.spentOn, ['global:2026-08-04']);
+    assert.equal(merged.remaining, 0);
+});
+
+test('a legacy entry names no day, so the reset voids it', () => {
+    // It predates the ledger, which means it cannot predate the reset any less.
+    const legacy = { total: 2, remaining: 0, tier1Earned: true, tier2Earned: true, initialized: true };
+
+    const merged = mergeFreezeTokens(tokens({ spentOn: [] }), legacy, true, '2026-08-01');
+
+    assert.deepEqual(merged.spentOn, []);
+    assert.equal(merged.remaining, 2);
+});
+
+test('without a reset the ledger is untouched', () => {
+    // Every merge on a device that has never reset goes through here, so the
+    // floor has to be inert when there is none.
+    const merged = mergeFreezeTokens(
+        tokens({ spentOn: ['global:2026-07-30'] }),
+        tokens({ spentOn: ['focus:2026-07-28'] }),
+        true);
+
+    assert.deepEqual(merged.spentOn.sort(), ['focus:2026-07-28', 'global:2026-07-30']);
+});
+
 // ── Records from before the ledger ──────────────────────────────────────────
 
 test('a record without a ledger gets one built from its own count', () => {

@@ -579,6 +579,104 @@ test('a reset just after local midnight clears its own day, not the one before',
     assert.equal(merged[dayAfter]?.questionCount, 9);
 });
 
+/* ── The reset day belongs to whoever has seen the reset ─────────────────────
+   Days before the reset day are a real floor. The reset day itself is the one
+   day whose record can be either pre- or post-reset, so the question is about
+   the side holding it, not the day: had that side seen the reset when it wrote?
+
+   Answering "the remote never, the local always" was wrong both ways, and it
+   was wrong permanently, because a reset instant is kept for good. */
+
+const dayBucket = (deviceKey, questionCount) => ({
+    studied: false, frozen: false, overdueSnapshot: 12,
+    byDevice: { [deviceKey]: { questionCount, correctCount: questionCount } }
+});
+
+test('work done on the reset day after the reset still crosses devices', () => {
+    const resetAt = new Date();
+    resetAt.setHours(9, 0, 0, 0);
+    const resetDay = getLocalDateStr(resetAt);
+
+    // Both devices have adopted the reset instant - which is where they both live
+    // permanently, since the pull propagates it - and both worked afterwards.
+    const merged = mergeSyncData(
+        emptyPayload({
+            studyActivity: { [resetDay]: dayBucket('dev-b', 9) },
+            lastProgressResetTimestamp: resetAt.getTime(),
+            lastUpdated: resetAt.getTime() + 120000
+        }),
+        emptyPayload({
+            studyActivity: { [resetDay]: dayBucket('dev-a', 6) },
+            lastProgressResetTimestamp: resetAt.getTime(),
+            lastUpdated: resetAt.getTime() + 60000
+        })
+    ).studyActivity;
+
+    // Two devices are two parts of a day here as much as on any other day.
+    assert.equal(merged[resetDay].questionCount, 15,
+        'the reset day was left to whoever merged, so one side\'s answers were dropped');
+});
+
+test('a device that only heard about the reset clears the reset day too', () => {
+    const resetAt = new Date();
+    resetAt.setHours(9, 0, 0, 0);
+    const resetDay = getLocalDateStr(resetAt);
+
+    // Local never reset and is holding what it had before the reset happened
+    // elsewhere; the remote is the resetting device, written after its reset.
+    const merged = mergeSyncData(
+        emptyPayload({
+            studyActivity: { [resetDay]: dayBucket('dev-b', 14) },
+            lastProgressResetTimestamp: 0,
+            lastUpdated: resetAt.getTime() - 60000
+        }),
+        emptyPayload({
+            studyActivity: { [resetDay]: dayBucket('dev-a', 6) },
+            lastProgressResetTimestamp: resetAt.getTime(),
+            lastUpdated: resetAt.getTime() + 60000
+        })
+    ).studyActivity;
+
+    assert.equal(merged[resetDay].byDevice['dev-b'], undefined,
+        'the pre-reset bucket survived a reset it had not seen');
+    assert.equal(merged[resetDay].questionCount, 6);
+});
+
+test('a reset the remote has not seen yet still clears the reset day on it', () => {
+    // The direction the original rule got right, and the one that must not
+    // regress: local reset after the remote payload was written.
+    const resetAt = new Date();
+    resetAt.setHours(9, 0, 0, 0);
+    const resetDay = getLocalDateStr(resetAt);
+
+    const merged = mergeSyncData(
+        emptyPayload({
+            studyActivity: {},
+            lastProgressResetTimestamp: resetAt.getTime(),
+            lastUpdated: resetAt.getTime() + 60000
+        }),
+        emptyPayload({
+            studyActivity: { [resetDay]: dayBucket('dev-a', 7) },
+            lastProgressResetTimestamp: 0,
+            lastUpdated: resetAt.getTime() - 60000
+        })
+    ).studyActivity;
+
+    assert.equal(merged[resetDay], undefined);
+});
+
+test('with no reset anywhere, every day merges from both sides', () => {
+    // The floor has to be inert without a reset: this path runs on every merge.
+    const today = getLocalDateStr(new Date());
+
+    const merged = mergeSyncData(
+        emptyPayload({ studyActivity: { [today]: dayBucket('dev-b', 9) }, lastProgressResetTimestamp: 0 }),
+        emptyPayload({ studyActivity: { [today]: dayBucket('dev-a', 6) }, lastProgressResetTimestamp: 0 })
+    ).studyActivity;
+
+    assert.equal(merged[today].questionCount, 15);
+});
+
 /* ── The per-question log has to survive both repair and merge ───────────────
    A day's buckets hold one thing beyond their counters: which questions were
    worked, so the trend bars can count a question answered four times once. It
