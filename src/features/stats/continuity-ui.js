@@ -2096,9 +2096,13 @@ function renderTrendChart(buckets, yAxisId, barsId, xAxisId) {
     // The line overlay is absolutely positioned inside the bar strip.
     barsEl.style.position = 'relative';
 
-    const tooltip = document.createElement('div');
-    tooltip.className = 'trend-chart-tooltip';
-    barsEl.appendChild(tooltip);
+    let tooltip = document.getElementById('globalTrendChartTooltip');
+    if (!tooltip) {
+        tooltip = document.createElement('div');
+        tooltip.id = 'globalTrendChartTooltip';
+        tooltip.className = 'trend-chart-tooltip';
+        document.body.appendChild(tooltip);
+    }
 
     barsEl.addEventListener('mouseleave', () => { tooltip.style.display = 'none'; });
 
@@ -2235,25 +2239,18 @@ function renderTrendChart(buckets, yAxisId, barsId, xAxisId) {
                 tooltip.style.display = 'block';
                 
                 const rect = barWrap.getBoundingClientRect();
-                const containerRect = barsEl.getBoundingClientRect();
-                const barRect = barInner.getBoundingClientRect();
                 
-                let left = (rect.left - containerRect.left) + (rect.width / 2);
-                let top = (barRect.top - containerRect.top) - 36;
-                if (top < 4) top = 4;
+                let top = rect.top - tooltip.offsetHeight - 10 + window.scrollY;
+                if (top < window.scrollY + 5) {
+                    top = rect.bottom + 10 + window.scrollY;
+                }
+                
+                let left = rect.left + (rect.width / 2) - (tooltip.offsetWidth / 2) + window.scrollX;
+                left = Math.max(8, Math.min(left, window.innerWidth - tooltip.offsetWidth - 8));
                 
                 tooltip.style.top = `${top}px`;
                 tooltip.style.left = `${left}px`;
-                tooltip.style.transform = 'translateX(-50%)';
-                
-                const leftPerc = left / containerRect.width;
-                if (leftPerc < 0.2) {
-                    tooltip.style.transform = 'translateX(0)';
-                    tooltip.style.left = `${rect.left - containerRect.left}px`;
-                } else if (leftPerc > 0.8) {
-                    tooltip.style.transform = 'translateX(-100%)';
-                    tooltip.style.left = `${rect.right - containerRect.left}px`;
-                }
+                tooltip.style.transform = 'none';
             });
             barWrap.addEventListener('mouseleave', () => {
                 tooltip.style.display = 'none';
