@@ -1247,11 +1247,10 @@ function _showDayPopupDOM(day, barWrap, barsEl, isDark) {
     const uniqueCount = 0; // Omitted for simplicity or could calculate if needed
 
     popup.innerHTML = `
-        <div style="font-weight:700; font-size:0.85rem; margin-bottom:8px; padding-bottom:7px;
-                    border-bottom:1px solid ${isDark ? 'rgba(255,255,255,0.1)' : 'rgba(0,0,0,0.08)'};">
+        <div style="font-weight:700; font-size:0.75rem; margin-bottom:4px;">
             ${dateLabel}
         </div>
-        <div style="display:flex; flex-direction:column; gap:5px; font-size:0.82rem;">
+        <div style="display:flex; flex-direction:column; gap:3px; font-size:0.72rem;">
             <div style="display:flex; justify-content:space-between; gap:16px;">
                 <span style="color:${isDark ? '#94a3b8' : '#64748b'};">${t('stat_total_answers')}</span>
                 <b>${totalAnswers}</b>
@@ -1285,16 +1284,16 @@ function _showDayPopupDOM(day, barWrap, barsEl, isDark) {
         background: isDark ? '#2d3f55' : '#f0f4f8',
         color: isDark ? '#f1f5f9' : '#0f172a',
         border: `1px solid ${isDark ? 'rgba(255,255,255,0.18)' : 'rgba(0,0,0,0.12)'}`,
-        borderRadius: '10px',
-        padding: '12px 14px',
+        borderRadius: '8px',
+        padding: '8px 10px',
         boxShadow: isDark
-            ? '0 8px 28px rgba(0,0,0,0.5)'
-            : '0 8px 24px rgba(0,0,0,0.15)',
+            ? '0 6px 20px rgba(0,0,0,0.5)'
+            : '0 6px 18px rgba(0,0,0,0.15)',
         zIndex: '9999',
-        minWidth: '170px',
+        minWidth: '140px',
         pointerEvents: 'auto',
         fontFamily: 'Inter, sans-serif',
-        fontSize: '0.85rem',
+        fontSize: '0.75rem',
         transition: 'opacity 0.15s',
         opacity: '0',
     });
