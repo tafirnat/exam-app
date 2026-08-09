@@ -434,24 +434,30 @@ function renderFocusSlide() {
 
                 const item = document.createElement('div');
                 item.style.display = 'flex';
-                item.style.flexDirection = 'column';
+                item.style.flexDirection = 'row';
+                item.style.alignItems = 'center';
+                item.style.justifyContent = 'space-between';
                 item.style.fontSize = '0.75rem';
-                item.style.color = 'var(--trend-line-focus, #8b5cf6)';
-                item.style.lineHeight = '1.2';
+                item.style.color = '#7a59c4';
+                item.style.lineHeight = '1.4';
+                item.style.width = '100%';
+                item.title = label;
                 
                 const nameLine = document.createElement('div');
                 nameLine.className = 'truncate';
-                nameLine.style.fontWeight = '600';
+                nameLine.style.flex = '1';
+                nameLine.style.minWidth = '0';
+                nameLine.style.marginRight = '4px';
+                nameLine.style.fontWeight = 'normal';
                 nameLine.textContent = label;
-                nameLine.title = label;
                 
                 const statsLine = document.createElement('div');
-                statsLine.style.opacity = '0.85';
-                statsLine.style.fontSize = '0.7rem';
-                const qLabel = t('questions_unit') || 'Soru';
-                const mLabel = t('topic_mastery') || 'Hakimiyet';
-                const dLabel = (t('difficulty_label') || 'Zorluk').replace(':', '').trim();
-                statsLine.textContent = `${qCount} ${qLabel} • %${mastery} ${mLabel} • ${avgDiff} ${dLabel}`;
+                statsLine.style.flexShrink = '0';
+                statsLine.style.whiteSpace = 'nowrap';
+                statsLine.style.fontWeight = 'normal';
+                statsLine.style.opacity = '0.9';
+                
+                statsLine.textContent = `→ Q: ${qCount} | ${mastery}% | Ø ${avgDiff}`;
 
                 item.appendChild(nameLine);
                 item.appendChild(statsLine);
