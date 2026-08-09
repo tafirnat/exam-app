@@ -1054,230 +1054,192 @@ function _drawStackedBar(canvas, legendEl, segments, total) {
 
 /** Draws last 7-day correct answer trend as a column chart */
 function _drawWeeklyTrend(canvas, sources = []) {
-    if (!canvas) return;
-    const dpr = window.devicePixelRatio || 1;
-    const W = canvas.offsetWidth || canvas.parentElement?.offsetWidth || 300;
-    const H = 140; // Slightly taller for counts
-    canvas.width  = W * dpr;
-    canvas.height = H * dpr;
-    canvas.style.width  = W + 'px';
-    canvas.style.height = H + 'px';
-
-    const ctx = canvas.getContext('2d');
-    ctx.scale(dpr, dpr);
-    ctx.clearRect(0, 0, W, H);
-
-    // Build day buckets (last 7 days)
-    const days = [];
-    for (let i = 6; i >= 0; i--) {
-        const d = new Date();
-        d.setDate(d.getDate() - i);
-        days.push({
-            label: d.toLocaleDateString(AppState.language === 'tr' ? 'tr-TR' : AppState.language, { weekday: 'short' }),
-            dateStr: d.toISOString().slice(0, 10),
-            correct: 0,
-            wrong: 0,
-            total: 0,
-        });
-    }
-
-    // Pull from reliable recentTests or source-specific logs based on selected sources
+    // Collect all valid tests for selected sources
     const testsToScan = [];
     if (sources && sources.length > 0) {
         sources.forEach(s => {
-            if (s.testResults) {
-                testsToScan.push(...s.testResults);
-            }
+            if (s.testResults) testsToScan.push(...s.testResults);
         });
     } else {
-        // Fallback to global recentTests if no sources provided (though filterSources is always passed now)
         testsToScan.push(...(AppState.recentTests || []));
     }
+
+    // Helper to generate buckets
+    const generateBuckets = (numDays) => {
+        const days = [];
+        const currentDate = new Date();
+        currentDate.setHours(0, 0, 0, 0); // Start of today
+        // Backdate to numDays - 1
+        currentDate.setDate(currentDate.getDate() - numDays + 1);
+
+        const lang = AppState.language || 'en';
+        const isTr = lang.startsWith('tr');
+        const isDe = lang.startsWith('de');
+        
+        const dayLabels = isTr ? ['Paz', 'Pzt', 'Sal', 'Çar', 'Per', 'Cum', 'Cmt'] :
+            isDe ? ['So', 'Mo', 'Di', 'Mi', 'Do', 'Fr', 'Sa'] :
+                ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
+
+        for (let i = 0; i < numDays; i++) {
+            const d = new Date(currentDate);
+            days.push({
+                label: numDays === 7 ? dayLabels[d.getDay()] : String(d.getDate()).padStart(2, '0'),
+                dateStr: d.getFullYear() + '-' + String(d.getMonth() + 1).padStart(2, '0') + '-' + String(d.getDate()).padStart(2, '0'),
+                correct: 0,
+                wrong: 0,
+                total: 0, // unanswered + correct + wrong
+                totalAnswers: 0, // correct + wrong
+                uniqueCount: 0 // Optional if we want to show unique
+            });
+            currentDate.setDate(currentDate.getDate() + 1);
+        }
+        return days;
+    };
+
+    const weeklyDays = generateBuckets(7);
+    const monthlyDays = generateBuckets(30);
 
     testsToScan.forEach(test => {
         if (!test?.startTime) return;
         const dayStr = test.startTime.slice(0, 10);
-        const bucket = days.find(d => d.dateStr === dayStr);
-        if (bucket) {
-            bucket.correct += test.correctCount || 0;
-            bucket.wrong   += test.wrongCount   || 0;
-            bucket.total   += (test.correctCount || 0) + (test.wrongCount || 0) + (test.unansweredCount || 0);
-        }
+        
+        [weeklyDays, monthlyDays].forEach(bucketList => {
+            const bucket = bucketList.find(d => d.dateStr === dayStr);
+            if (bucket) {
+                bucket.correct += test.correctCount || 0;
+                bucket.wrong   += test.wrongCount   || 0;
+                bucket.totalAnswers += (test.correctCount || 0) + (test.wrongCount || 0);
+                bucket.total += (test.correctCount || 0) + (test.wrongCount || 0) + (test.unansweredCount || 0);
+            }
+        });
     });
 
     const pal = _chartPalette();
     const isDark = pal.isDark;
-    const gridColor = pal.grid;
-    const textColor = pal.muted;
-    const skippedColor = isDark ? '#64748b' : '#cbd5e1';
 
-    // Calculate nice intervals for Y-axis based on total (incl. unanswered)
-    const maxDayTotal = Math.max(...days.map(d => d.total), 1);
-    const roughStep = maxDayTotal / 5;
-    const niceSteps = [1, 2, 5, 10, 20, 25, 50, 100, 250, 500];
-    const step = niceSteps.find(s => s >= roughStep) || niceSteps[niceSteps.length - 1];
-    const lineCount = Math.ceil(maxDayTotal / step);
-    const chartMax = step * lineCount;
+    const renderDOMTrend = (buckets, yAxisId, barsId, xAxisId) => {
+        const yAxisEl = document.getElementById(yAxisId);
+        const barsEl = document.getElementById(barsId);
+        const xAxisEl = document.getElementById(xAxisId);
+        if (!yAxisEl || !barsEl || !xAxisEl) return;
 
-    const padL = 32, padR = 10, padTop = 20, padBot = 28;
-    const chartW = W - padL - padR;
-    const chartH = H - padTop - padBot;
-    const gap    = chartW / 7;
-    const barW   = Math.floor(gap * 0.65);
+        yAxisEl.innerHTML = '';
+        barsEl.innerHTML = '';
+        xAxisEl.innerHTML = '';
 
-    // Grid lines & Y-Axis Labels
-    ctx.strokeStyle = gridColor;
-    ctx.lineWidth = 1;
-    ctx.font = '10px Inter, sans-serif';
-    ctx.fillStyle = textColor;
-    ctx.textAlign = 'right';
-    ctx.textBaseline = 'middle';
+        const maxCount = buckets.reduce((max, b) => Math.max(max, b.totalAnswers), 0);
+        const topLimit = Math.max(10, Math.ceil(maxCount / 5) * 5);
 
-    for (let i = 0; i <= lineCount; i++) {
-        const val = i * step;
-        const y = padTop + chartH * (1 - (val / chartMax));
-        
-        // Grid line
-        ctx.beginPath(); 
-        ctx.moveTo(padL, y); 
-        ctx.lineTo(W - padR, y); 
-        ctx.stroke();
+        const labelWidth = Math.max(20, String(topLimit).length * 8);
+        const gutter = labelWidth + 5;
+        barsEl.style.paddingLeft = `${gutter}px`;
+        xAxisEl.style.paddingLeft = `${gutter}px`;
+        barsEl.style.position = 'relative';
 
-        // Label
-        ctx.fillText(val, padL - 8, y);
-    }
-
-    days.forEach((day, i) => {
-        const unanswered = Math.max(0, day.total - day.correct - day.wrong);
-        const dayTotal = day.correct + day.wrong + unanswered;
-        const x = padL + i * gap + (gap - barW) / 2;
-        const baseY = padTop + chartH;
-
-        // Reset color for labels
-        ctx.fillStyle = textColor;
-        ctx.font = '10px Inter, sans-serif';
-        ctx.textAlign = 'center';
-        ctx.textBaseline = 'top';
-        ctx.fillText(day.label, x + barW / 2, baseY + 14);
-
-        if (dayTotal === 0) {
-            // Empty state placeholder
-            _roundRect(ctx, x, baseY - 2, barW, 2, 1, pal.border);
-            return;
+        for (let i = 0; i <= 5; i++) {
+            const val = Math.round((topLimit / 5) * i);
+            const line = document.createElement('div');
+            line.style.display = 'flex';
+            line.style.alignItems = 'center';
+            line.style.fontSize = '0.7rem';
+            line.style.color = 'var(--text-secondary)';
+            line.style.width = '100%';
+            line.innerHTML = `<span style="width:${labelWidth}px; text-align:right; margin-right:5px;">${val}</span><div style="flex:1; height:1px; background:var(--border-color); opacity:0.5;"></div>`;
+            yAxisEl.appendChild(line);
         }
 
-        // Pixel heights for each segment
-        const totalHeight_px    = (dayTotal      / chartMax) * chartH;
-        const wrongHeight_px    = (day.wrong      / dayTotal) * totalHeight_px;
-        const skippedHeight_px  = (unanswered     / dayTotal) * totalHeight_px;
-        const correctHeight_px  = (day.correct    / dayTotal) * totalHeight_px;
+        buckets.forEach(d => {
+            const xLbl = document.createElement('div');
+            xLbl.textContent = d.label;
+            xLbl.style.flex = '1';
+            xLbl.style.textAlign = 'center';
+            xAxisEl.appendChild(xLbl);
 
-        // Draw from bottom to top: Wrong (red) → Skipped (grey) → Correct (green)
-        let drawY = baseY;
+            const barWrap = document.createElement('div');
+            barWrap.style.flex = '1';
+            barWrap.style.height = '100%';
+            barWrap.style.display = 'flex';
+            barWrap.style.flexDirection = 'column-reverse';
+            barWrap.style.alignItems = 'center';
+            barWrap.style.padding = buckets.length > 7 ? '0 2px' : '0 8px';
 
-        // Wrong (Bottom - Red)
-        if (day.wrong > 0) {
-            drawY -= wrongHeight_px;
-            const isOnlySegment = unanswered === 0 && day.correct === 0;
-            _roundRectBottom(ctx, x, drawY, barW, wrongHeight_px, 3, '#ef4444');
-            if (isOnlySegment) _roundRectTop(ctx, x, drawY, barW, wrongHeight_px, 3, '#ef4444');
-        }
+            const barInner = document.createElement('div');
+            barInner.style.width = '100%';
+            barInner.style.maxWidth = '24px';
+            barInner.style.height = '100%';
+            barInner.style.display = 'flex';
+            barInner.style.flexDirection = 'column-reverse';
+            barInner.style.position = 'relative';
 
-        // Skipped (Middle - Grey)
-        if (unanswered > 0) {
-            drawY -= skippedHeight_px;
-            const isBottom = day.wrong === 0;
-            const isTop    = day.correct === 0;
-            if (isBottom && isTop) {
-                // Only segment — round all corners
-                _roundRect(ctx, x, drawY, barW, skippedHeight_px, 3, skippedColor);
-            } else if (isBottom) {
-                _roundRectBottom(ctx, x, drawY, barW, skippedHeight_px, 3, skippedColor);
-            } else if (isTop) {
-                _roundRectTop(ctx, x, drawY, barW, skippedHeight_px, 3, skippedColor);
-            } else {
-                // Sandwiched — no rounding
-                ctx.fillStyle = skippedColor;
-                ctx.fillRect(x, drawY, barW, skippedHeight_px);
+            if (d.totalAnswers > 0) {
+                const hPerc = (d.totalAnswers / topLimit) * 100;
+                barInner.style.height = `${hPerc}%`;
+
+                // Plain graph: just one primary colored bar for volume
+                const bDiv = document.createElement('div');
+                bDiv.style.height = `100%`;
+                bDiv.style.background = 'var(--primary-color, #3b82f6)';
+                bDiv.style.width = '100%';
+                bDiv.style.borderRadius = '4px 4px 0 0';
+                barInner.appendChild(bDiv);
+
+                const topLbl = document.createElement('span');
+                topLbl.textContent = d.totalAnswers;
+                topLbl.style.position = 'absolute';
+                topLbl.style.top = '-16px';
+                topLbl.style.width = '100%';
+                topLbl.style.textAlign = 'center';
+                topLbl.style.fontSize = '0.65rem';
+                topLbl.style.fontWeight = 'bold';
+                topLbl.style.color = 'var(--text-primary)';
+                topLbl.style.zIndex = '3';
+                if(buckets.length > 7) topLbl.style.display = 'none'; // hide for monthly
+                barInner.appendChild(topLbl);
             }
-        }
 
-        // Correct (Top - Green)
-        if (day.correct > 0) {
-            drawY -= correctHeight_px;
-            _roundRectTop(ctx, x, drawY, barW, correctHeight_px, 3, '#22c55e');
-            if (day.wrong === 0 && unanswered === 0) {
-                _roundRectBottom(ctx, x, drawY, barW, correctHeight_px, 3, '#22c55e');
-            }
-        }
-
-        // Count above bar
-        ctx.fillStyle = pal.text;
-        ctx.font = 'bold 10px Inter, sans-serif';
-        ctx.textBaseline = 'bottom';
-        ctx.fillText(dayTotal, x + barW / 2, baseY - totalHeight_px - 4);
-    });
-
-    // --- Click handler: show day detail popup ---
-    // Store layout params on canvas so the click handler can reuse them
-    canvas._weeklyLayout = { padL, gap, barW, days, W, H, padTop, chartH };
-
-    if (!canvas._weeklyClickBound) {
-        canvas._weeklyClickBound = true;
-        canvas.style.cursor = 'pointer';
-        canvas.addEventListener('click', (e) => {
-            const rect   = canvas.getBoundingClientRect();
-            const scaleX = canvas.offsetWidth / rect.width;
-            const clickX = (e.clientX - rect.left) * scaleX;
-
-            const { padL, gap, barW, days } = canvas._weeklyLayout;
-            const dayIndex = days.findIndex((_, i) => {
-                const barX = padL + i * gap + (gap - barW) / 2;
-                return clickX >= barX - 4 && clickX <= barX + barW + 4;
+            barWrap.appendChild(barInner);
+            
+            // Tooltip using _showDayPopup DOM version
+            barWrap.addEventListener('mouseenter', (e) => {
+                _showDayPopupDOM(d, barWrap, barsEl, isDark);
             });
-            // Stop propagation so the document-level close listener
-            // from a previously opened popup doesn't close this new one.
-            e.stopPropagation();
-            if (dayIndex === -1) { _removeDayPopup(); return; }
-            _showDayPopup(canvas, dayIndex, canvas._weeklyLayout, e);
+            barWrap.addEventListener('mouseleave', () => {
+                _removeDayPopup();
+            });
+
+            barsEl.appendChild(barWrap);
+        });
+    };
+
+    renderDOMTrend(weeklyDays, 'modalWeeklyTrendYAxis', 'modalWeeklyTrendBars', 'modalWeeklyTrendXAxis');
+    renderDOMTrend(monthlyDays, 'modalMonthlyTrendYAxis', 'modalMonthlyTrendBars', 'modalMonthlyTrendXAxis');
+
+    // Bind flip buttons if not bound
+    const card = document.getElementById('modalWeeklyTrendCard');
+    if (card && !card.dataset.flipBound) {
+        card.dataset.flipBound = 'true';
+        card.querySelectorAll('[data-modal-trend-flip]').forEach(btn => {
+            btn.addEventListener('click', () => {
+                card.classList.toggle('flipped');
+            });
         });
     }
 }
 
-/** Builds and shows a positioned popup for a clicked day bar. */
-function _showDayPopup(canvas, dayIndex, layout, mouseEvent) {
+function _showDayPopupDOM(day, barWrap, barsEl, isDark) {
     _removeDayPopup();
-
-    const { padL, gap, barW, days } = layout;
-    const day = days[dayIndex];
-    const unanswered = Math.max(0, day.total - day.correct - day.wrong);
-
-    // --- Unique question count for this day ---
-    const uniqueIds = new Set();
-    (AppState.recentTests || []).forEach(test => {
-        if (!test?.startTime) return;
-        if (test.startTime.slice(0, 10) !== day.dateStr) return;
-        (test.questions || []).forEach(q => {
-            const id = q.id || q.content?.id;
-            if (id) uniqueIds.add(id);
-        });
-    });
-    const uniqueCount = uniqueIds.size;
-    const totalAnswers = day.correct + day.wrong + unanswered;
-
-    const pal = _chartPalette();
-    const isDark = pal.isDark;
-
-    // --- Popup element ---
     const popup = document.createElement('div');
     popup.id = 'weeklyDayPopup';
 
-    // Format date nicely
     const dateObj = new Date(day.dateStr + 'T12:00:00');
     const dateLabel = dateObj.toLocaleDateString(
         AppState.language === 'tr' ? 'tr-TR' : AppState.language,
         { weekday: 'long', day: 'numeric', month: 'short' }
     );
+
+    const unanswered = Math.max(0, day.total - day.correct - day.wrong);
+    const totalAnswers = day.correct + day.wrong + unanswered;
+    const uniqueCount = 0; // Omitted for simplicity or could calculate if needed
 
     popup.innerHTML = `
         <div style="font-weight:700; font-size:0.85rem; margin-bottom:8px; padding-bottom:7px;
@@ -1310,12 +1272,6 @@ function _showDayPopup(canvas, dayIndex, layout, mouseEvent) {
                 </span>
                 <b style="color:${isDark ? '#94a3b8' : '#64748b'};">${unanswered}</b>
             </div>
-            ${uniqueCount > 0 ? `
-            <div style="margin-top:4px; padding-top:6px; border-top:1px solid ${isDark ? 'rgba(255,255,255,0.08)' : 'rgba(0,0,0,0.06)'};
-                        display:flex; justify-content:space-between; gap:16px; color:${isDark ? '#94a3b8' : '#64748b'}; font-size:0.78rem;">
-                <span>${t('stat_unique_questions')}</span>
-                <b>${uniqueCount}</b>
-            </div>` : ''}
         </div>
     `;
 
@@ -1323,7 +1279,7 @@ function _showDayPopup(canvas, dayIndex, layout, mouseEvent) {
         position: 'absolute',
         background: isDark ? '#2d3f55' : '#f0f4f8',
         color: isDark ? '#f1f5f9' : '#0f172a',
-        border: `1px solid ${isDark ? 'rgba(255,255,255,0.18)' : 'rgba(0,0,0,0.12)'}`,
+        border: \`1px solid \${isDark ? 'rgba(255,255,255,0.18)' : 'rgba(0,0,0,0.12)'}\`,
         borderRadius: '10px',
         padding: '12px 14px',
         boxShadow: isDark
@@ -1338,93 +1294,25 @@ function _showDayPopup(canvas, dayIndex, layout, mouseEvent) {
         opacity: '0',
     });
 
-    // Position: above the clicked bar, anchored to viewport
     document.body.appendChild(popup);
 
-    const canvasRect = canvas.getBoundingClientRect();
-    const barCenterX = canvasRect.left + (padL + dayIndex * gap + gap / 2) * (canvasRect.width / canvas.offsetWidth);
-    const popupTop   = canvasRect.top + window.scrollY - popup.offsetHeight - 10;
-    let   popupLeft  = barCenterX - popup.offsetWidth / 2;
+    const rect = barWrap.getBoundingClientRect();
+    
+    let popupTop = rect.top - popup.offsetHeight - 12 + window.scrollY;
+    if (popupTop < window.scrollY + 10) {
+        popupTop = rect.bottom + 12 + window.scrollY;
+    }
 
-    // Keep inside viewport
+    let popupLeft = rect.left + (rect.width / 2) - (popup.offsetWidth / 2) + window.scrollX;
     popupLeft = Math.max(8, Math.min(popupLeft, window.innerWidth - popup.offsetWidth - 8));
 
-    popup.style.top  = `${popupTop}px`;
-    popup.style.left = `${popupLeft}px`;
+    popup.style.top  = \`\${popupTop}px\`;
+    popup.style.left = \`\${popupLeft}px\`;
 
     requestAnimationFrame(() => { popup.style.opacity = '1'; });
-
-    // Close on outside click
-    setTimeout(() => {
-        document.addEventListener('click', _removeDayPopup, { once: true });
-    }, 0);
 }
 
 function _removeDayPopup() {
     const existing = document.getElementById('weeklyDayPopup');
     if (existing) existing.remove();
 }
-
-
-/** Helper: Round TOP ONLY */
-function _roundRectTop(ctx, x, y, w, h, r, color) {
-    ctx.beginPath();
-    ctx.moveTo(x, y + h);
-    ctx.lineTo(x, y + r);
-    ctx.quadraticCurveTo(x, y, x + r, y);
-    ctx.lineTo(x + w - r, y);
-    ctx.quadraticCurveTo(x + w, y, x + w, y + r);
-    ctx.lineTo(x + w, y + h);
-    ctx.fillStyle = color;
-    ctx.fill();
-}
-
-/** Helper: Round BOTTOM ONLY */
-function _roundRectBottom(ctx, x, y, w, h, r, color) {
-    ctx.beginPath();
-    ctx.moveTo(x, y);
-    ctx.lineTo(x + w, y);
-    ctx.lineTo(x + w, y + h - r);
-    ctx.quadraticCurveTo(x + w, y + h, x + w - r, y + h);
-    ctx.lineTo(x + r, y + h);
-    ctx.quadraticCurveTo(x, y + h, x, y + h - r);
-    ctx.lineTo(x, y);
-    ctx.fillStyle = color;
-    ctx.fill();
-}
-
-/** Helper: filled rounded rect */
-function _roundRect(ctx, x, y, w, h, r, color) {
-    ctx.beginPath();
-    ctx.moveTo(x + r, y);
-    ctx.lineTo(x + w - r, y);
-    ctx.quadraticCurveTo(x + w, y, x + w, y + r);
-    ctx.lineTo(x + w, y + h - r);
-    ctx.quadraticCurveTo(x + w, y + h, x + w - r, y + h);
-    ctx.lineTo(x + r, y + h);
-    ctx.quadraticCurveTo(x, y + h, x, y + h - r);
-    ctx.lineTo(x, y + r);
-    ctx.quadraticCurveTo(x, y, x + r, y);
-    ctx.closePath();
-    ctx.fillStyle = color;
-    ctx.fill();
-}
-
-/** Helper: fills a rect with radius only on specified corners */
-function _roundRectPartial(ctx, x, y, w, h, rTL, rTR, color) {
-    const rBL = 0, rBR = 0;
-    ctx.beginPath();
-    ctx.moveTo(x + rTL, y);
-    ctx.lineTo(x + w - rTR, y);
-    ctx.quadraticCurveTo(x + w, y,     x + w,     y + rTR);
-    ctx.lineTo(x + w, y + h - rBR);
-    ctx.quadraticCurveTo(x + w, y + h, x + w - rBR, y + h);
-    ctx.lineTo(x + rBL, y + h);
-    ctx.quadraticCurveTo(x, y + h,     x,           y + h - rBL);
-    ctx.lineTo(x, y + rTL);
-    ctx.quadraticCurveTo(x, y,         x + rTL,     y);
-    ctx.closePath();
-    ctx.fillStyle = color;
-    ctx.fill();
-}
-
