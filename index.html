@@ -940,9 +940,9 @@
                     <div class="card continuity-slide motivation-card-art" id="motivationContinuityCard">
                         <div class="motivation-card-overlay"></div>
                         <div
-                            style="position: relative; z-index: 2; display: flex; gap: 0.85rem; align-items: center; min-height: 90px;">
+                            style="position: relative; z-index: 2; display: flex; gap: 0.85rem; align-items: stretch; min-height: 90px; padding: 4px 0;">
                             <div class="motivation-icon-badge"
-                                style="display: flex; align-items: center; justify-content: center; width: 44px; height: 44px; border-radius: 50%; background: rgba(245, 158, 11, 0.22); color: #fbbf24; flex-shrink: 0; box-shadow: 0 2px 8px rgba(0,0,0,0.3);">
+                                style="display: flex; align-items: center; justify-content: center; width: 44px; height: 44px; border-radius: 50%; background: rgba(245, 158, 11, 0.22); color: #fbbf24; flex-shrink: 0; box-shadow: 0 2px 8px rgba(0,0,0,0.3); align-self: center;">
                                 <svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor"
                                     stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
                                     <path
@@ -951,7 +951,7 @@
                             </div>
                             <div
                                 style="flex: 1; min-width: 0; display: flex; flex-direction: column; justify-content: space-between; gap: 4px;">
-                                <div style="display: flex; justify-content: space-between; align-items: center;">
+                                <div style="display: flex; justify-content: space-between; align-items: flex-start;">
                                     <h3 style="margin: 0; font-size: 0.78rem; font-weight: 700; color: #f1f5f9; text-transform: uppercase; letter-spacing: 0.6px; text-shadow: 0 1px 3px #000, 0 2px 6px rgba(0,0,0,0.9);"
                                         data-i18n="motivation_title">Günün Motivasyonu</h3>
                                     <div class="continuity-icon-row">
@@ -974,11 +974,13 @@
                                         </button>
                                     </div>
                                 </div>
-                                <div id="motivationQuoteText"
-                                    style="font-size: 0.88rem; font-style: italic; font-weight: 600; color: #ffffff; line-height: 1.35; text-shadow: 0 1px 3px #000, 0 2px 8px rgba(0,0,0,0.95);">
-                                    "..."
+                                <div style="flex: 1; display: flex; align-items: center; justify-content: center; padding: 4px 0; min-height: 0;">
+                                    <div id="motivationQuoteText"
+                                        style="font-size: 0.88rem; font-style: italic; font-weight: 600; color: #ffffff; line-height: 1.35; text-shadow: 0 1px 3px #000, 0 2px 8px rgba(0,0,0,0.95); text-align: center;">
+                                        "..."
+                                    </div>
                                 </div>
-                                <div style="display: flex; justify-content: space-between; align-items: flex-end; margin-top: 8px; width: 100%; gap: 8px;">
+                                <div style="display: flex; justify-content: space-between; align-items: flex-end; margin-top: 4px; width: 100%; gap: 8px;">
                                     <span id="motivationArtworkInfo" style="font-size: 0.68rem; color: #cbd5e1; font-style: italic; text-shadow: 0 1px 3px #000, 0 1px 5px rgba(0,0,0,0.9); max-width: 50%; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; display: none;"></span>
                                     <span id="motivationQuoteAuthor" style="font-size: 0.76rem; font-weight: 700; color: #38bdf8; text-shadow: 0 1px 3px #000, 0 2px 6px rgba(0,0,0,0.95); max-width: 100%; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; text-align: right; margin-left: auto;">
                                         — ...
