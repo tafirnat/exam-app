@@ -410,16 +410,14 @@ function renderFocusSlide() {
             .join(', ');
 
         if (isFocusActivityRequirementMet(todayAct)) {
-            textEl.textContent = selectedNames ? t('streak_focus_secured_names', { names: selectedNames }) : t('streak_focus_secured');
+            textEl.textContent = t('streak_focus_secured');
             textEl.style.color = 'var(--success-color, #10b981)';
             updateCometRing(focusContainer, focusSpinGroup, 100, 'var(--success-color, #10b981)');
         } else {
             const progress = solved > 0 ? Math.max(1, Math.min(99, Math.round((solved / req) * 100))) : 0;
             textEl.style.color = 'var(--text-secondary)';
             updateCometRing(focusContainer, focusSpinGroup, progress, 'var(--trend-line-focus, #8b5cf6)');
-            textEl.textContent = selectedNames
-                ? t('streak_for_progress_focus_names', { solved, req, names: selectedNames })
-                : t('streak_for_progress_focus_count', { solved, req, count: focusSources.length });
+            textEl.textContent = t('streak_for_progress', { solved, req });
         }
 
         if (sourcesListEl) {
