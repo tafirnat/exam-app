@@ -446,7 +446,8 @@ function renderFocusSlide() {
                 item.style.display = 'flex';
                 item.style.flexDirection = 'column';
                 item.style.fontSize = '0.75rem';
-                item.style.color = '#7a59c4';
+                item.style.color = 'var(--text-secondary)';
+                item.style.fontStyle = 'italic';
                 item.style.lineHeight = '1.4';
                 
                 const nameLine = document.createElement('div');
