@@ -1565,6 +1565,9 @@ export function getDifficultyNavItems(isModal = false) {
     if (isModal) {
         const activeSources = (AppState.sources || []).filter(s => s.active && !s.archived && !s.deleted);
         const items = [];
+        if (activeSources.length > 1) {
+            items.push({ id: 'all', name: 'Aktif Kaynaklara Genel Bakış', isAll: true });
+        }
         activeSources.forEach(s => {
             const folder = AppState.folders?.find(f => f.id === (s.folderId || UNCATEGORIZED_FOLDER_ID));
             const folderName = (folder && folder.id !== UNCATEGORIZED_FOLDER_ID && !folder.isSystem) ? folder.name : '';
@@ -1731,12 +1734,12 @@ export function updateDifficultyUI(isModal = false) {
     const badgeTextEl = document.getElementById(getId('diffCardSourceBadgeText'));
     const badgeEl = document.getElementById(getId('diffCardSourceBadge'));
     if (badgeTextEl) {
-        badgeTextEl.textContent = currentItem.isAll ? (badgeTextEl.getAttribute('data-i18n') ? t('chart_title') : 'Tüm Aktif Kaynaklar') : (currentItem.name || '');
+        badgeTextEl.textContent = currentItem.isAll ? 'Aktif Kaynaklara Genel Bakış' : (currentItem.name || '');
     }
     if (badgeEl) {
-        badgeEl.title = currentItem.isAll ? 'Tüm Aktif Kaynaklar' : (currentItem.name || '');
+        badgeEl.title = currentItem.isAll ? 'Aktif Kaynaklara Genel Bakış' : (currentItem.name || '');
         if (isModal) {
-            badgeEl.classList.toggle('is-disabled', !!currentItem.isAll);
+            badgeEl.classList.remove('is-disabled');
             badgeEl.style.display = 'flex';
         } else {
             if (currentItem.isAll) {
@@ -1751,10 +1754,14 @@ export function updateDifficultyUI(isModal = false) {
 
     const inspectBtn = document.getElementById(getId('diffCardInspectBtn'));
     if (inspectBtn) {
-        if (currentItem.isAll) {
-            inspectBtn.style.display = 'none';
-        } else {
+        if (isModal) {
             inspectBtn.style.display = 'flex';
+        } else {
+            if (currentItem.isAll) {
+                inspectBtn.style.display = 'none';
+            } else {
+                inspectBtn.style.display = 'flex';
+            }
         }
     }
 
@@ -1776,9 +1783,7 @@ export function updateDifficultyUI(isModal = false) {
     if (nextBtn) nextBtn.disabled = !hasMultiple;
     
     // Hide navigation controls completely if there's only 1 source
-    const navControls = isModal 
-        ? document.querySelector('#progressChartOverlay .diff-card-nav-controls')
-        : document.querySelector('#homeDifficultyStatsCard .diff-card-nav-controls');
+    const navControls = document.getElementById(getId('diffCardNavControls')) || document.querySelector(`#${isModal ? 'modalDifficultySection' : 'homeDifficultyStatsCard'} .diff-card-nav-controls`);
     if (navControls) {
         navControls.style.display = hasMultiple ? 'flex' : 'none';
     }

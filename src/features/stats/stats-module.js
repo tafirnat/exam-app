@@ -137,9 +137,11 @@ export function renderStatsList(filter = 'all', searchKeyword = '') {
             // Archived sources never enter the pool (filterSources comes from liveSources()).
             const srcKw = rawKw.slice(1).trim().toLowerCase();
             if (srcKw !== '') {
+                const srcParts = srcKw.split('&').map(s => s.trim()).filter(s => s);
                 filteredQuestions = filteredQuestions.filter(q => {
-                    if (String(q.sourceId).toLowerCase() === srcKw) return true;
-                    return String(q.sourceName || '').toLowerCase().includes(srcKw);
+                    const qId = String(q.sourceId).toLowerCase();
+                    const qName = String(q.sourceName || '').toLowerCase();
+                    return srcParts.some(part => qId === part || qName.includes(part));
                 });
             }
         } else if (rawKw.startsWith('#')) {
@@ -309,8 +311,9 @@ function updateStatsFooter(filter, keyword, count, questions = []) {
     const rawKw = (keyword || '').trim();
 
     if (rawKw.startsWith('$')) {
-        // Source scope: strip $ prefix to get clean source name
-        scopeName = rawKw.slice(1).trim() || t('stats_scope_all_label');
+        // Source scope: strip $ prefix and split by &
+        const sources = rawKw.slice(1).split('&').map(s => s.trim()).filter(s => s);
+        scopeName = sources.length > 0 ? sources.join(', ') : t('stats_scope_all_label');
     } else if (rawKw.startsWith('#')) {
         // Tag scope: strip # prefix to get clean tag name
         const tagName = rawKw.slice(1).trim();
@@ -796,13 +799,20 @@ export function setupStatsEventListeners() {
  * Archived sources are still excluded - the pool always comes from liveSources().
  */
 export function inspectSourceQuestions(sourceId) {
-    const source = liveSources().find(s => s.id === sourceId);
-    if (!source) return;
+    let query = '';
+    if (sourceId === 'all') {
+        const activeSources = liveSources().filter(s => s.active);
+        if (activeSources.length === 0) return;
+        query = '$' + activeSources.map(s => s.name).join(' & ');
+    } else {
+        const source = liveSources().find(s => s.id === sourceId);
+        if (!source) return;
+        query = `$${source.name}`;
+    }
 
     const globalToggle = document.getElementById('statsGlobalToggle');
     if (globalToggle) globalToggle.checked = true;
 
-    const query = `$${source.name}`;
     AppState.activeTagFilter = null;
     AppState.activeStatsFilter = 'all';
     document.querySelectorAll('.filter-btn').forEach(b => {
