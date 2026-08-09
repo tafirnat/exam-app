@@ -7024,3 +7024,19 @@ body.dnd-active {
 .focus-source-slide.slide-out {
     animation: slideOutDown 0.4s forwards cubic-bezier(0.25, 1, 0.5, 1);
 }
+
+.modal-inspect-btn {
+    position: absolute;
+    bottom: 0;
+    right: 0;
+    width: auto;
+    gap: 0.35rem;
+}
+
+@media (max-width: 600px) {
+    .modal-inspect-btn {
+        position: static;
+        margin-left: auto;
+        margin-top: 0.5rem;
+    }
+}
