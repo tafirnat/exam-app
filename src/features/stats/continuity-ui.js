@@ -1664,25 +1664,11 @@ export function bindDifficultyCardControls(isModal = false) {
             if (typeof window.switchView === 'function') window.switchView('stats');
             if (typeof window.syncStatsSearchUI === 'function') window.syncStatsSearchUI();
             renderStatsList('all');
-    const diffContainer = document.getElementById('homeDifficultyStatsCard');
-    const trendContainer = document.getElementById('homeWeeklyTrendCard');
-    const globalContainer = document.getElementById('homeGlobalStatsCard');
-
-    const statsKeys = Object.keys(AppState.stats || {});
-    const hasActivity = AppState.studyActivity && Object.keys(AppState.studyActivity).length > 0;
-    const hasStats = statsKeys.length > 0;
-    const hasLiveSources = liveSources().length > 0;
-
-    if (!hasStats && !hasActivity && !hasLiveSources) {
-        if (diffContainer) diffContainer.style.display = 'none';
-        if (trendContainer) trendContainer.style.display = 'none';
-        if (globalContainer) globalContainer.style.display = 'none';
-        return;
+            const overlay = document.getElementById('progressChartOverlay');
+            if (overlay) overlay.style.display = 'none';
+        };
     }
-
-    if (diffContainer) diffContainer.style.display = 'block';
-    if (trendContainer) trendContainer.style.display = 'block';
-    if (globalContainer) globalContainer.style.display = 'block';
+}
 
 export function updateDifficultyUI(isModal = false) {
     bindDifficultyCardControls(isModal);
