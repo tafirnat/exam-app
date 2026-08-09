@@ -540,7 +540,33 @@ function randomFocalPoint() {
     return ARTWORK_FOCAL_POINTS[Math.floor(Math.random() * ARTWORK_FOCAL_POINTS.length)];
 }
 
-export function renderMotivationSlide() {
+function getMotivationCache() {
+    const today = new Date().toLocaleDateString('en-CA');
+    let cache = null;
+    try {
+        cache = JSON.parse(localStorage.getItem('motivation_cache'));
+    } catch (e) {}
+
+    if (!cache || cache.date !== today) {
+        const ids = [];
+        while(ids.length < 5) {
+            const r = Math.floor(Math.random() * 50) + 1;
+            if(!ids.includes(r)) ids.push(r);
+        }
+        cache = { date: today, ids: ids, index: 0 };
+        localStorage.setItem('motivation_cache', JSON.stringify(cache));
+    }
+    return cache;
+}
+
+export function cycleMotivation() {
+    const cache = getMotivationCache();
+    cache.index = (cache.index + 1) % cache.ids.length;
+    localStorage.setItem('motivation_cache', JSON.stringify(cache));
+    renderMotivationSlide(true);
+}
+
+export function renderMotivationSlide(isCycle = false) {
     const textEl = document.getElementById('motivationQuoteText');
     const authorEl = document.getElementById('motivationQuoteAuthor');
     const artworkEl = document.getElementById('motivationArtworkInfo');
@@ -548,43 +574,50 @@ export function renderMotivationSlide() {
     if (!textEl || !authorEl || !card) return;
 
     const lang = AppState.language || 'en';
-    const currentId = card.dataset.quoteId ? parseInt(card.dataset.quoteId, 10) : null;
-    const quote = currentId
-        ? (MOTIVATION_QUOTES.find(q => q.id === currentId) || getDailyQuote(lang))
-        : getDailyQuote(lang);
+    
+    const cache = getMotivationCache();
+    const id = cache.ids[cache.index];
+    
+    const quote = MOTIVATION_QUOTES[id % MOTIVATION_QUOTES.length] || MOTIVATION_QUOTES[0];
 
     card.dataset.quoteId = String(quote.id);
     const safeLang = (quote[lang]) ? lang : 'en';
     textEl.textContent = `"${quote[safeLang] || quote.text || quote.tr}"`;
     authorEl.textContent = `— ${quote.author}`;
 
-    if (quote.artwork && quote.artwork.url) {
-        const optimizedUrl = optimizeCdnImageUrl(quote.artwork.url);
-        const focal = randomFocalPoint();
-        card.dataset.focalPoint = focal;
-        card.dataset.artworkUrl = quote.artwork.url;
-        if (artworkEl) {
-            artworkEl.textContent = `${quote.artwork.artist} — ${quote.artwork.title} (${quote.artwork.year})`;
-            artworkEl.title = `Günün Eseri: ${quote.artwork.title} by ${quote.artwork.artist} (${quote.artwork.year})`;
-        }
-        // Preload the image; show the card only once it's fully fetched (smooth fade-in).
-        const img = new Image();
-        img.onload = () => {
-            card.style.backgroundImage = `url("${optimizedUrl}")`;
-            card.style.backgroundSize = 'cover';
-            card.style.backgroundPosition = focal;
-            card.classList.add('motivation-img-ready');
-        };
-        img.onerror = () => {
-            // Show card anyway so text is still readable
-            card.style.backgroundImage = `url("${optimizedUrl}")`;
-            card.classList.add('motivation-img-ready');
-        };
-        img.src = optimizedUrl;
-    } else {
-        // No artwork — still reveal the card
-        card.classList.add('motivation-img-ready');
+    if (artworkEl) {
+        artworkEl.style.display = 'none';
     }
+
+    let rawWidth = card.clientWidth || window.innerWidth || 600;
+    let rawHeight = card.clientHeight || 112;
+    if (rawWidth < 100) rawWidth = 600;
+    if (rawHeight < 50) rawHeight = 112;
+    
+    const width = Math.ceil(rawWidth / 50) * 50;
+    const height = Math.ceil(rawHeight / 50) * 50;
+    
+    const optimizedUrl = `https://picsum.photos/seed/estetik${id}/${width}/${height}`;
+    
+    if (isCycle) {
+        card.classList.remove('motivation-img-ready');
+        card.classList.add('motivation-img-refreshing');
+    }
+
+    const img = new Image();
+    img.onload = () => {
+        card.style.backgroundImage = `url("${optimizedUrl}")`;
+        card.style.backgroundSize = 'cover';
+        card.style.backgroundPosition = 'center center';
+        card.classList.remove('motivation-img-refreshing');
+        card.classList.add('motivation-img-ready');
+    };
+    img.onerror = () => {
+        card.style.background = 'linear-gradient(135deg, #1e293b, #0f172a)';
+        card.classList.remove('motivation-img-refreshing');
+        card.classList.add('motivation-img-ready');
+    };
+    img.src = optimizedUrl;
 }
 
 export function bindMotivationEvents() {
@@ -592,8 +625,6 @@ export function bindMotivationEvents() {
     const refreshBtn = document.getElementById('refreshMotivationBtn');
     const textEl = document.getElementById('motivationQuoteText');
     const authorEl = document.getElementById('motivationQuoteAuthor');
-    const artworkEl = document.getElementById('motivationArtworkInfo');
-    const card = document.getElementById('motivationContinuityCard');
 
     if (copyBtn && !copyBtn.dataset.bound) {
         copyBtn.dataset.bound = 'true';
@@ -615,43 +646,7 @@ export function bindMotivationEvents() {
     if (refreshBtn && !refreshBtn.dataset.bound) {
         refreshBtn.dataset.bound = 'true';
         refreshBtn.addEventListener('click', () => {
-            if (!textEl || !authorEl || !card) return;
-            const lang = AppState.language || 'en';
-            const currentId = parseInt(card.dataset.quoteId || '0', 10);
-            // Also exclude the current artwork URL so the same image never reappears on refresh
-            const currentArtworkUrl = card.dataset.artworkUrl || null;
-            const newQuote = getRandomQuote(lang, currentId, currentArtworkUrl);
-            card.dataset.quoteId = String(newQuote.id);
-            const safeLang = (newQuote[lang]) ? lang : 'en';
-            textEl.textContent = `"${newQuote[safeLang] || newQuote.text || newQuote.tr}"`;
-            authorEl.textContent = `— ${newQuote.author}`;
-
-            if (newQuote.artwork) {
-                const optimizedUrl = optimizeCdnImageUrl(newQuote.artwork.url);
-                const focal = randomFocalPoint();
-                card.dataset.focalPoint = focal;
-                card.dataset.artworkUrl = newQuote.artwork.url;
-                if (artworkEl) {
-                    artworkEl.textContent = `${newQuote.artwork.artist} — ${newQuote.artwork.title} (${newQuote.artwork.year})`;
-                    artworkEl.title = `Günün Eseri: ${newQuote.artwork.title} by ${newQuote.artwork.artist} (${newQuote.artwork.year})`;
-                }
-                // Cross-fade: fade out → swap → preload → fade back in
-                card.classList.remove('motivation-img-ready');
-                card.classList.add('motivation-img-refreshing');
-                const img = new Image();
-                img.onload = () => {
-                    card.style.backgroundImage = `url('${optimizedUrl}')`;
-                    card.style.backgroundPosition = focal;
-                    card.classList.remove('motivation-img-refreshing');
-                    card.classList.add('motivation-img-ready');
-                };
-                img.onerror = () => {
-                    card.style.backgroundImage = `url('${optimizedUrl}')`;
-                    card.classList.remove('motivation-img-refreshing');
-                    card.classList.add('motivation-img-ready');
-                };
-                img.src = optimizedUrl;
-            }
+            cycleMotivation();
         });
     }
 }
@@ -805,6 +800,14 @@ function initCarouselEvents() {
             setTimeout(() => {
                 if (typeof renderNuggetSlide === 'function') {
                     renderNuggetSlide(1);
+                }
+            }, 300);
+        }
+
+        if (nextSlide.id === 'motivationContinuityCard') {
+            setTimeout(() => {
+                if (typeof cycleMotivation === 'function') {
+                    cycleMotivation();
                 }
             }, 300);
         }
