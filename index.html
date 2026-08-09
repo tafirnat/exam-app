@@ -1223,7 +1223,7 @@
                             </div>
                         </div>
                         <div
-                            style="display: flex; gap: 1.5rem; margin-top: 1.25rem; align-items: center; flex-wrap: wrap; flex: 1;">
+                            style="display: flex; gap: 1.5rem; margin-top: 1.25rem; align-items: center; flex-wrap: wrap; flex: 1; position: relative;">
                             <div id="difficultyDonutChart"
                                 style="position: relative; width: 130px; height: 130px; border-radius: 50%; background: var(--surface-hover); flex-shrink: 0;">
                                 <div
@@ -1237,19 +1237,20 @@
                             <div id="difficultyLegend"
                                 style="display: grid; grid-template-columns: repeat(auto-fit, minmax(110px, 1fr)); gap: 0.6rem 0.8rem; font-size: 0.8rem; color: var(--text-secondary); flex: 1; min-width: 130px;">
                             </div>
+                            <button type="button" class="card-control-btn diff-card-inspect-btn modal-inspect-btn" id="diffCardInspectBtn"
+                                title="Soruları İncele (#stats)" data-i18n-title="inspect_source_questions"
+                                aria-label="Soruları İncele">
+                                <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor"
+                                    stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+                                    <line x1="3" y1="6" x2="13" y2="6"></line>
+                                    <line x1="3" y1="12" x2="10" y2="12"></line>
+                                    <line x1="3" y1="18" x2="10" y2="18"></line>
+                                    <circle cx="16" cy="15" r="4"></circle>
+                                    <line x1="19" y1="18" x2="22" y2="21"></line>
+                                </svg>
+                                <span class="inspect-btn-text" data-i18n="inspect_btn" style="font-size: 0.75rem; font-weight: 500;">İncele</span>
+                            </button>
                         </div>
-                        <button type="button" class="card-control-btn diff-card-inspect-btn" id="diffCardInspectBtn"
-                            title="Soruları İncele (#stats)" data-i18n-title="inspect_source_questions"
-                            aria-label="Soruları İncele" style="position: absolute; bottom: 0.75rem; right: 0.75rem;">
-                            <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor"
-                                stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
-                                <line x1="3" y1="6" x2="13" y2="6"></line>
-                                <line x1="3" y1="12" x2="10" y2="12"></line>
-                                <line x1="3" y1="18" x2="10" y2="18"></line>
-                                <circle cx="16" cy="15" r="4"></circle>
-                                <line x1="19" y1="18" x2="22" y2="21"></line>
-                            </svg>
-                        </button>
                     </div>
                 </div>
 
