@@ -372,9 +372,16 @@ function getSourceQuestionCount(sourceId) {
     return source?.questions?.length || 0;
 }
 
+let focusSourceInterval = null;
+
 function renderFocusSlide() {
     const card = document.getElementById('focusContinuityCard');
     if (!card) return;
+
+    if (focusSourceInterval) {
+        clearInterval(focusSourceInterval);
+        focusSourceInterval = null;
+    }
 
     const focusStreak = calculateFocusStreak();
     updateStreakCountDisplay('focusStreakCount', focusStreak);
@@ -422,8 +429,12 @@ function renderFocusSlide() {
 
         if (sourcesListEl) {
             sourcesListEl.innerHTML = '';
-            const displaySources = focusSources.slice(0, 3);
-            displaySources.forEach(id => {
+            
+            if (focusSources.length === 0) return;
+
+            let currentIndex = 0;
+
+            const createSlide = (id) => {
                 const isLive = liveFocusSources.includes(id);
                 const label = getFocusSourceLabel(id) + (isLive ? '' : ` (${t('source_missing')})`);
                 const qCount = getSourceQuestionCount(id);
@@ -431,36 +442,62 @@ function renderFocusSlide() {
                 const avgDiff = isLive ? calculateSourceAverageDifficulty(id) : 0;
 
                 const item = document.createElement('div');
+                item.className = 'focus-source-slide';
                 item.style.display = 'flex';
-                item.style.flexDirection = 'row';
-                item.style.alignItems = 'center';
-                item.style.justifyContent = 'flex-start';
+                item.style.flexDirection = 'column';
                 item.style.fontSize = '0.75rem';
                 item.style.color = '#7a59c4';
                 item.style.lineHeight = '1.4';
-                item.style.width = '100%';
-                item.title = label;
                 
                 const nameLine = document.createElement('div');
                 nameLine.className = 'truncate';
-                nameLine.style.flex = '0 1 auto';
-                nameLine.style.minWidth = '0';
-                nameLine.style.marginRight = '4px';
                 nameLine.style.fontWeight = 'normal';
                 nameLine.textContent = label;
+                nameLine.title = label;
                 
                 const statsLine = document.createElement('div');
-                statsLine.style.flexShrink = '0';
-                statsLine.style.whiteSpace = 'nowrap';
-                statsLine.style.fontWeight = 'normal';
                 statsLine.style.opacity = '0.9';
-                
-                statsLine.textContent = `→ Q: ${qCount} | ${mastery}% | Ø ${avgDiff}`;
+                statsLine.style.fontSize = '0.7rem';
+                const qLabel = t('questions_unit') || 'Soru';
+                const mLabel = t('topic_mastery') || 'Hakimiyet';
+                const dLabel = (t('difficulty_label') || 'Zorluk').replace(':', '').trim();
+                statsLine.textContent = `${qCount} ${qLabel} • %${mastery} ${mLabel} • ${avgDiff} ${dLabel}`;
 
                 item.appendChild(nameLine);
                 item.appendChild(statsLine);
-                sourcesListEl.appendChild(item);
-            });
+                return item;
+            };
+
+            const showSlide = (index) => {
+                const currentSlide = sourcesListEl.querySelector('.focus-source-slide.slide-in');
+                const nextSlide = createSlide(focusSources[index]);
+                nextSlide.classList.add('slide-in');
+                
+                if (currentSlide) {
+                    currentSlide.classList.remove('slide-in');
+                    currentSlide.classList.add('slide-out');
+                    setTimeout(() => {
+                        if (currentSlide.parentElement === sourcesListEl) {
+                            sourcesListEl.removeChild(currentSlide);
+                        }
+                    }, 400); 
+                }
+                sourcesListEl.appendChild(nextSlide);
+            };
+
+            showSlide(0);
+
+            if (focusSources.length > 1) {
+                focusSourceInterval = setInterval(() => {
+                    if (!document.body.contains(sourcesListEl)) {
+                        clearInterval(focusSourceInterval);
+                        focusSourceInterval = null;
+                        return;
+                    }
+                    currentIndex = (currentIndex + 1) % focusSources.length;
+                    showSlide(currentIndex);
+                }, 2500);
+            }
         }
     }
 

@@ -7003,4 +7003,25 @@ body.dnd-active {
         margin-right: 0;
         margin-top: 12px;
     }
+}@keyframes slideOutDown {
+    0% { transform: translateY(0); opacity: 1; }
+    100% { transform: translateY(100%); opacity: 0; }
+}
+
+@keyframes slideInFromTop {
+    0% { transform: translateY(-100%); opacity: 0; }
+    100% { transform: translateY(0); opacity: 1; }
+}
+
+.focus-source-slide {
+    position: absolute;
+    width: 100%;
+}
+
+.focus-source-slide.slide-in {
+    animation: slideInFromTop 0.4s forwards cubic-bezier(0.25, 1, 0.5, 1);
+}
+
+.focus-source-slide.slide-out {
+    animation: slideOutDown 0.4s forwards cubic-bezier(0.25, 1, 0.5, 1);
 }
