@@ -2133,6 +2133,12 @@ function renderTrendChart(buckets, yAxisId, barsId, xAxisId) {
         barWrap.style.alignItems = 'center';
         barWrap.style.padding = '0 8px';
         barWrap.style.background = 'rgba(0, 0, 0, 0)';
+        barWrap.style.position = 'relative';
+
+        const hoverTarget = document.createElement('div');
+        hoverTarget.style.position = 'absolute';
+        hoverTarget.style.inset = '0';
+        hoverTarget.style.zIndex = '5';
 
         const barInner = document.createElement('div');
         barInner.style.width = '100%';
@@ -2198,7 +2204,7 @@ function renderTrendChart(buckets, yAxisId, barsId, xAxisId) {
             barInner.appendChild(topLbl);
 
             barWrap.style.cursor = 'pointer';
-            barWrap.addEventListener('mouseenter', () => {
+            hoverTarget.addEventListener('mouseenter', () => {
                 tooltip.innerHTML = `
                     <div class="trend-tooltip-header">
                         <div style="font-weight:700; font-size:0.75rem; margin-bottom:4px; text-align:center;">
@@ -2253,9 +2259,10 @@ function renderTrendChart(buckets, yAxisId, barsId, xAxisId) {
                 tooltip.style.left = `${left}px`;
                 tooltip.style.transform = 'none';
             });
-            barWrap.addEventListener('mouseleave', () => {
+            hoverTarget.addEventListener('mouseleave', () => {
                 tooltip.style.display = 'none';
             });
+            barWrap.appendChild(hoverTarget);
         }
 
         barWrap.appendChild(barInner);
