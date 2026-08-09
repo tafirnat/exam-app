@@ -1731,17 +1731,21 @@ export function updateDifficultyUI(isModal = false) {
     const badgeTextEl = document.getElementById(getId('diffCardSourceBadgeText'));
     const badgeEl = document.getElementById(getId('diffCardSourceBadge'));
     if (badgeTextEl) {
-        const rawName = currentItem.name || '';
-        badgeTextEl.textContent = rawName;
+        badgeTextEl.textContent = currentItem.isAll ? (badgeTextEl.getAttribute('data-i18n') ? t('chart_title') : 'Tüm Aktif Kaynaklar') : (currentItem.name || '');
     }
     if (badgeEl) {
-        badgeEl.title = currentItem.name || '';
-        if (currentItem.isAll) {
-            badgeEl.classList.add('is-disabled');
-            badgeEl.style.display = 'none';
-        } else {
-            badgeEl.classList.remove('is-disabled');
+        badgeEl.title = currentItem.isAll ? 'Tüm Aktif Kaynaklar' : (currentItem.name || '');
+        if (isModal) {
+            badgeEl.classList.toggle('is-disabled', !!currentItem.isAll);
             badgeEl.style.display = 'flex';
+        } else {
+            if (currentItem.isAll) {
+                badgeEl.classList.add('is-disabled');
+                badgeEl.style.display = 'none';
+            } else {
+                badgeEl.classList.remove('is-disabled');
+                badgeEl.style.display = 'flex';
+            }
         }
     }
 
@@ -1840,8 +1844,10 @@ export function updateDifficultyUI(isModal = false) {
 
     const legendEl = document.getElementById(getId('difficultyLegend'));
     if (legendEl) {
+        // Only move inspectBtn for home card
         const inspectBtn = document.getElementById(getId('diffCardInspectBtn'));
-        if (inspectBtn) inspectBtn.remove();
+        if (inspectBtn && !isModal) inspectBtn.remove();
+        
         legendEl.innerHTML = '';
         diffData.forEach(d => {
             const perc = totalQuestions > 0 ? Math.round((d.count / totalQuestions) * 100) : 0;
@@ -1855,7 +1861,8 @@ export function updateDifficultyUI(isModal = false) {
             `;
             legendEl.appendChild(row);
         });
-        if (inspectBtn) legendEl.appendChild(inspectBtn);
+        
+        if (inspectBtn && !isModal) legendEl.appendChild(inspectBtn);
     }
 }
 
