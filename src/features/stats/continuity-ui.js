@@ -569,11 +569,13 @@ export function cycleMotivation() {
 export function renderMotivationSlide(isCycle = false) {
     const textEl = document.getElementById('motivationQuoteText');
     const authorEl = document.getElementById('motivationQuoteAuthor');
-    const artworkEl = document.getElementById('motivationArtworkInfo');
+    const langToggleEl = document.getElementById('motivationLangToggle');
     const card = document.getElementById('motivationContinuityCard');
     if (!textEl || !authorEl || !card) return;
 
-    const lang = AppState.language || 'en';
+    const appLang = AppState.language || 'en';
+    const overrideLang = localStorage.getItem('motivation_lang');
+    const lang = overrideLang && ['tr', 'en', 'de'].includes(overrideLang) ? overrideLang : appLang;
     
     const cache = getMotivationCache();
     const id = cache.ids[cache.index];
@@ -582,11 +584,11 @@ export function renderMotivationSlide(isCycle = false) {
 
     card.dataset.quoteId = String(quote.id);
     const safeLang = (quote[lang]) ? lang : 'en';
-    textEl.textContent = quote[safeLang] || quote.text || quote.tr;
+    textEl.textContent = quote[safeLang] || quote.en || quote.tr;
     authorEl.textContent = `— ${quote.author}`;
 
-    if (artworkEl) {
-        artworkEl.style.display = 'none';
+    if (langToggleEl) {
+        langToggleEl.textContent = safeLang.toUpperCase();
     }
 
     let rawWidth = card.clientWidth || window.innerWidth || 600;
@@ -625,6 +627,7 @@ export function bindMotivationEvents() {
     const refreshBtn = document.getElementById('refreshMotivationBtn');
     const textEl = document.getElementById('motivationQuoteText');
     const authorEl = document.getElementById('motivationQuoteAuthor');
+    const langToggleEl = document.getElementById('motivationLangToggle');
 
     if (copyBtn && !copyBtn.dataset.bound) {
         copyBtn.dataset.bound = 'true';
@@ -647,6 +650,22 @@ export function bindMotivationEvents() {
         refreshBtn.dataset.bound = 'true';
         refreshBtn.addEventListener('click', () => {
             cycleMotivation();
+        });
+    }
+
+    if (langToggleEl && !langToggleEl.dataset.bound) {
+        langToggleEl.dataset.bound = 'true';
+        langToggleEl.addEventListener('click', (e) => {
+            e.stopPropagation();
+            const supported = ['tr', 'en', 'de'];
+            let current = localStorage.getItem('motivation_lang') || AppState.language || 'en';
+            if (!supported.includes(current)) current = 'en';
+            
+            const nextIdx = (supported.indexOf(current) + 1) % supported.length;
+            localStorage.setItem('motivation_lang', supported[nextIdx]);
+            
+            renderMotivationSlide(false);
+            document.dispatchEvent(new CustomEvent('reset-carousel-timer'));
         });
     }
 }
@@ -861,6 +880,10 @@ function initCarouselEvents() {
             }
         }, durationMs);
     }
+
+    document.addEventListener('reset-carousel-timer', () => {
+        pauseTemporarily(10000);
+    });
 
     // Hover events (Desktop / Mouse)
     wrapper.addEventListener('mouseenter', () => {
