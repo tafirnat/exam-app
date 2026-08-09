@@ -1525,12 +1525,31 @@ let currentDifficultyViewId = 'all';
 let currentModalDifficultyViewId = null;
 let diffCardControlsBound = { home: false, modal: false };
 
-export function getCurrentModalDifficultyViewId() {
-    return currentModalDifficultyViewId;
-}
-
 export function resetModalDifficultyViewId() {
     currentModalDifficultyViewId = 'all';
+}
+
+/**
+ * The nav item the modal is currently showing, with the selection settled.
+ *
+ * The panel draws three charts off one selection, and it used to read that
+ * selection at the top and then let updateDifficultyUI() change it halfway
+ * through: opening the panel resets the id to 'all', but the nav offers no
+ * 'all' item when there is a single active source, so the id was rewritten to
+ * that source *after* the other two charts had already drawn themselves for
+ * 'all'. The panel therefore opened showing the source's name over another
+ * source's data, and silently corrected itself on the next redraw.
+ *
+ * Settling it here, before anything draws, is what makes the three charts agree
+ * on their first paint.
+ */
+export function resolveModalDifficultyView() {
+    const navItems = getDifficultyNavItems(true);
+    if (navItems.length === 0) return null;
+
+    const item = navItems.find(i => i.id === currentModalDifficultyViewId) || navItems[0];
+    currentModalDifficultyViewId = item.id;
+    return item;
 }
 
 export function getOrderedLiveSources() {
@@ -1566,7 +1585,7 @@ export function getDifficultyNavItems(isModal = false) {
         const activeSources = (AppState.sources || []).filter(s => s.active && !s.archived && !s.deleted);
         const items = [];
         if (activeSources.length > 1) {
-            items.push({ id: 'all', name: 'Aktif Kaynaklara Genel Bakış', isAll: true });
+            items.push({ id: 'all', name: t('all_active_sources_overview'), isAll: true });
         }
         activeSources.forEach(s => {
             const folder = AppState.folders?.find(f => f.id === (s.folderId || UNCATEGORIZED_FOLDER_ID));
@@ -1694,50 +1713,55 @@ export function bindDifficultyCardControls(isModal = false) {
     if (inspectBtn) {
         inspectBtn.onclick = async (e) => {
             e.stopPropagation();
-            const { inspectSourceQuestions, renderStatsList } = await import('./stats-module.js');
+            const { inspectSourceQuestions } = await import('./stats-module.js');
             const currentId = isModal ? currentModalDifficultyViewId : currentDifficultyViewId;
-            if (currentId && currentId !== 'all') {
-                const overlay = document.getElementById('progressChartOverlay');
-                if (overlay) overlay.style.display = 'none';
-                inspectSourceQuestions(currentId);
-                return;
-            }
-            const globalToggle = document.getElementById('statsGlobalToggle');
-            if (globalToggle) globalToggle.checked = true;
-            AppState.currentSourceKey = null;
-            const searchInput = document.getElementById('statsSearchInput');
-            if (searchInput) searchInput.value = '';
-            if (typeof window.switchView === 'function') window.switchView('stats');
-            if (typeof window.syncStatsSearchUI === 'function') window.syncStatsSearchUI();
-            renderStatsList('all');
+
+            /* Including "all". inspectSourceQuestions() already builds
+               `$Ad1 & Ad2 & Ad3` from the *active* sources, which is exactly
+               this panel's scope; the hand-rolled branch that used to live here
+               only ticked the global toggle and asked for an unfiltered list,
+               so "inspect the sources of my test" opened the whole library. */
+            inspectSourceQuestions(currentId || 'all');
+
             const overlay = document.getElementById('progressChartOverlay');
             if (overlay) overlay.style.display = 'none';
         };
     }
 }
 
-export function updateDifficultyUI(isModal = false) {
+/**
+ * @param {boolean} isModal
+ * @param {object} [preResolved] the nav item the caller already settled on -
+ *        see resolveModalDifficultyView(). Passing it is what stops this
+ *        function from moving the selection under a caller that has already
+ *        drawn something with it.
+ */
+export function updateDifficultyUI(isModal = false, preResolved = null) {
     bindDifficultyCardControls(isModal);
     const getId = (id) => isModal ? `modal${id.charAt(0).toUpperCase() + id.slice(1)}` : id;
 
     const navItems = getDifficultyNavItems(isModal);
     if (navItems.length === 0) return; // No sources to show
 
-    const currentId = isModal ? currentModalDifficultyViewId : currentDifficultyViewId;
-    let currentItem = navItems.find(i => i.id === currentId);
+    let currentItem = preResolved && navItems.find(i => i.id === preResolved.id);
+    if (!currentItem) {
+        const currentId = isModal ? currentModalDifficultyViewId : currentDifficultyViewId;
+        currentItem = navItems.find(i => i.id === currentId);
+    }
     if (!currentItem) {
         currentItem = navItems[0];
         if (isModal) currentModalDifficultyViewId = currentItem.id;
         else currentDifficultyViewId = currentItem.id;
     }
 
+    const allLabel = t('all_active_sources_overview');
     const badgeTextEl = document.getElementById(getId('diffCardSourceBadgeText'));
     const badgeEl = document.getElementById(getId('diffCardSourceBadge'));
     if (badgeTextEl) {
-        badgeTextEl.textContent = currentItem.isAll ? 'Aktif Kaynaklara Genel Bakış' : (currentItem.source?.name || currentItem.name || '');
+        badgeTextEl.textContent = currentItem.isAll ? allLabel : (currentItem.source?.name || currentItem.name || '');
     }
     if (badgeEl) {
-        badgeEl.title = currentItem.isAll ? 'Aktif Kaynaklara Genel Bakış' : (currentItem.source?.name || currentItem.name || '');
+        badgeEl.title = currentItem.isAll ? allLabel : (currentItem.source?.name || currentItem.name || '');
         if (isModal) {
             badgeEl.classList.remove('is-disabled');
             badgeEl.style.display = 'flex';
@@ -1791,8 +1815,14 @@ export function updateDifficultyUI(isModal = false) {
     let diffCounts = { easy: 0, medium: 0, hard: 0, veryHard: 0, unsolved: 0 };
     let totalQuestions = 0;
 
+    /* The home card describes the library, so "all" there means everything that
+       is not archived - a source you have switched off is still part of what you
+       own. The modal describes the *test*, so "all" there means the sources a
+       test would actually draw from. Reading liveSources() in both is why the
+       panel's donut counted 30 questions under a header the bar beneath it
+       answered with 20. */
     const targetSources = currentItem.isAll
-        ? liveSources()
+        ? (isModal ? liveSources().filter(s => s.active) : liveSources())
         : liveSources().filter(s => s.id === currentItem.id);
 
     const allQuestions = [];
@@ -1932,7 +1962,9 @@ function emptyTrendBucket(label, fullDateLabel) {
         label, fullDateLabel,
         correct: 0, neutral: 0, wrong: 0, empty: 0, total: 0,
         volumeTotal: 0, volumeFocus: 0,
-        effortCorrect: 0, effortWrong: 0, effortEmpty: 0
+        effortCorrect: 0, effortWrong: 0, effortEmpty: 0,
+        // Only ever set on a source-filtered bucket - see addActivityToBucket.
+        unattributed: 0
     };
 }
 
@@ -2068,6 +2100,17 @@ function addActivityToBucket(bucket, act, logFilter = null) {
        short bar on a day nobody can attribute any more. */
     if (logFilter) {
         addLogCounts(bucket, combineDeviceLogs(logged, logFilter));
+
+        /* What the day did that cannot be pinned on any source. The counters are
+           real - that many questions were answered - the breakdown behind them
+           simply was not kept, either because the day predates the log or
+           because the device that wrote it keeps none. Carried out so the chart
+           can say "total known, breakdown unknown" instead of drawing a zero
+           that reads as "you did nothing". */
+        const unlogged = deviceBuckets.filter(b => !b.questionLog || Object.keys(b.questionLog).length === 0);
+        bucket.unattributed += deviceBuckets.length === 0
+            ? (act.questionCount || 0)
+            : unlogged.reduce((sum, b) => sum + (b.questionCount || 0), 0);
         return;
     }
 
@@ -2171,17 +2214,12 @@ function addFlatCounts(bucket, counts) {
 }
 
 /** Draws the stacked bar chart shared by the weekly and monthly trend faces. */
-export function renderTrendChart(buckets, yAxisId, barsId, xAxisId) {
+function renderTrendChart(buckets, yAxisId, barsId, xAxisId) {
     const yAxisEl = document.getElementById(yAxisId);
     const barsEl = document.getElementById(barsId);
     const xAxisEl = document.getElementById(xAxisId);
 
     if (!yAxisEl || !barsEl || !xAxisEl) return;
-
-    /* A month of daily columns has no room for a name under each bar or a count
-       above it. Six month bars and a week of days do, so the thinning keys off
-       the column count rather than off which face is asking. */
-    const dense = buckets.length > 12;
 
     yAxisEl.innerHTML = '';
     barsEl.innerHTML = '';
@@ -2223,16 +2261,13 @@ export function renderTrendChart(buckets, yAxisId, barsId, xAxisId) {
 
     buckets.forEach(d => {
         const xLbl = document.createElement('div');
-        // Every fifth day of the month plus the first, so the ticks stay put as
-        // the window slides instead of dancing with today's date.
-        xLbl.textContent = dense && !(d.label === '01' || Number(d.label) % 5 === 0) ? '' : d.label;
+        xLbl.textContent = d.label;
         xLbl.style.flex = '1';
         xLbl.style.textAlign = 'center';
         xAxisEl.appendChild(xLbl);
 
         const barWrap = document.createElement('div');
         barWrap.className = 'trend-bar-wrapper';
-        if (dense) barWrap.style.padding = '0 2px';
 
         const hoverTarget = document.createElement('div');
         hoverTarget.style.position = 'absolute';
@@ -2299,7 +2334,7 @@ export function renderTrendChart(buckets, yAxisId, barsId, xAxisId) {
             topLbl.style.color = 'var(--text-primary)';
             topLbl.style.zIndex = '3';
             topLbl.style.textShadow = '0 0 3px var(--surface-color), 0 0 3px var(--surface-color), 0 0 2px var(--surface-color)';
-            if (!dense) barInner.appendChild(topLbl);
+            barInner.appendChild(topLbl);
 
             barWrap.style.cursor = 'pointer';
             hoverTarget.addEventListener('mouseenter', () => {

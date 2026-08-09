@@ -9,12 +9,10 @@ import { plainText } from '../../core/markdown.js';
 import {
     renderContinuityBlock,
     updateDifficultyUI,
-    getCurrentModalDifficultyViewId,
-    resetModalDifficultyViewId,
-    buildDailyTrendBuckets,
-    makeSourceLogFilter,
-    renderTrendChart
+    resolveModalDifficultyView,
+    resetModalDifficultyViewId
 } from './continuity-ui.js';
+import { buildWorkloadBuckets, renderWorkloadChart, workloadSources } from './workload-chart.js';
 
 
 export function renderStatsList(filter = 'all', searchKeyword = '') {
@@ -915,23 +913,17 @@ export function refreshProgressChartOverlay() {
 
 /**
  * Draws the three charts inside the progress chart overlay: the completion bar,
- * the difficulty donut and the weekly/monthly study trend.
+ * the difficulty donut and the work/load chart.
+ *
+ * All three describe the same thing - the sources a test draws from, either
+ * merged or one at a time. That scope is settled once, here, before anything
+ * draws: the panel used to let each chart decide for itself and they disagreed,
+ * the donut counting the whole library under a header the bar beneath it
+ * answered with the active sources only.
  */
 export function showProgressCharts() {
-    /* liveSources(), not AppState.sources: the source picker these arrows walk
-       is built from the live library too, so reading a wider set here let the
-       badge name a source the filter then failed to find - and a miss fell back
-       to *every* active source, drawing the whole library under one source's
-       name. */
-    const activeSources = liveSources().filter(s => s.active);
-    let filterSources = activeSources;
-    let oneSource = null;
-
-    const currentId = getCurrentModalDifficultyViewId();
-    if (currentId && currentId !== 'all') {
-        oneSource = liveSources().find(s => s.id === currentId) || null;
-        if (oneSource) filterSources = [oneSource];
-    }
+    const view = resolveModalDifficultyView();
+    const filterSources = workloadSources(view ? view.id : 'all');
 
     const total = filterSources.reduce((sum, s) => sum + (s.questions?.length || 0), 0);
 
@@ -968,56 +960,20 @@ export function showProgressCharts() {
     );
 
     // ---- Chart 2: Donut / Pie – Difficulty (Using SSOT Component) ----
-    updateDifficultyUI(true);
+    // The already-settled selection is handed over, so this cannot move it out
+    // from under the bar that was just drawn with it.
+    updateDifficultyUI(true, view);
 
-    // ---- Chart 3: Weekly / monthly study trend ----
-    /* The same builders and the same renderer as the home card. This used to be
-       a private copy that read `act.questionLog` - a field that has lived inside
-       act.byDevice[device] since the day became per-device counting - and keyed
-       its columns off device time. Both defects were silent: the filtered view
-       drew "no data" for sources with months of work behind them, and the
-       unfiltered one disagreed with the card on the home screen. */
-    const activities = AppState.studyActivity || {};
-    // Unfiltered means the whole day, the same figure the home card shows -
-    // not "every active source", which would drop work done on a source that
-    // has since been switched off.
-    const logFilter = makeSourceLogFilter(oneSource ? [oneSource.id] : null);
-
-    renderTrendChart(
-        buildDailyTrendBuckets(activities, 7, { logFilter }),
-        'modalWeeklyTrendYAxis', 'modalWeeklyTrendBars', 'modalWeeklyTrendXAxis'
+    // ---- Chart 3: Work done and load ahead, on one axis ----
+    /* Not the home card's trend chart. That one answers "how much have I
+       studied" over the whole library and the panel was drawing the same
+       picture with a filter - two identical charts. This one answers what the
+       panel is for: these sources' last week, and what they are about to ask
+       for. See workload-chart.js for why the forward half has no data hole. */
+    renderWorkloadChart(
+        buildWorkloadBuckets(view ? view.id : 'all'),
+        'modalWorkloadYAxis', 'modalWorkloadBars', 'modalWorkloadXAxis'
     );
-    renderTrendChart(
-        buildDailyTrendBuckets(activities, 30, { logFilter }),
-        'modalMonthlyTrendYAxis', 'modalMonthlyTrendBars', 'modalMonthlyTrendXAxis'
-    );
-
-    _bindModalTrendFlip();
-}
-
-/** Wires the flip buttons on both faces of the modal's trend card (once). */
-function _bindModalTrendFlip() {
-    const card = document.getElementById('modalWeeklyTrendCard');
-    if (!card || card.dataset.flipBound) return;
-    card.dataset.flipBound = 'true';
-
-    card.querySelectorAll('[data-modal-trend-flip]').forEach(btn => {
-        btn.addEventListener('click', () => {
-            const flipped = card.classList.toggle('flipped');
-            // The hidden face must stay out of the tab order, otherwise focus
-            // can land on a button nobody can see.
-            card.querySelectorAll('.chart-flip-front [data-modal-trend-flip]').forEach(b => {
-                b.tabIndex = flipped ? -1 : 0;
-            });
-            card.querySelectorAll('.chart-flip-back [data-modal-trend-flip]').forEach(b => {
-                b.tabIndex = flipped ? 0 : -1;
-            });
-        });
-    });
-
-    card.querySelectorAll('.chart-flip-back [data-modal-trend-flip]').forEach(b => {
-        b.tabIndex = -1;
-    });
 }
 
 /**
@@ -1053,9 +1009,17 @@ function _drawStackedBar(canvas, legendEl, segments, total) {
     canvas.style.width  = W + 'px';
     canvas.style.height = H + 'px';
 
+    /* The legend is written first because it is plain DOM and the bar is not:
+       when a 2d context cannot be had the picture is lost but the numbers it
+       was picturing are still worth showing, and the two charts below are drawn
+       by this same pass and must still land. */
+    if (legendEl) {
+        legendEl.innerHTML = segments.map(s =>
+            `<span><span class="cl-dot" style="background:${s.color}"></span>${s.label}: <b>${s.value}</b></span>`
+        ).join('');
+    }
+
     const ctx = canvas.getContext('2d');
-    // No 2d context means no bar, not a dead redraw: the donut and the trend
-    // below it are drawn by the same pass and must still land.
     if (!ctx) return;
     ctx.scale(dpr, dpr);
     ctx.clearRect(0, 0, W, H);
@@ -1110,13 +1074,6 @@ function _drawStackedBar(canvas, legendEl, segments, total) {
         }
         x += w;
     });
-
-    // Legend
-    if (legendEl) {
-        legendEl.innerHTML = segments.map(s =>
-            `<span><span class="cl-dot" style="background:${s.color}"></span>${s.label}: <b>${s.value}</b></span>`
-        ).join('');
-    }
 }
 
 /** Helper: Round TOP ONLY */

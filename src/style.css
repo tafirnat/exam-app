@@ -7069,11 +7069,221 @@ body.dnd-active {
     font-weight: normal !important;
 }
 
-/* Responsive layout for modal trend charts */
-@media (min-width: 768px) {
-    .modal-trend-flip-inner { transform: none !important; display: flex !important; flex-direction: row-reverse !important; gap: 1rem !important; }
-    .modal-trend-face { position: relative !important; backface-visibility: visible !important; width: 50% !important; transform: none !important; }
-    .modal-trend-flip-btn { display: none !important; }
+/* ── Work & load chart (progress panel) ──────────────────────────────────────
+   Filled = already done, hollow = still owed. The distinction that carries the
+   meaning is fill, not hue: a solid bar and an outline read apart in greyscale
+   and under every kind of colour vision. Hue only says *which* kind of owed,
+   and the two hollow kinds are further separated by a dashed vs solid border so
+   red/yellow is never the only signal. */
+.workload-container {
+    display: flex;
+    flex-direction: column;
+    justify-content: flex-end;
+    position: relative;
+    height: 190px;
+    margin-top: 1rem;
+}
+
+.workload-y-axis {
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 28px;
+    display: flex;
+    flex-direction: column-reverse;
+    justify-content: space-between;
+    pointer-events: none;
+}
+
+.workload-axis-line {
+    display: flex;
+    align-items: center;
+    width: 100%;
+    font-size: 0.7rem;
+    color: var(--text-secondary);
+}
+
+.workload-axis-line span {
+    text-align: right;
+    margin-right: 5px;
+    flex-shrink: 0;
+}
+
+.workload-axis-rule {
+    flex: 1;
+    height: 1px;
+    background: var(--border-color);
+    opacity: 0.5;
+}
+
+.workload-bars {
+    display: flex;
+    align-items: flex-end;
+    width: 100%;
+    height: 156px;
+    z-index: 1;
+}
+
+.workload-slot {
+    flex: 1;
+    height: 100%;
+    display: flex;
+    flex-direction: row;
+    align-items: flex-end;
+    justify-content: center;
+    gap: 2px;
+    padding: 0 3px;
+    position: relative;
+}
+
+/* The two moments the eye needs: where the record stops and the forecast
+   starts, with "now" sitting between them. */
+.workload-slot.opens-group {
+    border-left: 1px dashed var(--border-color);
+}
+
+.workload-slot.is-today {
+    background: color-mix(in srgb, var(--primary-color) 5%, transparent);
+    border-radius: 6px 6px 0 0;
+}
+
+/* The two backlog ticks carry a word where the days carry two letters, so they
+   get the room rather than the translations getting shortened past meaning -
+   "Rückstand" hyphenating mid-word is not a label. */
+.workload-slot.is-backlog,
+.workload-x-label.is-backlog {
+    flex: 1.7;
+}
+
+.workload-bar {
+    flex: 1;
+    max-width: 22px;
+    height: 100%;
+    display: flex;
+    flex-direction: column-reverse;
+    position: relative;
+    cursor: pointer;
+}
+
+.workload-bar-fill {
+    width: 100%;
+    border-radius: 4px 4px 0 0;
+    position: relative;
+    box-sizing: border-box;
+}
+
+.workload-bar.is-done .workload-bar-fill {
+    background: var(--primary-color, #3b82f6);
+}
+
+.workload-bar.is-overdue .workload-bar-fill {
+    background: transparent;
+    border: 2px dashed #ef4444;
+}
+
+.workload-bar.is-unstarted .workload-bar-fill {
+    background: transparent;
+    border: 2px dotted #94a3b8;
+}
+
+.workload-bar.is-due .workload-bar-fill {
+    background: transparent;
+    border: 2px solid #eab308;
+}
+
+/* A day whose per-source breakdown was never kept. Not a zero - a stub that
+   says "unknown", with the day's real total in the tooltip. */
+.workload-bar.is-unknown .workload-bar-fill {
+    background: repeating-linear-gradient(45deg,
+            var(--text-secondary) 0 3px,
+            transparent 3px 6px);
+    border: none;
+    opacity: 0.45;
+    border-radius: 2px;
+}
+
+.workload-bar-count {
+    position: absolute;
+    top: -15px;
+    width: 100%;
+    text-align: center;
+    font-size: 0.66rem;
+    font-weight: 700;
+    color: var(--text-primary);
+    text-shadow: 0 0 3px var(--surface-color), 0 0 3px var(--surface-color);
+}
+
+.workload-x-axis {
+    display: flex;
+    width: 100%;
+    height: 28px;
+    align-items: flex-start;
+    padding-top: 4px;
+    font-size: 0.6rem;
+    color: var(--text-secondary);
+}
+
+/* The two backlog ticks carry a word, not a weekday, so they are the ones that
+   decide this row's width. They are kept to a single word in every language;
+   the legend and the tooltip carry the full phrase. */
+.workload-x-label {
+    flex: 1;
+    text-align: center;
+    line-height: 1.15;
+    padding: 0 1px;
+    overflow-wrap: anywhere;
+}
+
+.workload-x-label.is-today {
+    font-weight: 700;
+    color: var(--text-primary);
+}
+
+.workload-legend {
+    margin-top: 0.65rem;
+}
+
+.workload-swatch {
+    width: 14px;
+    height: 10px;
+    border-radius: 2px;
+    flex-shrink: 0;
+}
+
+.workload-swatch.is-done {
+    background: var(--primary-color, #3b82f6);
+}
+
+.workload-swatch.is-overdue {
+    border: 2px dashed #ef4444;
+}
+
+.workload-swatch.is-unstarted {
+    border: 2px dotted #94a3b8;
+}
+
+.workload-swatch.is-due {
+    border: 2px solid #eab308;
+}
+
+.trend-tooltip-dot.workload-dot.is-overdue {
+    background: transparent;
+    border: 2px dashed #ef4444;
+}
+
+.trend-tooltip-dot.workload-dot.is-unstarted {
+    background: transparent;
+    border: 2px dotted #94a3b8;
+}
+
+.trend-tooltip-dot.workload-dot.is-due {
+    background: transparent;
+    border: 2px solid #eab308;
+}
+
+.trend-tooltip-dot.workload-dot.is-done {
+    background: var(--primary-color, #3b82f6);
 }
 
 /* Trend Chart Bars */

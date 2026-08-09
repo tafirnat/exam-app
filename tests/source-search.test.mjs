@@ -55,10 +55,27 @@ test('stats-module handles the $ prefix before the # prefix and pools only live 
     assert.ok(src.includes('export function inspectSourceQuestions'));
 });
 
+/* Including the "all" case. inspectSourceQuestions() builds `$Ad1 & Ad2` from
+   the active sources, which is the scope the progress panel describes; the card
+   used to hand-roll that branch instead, ticking the global toggle and asking
+   for an unfiltered list, so "inspect the sources of my test" opened the whole
+   library. Pinned by behaviour rather than by the variable name it is called
+   with - the name has already drifted once while this test stayed green-looking
+   and red. */
 test('inspect buttons route through inspectSourceQuestions', () => {
     const continuity = readFileSync(join(root, 'src/features/stats/continuity-ui.js'), 'utf8');
     const sourcesUi = readFileSync(join(root, 'src/features/sources/sources-ui.js'), 'utf8');
-    assert.ok(continuity.includes('inspectSourceQuestions(currentDifficultyViewId)'));
+
+    const handler = continuity.slice(
+        continuity.indexOf('inspectBtn.onclick'),
+        continuity.indexOf('inspectBtn.onclick') + 900
+    );
+    assert.match(handler, /inspectSourceQuestions\(/, 'the card must delegate to the shared entry point');
+    assert.ok(!handler.includes('renderStatsList('),
+        'no hand-rolled list rendering - that branch is what lost the source scope');
+    assert.ok(!handler.includes('globalToggle'),
+        'and no hand-rolled scope toggling either');
+
     assert.ok(sourcesUi.includes('inspectSourceQuestions(source.id)'));
 });
 
