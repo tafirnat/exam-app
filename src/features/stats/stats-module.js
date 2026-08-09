@@ -1316,3 +1316,60 @@ function _removeDayPopup() {
     const existing = document.getElementById('weeklyDayPopup');
     if (existing) existing.remove();
 }
+
+/** Helper: Round TOP ONLY */
+function _roundRectTop(ctx, x, y, w, h, r, color) {
+    ctx.beginPath();
+    ctx.moveTo(x, y + h);
+    ctx.lineTo(x, y + r);
+    ctx.quadraticCurveTo(x, y, x + r, y);
+    ctx.lineTo(x + w - r, y);
+    ctx.quadraticCurveTo(x + w, y, x + w, y + r);
+    ctx.lineTo(x + w, y + h);
+    ctx.fillStyle = color;
+    ctx.fill();
+}
+
+/** Helper: Round BOTTOM ONLY */
+function _roundRectBottom(ctx, x, y, w, h, r, color) {
+    ctx.beginPath();
+    ctx.moveTo(x, y);
+    ctx.lineTo(x + w, y);
+    ctx.lineTo(x + w, y + h - r);
+    ctx.quadraticCurveTo(x + w, y + h, x + w - r, y + h);
+    ctx.lineTo(x + r, y + h);
+    ctx.quadraticCurveTo(x, y + h, x, y + h - r);
+    ctx.lineTo(x, y);
+    ctx.fillStyle = color;
+    ctx.fill();
+}
+
+/** Helper: filled rounded rect */
+function _roundRect(ctx, x, y, w, h, r, color) {
+    ctx.beginPath();
+    ctx.moveTo(x + r, y);
+    ctx.lineTo(x + w - r, y);
+    ctx.quadraticCurveTo(x + w, y, x + w, y + r);
+    ctx.lineTo(x + w, y + h - r);
+    ctx.quadraticCurveTo(x + w, y + h, x + w - r, y + h);
+    ctx.lineTo(x + r, y + h);
+    ctx.quadraticCurveTo(x, y + h, x, y + h - r);
+    ctx.lineTo(x, y + r);
+    ctx.quadraticCurveTo(x, y, x + r, y);
+    ctx.closePath();
+    ctx.fillStyle = color;
+    ctx.fill();
+}
+
+/** Helper: Partial rounded rect */
+function _roundRectPartial(ctx, x, y, w, h, rTL, rTR, color) {
+    ctx.beginPath();
+    ctx.moveTo(x, y + h);
+    ctx.lineTo(x, y + rTL);
+    ctx.quadraticCurveTo(x, y, x + rTL, y);
+    ctx.lineTo(x + w - rTR, y);
+    ctx.quadraticCurveTo(x + w, y, x + w, y + rTR);
+    ctx.lineTo(x + w, y + h);
+    ctx.fillStyle = color;
+    ctx.fill();
+}
