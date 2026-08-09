@@ -1674,8 +1674,9 @@ export function bindDifficultyCardControls(isModal = false) {
         inspectBtn.onclick = async (e) => {
             e.stopPropagation();
             const { inspectSourceQuestions, renderStatsList } = await import('./stats-module.js');
-            if (currentDifficultyViewId !== 'all') {
-                inspectSourceQuestions(currentDifficultyViewId);
+            const currentId = isModal ? currentModalDifficultyViewId : currentDifficultyViewId;
+            if (currentId && currentId !== 'all') {
+                inspectSourceQuestions(currentId);
                 return;
             }
             const globalToggle = document.getElementById('statsGlobalToggle');
