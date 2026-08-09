@@ -112,27 +112,27 @@ Soruları ve okuma kartlarını yerel tarayıcı konuşma sentezi ile sesli okur
 ### Ana Panel ve İlerleme
 | Ana Panel | İlerleme Detayları |
 | :---: | :---: |
-| ![Dashboard](./docs/screenshots/dashboard.png) | ![Progress Details](./docs/screenshots/progress-details.png) |
+| <img src="./docs/screenshots/dashboard.png" width="300"> | <img src="./docs/screenshots/progress-details.png" width="300"> |
 
 ### Sınav Arayüzü ve Sonuçlar
 | Aktif Sınav Oturumu | Test Sonuçları & Analiz |
 | :---: | :---: |
-| ![Quiz Interface](./docs/screenshots/quiz-interface.png) | ![Test Results](./docs/screenshots/test-results.png) |
+| <img src="./docs/screenshots/quiz-interface.png" width="300"> | <img src="./docs/screenshots/test-results.png" width="300"> |
 
 ### Kaynak Yönetimi ve Gezinme
 | Kayıtlı Kaynaklar & Klasörler | Yan Menü ve Hızlı Erişim |
 | :---: | :---: |
-| ![Saved Sources](./docs/screenshots/saved-sources.png) | ![Sidebar Menu](./docs/screenshots/sidebar-menu.png) |
+| <img src="./docs/screenshots/saved-sources.png" width="300"> | <img src="./docs/screenshots/sidebar-menu.png" width="300"> |
 
 ### Organizasyon ve Arşivleme
 | Klasör Ekleme | Kaynak Arşivleme |
 | :---: | :---: |
-| ![Add Folder](./docs/screenshots/add-folder.png) | ![Archive Source](./docs/screenshots/archive-source.png) |
+| <img src="./docs/screenshots/add-folder.png" width="300"> | <img src="./docs/screenshots/archive-source.png" width="300"> |
 
 ### Detaylı Analitik
 | Soru Analitiği |
 | :---: |
-| ![Question Analytics](./docs/screenshots/question-analytics.png) |
+| <img src="./docs/screenshots/question-analytics.png" width="300"> |
 
 </div>
 

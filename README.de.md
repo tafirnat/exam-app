@@ -112,27 +112,27 @@ Keine Drittanbieter-Tracking-Server oder zentrale Datenbanken. Kein Account-Zwan
 ### Dashboard & Fortschritt
 | Dashboard | Fortschrittsdetails |
 | :---: | :---: |
-| ![Dashboard](./docs/screenshots/dashboard.png) | ![Progress Details](./docs/screenshots/progress-details.png) |
+| <img src="./docs/screenshots/dashboard.png" width="300"> | <img src="./docs/screenshots/progress-details.png" width="300"> |
 
 ### Quiz-Benutzeroberfläche & Ergebnisse
 | Aktive Lernsitzung | Testergebnisse & Analyse |
 | :---: | :---: |
-| ![Quiz Interface](./docs/screenshots/quiz-interface.png) | ![Test Results](./docs/screenshots/test-results.png) |
+| <img src="./docs/screenshots/quiz-interface.png" width="300"> | <img src="./docs/screenshots/test-results.png" width="300"> |
 
 ### Quellenverwaltung & Navigation
 | Gespeicherte Quellen & Ordner | Seitenleisten-Menü |
 | :---: | :---: |
-| ![Saved Sources](./docs/screenshots/saved-sources.png) | ![Sidebar Menu](./docs/screenshots/sidebar-menu.png) |
+| <img src="./docs/screenshots/saved-sources.png" width="300"> | <img src="./docs/screenshots/sidebar-menu.png" width="300"> |
 
 ### Organisation & Archivierung
 | Ordner Hinzufügen | Quelle Archivieren |
 | :---: | :---: |
-| ![Add Folder](./docs/screenshots/add-folder.png) | ![Archive Source](./docs/screenshots/archive-source.png) |
+| <img src="./docs/screenshots/add-folder.png" width="300"> | <img src="./docs/screenshots/archive-source.png" width="300"> |
 
 ### Detaillierte Analytik
 | Fragen-Analytik |
 | :---: |
-| ![Question Analytics](./docs/screenshots/question-analytics.png) |
+| <img src="./docs/screenshots/question-analytics.png" width="300"> |
 
 </div>
 
