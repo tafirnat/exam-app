@@ -1811,6 +1811,8 @@ export function updateDifficultyUI(isModal = false) {
 
     const legendEl = document.getElementById(getId('difficultyLegend'));
     if (legendEl) {
+        const inspectBtn = document.getElementById(getId('diffCardInspectBtn'));
+        if (inspectBtn) inspectBtn.remove();
         legendEl.innerHTML = '';
         diffData.forEach(d => {
             const perc = totalQuestions > 0 ? Math.round((d.count / totalQuestions) * 100) : 0;
@@ -1824,6 +1826,7 @@ export function updateDifficultyUI(isModal = false) {
             `;
             legendEl.appendChild(row);
         });
+        if (inspectBtn) legendEl.appendChild(inspectBtn);
     }
 }
 
