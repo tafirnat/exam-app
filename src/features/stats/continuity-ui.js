@@ -1941,7 +1941,11 @@ export function buildWeeklyTrendBuckets(activities) {
 
     const buckets = [];
     for (let i = 0; i < numDays; i++) {
-        const bucket = { label: dayLabels[currentDate.getDay()], correct: 0, neutral: 0, wrong: 0, empty: 0, total: 0, volumeTotal: 0, volumeFocus: 0, effortCorrect: 0, effortWrong: 0, effortEmpty: 0 };
+        const fullDateLabel = currentDate.toLocaleDateString(
+            isTr ? 'tr-TR' : lang,
+            { weekday: 'long', day: 'numeric', month: 'short' }
+        );
+        const bucket = { label: dayLabels[currentDate.getDay()], fullDateLabel, correct: 0, neutral: 0, wrong: 0, empty: 0, total: 0, volumeTotal: 0, volumeFocus: 0, effortCorrect: 0, effortWrong: 0, effortEmpty: 0 };
         addActivityToBucket(bucket, activities[getLocalDateStr(currentDate)]);
         buckets.push(bucket);
         currentDate.setDate(currentDate.getDate() + 1);
@@ -1961,8 +1965,13 @@ export function buildMonthlyTrendBuckets(activities) {
 
     for (let i = numMonths - 1; i >= 0; i--) {
         const monthDate = new Date(today.getFullYear(), today.getMonth() - i, 1);
+        const fullDateLabel = monthDate.toLocaleDateString(
+            lang.startsWith('tr') ? 'tr-TR' : lang,
+            { month: 'long', year: 'numeric' }
+        );
         const bucket = {
             label: monthFormatter.format(monthDate),
+            fullDateLabel,
             correct: 0, neutral: 0, wrong: 0, empty: 0, total: 0, volumeTotal: 0, volumeFocus: 0, effortCorrect: 0, effortWrong: 0, effortEmpty: 0
         };
         // Keyed by year-month so activity dates land in the right bucket even
@@ -2187,6 +2196,9 @@ function renderTrendChart(buckets, yAxisId, barsId, xAxisId) {
             barWrap.addEventListener('mouseenter', () => {
                 tooltip.innerHTML = `
                     <div class="trend-tooltip-header">
+                        <div style="font-weight:700; font-size:0.75rem; margin-bottom:4px; text-align:center;">
+                            ${d.fullDateLabel}
+                        </div>
                         <div class="trend-tooltip-row">
                             <span class="trend-tooltip-label">${t('chart_tooltip_unique')}</span>
                             <b>${d.total}</b>
