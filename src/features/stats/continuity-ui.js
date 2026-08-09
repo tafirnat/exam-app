@@ -15,7 +15,8 @@ import {
     getFocusSources,
     getLiveFocusSources,
     getFocusSourceLabel,
-    calculateFocusTargetDistribution
+    calculateFocusTargetDistribution,
+    calculateTopicMastery
 } from './continuity-engine.js';
 import { getDayAnchor } from '../../core/daily-activity.js';
 import { buildQuestionPool } from '../test/test-engine.js';
@@ -350,6 +351,27 @@ function renderGlobalSlide(liveQ) {
     renderStreakRunButton('global');
 }
 
+function calculateSourceAverageDifficulty(sourceId) {
+    if (!AppState.sources || !AppState.stats) return 0;
+    const source = AppState.sources.find(s => s.id === sourceId);
+    if (!source || !source.questions || source.questions.length === 0) return 0;
+    let totalDiff = 0;
+    source.questions.forEach(q => {
+        const statKey = `${sourceId}_${q.id}`;
+        const stat = AppState.stats[statKey] || { difficulty: (q.difficulty || 2.5) * 2 };
+        totalDiff += stat.difficulty;
+    });
+    return (totalDiff / source.questions.length / 2).toFixed(1);
+}
+
+function getSourceQuestionCount(sourceId) {
+    if (window.appData && window.appData.questionCounts && window.appData.questionCounts[sourceId]) {
+        return window.appData.questionCounts[sourceId];
+    }
+    const source = AppState.sources?.find(s => s.id === sourceId);
+    return source?.questions?.length || 0;
+}
+
 function renderFocusSlide() {
     const card = document.getElementById('focusContinuityCard');
     if (!card) return;
@@ -364,11 +386,13 @@ function renderFocusSlide() {
     const textEl = document.getElementById('focusContinuityOverdueText');
     const focusContainer = document.getElementById('focusRingContainer');
     const focusSpinGroup = document.getElementById('focusRingSpinGroup');
+    const sourcesListEl = document.getElementById('focusContinuitySourcesList');
 
     if (!focusSources || focusSources.length === 0) {
         textEl.textContent = t('streak_focus_no_sources');
         textEl.style.color = 'var(--text-secondary)';
         updateCometRing(focusContainer, focusSpinGroup, 0, 'var(--trend-line-focus, #8b5cf6)');
+        if (sourcesListEl) sourcesListEl.innerHTML = '';
     } else {
         const focusOverdue = getDailyFocusOverdueSnapshot();
         const req = getDailyRequirement(focusOverdue);
@@ -396,6 +420,43 @@ function renderFocusSlide() {
             textEl.textContent = selectedNames
                 ? t('streak_for_progress_focus_names', { solved, req, names: selectedNames })
                 : t('streak_for_progress_focus_count', { solved, req, count: focusSources.length });
+        }
+
+        if (sourcesListEl) {
+            sourcesListEl.innerHTML = '';
+            const displaySources = focusSources.slice(0, 3);
+            displaySources.forEach(id => {
+                const isLive = liveFocusSources.includes(id);
+                const label = getFocusSourceLabel(id) + (isLive ? '' : ` (${t('source_missing')})`);
+                const qCount = getSourceQuestionCount(id);
+                const mastery = isLive ? calculateTopicMastery(id) : 0;
+                const avgDiff = isLive ? calculateSourceAverageDifficulty(id) : 0;
+
+                const item = document.createElement('div');
+                item.style.display = 'flex';
+                item.style.flexDirection = 'column';
+                item.style.fontSize = '0.75rem';
+                item.style.color = 'var(--trend-line-focus, #8b5cf6)';
+                item.style.lineHeight = '1.2';
+                
+                const nameLine = document.createElement('div');
+                nameLine.className = 'truncate';
+                nameLine.style.fontWeight = '600';
+                nameLine.textContent = label;
+                nameLine.title = label;
+                
+                const statsLine = document.createElement('div');
+                statsLine.style.opacity = '0.85';
+                statsLine.style.fontSize = '0.7rem';
+                const qLabel = t('questions_unit') || 'Soru';
+                const mLabel = t('topic_mastery') || 'Hakimiyet';
+                const dLabel = (t('difficulty_label') || 'Zorluk').replace(':', '').trim();
+                statsLine.textContent = `${qCount} ${qLabel} • %${mastery} ${mLabel} • ${avgDiff} ${dLabel}`;
+
+                item.appendChild(nameLine);
+                item.appendChild(statsLine);
+                sourcesListEl.appendChild(item);
+            });
         }
     }
 
