@@ -1522,6 +1522,7 @@ export function showDailyMotivationToast() {
 }
 
 let currentDifficultyViewId = 'all';
+let currentModalDifficultyViewId = null;
 let diffCardControlsBound = { home: false, modal: false };
 
 export function getOrderedLiveSources() {
@@ -1552,7 +1553,19 @@ export function getOrderedLiveSources() {
     return result;
 }
 
-export function getDifficultyNavItems() {
+export function getDifficultyNavItems(isModal = false) {
+    if (isModal) {
+        const activeSources = (AppState.sources || []).filter(s => s.active && !s.archived && !s.deleted);
+        const items = [];
+        activeSources.forEach(s => {
+            const folder = AppState.folders?.find(f => f.id === (s.folderId || UNCATEGORIZED_FOLDER_ID));
+            const folderName = (folder && folder.id !== UNCATEGORIZED_FOLDER_ID && !folder.isSystem) ? folder.name : '';
+            const displayName = folderName ? `${folderName} › ${s.name}` : s.name;
+            items.push({ id: s.id, name: displayName, source: s, isStarred: !!s.starred });
+        });
+        return items;
+    }
+
     const ordered = getOrderedLiveSources();
     const starred = ordered.filter(item => !!item.source.starred);
     const unstarred = ordered.filter(item => !item.source.starred);
@@ -1603,27 +1616,37 @@ export function bindDifficultyCardControls(isModal = false) {
 
     if (prevBtn) {
         prevBtn.onclick = () => {
-            const items = getDifficultyNavItems();
+            const items = getDifficultyNavItems(isModal);
             if (items.length <= 1) return;
-            let idx = items.findIndex(i => i.id === currentDifficultyViewId);
+            const currentId = isModal ? currentModalDifficultyViewId : currentDifficultyViewId;
+            let idx = items.findIndex(i => i.id === currentId);
             if (idx === -1) idx = 0;
             const nextIdx = (idx - 1 + items.length) % items.length;
-            currentDifficultyViewId = items[nextIdx].id;
-            renderActivityCharts();
-            if (isModal) updateDifficultyUI(true);
+            if (isModal) {
+                currentModalDifficultyViewId = items[nextIdx].id;
+                updateDifficultyUI(true);
+            } else {
+                currentDifficultyViewId = items[nextIdx].id;
+                renderActivityCharts();
+            }
         };
     }
 
     if (nextBtn) {
         nextBtn.onclick = () => {
-            const items = getDifficultyNavItems();
+            const items = getDifficultyNavItems(isModal);
             if (items.length <= 1) return;
-            let idx = items.findIndex(i => i.id === currentDifficultyViewId);
+            const currentId = isModal ? currentModalDifficultyViewId : currentDifficultyViewId;
+            let idx = items.findIndex(i => i.id === currentId);
             if (idx === -1) idx = 0;
             const nextIdx = (idx + 1) % items.length;
-            currentDifficultyViewId = items[nextIdx].id;
-            renderActivityCharts();
-            if (isModal) updateDifficultyUI(true);
+            if (isModal) {
+                currentModalDifficultyViewId = items[nextIdx].id;
+                updateDifficultyUI(true);
+            } else {
+                currentDifficultyViewId = items[nextIdx].id;
+                renderActivityCharts();
+            }
         };
     }
 
@@ -1634,12 +1657,11 @@ export function bindDifficultyCardControls(isModal = false) {
         };
     }
 
-    if (titleEl) {
+    if (titleEl && !isModal) {
         titleEl.onclick = () => {
             if (currentDifficultyViewId !== 'all') {
                 currentDifficultyViewId = 'all';
                 renderActivityCharts();
-                if (isModal) updateDifficultyUI(true);
             }
         };
     }
@@ -1674,9 +1696,16 @@ export function updateDifficultyUI(isModal = false) {
     bindDifficultyCardControls(isModal);
     const getId = (id) => isModal ? `modal${id.charAt(0).toUpperCase() + id.slice(1)}` : id;
 
-    const navItems = getDifficultyNavItems();
-    const currentItem = navItems.find(i => i.id === currentDifficultyViewId) || navItems[0];
-    currentDifficultyViewId = currentItem.id;
+    const navItems = getDifficultyNavItems(isModal);
+    if (navItems.length === 0) return; // No sources to show
+
+    const currentId = isModal ? currentModalDifficultyViewId : currentDifficultyViewId;
+    let currentItem = navItems.find(i => i.id === currentId);
+    if (!currentItem) {
+        currentItem = navItems[0];
+        if (isModal) currentModalDifficultyViewId = currentItem.id;
+        else currentDifficultyViewId = currentItem.id;
+    }
 
     const badgeTextEl = document.getElementById(getId('diffCardSourceBadgeText'));
     const badgeEl = document.getElementById(getId('diffCardSourceBadge'));
@@ -1687,10 +1716,13 @@ export function updateDifficultyUI(isModal = false) {
     }
     if (badgeEl) {
         badgeEl.title = currentItem.name || '';
-        badgeEl.classList.toggle('is-disabled', currentItem.isAll);
-        // Show/hide badge completely based on context
-        if (isModal && currentItem.isAll) badgeEl.style.display = 'none';
-        else badgeEl.style.display = 'flex';
+        if (currentItem.isAll) {
+            badgeEl.classList.add('is-disabled');
+            badgeEl.style.display = 'none';
+        } else {
+            badgeEl.classList.remove('is-disabled');
+            badgeEl.style.display = 'flex';
+        }
     }
 
     const starBtn = document.getElementById(getId('diffCardStarBtn'));
@@ -1709,6 +1741,12 @@ export function updateDifficultyUI(isModal = false) {
     const hasMultiple = navItems.length > 1;
     if (prevBtn) prevBtn.disabled = !hasMultiple;
     if (nextBtn) nextBtn.disabled = !hasMultiple;
+    
+    // Hide navigation controls completely if there's only 1 source
+    const navControls = document.querySelector(`#${isModal ? 'modalDifficultySection' : 'homeDifficultyStatsCard'} .diff-card-nav-controls`);
+    if (navControls) {
+        navControls.style.display = hasMultiple ? 'flex' : 'none';
+    }
 
     let diffCounts = { easy: 0, medium: 0, hard: 0, veryHard: 0, unsolved: 0 };
     let totalQuestions = 0;
