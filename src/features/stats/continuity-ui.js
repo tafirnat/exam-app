@@ -2132,6 +2132,7 @@ function renderTrendChart(buckets, yAxisId, barsId, xAxisId) {
         barWrap.style.flexDirection = 'column-reverse';
         barWrap.style.alignItems = 'center';
         barWrap.style.padding = '0 8px';
+        barWrap.style.background = 'rgba(0, 0, 0, 0)';
 
         const barInner = document.createElement('div');
         barInner.style.width = '100%';
@@ -2294,6 +2295,7 @@ function renderTrendLines(barsEl, buckets, topLimit, gutter) {
     svg.setAttribute('viewBox', '0 0 100 100');
     svg.setAttribute('preserveAspectRatio', 'none');
     svg.setAttribute('aria-hidden', 'true');
+    svg.style.pointerEvents = 'none';
 
     const pointsOf = s => buckets.map((b, i) => `${xAt(i)},${yAt(b[s.key] || 0)}`).join(' ');
 
@@ -2325,6 +2327,7 @@ function renderTrendLines(barsEl, buckets, topLimit, gutter) {
             dot.style.left = `${xAt(i)}%`;
             dot.style.top = `${yAt(b[s.key] || 0)}%`;
             dot.style.background = s.color;
+            dot.style.pointerEvents = 'none';
             overlay.appendChild(dot);
         });
     });
