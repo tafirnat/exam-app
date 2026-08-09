@@ -1525,6 +1525,14 @@ let currentDifficultyViewId = 'all';
 let currentModalDifficultyViewId = null;
 let diffCardControlsBound = { home: false, modal: false };
 
+export function getCurrentModalDifficultyViewId() {
+    return currentModalDifficultyViewId;
+}
+
+export function resetModalDifficultyViewId() {
+    currentModalDifficultyViewId = 'all';
+}
+
 export function getOrderedLiveSources() {
     const folders = liveFolders().sort((a, b) => (a.order || 0) - (b.order || 0));
     const result = [];
@@ -1615,7 +1623,7 @@ export function bindDifficultyCardControls(isModal = false) {
     };
 
     if (prevBtn) {
-        prevBtn.onclick = () => {
+        prevBtn.onclick = async () => {
             const items = getDifficultyNavItems(isModal);
             if (items.length <= 1) return;
             const currentId = isModal ? currentModalDifficultyViewId : currentDifficultyViewId;
@@ -1624,7 +1632,8 @@ export function bindDifficultyCardControls(isModal = false) {
             const nextIdx = (idx - 1 + items.length) % items.length;
             if (isModal) {
                 currentModalDifficultyViewId = items[nextIdx].id;
-                updateDifficultyUI(true);
+                const { showProgressCharts } = await import('./stats-module.js');
+                showProgressCharts();
             } else {
                 currentDifficultyViewId = items[nextIdx].id;
                 renderActivityCharts();
@@ -1633,7 +1642,7 @@ export function bindDifficultyCardControls(isModal = false) {
     }
 
     if (nextBtn) {
-        nextBtn.onclick = () => {
+        nextBtn.onclick = async () => {
             const items = getDifficultyNavItems(isModal);
             if (items.length <= 1) return;
             const currentId = isModal ? currentModalDifficultyViewId : currentDifficultyViewId;
@@ -1642,7 +1651,8 @@ export function bindDifficultyCardControls(isModal = false) {
             const nextIdx = (idx + 1) % items.length;
             if (isModal) {
                 currentModalDifficultyViewId = items[nextIdx].id;
-                updateDifficultyUI(true);
+                const { showProgressCharts } = await import('./stats-module.js');
+                showProgressCharts();
             } else {
                 currentDifficultyViewId = items[nextIdx].id;
                 renderActivityCharts();
@@ -1657,11 +1667,19 @@ export function bindDifficultyCardControls(isModal = false) {
         };
     }
 
-    if (titleEl && !isModal) {
-        titleEl.onclick = () => {
-            if (currentDifficultyViewId !== 'all') {
-                currentDifficultyViewId = 'all';
-                renderActivityCharts();
+    if (titleEl) {
+        titleEl.onclick = async () => {
+            if (isModal) {
+                if (currentModalDifficultyViewId !== 'all') {
+                    currentModalDifficultyViewId = 'all';
+                    const { showProgressCharts } = await import('./stats-module.js');
+                    showProgressCharts();
+                }
+            } else {
+                if (currentDifficultyViewId !== 'all') {
+                    currentDifficultyViewId = 'all';
+                    renderActivityCharts();
+                }
             }
         };
     }
@@ -1727,6 +1745,15 @@ export function updateDifficultyUI(isModal = false) {
         }
     }
 
+    const inspectBtn = document.getElementById(getId('diffCardInspectBtn'));
+    if (inspectBtn) {
+        if (currentItem.isAll) {
+            inspectBtn.style.display = 'none';
+        } else {
+            inspectBtn.style.display = 'flex';
+        }
+    }
+
     const starBtn = document.getElementById(getId('diffCardStarBtn'));
     if (starBtn) {
         if (currentItem.isAll) {
@@ -1745,7 +1772,9 @@ export function updateDifficultyUI(isModal = false) {
     if (nextBtn) nextBtn.disabled = !hasMultiple;
     
     // Hide navigation controls completely if there's only 1 source
-    const navControls = document.querySelector(`#${isModal ? 'modalDifficultySection' : 'homeDifficultyStatsCard'} .diff-card-nav-controls`);
+    const navControls = isModal 
+        ? document.querySelector('#progressChartOverlay .diff-card-nav-controls')
+        : document.querySelector('#homeDifficultyStatsCard .diff-card-nav-controls');
     if (navControls) {
         navControls.style.display = hasMultiple ? 'flex' : 'none';
     }

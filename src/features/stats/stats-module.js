@@ -6,7 +6,7 @@ import { getLocalDateStr } from '../../core/daily-activity.js';
 import { calculateExamReadiness, calculateGlobalStreak, calculateFocusStreak } from './continuity-engine.js';
 import { calculateRetrievability } from '../test/test-engine.js';
 import { plainText } from '../../core/markdown.js';
-import { renderContinuityBlock, updateDifficultyUI } from './continuity-ui.js';
+import { renderContinuityBlock, updateDifficultyUI, getCurrentModalDifficultyViewId, resetModalDifficultyViewId } from './continuity-ui.js';
 
 
 export function renderStatsList(filter = 'all', searchKeyword = '') {
@@ -864,6 +864,7 @@ function _bindChartOverlay() {
     if (!section || !overlay) return;
 
     section.addEventListener('click', () => {
+        resetModalDifficultyViewId();
         overlay.style.display = 'flex';
         requestAnimationFrame(() => showProgressCharts());
     });
@@ -883,7 +884,15 @@ function _bindChartOverlay() {
 export function showProgressCharts() {
     const activeQuestions = [];
     const activeSources = AppState.sources.filter(s => s.active);
-    const filterSources = activeSources;
+    let filterSources = activeSources;
+
+    const currentId = getCurrentModalDifficultyViewId();
+    if (currentId && currentId !== 'all') {
+        const selected = activeSources.find(s => s.id === currentId);
+        if (selected) {
+            filterSources = [selected];
+        }
+    }
 
     filterSources.forEach(s => {
         if (s.questions) activeQuestions.push(...s.questions);
@@ -934,7 +943,7 @@ export function showProgressCharts() {
     updateDifficultyUI(true);
 
     // ---- Chart 3: Weekly bar chart ----
-    _drawWeeklyTrend(document.getElementById('chartWeekly'));
+    _drawWeeklyTrend(document.getElementById('chartWeekly'), filterSources);
 }
 
 /**
@@ -1034,7 +1043,7 @@ function _drawStackedBar(canvas, legendEl, segments, total) {
 }
 
 /** Draws last 7-day correct answer trend as a column chart */
-function _drawWeeklyTrend(canvas) {
+function _drawWeeklyTrend(canvas, sources = []) {
     if (!canvas) return;
     const dpr = window.devicePixelRatio || 1;
     const W = canvas.offsetWidth || canvas.parentElement?.offsetWidth || 300;
@@ -1062,9 +1071,18 @@ function _drawWeeklyTrend(canvas) {
         });
     }
 
-    // Pull from reliable recentTests or source-specific logs
-    const currentSource = AppState.sources.find(s => s.id === AppState.currentSourceKey);
-    const testsToScan = currentSource ? (currentSource.testResults || []) : (AppState.recentTests || []);
+    // Pull from reliable recentTests or source-specific logs based on selected sources
+    const testsToScan = [];
+    if (sources && sources.length > 0) {
+        sources.forEach(s => {
+            if (s.testResults) {
+                testsToScan.push(...s.testResults);
+            }
+        });
+    } else {
+        // Fallback to global recentTests if no sources provided (though filterSources is always passed now)
+        testsToScan.push(...(AppState.recentTests || []));
+    }
 
     testsToScan.forEach(test => {
         if (!test?.startTime) return;
