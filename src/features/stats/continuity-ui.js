@@ -582,7 +582,7 @@ export function renderMotivationSlide(isCycle = false) {
 
     card.dataset.quoteId = String(quote.id);
     const safeLang = (quote[lang]) ? lang : 'en';
-    textEl.textContent = `"${quote[safeLang] || quote.text || quote.tr}"`;
+    textEl.textContent = quote[safeLang] || quote.text || quote.tr;
     authorEl.textContent = `— ${quote.author}`;
 
     if (artworkEl) {

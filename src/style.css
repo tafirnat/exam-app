@@ -6693,6 +6693,10 @@ body.dnd-active {
     transition: background 0.4s ease;
 }
 
+[data-theme="dark"] .motivation-card-overlay {
+    background: linear-gradient(135deg, rgba(15, 23, 42, 0.70) 0%, rgba(15, 23, 42, 0.88) 100%);
+}
+
 .motivation-artwork-tag {
     font-size: 0.68rem;
     color: #e2e8f0;
