@@ -2995,11 +2995,13 @@ ${m}`);n(b?"replace":"merge");return}const f=l.innerText,g=c.innerText;a.innerTe
                                 style="font-size: 0.85rem; color: var(--text-primary); font-weight: 600;"
                                 data-i18n="question_difficulty_analysis" data-i18n-title="reset_to_all_sources"
                                 title="En Başa Dön (Tüm Aktif Kaynaklar)">Soru Zorluk Analizi</span>
+                            <div id="modalDiffCardSourceBadge" style="display: none; align-items: flex-start; width: 100%;">
+                                <span id="modalDiffCardSourceBadgeText" style="font-size: 0.75rem; color: var(--text-secondary); max-width: 100%; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;"></span>
+                            </div>
                         </div>
-                        <div style="display: flex; flex-direction: column; align-items: flex-end; gap: 4px; flex-shrink: 0;">
-                            <div class="diff-card-nav-controls"
-                                style="display: flex; align-items: center; gap: 0.85rem; justify-content: flex-end;">
-                                <button type="button" class="card-control-btn" id="modalDiffCardPrevBtn"
+                        <div class="diff-card-nav-controls"
+                            style="display: flex; align-items: center; gap: 0.85rem; flex-shrink: 0;">
+                            <button type="button" class="card-control-btn" id="modalDiffCardPrevBtn"
                                     title="Önceki Kaynak" data-i18n-title="prev_source" aria-label="Önceki">
                                     <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor"
                                         stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
@@ -3014,11 +3016,7 @@ ${m}`);n(b?"replace":"merge");return}const f=l.innerText,g=c.innerText;a.innerTe
                                     </svg>
                                 </button>
                             </div>
-                            <div id="modalDiffCardSourceBadge" style="display: none; justify-content: flex-end; width: 100%;">
-                                <span id="modalDiffCardSourceBadgeText" style="font-size: 0.75rem; color: var(--text-secondary); text-align: right; max-width: 150px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;"></span>
-                            </div>
                         </div>
-                    </div>
                     <div style="display: flex; gap: 1.5rem; margin-top: 0.5rem; align-items: center; flex-wrap: wrap; flex: 1; position: relative;">
                         <div id="modalDifficultyDonutChart"
                             style="position: relative; width: 130px; height: 130px; border-radius: 50%; background: var(--surface-hover); flex-shrink: 0;">
