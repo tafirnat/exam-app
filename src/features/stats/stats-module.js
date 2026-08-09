@@ -1054,16 +1054,6 @@ function _drawStackedBar(canvas, legendEl, segments, total) {
 
 /** Draws last 7-day correct answer trend as a column chart */
 function _drawWeeklyTrend(canvas, sources = []) {
-    // Collect all valid tests for selected sources
-    const testsToScan = [];
-    if (sources && sources.length > 0) {
-        sources.forEach(s => {
-            if (s.testResults) testsToScan.push(...s.testResults);
-        });
-    } else {
-        testsToScan.push(...(AppState.recentTests || []));
-    }
-
     // Helper to generate buckets
     const generateBuckets = (numDays) => {
         const days = [];
@@ -1099,17 +1089,40 @@ function _drawWeeklyTrend(canvas, sources = []) {
     const weeklyDays = generateBuckets(7);
     const monthlyDays = generateBuckets(30);
 
-    testsToScan.forEach(test => {
-        if (!test?.startTime) return;
-        const dayStr = test.startTime.slice(0, 10);
-        
+    const sourceIds = new Set(sources.map(s => s.id));
+    const isAllSources = !sources || sources.length === 0;
+    const activities = AppState.studyActivity || {};
+
+    Object.keys(activities).forEach(dateStr => {
+        const act = activities[dateStr];
+        if (!act) return;
+
+        let dayCorrect = 0;
+        let dayWrong = 0;
+        let dayUnanswered = 0;
+
+        if (isAllSources) {
+            dayCorrect = act.correctCount || 0;
+            dayWrong = act.wrongCount || 0;
+            dayUnanswered = act.unansweredCount || 0;
+        } else if (act.questionLog) {
+            Object.keys(act.questionLog).forEach(qKey => {
+                const sId = qKey.split('_')[0];
+                if (sourceIds.has(sId)) {
+                    dayCorrect += act.questionLog[qKey].correct || 0;
+                    dayWrong += act.questionLog[qKey].wrong || 0;
+                    dayUnanswered += act.questionLog[qKey].empty || 0;
+                }
+            });
+        }
+
         [weeklyDays, monthlyDays].forEach(bucketList => {
-            const bucket = bucketList.find(d => d.dateStr === dayStr);
+            const bucket = bucketList.find(d => d.dateStr === dateStr);
             if (bucket) {
-                bucket.correct += test.correctCount || 0;
-                bucket.wrong   += test.wrongCount   || 0;
-                bucket.totalAnswers += (test.correctCount || 0) + (test.wrongCount || 0);
-                bucket.total += (test.correctCount || 0) + (test.wrongCount || 0) + (test.unansweredCount || 0);
+                bucket.correct += dayCorrect;
+                bucket.wrong += dayWrong;
+                bucket.totalAnswers += (dayCorrect + dayWrong);
+                bucket.total += (dayCorrect + dayWrong + dayUnanswered);
             }
         });
     });

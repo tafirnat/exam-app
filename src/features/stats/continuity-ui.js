@@ -2088,20 +2088,7 @@ function renderTrendChart(buckets, yAxisId, barsId, xAxisId) {
     barsEl.style.position = 'relative';
 
     const tooltip = document.createElement('div');
-    tooltip.style.position = 'absolute';
-    tooltip.style.display = 'none';
-    tooltip.style.backgroundColor = 'var(--surface-color)';
-    tooltip.style.border = '1px solid var(--border-color)';
-    tooltip.style.borderRadius = '4px';
-    tooltip.style.padding = '4px 6px';
-    tooltip.style.fontSize = '0.7rem';
-    tooltip.style.color = 'var(--text-primary)';
-    tooltip.style.zIndex = '10';
-    tooltip.style.pointerEvents = 'none';
-    tooltip.style.boxShadow = '0 2px 4px rgba(0,0,0,0.2)';
-    tooltip.style.whiteSpace = 'nowrap';
-    tooltip.style.textAlign = 'center';
-    tooltip.style.lineHeight = '1.3';
+    tooltip.className = 'trend-chart-tooltip';
     barsEl.appendChild(tooltip);
 
     barsEl.addEventListener('mouseleave', () => { tooltip.style.display = 'none'; });
@@ -2198,7 +2185,41 @@ function renderTrendChart(buckets, yAxisId, barsId, xAxisId) {
 
             barWrap.style.cursor = 'pointer';
             barWrap.addEventListener('mouseenter', () => {
-                tooltip.innerHTML = `${t('chart_tooltip_unique')}: <b>${d.total}</b> | ${t('chart_tooltip_total')}: <b>${d.volumeTotal}</b><br><span style="color:#22c55e">${t('chart_tooltip_correct')}:${d.effortCorrect}</span> &nbsp;<span style="color:#ef4444">${t('chart_tooltip_wrong')}:${d.effortWrong}</span> &nbsp;<span style="color:#64748b">${t('chart_tooltip_empty')}:${d.effortEmpty}</span>`;
+                tooltip.innerHTML = `
+                    <div class="trend-tooltip-header">
+                        <div class="trend-tooltip-row">
+                            <span class="trend-tooltip-label">${t('chart_tooltip_unique')}</span>
+                            <b>${d.total}</b>
+                        </div>
+                        <div class="trend-tooltip-row">
+                            <span class="trend-tooltip-label">${t('chart_tooltip_total')}</span>
+                            <b>${d.volumeTotal}</b>
+                        </div>
+                    </div>
+                    <div class="trend-tooltip-body">
+                        <div class="trend-tooltip-row">
+                            <span class="trend-tooltip-label">
+                                <span class="trend-tooltip-dot" style="background:#22c55e;"></span>
+                                ${t('chart_tooltip_correct')}
+                            </span>
+                            <b style="color:#22c55e;">${d.effortCorrect}</b>
+                        </div>
+                        <div class="trend-tooltip-row">
+                            <span class="trend-tooltip-label">
+                                <span class="trend-tooltip-dot" style="background:#ef4444;"></span>
+                                ${t('chart_tooltip_wrong')}
+                            </span>
+                            <b style="color:#ef4444;">${d.effortWrong}</b>
+                        </div>
+                        <div class="trend-tooltip-row">
+                            <span class="trend-tooltip-label">
+                                <span class="trend-tooltip-dot" style="background:#64748b;"></span>
+                                ${t('chart_tooltip_empty')}
+                            </span>
+                            <b style="color:#94a3b8;">${d.effortEmpty}</b>
+                        </div>
+                    </div>
+                `;
                 tooltip.style.display = 'block';
                 
                 const rect = barWrap.getBoundingClientRect();

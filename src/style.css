@@ -7079,3 +7079,58 @@ body.dnd-active {
 /* Trend Chart Bars */
 .trend-bar-wrapper { flex: 1; height: 100%; display: flex; flex-direction: column-reverse; align-items: center; }
 .trend-bar-inner { width: 100%; max-width: 24px; height: 100%; display: flex; flex-direction: column-reverse; position: relative; }
+
+/* Trend Chart Tooltip */
+.trend-chart-tooltip {
+    position: absolute;
+    display: none;
+    background: rgb(45, 63, 85);
+    color: rgb(241, 245, 249);
+    border: 1px solid rgba(255, 255, 255, 0.18);
+    border-radius: 8px;
+    padding: 8px 10px;
+    box-shadow: rgba(0, 0, 0, 0.5) 0px 6px 20px;
+    z-index: 10;
+    min-width: 140px;
+    pointer-events: none;
+    font-family: Inter, sans-serif;
+    font-size: 0.75rem;
+    line-height: 1.3;
+}
+
+.trend-tooltip-header {
+    font-weight: 700;
+    font-size: 0.75rem;
+    margin-bottom: 4px;
+    display: flex;
+    flex-direction: column;
+    gap: 3px;
+}
+
+.trend-tooltip-row {
+    display: flex;
+    justify-content: space-between;
+    gap: 16px;
+    align-items: center;
+}
+
+.trend-tooltip-body {
+    display: flex;
+    flex-direction: column;
+    gap: 3px;
+    font-size: 0.72rem;
+}
+
+.trend-tooltip-dot {
+    width: 8px;
+    height: 8px;
+    border-radius: 50%;
+    display: inline-block;
+}
+
+.trend-tooltip-label {
+    display: flex;
+    align-items: center;
+    gap: 5px;
+    color: #94a3b8;
+}
