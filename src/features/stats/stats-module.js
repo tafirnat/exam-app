@@ -1279,7 +1279,7 @@ function _showDayPopupDOM(day, barWrap, barsEl, isDark) {
         position: 'absolute',
         background: isDark ? '#2d3f55' : '#f0f4f8',
         color: isDark ? '#f1f5f9' : '#0f172a',
-        border: \`1px solid \${isDark ? 'rgba(255,255,255,0.18)' : 'rgba(0,0,0,0.12)'}\`,
+        border: `1px solid ${isDark ? 'rgba(255,255,255,0.18)' : 'rgba(0,0,0,0.12)'}`,
         borderRadius: '10px',
         padding: '12px 14px',
         boxShadow: isDark
@@ -1306,8 +1306,8 @@ function _showDayPopupDOM(day, barWrap, barsEl, isDark) {
     let popupLeft = rect.left + (rect.width / 2) - (popup.offsetWidth / 2) + window.scrollX;
     popupLeft = Math.max(8, Math.min(popupLeft, window.innerWidth - popup.offsetWidth - 8));
 
-    popup.style.top  = \`\${popupTop}px\`;
-    popup.style.left = \`\${popupLeft}px\`;
+    popup.style.top  = `${popupTop}px`;
+    popup.style.left = `${popupLeft}px`;
 
     requestAnimationFrame(() => { popup.style.opacity = '1'; });
 }
