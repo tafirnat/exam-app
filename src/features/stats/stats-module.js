@@ -1150,7 +1150,7 @@ function _drawWeeklyTrend(canvas, sources = []) {
 
         buckets.forEach(d => {
             const xLbl = document.createElement('div');
-            xLbl.textContent = d.label;
+            xLbl.textContent = (buckets.length <= 7 || parseInt(d.label) % 5 === 0 || d.label === '01') ? d.label : '';
             xLbl.style.flex = '1';
             xLbl.style.textAlign = 'center';
             xAxisEl.appendChild(xLbl);

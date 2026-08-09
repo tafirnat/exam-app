@@ -7071,7 +7071,7 @@ body.dnd-active {
 
 /* Responsive layout for modal trend charts */
 @media (min-width: 768px) {
-    .modal-trend-flip-inner { transform: none !important; display: flex !important; gap: 1rem !important; }
+    .modal-trend-flip-inner { transform: none !important; display: flex !important; flex-direction: row-reverse !important; gap: 1rem !important; }
     .modal-trend-face { position: relative !important; backface-visibility: visible !important; width: 50% !important; transform: none !important; }
     .modal-trend-flip-btn { display: none !important; }
 }
