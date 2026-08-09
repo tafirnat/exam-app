@@ -1170,20 +1170,11 @@ function _drawWeeklyTrend(canvas, sources = []) {
             xAxisEl.appendChild(xLbl);
 
             const barWrap = document.createElement('div');
-            barWrap.style.flex = '1';
-            barWrap.style.height = '100%';
-            barWrap.style.display = 'flex';
-            barWrap.style.flexDirection = 'column-reverse';
-            barWrap.style.alignItems = 'center';
+            barWrap.className = 'trend-bar-wrapper';
             barWrap.style.padding = buckets.length > 7 ? '0 2px' : '0 8px';
 
             const barInner = document.createElement('div');
-            barInner.style.width = '100%';
-            barInner.style.maxWidth = '24px';
-            barInner.style.height = '100%';
-            barInner.style.display = 'flex';
-            barInner.style.flexDirection = 'column-reverse';
-            barInner.style.position = 'relative';
+            barInner.className = 'trend-bar-inner';
 
             if (d.totalAnswers > 0) {
                 const hPerc = (d.totalAnswers / topLimit) * 100;
