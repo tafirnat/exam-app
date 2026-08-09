@@ -2028,34 +2028,32 @@
                 </div>
                 <!-- Chart 2: Zorluk Pasta -->
                 <div class="chart-section" id="modalDifficultySection" style="display: flex; flex-direction: column;">
-                    <div style="display: flex; align-items: flex-start; justify-content: space-between; gap: 0.5rem; margin-bottom: 0.5rem;">
-                        <div style="display: flex; flex-direction: column; gap: 4px; min-width: 0; flex: 1;">
-                            <span id="modalDiffCardTitle" class="diff-card-title-btn"
-                                style="font-size: 0.85rem; color: var(--text-primary); font-weight: 600;"
-                                data-i18n="question_difficulty_analysis" data-i18n-title="reset_to_all_sources"
-                                title="En Başa Dön (Tüm Aktif Kaynaklar)">Soru Zorluk Analizi</span>
-                            <div id="modalDiffCardSourceBadge" style="display: none; align-items: flex-start; width: 100%;">
-                                <span id="modalDiffCardSourceBadgeText" style="font-size: 0.75rem; color: var(--text-secondary); max-width: 100%; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;"></span>
-                            </div>
-                        </div>
+                    <div style="display: flex; align-items: center; justify-content: space-between; gap: 0.5rem;">
+                        <span id="modalDiffCardTitle" class="diff-card-title-btn"
+                            style="font-size: 0.85rem; color: var(--text-primary); font-weight: 600; min-width: 0;"
+                            data-i18n="question_difficulty_analysis" data-i18n-title="reset_to_all_sources"
+                            title="En Başa Dön (Tüm Aktif Kaynaklar)">Soru Zorluk Analizi</span>
                         <div class="diff-card-nav-controls"
                             style="display: flex; align-items: center; gap: 0.85rem; flex-shrink: 0;">
                             <button type="button" class="card-control-btn" id="modalDiffCardPrevBtn"
-                                    title="Önceki Kaynak" data-i18n-title="prev_source" aria-label="Önceki">
-                                    <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor"
-                                        stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
-                                        <path d="M15 18l-6-6 6-6"></path>
-                                    </svg>
-                                </button>
-                                <button type="button" class="card-control-btn" id="modalDiffCardNextBtn"
-                                    title="Sonraki Kaynak" data-i18n-title="next_source" aria-label="Sonraki">
-                                    <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor"
-                                        stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
-                                        <path d="M9 18l6-6-6-6"></path>
-                                    </svg>
-                                </button>
-                            </div>
+                                title="Önceki Kaynak" data-i18n-title="prev_source" aria-label="Önceki">
+                                <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor"
+                                    stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+                                    <path d="M15 18l-6-6 6-6"></path>
+                                </svg>
+                            </button>
+                            <button type="button" class="card-control-btn" id="modalDiffCardNextBtn"
+                                title="Sonraki Kaynak" data-i18n-title="next_source" aria-label="Sonraki">
+                                <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor"
+                                    stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+                                    <path d="M9 18l6-6-6-6"></path>
+                                </svg>
+                            </button>
                         </div>
+                    </div>
+                    <div id="modalDiffCardSourceBadge" style="display: none; align-items: flex-start; width: 100%; margin-top: 4px; margin-bottom: 0.5rem;">
+                        <span id="modalDiffCardSourceBadgeText" style="font-size: 0.75rem; color: var(--text-secondary); max-width: 100%; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; display: block;"></span>
+                    </div>
                     <div style="display: flex; gap: 1.5rem; margin-top: 0.5rem; align-items: center; flex-wrap: wrap; flex: 1; position: relative;">
                         <div id="modalDifficultyDonutChart"
                             style="position: relative; width: 130px; height: 130px; border-radius: 50%; background: var(--surface-hover); flex-shrink: 0;">
