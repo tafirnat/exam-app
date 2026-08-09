@@ -1574,14 +1574,19 @@ export function getDifficultyNavItems() {
     return items;
 }
 
-function bindDifficultyCardControls() {
-    if (diffCardControlsBound) return;
-    diffCardControlsBound = true;
+export function bindDifficultyCardControls(isModal = false) {
+    const boundKey = isModal ? 'modal' : 'home';
+    if (diffCardControlsBound[boundKey]) return;
+    diffCardControlsBound[boundKey] = true;
 
-    const prevBtn = document.getElementById('diffCardPrevBtn');
-    const nextBtn = document.getElementById('diffCardNextBtn');
-    const starBtn = document.getElementById('diffCardStarBtn');
-    const badgeEl = document.getElementById('diffCardSourceBadge');
+    const getId = (id) => isModal ? `modal${id.charAt(0).toUpperCase() + id.slice(1)}` : id;
+
+    const prevBtn = document.getElementById(getId('diffCardPrevBtn'));
+    const nextBtn = document.getElementById(getId('diffCardNextBtn'));
+    const starBtn = document.getElementById(getId('diffCardStarBtn'));
+    const titleEl = document.getElementById(getId('diffCardTitle')) || document.querySelector(`#${isModal ? 'modalDifficultySection' : 'homeDifficultyStatsCard'} [data-i18n="question_difficulty_analysis"]`);
+    const badgeEl = document.getElementById(getId('diffCardSourceBadge'));
+    const inspectBtn = document.getElementById(getId('diffCardInspectBtn'));
 
     const toggleStar = () => {
         if (currentDifficultyViewId === 'all') return;
@@ -1591,6 +1596,8 @@ function bindDifficultyCardControls() {
             touch(source);
             saveSources();
             renderActivityCharts();
+            if (isModal) updateDifficultyUI(true);
+            else updateDifficultyUI(false); // Update the other one if visible maybe? We just update the caller's view for now
         }
     };
 
@@ -1603,6 +1610,7 @@ function bindDifficultyCardControls() {
             const nextIdx = (idx - 1 + items.length) % items.length;
             currentDifficultyViewId = items[nextIdx].id;
             renderActivityCharts();
+            if (isModal) updateDifficultyUI(true);
         };
     }
 
@@ -1615,6 +1623,7 @@ function bindDifficultyCardControls() {
             const nextIdx = (idx + 1) % items.length;
             currentDifficultyViewId = items[nextIdx].id;
             renderActivityCharts();
+            if (isModal) updateDifficultyUI(true);
         };
     }
 
@@ -1625,23 +1634,20 @@ function bindDifficultyCardControls() {
         };
     }
 
-    const titleEl = document.getElementById('diffCardTitle') || document.querySelector('#homeDifficultyStatsCard [data-i18n="question_difficulty_analysis"]');
     if (titleEl) {
         titleEl.onclick = () => {
             if (currentDifficultyViewId !== 'all') {
                 currentDifficultyViewId = 'all';
                 renderActivityCharts();
+                if (isModal) updateDifficultyUI(true);
             }
         };
     }
 
     if (badgeEl) {
-        badgeEl.onclick = () => {
-            toggleStar();
-        };
+        badgeEl.onclick = () => toggleStar();
     }
 
-    const inspectBtn = document.getElementById('diffCardInspectBtn');
     if (inspectBtn) {
         inspectBtn.onclick = async (e) => {
             e.stopPropagation();
@@ -1650,7 +1656,6 @@ function bindDifficultyCardControls() {
                 inspectSourceQuestions(currentDifficultyViewId);
                 return;
             }
-            // All-sources view: turn on global toggle so all sources are in the search pool
             const globalToggle = document.getElementById('statsGlobalToggle');
             if (globalToggle) globalToggle.checked = true;
             AppState.currentSourceKey = null;
@@ -1659,11 +1664,6 @@ function bindDifficultyCardControls() {
             if (typeof window.switchView === 'function') window.switchView('stats');
             if (typeof window.syncStatsSearchUI === 'function') window.syncStatsSearchUI();
             renderStatsList('all');
-        };
-    }
-}
-
-function renderActivityCharts() {
     const diffContainer = document.getElementById('homeDifficultyStatsCard');
     const trendContainer = document.getElementById('homeWeeklyTrendCard');
     const globalContainer = document.getElementById('homeGlobalStatsCard');
@@ -1684,25 +1684,30 @@ function renderActivityCharts() {
     if (trendContainer) trendContainer.style.display = 'block';
     if (globalContainer) globalContainer.style.display = 'block';
 
-    // 1. Difficulty Donut Chart with Navigation & Starring Scope
-    bindDifficultyCardControls();
+export function updateDifficultyUI(isModal = false) {
+    bindDifficultyCardControls(isModal);
+    const getId = (id) => isModal ? `modal${id.charAt(0).toUpperCase() + id.slice(1)}` : id;
+
     const navItems = getDifficultyNavItems();
     const currentItem = navItems.find(i => i.id === currentDifficultyViewId) || navItems[0];
     currentDifficultyViewId = currentItem.id;
 
-    const badgeTextEl = document.getElementById('diffCardSourceBadgeText');
-    const badgeEl = document.getElementById('diffCardSourceBadge');
+    const badgeTextEl = document.getElementById(getId('diffCardSourceBadgeText'));
+    const badgeEl = document.getElementById(getId('diffCardSourceBadge'));
     if (badgeTextEl) {
         const rawName = currentItem.name || '';
         const truncatedName = rawName.length > 40 ? rawName.substring(0, 37) + '...' : rawName;
         badgeTextEl.textContent = truncatedName;
-        if (badgeEl) {
-            badgeEl.title = rawName;
-            badgeEl.classList.toggle('is-disabled', currentItem.isAll);
-        }
+    }
+    if (badgeEl) {
+        badgeEl.title = currentItem.name || '';
+        badgeEl.classList.toggle('is-disabled', currentItem.isAll);
+        // Show/hide badge completely based on context
+        if (isModal && currentItem.isAll) badgeEl.style.display = 'none';
+        else badgeEl.style.display = 'flex';
     }
 
-    const starBtn = document.getElementById('diffCardStarBtn');
+    const starBtn = document.getElementById(getId('diffCardStarBtn'));
     if (starBtn) {
         if (currentItem.isAll) {
             starBtn.disabled = true;
@@ -1713,8 +1718,8 @@ function renderActivityCharts() {
         }
     }
 
-    const prevBtn = document.getElementById('diffCardPrevBtn');
-    const nextBtn = document.getElementById('diffCardNextBtn');
+    const prevBtn = document.getElementById(getId('diffCardPrevBtn'));
+    const nextBtn = document.getElementById(getId('diffCardNextBtn'));
     const hasMultiple = navItems.length > 1;
     if (prevBtn) prevBtn.disabled = !hasMultiple;
     if (nextBtn) nextBtn.disabled = !hasMultiple;
@@ -1767,7 +1772,7 @@ function renderActivityCharts() {
         }
     });
 
-    const donutEl = document.getElementById('difficultyDonutChart');
+    const donutEl = document.getElementById(getId('difficultyDonutChart'));
     if (donutEl) {
         if (gradientParts.length > 0) {
             donutEl.style.background = `conic-gradient(${gradientParts.join(', ')})`;
@@ -1775,10 +1780,10 @@ function renderActivityCharts() {
             donutEl.style.background = 'var(--surface-hover)';
         }
     }
-    const countEl = document.getElementById('donutTotalCount');
+    const countEl = document.getElementById(getId('donutTotalCount'));
     if (countEl) countEl.textContent = totalQuestions;
 
-    const legendEl = document.getElementById('difficultyLegend');
+    const legendEl = document.getElementById(getId('difficultyLegend'));
     if (legendEl) {
         legendEl.innerHTML = '';
         diffData.forEach(d => {
@@ -1794,6 +1799,30 @@ function renderActivityCharts() {
             legendEl.appendChild(row);
         });
     }
+}
+
+function renderActivityCharts() {
+    const diffContainer = document.getElementById('homeDifficultyStatsCard');
+    const trendContainer = document.getElementById('homeWeeklyTrendCard');
+    const globalContainer = document.getElementById('homeGlobalStatsCard');
+
+    const statsKeys = Object.keys(AppState.stats || {});
+    const hasActivity = AppState.studyActivity && Object.keys(AppState.studyActivity).length > 0;
+    const hasStats = statsKeys.length > 0;
+    const hasLiveSources = liveSources().length > 0;
+
+    if (!hasStats && !hasActivity && !hasLiveSources) {
+        if (diffContainer) diffContainer.style.display = 'none';
+        if (trendContainer) trendContainer.style.display = 'none';
+        if (globalContainer) globalContainer.style.display = 'none';
+        return;
+    }
+
+    if (diffContainer) diffContainer.style.display = 'block';
+    if (trendContainer) trendContainer.style.display = 'block';
+    if (globalContainer) globalContainer.style.display = 'block';
+
+    updateDifficultyUI(false);
 
     // 2. Study Trend (weekly on the card's front face, monthly on its back)
     const activities = AppState.studyActivity || {};

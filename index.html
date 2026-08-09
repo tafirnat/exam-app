@@ -2027,11 +2027,72 @@
                     <div class="chart-canvas-legend" id="chartDistLegend"></div>
                 </div>
                 <!-- Chart 2: Zorluk Pasta -->
-                <div class="chart-section">
-                    <div class="chart-section-label" data-i18n="chart_diff_label">Soru Zorluk Analizi</div>
-                    <div style="display:flex; align-items:center; gap:1rem; justify-content:center;">
-                        <canvas id="chartDifficulty" style="max-width:180px; max-height:180px;"></canvas>
-                        <div class="chart-canvas-legend" id="chartDiffLegend" style="text-align:left;"></div>
+                <div class="chart-section" id="modalDifficultySection" style="display: flex; flex-direction: column;">
+                    <div style="display: flex; align-items: flex-start; justify-content: space-between; gap: 0.5rem; margin-bottom: 0.5rem;">
+                        <div style="display: flex; flex-direction: column; gap: 4px; min-width: 0; flex: 1;">
+                            <span id="modalDiffCardTitle" class="diff-card-title-btn"
+                                style="font-size: 0.85rem; color: var(--text-primary); font-weight: 600;"
+                                data-i18n="question_difficulty_analysis" data-i18n-title="reset_to_all_sources"
+                                title="En Başa Dön (Tüm Aktif Kaynaklar)">Soru Zorluk Analizi</span>
+                            <div id="modalDiffCardSourceBadge" class="diff-card-source-row" title="Tüm Kaynaklar" style="display: none;">
+                                <button type="button" class="card-control-btn star-icon-btn" id="modalDiffCardStarBtn"
+                                    title="Kaynağı Yıldızla / Yıldızı Kaldır" data-i18n-title="toggle_star_source"
+                                    aria-label="Yıldızla" disabled>
+                                    <svg viewBox="0 0 24 24" width="14" height="14" fill="none"
+                                        stroke="currentColor" stroke-width="2" stroke-linecap="round"
+                                        stroke-linejoin="round">
+                                        <polygon
+                                            points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2">
+                                        </polygon>
+                                    </svg>
+                                </button>
+                                <!-- No badge text as requested -->
+                            </div>
+                        </div>
+                        <div class="diff-card-nav-controls"
+                            style="display: flex; align-items: center; gap: 0.85rem; flex-shrink: 0;">
+                            <button type="button" class="card-control-btn" id="modalDiffCardPrevBtn"
+                                title="Önceki Kaynak" data-i18n-title="prev_source" aria-label="Önceki">
+                                <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor"
+                                    stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+                                    <path d="M15 18l-6-6 6-6"></path>
+                                </svg>
+                            </button>
+                            <button type="button" class="card-control-btn" id="modalDiffCardNextBtn"
+                                title="Sonraki Kaynak" data-i18n-title="next_source" aria-label="Sonraki">
+                                <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor"
+                                    stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+                                    <path d="M9 18l6-6-6-6"></path>
+                                </svg>
+                            </button>
+                        </div>
+                    </div>
+                    <div style="display: flex; gap: 1.5rem; margin-top: 0.5rem; align-items: center; flex-wrap: wrap; flex: 1; position: relative;">
+                        <div id="modalDifficultyDonutChart"
+                            style="position: relative; width: 130px; height: 130px; border-radius: 50%; background: var(--surface-hover); flex-shrink: 0;">
+                            <div
+                                style="position: absolute; inset: 24px; background: var(--surface-color); border-radius: 50%; display: flex; flex-direction: column; align-items: center; justify-content: center; box-shadow: inset 0 2px 4px rgba(0,0,0,0.05);">
+                                <span id="modalDonutTotalCount"
+                                    style="font-size: 1.6rem; font-weight: 800; color: var(--text-primary); line-height: 1;">0</span>
+                                <span style="font-size: 0.75rem; color: var(--text-secondary); margin-top: 4px;"
+                                    data-i18n="question">Soru</span>
+                            </div>
+                        </div>
+                        <div id="modalDifficultyLegend"
+                            style="display: grid; grid-template-columns: repeat(auto-fit, minmax(110px, 1fr)); gap: 0.6rem 0.8rem; font-size: 0.8rem; color: var(--text-secondary); flex: 1; min-width: 130px;">
+                        </div>
+                        <button type="button" class="card-control-btn diff-card-inspect-btn" id="modalDiffCardInspectBtn"
+                            title="Soruları İncele (#stats)" data-i18n-title="inspect_source_questions"
+                            aria-label="Soruları İncele" style="position: absolute; bottom: 0; right: 0;">
+                            <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor"
+                                stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+                                <line x1="3" y1="6" x2="13" y2="6"></line>
+                                <line x1="3" y1="12" x2="10" y2="12"></line>
+                                <line x1="3" y1="18" x2="10" y2="18"></line>
+                                <circle cx="16" cy="15" r="4"></circle>
+                                <line x1="19" y1="18" x2="22" y2="21"></line>
+                            </svg>
+                        </button>
                     </div>
                 </div>
                 <!-- Chart 3: Haftalık Trend -->

@@ -6,7 +6,7 @@ import { getLocalDateStr } from '../../core/daily-activity.js';
 import { calculateExamReadiness, calculateGlobalStreak, calculateFocusStreak } from './continuity-engine.js';
 import { calculateRetrievability } from '../test/test-engine.js';
 import { plainText } from '../../core/markdown.js';
-import { renderContinuityBlock } from './continuity-ui.js';
+import { renderContinuityBlock, updateDifficultyUI } from './continuity-ui.js';
 
 
 export function renderStatsList(filter = 'all', searchKeyword = '') {
@@ -930,18 +930,8 @@ export function showProgressCharts() {
         total
     );
 
-    // ---- Chart 2: Donut / Pie — Difficulty ----
-    _drawDonut(
-        document.getElementById('chartDifficulty'),
-        document.getElementById('chartDiffLegend'),
-        [
-            { label: `${t('difficulty_easy')}`,     value: coeffGroups.easy,     color: '#22c55e', emoji: '🟢' },
-            { label: `${t('difficulty_medium')}`,   value: coeffGroups.medium,  color: '#eab308', emoji: '🟡' },
-            { label: `${t('difficulty_hard')}`,    value: coeffGroups.hard,    color: '#f97316', emoji: '🟠' },
-            { label: `${t('difficulty_very_hard')}`,   value: coeffGroups.veryHard, color: '#ef4444', emoji: '🔴' },
-        ],
-        total
-    );
+    // ---- Chart 2: Donut / Pie – Difficulty (Using SSOT Component) ----
+    updateDifficultyUI(true);
 
     // ---- Chart 3: Weekly bar chart ----
     _drawWeeklyTrend(document.getElementById('chartWeekly'));
@@ -1040,101 +1030,6 @@ function _drawStackedBar(canvas, legendEl, segments, total) {
         legendEl.innerHTML = segments.map(s =>
             `<span><span class="cl-dot" style="background:${s.color}"></span>${s.label}: <b>${s.value}</b></span>`
         ).join('');
-    }
-}
-
-/** Draws a donut chart */
-function _drawDonut(canvas, legendEl, segments, total) {
-    if (!canvas) return;
-    const size = Math.min(canvas.parentElement?.offsetWidth / 2 || 160, 180);
-    const dpr = window.devicePixelRatio || 1;
-    canvas.width  = size * dpr;
-    canvas.height = size * dpr;
-    canvas.style.width  = size + 'px';
-    canvas.style.height = size + 'px';
-
-    const ctx = canvas.getContext('2d');
-    ctx.scale(dpr, dpr);
-    ctx.clearRect(0, 0, size, size);
-
-    const cx = size / 2, cy = size / 2;
-    const outerR = size / 2 - 4;
-    const innerR = outerR * 0.60;
-    let startAngle = -Math.PI / 2;
-
-    const pal = _chartPalette();
-    // The separator slivers have to match the panel behind the ring, not the
-    // page background — the chart panel is --surface-color.
-    const bgColor = pal.surface;
-    // --border-color is #e2e8f0 / #334155 — the two greys this ring was always
-    // meant to use, now actually resolved per theme.
-    const greyColor = pal.border;
-
-    // We want to show difficulty segments ONLY for solved questions, 
-    // and the rest of the ring should be grey (unsolved).
-    const solvedSegments = segments.filter(s => s.label !== t('stat_not_solved'));
-    const solvedTotal = solvedSegments.reduce((a, s) => a + s.value, 0);
-    const unsolvedCount = Math.max(0, total - solvedTotal);
-
-    // Create a new segments array for the donut: [Solved Diff 1, Solved Diff 2, ..., Unsolved (Grey)]
-    const finalSegments = [...solvedSegments];
-    if (unsolvedCount > 0) {
-        // No emoji here: ⚫ is a fixed near-black glyph that disappears on the
-        // dark panel. A dot painted with the segment's own colour tracks both themes.
-        finalSegments.push({ label: t('stat_not_solved'), value: unsolvedCount, color: greyColor });
-    }
-
-    if (total === 0) {
-        ctx.beginPath();
-        ctx.arc(cx, cy, outerR, 0, Math.PI * 2);
-        ctx.arc(cx, cy, innerR, Math.PI * 2, 0, true);
-        ctx.fillStyle = greyColor;
-        ctx.fill();
-    } else {
-        finalSegments.forEach((seg, i) => {
-            const sweep = (seg.value / total) * Math.PI * 2;
-            if (sweep <= 0) return;
-            const endAngle = startAngle + sweep;
-
-            ctx.beginPath();
-            ctx.moveTo(cx, cy);
-            ctx.arc(cx, cy, outerR, startAngle, endAngle);
-            ctx.arc(cx, cy, innerR, endAngle, startAngle, true);
-            ctx.closePath();
-            ctx.fillStyle = seg.color;
-            ctx.fill();
-
-            // Gap
-            ctx.beginPath();
-            ctx.moveTo(cx, cy);
-            ctx.arc(cx, cy, outerR + 1, endAngle - 0.015, endAngle + 0.015);
-            ctx.fillStyle = bgColor;
-            ctx.fill();
-
-            startAngle = endAngle;
-        });
-    }
-
-    // Center text
-    ctx.textAlign = 'center';
-    ctx.textBaseline = 'middle';
-    ctx.font = `bold ${Math.round(size * 0.14)}px Inter, sans-serif`;
-    ctx.fillStyle = pal.text;
-    ctx.fillText(total, cx, cy - size * 0.04);
-    ctx.font = `${Math.round(size * 0.09)}px Inter, sans-serif`;
-    ctx.fillStyle = pal.muted;
-    ctx.fillText(t('charts_question'), cx, cy + size * 0.1);
-
-    // Legend
-    if (legendEl) {
-        legendEl.innerHTML = finalSegments
-            .map(s => {
-                const pct = total > 0 ? Math.round(s.value / total * 100) : 0;
-                // Use emoji if provided, otherwise fallback to dot
-                const icon = s.emoji ? `<span style="font-size:0.9rem; line-height:1;">${s.emoji}</span>`
-                             : `<span class="cl-dot" style="background-color:${s.color}; border:1px solid ${pal.hairline}"></span>`;
-                return `<span>${icon} ${s.label}: ${s.value} (${pct}%)</span>`;
-            }).join('');
     }
 }
 
