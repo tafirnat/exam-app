@@ -6617,17 +6617,12 @@ body.dnd-active {
     overflow: hidden;
     text-overflow: ellipsis;
     min-width: 0;
-    max-width: 320px;
+    max-width: 100%;
     flex: 1;
     display: block;
     transition: color 0.15s ease;
 }
 
-@media (max-width: 600px) {
-    .diff-card-source-text {
-        max-width: 230px;
-    }
-}
 
 .diff-card-source-row:hover:not(.is-disabled) .diff-card-source-text {
     color: var(--text-primary);
