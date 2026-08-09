@@ -886,19 +886,6 @@ function initCarouselEvents() {
         pauseTemporarily(10000);
     });
 
-    // Hover events (Desktop / Mouse)
-    wrapper.addEventListener('mouseenter', () => {
-        isHovering = true;
-        stopTimer();
-    });
-
-    wrapper.addEventListener('mouseleave', () => {
-        isHovering = false;
-        if (!shouldPause()) {
-            startTimer();
-        }
-    });
-
     // Pointer events (Hybrid & Touchscreen Pointer support)
     wrapper.addEventListener('pointerenter', (e) => {
         if (e.pointerType === 'mouse') {
@@ -981,6 +968,11 @@ function initCarouselEvents() {
                     const prevIdx = (currentSlideIndex - 1 + slides.length) % slides.length;
                     goToSlide(prevIdx, 'prev');
                 }
+                // Clear touch pause if user swiped, to immediately resume
+                if (touchPauseTimer) {
+                    clearTimeout(touchPauseTimer);
+                    touchPauseTimer = null;
+                }
             }
         }
         startTimer(); // Hemen süreyi sıfırla ve başlat
@@ -1002,6 +994,10 @@ function initCarouselEvents() {
                 if (playIcon) playIcon.style.display = 'none';
             }
             
+            if (touchPauseTimer) {
+                clearTimeout(touchPauseTimer);
+                touchPauseTimer = null;
+            }
             startTimer(); // Hemen süreyi sıfırla ve baştan başlat
         });
     });
