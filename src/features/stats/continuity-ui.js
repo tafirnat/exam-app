@@ -2137,8 +2137,12 @@ function renderTrendChart(buckets, yAxisId, barsId, xAxisId) {
 
         const hoverTarget = document.createElement('div');
         hoverTarget.style.position = 'absolute';
-        hoverTarget.style.inset = '0';
+        hoverTarget.style.top = '0';
+        hoverTarget.style.left = '0';
+        hoverTarget.style.width = '100%';
+        hoverTarget.style.height = '100%';
         hoverTarget.style.zIndex = '5';
+        hoverTarget.style.background = 'rgba(0, 0, 0, 0)';
 
         const barInner = document.createElement('div');
         barInner.style.width = '100%';
