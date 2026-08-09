@@ -7070,11 +7070,13 @@ body.dnd-active {
 }
 
 /* ── Work & load chart (progress panel) ──────────────────────────────────────
-   Filled = already done, hollow = still owed. The distinction that carries the
-   meaning is fill, not hue: a solid bar and an outline read apart in greyscale
-   and under every kind of colour vision. Hue only says *which* kind of owed,
-   and the two hollow kinds are further separated by a dashed vs solid border so
-   red/yellow is never the only signal. */
+   Fill marks time, not virtue: a solid bar is a moment that has gone by - work
+   you did, or a review date that passed without you - and an outline is still
+   ahead of you. That is the axis the chart is laid out on, so it is the one the
+   ink follows. Hue then says which kind. Where hue would be the only signal,
+   position carries it too: the backlog's dotted blue against the day columns'
+   solid blue, today's yellow inside the tinted pair against the plan's grey out
+   on the numbered days, overdue's red against the days it stands beside. */
 .workload-container {
     display: flex;
     flex-direction: column;
@@ -7148,6 +7150,18 @@ body.dnd-active {
     border-radius: 6px 6px 0 0;
 }
 
+/* Today holds two bars - what is done and what is left - so it is given two
+   columns' worth of room and they come out at the same width as every other
+   day rather than half of it. What still sets the group apart is the tint
+   behind it and how tightly the pair sits: the gap inside the group is smaller
+   than the gap between any two days. The x-axis is a separate flex row, so its
+   label has to widen by the same amount or the strip drifts out from under the
+   columns it names. */
+.workload-slot.is-today,
+.workload-x-label.is-today {
+    flex: 2;
+}
+
 /* The two backlog ticks carry a word where the days carry two letters, so they
    get the room rather than the translations getting shortened past meaning -
    "Rückstand" hyphenating mid-word is not a label. */
@@ -7177,19 +7191,27 @@ body.dnd-active {
     background: var(--primary-color, #3b82f6);
 }
 
+/* Solid, like the days beside it: the review date this stands for is behind you
+   whether or not you got to it. Red is what keeps it from reading as work done. */
 .workload-bar.is-overdue .workload-bar-fill {
-    background: transparent;
-    border: 2px dashed #ef4444;
+    background: #ef4444;
 }
 
+/* Never scheduled, so nothing about it is in the past - an outline, in the same
+   blue as "answered" because it is the same kind of thing, just not done yet. */
 .workload-bar.is-unstarted .workload-bar-fill {
     background: transparent;
-    border: 2px dotted #94a3b8;
+    border: 2px dotted var(--primary-color, #3b82f6);
 }
 
-.workload-bar.is-due .workload-bar-fill {
+.workload-bar.is-due-today .workload-bar-fill {
     background: transparent;
     border: 2px solid #eab308;
+}
+
+.workload-bar.is-planned .workload-bar-fill {
+    background: transparent;
+    border: 2px solid #94a3b8;
 }
 
 /* A day whose per-source breakdown was never kept. Not a zero - a stub that
@@ -7256,34 +7278,57 @@ body.dnd-active {
 }
 
 .workload-swatch.is-overdue {
-    border: 2px dashed #ef4444;
+    background: #ef4444;
 }
 
 .workload-swatch.is-unstarted {
-    border: 2px dotted #94a3b8;
+    border: 2px dotted var(--primary-color, #3b82f6);
 }
 
-.workload-swatch.is-due {
+.workload-swatch.is-due-today {
     border: 2px solid #eab308;
 }
 
+.workload-swatch.is-planned {
+    border: 2px solid #94a3b8;
+}
+
 .trend-tooltip-dot.workload-dot.is-overdue {
-    background: transparent;
-    border: 2px dashed #ef4444;
+    background: #ef4444;
 }
 
 .trend-tooltip-dot.workload-dot.is-unstarted {
     background: transparent;
-    border: 2px dotted #94a3b8;
+    border: 2px dotted var(--primary-color, #3b82f6);
 }
 
-.trend-tooltip-dot.workload-dot.is-due {
+.trend-tooltip-dot.workload-dot.is-due-today {
     background: transparent;
     border: 2px solid #eab308;
 }
 
+.trend-tooltip-dot.workload-dot.is-planned {
+    background: transparent;
+    border: 2px solid #94a3b8;
+}
+
 .trend-tooltip-dot.workload-dot.is-done {
     background: var(--primary-color, #3b82f6);
+}
+
+/* An info button sitting at the right edge of a chart's heading row. Same
+   affordance as the stat boxes' one on the home screen, laid out inline
+   instead of pinned into a corner. */
+.chart-section-head {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 0.5rem;
+}
+
+.chart-info-btn {
+    padding: 2px;
+    flex-shrink: 0;
 }
 
 /* Trend Chart Bars */

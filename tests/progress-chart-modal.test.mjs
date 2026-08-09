@@ -19,12 +19,23 @@ import { JSDOM } from 'jsdom';
  * change reaches an open panel.
  */
 
-let AppState, buildWorkloadBuckets, workloadSources, dueTimestamp, PAST_DAYS, FUTURE_DAYS,
+let AppState, buildWorkloadBuckets, workloadSources, dueTimestamp, PAST_DAYS, FUTURE_DAYS, Kind,
     showProgressCharts, refreshProgressChartOverlay,
     resetModalDifficultyViewId, updateDifficultyUI,
     getLocalDateStr, shiftDateStr;
 
 const html = readFileSync(new URL('../index.html', import.meta.url), 'utf8');
+
+/* Comments stripped first, or the prose above a rule gets read as one - this
+   file explains its own encoding at length, right where the encoding lives. */
+const css = readFileSync(new URL('../src/style.css', import.meta.url), 'utf8')
+    .replace(/\/\*[\s\S]*?\*\//g, '');
+
+/** Every declaration that lands on a selector, in source order. */
+const declarationsFor = (selector) => [...css.matchAll(/([^{}]+)\{([^{}]*)\}/g)]
+    .filter(m => m[1].split(',').some(s => s.trim() === selector))
+    .map(m => m[2])
+    .join(';');
 
 // One parse of index.html, used both as the markup under inspection and as the
 // DOM the renderers draw into - a second JSDOM of a file this size costs more
@@ -52,12 +63,16 @@ before(async () => {
     ({ AppState } = await import('../src/core/state.js'));
     ({ getLocalDateStr, shiftDateStr } = await import('../src/core/daily-activity.js'));
     ({ resetModalDifficultyViewId, updateDifficultyUI } = await import('../src/features/stats/continuity-ui.js'));
-    ({ buildWorkloadBuckets, workloadSources, dueTimestamp, PAST_DAYS, FUTURE_DAYS } =
+    ({ buildWorkloadBuckets, workloadSources, dueTimestamp, PAST_DAYS, FUTURE_DAYS, Kind } =
         await import('../src/features/stats/workload-chart.js'));
     ({ showProgressCharts, refreshProgressChartOverlay } = await import('../src/features/stats/stats-module.js'));
 });
 
 const qs = (n) => Array.from({ length: n }, (_, i) => ({ id: i + 1 }));
+
+const openPanel = () => { document.getElementById('progressChartOverlay').style.display = 'flex'; };
+const bars = () => [...document.querySelectorAll('#modalWorkloadBars .workload-bar')]
+    .map(b => b.querySelector('.workload-bar-count')?.textContent || '');
 
 /** A stats record that comes due `inDays` from `now` (negative = overdue). */
 const dueIn = (inDays, now) => ({
@@ -82,7 +97,7 @@ beforeEach(() => {
 
 // ── Markup ──────────────────────────────────────────────────────────────────
 
-test('the panel carries the work/load chart and names all four bar kinds', () => {
+test('the panel carries the work/load chart and names all five bar kinds', () => {
     const section = markup.getElementById('modalWorkloadSection');
     assert.ok(section, '#modalWorkloadSection is missing from index.html');
 
@@ -92,15 +107,126 @@ test('the panel carries the work/load chart and names all four bar kinds', () =>
 
     const legend = section.querySelector('#modalWorkloadLegend');
     assert.ok(legend, 'the chart needs a legend');
-    for (const kind of ['is-done', 'is-overdue', 'is-unstarted', 'is-due']) {
+    for (const kind of ['is-done', 'is-overdue', 'is-unstarted', 'is-due-today', 'is-planned']) {
         assert.ok(legend.querySelector(`.workload-swatch.${kind}`), `${kind} needs a swatch`);
     }
-    assert.equal(legend.querySelectorAll('[data-i18n]').length, 4, 'every kind needs a translated label');
+    assert.equal(legend.querySelectorAll('[data-i18n]').length, 5, 'every kind needs a translated label');
+});
+
+/* The panel packs three readings of the same sources onto one screen and the
+   work/load chart alone carries five bar kinds, so each heading offers the
+   explanation behind an `i` - the same affordance the home screen's stat boxes
+   use. Pinned because a button with no handler looks identical to one with. */
+test('each chart heading offers its explanation, and every string is translated', async () => {
+    const { translations, t } = await import('../src/core/i18n.js');
+
+    const buttons = [
+        ['modalOverviewInfoBtn', 'panel_overview_info_title', 'panel_overview_info_desc'],
+        ['modalDifficultyInfoBtn', 'difficulty_info_title', 'difficulty_info_desc'],
+        ['modalWorkloadInfoBtn', 'workload_info_title', 'workload_info_desc']
+    ];
+
+    for (const [id, titleKey, descKey] of buttons) {
+        const btn = markup.getElementById(id);
+        assert.ok(btn, `#${id} is missing from index.html`);
+        assert.ok(btn.querySelector('.info-italic-icon'), `#${id} must look like the other info buttons`);
+
+        for (const lang of ['tr', 'en', 'de']) {
+            for (const key of [titleKey, descKey]) {
+                assert.ok(translations[lang]?.[key], `${lang}.${key} is missing`);
+            }
+        }
+    }
+
+    /* Clicked for real rather than grepped for: the ids live in a table that
+       survives its own binding call being deleted, so a scan for them stays
+       green while every button on the panel does nothing. */
+    openPanel();
+    showProgressCharts();
+
+    for (const [id, titleKey] of buttons) {
+        document.getElementById('customModalOverlay').classList.remove('active');
+        document.getElementById(id).dispatchEvent(new window.MouseEvent('click', { bubbles: true }));
+
+        assert.ok(document.getElementById('customModalOverlay').classList.contains('active'),
+            `#${id} opened nothing`);
+        assert.equal(document.getElementById('modalTitle').innerText, t(titleKey),
+            `#${id} explained the wrong chart`);
+        assert.ok(document.getElementById('modalMessage').innerHTML.length > 80,
+            `#${id} needs a real explanation, not a stub`);
+    }
+    document.getElementById('customModalOverlay').classList.remove('active');
+});
+
+test('the new bar kinds and the renamed ones are translated everywhere', async () => {
+    const { translations } = await import('../src/core/i18n.js');
+    const keys = ['workload_done', 'workload_overdue', 'workload_unstarted',
+        'workload_due_today', 'workload_planned',
+        'workload_overdue_short', 'workload_unstarted_short', 'workload_today'];
+
+    for (const lang of ['tr', 'en', 'de']) {
+        for (const key of keys) {
+            assert.ok(translations[lang]?.[key], `${lang}.${key} is missing`);
+        }
+    }
+    // The single "coming due" kind was split in two; leaving the old key around
+    // would let a stale data-i18n keep resolving and hide the split.
+    for (const lang of ['tr', 'en', 'de']) {
+        assert.equal(translations[lang].workload_due, undefined, `${lang} still carries the merged key`);
+    }
+});
+
+test('the inspect button sits with the source it names', () => {
+    const inspect = markup.getElementById('modalDiffCardInspectBtn');
+    const info = markup.getElementById('modalOverviewInfoBtn');
+    assert.ok(inspect && info);
+    assert.equal(inspect.parentElement, info.parentElement, 'the two share a row under the badge');
+    assert.ok(!/flex-end/.test(inspect.parentElement.getAttribute('style') || ''),
+        'the row reads left to right, under the source name rather than off to the right');
 });
 
 test('the panel no longer carries a second copy of the home trend card', () => {
     assert.equal(markup.getElementById('modalWeeklyTrendCard'), null);
     assert.equal(markup.getElementById('modalMonthlyTrendBars'), null);
+});
+
+/* Fill is the one thing three paragraphs of info text describe in words, in
+   three languages, so it cannot drift quietly: solid is a moment that has gone
+   by - the answers you gave, and the review date that lapsed without you - and
+   an outline is work still ahead. jsdom has no layout, so this is read off the
+   stylesheet rather than off a rendered bar. */
+test('fill marks time: what is behind you is solid, what is still ahead is an outline', () => {
+    for (const kind of ['is-done', 'is-overdue']) {
+        const decls = declarationsFor(`.workload-bar.${kind} .workload-bar-fill`);
+        assert.match(decls, /background:\s*(?!transparent)\S/,
+            `${kind} stands for a moment that has passed, so it is drawn solid`);
+        assert.doesNotMatch(decls, /border:\s*\d/,
+            `${kind} is solid; an outline on top of it is a second signal saying the opposite`);
+    }
+
+    for (const kind of ['is-unstarted', 'is-due-today', 'is-planned']) {
+        const decls = declarationsFor(`.workload-bar.${kind} .workload-bar-fill`);
+        assert.match(decls, /background:\s*transparent/,
+            `${kind} is still ahead of you, so it stays hollow`);
+        assert.match(decls, /border:\s*\d+px\s+(solid|dashed|dotted)/,
+            `${kind} is only visible at all through its outline`);
+    }
+});
+
+/* Today draws two bars where every other slot draws one. Left at one column's
+   width they come out half as wide as the days around them, and since the
+   x-axis is its own flex row, widening the slot alone slides every label out
+   from under the column it names. */
+test("today's pair is as wide as any other day, and the axis tracks it", () => {
+    const flexOf = (sel) => (declarationsFor(sel).match(/(?:^|[;\s])flex:\s*([\d.]+)/) || [])[1];
+    const data = buildWorkloadBuckets('all', Date.now());
+
+    assert.equal(Number(flexOf('.workload-slot.is-today')), data.today.length,
+        'the slot needs one column of room per bar it holds');
+    for (const group of ['is-today', 'is-backlog']) {
+        assert.equal(flexOf(`.workload-x-label.${group}`), flexOf(`.workload-slot.${group}`),
+            `the ${group} label has to be exactly as wide as its slot`);
+    }
 });
 
 // ── Scope ───────────────────────────────────────────────────────────────────
@@ -169,6 +295,13 @@ test('a question due in three days lands on the third column ahead', () => {
     assert.equal(w.future.length, FUTURE_DAYS);
     assert.equal(w.future[2].value, 1);
     assert.equal(sum(w.future), 1, 'and on no other');
+
+    /* The days ahead are a plan, not a debt, and they are drawn differently
+       for exactly that reason - reading the whole right-hand side as overdue
+       is the misreading this split exists to prevent. */
+    assert.ok(w.future.every(b => b.kind === Kind.PLANNED), 'the forecast is planned work');
+    assert.equal(w.today[1].kind, Kind.DUE_TODAY, "what is left of today is not merely planned");
+    assert.notEqual(Kind.PLANNED, Kind.DUE_TODAY);
 });
 
 test('a question still due later today is today\'s remainder, not backlog', () => {
@@ -231,9 +364,6 @@ test('a day whose breakdown was never kept says so instead of reading as zero', 
 
 // ── The panel on screen ─────────────────────────────────────────────────────
 
-const openPanel = () => { document.getElementById('progressChartOverlay').style.display = 'flex'; };
-const bars = () => [...document.querySelectorAll('#modalWorkloadBars .workload-bar')]
-    .map(b => b.querySelector('.workload-bar-count')?.textContent || '');
 
 test('the first paint already agrees with the second', () => {
     // A single active source: the nav offers no "all" item, so opening the panel

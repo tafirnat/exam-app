@@ -2047,10 +2047,10 @@
                         </button>
                     </div>
                 </div>
-                <div style="display: flex; justify-content: flex-end; margin-top: 0.25rem;">
+                <div style="display: flex; align-items: center; gap: 0.4rem; margin-top: 0.25rem;">
                     <button type="button" class="legend-inspect-btn" id="modalDiffCardInspectBtn"
                         title="Soruları İncele (#stats)" data-i18n-title="inspect_source_questions"
-                        aria-label="Soruları İncele" style="display: none; font-size: 1rem; padding: 4px 8px; align-items: center; gap: 0.4rem; width: auto; justify-content: flex-end;">
+                        aria-label="Soruları İncele" style="display: none; font-size: 1rem; padding: 4px 8px; align-items: center; gap: 0.4rem; width: auto; justify-content: flex-start;">
                         <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor"
                             stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
                             <line x1="3" y1="6" x2="13" y2="6"></line>
@@ -2060,6 +2060,11 @@
                             <line x1="19" y1="18" x2="22" y2="21"></line>
                         </svg>
                         <span class="inspect-btn-text" data-i18n="inspect_btn" style="font-size: 1rem !important;">İncele</span>
+                    </button>
+                    <button type="button" id="modalOverviewInfoBtn" class="continuity-icon-btn chart-info-btn"
+                        data-i18n-title="panel_overview_info_title" title="Bu Panel Hakkında"
+                        aria-label="Bu Panel Hakkında">
+                        <span class="info-italic-icon">i</span>
                     </button>
                 </div>
             </div>
@@ -2072,7 +2077,14 @@
                 </div>
                 <!-- Chart 2: Zorluk Pasta -->
                 <div class="chart-section" id="modalDifficultySection" style="display: flex; flex-direction: column;">
-                    <div class="chart-section-label" data-i18n="question_difficulty_analysis">Soru Zorluk Analizi</div>
+                    <div class="chart-section-head">
+                        <div class="chart-section-label" data-i18n="question_difficulty_analysis">Soru Zorluk Analizi</div>
+                        <button type="button" id="modalDifficultyInfoBtn" class="continuity-icon-btn chart-info-btn"
+                            data-i18n-title="difficulty_info_title" title="Soru Zorluk Analizi Hakkında"
+                            aria-label="Soru Zorluk Analizi Hakkında">
+                            <span class="info-italic-icon">i</span>
+                        </button>
+                    </div>
                     <div style="display: flex; gap: 1.5rem; margin-top: 0.5rem; align-items: center; flex-wrap: wrap; flex: 1; position: relative;">
                         <div id="modalDifficultyDonutChart"
                             style="position: relative; width: 130px; height: 130px; border-radius: 50%; background: var(--surface-hover); flex-shrink: 0;">
@@ -2091,7 +2103,14 @@
                 </div>
                 <!-- Chart 3: Çalışma & Yük - geçmiş bir hafta ve önümüzdeki yük, tek eksende -->
                 <div class="chart-section" id="modalWorkloadSection">
-                    <div class="chart-section-label" data-i18n="workload_title">Çalışma & Yük</div>
+                    <div class="chart-section-head">
+                        <div class="chart-section-label" data-i18n="workload_title">Çalışma & Yük</div>
+                        <button type="button" id="modalWorkloadInfoBtn" class="continuity-icon-btn chart-info-btn"
+                            data-i18n-title="workload_info_title" title="Çalışma & Yük Hakkında"
+                            aria-label="Çalışma & Yük Hakkında">
+                            <span class="info-italic-icon">i</span>
+                        </button>
+                    </div>
                     <div id="modalWorkloadContainer" class="workload-container">
                         <div id="modalWorkloadYAxis" class="workload-y-axis"></div>
                         <div id="modalWorkloadBars" class="workload-bars"></div>
@@ -2104,8 +2123,10 @@
                                 data-i18n="workload_overdue">Gecikmiş</span></span>
                         <span class="trend-legend-item"><span class="workload-swatch is-unstarted"></span><span
                                 data-i18n="workload_unstarted">Hiç başlanmamış</span></span>
-                        <span class="trend-legend-item"><span class="workload-swatch is-due"></span><span
-                                data-i18n="workload_due">Bekleyen</span></span>
+                        <span class="trend-legend-item"><span class="workload-swatch is-due-today"></span><span
+                                data-i18n="workload_due_today">Bugün bakılacak</span></span>
+                        <span class="trend-legend-item"><span class="workload-swatch is-planned"></span><span
+                                data-i18n="workload_planned">Planlananlar</span></span>
                     </div>
                 </div>
             </div>

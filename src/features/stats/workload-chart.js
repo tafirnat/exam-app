@@ -22,16 +22,25 @@
  * ever given. So the past half is kept short (a week, which the log does cover)
  * and the rest of the chart is the load ahead.
  *
- * ── The four bar kinds ──────────────────────────────────────────────────────
+ * ── The five bar kinds ──────────────────────────────────────────────────────
  *
- *   filled          done          questions answered that day
- *   red, hollow     overdue       R <= 0.9 now
- *   grey, hollow    unstarted     never reviewed - the engine calls these
+ *   blue, solid     done          questions answered that day
+ *   red, solid      overdue       R <= 0.9 now - revision you already owe
+ *   blue, hollow    unstarted     never reviewed - the engine calls these
  *                                 overdue too, but a fresh 500-question source
  *                                 would bury the real backlog in one column
- *   yellow, hollow  due ahead     falls due on that day
+ *   yellow, hollow  due today     falls due later today
+ *   grey, hollow    planned       falls due on one of the days ahead
  *
- * Every question with a stats record lands in exactly one of the last three, or
+ * Fill follows the axis the chart is already laid out on: solid is a moment
+ * that has gone by - work you did, or a review date that passed without you -
+ * and an outline is still ahead. "Unstarted" is hollow because it never had a
+ * date at all. Hue then says which kind, and where hue would be the only signal
+ * position carries it as well: overdue's red stands against the day columns it
+ * sits beside, and today's yellow sits inside the tinted pair while the plan's
+ * grey runs out along the numbered days.
+ *
+ * Every question with a stats record lands in exactly one of the last four, or
  * beyond the horizon. Today carries two bars - what is done and what is left -
  * which is the whole point of putting both halves on one axis.
  */
@@ -51,7 +60,11 @@ export const Kind = Object.freeze({
     DONE: 'done',
     OVERDUE: 'overdue',
     UNSTARTED: 'unstarted',
-    DUE: 'due'
+    /* Split apart deliberately: what is left of today is a thing you can still
+       finish, the days ahead are a plan. Drawing them the same way invited
+       reading the whole right-hand side as debt. */
+    DUE_TODAY: 'dueToday',
+    PLANNED: 'planned'
 });
 
 const DAY_MS = 86400000;
@@ -146,14 +159,14 @@ export function buildWorkloadBuckets(sourceId = 'all', now = Date.now()) {
             value: todayBucket.total, unattributed: todayBucket.unattributed
         },
         {
-            kind: Kind.DUE, isToday: true,
+            kind: Kind.DUE_TODAY, isToday: true,
             label: '', fullDateLabel: dayLabel(todayKey),
             value: dueToday
         }
     ];
 
     const future = futureKeys.map((key, i) => ({
-        kind: Kind.DUE,
+        kind: Kind.PLANNED,
         label: `+${i + 1}`,
         fullDateLabel: dayLabel(key),
         value: dueByKey[key]
@@ -170,7 +183,8 @@ const KIND_CLASS = {
     [Kind.DONE]: 'is-done',
     [Kind.OVERDUE]: 'is-overdue',
     [Kind.UNSTARTED]: 'is-unstarted',
-    [Kind.DUE]: 'is-due'
+    [Kind.DUE_TODAY]: 'is-due-today',
+    [Kind.PLANNED]: 'is-planned'
 };
 
 /** Rounds the axis top up to a friendly tick, never below 10. */
@@ -276,7 +290,8 @@ const KIND_TEXT = {
     [Kind.DONE]: 'workload_done',
     [Kind.OVERDUE]: 'workload_overdue',
     [Kind.UNSTARTED]: 'workload_unstarted',
-    [Kind.DUE]: 'workload_due'
+    [Kind.DUE_TODAY]: 'workload_due_today',
+    [Kind.PLANNED]: 'workload_planned'
 };
 
 function showTooltip(tooltip, anchor, bar, unknown) {

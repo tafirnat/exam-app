@@ -1,6 +1,6 @@
 import { AppState, liveSources } from '../../core/state.js';
 import { t } from '../../core/i18n.js';
-import { showConfirm, escapeHTML } from '../../core/utils.js';
+import { showConfirm, escapeHTML, showInfoAlert } from '../../core/utils.js';
 import { readJSON } from '../../core/storage.js';
 import { getLocalDateStr } from '../../core/daily-activity.js';
 import { calculateExamReadiness, calculateGlobalStreak, calculateFocusStreak } from './continuity-engine.js';
@@ -894,6 +894,44 @@ function _bindChartOverlay() {
     });
 }
 
+/**
+ * The `i` buttons on the panel's headings.
+ *
+ * The panel packs three different readings of the same sources into one screen,
+ * and the work/load chart in particular carries five bar kinds whose meaning is
+ * not self-evident from a legend word. The explanations live behind a button
+ * rather than on the page so the charts keep their room.
+ *
+ * Read through t() at click time, not at bind time: the panel is bound once and
+ * the language can change under it.
+ */
+const CHART_INFO_BUTTONS = [
+    ['modalOverviewInfoBtn', 'panel_overview_info_title', 'panel_overview_info_desc'],
+    ['modalDifficultyInfoBtn', 'difficulty_info_title', 'difficulty_info_desc'],
+    ['modalWorkloadInfoBtn', 'workload_info_title', 'workload_info_desc']
+];
+
+let _chartInfoBound = false;
+
+function _bindChartInfoButtons() {
+    /* Bound when the panel draws, not when the home screen does: these live
+       inside the panel, and hanging them off the home renderer meant the whole
+       set stayed dead on any path that opened the panel without that renderer
+       having run. */
+    if (_chartInfoBound) return;
+    _chartInfoBound = true;
+
+    CHART_INFO_BUTTONS.forEach(([id, titleKey, descKey]) => {
+        const btn = document.getElementById(id);
+        if (!btn) return;
+        btn.addEventListener('click', (e) => {
+            // The badge row's own click toggles the source star.
+            e.stopPropagation();
+            showInfoAlert(t(descKey), t(titleKey));
+        });
+    });
+}
+
 /** True while the progress chart overlay is on screen. */
 function _chartOverlayIsOpen() {
     const overlay = document.getElementById('progressChartOverlay');
@@ -922,6 +960,8 @@ export function refreshProgressChartOverlay() {
  * answered with the active sources only.
  */
 export function showProgressCharts() {
+    _bindChartInfoButtons();
+
     const view = resolveModalDifficultyView();
     const filterSources = workloadSources(view ? view.id : 'all');
 
