@@ -1676,6 +1676,8 @@ export function bindDifficultyCardControls(isModal = false) {
             const { inspectSourceQuestions, renderStatsList } = await import('./stats-module.js');
             const currentId = isModal ? currentModalDifficultyViewId : currentDifficultyViewId;
             if (currentId && currentId !== 'all') {
+                const overlay = document.getElementById('progressChartOverlay');
+                if (overlay) overlay.style.display = 'none';
                 inspectSourceQuestions(currentId);
                 return;
             }
