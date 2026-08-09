@@ -18,7 +18,7 @@ import { AppState } from './state.js';
 
 import { renderSourcesList, renderHomeActiveSources } from '../features/sources/sources-ui.js';
 import { renderContinuityBlock, renderGlobalCharts } from '../features/stats/continuity-ui.js';
-import { renderStatsList, updateHomeStats } from '../features/stats/stats-module.js';
+import { renderStatsList, updateHomeStats, refreshProgressChartOverlay } from '../features/stats/stats-module.js';
 import { renderResumeButton } from '../features/test/test-ui.js';
 import { updateQuickSourcesDot } from '../features/sources/quick-presets-ui.js';
 import { syncQuickPresetsWithLiveSources } from '../features/sources/quick-presets.js';
@@ -101,6 +101,21 @@ const BINDINGS = [
         slices: [Slice.ACTIVITY, Slice.STATS, Slice.SOURCES],
         run: renderGlobalCharts,
         views: [View.HOME]
+    },
+
+    {
+        /* The panel behind the home progress bar: the same three figures the
+           charts above show, for one source at a time. It was drawn on open and
+           by nothing else, so it froze the moment it appeared - a sync pull or a
+           test finished in another tab left it describing a state that no longer
+           existed, under a header that still named the source.
+
+           No view gate: the gate here is whether the overlay is up, which its
+           renderer checks itself. Gating on HOME instead would defer the redraw
+           behind an overlay the user is looking at. */
+        name: 'home:progressChartPanel',
+        slices: [Slice.ACTIVITY, Slice.STATS, Slice.SOURCES],
+        run: refreshProgressChartOverlay
     },
 
     // ── Sources ─────────────────────────────────────────────────────────────

@@ -6,7 +6,15 @@ import { getLocalDateStr } from '../../core/daily-activity.js';
 import { calculateExamReadiness, calculateGlobalStreak, calculateFocusStreak } from './continuity-engine.js';
 import { calculateRetrievability } from '../test/test-engine.js';
 import { plainText } from '../../core/markdown.js';
-import { renderContinuityBlock, updateDifficultyUI, getCurrentModalDifficultyViewId, resetModalDifficultyViewId } from './continuity-ui.js';
+import {
+    renderContinuityBlock,
+    updateDifficultyUI,
+    getCurrentModalDifficultyViewId,
+    resetModalDifficultyViewId,
+    buildDailyTrendBuckets,
+    makeSourceLogFilter,
+    renderTrendChart
+} from './continuity-ui.js';
 
 
 export function renderStatsList(filter = 'all', searchKeyword = '') {
@@ -888,31 +896,47 @@ function _bindChartOverlay() {
     });
 }
 
+/** True while the progress chart overlay is on screen. */
+function _chartOverlayIsOpen() {
+    const overlay = document.getElementById('progressChartOverlay');
+    return !!overlay && overlay.style.display !== 'none';
+}
+
 /**
- * Renders three Canvas charts inside the progress chart overlay.
+ * Redraws the overlay if - and only if - it is open.
+ *
+ * This is what ui-bindings subscribes; the panel used to be drawn once on open
+ * and by nothing else, so an answer committed elsewhere or a sync pull left it
+ * showing whatever it happened to hold when the user tapped the progress bar.
+ */
+export function refreshProgressChartOverlay() {
+    if (_chartOverlayIsOpen()) showProgressCharts();
+}
+
+/**
+ * Draws the three charts inside the progress chart overlay: the completion bar,
+ * the difficulty donut and the weekly/monthly study trend.
  */
 export function showProgressCharts() {
-    const activeQuestions = [];
-    const activeSources = AppState.sources.filter(s => s.active);
+    /* liveSources(), not AppState.sources: the source picker these arrows walk
+       is built from the live library too, so reading a wider set here let the
+       badge name a source the filter then failed to find - and a miss fell back
+       to *every* active source, drawing the whole library under one source's
+       name. */
+    const activeSources = liveSources().filter(s => s.active);
     let filterSources = activeSources;
+    let oneSource = null;
 
     const currentId = getCurrentModalDifficultyViewId();
     if (currentId && currentId !== 'all') {
-        const selected = activeSources.find(s => s.id === currentId);
-        if (selected) {
-            filterSources = [selected];
-        }
+        oneSource = liveSources().find(s => s.id === currentId) || null;
+        if (oneSource) filterSources = [oneSource];
     }
 
-    filterSources.forEach(s => {
-        if (s.questions) activeQuestions.push(...s.questions);
-    });
-    const total = activeQuestions.length;
-    if (total === 0) return;
+    const total = filterSources.reduce((sum, s) => sum + (s.questions?.length || 0), 0);
 
     // Compute segments
     let learnedCount = 0, solvedCount = 0;
-    const coeffGroups = { easy: 0, medium: 0, hard: 0, veryHard: 0 };
 
     filterSources.forEach(source => {
         if (!source.questions) return;
@@ -923,21 +947,15 @@ export function showProgressCharts() {
                 const answered = (s.correct || 0) + (s.wrong || 0) > 0;
                 if (s.learned) learnedCount++;
                 else if (answered) solvedCount++;
-
-                // Difficulty groups: only for SOLVED questions as per user request
-                if (answered) {
-                    const d = s.difficulty || 5; 
-                    if (d <= 4.0)      coeffGroups.easy++;     // Display <= 2.0
-                    else if (d <= 6.0) coeffGroups.medium++;   // Display 2.0 - 3.0 
-                    else if (d <= 8.0) coeffGroups.hard++;     // Display 3.0 - 4.0
-                    else               coeffGroups.veryHard++; // Display > 4.0
-                }
             }
         });
     });
     const notSolvedCount = total - learnedCount - solvedCount;
 
     // ---- Chart 1: Stacked Horizontal Bar ----
+    /* Drawn even at zero. Bailing out on an empty library left the previous
+       source's bar on screen, which reads as data about the source now named in
+       the header. */
     _drawStackedBar(
         document.getElementById('chartDistribution'),
         document.getElementById('chartDistLegend'),
@@ -952,8 +970,54 @@ export function showProgressCharts() {
     // ---- Chart 2: Donut / Pie – Difficulty (Using SSOT Component) ----
     updateDifficultyUI(true);
 
-    // ---- Chart 3: Weekly bar chart ----
-    _drawWeeklyTrend(document.getElementById('chartWeekly'), filterSources);
+    // ---- Chart 3: Weekly / monthly study trend ----
+    /* The same builders and the same renderer as the home card. This used to be
+       a private copy that read `act.questionLog` - a field that has lived inside
+       act.byDevice[device] since the day became per-device counting - and keyed
+       its columns off device time. Both defects were silent: the filtered view
+       drew "no data" for sources with months of work behind them, and the
+       unfiltered one disagreed with the card on the home screen. */
+    const activities = AppState.studyActivity || {};
+    // Unfiltered means the whole day, the same figure the home card shows -
+    // not "every active source", which would drop work done on a source that
+    // has since been switched off.
+    const logFilter = makeSourceLogFilter(oneSource ? [oneSource.id] : null);
+
+    renderTrendChart(
+        buildDailyTrendBuckets(activities, 7, { logFilter }),
+        'modalWeeklyTrendYAxis', 'modalWeeklyTrendBars', 'modalWeeklyTrendXAxis'
+    );
+    renderTrendChart(
+        buildDailyTrendBuckets(activities, 30, { logFilter }),
+        'modalMonthlyTrendYAxis', 'modalMonthlyTrendBars', 'modalMonthlyTrendXAxis'
+    );
+
+    _bindModalTrendFlip();
+}
+
+/** Wires the flip buttons on both faces of the modal's trend card (once). */
+function _bindModalTrendFlip() {
+    const card = document.getElementById('modalWeeklyTrendCard');
+    if (!card || card.dataset.flipBound) return;
+    card.dataset.flipBound = 'true';
+
+    card.querySelectorAll('[data-modal-trend-flip]').forEach(btn => {
+        btn.addEventListener('click', () => {
+            const flipped = card.classList.toggle('flipped');
+            // The hidden face must stay out of the tab order, otherwise focus
+            // can land on a button nobody can see.
+            card.querySelectorAll('.chart-flip-front [data-modal-trend-flip]').forEach(b => {
+                b.tabIndex = flipped ? -1 : 0;
+            });
+            card.querySelectorAll('.chart-flip-back [data-modal-trend-flip]').forEach(b => {
+                b.tabIndex = flipped ? 0 : -1;
+            });
+        });
+    });
+
+    card.querySelectorAll('.chart-flip-back [data-modal-trend-flip]').forEach(b => {
+        b.tabIndex = -1;
+    });
 }
 
 /**
@@ -990,6 +1054,9 @@ function _drawStackedBar(canvas, legendEl, segments, total) {
     canvas.style.height = H + 'px';
 
     const ctx = canvas.getContext('2d');
+    // No 2d context means no bar, not a dead redraw: the donut and the trend
+    // below it are drawn by the same pass and must still land.
+    if (!ctx) return;
     ctx.scale(dpr, dpr);
     ctx.clearRect(0, 0, W, H);
 
@@ -1050,288 +1117,6 @@ function _drawStackedBar(canvas, legendEl, segments, total) {
             `<span><span class="cl-dot" style="background:${s.color}"></span>${s.label}: <b>${s.value}</b></span>`
         ).join('');
     }
-}
-
-/** Draws last 7-day correct answer trend as a column chart */
-function _drawWeeklyTrend(canvas, sources = []) {
-    // Helper to generate buckets
-    const generateBuckets = (numDays) => {
-        const days = [];
-        const currentDate = new Date();
-        currentDate.setHours(0, 0, 0, 0); // Start of today
-        // Backdate to numDays - 1
-        currentDate.setDate(currentDate.getDate() - numDays + 1);
-
-        const lang = AppState.language || 'en';
-        const isTr = lang.startsWith('tr');
-        const isDe = lang.startsWith('de');
-        
-        const dayLabels = isTr ? ['Paz', 'Pzt', 'Sal', 'Çar', 'Per', 'Cum', 'Cmt'] :
-            isDe ? ['So', 'Mo', 'Di', 'Mi', 'Do', 'Fr', 'Sa'] :
-                ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
-
-        for (let i = 0; i < numDays; i++) {
-            const d = new Date(currentDate);
-            days.push({
-                label: numDays === 7 ? dayLabels[d.getDay()] : String(d.getDate()).padStart(2, '0'),
-                dateStr: d.getFullYear() + '-' + String(d.getMonth() + 1).padStart(2, '0') + '-' + String(d.getDate()).padStart(2, '0'),
-                correct: 0,
-                wrong: 0,
-                total: 0, // unanswered + correct + wrong
-                totalAnswers: 0, // correct + wrong
-                uniqueCount: 0 // Optional if we want to show unique
-            });
-            currentDate.setDate(currentDate.getDate() + 1);
-        }
-        return days;
-    };
-
-    const weeklyDays = generateBuckets(7);
-    const monthlyDays = generateBuckets(30);
-
-    const sourceIds = new Set(sources.map(s => s.id));
-    const isAllSources = !sources || sources.length === 0;
-    const activities = AppState.studyActivity || {};
-
-    Object.keys(activities).forEach(dateStr => {
-        const act = activities[dateStr];
-        if (!act) return;
-
-        let dayCorrect = 0;
-        let dayWrong = 0;
-        let dayUnanswered = 0;
-
-        if (isAllSources) {
-            dayCorrect = act.correctCount || 0;
-            dayWrong = act.wrongCount || 0;
-            dayUnanswered = act.unansweredCount || 0;
-        } else if (act.questionLog) {
-            Object.keys(act.questionLog).forEach(qKey => {
-                const sId = qKey.split('_')[0];
-                if (sourceIds.has(sId)) {
-                    dayCorrect += act.questionLog[qKey].correct || 0;
-                    dayWrong += act.questionLog[qKey].wrong || 0;
-                    dayUnanswered += act.questionLog[qKey].empty || 0;
-                }
-            });
-        }
-
-        [weeklyDays, monthlyDays].forEach(bucketList => {
-            const bucket = bucketList.find(d => d.dateStr === dateStr);
-            if (bucket) {
-                bucket.correct += dayCorrect;
-                bucket.wrong += dayWrong;
-                bucket.totalAnswers += (dayCorrect + dayWrong);
-                bucket.total += (dayCorrect + dayWrong + dayUnanswered);
-            }
-        });
-    });
-
-    const pal = _chartPalette();
-    const isDark = pal.isDark;
-
-    const renderDOMTrend = (buckets, yAxisId, barsId, xAxisId) => {
-        const yAxisEl = document.getElementById(yAxisId);
-        const barsEl = document.getElementById(barsId);
-        const xAxisEl = document.getElementById(xAxisId);
-        if (!yAxisEl || !barsEl || !xAxisEl) return;
-
-        yAxisEl.innerHTML = '';
-        barsEl.innerHTML = '';
-        xAxisEl.innerHTML = '';
-
-        const maxCount = buckets.reduce((max, b) => Math.max(max, b.totalAnswers), 0);
-        const topLimit = Math.max(10, Math.ceil(maxCount / 5) * 5);
-
-        const labelWidth = Math.max(20, String(topLimit).length * 8);
-        const gutter = labelWidth + 5;
-        barsEl.style.paddingLeft = `${gutter}px`;
-        xAxisEl.style.paddingLeft = `${gutter}px`;
-        barsEl.style.position = 'relative';
-
-        if (maxCount === 0) {
-            const noData = document.createElement('div');
-            noData.textContent = t('no_data') || 'Veri Yok';
-            noData.style.position = 'absolute';
-            noData.style.top = '50%';
-            noData.style.left = '50%';
-            noData.style.transform = 'translate(-50%, -50%)';
-            noData.style.color = 'var(--text-secondary)';
-            noData.style.fontSize = '0.9rem';
-            noData.style.fontWeight = 'bold';
-            noData.style.zIndex = '5';
-            barsEl.appendChild(noData);
-        }
-
-        for (let i = 0; i <= 5; i++) {
-            const val = Math.round((topLimit / 5) * i);
-            const line = document.createElement('div');
-            line.style.display = 'flex';
-            line.style.alignItems = 'center';
-            line.style.fontSize = '0.7rem';
-            line.style.color = 'var(--text-secondary)';
-            line.style.width = '100%';
-            line.innerHTML = `<span style="width:${labelWidth}px; text-align:right; margin-right:5px;">${val}</span><div style="flex:1; height:1px; background:var(--border-color); opacity:0.5;"></div>`;
-            yAxisEl.appendChild(line);
-        }
-
-        buckets.forEach(d => {
-            const xLbl = document.createElement('div');
-            xLbl.textContent = (buckets.length <= 7 || parseInt(d.label) % 5 === 0 || d.label === '01') ? d.label : '';
-            xLbl.style.flex = '1';
-            xLbl.style.textAlign = 'center';
-            xAxisEl.appendChild(xLbl);
-
-            const barWrap = document.createElement('div');
-            barWrap.className = 'trend-bar-wrapper';
-            barWrap.style.padding = buckets.length > 7 ? '0 2px' : '0 8px';
-
-            const barInner = document.createElement('div');
-            barInner.className = 'trend-bar-inner';
-
-            if (d.totalAnswers > 0) {
-                const hPerc = (d.totalAnswers / topLimit) * 100;
-                barInner.style.height = `${hPerc}%`;
-
-                // Plain graph: just one primary colored bar for volume
-                const bDiv = document.createElement('div');
-                bDiv.style.height = `100%`;
-                bDiv.style.background = 'var(--primary-color, #3b82f6)';
-                bDiv.style.width = '100%';
-                bDiv.style.borderRadius = '4px 4px 0 0';
-                barInner.appendChild(bDiv);
-
-                const topLbl = document.createElement('span');
-                topLbl.textContent = d.totalAnswers;
-                topLbl.style.position = 'absolute';
-                topLbl.style.top = '-16px';
-                topLbl.style.width = '100%';
-                topLbl.style.textAlign = 'center';
-                topLbl.style.fontSize = '0.65rem';
-                topLbl.style.fontWeight = 'bold';
-                topLbl.style.color = 'var(--text-primary)';
-                topLbl.style.zIndex = '3';
-                if(buckets.length > 7) topLbl.style.display = 'none'; // hide for monthly
-                barInner.appendChild(topLbl);
-            }
-
-            barWrap.appendChild(barInner);
-            
-            // Tooltip using _showDayPopup DOM version
-            barWrap.addEventListener('mouseenter', (e) => {
-                _showDayPopupDOM(d, barWrap, barsEl, isDark);
-            });
-            barWrap.addEventListener('mouseleave', () => {
-                _removeDayPopup();
-            });
-
-            barsEl.appendChild(barWrap);
-        });
-    };
-
-    renderDOMTrend(weeklyDays, 'modalWeeklyTrendYAxis', 'modalWeeklyTrendBars', 'modalWeeklyTrendXAxis');
-    renderDOMTrend(monthlyDays, 'modalMonthlyTrendYAxis', 'modalMonthlyTrendBars', 'modalMonthlyTrendXAxis');
-
-    // Bind flip buttons if not bound
-    const card = document.getElementById('modalWeeklyTrendCard');
-    if (card && !card.dataset.flipBound) {
-        card.dataset.flipBound = 'true';
-        card.querySelectorAll('[data-modal-trend-flip]').forEach(btn => {
-            btn.addEventListener('click', () => {
-                card.classList.toggle('flipped');
-            });
-        });
-    }
-}
-
-function _showDayPopupDOM(day, barWrap, barsEl, isDark) {
-    _removeDayPopup();
-    const popup = document.createElement('div');
-    popup.id = 'weeklyDayPopup';
-
-    const dateObj = new Date(day.dateStr + 'T12:00:00');
-    const dateLabel = dateObj.toLocaleDateString(
-        AppState.language === 'tr' ? 'tr-TR' : AppState.language,
-        { weekday: 'long', day: 'numeric', month: 'short' }
-    );
-
-    const unanswered = Math.max(0, day.total - day.correct - day.wrong);
-    const totalAnswers = day.correct + day.wrong + unanswered;
-    const uniqueCount = 0; // Omitted for simplicity or could calculate if needed
-
-    popup.innerHTML = `
-        <div style="font-weight:700; font-size:0.75rem; margin-bottom:4px;">
-            ${dateLabel}
-        </div>
-        <div style="display:flex; flex-direction:column; gap:3px; font-size:0.72rem;">
-            <div style="display:flex; justify-content:space-between; gap:16px;">
-                <span style="color:${isDark ? '#94a3b8' : '#64748b'};">${t('stat_total_answers')}</span>
-                <b>${totalAnswers}</b>
-            </div>
-            <div style="display:flex; justify-content:space-between; gap:16px;">
-                <span style="display:flex; align-items:center; gap:5px;">
-                    <span style="width:8px;height:8px;border-radius:50%;background:#22c55e;display:inline-block;"></span>
-                    ${t('correct')}
-                </span>
-                <b style="color:#22c55e;">${day.correct}</b>
-            </div>
-            <div style="display:flex; justify-content:space-between; gap:16px;">
-                <span style="display:flex; align-items:center; gap:5px;">
-                    <span style="width:8px;height:8px;border-radius:50%;background:#ef4444;display:inline-block;"></span>
-                    ${t('wrong')}
-                </span>
-                <b style="color:#ef4444;">${day.wrong}</b>
-            </div>
-            <div style="display:flex; justify-content:space-between; gap:16px;">
-                <span style="display:flex; align-items:center; gap:5px;">
-                    <span style="width:8px;height:8px;border-radius:50%;background:${isDark ? '#64748b' : '#cbd5e1'};display:inline-block;"></span>
-                    ${t('unanswered_count')}
-                </span>
-                <b style="color:${isDark ? '#94a3b8' : '#64748b'};">${unanswered}</b>
-            </div>
-        </div>
-    `;
-
-    Object.assign(popup.style, {
-        position: 'absolute',
-        background: isDark ? '#2d3f55' : '#f0f4f8',
-        color: isDark ? '#f1f5f9' : '#0f172a',
-        border: `1px solid ${isDark ? 'rgba(255,255,255,0.18)' : 'rgba(0,0,0,0.12)'}`,
-        borderRadius: '8px',
-        padding: '8px 10px',
-        boxShadow: isDark
-            ? '0 6px 20px rgba(0,0,0,0.5)'
-            : '0 6px 18px rgba(0,0,0,0.15)',
-        zIndex: '9999',
-        minWidth: '140px',
-        pointerEvents: 'auto',
-        fontFamily: 'Inter, sans-serif',
-        fontSize: '0.75rem',
-        transition: 'opacity 0.15s',
-        opacity: '0',
-    });
-
-    document.body.appendChild(popup);
-
-    const rect = barWrap.getBoundingClientRect();
-    
-    let popupTop = rect.top - popup.offsetHeight - 12 + window.scrollY;
-    if (popupTop < window.scrollY + 10) {
-        popupTop = rect.bottom + 12 + window.scrollY;
-    }
-
-    let popupLeft = rect.left + (rect.width / 2) - (popup.offsetWidth / 2) + window.scrollX;
-    popupLeft = Math.max(8, Math.min(popupLeft, window.innerWidth - popup.offsetWidth - 8));
-
-    popup.style.top  = `${popupTop}px`;
-    popup.style.left = `${popupLeft}px`;
-
-    requestAnimationFrame(() => { popup.style.opacity = '1'; });
-}
-
-function _removeDayPopup() {
-    const existing = document.getElementById('weeklyDayPopup');
-    if (existing) existing.remove();
 }
 
 /** Helper: Round TOP ONLY */

@@ -18,7 +18,7 @@ import {
     calculateFocusTargetDistribution,
     calculateTopicMastery
 } from './continuity-engine.js';
-import { getDayAnchor } from '../../core/daily-activity.js';
+import { getDayAnchor, shiftDateStr } from '../../core/daily-activity.js';
 import { buildQuestionPool } from '../test/test-engine.js';
 import { buildStreakRun, prepareStreakRun, resolveStreakCount } from './streak-run.js';
 import { renderSourcePicker } from '../sources/sources-ui.js';
@@ -1926,11 +1926,58 @@ function bindTrendFlip() {
     });
 }
 
-/** One bucket per day for the last 7 days, oldest first. */
-export function buildWeeklyTrendBuckets(activities) {
-    const numDays = 7;
-    const currentDate = getDayAnchor();
-    currentDate.setDate(currentDate.getDate() - numDays + 1);
+/** The shape every trend bar is drawn from. */
+function emptyTrendBucket(label, fullDateLabel) {
+    return {
+        label, fullDateLabel,
+        correct: 0, neutral: 0, wrong: 0, empty: 0, total: 0,
+        volumeTotal: 0, volumeFocus: 0,
+        effortCorrect: 0, effortWrong: 0, effortEmpty: 0
+    };
+}
+
+/**
+ * A predicate over question-log keys, or null for "count everything".
+ *
+ * A log key is `${sourceId}_${questionId}` and *both* halves can carry
+ * underscores - an id looks like `exam_<slug>_<ts>_<rand>` - so splitting the
+ * key on '_' yields "exam" for every source in the library. The progress
+ * modal's private copy of the trend arithmetic did exactly that, which is why
+ * it drew an empty chart for every source that had in fact been studied.
+ * Matching against ids we actually hold is the only reading that survives, and
+ * the longest match wins so an id that happens to prefix another cannot claim
+ * its rows.
+ *
+ * @param {Iterable<string>|null} sourceIds the sources to keep, null for all
+ */
+export function makeSourceLogFilter(sourceIds, knownIds = liveSources().map(s => s.id)) {
+    if (!sourceIds) return null;
+
+    const wanted = new Set(sourceIds);
+    if (wanted.size === 0) return () => false;
+
+    const ordered = [...new Set([...knownIds, ...wanted])].sort((a, b) => b.length - a.length);
+    return (qKey) => {
+        const owner = ordered.find(id => qKey.startsWith(`${id}_`));
+        return owner ? wanted.has(owner) : false;
+    };
+}
+
+/**
+ * One bucket per day for the last `numDays` days, oldest first.
+ *
+ * The key and the label come from the same calendar: the key is stepped on the
+ * day string itself (see shiftDateStr) and the Date behind the label is derived
+ * from that key. Walking a `new Date()` and reading the device's own
+ * getFullYear()/getMonth()/getDate() off it - which the progress modal's copy
+ * of this used to do - keys the chart to the *device* day while studyActivity
+ * is written in the *app* day, so outside Europe/Berlin a whole column reads
+ * empty while the work sits one bar over.
+ *
+ * @param {{logFilter?: ((qKey: string) => boolean)|null}} [options]
+ */
+export function buildDailyTrendBuckets(activities, numDays = 7, options = {}) {
+    const { logFilter = null } = options;
 
     const lang = document.documentElement.lang || 'en';
     const isTr = lang.startsWith('tr');
@@ -1939,22 +1986,37 @@ export function buildWeeklyTrendBuckets(activities) {
         isDe ? ['So', 'Mo', 'Di', 'Mi', 'Do', 'Fr', 'Sa'] :
             ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
 
+    const todayKey = getLocalDateStr();
     const buckets = [];
-    for (let i = 0; i < numDays; i++) {
-        const fullDateLabel = currentDate.toLocaleDateString(
+
+    for (let i = numDays - 1; i >= 0; i--) {
+        const dateKey = shiftDateStr(todayKey, -i);
+        const anchor = getDayAnchor(dateKey);
+        const fullDateLabel = anchor.toLocaleDateString(
             isTr ? 'tr-TR' : lang,
             { weekday: 'long', day: 'numeric', month: 'short' }
         );
-        const bucket = { label: dayLabels[currentDate.getDay()], fullDateLabel, correct: 0, neutral: 0, wrong: 0, empty: 0, total: 0, volumeTotal: 0, volumeFocus: 0, effortCorrect: 0, effortWrong: 0, effortEmpty: 0 };
-        addActivityToBucket(bucket, activities[getLocalDateStr(currentDate)]);
+        // A week is short enough to name each day; a month of them is not, so
+        // the longer view falls back to the day of the month.
+        const label = numDays <= 7
+            ? dayLabels[anchor.getDay()]
+            : String(anchor.getDate()).padStart(2, '0');
+
+        const bucket = emptyTrendBucket(label, fullDateLabel);
+        addActivityToBucket(bucket, activities[dateKey], logFilter);
         buckets.push(bucket);
-        currentDate.setDate(currentDate.getDate() + 1);
     }
     return buckets;
 }
 
+/** One bucket per day for the last 7 days, oldest first. */
+export function buildWeeklyTrendBuckets(activities, options = {}) {
+    return buildDailyTrendBuckets(activities, 7, options);
+}
+
 /** One bucket per calendar month for the last 6 months, oldest first. */
-export function buildMonthlyTrendBuckets(activities) {
+export function buildMonthlyTrendBuckets(activities, options = {}) {
+    const { logFilter = null } = options;
     const numMonths = 6;
     const lang = document.documentElement.lang || 'en';
     const monthFormatter = new Intl.DateTimeFormat(lang, { month: 'short' });
@@ -1969,11 +2031,7 @@ export function buildMonthlyTrendBuckets(activities) {
             lang.startsWith('tr') ? 'tr-TR' : lang,
             { month: 'long', year: 'numeric' }
         );
-        const bucket = {
-            label: monthFormatter.format(monthDate),
-            fullDateLabel,
-            correct: 0, neutral: 0, wrong: 0, empty: 0, total: 0, volumeTotal: 0, volumeFocus: 0, effortCorrect: 0, effortWrong: 0, effortEmpty: 0
-        };
+        const bucket = emptyTrendBucket(monthFormatter.format(monthDate), fullDateLabel);
         // Keyed by year-month so activity dates land in the right bucket even
         // when the range spans a year boundary.
         bucketByKey[`${monthDate.getFullYear()}-${monthDate.getMonth()}`] = bucket;
@@ -1983,19 +2041,35 @@ export function buildMonthlyTrendBuckets(activities) {
     Object.keys(activities).forEach(dateStr => {
         const [y, m] = dateStr.split('-');
         const bucket = bucketByKey[`${Number(y)}-${Number(m) - 1}`];
-        if (bucket) addActivityToBucket(bucket, activities[dateStr]);
+        if (bucket) addActivityToBucket(bucket, activities[dateStr], logFilter);
     });
 
     return buckets;
 }
 
 /** Folds one day's activity record into a bucket's correct/wrong/empty totals. */
-function addActivityToBucket(bucket, act) {
+function addActivityToBucket(bucket, act, logFilter = null) {
     // Include any day where at least one question was answered, regardless of
     // whether the daily threshold was met (act.studied). Filtering on studied
     // hid partial-study days entirely, making the bars appear empty even when
     // the user had answered several questions that day.
     if (!act || !(act.questionCount > 0)) return;
+
+    const deviceBuckets = act.byDevice && typeof act.byDevice === 'object'
+        ? Object.values(act.byDevice).filter(b => b && typeof b === 'object')
+        : [];
+    const logged = deviceBuckets.filter(b => b.questionLog && Object.keys(b.questionLog).length > 0);
+
+    /* A source filter can only be answered by the per-question log: the day's
+       counters say how much was done, never on what. Days written before the
+       log existed - and buckets from a device that keeps none - are therefore
+       left out of a filtered bar rather than guessed at. Guessing would put
+       another source's work onto this source's column, which is worse than a
+       short bar on a day nobody can attribute any more. */
+    if (logFilter) {
+        addLogCounts(bucket, combineDeviceLogs(logged, logFilter));
+        return;
+    }
 
     bucket.volumeTotal += act.questionCount || 0;
     bucket.volumeFocus += Math.min(act.focusQuestionCount || 0, act.questionCount || 0);
@@ -2007,11 +2081,6 @@ function addActivityToBucket(bucket, act) {
         bucket.effortEmpty += act.questionCount || 0;
     }
 
-    const deviceBuckets = act.byDevice && typeof act.byDevice === 'object'
-        ? Object.values(act.byDevice).filter(b => b && typeof b === 'object')
-        : [];
-    const logged = deviceBuckets.filter(b => b.questionLog && Object.keys(b.questionLog).length > 0);
-
     /* Nothing logged this day: written before the log existed, or by a device
        still on an older build. The flat counters are all there is to draw. */
     if (logged.length === 0) {
@@ -2019,19 +2088,40 @@ function addActivityToBucket(bucket, act) {
         return;
     }
 
-    const combinedLog = {};
-    logged.forEach(b => {
+    addUniqueQuestions(bucket, combineDeviceLogs(logged, null));
+
+    /* A device that logged nothing still studied that day, and its questions are
+       not in the combined log. Drawing only the logged buckets made the other
+       device's work disappear from the bar the moment *one* bucket carried a
+       log - the same day then read differently on each device, and a day worked
+       only on the device whose log had been stripped read as nothing at all.
+       These questions cannot be deduplicated against the log, so they are taken
+       at face value; that is the same figure the whole bar used to show. */
+    deviceBuckets.forEach(b => {
+        if (!b.questionLog || Object.keys(b.questionLog).length === 0) addFlatCounts(bucket, b);
+    });
+}
+
+/** Every device's log for one day, folded into one entry per distinct question. */
+function combineDeviceLogs(loggedBuckets, logFilter) {
+    const combined = {};
+    loggedBuckets.forEach(b => {
         for (const [qKey, stats] of Object.entries(b.questionLog)) {
-            if (!combinedLog[qKey]) {
-                combinedLog[qKey] = { correct: 0, wrong: 0, empty: 0 };
+            if (logFilter && !logFilter(qKey)) continue;
+            if (!combined[qKey]) {
+                combined[qKey] = { correct: 0, wrong: 0, empty: 0, isFocus: false };
             }
-            combinedLog[qKey].correct += stats.correct || 0;
-            combinedLog[qKey].wrong += stats.wrong || 0;
-            combinedLog[qKey].empty += stats.empty || 0;
+            combined[qKey].correct += stats.correct || 0;
+            combined[qKey].wrong += stats.wrong || 0;
+            combined[qKey].empty += stats.empty || 0;
+            if (stats.isFocus) combined[qKey].isFocus = true;
         }
     });
+    return Object.values(combined);
+}
 
-    const uniqueQuestions = Object.values(combinedLog);
+/** Sorts distinct questions into the bar's outcome bands. */
+function addUniqueQuestions(bucket, uniqueQuestions) {
     bucket.total += uniqueQuestions.length;
 
     uniqueQuestions.forEach(q => {
@@ -2041,16 +2131,24 @@ function addActivityToBucket(bucket, act) {
         else if (q.correct < bad && (q.correct > 0 || q.wrong > 0)) bucket.wrong++;
         else bucket.empty++;
     });
+}
 
-    /* A device that logged nothing still studied that day, and its questions are
-       not in combinedLog. Drawing only the logged buckets made the other
-       device's work disappear from the bar the moment *one* bucket carried a
-       log - the same day then read differently on each device, and a day worked
-       only on the device whose log had been stripped read as nothing at all.
-       These questions cannot be deduplicated against the log, so they are taken
-       at face value; that is the same figure the whole bar used to show. */
-    deviceBuckets.forEach(b => {
-        if (!b.questionLog || Object.keys(b.questionLog).length === 0) addFlatCounts(bucket, b);
+/**
+ * The whole bar from the log alone - bands, volume lines and tooltip figures.
+ *
+ * Used when a filter is in play, where the day's own counters cover sources the
+ * bar is not about and so cannot be borrowed for the lines.
+ */
+function addLogCounts(bucket, uniqueQuestions) {
+    addUniqueQuestions(bucket, uniqueQuestions);
+
+    uniqueQuestions.forEach(q => {
+        const attempts = q.correct + q.wrong + q.empty;
+        bucket.volumeTotal += attempts;
+        if (q.isFocus) bucket.volumeFocus += attempts;
+        bucket.effortCorrect += q.correct;
+        bucket.effortWrong += q.wrong;
+        bucket.effortEmpty += q.empty;
     });
 }
 
@@ -2073,12 +2171,17 @@ function addFlatCounts(bucket, counts) {
 }
 
 /** Draws the stacked bar chart shared by the weekly and monthly trend faces. */
-function renderTrendChart(buckets, yAxisId, barsId, xAxisId) {
+export function renderTrendChart(buckets, yAxisId, barsId, xAxisId) {
     const yAxisEl = document.getElementById(yAxisId);
     const barsEl = document.getElementById(barsId);
     const xAxisEl = document.getElementById(xAxisId);
 
     if (!yAxisEl || !barsEl || !xAxisEl) return;
+
+    /* A month of daily columns has no room for a name under each bar or a count
+       above it. Six month bars and a week of days do, so the thinning keys off
+       the column count rather than off which face is asking. */
+    const dense = buckets.length > 12;
 
     yAxisEl.innerHTML = '';
     barsEl.innerHTML = '';
@@ -2120,20 +2223,16 @@ function renderTrendChart(buckets, yAxisId, barsId, xAxisId) {
 
     buckets.forEach(d => {
         const xLbl = document.createElement('div');
-        xLbl.textContent = d.label;
+        // Every fifth day of the month plus the first, so the ticks stay put as
+        // the window slides instead of dancing with today's date.
+        xLbl.textContent = dense && !(d.label === '01' || Number(d.label) % 5 === 0) ? '' : d.label;
         xLbl.style.flex = '1';
         xLbl.style.textAlign = 'center';
         xAxisEl.appendChild(xLbl);
 
         const barWrap = document.createElement('div');
-        barWrap.style.flex = '1';
-        barWrap.style.height = '100%';
-        barWrap.style.display = 'flex';
-        barWrap.style.flexDirection = 'column-reverse';
-        barWrap.style.alignItems = 'center';
-        barWrap.style.padding = '0 8px';
-        barWrap.style.background = 'rgba(0, 0, 0, 0)';
-        barWrap.style.position = 'relative';
+        barWrap.className = 'trend-bar-wrapper';
+        if (dense) barWrap.style.padding = '0 2px';
 
         const hoverTarget = document.createElement('div');
         hoverTarget.style.position = 'absolute';
@@ -2145,12 +2244,7 @@ function renderTrendChart(buckets, yAxisId, barsId, xAxisId) {
         hoverTarget.style.background = 'rgba(0, 0, 0, 0)';
 
         const barInner = document.createElement('div');
-        barInner.style.width = '100%';
-        barInner.style.maxWidth = '24px';
-        barInner.style.height = '100%';
-        barInner.style.display = 'flex';
-        barInner.style.flexDirection = 'column-reverse';
-        barInner.style.position = 'relative';
+        barInner.className = 'trend-bar-inner';
 
         if (d.total > 0) {
             const hPerc = (d.total / topLimit) * 100;
@@ -2205,7 +2299,7 @@ function renderTrendChart(buckets, yAxisId, barsId, xAxisId) {
             topLbl.style.color = 'var(--text-primary)';
             topLbl.style.zIndex = '3';
             topLbl.style.textShadow = '0 0 3px var(--surface-color), 0 0 3px var(--surface-color), 0 0 2px var(--surface-color)';
-            barInner.appendChild(topLbl);
+            if (!dense) barInner.appendChild(topLbl);
 
             barWrap.style.cursor = 'pointer';
             hoverTarget.addEventListener('mouseenter', () => {

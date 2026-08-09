@@ -7077,7 +7077,7 @@ body.dnd-active {
 }
 
 /* Trend Chart Bars */
-.trend-bar-wrapper { flex: 1; height: 100%; display: flex; flex-direction: column-reverse; align-items: center; }
+.trend-bar-wrapper { flex: 1; height: 100%; display: flex; flex-direction: column-reverse; align-items: center; padding: 0 8px; background: transparent; position: relative; }
 .trend-bar-inner { width: 100%; max-width: 24px; height: 100%; display: flex; flex-direction: column-reverse; position: relative; }
 
 /* Trend Chart Tooltip */
@@ -7090,7 +7090,10 @@ body.dnd-active {
     border-radius: 8px;
     padding: 8px 10px;
     box-shadow: rgba(0, 0, 0, 0.5) 0px 6px 20px;
-    z-index: 10;
+    /* Above .chart-overlay (2000), below #customModalOverlay (10100). The
+       tooltip is a body child, so at z-index 10 it rendered behind the progress
+       panel's backdrop - hovering a bar in there showed nothing at all. */
+    z-index: 10050;
     min-width: 140px;
     pointer-events: none;
     font-family: Inter, sans-serif;
