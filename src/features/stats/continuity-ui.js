@@ -436,7 +436,7 @@ function renderFocusSlide() {
                 item.style.display = 'flex';
                 item.style.flexDirection = 'row';
                 item.style.alignItems = 'center';
-                item.style.justifyContent = 'space-between';
+                item.style.justifyContent = 'flex-start';
                 item.style.fontSize = '0.75rem';
                 item.style.color = '#7a59c4';
                 item.style.lineHeight = '1.4';
@@ -445,7 +445,7 @@ function renderFocusSlide() {
                 
                 const nameLine = document.createElement('div');
                 nameLine.className = 'truncate';
-                nameLine.style.flex = '1';
+                nameLine.style.flex = '0 1 auto';
                 nameLine.style.minWidth = '0';
                 nameLine.style.marginRight = '4px';
                 nameLine.style.fontWeight = 'normal';
