@@ -1522,7 +1522,7 @@ export function showDailyMotivationToast() {
 }
 
 let currentDifficultyViewId = 'all';
-let diffCardControlsBound = false;
+let diffCardControlsBound = { home: false, modal: false };
 
 export function getOrderedLiveSources() {
     const folders = liveFolders().sort((a, b) => (a.order || 0) - (b.order || 0));
