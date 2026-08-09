@@ -1136,6 +1136,20 @@ function _drawWeeklyTrend(canvas, sources = []) {
         xAxisEl.style.paddingLeft = `${gutter}px`;
         barsEl.style.position = 'relative';
 
+        if (maxCount === 0) {
+            const noData = document.createElement('div');
+            noData.textContent = t('no_data') || 'Veri Yok';
+            noData.style.position = 'absolute';
+            noData.style.top = '50%';
+            noData.style.left = '50%';
+            noData.style.transform = 'translate(-50%, -50%)';
+            noData.style.color = 'var(--text-secondary)';
+            noData.style.fontSize = '0.9rem';
+            noData.style.fontWeight = 'bold';
+            noData.style.zIndex = '5';
+            barsEl.appendChild(noData);
+        }
+
         for (let i = 0; i <= 5; i++) {
             const val = Math.round((topLimit / 5) * i);
             const line = document.createElement('div');

@@ -1734,10 +1734,10 @@ export function updateDifficultyUI(isModal = false) {
     const badgeTextEl = document.getElementById(getId('diffCardSourceBadgeText'));
     const badgeEl = document.getElementById(getId('diffCardSourceBadge'));
     if (badgeTextEl) {
-        badgeTextEl.textContent = currentItem.isAll ? 'Aktif Kaynaklara Genel Bakış' : (currentItem.name || '');
+        badgeTextEl.textContent = currentItem.isAll ? 'Aktif Kaynaklara Genel Bakış' : (currentItem.source?.name || currentItem.name || '');
     }
     if (badgeEl) {
-        badgeEl.title = currentItem.isAll ? 'Aktif Kaynaklara Genel Bakış' : (currentItem.name || '');
+        badgeEl.title = currentItem.isAll ? 'Aktif Kaynaklara Genel Bakış' : (currentItem.source?.name || currentItem.name || '');
         if (isModal) {
             badgeEl.classList.remove('is-disabled');
             badgeEl.style.display = 'flex';
