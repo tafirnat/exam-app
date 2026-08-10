@@ -1261,6 +1261,78 @@ textarea {
     margin: 4px 0;
 }
 
+/* The menu's closing row: two icon-only actions, no labels.
+
+   They are one gesture at two altitudes - take the question out, or hand the
+   whole prompt to the OS - so they share a row rather than sitting in the list
+   above, where a labelled row reads as a third AI provider. Share is the wider
+   one because it is the one that leaves the app; copy stays frameless and
+   square, the shape #openFocusSourceModalBtn (.continuity-icon-btn) uses for
+   the same kind of quiet secondary control. */
+.ai-copy-actions {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    padding: 2px;
+}
+
+.ai-copy-icon-btn {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 34px;
+    height: 34px;
+    padding: 0;
+    flex-shrink: 0;
+    background: transparent;
+    border: none;
+    border-radius: 8px;
+    color: var(--text-secondary);
+    cursor: pointer;
+    touch-action: manipulation;
+    transition: color 0.15s ease, background-color 0.15s ease, transform 0.18s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.ai-copy-icon-btn:hover,
+.ai-copy-icon-btn:active {
+    color: var(--primary-color);
+    background: var(--surface-hover);
+    transform: scale(1.08);
+}
+
+/* Takes the rest of the row and carries the tint: the primary action of the
+   menu's bottom half. The hover deepens the same tint rather than flipping to a
+   solid fill with white glyph - the dark theme's primary is light enough that
+   white on it loses the icon. */
+.ai-share-btn {
+    flex: 1;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    height: 34px;
+    padding: 0;
+    background: rgba(var(--primary-rgb), 0.12);
+    border: none;
+    border-radius: 8px;
+    color: var(--primary-color);
+    cursor: pointer;
+    touch-action: manipulation;
+    transition: background-color 0.15s ease, transform 0.18s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.ai-share-btn:hover,
+.ai-share-btn:active {
+    background: rgba(var(--primary-rgb), 0.24);
+    transform: translateY(-1px);
+}
+
+.ai-copy-icon-btn svg,
+.ai-share-btn svg {
+    width: 17px;
+    height: 17px;
+    flex-shrink: 0;
+}
+
 /* .menu-hint is an icon-plus-text row (display: flex), which is right for the
    one-sentence hints it was built for. This one is mixed inline content - a
    label, five <code> spans, a <br>, then a second sentence - and flex made every

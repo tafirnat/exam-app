@@ -174,6 +174,32 @@ export function insertVariableAt(value, name, start, end = start) {
     return { value: before + lead + token + after, caret: (before + lead + token).length };
 }
 
+/**
+ * The question and its answer as plain text - what the copy button puts on the
+ * clipboard.
+ *
+ * Deliberately not a prompt: no instruction, no options, no source. The prompt
+ * is what the share button hands to the OS; this is the raw material, for a note
+ * or a message. It used to be the question text alone, which left the answer to
+ * be looked up again wherever the text landed.
+ *
+ * The answer line drops when nothing is marked correct. An open-ended question
+ * the user answers in their own words has no answer to copy, and a bare
+ * "Correct Answer:" reads as one that went missing - the same reason
+ * fillTemplate drops a line whose variables came up empty.
+ */
+export function buildQuestionAnswerText(q) {
+    const vars = buildPromptVars(q);
+    if (!vars) return '';
+
+    const question = vars.question.trim();
+    const correct = vars.correct.trim();
+    if (!question) return '';
+    if (!correct) return question;
+
+    return `${question}\n\n${t('correct_answer')}: ${correct}`;
+}
+
 /** An option's text, by id. */
 function optionText(q, id) {
     const opt = (q?.options || []).find(o => String(o.id) === String(id));

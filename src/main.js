@@ -1,5 +1,5 @@
 import { AppState, initState, saveStats, saveSources, saveCurrentSource, saveCustomAIPrompt, saveAiProviders, saveLanguageSettings, saveAiPrompts, trackDeletedAiPrompt, saveActivePromptId, saveAdhocPrompt, DEFAULT_AI_PROVIDERS, saveActiveTest, clearActiveTest, clearLocalStudyData, clearProgressData, clearSourcesData, SAMPLE_LOADED_KEY, findMatchingPresetId } from './core/state.js';
-import { DEFAULT_PROMPT_ID, ADHOC_PROMPT_ID, PROMPT_VARIABLES, listPrompts, resolveActivePrompt, defaultPromptBody, builtinPromptBody, buildPromptVars, fillTemplate, insertVariableAt } from './core/ai-prompts.js';
+import { DEFAULT_PROMPT_ID, ADHOC_PROMPT_ID, PROMPT_VARIABLES, listPrompts, resolveActivePrompt, defaultPromptBody, builtinPromptBody, buildPromptVars, buildQuestionAnswerText, fillTemplate, insertVariableAt } from './core/ai-prompts.js';
 import { initTheme, toggleTheme, getActiveTheme } from './core/theme.js';
 import { updateStaticTranslations, updateDocumentTitle, t, targetLanguages, translations } from './core/i18n.js';
 import { showToast, showConfirm, getCorrectAnswers, highlightText, escapeHTML } from './core/utils.js';
@@ -105,7 +105,8 @@ window.switchView = switchView; // Ensure it's available for modules
 window.goHome = goHome;
 window.copyAIPrompt = copyAIPrompt;
 window.executeAiSearch = executeAiSearch;
-window.copyQuestionText = copyQuestionText;
+window.copyQuestionAndAnswer = copyQuestionAndAnswer;
+window.sharePrompt = sharePrompt;
 window.checkActiveTest = checkActiveTest;
 window.renderQuestion = renderQuestion;
 /* The hand-rolled predecessor of the store: 14 call sites reached this through
@@ -1431,10 +1432,15 @@ function setupEventListeners() {
     document.getElementById('indNote').onclick = toggleNoteArea;
     document.getElementById('menuTranslateAllInline').onclick = translateAll;
     document.getElementById('menuCopyToggleInline').onclick = (e) => toggleAiCopyMenu(false, e);
-    document.getElementById('aiCopyTextOption').onclick = (e) => {
+    document.getElementById('aiCopyQaBtn').onclick = (e) => {
         e.stopPropagation();
         closeAllAiCopyDropdowns();
-        copyQuestionText();
+        copyQuestionAndAnswer(false);
+    };
+    document.getElementById('aiSharePromptBtn').onclick = (e) => {
+        e.stopPropagation();
+        closeAllAiCopyDropdowns();
+        sharePrompt(false);
     };
     document.getElementById('menuEditPrompt').onclick = openPromptLibrary;
     document.getElementById('menuManageAIProviders').onclick = openAiManager;
@@ -1458,10 +1464,15 @@ function setupEventListeners() {
     document.getElementById('previewIndNote').onclick = toggleNoteArea;
     document.getElementById('previewMenuTranslateAllInline').onclick = translateAll;
     document.getElementById('previewMenuCopyToggleInline').onclick = (e) => toggleAiCopyMenu(true, e);
-    document.getElementById('previewAiCopyTextOption').onclick = (e) => {
+    document.getElementById('previewAiCopyQaBtn').onclick = (e) => {
         e.stopPropagation();
         closeAllAiCopyDropdowns();
-        copyQuestionText();
+        copyQuestionAndAnswer(true);
+    };
+    document.getElementById('previewAiSharePromptBtn').onclick = (e) => {
+        e.stopPropagation();
+        closeAllAiCopyDropdowns();
+        sharePrompt(true);
     };
 
     document.addEventListener('click', (e) => {
@@ -2417,6 +2428,14 @@ function getFormattedPrompt(isPreview = false) {
     return fillTemplate(prompt?.body || '', vars);
 }
 
+/** The menu's own button, flashed to acknowledge an action that opens nothing. */
+function flashAiMenuButton(isPreview = false) {
+    const btn = document.getElementById(isPreview ? 'previewMenuCopyToggleInline' : 'menuCopyToggleInline');
+    if (!btn) return;
+    btn.classList.add('copy-flash');
+    setTimeout(() => btn.classList.remove('copy-flash'), 500);
+}
+
 function executeAiSearch(providerId, isPreview = false) {
     const prompt = getFormattedPrompt(isPreview);
     if (!prompt) return;
@@ -2424,12 +2443,7 @@ function executeAiSearch(providerId, isPreview = false) {
     const provider = (AppState.aiProviders || DEFAULT_AI_PROVIDERS).find(p => p.id === providerId);
     if (!provider) return;
 
-    const btnId = isPreview ? 'previewMenuCopyToggleInline' : 'menuCopyToggleInline';
-    const btn = document.getElementById(btnId);
-    if (btn) {
-        btn.classList.add('copy-flash');
-        setTimeout(() => btn.classList.remove('copy-flash'), 500);
-    }
+    flashAiMenuButton(isPreview);
 
     if (provider.url.includes('{PROMPT}')) {
         const targetUrl = provider.url.replace('{PROMPT}', encodeURIComponent(prompt));
@@ -2448,39 +2462,65 @@ function copyAIPrompt(isPreview = false) {
 
     navigator.clipboard.writeText(prompt).then(() => {
         showToast(t('prompt_copied_toast') || 'Soru promptu panoya alındı.');
-        const btnId = isPreview ? 'previewMenuCopyToggleInline' : 'menuCopyToggleInline';
-        const btn = document.getElementById(btnId);
-        if (btn) {
-            btn.classList.add('copy-flash');
-            setTimeout(() => btn.classList.remove('copy-flash'), 500);
-        }
+        flashAiMenuButton(isPreview);
     }).catch(err => console.error('Clipboard error:', err));
 }
 
-function copyQuestionText() {
-    const isPreview = document.getElementById('statsPreviewView').offsetParent !== null;
-    let q;
-    if (isPreview) {
-        q = AppState.previewQuestion;
-    } else {
-        const qIndex = AppState.currentIndex;
-        const compositeId = AppState.currentTest[qIndex];
-        q = AppState.questionMap[compositeId];
+/**
+ * Hands the formatted prompt to the operating system's share sheet.
+ *
+ * The sheet reaches what a provider URL cannot: the AI app installed on the
+ * phone, a chat, a note. window.open lands in a browser tab even when the app
+ * is right there, so this is the mobile half of the same menu - the provider
+ * list stays because a {PROMPT} URL opens pre-filled in one tap, which the sheet
+ * cannot do.
+ *
+ * navigator.share needs the click's transient activation, so nothing may be
+ * awaited before it. getFormattedPrompt is synchronous and has to stay that way
+ * for this call to open anything - an `await import(...)` slipped in above would
+ * make the sheet silently not appear.
+ *
+ * Falls back to the clipboard rather than hiding the button: the API is absent
+ * on desktop Firefox and Linux Chrome, and outside a secure context - a phone
+ * pointed at the dev server over http gets `undefined` here, which otherwise
+ * reads as a broken feature. A dismissed sheet is an AbortError, not a failure.
+ */
+function sharePrompt(isPreview = false) {
+    const prompt = getFormattedPrompt(isPreview);
+    if (!prompt) return;
+
+    flashAiMenuButton(isPreview);
+
+    if (!navigator.share) {
+        navigator.clipboard.writeText(prompt)
+            .then(() => showToast(t('prompt_copied_toast') || 'Soru promptu panoya alındı.'))
+            .catch(err => console.error('Clipboard error:', err));
+        return;
     }
 
-    const text = q?.content?.text || q?.text || '';
+    navigator.share({ text: prompt }).catch(err => {
+        if (err?.name !== 'AbortError') console.error('Share failed:', err);
+    });
+}
+
+/**
+ * Copies the question with its answer - the raw material, not a prompt.
+ *
+ * The prompt is the share button's payload; this one exists for the other half
+ * of the workflow, getting the question into a note or a message. The answer
+ * comes along because looking it up again wherever the text landed was the
+ * missing half of the old "copy question text".
+ */
+function copyQuestionAndAnswer(isPreview = false) {
+    const ctx = currentPromptContext(isPreview);
+    const text = ctx ? buildQuestionAnswerText(ctx.q) : '';
     if (!text) return;
 
-    navigator.clipboard.writeText(text).then(() => {
-        showToast(t('copy_success') || 'Soru metni kopyalandı.');
-    });
+    navigator.clipboard.writeText(text)
+        .then(() => showToast(t('copy_success') || 'Panoya kopyalandı.'))
+        .catch(err => console.error('Clipboard error:', err));
 
-    const btnId = isPreview ? 'previewMenuCopyToggleInline' : 'menuCopyToggleInline';
-    const btn = document.getElementById(btnId);
-    if (btn) {
-        btn.classList.add('copy-flash');
-        setTimeout(() => btn.classList.remove('copy-flash'), 500);
-    }
+    flashAiMenuButton(isPreview);
 }
 
 function goHome() {

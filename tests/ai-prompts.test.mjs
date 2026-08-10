@@ -1,5 +1,8 @@
 import test, { before, beforeEach } from 'node:test';
 import assert from 'node:assert/strict';
+import { readFileSync } from 'node:fs';
+import { fileURLToPath } from 'node:url';
+import { dirname, join } from 'node:path';
 import { JSDOM } from 'jsdom';
 
 /* The prompt library. One template answered one question - "explain the correct
@@ -24,8 +27,8 @@ import { JSDOM } from 'jsdom';
 let AppState, initState, saveAiPrompts, trackDeletedAiPrompt, saveActivePromptId,
     saveAdhocPrompt, saveCustomAIPrompt, SYNCED_SETTINGS, clearProgressData, clearLocalStudyData;
 let mergeSyncData, getSyncPayload;
-let listPrompts, resolveActivePrompt, fillTemplate, buildPromptVars, defaultPromptBody,
-    insertVariableAt, DEFAULT_PROMPT_ID, ADHOC_PROMPT_ID, PROMPT_VARIABLES;
+let listPrompts, resolveActivePrompt, fillTemplate, buildPromptVars, buildQuestionAnswerText,
+    defaultPromptBody, insertVariableAt, DEFAULT_PROMPT_ID, ADHOC_PROMPT_ID, PROMPT_VARIABLES;
 let seedAiPrompts;
 let translations;
 
@@ -42,8 +45,8 @@ before(async () => {
     } = await import('../src/core/state.js'));
     ({ mergeSyncData, getSyncPayload } = await import('../src/core/github-sync.js'));
     ({
-        listPrompts, resolveActivePrompt, fillTemplate, buildPromptVars, defaultPromptBody,
-        insertVariableAt, DEFAULT_PROMPT_ID, ADHOC_PROMPT_ID, PROMPT_VARIABLES
+        listPrompts, resolveActivePrompt, fillTemplate, buildPromptVars, buildQuestionAnswerText,
+        defaultPromptBody, insertVariableAt, DEFAULT_PROMPT_ID, ADHOC_PROMPT_ID, PROMPT_VARIABLES
     } = await import('../src/core/ai-prompts.js'));
     ({ seedAiPrompts } = await import('../src/core/migration.js'));
     ({ translations } = await import('../src/core/i18n.js'));
@@ -309,6 +312,52 @@ test('an unanswered question yields no answer rather than an empty label', () =>
     assert.equal(fillTemplate('Mine: {answer}', vars), '');
 });
 
+// ── The copy payload ────────────────────────────────────────────────────────
+
+/* The AI menu ends in two actions and they carry different things: share hands
+   out the *prompt* (instruction, options, the user's own answer), copy takes
+   the question and its answer and nothing else. Copying used to take the
+   question text alone, which left the answer to be looked up again wherever the
+   text landed. */
+
+const unmarkedOpenQuestion = () => ({
+    id: 'q3', sourceId: 's1', type: 'short_answer',
+    content: { text: 'Describe your own study routine.' }
+});
+
+test('copying takes the question with its answer, and nothing else', () => {
+    const text = buildQuestionAnswerText(choiceQuestion());
+
+    assert.ok(text.includes('Which layer routes packets?'));
+    assert.ok(text.includes(`${translations.en.correct_answer}: Network`));
+
+    /* The option list is the prompt's business. 'Data link' is an option and
+       not the answer, so its absence is what says the two payloads stayed
+       apart - a copy that quietly became the prompt would carry it. */
+    assert.ok(!text.includes('Data link'));
+});
+
+test('an open-ended question with no marked answer copies the question alone', () => {
+    const text = buildQuestionAnswerText(unmarkedOpenQuestion());
+
+    /* Nothing to copy as the answer - the user writes it themselves. A bare
+       "Correct Answer:" reads as an answer that went missing, which is the same
+       reason fillTemplate drops a line whose variables came up empty. */
+    assert.equal(text, 'Describe your own study routine.');
+    assert.ok(!text.includes(translations.en.correct_answer));
+});
+
+test('the copy label follows the app language', () => {
+    AppState.language = 'de';
+    const text = buildQuestionAnswerText(choiceQuestion());
+    assert.ok(text.includes(`${translations.de.correct_answer}: Network`));
+});
+
+test('a question with no text copies nothing', () => {
+    assert.equal(buildQuestionAnswerText(null), '');
+    assert.equal(buildQuestionAnswerText({ id: 'q4', type: 'single_choice', content: {} }), '');
+});
+
 // ── Merge ───────────────────────────────────────────────────────────────────
 
 test('two devices each adding a prompt end up with both', () => {
@@ -460,6 +509,49 @@ test('the starter prompts use the variables they need', () => {
 });
 
 // ── i18n ────────────────────────────────────────────────────────────────────
+
+test('both AI menus carry the two actions, and both are bound', () => {
+    /* The menu exists twice - the test screen and the stats preview - and the
+       twins are bound in two separate blocks of main.js. Adding a control to
+       one and not the other is the standing failure mode here; so is leaving a
+       button in the markup with no handler, which reads as a dead button and
+       throws nothing. */
+    const root = join(dirname(fileURLToPath(import.meta.url)), '..');
+    const html = readFileSync(join(root, 'index.html'), 'utf8');
+    const main = readFileSync(join(root, 'src/main.js'), 'utf8');
+
+    ['aiCopyQaBtn', 'aiSharePromptBtn', 'previewAiCopyQaBtn', 'previewAiSharePromptBtn'].forEach(id => {
+        assert.ok(html.includes(`id="${id}"`), `${id} missing from index.html`);
+        assert.ok(
+            new RegExp(`getElementById\\('${id}'\\)\\.onclick`).test(main),
+            `${id} has no handler`
+        );
+    });
+
+    /* Icon-only by design, so the tooltip is the only label there is. */
+    ['copy_question_answer', 'share_prompt'].forEach(key => {
+        assert.equal((html.match(new RegExp(`data-i18n-title="${key}"`, 'g')) || []).length, 2);
+        ['tr', 'en', 'de'].forEach(lang => assert.ok(translations[lang][key], `${key} missing in ${lang}`));
+    });
+});
+
+test('sharing hands out the prompt, copying does not', () => {
+    /* The whole point of the split. Pointing share at the question text would
+       ship the AI half of the menu broken - an external AI asked to check a
+       question it cannot see the options of - and nothing would throw. */
+    const root = join(dirname(fileURLToPath(import.meta.url)), '..');
+    const main = readFileSync(join(root, 'src/main.js'), 'utf8');
+
+    const share = main.match(/function sharePrompt\([^)]*\)\s*\{[\s\S]*?\n\}/);
+    assert.ok(share, 'sharePrompt not found');
+    assert.ok(share[0].includes('getFormattedPrompt('), 'share must send the formatted prompt');
+    assert.ok(share[0].includes('navigator.share'), 'share must reach the OS share sheet');
+
+    const copy = main.match(/function copyQuestionAndAnswer\([^)]*\)\s*\{[\s\S]*?\n\}/);
+    assert.ok(copy, 'copyQuestionAndAnswer not found');
+    assert.ok(copy[0].includes('buildQuestionAnswerText('), 'copy must send question and answer');
+    assert.ok(!copy[0].includes('getFormattedPrompt('), 'copy must not send the prompt');
+});
 
 test('every prompt string exists in all three languages', () => {
     /* Hardcoded Turkish has shipped into the German UI before (see CLAUDE.md
