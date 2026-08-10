@@ -528,10 +528,40 @@ test('both AI menus carry the two actions, and both are bound', () => {
         );
     });
 
-    /* Icon-only by design, so the tooltip is the only label there is. */
+    ['copy_question_answer', 'share_prompt', 'share_short'].forEach(key => {
+        ['tr', 'en', 'de'].forEach(lang => assert.ok(translations[lang][key], `${key} missing in ${lang}`));
+    });
+
+    /* Both tooltips exist twice - once per menu. */
     ['copy_question_answer', 'share_prompt'].forEach(key => {
         assert.equal((html.match(new RegExp(`data-i18n-title="${key}"`, 'g')) || []).length, 2);
-        ['tr', 'en', 'de'].forEach(lang => assert.ok(translations[lang][key], `${key} missing in ${lang}`));
+    });
+
+    const button = (id) => {
+        const m = html.match(new RegExp(`<button[^>]*id="${id}"[\\s\\S]*?</button>`));
+        assert.ok(m, `${id} markup not found`);
+        return m[0];
+    };
+
+    ['aiCopyQaBtn', 'previewAiCopyQaBtn'].forEach(id => {
+        const markup = button(id);
+        /* Wordless by design: the icon is the universal one and the tooltip is
+           its only text. A label here would also unbalance the row, which
+           carries its hierarchy in width and tone rather than in size. */
+        assert.ok(!/data-i18n=/.test(markup), `${id} must carry no label`);
+        assert.ok(!/<span/.test(markup), `${id} must carry no label`);
+        /* The two-sheet copy glyph the app already uses (#copyMotivationBtn and
+           the two share dialogs), not the clipboard it started with. */
+        assert.ok(markup.includes('rect x="9" y="9" width="13" height="13"'), `${id} uses the wrong glyph`);
+    });
+
+    ['aiSharePromptBtn', 'previewAiSharePromptBtn'].forEach(id => {
+        assert.ok(button(id).includes('data-i18n="share_short"'), `${id} must carry the one-word label`);
+    });
+
+    /* One word. The row has ~192px and the icon takes part of it. */
+    ['tr', 'en', 'de'].forEach(lang => {
+        assert.ok(!translations[lang].share_short.includes(' '), `share_short is not one word in ${lang}`);
     });
 });
 

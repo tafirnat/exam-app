@@ -1261,14 +1261,16 @@ textarea {
     margin: 4px 0;
 }
 
-/* The menu's closing row: two icon-only actions, no labels.
+/* The menu's closing row: two filled actions of the same height and radius, so
+   they read as one pair rather than as two leftovers under the divider.
 
    They are one gesture at two altitudes - take the question out, or hand the
-   whole prompt to the OS - so they share a row rather than sitting in the list
-   above, where a labelled row reads as a third AI provider. Share is the wider
-   one because it is the one that leaves the app; copy stays frameless and
-   square, the shape #openFocusSourceModalBtn (.continuity-icon-btn) uses for
-   the same kind of quiet secondary control. */
+   whole prompt to the OS - which is why they share a row instead of sitting in
+   the list above, where a labelled row reads as a third AI provider. The
+   hierarchy is carried by width and tone, not by size: share takes the rest of
+   the row, a word, and the primary tint; copy stays square, wordless, and on
+   the neutral surface tone. Copy has no label by design - the icon is the
+   universal one and the tooltip is its only text. */
 .ai-copy-actions {
     display: flex;
     align-items: center;
@@ -1284,7 +1286,7 @@ textarea {
     height: 34px;
     padding: 0;
     flex-shrink: 0;
-    background: transparent;
+    background: var(--surface-hover);
     border: none;
     border-radius: 8px;
     color: var(--text-secondary);
@@ -1296,8 +1298,8 @@ textarea {
 .ai-copy-icon-btn:hover,
 .ai-copy-icon-btn:active {
     color: var(--primary-color);
-    background: var(--surface-hover);
-    transform: scale(1.08);
+    background: rgba(var(--primary-rgb), 0.12);
+    transform: translateY(-1px);
 }
 
 /* Takes the rest of the row and carries the tint: the primary action of the
@@ -1309,12 +1311,17 @@ textarea {
     display: inline-flex;
     align-items: center;
     justify-content: center;
+    gap: 8px;
     height: 34px;
     padding: 0;
     background: rgba(var(--primary-rgb), 0.12);
     border: none;
     border-radius: 8px;
     color: var(--primary-color);
+    /* A button does not inherit the page font on its own. */
+    font-family: inherit;
+    font-size: 0.85rem;
+    font-weight: 600;
     cursor: pointer;
     touch-action: manipulation;
     transition: background-color 0.15s ease, transform 0.18s cubic-bezier(0.16, 1, 0.3, 1);
