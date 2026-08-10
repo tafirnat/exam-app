@@ -7045,16 +7045,19 @@ body.dnd-active {
     100% { transform: translateY(0); opacity: 1; }
 }
 
-.focus-source-slide {
+/* The rotating source strip - one line per source, on both the Genel Seri and
+   the Odak Seri card. Absolute so the outgoing and incoming lines can overlap
+   during the swap without the card growing by a row. */
+.source-ticker-slide {
     position: absolute;
     width: 100%;
 }
 
-.focus-source-slide.slide-in {
+.source-ticker-slide.slide-in {
     animation: slideInFromTop 0.4s forwards cubic-bezier(0.25, 1, 0.5, 1);
 }
 
-.focus-source-slide.slide-out {
+.source-ticker-slide.slide-out {
     animation: slideOutDown 0.4s forwards cubic-bezier(0.25, 1, 0.5, 1);
 }
 

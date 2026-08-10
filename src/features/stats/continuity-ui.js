@@ -328,6 +328,10 @@ function renderGlobalSlide(liveQ) {
         }
     }
 
+    // Sources strip — same rotation the Odak card uses, over the library this
+    // streak is measured on.
+    renderSourceTicker(document.getElementById('continuitySourcesList'), getLibraryTickerItems());
+
     // Tokens — read real state from AppState
     const tokensEl = document.getElementById('continuityTokens');
     tokensEl.innerHTML = '';
@@ -372,16 +376,135 @@ function getSourceQuestionCount(sourceId) {
     return source?.questions?.length || 0;
 }
 
-let focusSourceInterval = null;
+const SOURCE_TICKER_INTERVAL_MS = 2500;
+const SOURCE_TICKER_EXIT_MS = 400;
+
+/* One rotating source strip, shared by the Genel Seri and Odak Seri cards. The
+   timer is kept per list element rather than in one module-level handle: the
+   two cards re-render on different triggers, so a single handle would let one
+   card's re-render silently stop the other card's rotation. */
+const sourceTickerTimers = new Map();
+
+function stopSourceTicker(listEl) {
+    const timer = sourceTickerTimers.get(listEl);
+    if (timer) clearInterval(timer);
+    sourceTickerTimers.delete(listEl);
+}
+
+/**
+ * Rotates one line per source through `listEl`: the source's name above its
+ * question count, mastery and average difficulty. Items are
+ * `{ id, label, measurable }`; `measurable: false` marks a source that is no
+ * longer in the library, so its stats are not looked up. Both paths end at 0
+ * either way - the flag says why, it does not change the line.
+ */
+export function renderSourceTicker(listEl, items) {
+    if (!listEl) return;
+    stopSourceTicker(listEl);
+    listEl.innerHTML = '';
+    if (!items || items.length === 0) return;
+
+    const createSlide = (entry) => {
+        const item = document.createElement('div');
+        item.className = 'source-ticker-slide';
+        item.style.display = 'flex';
+        item.style.flexDirection = 'column';
+        item.style.fontSize = '0.75rem';
+        item.style.color = 'var(--text-secondary)';
+        item.style.fontStyle = 'italic';
+        item.style.lineHeight = '1.4';
+
+        const nameLine = document.createElement('div');
+        nameLine.className = 'truncate';
+        nameLine.style.fontWeight = 'normal';
+        nameLine.textContent = entry.label;
+        nameLine.title = entry.label;
+
+        const qCount = getSourceQuestionCount(entry.id);
+        const mastery = entry.measurable ? calculateTopicMastery(entry.id) : 0;
+        const avgDiff = entry.measurable ? calculateSourceAverageDifficulty(entry.id) : 0;
+
+        const statsLine = document.createElement('div');
+        statsLine.className = 'source-ticker-stats';
+        statsLine.style.opacity = '0.9';
+        statsLine.style.fontSize = '0.7rem';
+        const qLabel = t('questions_unit') || 'Soru';
+        const mLabel = t('topic_mastery') || 'Hakimiyet';
+        const dLabel = (t('difficulty_label') || 'Zorluk').replace(':', '').trim();
+        statsLine.textContent = `${qCount} ${qLabel} • %${mastery} ${mLabel} • ${avgDiff} ${dLabel}`;
+
+        item.appendChild(nameLine);
+        item.appendChild(statsLine);
+        return item;
+    };
+
+    const showSlide = (index) => {
+        const currentSlide = listEl.querySelector('.source-ticker-slide.slide-in');
+        const nextSlide = createSlide(items[index]);
+        nextSlide.classList.add('slide-in');
+
+        if (currentSlide) {
+            currentSlide.classList.remove('slide-in');
+            currentSlide.classList.add('slide-out');
+            setTimeout(() => {
+                if (currentSlide.parentElement === listEl) {
+                    listEl.removeChild(currentSlide);
+                }
+            }, SOURCE_TICKER_EXIT_MS);
+        }
+        listEl.appendChild(nextSlide);
+    };
+
+    showSlide(0);
+    if (items.length < 2) return;
+
+    let currentIndex = 0;
+    const timer = setInterval(() => {
+        if (!document.body.contains(listEl)) {
+            stopSourceTicker(listEl);
+            return;
+        }
+        currentIndex = (currentIndex + 1) % items.length;
+        showSlide(currentIndex);
+    }, SOURCE_TICKER_INTERVAL_MS);
+    sourceTickerTimers.set(listEl, timer);
+}
+
+/**
+ * Strip items for the Genel Seri card. The card's target is measured over the
+ * whole library (`buildQuestionPool({ scope: 'all' })`), so the strip names the
+ * same set - every non-archived source, in the order the user arranged them.
+ * Narrowing this to the active sources would name a smaller set than the
+ * streak it sits on.
+ */
+export function getLibraryTickerItems() {
+    return getOrderedLiveSources().map(({ source }) => ({
+        id: source.id,
+        label: source.name,
+        measurable: true
+    }));
+}
+
+/**
+ * Strip items for the Odak Seri card: the selected sources, with the ones that
+ * left the library labelled instead of dropped, so the card keeps describing
+ * the streak it is counting.
+ */
+export function getFocusTickerItems() {
+    const live = getLiveFocusSources();
+    return getFocusSources().map(id => {
+        const isLive = live.includes(id);
+        return {
+            id,
+            label: isLive ? getFocusSourceLabel(id) : `${getFocusSourceLabel(id)} (${t('source_missing')})`,
+            measurable: isLive
+        };
+    });
+}
 
 function renderFocusSlide() {
     const card = document.getElementById('focusContinuityCard');
     if (!card) return;
-
-    if (focusSourceInterval) {
-        clearInterval(focusSourceInterval);
-        focusSourceInterval = null;
-    }
 
     const focusStreak = calculateFocusStreak();
     updateStreakCountDisplay('focusStreakCount', focusStreak);
@@ -399,22 +522,11 @@ function renderFocusSlide() {
         textEl.textContent = t('streak_focus_no_sources');
         textEl.style.color = 'var(--text-secondary)';
         updateCometRing(focusContainer, focusSpinGroup, 0, 'var(--trend-line-focus, #8b5cf6)');
-        if (sourcesListEl) sourcesListEl.innerHTML = '';
+        renderSourceTicker(sourcesListEl, []);
     } else {
         const focusOverdue = getDailyFocusOverdueSnapshot();
         const req = getDailyRequirement(focusOverdue);
         const solved = todayAct.focusQuestionCount || 0;
-
-        // Names come from the snapshot when a source is gone, so the card keeps
-        // describing the streak instead of falling back to a raw id.
-        const liveFocusSources = getLiveFocusSources();
-        const selectedNames = focusSources
-            .map(id => {
-                const label = getFocusSourceLabel(id);
-                return liveFocusSources.includes(id) ? label : `${label} (${t('source_missing')})`;
-            })
-            .filter(Boolean)
-            .join(', ');
 
         if (isFocusActivityRequirementMet(todayAct)) {
             textEl.textContent = t('streak_focus_secured');
@@ -427,79 +539,7 @@ function renderFocusSlide() {
             textEl.textContent = t('streak_for_progress', { solved, req });
         }
 
-        if (sourcesListEl) {
-            sourcesListEl.innerHTML = '';
-            
-            if (focusSources.length === 0) return;
-
-            let currentIndex = 0;
-
-            const createSlide = (id) => {
-                const isLive = liveFocusSources.includes(id);
-                const label = getFocusSourceLabel(id) + (isLive ? '' : ` (${t('source_missing')})`);
-                const qCount = getSourceQuestionCount(id);
-                const mastery = isLive ? calculateTopicMastery(id) : 0;
-                const avgDiff = isLive ? calculateSourceAverageDifficulty(id) : 0;
-
-                const item = document.createElement('div');
-                item.className = 'focus-source-slide';
-                item.style.display = 'flex';
-                item.style.flexDirection = 'column';
-                item.style.fontSize = '0.75rem';
-                item.style.color = 'var(--text-secondary)';
-                item.style.fontStyle = 'italic';
-                item.style.lineHeight = '1.4';
-                
-                const nameLine = document.createElement('div');
-                nameLine.className = 'truncate';
-                nameLine.style.fontWeight = 'normal';
-                nameLine.textContent = label;
-                nameLine.title = label;
-                
-                const statsLine = document.createElement('div');
-                statsLine.style.opacity = '0.9';
-                statsLine.style.fontSize = '0.7rem';
-                const qLabel = t('questions_unit') || 'Soru';
-                const mLabel = t('topic_mastery') || 'Hakimiyet';
-                const dLabel = (t('difficulty_label') || 'Zorluk').replace(':', '').trim();
-                statsLine.textContent = `${qCount} ${qLabel} • %${mastery} ${mLabel} • ${avgDiff} ${dLabel}`;
-
-                item.appendChild(nameLine);
-                item.appendChild(statsLine);
-                return item;
-            };
-
-            const showSlide = (index) => {
-                const currentSlide = sourcesListEl.querySelector('.focus-source-slide.slide-in');
-                const nextSlide = createSlide(focusSources[index]);
-                nextSlide.classList.add('slide-in');
-                
-                if (currentSlide) {
-                    currentSlide.classList.remove('slide-in');
-                    currentSlide.classList.add('slide-out');
-                    setTimeout(() => {
-                        if (currentSlide.parentElement === sourcesListEl) {
-                            sourcesListEl.removeChild(currentSlide);
-                        }
-                    }, 400); 
-                }
-                sourcesListEl.appendChild(nextSlide);
-            };
-
-            showSlide(0);
-
-            if (focusSources.length > 1) {
-                focusSourceInterval = setInterval(() => {
-                    if (!document.body.contains(sourcesListEl)) {
-                        clearInterval(focusSourceInterval);
-                        focusSourceInterval = null;
-                        return;
-                    }
-                    currentIndex = (currentIndex + 1) % focusSources.length;
-                    showSlide(currentIndex);
-                }, 2500);
-            }
-        }
+        renderSourceTicker(sourcesListEl, getFocusTickerItems());
     }
 
     // Focus Tokens — read real state from AppState
