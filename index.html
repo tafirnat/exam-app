@@ -1483,6 +1483,9 @@
                         </svg>
                     </div>
                     <div class="ai-copy-dropdown" id="aiCopyDropdown">
+                        <div class="ai-copy-header" data-i18n="prompt_select_label">Prompt</div>
+                        <select class="ai-copy-prompt-select" id="aiCopyPromptSelect"></select>
+                        <div class="ai-copy-divider"></div>
                         <div class="ai-copy-header" data-i18n="ai_search_title">AI ile Çöz / Ara</div>
                         <div class="ai-copy-list" id="aiCopyList"></div>
                         <div class="ai-copy-divider"></div>
@@ -1856,6 +1859,9 @@
                         </svg>
                     </div>
                     <div class="ai-copy-dropdown" id="previewAiCopyDropdown">
+                        <div class="ai-copy-header" data-i18n="prompt_select_label">Prompt</div>
+                        <select class="ai-copy-prompt-select" id="previewAiCopyPromptSelect"></select>
+                        <div class="ai-copy-divider"></div>
                         <div class="ai-copy-header" data-i18n="ai_search_title">AI ile Çöz / Ara</div>
                         <div class="ai-copy-list" id="previewAiCopyList"></div>
                         <div class="ai-copy-divider"></div>
@@ -2442,19 +2448,88 @@
     </div>
 
 
-    <!-- AI Prompt Editor Modal -->
-    <div id="promptEditorOverlay" class="modal-overlay">
+    <!-- AI Prompt Library Modal -->
+    <div id="promptLibraryOverlay" class="modal-overlay">
         <div class="modal-card">
-            <h3 data-i18n="ai_prompt_editor_title">AI Prompt Düzenleyici</h3>
-            <p style="font-size: 0.8rem; color: var(--text-secondary); margin-bottom: 1rem;">
-                Variables: <code style="color: var(--primary-color);">{question}</code>, <code
-                    style="color: var(--primary-color);">{options}</code>
-            </p>
-            <textarea id="customPromptInput" style="min-height: 200px; margin-bottom: 1.5rem;"></textarea>
+            <div class="modal-header"
+                style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.75rem;">
+                <h3 style="margin: 0;" data-i18n="prompt_library_title">AI Promptları</h3>
+                <button class="icon-btn" id="promptLibraryCloseBtn">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="18" height="18">
+                        <line x1="18" y1="6" x2="6" y2="18"></line>
+                        <line x1="6" y1="6" x2="18" y2="18"></line>
+                    </svg>
+                </button>
+            </div>
+            <div class="modal-body" style="padding: 0.25rem 0;">
+                <div class="menu-hint" style="margin-bottom: 0.75rem;" data-i18n="prompt_library_hint">
+                    AI menüsünde hangi promptla göndereceğinizi seçersiniz. Standart prompt silinemez.
+                </div>
+
+                <div id="promptLibraryList"
+                    style="max-height: 260px; overflow-y: auto; display: flex; flex-direction: column; gap: 0.5rem;">
+                </div>
+
+                <button class="btn btn-secondary btn-block modal-action-btn" id="promptAddBtn"
+                    style="margin-top: 1rem; display: flex; align-items: center; justify-content: center; gap: 0.5rem; width: 100%;">
+                    <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2.5"
+                        stroke-linecap="round" stroke-linejoin="round">
+                        <line x1="12" y1="5" x2="12" y2="19"></line>
+                        <line x1="5" y1="12" x2="19" y2="12"></line>
+                    </svg>
+                    <span data-i18n="prompt_add_new">Yeni Prompt Ekle</span>
+                </button>
+
+                <div id="promptEditorSection"
+                    style="display: none; border-top: 1px solid var(--border-color); padding-top: 1rem; margin-top: 1rem;">
+                    <h4 id="promptEditorHeading"
+                        style="font-size: 0.9rem; margin-bottom: 0.75rem; color: var(--text-primary);"></h4>
+                    <input type="text" id="promptTitleInput" data-i18n-placeholder="ph_prompt_title"
+                        placeholder="ör: Cevabımı Değerlendir" style="margin-bottom: 0.5rem; width: 100%;">
+                    <textarea id="promptBodyInput" data-i18n-placeholder="ph_prompt_body"
+                        placeholder="AI'a ne yapmasını istediğinizi yazın…"
+                        style="min-height: 150px; margin-bottom: 0.5rem;"></textarea>
+                    <div class="menu-hint prompt-variables-hint" id="promptVariablesHint"
+                        style="margin-bottom: 0.75rem;"></div>
+                    <div style="display: flex; gap: 0.75rem;">
+                        <button class="btn btn-subtle btn-flex" id="promptEditorResetBtn"
+                            data-i18n="reset">Sıfırla</button>
+                        <button class="btn btn-secondary btn-flex" id="promptEditorCancelBtn"
+                            data-i18n="cancel">Vazgeç</button>
+                        <button class="btn btn-primary btn-flex" id="promptEditorSaveBtn"
+                            data-i18n="save">Kaydet</button>
+                    </div>
+                </div>
+            </div>
+            <div class="modal-footer" style="display: flex; justify-content: flex-end; margin-top: 1rem;">
+                <button class="btn btn-subtle" id="promptLibraryDoneBtn" data-i18n="close">Kapat</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- One-off prompt for the question on screen. Never synced. -->
+    <div id="adhocPromptOverlay" class="modal-overlay">
+        <div class="modal-card">
+            <h3 style="margin-bottom: 0.5rem;" data-i18n="prompt_adhoc_title">Özel Prompt</h3>
+            <div class="menu-hint" style="margin-bottom: 0.75rem;" data-i18n="prompt_adhoc_hint">
+                Yalnızca bu cihazda kalır, senkronlanmaz. Başka bir prompt seçtiğinizde silinir.
+            </div>
+            <textarea id="adhocPromptInput" data-i18n-placeholder="ph_prompt_body"
+                placeholder="AI'a ne yapmasını istediğinizi yazın…"
+                style="min-height: 160px; margin-bottom: 0.5rem;"></textarea>
+            <div class="menu-hint prompt-variables-hint" id="adhocVariablesHint" style="margin-bottom: 0.75rem;"></div>
+
+            <label class="prompt-save-toggle"
+                style="display: flex; align-items: center; gap: 0.5rem; margin-bottom: 0.75rem; cursor: pointer;">
+                <input type="checkbox" id="adhocPromptSaveCheck">
+                <span style="font-size: 0.85rem;" data-i18n="prompt_adhoc_save">Bu promptu kaydet</span>
+            </label>
+            <input type="text" id="adhocPromptTitleInput" data-i18n-placeholder="ph_prompt_title"
+                placeholder="ör: Cevabımı Değerlendir" style="display: none; margin-bottom: 0.75rem; width: 100%;">
+
             <div style="display: flex; gap: 0.75rem;">
-                <button class="btn btn-subtle btn-flex" id="promptResetBtn" data-i18n="reset">Sıfırla</button>
-                <button class="btn btn-secondary btn-flex" id="promptCancelBtn" data-i18n="cancel">Vazgeç</button>
-                <button class="btn btn-primary btn-flex" id="promptSaveBtn" data-i18n="save">Kaydet</button>
+                <button class="btn btn-secondary btn-flex" id="adhocPromptCancelBtn" data-i18n="cancel">Vazgeç</button>
+                <button class="btn btn-primary btn-flex" id="adhocPromptUseBtn" data-i18n="prompt_use">Kullan</button>
             </div>
         </div>
     </div>

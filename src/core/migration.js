@@ -1,5 +1,5 @@
 
-import { AppState, saveSources, saveStats, saveCurrentSource, saveFolders, saveStudyActivity, touch } from './state.js';
+import { AppState, saveSources, saveStats, saveCurrentSource, saveFolders, saveStudyActivity, saveAiPrompts, touch } from './state.js';
 import { persist, persistRemove, readString } from './storage.js';
 import { DAILY_TARGET, COUNTER_KEYS, bucketsOf, recomputeDayTotals } from './daily-activity.js';
 import { generateHybridExamId } from '../features/sources/sources-service.js';
@@ -326,5 +326,64 @@ export function migrateExamIds() {
         saveSources();
     }
     return changed;
+}
+
+const AI_PROMPTS_SEED_FLAG = 'focus_app_ai_prompts_seeded';
+
+/**
+ * Puts the three starter prompts in the library, once per device.
+ *
+ * They cover the three workflows the library exists for - verify the question,
+ * teach me the topic, grade my open answer - and the point of shipping them is
+ * that the second and third need variables ({source}, {answer}) that nobody
+ * discovers from an empty list.
+ *
+ * Three things make the "once" real:
+ *
+ * - The ids are fixed. Seeding runs on each device independently, and ids
+ *   generated per device would merge into three copies of every prompt.
+ * - A tombstoned id is not re-created. Deleting a starter prompt has to stick,
+ *   including on a device that pulls the deletion before it has ever seeded.
+ * - The local flag stops the whole pass. Without it, deleting all three on the
+ *   only device would hand them straight back on the next boot.
+ *
+ * Seeded for existing installs too, not just new ones: the library is new to
+ * everyone, and a user who already has their data would otherwise be the one
+ * person who never sees what it is for.
+ */
+export function seedAiPrompts(t) {
+    if (readString(AI_PROMPTS_SEED_FLAG) === '1') return 0;
+
+    const seeds = [
+        { id: 'seed-verify', title: t('seed_verify_title'), body: t('seed_verify_body') },
+        { id: 'seed-explain', title: t('seed_explain_title'), body: t('seed_explain_body') },
+        { id: 'seed-evaluate', title: t('seed_evaluate_title'), body: t('seed_evaluate_body') }
+    ];
+
+    if (!Array.isArray(AppState.aiPrompts)) AppState.aiPrompts = [];
+    const known = new Set(AppState.aiPrompts.map(p => p && p.id));
+    const buried = new Set(AppState.deletedAiPromptIds || []);
+
+    /* One timestamp for the batch, stepped per record. `createdAt` is the list's
+       sort key, so three prompts written in the same millisecond would order by
+       whatever the map happened to yield. */
+    const now = Date.now();
+    let added = 0;
+
+    seeds.forEach((seed, i) => {
+        if (known.has(seed.id) || buried.has(seed.id)) return;
+        AppState.aiPrompts.push({
+            id: seed.id,
+            title: seed.title,
+            body: seed.body,
+            createdAt: now + i,
+            updatedAt: now + i
+        });
+        added++;
+    });
+
+    persist(AI_PROMPTS_SEED_FLAG, '1');
+    if (added > 0) saveAiPrompts();
+    return added;
 }
 

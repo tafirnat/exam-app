@@ -150,6 +150,18 @@ export const AppState = {
     translationEnabled: true,
     recentTests: [],
     customAIPrompt: '',
+    /* The prompt library and its tombstones - see core/ai-prompts.js. Records
+       with ids rather than one blob, because two devices each adding a prompt
+       have to end up with two prompts. */
+    aiPrompts: [],
+    deletedAiPromptIds: [],
+    /* Which prompt the AI menu opens on. A synced setting: picking "Explain the
+       topic" on the phone should still be the choice on the laptop. */
+    activePromptId: 'default',
+    /* A prompt typed for the question at hand. Deliberately absent from the
+       sync payload - it belongs to this moment on this device, and the user
+       promotes it to the library explicitly if they want it to travel. */
+    adhocPrompt: '',
     aiProviders: DEFAULT_AI_PROVIDERS,
     ttsEnabled: false,
     ttsAutoplay: false,
@@ -257,6 +269,10 @@ export function initState({ force = false } = {}) {
         translationEnabled: readJSON('focus_app_translation_enabled', true),
         recentTests: readJSON('focus_app_recent_tests', []).slice(0, 10),
         customAIPrompt: readString('focus_app_custom_ai_prompt', '') || '',
+        aiPrompts: readJSON('focus_app_ai_prompts', []),
+        deletedAiPromptIds: readJSON('focus_app_deleted_ai_prompts', []),
+        activePromptId: readString('focus_app_active_prompt_id', 'default') || 'default',
+        adhocPrompt: readString('focus_app_adhoc_prompt', '') || '',
         aiProviders: readJSON('focus_app_ai_providers', DEFAULT_AI_PROVIDERS),
         ttsEnabled: readJSON('focus_app_tts_enabled', false),
         ttsAutoplay: readJSON('focus_app_tts_autoplay', false),
@@ -404,6 +420,11 @@ export function clearLocalStudyData() {
     AppState.deletedQuickPresetIds = allDeletedPresetIds;
     AppState.currentSourceKey = null;
     AppState.presetSessions = {};
+    /* `aiPrompts` is deliberately NOT cleared here or in the other two resets.
+       It has quickPresets' shape and sits next to it in the payload, so it is
+       the obvious thing to sweep in alongside - but a prompt is a tool the user
+       wrote, not a record of their progress, and it survives a reset for the
+       same reason the language and the TTS settings do. */
     /* Factory values, but the revision map is carried over: a key this reset
        genuinely changed is re-stamped by saveContinuityConfig() below and
        outranks every other device, while a key that already held its default
@@ -730,7 +751,7 @@ export function saveStats() {
 }
 
 /* ── Synced settings ────────────────────────────────────────────────────────
-   These eleven follow the user across devices. They stay ordinary AppState
+   These twelve follow the user across devices. They stay ordinary AppState
    fields under their own storage keys - every reader and every settings screen
    is untouched - and what is added is a stamp per key.
 
@@ -745,7 +766,7 @@ export function saveStats() {
    change no other device can see, and nothing fails loudly enough to notice. */
 export const SYNCED_SETTINGS = Object.freeze([
     'language', 'translationTarget', 'translationEnabled',
-    'ttsEnabled', 'ttsAutoplay', 'ttsSpeed', 'customAIPrompt',
+    'ttsEnabled', 'ttsAutoplay', 'ttsSpeed', 'customAIPrompt', 'activePromptId',
     'timerStopwatchEnabled', 'timerCountdownEnabled',
     'timerCountdownLimit', 'timerAutoCheckEnabled'
 ]);
@@ -759,6 +780,7 @@ const SETTINGS_STORAGE_KEYS = Object.freeze({
     ttsAutoplay: 'focus_app_tts_autoplay',
     ttsSpeed: 'focus_app_tts_speed',
     customAIPrompt: 'focus_app_custom_ai_prompt',
+    activePromptId: 'focus_app_active_prompt_id',
     timerStopwatchEnabled: 'focus_app_timer_stopwatch',
     timerCountdownEnabled: 'focus_app_timer_countdown',
     timerCountdownLimit: 'focus_app_timer_limit',
@@ -825,7 +847,7 @@ export function applySyncedSettings(values, revisions) {
 
     SYNCED_SETTINGS.forEach(key => {
         if (!(key in values)) return;
-        /* Only a key somebody has actually set. Every device carries all eleven
+        /* Only a key somebody has actually set. Every device carries all twelve
            whether or not their values mean anything, so applying unstamped ones
            would let the first device to push after the upgrade decide the
            language and the timer for the other two - a setting nobody touched
@@ -855,6 +877,51 @@ export function applySyncedSettings(values, revisions) {
 export function saveCustomAIPrompt() {
     const ok = persist('focus_app_custom_ai_prompt', AppState.customAIPrompt);
     saveSyncedSettings();
+    emit(Slice.SETTINGS);
+    return ok;
+}
+
+/* ── The prompt library ─────────────────────────────────────────────────────
+   Records with ids, tombstoned on delete, merged by id. Not a synced *setting*:
+   settings rank two values of one key by stamp, which is right for "the
+   language is German" and wrong for a list - two devices each adding a prompt
+   would keep one of the two lists and silently drop the other. */
+
+export function saveAiPrompts() {
+    const { ok, changed } = persistIfChanged('focus_app_ai_prompts', AppState.aiPrompts);
+    if (!changed) return ok;
+    emit(Slice.SETTINGS);
+    import('./github-sync.js').then(m => m.scheduleSync(300, m.SyncScope.PROGRESS)).catch(() => {});
+    return ok;
+}
+
+export function trackDeletedAiPrompt(id) {
+    if (!id) return;
+    if (!AppState.deletedAiPromptIds.includes(id)) {
+        AppState.deletedAiPromptIds.push(id);
+        persist('focus_app_deleted_ai_prompts', AppState.deletedAiPromptIds);
+        emit(Slice.SETTINGS);
+    }
+}
+
+/** The menu's current selection. Synced, so it goes through the stamping path. */
+export function saveActivePromptId() {
+    const ok = persist('focus_app_active_prompt_id', AppState.activePromptId || 'default');
+    saveSyncedSettings();
+    emit(Slice.SETTINGS);
+    return ok;
+}
+
+/**
+ * The one-off prompt.
+ *
+ * Persisted so a reload mid-test does not lose it, but deliberately never
+ * scheduled for sync and never added to the payload: it describes the question
+ * on the screen of this device, and a copy arriving on another device would be
+ * a prompt the user there never wrote and cannot account for.
+ */
+export function saveAdhocPrompt() {
+    const ok = persist('focus_app_adhoc_prompt', AppState.adhocPrompt || '');
     emit(Slice.SETTINGS);
     return ok;
 }

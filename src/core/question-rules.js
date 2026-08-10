@@ -66,7 +66,7 @@ function hasContent(q) {
 /* Imported files spell the correct answer half a dozen different ways; the
    editor only ever writes answer.correct_ids. Read all of them so a hand-built
    file is not reported as broken just for using an older key. */
-function readCorrectIds(q) {
+export function readCorrectIds(q) {
     const a = q?.answer;
     const lists = [q?.correctOptionIds, a?.correct_ids, a?.correct_option_ids, a?.correctIds];
     for (const list of lists) {
@@ -79,7 +79,7 @@ function readCorrectIds(q) {
     return [];
 }
 
-function readAcceptedTexts(q) {
+export function readAcceptedTexts(q) {
     const a = q?.answer;
     if (Array.isArray(a?.accepted_texts) && a.accepted_texts.length > 0) return a.accepted_texts;
     const single = a?.correct_answer ?? a?.correct_text;

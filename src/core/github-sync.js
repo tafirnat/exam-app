@@ -1,4 +1,4 @@
-import { AppState, saveSources, saveStats, saveRecentTests, saveFolders, saveQuickPresets, clearLocalStudyData, saveStudyActivity, saveContinuityConfig, getSettingsSnapshot, applySyncedSettings } from './state.js';
+import { AppState, saveSources, saveStats, saveRecentTests, saveFolders, saveQuickPresets, saveAiPrompts, clearLocalStudyData, saveStudyActivity, saveContinuityConfig, getSettingsSnapshot, applySyncedSettings } from './state.js';
 import { showToast, showAlert } from './utils.js';
 import { t } from './i18n.js';
 import { migrateFolderColors, sanitizeActivityRecord } from './migration.js';
@@ -185,6 +185,12 @@ export function getSyncPayload() {
         )),
         folders: AppState.folders || [],
         quickPresets: AppState.quickPresets || [],
+        /* The prompt library. `adhocPrompt` is absent on purpose and must stay
+           absent: it is written for the question on this screen, and a copy
+           arriving on another device is a prompt nobody there wrote.
+           tests/ai-prompts.test.mjs holds this. */
+        aiPrompts: AppState.aiPrompts || [],
+        deletedAiPromptIds: AppState.deletedAiPromptIds || [],
         deletedSourceIds: AppState.deletedSourceIds || [],
         deletedFolderIds: AppState.deletedFolderIds || [],
         deletedQuickPresetIds: AppState.deletedQuickPresetIds || [],
@@ -1020,6 +1026,16 @@ export async function syncFromGist(options = {}) {
                 persist('focus_app_deleted_quick_presets', merged.deletedQuickPresetIds);
             }
 
+            if (Array.isArray(merged.aiPrompts)) {
+                AppState.aiPrompts = merged.aiPrompts;
+                saveAiPrompts();
+            }
+
+            if (Array.isArray(merged.deletedAiPromptIds)) {
+                AppState.deletedAiPromptIds = merged.deletedAiPromptIds;
+                persist('focus_app_deleted_ai_prompts', merged.deletedAiPromptIds);
+            }
+
             // Apply merged stats
             if (merged.stats && typeof merged.stats === 'object') {
                 AppState.stats = merged.stats;
@@ -1525,12 +1541,20 @@ export function mergeSyncData(local, remote) {
         ...(AppState.deletedQuickPresetIds || [])
     ]));
 
+    // 0d. Combine AI Prompt Tombstones
+    const mergedDeletedAiPromptIds = Array.from(new Set([
+        ...(remote.deletedAiPromptIds || []),
+        ...(local.deletedAiPromptIds || []),
+        ...(AppState.deletedAiPromptIds || [])
+    ]));
+
     // If the merged tombstone sets are larger than what local already knew about,
     // local needs to push the updated state back to the Gist.
     if (
         mergedDeletedIds.length          > (local.deletedSourceIds       || []).length ||
         mergedDeletedFolderIds.length    > (local.deletedFolderIds        || []).length ||
-        mergedDeletedQuickPresetIds.length > (local.deletedQuickPresetIds || []).length
+        mergedDeletedQuickPresetIds.length > (local.deletedQuickPresetIds || []).length ||
+        mergedDeletedAiPromptIds.length  > (local.deletedAiPromptIds      || []).length
     ) {
         hasLocalChanges = true;
     }
@@ -1768,6 +1792,34 @@ export function mergeSyncData(local, remote) {
 
     const mergedQuickPresets = Array.from(quickPresetsMap.values());
 
+    /* 4b. Merge AI Prompts (by ID, respecting AI Prompt Tombstones)
+       Same rule as quick presets one block up, with one difference: the reset
+       guard is not applied. A progress or factory reset clears what the user has
+       *studied*; the prompts they wrote are a tool, and letting the reset guard
+       drop the remote side here would delete the other devices' prompts as a
+       side effect of clearing this device's progress. state.js's resets leave
+       AppState.aiPrompts alone for the same reason. */
+    const aiPromptsMap = new Map();
+    (remote.aiPrompts || []).forEach(p => {
+        if (p && p.id && !mergedDeletedAiPromptIds.includes(p.id)) {
+            aiPromptsMap.set(p.id, p);
+        }
+    });
+
+    (local.aiPrompts || []).forEach(p => {
+        if (!p || !p.id || mergedDeletedAiPromptIds.includes(p.id)) return;
+        const existing = aiPromptsMap.get(p.id);
+        if (!existing) {
+            aiPromptsMap.set(p.id, p);
+            hasLocalChanges = true;
+        } else if ((p.updatedAt || 0) > (existing.updatedAt || 0)) {
+            aiPromptsMap.set(p.id, p);
+            hasLocalChanges = true;
+        }
+    });
+
+    const mergedAiPrompts = Array.from(aiPromptsMap.values());
+
     // 5. Merge Study Activity (Union by date key, respecting progress-reset floor)
     // Convert the reset floor timestamp to a date string for date-key comparison.
     /* The reset instant as a *local* day, because that is what the keys it is
@@ -1925,6 +1977,7 @@ export function mergeSyncData(local, remote) {
         sources: mergedSources,
         folders: mergedFolders,
         quickPresets: mergedQuickPresets,
+        aiPrompts: mergedAiPrompts,
         activeSession: activeSession.session,
         stats: mergedStats,
         recentTests: mergedRecentTests,
@@ -1933,6 +1986,7 @@ export function mergeSyncData(local, remote) {
         deletedSourceIds: mergedDeletedIds,
         deletedFolderIds: mergedDeletedFolderIds,
         deletedQuickPresetIds: mergedDeletedQuickPresetIds,
+        deletedAiPromptIds: mergedDeletedAiPromptIds,
         // Propagate the most recent reset timestamps so all devices stay in sync
         lastResetTimestamp: Math.max(localResetAt, remoteResetAt),
         lastProgressResetTimestamp: Math.max(localProgressResetAt, remoteProgressResetAt),

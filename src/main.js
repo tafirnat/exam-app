@@ -1,8 +1,9 @@
-import { AppState, initState, saveStats, saveSources, saveCurrentSource, saveCustomAIPrompt, saveAiProviders, saveLanguageSettings, DEFAULT_AI_PROVIDERS, saveActiveTest, clearActiveTest, clearLocalStudyData, clearProgressData, clearSourcesData, SAMPLE_LOADED_KEY, findMatchingPresetId } from './core/state.js';
+import { AppState, initState, saveStats, saveSources, saveCurrentSource, saveCustomAIPrompt, saveAiProviders, saveLanguageSettings, saveAiPrompts, trackDeletedAiPrompt, saveActivePromptId, saveAdhocPrompt, DEFAULT_AI_PROVIDERS, saveActiveTest, clearActiveTest, clearLocalStudyData, clearProgressData, clearSourcesData, SAMPLE_LOADED_KEY, findMatchingPresetId } from './core/state.js';
+import { DEFAULT_PROMPT_ID, ADHOC_PROMPT_ID, PROMPT_VARIABLES, listPrompts, resolveActivePrompt, defaultPromptBody, builtinPromptBody, buildPromptVars, fillTemplate } from './core/ai-prompts.js';
 import { initTheme, toggleTheme, getActiveTheme } from './core/theme.js';
 import { updateStaticTranslations, updateDocumentTitle, t, targetLanguages, translations } from './core/i18n.js';
 import { showToast, showConfirm, getCorrectAnswers, highlightText, escapeHTML } from './core/utils.js';
-import { migrateOldData, migrateFolderColors, sanitizeStudyActivity, migrateExamIds } from './core/migration.js';
+import { migrateOldData, migrateFolderColors, sanitizeStudyActivity, migrateExamIds, seedAiPrompts } from './core/migration.js';
 import { getQuestionCategory } from './core/question-rules.js';
 import { persist, readJSON, readString } from './core/storage.js';
 import * as store from './core/store.js';
@@ -262,6 +263,9 @@ const initApp = () => {
         migrateOldData();
         migrateFolderColors();
         migrateExamIds();
+        // After the language is settled by initState, so the starter prompts are
+        // written in the language the user actually reads.
+        seedAiPrompts(t);
 
         // Runs before anything reads studyActivity: the additive Gist merge left
         // inflated daily counters behind, and every streak, ring and chart on the
@@ -1285,6 +1289,12 @@ function setupEventListeners() {
         if (countdownAutoCheckToggle) countdownAutoCheckToggle.checked = AppState.timerAutoCheckEnabled ?? true;
         updateCountdownUI();
 
+        /* The prompt library and the selection both travel, so the picker has to
+           be rebuilt here too - a prompt added on the phone should be in the
+           list on the laptop without a reload. Cheap enough to do unconditionally:
+           it is two <select>s of a handful of entries. */
+        renderAllPromptSelects();
+
         // The language decides every static label, not just this menu.
         updateLangUI();
         updateStaticTranslations();
@@ -1426,8 +1436,22 @@ function setupEventListeners() {
         closeAllAiCopyDropdowns();
         copyQuestionText();
     };
-    document.getElementById('menuEditPrompt').onclick = openPromptEditor;
+    document.getElementById('menuEditPrompt').onclick = openPromptLibrary;
     document.getElementById('menuManageAIProviders').onclick = openAiManager;
+
+    /* The picker sits inside the dropdown, whose own document-level handler
+       closes it on any outside click - so both events have to stop here or
+       choosing an entry would shut the menu the user is choosing in. */
+    ['aiCopyPromptSelect', 'previewAiCopyPromptSelect'].forEach(id => {
+        const select = document.getElementById(id);
+        if (!select) return;
+        const isPreview = id.startsWith('preview');
+        select.onclick = (e) => e.stopPropagation();
+        select.onchange = (e) => {
+            e.stopPropagation();
+            onPromptSelectChange(isPreview, e.target.value);
+        };
+    });
 
     document.getElementById('previewIndStar').onclick = toggleStar;
     document.getElementById('previewIndFlag').onclick = toggleFlag;
@@ -1677,12 +1701,36 @@ function setupEventListeners() {
         mainImportInput.onchange = (e) => handleImport(e.target.files[0]);
     }
 
-    // AI Prompt Editor Listeners
-    document.getElementById('promptCancelBtn').onclick = closePromptEditor;
-    document.getElementById('promptSaveBtn').onclick = saveCustomPrompt;
-    document.getElementById('promptResetBtn').onclick = resetCustomPrompt;
-    document.getElementById('promptEditorOverlay').onclick = (e) => {
-        if (e.target.id === 'promptEditorOverlay') closePromptEditor();
+    // AI Prompt Library Listeners
+    document.getElementById('promptLibraryCloseBtn').onclick = closePromptLibrary;
+    document.getElementById('promptLibraryDoneBtn').onclick = closePromptLibrary;
+    document.getElementById('promptAddBtn').onclick = () => openPromptEditorSection(null);
+    document.getElementById('promptEditorSaveBtn').onclick = savePromptFromEditor;
+    document.getElementById('promptEditorCancelBtn').onclick = closePromptEditorSection;
+    document.getElementById('promptEditorResetBtn').onclick = resetStandardPrompt;
+    document.getElementById('promptLibraryOverlay').onclick = (e) => {
+        if (e.target.id === 'promptLibraryOverlay') closePromptLibrary();
+    };
+
+    // One-off prompt window
+    document.getElementById('adhocPromptCancelBtn').onclick = closeAdhocPrompt;
+    /* Stopped here, because this click ends by re-opening the AI menu and the
+       document-level handler that closes the dropdown on any outside click runs
+       *after* it: the menu opened and was shut again in the same event, so the
+       button read as doing nothing. Measured in Edge - jsdom has no such
+       handler ordering to get wrong. */
+    document.getElementById('adhocPromptUseBtn').onclick = (e) => {
+        e.stopPropagation();
+        useAdhocPrompt();
+    };
+    document.getElementById('adhocPromptSaveCheck').onchange = (e) => {
+        // A prompt kept for later needs a name; a one-off does not.
+        const titleInput = document.getElementById('adhocPromptTitleInput');
+        titleInput.style.display = e.target.checked ? '' : 'none';
+        if (e.target.checked) titleInput.focus();
+    };
+    document.getElementById('adhocPromptOverlay').onclick = (e) => {
+        if (e.target.id === 'adhocPromptOverlay') closeAdhocPrompt();
     };
 
     // Stats Filters & Search
@@ -2283,6 +2331,9 @@ function toggleAiCopyMenu(isPreview = false, event) {
 
     if (!isActive) {
         renderAiCopyList(isPreview);
+        // Rebuilt on open rather than once at boot: the library changes from the
+        // manage modal, and the selection also arrives from another device.
+        renderPromptSelect(isPreview);
         dropdown.classList.add('active');
     }
 }
@@ -2331,35 +2382,39 @@ function renderAiCopyList(isPreview = false) {
     });
 }
 
-function getFormattedPrompt(isPreview = false) {
-    let q;
+/**
+ * The question the AI menu is currently about, with everything a prompt can
+ * name: the user's own answer, the marked correct one, and the source it came
+ * from.
+ *
+ * The preview screen has a question but no answer of its own - the user is
+ * looking at a record, not sitting in it - so `userAnswer` stays null there and
+ * any {answer} line drops out.
+ */
+function currentPromptContext(isPreview = false) {
+    let q = null;
+    let userAnswer = null;
+
     if (isPreview) {
         q = AppState.previewQuestion;
     } else {
         const qIndex = AppState.currentIndex;
-        const compositeId = AppState.currentTest[qIndex];
-        q = AppState.questionMap[compositeId];
+        q = AppState.questionMap[AppState.currentTest[qIndex]];
+        userAnswer = AppState.userAnswers[qIndex] ?? null;
     }
-    if (!q) return '';
+    if (!q) return null;
 
-    let promptLang = AppState.language || 'en';
-    if (!['tr', 'en', 'de'].includes(promptLang)) {
-        promptLang = 'en';
-    }
+    const source = (AppState.sources || []).find(s => s.id === q.sourceId);
+    return { q, userAnswer, sourceName: source?.name || '' };
+}
 
-    const defaultTextAnswer = {
-        tr: 'Metin yanıtı',
-        en: 'Text response',
-        de: 'Textantwort'
-    }[promptLang] || 'Text response';
+function getFormattedPrompt(isPreview = false) {
+    const ctx = currentPromptContext(isPreview);
+    if (!ctx) return '';
 
-    const optionsText = q.options?.map(o => o.text).join(', ') || defaultTextAnswer;
-    const questionText = q.content?.text || q.text || '';
-
-    const template = AppState.customAIPrompt || translations[promptLang]?.ai_prompt_template || translations['en']?.ai_prompt_template;
-    return template
-        .replace('{question}', questionText)
-        .replace('{options}', optionsText);
+    const prompt = resolveActivePrompt();
+    const vars = buildPromptVars(ctx.q, { userAnswer: ctx.userAnswer, sourceName: ctx.sourceName });
+    return fillTemplate(prompt?.body || '', vars);
 }
 
 function executeAiSearch(providerId, isPreview = false) {
@@ -2457,45 +2512,320 @@ function updateTranslationUI() {
     }
 }
 
-// AI Prompt Editor Logic
-function openPromptEditor() {
-    const overlay = document.getElementById('promptEditorOverlay');
-    const input = document.getElementById('customPromptInput');
+/* ── The prompt library ─────────────────────────────────────────────────────
+   The manage modal edits one prompt at a time in a section below the list.
+   `promptEditorTarget` is which one: an id, DEFAULT_PROMPT_ID for the standard
+   prompt, or null when the section is closed. */
 
-    let promptLang = AppState.language || 'en';
-    if (!['tr', 'en', 'de'].includes(promptLang)) promptLang = 'en';
+let promptEditorTarget = null;
 
-    const defaultPrompt = translations[promptLang]?.ai_prompt_template || translations['en']?.ai_prompt_template;
+/** The variable list, as the editor and the ad-hoc window both show it. */
+function promptVariablesMarkup() {
+    const names = PROMPT_VARIABLES
+        .map(v => `<code style="color: var(--primary-color);">{${v}}</code>`)
+        .join(' ');
+    return `${escapeHTML(t('prompt_variables_hint'))} ${names}<br>${escapeHTML(t('prompt_variables_note'))}`;
+}
 
-    input.value = AppState.customAIPrompt || defaultPrompt;
+function openPromptLibrary() {
+    const overlay = document.getElementById('promptLibraryOverlay');
+    if (!overlay) return;
+    closePromptEditorSection();
+    renderPromptLibraryList();
     overlay.classList.add('active');
     if (menuActive) toggleMenu();
 }
 
-function closePromptEditor() {
-    const overlay = document.getElementById('promptEditorOverlay');
-    overlay.classList.remove('active');
+function closePromptLibrary() {
+    const overlay = document.getElementById('promptLibraryOverlay');
+    if (overlay) overlay.classList.remove('active');
+    closePromptEditorSection();
 }
 
-function saveCustomPrompt() {
-    const input = document.getElementById('customPromptInput');
-    AppState.customAIPrompt = input.value.trim();
-    saveCustomAIPrompt();
-    showToast(t('save_success') || 'Kaydedildi');
-    closePromptEditor();
+function renderPromptLibraryList() {
+    const container = document.getElementById('promptLibraryList');
+    if (!container) return;
+    container.innerHTML = '';
+
+    listPrompts()
+        // The ad-hoc prompt is not a library record - it has nothing to edit
+        // into and nothing to delete, and it disappears on the next selection.
+        .filter(p => p.id !== ADHOC_PROMPT_ID)
+        .forEach(p => {
+            const item = document.createElement('div');
+            item.className = 'ai-manage-item';
+
+            const preview = (p.body || '').replace(/\s+/g, ' ').trim();
+            /* The standard prompt gets no delete button. Nothing guards against
+               the click beyond its absence, and nothing needs to: it is not a
+               record in the list, so there is no id a delete could name. */
+            const deleteBtn = p.builtin ? '' : `
+                <button class="icon-btn delete-prompt-btn" style="color: #ef4444;" title="${escapeHTML(t('delete') || 'Sil')}">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="16" height="16">
+                        <polyline points="3 6 5 6 21 6"></polyline>
+                        <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path>
+                    </svg>
+                </button>`;
+
+            item.innerHTML = `
+                <div class="ai-manage-item-info">
+                    <span class="ai-manage-item-name">${escapeHTML(p.title)}</span>
+                    <span class="ai-manage-item-url">${escapeHTML(preview)}</span>
+                </div>
+                <div style="display: flex; align-items: center; gap: 0.25rem; flex-shrink: 0;">
+                    <button class="icon-btn edit-prompt-btn" title="${escapeHTML(t('edit') || 'Düzenle')}">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="16" height="16">
+                            <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"></path>
+                            <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"></path>
+                        </svg>
+                    </button>
+                    ${deleteBtn}
+                </div>
+            `;
+
+            item.querySelector('.edit-prompt-btn').onclick = () => openPromptEditorSection(p.id);
+            const del = item.querySelector('.delete-prompt-btn');
+            if (del) del.onclick = () => deleteLibraryPrompt(p.id, p.title);
+
+            container.appendChild(item);
+        });
 }
 
-async function resetCustomPrompt() {
-    if (await showConfirm(t('confirm_reset') || 'Varsayılan prompta dönmek istediğinize emin misiniz?')) {
-        let promptLang = AppState.language || 'en';
-        if (!['tr', 'en', 'de'].includes(promptLang)) promptLang = 'en';
-        const defaultPrompt = translations[promptLang]?.ai_prompt_template || translations['en']?.ai_prompt_template;
+/** @param {string|null} id an existing prompt, or null to compose a new one. */
+function openPromptEditorSection(id) {
+    const section = document.getElementById('promptEditorSection');
+    const heading = document.getElementById('promptEditorHeading');
+    const titleInput = document.getElementById('promptTitleInput');
+    const bodyInput = document.getElementById('promptBodyInput');
+    const resetBtn = document.getElementById('promptEditorResetBtn');
+    const hint = document.getElementById('promptVariablesHint');
+    if (!section) return;
 
-        document.getElementById('customPromptInput').value = defaultPrompt;
-        AppState.customAIPrompt = '';
-        saveCustomAIPrompt();
-        showToast(t('reset_success') || 'Sıfırlandı');
+    promptEditorTarget = id;
+    const isDefault = id === DEFAULT_PROMPT_ID;
+    const record = id && !isDefault ? (AppState.aiPrompts || []).find(p => p.id === id) : null;
+
+    if (hint) hint.innerHTML = promptVariablesMarkup();
+
+    if (isDefault) {
+        heading.textContent = t('edit_standard_prompt');
+        titleInput.value = t('prompt_standard');
+        titleInput.disabled = true;
+        bodyInput.value = defaultPromptBody();
+    } else {
+        heading.textContent = record ? t('prompt_edit_title') : t('prompt_new_title');
+        titleInput.disabled = false;
+        titleInput.value = record?.title || '';
+        bodyInput.value = record?.body || '';
     }
+
+    // "Reset" means "go back to the built-in template", which only the standard
+    // prompt has. A user prompt has no earlier version to return to.
+    if (resetBtn) resetBtn.style.display = isDefault ? '' : 'none';
+
+    section.style.display = '';
+    section.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+    (isDefault ? bodyInput : titleInput).focus();
+}
+
+function closePromptEditorSection() {
+    const section = document.getElementById('promptEditorSection');
+    if (section) section.style.display = 'none';
+    promptEditorTarget = null;
+}
+
+function savePromptFromEditor() {
+    const title = document.getElementById('promptTitleInput').value.trim();
+    const body = document.getElementById('promptBodyInput').value.trim();
+
+    if (promptEditorTarget === DEFAULT_PROMPT_ID) {
+        /* An empty body is allowed here and only here: it clears the override
+           and hands the standard prompt back to the built-in template, which is
+           also what keeps it following the app language. */
+        AppState.customAIPrompt = body;
+        saveCustomAIPrompt();
+    } else {
+        if (!title || !body) {
+            showToast(t('prompt_required_fields'));
+            return;
+        }
+        if (!Array.isArray(AppState.aiPrompts)) AppState.aiPrompts = [];
+        const existing = (AppState.aiPrompts || []).find(p => p.id === promptEditorTarget);
+        if (existing) {
+            existing.title = title;
+            existing.body = body;
+            existing.updatedAt = Date.now();
+        } else {
+            const now = Date.now();
+            AppState.aiPrompts.push({
+                id: `prompt-${now}-${Math.random().toString(36).slice(2, 8)}`,
+                title, body, createdAt: now, updatedAt: now
+            });
+        }
+        saveAiPrompts();
+    }
+
+    showToast(t('save_success'));
+    closePromptEditorSection();
+    renderPromptLibraryList();
+    renderAllPromptSelects();
+}
+
+async function resetStandardPrompt() {
+    if (!(await showConfirm(t('confirm_reset')))) return;
+    AppState.customAIPrompt = '';
+    saveCustomAIPrompt();
+    document.getElementById('promptBodyInput').value = builtinPromptBody();
+    showToast(t('reset_success'));
+    renderPromptLibraryList();
+    renderAllPromptSelects();
+}
+
+async function deleteLibraryPrompt(id, name) {
+    if (!(await showConfirm(t('prompt_confirm_delete', { name })))) return;
+
+    AppState.aiPrompts = (AppState.aiPrompts || []).filter(p => p.id !== id);
+    // Tombstoned, or the next pull brings it back from a device that still has
+    // it - the same rule quick presets and sources are deleted under.
+    trackDeletedAiPrompt(id);
+    saveAiPrompts();
+
+    // The selection syncs and can name what was just deleted. resolveActivePrompt
+    // falls back on read, but writing the fallback back means the other devices
+    // stop carrying a dangling id too.
+    if (AppState.activePromptId === id) {
+        AppState.activePromptId = DEFAULT_PROMPT_ID;
+        saveActivePromptId();
+    }
+
+    if (promptEditorTarget === id) closePromptEditorSection();
+    showToast(t('prompt_deleted'));
+    renderPromptLibraryList();
+    renderAllPromptSelects();
+}
+
+/* ── The picker in the AI menu ──────────────────────────────────────────────
+   A value the list cannot hold, so it can never collide with a prompt id. */
+const WRITE_CUSTOM_VALUE = '__write_custom__';
+
+function renderPromptSelect(isPreview = false) {
+    const select = document.getElementById(isPreview ? 'previewAiCopyPromptSelect' : 'aiCopyPromptSelect');
+    if (!select) return;
+
+    select.innerHTML = '';
+    const active = resolveActivePrompt();
+
+    listPrompts().forEach(p => {
+        const opt = document.createElement('option');
+        opt.value = p.id;
+        opt.textContent = p.title;
+        select.appendChild(opt);
+    });
+
+    const custom = document.createElement('option');
+    custom.value = WRITE_CUSTOM_VALUE;
+    custom.textContent = t('prompt_write_custom');
+    select.appendChild(custom);
+
+    select.value = active ? active.id : DEFAULT_PROMPT_ID;
+}
+
+function renderAllPromptSelects() {
+    renderPromptSelect(false);
+    renderPromptSelect(true);
+}
+
+function onPromptSelectChange(isPreview, value) {
+    if (value === WRITE_CUSTOM_VALUE) {
+        openAdhocPrompt(isPreview);
+        // Put the picker back where it was: the ad-hoc prompt does not exist
+        // until the window is confirmed, and leaving the box on an entry with
+        // nothing behind it would send an empty prompt on the next click.
+        renderAllPromptSelects();
+        return;
+    }
+
+    /* Selecting anything else discards the ad-hoc prompt. It was written for one
+       question and the user has just said they want a different instruction; a
+       one-off kept alive in the list would resurface later with no memory of
+       what it was for. */
+    if (value !== ADHOC_PROMPT_ID && AppState.adhocPrompt) {
+        AppState.adhocPrompt = '';
+        saveAdhocPrompt();
+    }
+
+    AppState.activePromptId = value;
+    saveActivePromptId();
+    renderAllPromptSelects();
+}
+
+/* ── The one-off prompt ─────────────────────────────────────────────────── */
+
+let adhocReturnsToPreview = false;
+
+function openAdhocPrompt(isPreview = false) {
+    const overlay = document.getElementById('adhocPromptOverlay');
+    if (!overlay) return;
+
+    adhocReturnsToPreview = isPreview;
+    closeAllAiCopyDropdowns();
+
+    document.getElementById('adhocPromptInput').value = AppState.adhocPrompt || '';
+    document.getElementById('adhocPromptSaveCheck').checked = false;
+    const titleInput = document.getElementById('adhocPromptTitleInput');
+    titleInput.value = '';
+    titleInput.style.display = 'none';
+
+    const hint = document.getElementById('adhocVariablesHint');
+    if (hint) hint.innerHTML = promptVariablesMarkup();
+
+    overlay.classList.add('active');
+    document.getElementById('adhocPromptInput').focus();
+}
+
+function closeAdhocPrompt() {
+    const overlay = document.getElementById('adhocPromptOverlay');
+    if (overlay) overlay.classList.remove('active');
+}
+
+function useAdhocPrompt() {
+    const body = document.getElementById('adhocPromptInput').value.trim();
+    if (!body) {
+        showToast(t('prompt_body_empty'));
+        return;
+    }
+
+    const keep = document.getElementById('adhocPromptSaveCheck').checked;
+    if (keep) {
+        const title = document.getElementById('adhocPromptTitleInput').value.trim();
+        if (!title) {
+            showToast(t('prompt_required_fields'));
+            return;
+        }
+        const now = Date.now();
+        if (!Array.isArray(AppState.aiPrompts)) AppState.aiPrompts = [];
+        const id = `prompt-${now}-${Math.random().toString(36).slice(2, 8)}`;
+        AppState.aiPrompts.push({ id, title, body, createdAt: now, updatedAt: now });
+        saveAiPrompts();
+
+        // Promoted to the library, so it is no longer a one-off: select the
+        // saved record rather than leaving a duplicate ad-hoc entry beside it.
+        AppState.adhocPrompt = '';
+        saveAdhocPrompt();
+        AppState.activePromptId = id;
+    } else {
+        AppState.adhocPrompt = body;
+        saveAdhocPrompt();
+        AppState.activePromptId = ADHOC_PROMPT_ID;
+    }
+
+    saveActivePromptId();
+    renderAllPromptSelects();
+    closeAdhocPrompt();
+
+    // Straight back to the menu the user came from - they opened this to send
+    // the question, not to manage prompts.
+    toggleAiCopyMenu(adhocReturnsToPreview);
 }
 
 // AI Provider Manager Functions
@@ -2608,10 +2938,16 @@ function closeAllModals() {
         closedAny = true;
     }
 
-    // 2. Prompt Editor
-    const pe = document.getElementById('promptEditorOverlay');
-    if (pe && pe.classList.contains('active')) {
-        closePromptEditor();
+    // 2. Prompt Library / the one-off prompt window
+    const adhoc = document.getElementById('adhocPromptOverlay');
+    if (adhoc && adhoc.classList.contains('active')) {
+        closeAdhocPrompt();
+        closedAny = true;
+    }
+
+    const pl = document.getElementById('promptLibraryOverlay');
+    if (pl && pl.classList.contains('active')) {
+        closePromptLibrary();
         closedAny = true;
     }
 

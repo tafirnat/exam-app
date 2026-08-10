@@ -1261,6 +1261,17 @@ textarea {
     margin: 4px 0;
 }
 
+/* The prompt picker sits inside a 250px dropdown, where the global select's
+   1rem padding and 0.95rem text overflow the card. Scale only - the border,
+   background and chevron all stay the global ones. */
+.ai-copy-prompt-select {
+    padding: 6px 1.9rem 6px 10px;
+    font-size: 0.82rem;
+    background-position: right 0.6rem center;
+    background-size: 1em;
+    border-radius: 8px;
+}
+
 .ai-manage-item {
     display: flex;
     align-items: center;
