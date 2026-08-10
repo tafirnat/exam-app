@@ -6475,6 +6475,23 @@ body.dnd-active {
     transform: rotateY(180deg);
 }
 
+/* backface-visibility takes the turned-away face out of the picture but not out
+   of hit testing. Measured with elementFromPoint over a monthly bar on the
+   flipped card: the top element was on the *front* face, so pointing at a month
+   opened a weekday's tooltip and the monthly one never appeared at all. Only
+   the face you are looking at takes the pointer. */
+.chart-flip-back {
+    pointer-events: none;
+}
+
+.chart-flip-card.flipped .chart-flip-front {
+    pointer-events: none;
+}
+
+.chart-flip-card.flipped .chart-flip-back {
+    pointer-events: auto;
+}
+
 /* Line overlay drawn over the trend bars. It is inset by the y-axis gutter so
    its first point lands on the centre of the first bar, and it never takes a
    pointer event - the bars underneath stay reachable. */

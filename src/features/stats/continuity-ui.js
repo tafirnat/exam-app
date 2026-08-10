@@ -2046,14 +2046,26 @@ export function buildWeeklyTrendBuckets(activities, options = {}) {
     return buildDailyTrendBuckets(activities, 7, options);
 }
 
-/** One bucket per calendar month for the last 6 months, oldest first. */
+/**
+ * One bucket per calendar month for the last 6 months, oldest first.
+ *
+ * The window is anchored on the *app* day, like every other reader of
+ * studyActivity: getDayAnchor()'s own year and month are the day zone's, so a
+ * device sitting on the far side of a month boundary still gets the month its
+ * records were written under. Reading the month off a plain `new Date()` would
+ * be right almost always and a month out for the few hours a month when the two
+ * calendars disagree - which is why `todayKey` is injectable rather than tested
+ * against whatever day the suite happens to run on.
+ *
+ * @param {{logFilter?: ((qKey: string) => boolean)|null, todayKey?: string}} [options]
+ */
 export function buildMonthlyTrendBuckets(activities, options = {}) {
-    const { logFilter = null } = options;
+    const { logFilter = null, todayKey = getLocalDateStr() } = options;
     const numMonths = 6;
     const lang = document.documentElement.lang || 'en';
     const monthFormatter = new Intl.DateTimeFormat(lang, { month: 'short' });
 
-    const today = getDayAnchor();
+    const today = getDayAnchor(todayKey);
     const buckets = [];
     const bucketByKey = {};
 

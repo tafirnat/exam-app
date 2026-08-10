@@ -26,6 +26,14 @@ before(async () => {
 const html = readFileSync(new URL('../index.html', import.meta.url), 'utf8');
 const markup = new JSDOM(html).window.document;
 
+// Comments stripped first so the prose above a rule is not read as one.
+const css = readFileSync(new URL('../src/style.css', import.meta.url), 'utf8')
+    .replace(/\/\*[\s\S]*?\*\//g, '');
+const declarationsFor = (selector) => [...css.matchAll(/([^{}]+)\{([^{}]*)\}/g)]
+    .filter(m => m[1].split(',').some(s => s.trim() === selector))
+    .map(m => m[2])
+    .join(';');
+
 test('the trend card carries both faces and every chart container', () => {
     const card = markup.getElementById('homeWeeklyTrendCard');
     assert.ok(card, '#homeWeeklyTrendCard is missing from index.html');
@@ -43,6 +51,21 @@ test('the trend card carries both faces and every chart container', () => {
     }
 
     assert.equal(card.querySelectorAll('[data-trend-flip]').length, 2, 'each face needs its own flip button');
+});
+
+/* The turned-away face still takes the pointer: backface-visibility removes it
+   from the picture, not from hit testing. Measured in Edge with the card
+   flipped - elementFromPoint over a monthly bar landed on the *weekly* face, so
+   pointing at a month opened a weekday's tooltip and the monthly one never
+   appeared at all. jsdom hit-tests nothing, so the rule is read off the
+   stylesheet; the behaviour behind it was checked in a real browser. */
+test('only the face you are looking at takes the pointer', () => {
+    assert.match(declarationsFor('.chart-flip-back'), /pointer-events:\s*none/,
+        'unflipped, the back face lies over the front and would swallow its hovers');
+    assert.match(declarationsFor('.chart-flip-card.flipped .chart-flip-front'), /pointer-events:\s*none/,
+        'flipped, the weekly face is still under the monthly one and answers first');
+    assert.match(declarationsFor('.chart-flip-card.flipped .chart-flip-back'), /pointer-events:\s*auto/,
+        'the face actually on show has to be reachable again');
 });
 
 test('each face names its two line series in a legend', () => {
@@ -113,11 +136,13 @@ test('legacy records without a breakdown still show their volume', () => {
 });
 
 test('the monthly face sums every day of a month into one bar', () => {
-    const now = new Date();
-    const day = n => {
-        const d = new Date(now.getFullYear(), now.getMonth(), n);
-        return getLocalDateStr(d);
-    };
+    /* Keys built on the app day, not by running a device Date through
+       getLocalDateStr(): east of the day zone a device midnight formats as the
+       *previous* app day, so under TZ=Pacific/Auckland "the 1st" came out as
+       the last day of the month before and the two records went into different
+       bars. The bucketing was right; the way this case named its days was not. */
+    const [y, m] = getLocalDateStr().split('-');
+    const day = n => `${y}-${m}-${String(n).padStart(2, '0')}`;
 
     const buckets = buildMonthlyTrendBuckets({
         [day(1)]: { studied: true, questionCount: 5, correctCount: 4, wrongCount: 1, unansweredCount: 0, focusQuestionCount: 2 },
@@ -130,6 +155,27 @@ test('the monthly face sums every day of a month into one bar', () => {
         { correct: current.correct, wrong: current.wrong, empty: current.empty, total: current.total, focus: current.volumeFocus },
         { correct: 7, wrong: 3, empty: 2, total: 12, focus: 8 }
     );
+});
+
+/* The window follows the app's calendar, not the device's. The two agree on all
+   but a few hours a month, so this is pinned with an injected day rather than
+   left to whenever the suite runs - otherwise taking the month off a plain
+   `new Date()` passes all year and puts the bars a month out on exactly the
+   nights the app is already careful about elsewhere. */
+test('the six months are counted back from the app day, across a year boundary', () => {
+    const buckets = buildMonthlyTrendBuckets(
+        {
+            '2025-08-31': { studied: true, questionCount: 3, correctCount: 3, wrongCount: 0, unansweredCount: 0 },
+            '2026-01-01': { studied: true, questionCount: 5, correctCount: 5, wrongCount: 0, unansweredCount: 0 },
+            '2025-07-31': { studied: true, questionCount: 9, correctCount: 9, wrongCount: 0, unansweredCount: 0 }
+        },
+        { todayKey: '2026-01-15' }
+    );
+
+    assert.equal(buckets.length, 6);
+    assert.equal(buckets[0].total, 3, 'August 2025 opens the window');
+    assert.equal(buckets[5].total, 5, "the injected day's own month closes it");
+    assert.equal(buckets.reduce((s, b) => s + b.total, 0), 8, 'July 2025 is off the window, not folded into it');
 });
 
 test('activity outside the six-month window is left out', () => {
