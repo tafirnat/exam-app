@@ -94,6 +94,8 @@ Günde bir kez, hazır kart olduğunda çalışan opt-in hatırlatıcılar. İzi
 - **Klasör Hedefli Üretim**: Soru kaynağı JSON root alanına `"folderId": "folder_..."` ekleyerek kaynağın doğrudan belirlenen klasör altında açılmasını sağlayın (Klasör ID'sini düzenleme modalındaki `id: ...` butonundan kopyalayabilirsiniz).
 - **Sıralı Düzen (`keepOrder`)**: Sırasıyla takip edilmesi gereken okuma materyallerinde soruların karıştırılmasını önlemek için JSON root veya `exam_metadata` alanına `"keepOrder": true` (veya `"preserveOrder": true`) ekleyebilirsiniz. Kaynak ayarlarındaki **Sıralı** toggle butonu ile de dilediğiniz zaman değiştirebilirsiniz.
 - **Soru hakkında AI'ya sor**: Herhangi bir sorunun bağlamını ChatGPT, Claude, Gemini, DeepSeek, Kimi vb. servislere aktif UI dilinizde tek tıkla gönderin.
+- **Prompt kütüphanesi**: AI menüsü tek bir sabit şablon yerine yan yana birkaç prompt taşır — soruyu denetletin, konuyu anlattırın, açık uçlu cevabınızı değerlendirtin. Üç hazır prompt gelir; bunları düzenleyebilir, kendinizinkini yazabilir ya da yalnızca ekrandaki soru için anlık bir prompt girebilirsiniz. Değişkenler (`{question}`, `{options}`, `{answer}`, `{correct}`, `{source}`) ekrandaki sorudan doldurulur; değişkenleri boş kalan satır düşer. Kütüphaneniz ve seçiminiz cihazlar arasında senkronlanır.
+- **Paylaş ya da kopyala**: Hazır promptu cihazınızın kendi paylaşım ekranına verin — telefonunuzdaki AI uygulaması, bir sohbet, bir not — ya da yalnızca soruyu cevabıyla kopyalayın.
 
 ### Metin Okuma (TTS)
 

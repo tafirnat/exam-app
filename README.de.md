@@ -94,6 +94,8 @@ Vollständige native Benutzeroberfläche auf **Englisch**, **Türkisch** und **D
 - **Ordnerspezifische Generierung**: Fügen Sie `"folderId": "folder_..."` zum JSON-Root hinzu, um importierte Fragensets direkt einem Ordner zuzuweisen (Ordner-IDs können über die Schaltfläche `id: ...` im Ordner-Verwaltungsmodal kopiert werden).
 - **Sequenzielle Reihenfolge (`keepOrder`)**: Für aufeinander folgende Lesematerialien können Sie `"keepOrder": true` (oder `"preserveOrder": true`) im JSON-Root oder in `exam_metadata` hinzufügen, um das Mischen der Fragen zu verhindern. Dies kann auch jederzeit über die Schaltfläche **Sortiert** in den Quellenaktionen umgeschaltet werden.
 - **KI zu einer Frage befragen**: Senden Sie den Kontext einer Frage mit einem Klick in Ihrer aktiven UI-Sprache an ChatGPT, Claude, Gemini, DeepSeek, Kimi usw.
+- **Prompt-Bibliothek**: Das KI-Menü führt mehrere Prompts nebeneinander statt einer festen Vorlage — eine Frage prüfen lassen, sich das Thema erklären lassen, die eigene offene Antwort bewerten lassen. Drei sind enthalten; Sie können sie bearbeiten, eigene schreiben oder einen einmaligen Prompt nur für die angezeigte Frage eingeben. Variablen (`{question}`, `{options}`, `{answer}`, `{correct}`, `{source}`) werden aus der angezeigten Frage gefüllt; eine Zeile, deren Variablen leer bleiben, entfällt. Bibliothek und Auswahl werden geräteübergreifend synchronisiert.
+- **Teilen oder kopieren**: Übergeben Sie den fertigen Prompt an die Freigabefunktion Ihres Geräts — die KI-App auf dem Handy, einen Chat, eine Notiz — oder kopieren Sie nur die Frage mit ihrer Antwort.
 
 ### Text-to-Speech
 

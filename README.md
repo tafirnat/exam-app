@@ -94,6 +94,8 @@ Full UI in **English**, **Turkish**, and **German**. Integrated Google Translate
 - **Folder-targeted generation**: Include `"folderId": "folder_..."` in the JSON root to automatically place imported question banks inside a specific folder (copy folder IDs via the `id: ...` button in the folder management modal).
 - **Sequential Order (`keepOrder`)**: For sequential reading materials or ordered topics, add `"keepOrder": true` (or `"preserveOrder": true`) in the JSON root or `exam_metadata` to prevent question shuffling. You can also toggle this anytime using the **Sequential** button in Source Actions.
 - **Ask AI about a question**: Send any question's context to ChatGPT, Claude, Gemini, DeepSeek, Kimi, etc. in one click, in your active UI language.
+- **Prompt library**: The AI menu carries several prompts side by side instead of one fixed template — have a question fact-checked, have the topic taught, have your open-ended answer graded. Three are included; edit them, write your own, or type a one-off prompt for the question in front of you. Variables (`{question}`, `{options}`, `{answer}`, `{correct}`, `{source}`) are filled from the question on screen, and a line whose variables come up empty is dropped. Your library and your selection sync across devices.
+- **Share or copy**: Hand the finished prompt to your device's own share sheet — the AI app on your phone, a chat, a note — or copy just the question with its answer.
 
 ### Text-to-Speech
 
