@@ -4252,7 +4252,7 @@ input:checked+.slider-small:before {
     padding: 1rem 1.25rem 1.5rem;
     display: flex;
     flex-direction: column;
-    gap: 1.5rem;
+    gap: 1rem;
     -webkit-overflow-scrolling: touch;
 }
 
@@ -4260,6 +4260,22 @@ input:checked+.slider-small:before {
     display: flex;
     flex-direction: column;
     gap: 0.6rem;
+}
+
+/* Inside the panel each chart gets ground of its own. The three ran together on
+   one flat surface with nothing but whitespace between them, and the body
+   scrolls under a fixed header - scroll a little and a section's heading is
+   gone, leaving a bare canvas with nothing to say where it began or what it
+   was. A card edge scrolls with its own chart, so the boundary holds at any
+   scroll position. Recessed rather than raised: --bg-color is the ground the
+   app itself sits on, a step below the panel's surface in both themes.
+   Scoped to the panel - the home screen's chart sections are laid out by their
+   own grid and were not part of the complaint. */
+.chart-panel-body > .chart-section {
+    background: var(--bg-color);
+    border: 1px solid var(--border-color);
+    border-radius: var(--radius-md);
+    padding: 0.85rem 1rem 1rem;
 }
 
 .chart-section-label {
@@ -7233,7 +7249,9 @@ body.dnd-active {
     font-size: 0.66rem;
     font-weight: 700;
     color: var(--text-primary);
-    text-shadow: 0 0 3px var(--surface-color), 0 0 3px var(--surface-color);
+    /* Halo in the colour of what is actually behind it - the section card, not
+       the panel the card sits on. */
+    text-shadow: 0 0 3px var(--bg-color), 0 0 3px var(--bg-color);
 }
 
 .workload-x-axis {

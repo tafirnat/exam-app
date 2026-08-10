@@ -190,6 +190,23 @@ test('the panel no longer carries a second copy of the home trend card', () => {
     assert.equal(markup.getElementById('modalMonthlyTrendBars'), null);
 });
 
+/* The panel's body scrolls under a fixed header, so a section's heading can be
+   gone while its chart is still on screen - a bare canvas with nothing to say
+   where it began. Each section is a card, and the card edge scrolls with the
+   chart it belongs to. The home screen's charts carry the same class and are
+   laid out by their own grid, so the rule has to stay scoped to the panel or
+   restyling this silently restyles the card the panel was opened from. */
+test('the panel dresses its own sections, not the home screen ones with the same class', () => {
+    const bare = [...css.matchAll(/([^{}]+)\{([^{}]*)\}/g)]
+        .filter(m => m[1].split(',').some(s => s.trim() === '.chart-section'))
+        .filter(m => /(^|;)\s*(background|border|padding)\s*:/.test(m[2]));
+
+    assert.deepEqual(bare.map(m => m[2].trim()), [],
+        'an unscoped .chart-section rule reaches the home screen too');
+    assert.match(declarationsFor('.chart-panel-body > .chart-section'), /background:\s*\S/,
+        "the panel's sections need ground of their own to sit on");
+});
+
 /* Fill is the one thing three paragraphs of info text describe in words, in
    three languages, so it cannot drift quietly: solid is a moment that has gone
    by - the answers you gave, and the review date that lapsed without you - and
