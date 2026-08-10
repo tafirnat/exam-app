@@ -145,6 +145,35 @@ export function fillTemplate(body, vars = {}) {
         .trim();
 }
 
+/**
+ * Puts a variable name into a prompt body, where the caret is.
+ *
+ * The arithmetic lives here rather than in the click handler so it can be
+ * tested: the handler's own job is reading the caret off a textarea and writing
+ * the result back, which is the part that needs a browser.
+ *
+ * @param {string} value the body as it stands
+ * @param {string} name a variable name, without braces
+ * @param {number} start caret position, or the start of a selection it replaces
+ * @param {number} [end] end of that selection; same as `start` for a plain caret
+ * @returns {{value: string, caret: number}} the new body and where to leave the caret
+ */
+export function insertVariableAt(value, name, start, end = start) {
+    const token = `{${name}}`;
+    const text = String(value ?? '');
+    const from = Math.max(0, Math.min(start ?? text.length, text.length));
+    const to = Math.max(from, Math.min(end ?? from, text.length));
+
+    const before = text.slice(0, from);
+    const after = text.slice(to);
+    /* A separator only where one is missing. Clicking twice must not produce
+       "{question}{options}", and a name dropped straight after a word would
+       read as part of it. */
+    const lead = before && !/\s$/.test(before) ? ' ' : '';
+
+    return { value: before + lead + token + after, caret: (before + lead + token).length };
+}
+
 /** An option's text, by id. */
 function optionText(q, id) {
     const opt = (q?.options || []).find(o => String(o.id) === String(id));

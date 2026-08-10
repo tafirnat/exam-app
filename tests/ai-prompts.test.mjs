@@ -25,7 +25,7 @@ let AppState, initState, saveAiPrompts, trackDeletedAiPrompt, saveActivePromptId
     saveAdhocPrompt, saveCustomAIPrompt, SYNCED_SETTINGS, clearProgressData, clearLocalStudyData;
 let mergeSyncData, getSyncPayload;
 let listPrompts, resolveActivePrompt, fillTemplate, buildPromptVars, defaultPromptBody,
-    DEFAULT_PROMPT_ID, ADHOC_PROMPT_ID, PROMPT_VARIABLES;
+    insertVariableAt, DEFAULT_PROMPT_ID, ADHOC_PROMPT_ID, PROMPT_VARIABLES;
 let seedAiPrompts;
 let translations;
 
@@ -43,7 +43,7 @@ before(async () => {
     ({ mergeSyncData, getSyncPayload } = await import('../src/core/github-sync.js'));
     ({
         listPrompts, resolveActivePrompt, fillTemplate, buildPromptVars, defaultPromptBody,
-        DEFAULT_PROMPT_ID, ADHOC_PROMPT_ID, PROMPT_VARIABLES
+        insertVariableAt, DEFAULT_PROMPT_ID, ADHOC_PROMPT_ID, PROMPT_VARIABLES
     } = await import('../src/core/ai-prompts.js'));
     ({ seedAiPrompts } = await import('../src/core/migration.js'));
     ({ translations } = await import('../src/core/i18n.js'));
@@ -215,6 +215,55 @@ test('every variable the editor advertises is one the formatter substitutes', ()
         assert.ok(out.includes(`val-${v}`), `${v} was not substituted`);
         assert.equal(out.includes(`{${v}}`), false, `${v} survived as a placeholder`);
     });
+});
+
+// ── Inserting a variable from the hint ──────────────────────────────────────
+
+test('a variable is inserted at the caret, not at the end', () => {
+    const { value, caret } = insertVariableAt('Frage:  — bewerte das.', 'question', 7, 7);
+    assert.equal(value, 'Frage: {question} — bewerte das.');
+    // The caret follows the inserted name, so a second click carries on from there.
+    assert.equal(caret, 'Frage: {question}'.length);
+});
+
+test('an untouched field appends rather than prepends', () => {
+    /* selectionStart is 0 on a textarea nobody has focused, so this is the case
+       the editor guards by putting the caret at the end when it opens - and the
+       one that would otherwise write the name in front of the whole prompt. */
+    const body = 'Bewerte meine Antwort.';
+    const { value } = insertVariableAt(body, 'answer', body.length, body.length);
+    assert.equal(value, 'Bewerte meine Antwort. {answer}');
+});
+
+test('a separator is added only where one is missing', () => {
+    assert.equal(insertVariableAt('Frage:', 'question', 6).value, 'Frage: {question}');
+    // Already spaced - a second space would show.
+    assert.equal(insertVariableAt('Frage: ', 'question', 7).value, 'Frage: {question}');
+    // A newline is a separator too.
+    assert.equal(insertVariableAt('Frage:\n', 'question', 7).value, 'Frage:\n{question}');
+    // Nothing before it at all.
+    assert.equal(insertVariableAt('', 'question', 0).value, '{question}');
+});
+
+test('a selection is replaced rather than pushed aside', () => {
+    const { value } = insertVariableAt('Frage: XXXX bewerten', 'question', 7, 11);
+    assert.equal(value, 'Frage: {question} bewerten');
+});
+
+test('an out-of-range caret does not corrupt the body', () => {
+    /* The body has to be longer than the negative offset, or the case passes
+       for the wrong reason: String.slice reads a negative index as "from the
+       end", and on a short string that happens to land on 0 anyway. Measured -
+       with 'kurz' the clamp could be deleted and every case stayed green. */
+    const body = 'Bewerte meine Antwort';
+    assert.equal(insertVariableAt(body, 'question', 999).value, `${body} {question}`);
+    assert.equal(insertVariableAt(body, 'question', -5).value, `{question}${body}`);
+});
+
+test('a backwards selection does not duplicate what it spans', () => {
+    // start > end, which is what a drag from right to left reports.
+    const { value } = insertVariableAt('Frage: XXXX bewerten', 'question', 11, 7);
+    assert.equal(value, 'Frage: XXXX {question} bewerten');
 });
 
 // ── Building the variables ──────────────────────────────────────────────────

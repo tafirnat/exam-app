@@ -1276,6 +1276,28 @@ textarea {
     display: block;
 }
 
+/* The variable names insert themselves, so they have to read as pressable
+   rather than as the plain <code> they replaced. Monospace is kept because that
+   is what they are - the exact text that lands in the prompt. */
+.prompt-var-token {
+    font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+    font-size: 1em;
+    line-height: inherit;
+    color: var(--primary-color);
+    background: transparent;
+    border: 1px solid transparent;
+    border-radius: 4px;
+    padding: 1px 4px;
+    cursor: pointer;
+    transition: background-color 0.15s, border-color 0.15s;
+}
+
+.prompt-var-token:hover,
+.prompt-var-token:focus-visible {
+    background: var(--surface-hover);
+    border-color: var(--border-color);
+}
+
 /* The prompt picker sits inside a 250px dropdown, where the global select's
    1rem padding and 0.95rem text overflow the card. Scale only - the border,
    background and chevron all stay the global ones. */

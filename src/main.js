@@ -1,5 +1,5 @@
 import { AppState, initState, saveStats, saveSources, saveCurrentSource, saveCustomAIPrompt, saveAiProviders, saveLanguageSettings, saveAiPrompts, trackDeletedAiPrompt, saveActivePromptId, saveAdhocPrompt, DEFAULT_AI_PROVIDERS, saveActiveTest, clearActiveTest, clearLocalStudyData, clearProgressData, clearSourcesData, SAMPLE_LOADED_KEY, findMatchingPresetId } from './core/state.js';
-import { DEFAULT_PROMPT_ID, ADHOC_PROMPT_ID, PROMPT_VARIABLES, listPrompts, resolveActivePrompt, defaultPromptBody, builtinPromptBody, buildPromptVars, fillTemplate } from './core/ai-prompts.js';
+import { DEFAULT_PROMPT_ID, ADHOC_PROMPT_ID, PROMPT_VARIABLES, listPrompts, resolveActivePrompt, defaultPromptBody, builtinPromptBody, buildPromptVars, fillTemplate, insertVariableAt } from './core/ai-prompts.js';
 import { initTheme, toggleTheme, getActiveTheme } from './core/theme.js';
 import { updateStaticTranslations, updateDocumentTitle, t, targetLanguages, translations } from './core/i18n.js';
 import { showToast, showConfirm, getCorrectAnswers, highlightText, escapeHTML } from './core/utils.js';
@@ -2519,12 +2519,48 @@ function updateTranslationUI() {
 
 let promptEditorTarget = null;
 
-/** The variable list, as the editor and the ad-hoc window both show it. */
+/**
+ * The variable list, as the editor and the ad-hoc window both show it.
+ *
+ * Buttons rather than decoration: the names are the least memorable part of
+ * writing a prompt, and a user who has to type `{question}` by hand gets it
+ * subtly wrong. Real <button>s, so they are reachable by keyboard for free.
+ */
 function promptVariablesMarkup() {
     const names = PROMPT_VARIABLES
-        .map(v => `<code style="color: var(--primary-color);">{${v}}</code>`)
+        .map(v => `<button type="button" class="prompt-var-token" data-var="${escapeHTML(v)}">{${escapeHTML(v)}}</button>`)
         .join(' ');
     return `${escapeHTML(t('prompt_variables_hint'))} ${names}<br>${escapeHTML(t('prompt_variables_note'))}`;
+}
+
+/** Wires a hint's variable buttons to the field they write into. */
+function bindPromptVariableTokens(hintId, textareaId) {
+    const hint = document.getElementById(hintId);
+    const input = document.getElementById(textareaId);
+    if (!hint || !input) return;
+
+    hint.querySelectorAll('.prompt-var-token').forEach(token => {
+        /* Denied focus, so the textarea keeps its caret. Without this the
+           mousedown blurs the field first and the insert lands wherever the
+           browser left selectionStart - which is 0 on a field that has not been
+           focused, i.e. the very start of the prompt. */
+        token.onmousedown = (e) => e.preventDefault();
+        token.onclick = () => {
+            const { value, caret } = insertVariableAt(
+                input.value, token.dataset.var, input.selectionStart, input.selectionEnd
+            );
+            input.value = value;
+            input.focus();
+            input.setSelectionRange(caret, caret);
+        };
+    });
+}
+
+/** Leaves the caret at the end, so the first insert appends rather than prepends. */
+function caretToEnd(input) {
+    if (!input) return;
+    const end = input.value.length;
+    input.setSelectionRange(end, end);
 }
 
 function openPromptLibrary() {
@@ -2623,9 +2659,12 @@ function openPromptEditorSection(id) {
     // prompt has. A user prompt has no earlier version to return to.
     if (resetBtn) resetBtn.style.display = isDefault ? '' : 'none';
 
+    bindPromptVariableTokens('promptVariablesHint', 'promptBodyInput');
+
     section.style.display = '';
     section.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
     (isDefault ? bodyInput : titleInput).focus();
+    caretToEnd(bodyInput);
 }
 
 function closePromptEditorSection() {
@@ -2778,9 +2817,12 @@ function openAdhocPrompt(isPreview = false) {
 
     const hint = document.getElementById('adhocVariablesHint');
     if (hint) hint.innerHTML = promptVariablesMarkup();
+    bindPromptVariableTokens('adhocVariablesHint', 'adhocPromptInput');
 
     overlay.classList.add('active');
-    document.getElementById('adhocPromptInput').focus();
+    const input = document.getElementById('adhocPromptInput');
+    input.focus();
+    caretToEnd(input);
 }
 
 function closeAdhocPrompt() {
