@@ -1261,6 +1261,21 @@ textarea {
     margin: 4px 0;
 }
 
+/* .menu-hint is an icon-plus-text row (display: flex), which is right for the
+   one-sentence hints it was built for. This one is mixed inline content - a
+   label, five <code> spans, a <br>, then a second sentence - and flex made every
+   run its own item: the label collapsed into a narrow column and the sentence
+   after the <br> was pushed outside the card and clipped. It is prose, so it
+   lays out as prose.
+
+   Written as .menu-hint.prompt-variables-hint rather than the class alone: both
+   would otherwise weigh the same and .menu-hint is declared further down the
+   sheet, so it won on order and this rule did nothing. Naming both also says
+   what the rule is for - it exists only to override that one declaration. */
+.menu-hint.prompt-variables-hint {
+    display: block;
+}
+
 /* The prompt picker sits inside a 250px dropdown, where the global select's
    1rem padding and 0.95rem text overflow the card. Scale only - the border,
    background and chevron all stay the global ones. */
