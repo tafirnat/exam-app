@@ -1102,7 +1102,15 @@
                                 <option value="15" data-i18n="q_count_15">15 Soru</option>
                                 <option value="20" data-i18n="q_count_20">20 Soru</option>
                                 <option value="40" data-i18n="q_count_40">40 Soru</option>
+                                <option value="all" data-i18n="q_count_all">Tüm Sorular</option>
                             </select>
+                        </div>
+                        <!-- Only shown while every active source asks to be kept in
+                             order and the pool is bigger than one session — see
+                             test-range.js. Hidden, it must not influence anything. -->
+                        <div class="input-group" id="questionStartGroup" style="display: none;">
+                            <label data-i18n="question_start_label">Başlangıç</label>
+                            <select id="questionStartRange"></select>
                         </div>
                         <div id="startBtnContainer" style="display: flex; gap: 0.75rem; flex-direction: column;">
                             <button class="btn btn-warning btn-block" id="resumeBtn" style="display: none;"
@@ -1980,6 +1988,18 @@
             <div class="question-stats-info visible" id="previewStatsInfo"></div>
 
             <div class="preview-actions-bar">
+                <!-- The arrows walk the list the preview was opened from, in the
+                     order it was shown. They flank the action pair rather than
+                     joining it: stacked on a phone, the pair is two rows and the
+                     arrows span both. See .q-nav-btn in style.css. -->
+                <button class="btn btn-secondary q-nav-btn" id="previewNavPrevBtn"
+                    data-i18n-title="prev_question" title="Önceki soru" disabled>
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"
+                        stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                        <polyline points="15 18 9 12 15 6"></polyline>
+                    </svg>
+                </button>
+                <div class="preview-actions-main">
                 <button class="btn btn-secondary btn-pill preview-back-btn" id="previewBackBtn">
                     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"
                         stroke-linejoin="round" style="width: 16px; height: 16px;">
@@ -1995,6 +2015,14 @@
                         <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"></path>
                     </svg>
                     <span data-i18n="edit">Düzenle</span>
+                </button>
+                </div>
+                <button class="btn btn-secondary q-nav-btn" id="previewNavNextBtn"
+                    data-i18n-title="next_question" title="Sonraki soru" disabled>
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"
+                        stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                        <polyline points="9 18 15 12 9 6"></polyline>
+                    </svg>
                 </button>
             </div>
         </div>
@@ -2190,6 +2218,11 @@
             </div>
             <div id="modalFooter" class="modal-footer" style="display: flex; gap: 0.75rem; justify-content: flex-end;">
                 <button class="btn btn-secondary" id="modalCancelBtn" data-i18n="cancel">Vazgeç</button>
+                <!-- The third way out, for questions that are not yes/no: "discard
+                     and continue" is neither confirming nor cancelling. Hidden by
+                     default and re-hidden by every other dialog that borrows this
+                     card — see showDecision() in core/utils.js. -->
+                <button class="btn btn-danger-soft" id="modalAltBtn" style="display: none;"></button>
                 <button class="btn btn-primary" id="modalConfirmBtn" data-i18n="confirm">Onayla</button>
             </div>
         </div>

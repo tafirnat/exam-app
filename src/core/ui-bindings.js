@@ -20,6 +20,7 @@ import { renderSourcesList, renderHomeActiveSources } from '../features/sources/
 import { renderContinuityBlock, renderGlobalCharts } from '../features/stats/continuity-ui.js';
 import { renderStatsList, updateHomeStats, refreshProgressChartOverlay } from '../features/stats/stats-module.js';
 import { renderResumeButton } from '../features/test/test-ui.js';
+import { renderQuestionRangePicker } from '../features/test/test-range.js';
 import { updateQuickSourcesDot } from '../features/sources/quick-presets-ui.js';
 import { syncQuickPresetsWithLiveSources } from '../features/sources/quick-presets.js';
 import { updateSyncUI } from './github-sync.js';
@@ -82,6 +83,17 @@ const BINDINGS = [
         name: 'home:activeSources',
         slices: [Slice.SOURCES, Slice.FOLDERS, Slice.STATS],
         run: renderHomeActiveSources,
+        views: [View.HOME]
+    },
+    {
+        /* Where a sequential session starts. Both halves of its visibility come
+           from the library: whether every active source asks to be kept in order,
+           and how many questions the pool holds. Switching a source on or off
+           changes both, so the picker cannot be drawn once at boot. The session
+           size is the other input, and that one is wired to the select itself. */
+        name: 'home:questionRange',
+        slices: [Slice.SOURCES, Slice.PRESETS],
+        run: renderQuestionRangePicker,
         views: [View.HOME]
     },
     {

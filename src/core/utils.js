@@ -178,6 +178,9 @@ export function showConfirm(message, title = '') {
         if (closeIconBtn) closeIconBtn.style.display = 'none';
 
         cancelBtn.style.display = 'inline-flex';
+        // The third button belongs to showDecision alone; this card is shared.
+        const altBtn = document.getElementById('modalAltBtn');
+        if (altBtn) altBtn.style.display = 'none';
         overlay.classList.add('active');
 
         const handleConfirm = () => {
@@ -199,6 +202,104 @@ export function showConfirm(message, title = '') {
         confirmBtn.addEventListener('click', handleConfirm);
         cancelBtn.addEventListener('click', handleCancel);
     });
+}
+
+/**
+ * A dialog with three ways out, for questions that are not yes/no.
+ *
+ * "You have unsaved changes" is the case it exists for: confirming (save) and
+ * cancelling (stay here) leave no way to say "throw them away and go", and
+ * folding that into Cancel makes the destructive answer the one you reach by
+ * backing out. Each intent gets its own button.
+ *
+ * Shares the card with showConfirm/showAlert, so the extra button is hidden
+ * again on the way out - and those two hide it on the way in, because a dialog
+ * that inherits a stray third button from the previous one is worse than no
+ * third button at all.
+ *
+ * @param {string} message
+ * @param {string} title
+ * @param {{confirm: string, alt: string, cancel: string}} labels
+ * @returns {Promise<'confirm'|'alt'|'cancel'>}
+ */
+export function showDecision(message, title = '', labels = {}) {
+    return new Promise((resolve) => {
+        const overlay = document.getElementById('customModalOverlay');
+        const titleEl = document.getElementById('modalTitle');
+        const headerEl = document.getElementById('modalHeader');
+        const messageEl = document.getElementById('modalMessage');
+        const confirmBtn = document.getElementById('modalConfirmBtn');
+        const cancelBtn = document.getElementById('modalCancelBtn');
+        const altBtn = document.getElementById('modalAltBtn');
+
+        /* No native equivalent of a three-way prompt, so a missing card falls
+           back to the safe answer: stay where you are and change nothing. */
+        if (!overlay || !messageEl || !confirmBtn || !cancelBtn || !altBtn) {
+            resolve('cancel');
+            return;
+        }
+
+        messageEl.innerText = message;
+        if (title) {
+            titleEl.innerText = title;
+            headerEl.style.display = 'block';
+        } else {
+            headerEl.style.display = 'none';
+        }
+
+        const footerEl = document.getElementById('modalFooter');
+        if (footerEl) footerEl.style.display = 'flex';
+        const closeIconBtn = document.getElementById('modalCloseIconBtn');
+        if (closeIconBtn) closeIconBtn.style.display = 'none';
+
+        /* Labels are set here rather than through data-i18n: this card is shared,
+           and a translated label left behind would relabel the next dialog. */
+        const previousConfirm = confirmBtn.innerText;
+        const previousCancel = cancelBtn.innerText;
+        if (labels.confirm) confirmBtn.innerText = labels.confirm;
+        if (labels.cancel) cancelBtn.innerText = labels.cancel;
+        altBtn.innerText = labels.alt || '';
+
+        cancelBtn.style.display = 'inline-flex';
+        altBtn.style.display = 'inline-flex';
+        overlay.classList.add('active');
+
+        const finish = (answer) => {
+            confirmBtn.removeEventListener('click', onConfirm);
+            cancelBtn.removeEventListener('click', onCancel);
+            altBtn.removeEventListener('click', onAlt);
+            altBtn.style.display = 'none';
+            confirmBtn.innerText = previousConfirm;
+            cancelBtn.innerText = previousCancel;
+            overlay.classList.remove('active');
+            resolve(answer);
+        };
+
+        const onConfirm = () => finish('confirm');
+        const onCancel = () => finish('cancel');
+        const onAlt = () => finish('alt');
+
+        confirmBtn.addEventListener('click', onConfirm);
+        cancelBtn.addEventListener('click', onCancel);
+        altBtn.addEventListener('click', onAlt);
+    });
+}
+
+/**
+ * JSON with object keys in a fixed order, for comparing two shapes of the same
+ * data.
+ *
+ * Plain JSON.stringify preserves insertion order, so deleting a field and
+ * putting it back - which is exactly what the editor's normalizeForType() does
+ * on a type change - produces a different string for identical data. A dirty
+ * check built on that reports changes the user never made.
+ */
+export function stableStringify(value) {
+    if (value === null || typeof value !== 'object') return JSON.stringify(value);
+    if (Array.isArray(value)) return `[${value.map(stableStringify).join(',')}]`;
+
+    const keys = Object.keys(value).sort();
+    return `{${keys.map(k => `${JSON.stringify(k)}:${stableStringify(value[k])}`).join(',')}}`;
 }
 
 /**
@@ -236,6 +337,8 @@ export function showAlert(message, title = '') {
         if (closeIconBtn) closeIconBtn.style.display = 'none';
 
         cancelBtn.style.display = 'none'; // Hide cancel button for alerts
+        const altBtn = document.getElementById('modalAltBtn');
+        if (altBtn) altBtn.style.display = 'none';
         overlay.classList.add('active');
 
         const handleConfirm = () => {

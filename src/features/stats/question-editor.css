@@ -196,9 +196,118 @@ select.editor-field {
     color: var(--primary-color);
 }
 
+/* Two fields side by side. A class, not an inline `style="display: grid"`, for
+   the same reason as the heights below: focus mode hides siblings by setting
+   `display: none` from a class, and an inline `display` beats it — measured, the
+   media type and position fields stayed on screen in focus mode while the
+   media-URL block beside them (which had no inline style) disappeared. */
+.editor-field-row {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 1rem;
+}
+
+.editor-field-row.is-tight {
+    gap: 0.75rem;
+}
+
+.editor-inline-row {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    padding: 0.25rem 0 0.5rem;
+}
+
+/* Field label inside an option card — smaller than the section labels above it. */
+.editor-sub-label {
+    display: block;
+    font-size: 0.75rem;
+    font-weight: 600;
+    margin-bottom: 0.2rem;
+}
+
+/* Textarea heights. Classes rather than inline `style="min-height: …"` because
+   focus mode has to grow the field it is working on, and an inline declaration
+   beats any class rule short of !important. */
+.editor-field.ta-sm { min-height: 50px; }
+.editor-field.ta-md { min-height: 100px; }
+.editor-field.ta-lg { min-height: 110px; }
+
+/* [◀] [Cancel][Save] [▶] — the arrows flank the pair, same component as the
+   preview action bar (.q-nav-btn lives in style.css, shared by both screens). */
 .editor-footer {
     display: flex;
+    align-items: stretch;
+    gap: 0.75rem;
+}
+
+.editor-footer-main {
+    flex: 1 1 0;
+    min-width: 0;
+    display: flex;
     gap: 1rem;
+}
+
+/* ── Focus mode ──────────────────────────────────────────────────────────────
+   Set on .editor-card while a textarea is being worked on; .editor-focus-unit
+   marks the block that keeps the screen. Both are applied by setupFocusMode()
+   in question-editor.js, and both vanish on the next render because the card is
+   rebuilt from scratch. */
+
+.editor-focus-exit {
+    position: absolute;
+    top: 0.75rem;
+    right: 0.75rem;
+    z-index: 2;
+    display: none;
+    align-items: center;
+    justify-content: center;
+    width: 32px;
+    height: 32px;
+    padding: 0;
+    background: var(--surface-hover);
+    border: 1px solid var(--border-color);
+    border-radius: 8px;
+    color: var(--text-secondary);
+    cursor: pointer;
+    transition: color 0.15s, border-color 0.15s;
+}
+
+.editor-focus-exit:hover {
+    color: var(--primary-color);
+    border-color: var(--primary-color);
+}
+
+.editor-card.is-focus-mode .editor-focus-exit {
+    display: flex;
+}
+
+/* The chrome steps aside. The footer deliberately stays: it holds Save and the
+   question arrows, and hiding the way out of a mode is how a mode becomes a
+   trap. */
+.editor-card.is-focus-mode .editor-header,
+.editor-card.is-focus-mode .editor-group-nav {
+    display: none;
+}
+
+/* Siblings of the focused block step aside; its ancestors must not, or the block
+   would be hidden along with them. `.editor-focus-path` marks that chain — set
+   in JS rather than reached with `:has()`, so the rule is a plain class match
+   that a test can read and a browser without :has() still honours. */
+.editor-card.is-focus-mode .edit-section.active > *:not(.editor-focus-unit):not(.editor-focus-path),
+.editor-card.is-focus-mode .editor-focus-path > .editor-input-group:not(.editor-focus-unit):not(.editor-focus-path),
+.editor-card.is-focus-mode .editor-focus-path > .option-edit-card:not(.editor-focus-unit),
+.editor-card.is-focus-mode .add-opt-btn {
+    display: none;
+}
+
+.editor-card.is-focus-mode .editor-focus-unit .editor-field {
+    min-height: 38vh;
+}
+
+.editor-card.is-focus-mode .editor-focus-unit .editor-live-preview-box {
+    max-height: 28vh;
+    overflow-y: auto;
 }
 
 /* Notice boxes in the editor share one shape; only the hue carries the meaning.

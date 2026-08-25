@@ -1083,6 +1083,20 @@ textarea {
     border-color: rgba(255, 255, 255, 0.1);
 }
 
+/* "12 / 87" — where the user is in the list the preview was opened from. Its own
+   node beside the title, because the title carries data-i18n and a language
+   change rewrites its whole text content. */
+.preview-nav-counter {
+    display: inline-flex;
+    align-items: center;
+    margin-left: 0.5rem;
+    font-size: 0.78rem;
+    font-weight: 600;
+    color: var(--text-secondary);
+    font-variant-numeric: tabular-nums;
+    user-select: none;
+}
+
 .indicator-icon-exit {
     display: flex;
     align-items: center;
@@ -1538,10 +1552,60 @@ textarea {
     margin: 1.5rem 0;
     display: flex;
     flex-direction: row;
-    align-items: center;
+    /* `stretch`, not `center`: the arrows have to reach the full height of the
+       action pair, which is two stacked rows on a phone. */
+    align-items: stretch;
     justify-content: center;
     width: 100%;
+    gap: 0.75rem;
+}
+
+/* The pair the arrows flank. It owns the row/column switch that used to live on
+   the bar, so the arrows stay beside it at every width instead of joining the
+   stack. */
+.preview-actions-main {
+    flex: 1 1 0;
+    min-width: 0;
+    display: flex;
+    flex-direction: row;
+    align-items: center;
     gap: 1rem;
+}
+
+/* Prev/next question. One class, two screens: the preview action bar and the
+   question editor's footer. Square, so it reads as a stepper rather than a
+   third action competing with the labelled buttons beside it. */
+.q-nav-btn {
+    flex: 0 0 auto;
+    width: 44px;
+    min-width: 44px;
+    padding: 0;
+    align-self: stretch;
+    /* `.btn` sets an explicit `height`, and an explicit height beats
+       `align-self: stretch` — measured: on a phone the pair stacks to 108px and
+       the arrows stayed at 48px beside it. `min-height` is inherited from `.btn`
+       and keeps them a tappable size when the pair is a single row. */
+    height: auto;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    margin: 0;
+    box-shadow: var(--btn-shadow);
+}
+
+.q-nav-btn svg {
+    width: 20px;
+    height: 20px;
+}
+
+.q-nav-btn:disabled {
+    opacity: 0.35;
+    cursor: default;
+    box-shadow: none;
+}
+
+.q-nav-btn:hover:not(:disabled) {
+    transform: var(--btn-lift);
 }
 
 /* Both buttons in this bar are plain `.btn` + variant + `.btn-pill`. They split
@@ -1570,7 +1634,9 @@ textarea {
 }
 
 @media (max-width: 600px) {
-    .preview-actions-bar {
+    /* The pair stacks; the bar does not. Moving this rule off the bar is what
+       keeps the arrows on the sides instead of above and below the buttons. */
+    .preview-actions-main {
         flex-direction: column;
         gap: 0.75rem;
     }
@@ -1583,7 +1649,7 @@ textarea {
         order: 2;
     }
 
-    /* The bar turns into a column here, so the main axis is vertical and the
+    /* The pair turns into a column here, so its main axis is vertical and the
        row-splitting `flex: 1 1 0` would apply its zero basis to the height —
        collapsing both buttons below --btn-h. Stacked, they simply fill the
        width and keep their natural height. */

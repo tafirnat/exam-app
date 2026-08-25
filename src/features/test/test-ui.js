@@ -9,6 +9,7 @@ import { getQuestionCategory } from '../../core/question-rules.js';
 import { parseCloze, clozeMarkup, matchesBlank } from '../../core/cloze.js';
 import { renderMarkdown, renderInlineMarkdown, plainText } from '../../core/markdown.js';
 import { openQuestionEditor } from '../stats/question-editor.js';
+import { setPreviewNavList } from '../stats/preview-nav.js';
 
 // --- TTS State Machine ---
 // States: 'IDLE' | 'SCHEDULED' | 'PLAYING'
@@ -1450,6 +1451,9 @@ window.showQuestionResult = (testId, questionId) => {
     if (!test) return;
     const q = test.questions.find(item => String(item.id) === String(questionId));
     if (!q) return;
+
+    // The arrows walk this test's questions, in the order the result grid shows.
+    setPreviewNavList(test.questions);
 
     // Use stats preview logic from main.js (needs to be available)
     window.dispatchEvent(new CustomEvent('show-stats-preview', {

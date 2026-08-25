@@ -8,7 +8,7 @@ import { getQuestionCategory } from './core/question-rules.js';
 import { persist, readJSON, readString } from './core/storage.js';
 import * as store from './core/store.js';
 import { emit, Slice } from './core/store.js';
-import { registerUIBindings, paintAll, notifyViewChanged } from './core/ui-bindings.js';
+import { registerUIBindings, paintAll, notifyViewChanged, View } from './core/ui-bindings.js';
 
 /* Exposed like the other debugging handles this file already hangs on window.
    Without it there is no way to inspect the live store from DevTools or a CDP
@@ -21,10 +21,12 @@ import { renderContinuityBlock, renderGlobalCharts, showDailyMotivationToast } f
 import { initArchiveUI } from './features/sources/archive.js';
 import { initStorageNoticeUI, maybeShowStorageNotice } from './features/sources/storage-notice.js';
 import { prepareTest, finishTest, prepareRetake, buildQuestionPool } from './features/test/test-engine.js';
+import { isSequentialMode, resolveQuestionCount, countActivePoolQuestions, renderQuestionRangePicker, setQuestionStartIndex, advanceQuestionRange, rangeAdvancedMessage, LONG_SESSION_THRESHOLD } from './features/test/test-range.js';
 import { flushInProgressAnswers } from './features/stats/continuity-engine.js';
 import { renderQuestion, handleCheckAnswer, updateIndicators, handleTranslation, handleDifficultyRating, handleFlashcardRating, renderTestResults, handleTtsToggle, getIsAudioPlaying, stopAudio, decorateReadingSections, renderResumeButton } from './features/test/test-ui.js';
 import { renderStatsList, updateHomeStats, setupStatsEventListeners } from './features/stats/stats-module.js';
-import { openQuestionEditor, closeQuestionEditor } from './features/stats/question-editor.js';
+import { openQuestionEditor, closeQuestionEditor, requestEditorExit, isQuestionEditorOpen } from './features/stats/question-editor.js';
+import { resolvePreviewQuestion, neighbourQuestion, navPositionLabel, updateNavButtons } from './features/stats/preview-nav.js';
 import { initTimer, stopTimer } from './features/test/timer-module.js';
 import { initSync, syncToGist } from './core/github-sync.js';
 import { renderMarkdown, renderInlineMarkdown, plainText, applySearchHighlight } from './core/markdown.js';
@@ -535,8 +537,14 @@ if (document.readyState === 'loading') {
 }
 
 window.renderQuestionPreview = (q, stats = null, source = null) => {
-    // Capture scroll position before switching
-    AppState.lastStatsScrollPos = window.scrollY;
+    /* Only on the way IN. This screen now repaints itself - a saved edit, a
+       sync pull, an arrow press - and every one of those calls happens while
+       the preview is already on screen, where window.scrollY is the preview's
+       own offset. Capturing it unconditionally overwrote the stats list's
+       position with it, so returning to the list landed in the wrong place. */
+    if (history.state?.view !== 'statsPreview') {
+        AppState.lastStatsScrollPos = window.scrollY;
+    }
 
     AppState.previewQuestion = q;
     AppState.previewQuestionId = q.id;
@@ -875,9 +883,77 @@ window.renderQuestionPreview = (q, stats = null, source = null) => {
             window.history.back();
         };
     }
+
+    refreshQuestionNavUI();
 };
 
 window.onPreviewQuestion = window.renderQuestionPreview;
+
+/**
+ * Repaints every arrow on screen and the "12 / 87" label beside the title.
+ *
+ * Both screens are refreshed together because the editor opens *over* the
+ * preview: they show the same position, and letting each own its own update
+ * left the one underneath describing the question before last.
+ */
+function refreshQuestionNavUI() {
+    updateNavButtons(
+        document.getElementById('previewNavPrevBtn'),
+        document.getElementById('previewNavNextBtn')
+    );
+    updateNavButtons(
+        document.getElementById('editor-nav-prev'),
+        document.getElementById('editor-nav-next')
+    );
+
+    const label = navPositionLabel();
+    const titleEl = document.querySelector('#previewIndicatorsBar .preview-title');
+    if (titleEl) {
+        /* The title carries data-i18n, so a language change would otherwise
+           overwrite the position it is holding. The counter goes in its own
+           node, which updateStaticTranslations() does not touch. */
+        let counter = document.getElementById('previewNavCounter');
+        if (!counter) {
+            counter = document.createElement('span');
+            counter.id = 'previewNavCounter';
+            counter.className = 'preview-nav-counter';
+            titleEl.insertAdjacentElement('afterend', counter);
+        }
+        counter.textContent = label;
+        counter.style.display = label ? 'inline-flex' : 'none';
+    }
+
+    const editorCounter = document.getElementById('editorNavCounter');
+    if (editorCounter) editorCounter.textContent = label;
+}
+
+/**
+ * Steps to the neighbouring question in the list the preview was opened from.
+ *
+ * The editor is reopened on the new question when it was open, so "next" means
+ * the same thing on both screens. Its unsaved-changes gate runs first and can
+ * refuse the move - the user asked to stay, and navigating anyway would discard
+ * exactly what they were protecting.
+ */
+async function navigateAdjacentQuestion(delta) {
+    const editorWasOpen = isQuestionEditorOpen();
+    if (editorWasOpen) {
+        const outcome = await requestEditorExit();
+        if (outcome === 'cancel') return;
+    }
+
+    const target = neighbourQuestion(delta);
+    if (!target) return;
+
+    renderQuestionPreview(target, null, AppState.currentPreviewSource);
+    if (editorWasOpen) openQuestionEditor(target);
+    refreshQuestionNavUI();
+}
+
+/* The editor's own footer arrows reach this through the window bridge the rest
+   of that module already uses - question-editor.js cannot import main.js. */
+window.navigateAdjacentQuestion = navigateAdjacentQuestion;
+window.refreshQuestionNavUI = refreshQuestionNavUI;
 
 function updateIndicatorsPreview() {
     const q = AppState.previewQuestion;
@@ -1302,6 +1378,29 @@ function setupEventListeners() {
     };
     store.subscribe('settings:controls', [Slice.SETTINGS], refreshSettingsControls);
 
+    /* The preview screen had no row in the bindings table at all, so nothing
+       redrew it: saving an edit wrote the source and closed the editor onto a
+       card still showing the question as it was. The change only appeared after
+       leaving the preview and coming back, which is when the list handed over a
+       fresh copy.
+
+       Registered here rather than in ui-bindings.js for the reason recorded in
+       CLAUDE.md (24): the renderer is a closure in this file, and ui-bindings
+       cannot import main.js without closing the import cycle. Same shape as
+       'settings:controls' above.
+
+       AppState.previewQuestion is a copy taken when the row was clicked, so it
+       has to be reconciled with storage before it is drawn again - see
+       resolvePreviewQuestion(). */
+    store.subscribe('preview:question', [Slice.SOURCES, Slice.STATS], () => {
+        if (!AppState.previewQuestion) return;
+        renderQuestionPreview(
+            resolvePreviewQuestion(AppState.previewQuestion),
+            null,
+            AppState.currentPreviewSource
+        );
+    }, { views: [View.STATS_PREVIEW] });
+
     setupStatsEventListeners();
 
     // ---- Notification Settings ----
@@ -1492,6 +1591,11 @@ function setupEventListeners() {
         }
     };
 
+    const previewPrev = document.getElementById('previewNavPrevBtn');
+    const previewNext = document.getElementById('previewNavNextBtn');
+    if (previewPrev) previewPrev.onclick = () => navigateAdjacentQuestion(-1);
+    if (previewNext) previewNext.onclick = () => navigateAdjacentQuestion(1);
+
 
 
 
@@ -1499,6 +1603,13 @@ function setupEventListeners() {
         switchView('results');
         renderTestResults();
         updateHomeStats();
+
+        /* A sequential session that just ended moves the picker on, so walking a
+           source front to back needs no interaction. Announced out loud and
+           mirrored in the visible picker - a silent cursor would leave the user
+           unable to explain why the same setup drew different questions. */
+        const nextBlock = advanceQuestionRange();
+        if (nextBlock) showToast(rangeAdvancedMessage(nextBlock));
     });
 
     // The continuity cards prepare the run themselves and announce it here, so
@@ -1531,6 +1642,16 @@ function setupEventListeners() {
     document.getElementById('prevBtn').onclick = prevQuestion;
     document.getElementById('nextBtn').onclick = nextQuestion;
     document.getElementById('checkBtn').onclick = handleCheckAnswer;
+
+    /* The block list is a function of the session size, so the picker has to be
+       rebuilt when the size changes - not only when the library does. The store
+       row covers the library half. */
+    const countSelect = document.getElementById('questionCount');
+    if (countSelect) countSelect.onchange = renderQuestionRangePicker;
+
+    const startRangeSelect = document.getElementById('questionStartRange');
+    if (startRangeSelect) startRangeSelect.onchange = () => setQuestionStartIndex(startRangeSelect.value);
+
     document.getElementById('diffHardBtn').onclick = () => handleDifficultyRating('hard');
     document.getElementById('diffEasyBtn').onclick = () => handleDifficultyRating('easy');
     window.handleFlashcardRating = handleFlashcardRating;
@@ -2172,10 +2293,24 @@ function updateLangUI() {
     });
 }
 
-function startTest() {
+async function startTest() {
+    const count = resolveQuestionCount(document.getElementById('questionCount').value);
+
+    /* The pool is measured before the test is prepared, so the confirmation can
+       name a real number. Long here means a long sitting, not a slow app - the
+       selection is O(n) and the session record is a list of ids. */
+    const willAsk = Math.min(count, countActivePoolQuestions());
+    if (willAsk > LONG_SESSION_THRESHOLD) {
+        const proceed = await showConfirm(t('long_session_confirm', { count: willAsk }));
+        if (!proceed) return;
+    }
+
     clearActiveTest();
-    const count = parseInt(document.getElementById('questionCount').value);
-    if (prepareTest(count)) {
+    /* Only a sequential session has a "first N" to offset from; in shuffled mode
+       the offset would name a position the order does not have. */
+    const startIndex = isSequentialMode() ? (AppState.questionStartIndex || 0) : 0;
+
+    if (prepareTest(count, { startIndex })) {
         switchView('test');
         renderQuestion();
         showDailyMotivationToast();

@@ -134,6 +134,10 @@ export const AppState = {
     activeTagFilter: null, // Currently active tag Filter for stats view
     questionMap: {}, // composite key (sourceId_questionId) → question object
     activePresetId: null,
+    /* Where a sequential session starts in the pool. Session-only on purpose:
+       it is mirrored by a visible picker, and a remembered offset would have a
+       fresh tab draw questions the user never chose. See test-range.js. */
+    questionStartIndex: 0,
 
     // ── Loaded from storage by initState(). ─────────────────────────────────
     // The values below are what a device that has never run the app holds, so

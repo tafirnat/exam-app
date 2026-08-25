@@ -13,6 +13,7 @@ import {
     resetModalDifficultyViewId
 } from './continuity-ui.js';
 import { buildWorkloadBuckets, renderWorkloadChart, workloadSources } from './workload-chart.js';
+import { setPreviewNavList } from './preview-nav.js';
 
 
 export function renderStatsList(filter = 'all', searchKeyword = '') {
@@ -222,6 +223,11 @@ export function renderStatsList(filter = 'all', searchKeyword = '') {
     if (typeof window.syncStatsSearchUI === 'function') {
         window.syncStatsSearchUI();
     }
+
+    /* The order on screen is the order the arrows walk. Recorded here rather
+       than rebuilt on demand because "the next question" means the next one in
+       *this* filtered, searched and sorted list - nothing else can reproduce it. */
+    setPreviewNavList(filteredQuestions);
 
     updateStatsFooter(filter, searchKeyword, filteredQuestions.length, filteredQuestions);
     if (filteredQuestions.length === 0) {
@@ -551,6 +557,8 @@ function renderHistoricalTests(list, filter) {
         testEl.querySelectorAll('.history-question-item').forEach((qDiv, idx) => {
             qDiv.onclick = (e) => {
                 e.stopPropagation();
+                // A history row navigates within its own test, not the stats list.
+                setPreviewNavList(questionsToShow);
                 if (window.onPreviewQuestion) window.onPreviewQuestion(questionsToShow[idx], null, 'stats');
             };
         });

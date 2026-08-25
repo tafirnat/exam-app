@@ -111,7 +111,69 @@ function applyFSRS(stat, rating, qDifficulty) {
     stat.coeff = stat.difficulty / 2;
 }
 
-export function prepareTest(count) {
+/**
+ * Whether the library currently switched on asks to be kept in its stored
+ * order. A single shuffled source in the mix decides for the whole session:
+ * interleaving one ordered pool with one random one produces neither.
+ *
+ * Extracted because two call sites used to spell it out separately, and a
+ * predicate written twice is a predicate that drifts.
+ */
+export function activeSourcesKeepOrder(sources = null) {
+    const list = sources || (AppState.sources || []).filter(s => s.active && !s.archived);
+    return list.length > 0 && list.every(s => s.keepOrder || s.metadata?.keepOrder);
+}
+
+/**
+ * The FSRS selection: what to ask when the app gets to choose. Due questions
+ * first, weakest recall leading; the rest drawn 60/30/10 from three difficulty
+ * bands so a session is mostly what the user struggles with without being only
+ * that. Lifted out of prepareTest() so the sequential branch can skip it
+ * outright rather than undo it afterwards.
+ */
+function selectByPriority(qs, overduePool, remainingPool, actualCount) {
+    const selectedObjects = [...overduePool.slice(0, actualCount)];
+    if (selectedObjects.length >= actualCount) return selectedObjects;
+
+    const remainingNeeded = actualCount - selectedObjects.length;
+    const pool = remainingPool.length > 0 ? remainingPool : qs.filter(item => !selectedObjects.includes(item));
+
+    if (pool.length <= remainingNeeded) {
+        selectedObjects.push(...pool);
+        return selectedObjects;
+    }
+
+    // Smart Distribution: 60% hard, 30% med, 10% easy
+    const p1 = pool.slice(0, Math.ceil(pool.length * 0.4));
+    const p2 = pool.slice(p1.length, p1.length + Math.ceil(pool.length * 0.3));
+    const p3 = pool.slice(p1.length + p2.length);
+
+    const take = (sourcePool, n) => {
+        const shuffled = shuffleArray(sourcePool);
+        const actual = Math.min(n, shuffled.length);
+        selectedObjects.push(...shuffled.slice(0, actual));
+        return n - actual;
+    };
+
+    const n1 = Math.round(remainingNeeded * 0.6);
+    const n2 = Math.round(remainingNeeded * 0.3);
+    const n3 = remainingNeeded - n1 - n2;
+
+    let rem = take(p1, n1);
+    rem = take(p2, n2 + rem);
+    take(p3, n3 + rem);
+
+    return selectedObjects;
+}
+
+/**
+ * @param {number} count  How many questions to ask. Infinity means the whole pool.
+ * @param {{startIndex?: number}} [options]  Where a sequential session starts in
+ *        the pool. Ignored unless the sources ask to be kept in order - there is
+ *        no "first N" to offset from once the order is the algorithm's to choose.
+ */
+export function prepareTest(count, options = {}) {
+    const { startIndex = 0 } = options;
     const rawQuestions = buildQuestionPool();
     if (rawQuestions.length === 0) return null;
 
@@ -154,46 +216,31 @@ export function prepareTest(count) {
     const overduePool = qs.filter(item => item.isOverdue).sort((a, b) => a.retrievability - b.retrievability);
     const remainingPool = qs.filter(item => !item.isOverdue && !item.learned).sort((a, b) => b.coeff - a.coeff);
 
-    let selectedObjects = [];
     const actualCount = Math.min(count, qs.length);
+    const keepOrder = activeSourcesKeepOrder();
 
-    selectedObjects.push(...overduePool.slice(0, actualCount));
+    /* Sequential sessions take the slice and nothing else: here the pool order
+       IS the answer, so FSRS priority is deliberately not consulted.
 
-    if (selectedObjects.length < actualCount) {
-        const remainingNeeded = actualCount - selectedObjects.length;
-        const pool = remainingPool.length > 0 ? remainingPool : qs.filter(item => !selectedObjects.includes(item));
-
-        if (pool.length <= remainingNeeded) {
-            selectedObjects.push(...pool);
-        } else {
-            // Smart Distribution: 60% hard, 30% med, 10% easy
-            const p1 = pool.slice(0, Math.ceil(pool.length * 0.4));
-            const p2 = pool.slice(p1.length, p1.length + Math.ceil(pool.length * 0.3));
-            const p3 = pool.slice(p1.length + p2.length);
-
-            const take = (sourcePool, n) => {
-                const shuffled = shuffleArray(sourcePool);
-                const actual = Math.min(n, shuffled.length);
-                selectedObjects.push(...shuffled.slice(0, actual));
-                return n - actual;
-            };
-
-            const n1 = Math.round(remainingNeeded * 0.6);
-            const n2 = Math.round(remainingNeeded * 0.3);
-            const n3 = remainingNeeded - n1 - n2;
-
-            let rem = take(p1, n1);
-            rem = take(p2, n2 + rem);
-            take(p3, n3 + rem);
-        }
-    }
+       This is the whole bug behind "I picked Sortiert and still got a jumble".
+       Skipping the final shuffleArray was never enough - selectByPriority()
+       hands back overdue questions first (sorted by retrievability), then splits
+       what is left into three difficulty bands and shuffles *each band*. By the
+       time the order was left alone it had already been rewritten three times. */
+    let selectedObjects = keepOrder
+        ? qs.slice(Math.max(0, startIndex), Math.max(0, startIndex) + actualCount)
+        : selectByPriority(qs, overduePool, remainingPool, actualCount);
 
     // Apply Focus Pools (Silent Fallback) - the pool applies the same due rule
     selectedObjects = applyFocusPools(selectedObjects, qs);
 
-    const activeSources = (AppState.sources || []).filter(s => s.active && !s.archived);
-    const allActiveKeepOrder = activeSources.length > 0 && activeSources.every(s => s.keepOrder || s.metadata?.keepOrder);
-    if (!allActiveKeepOrder) {
+    if (keepOrder) {
+        /* applyFocusPools appends to the end of the selection, so without this
+           the injected questions would trail the slice out of order - the one
+           way a sequential session could still come out unsorted. `idx` is the
+           question's position in the pool, assigned above. */
+        selectedObjects = [...selectedObjects].sort((a, b) => a.idx - b.idx);
+    } else {
         selectedObjects = shuffleArray(selectedObjects);
     }
 
@@ -214,7 +261,10 @@ export function prepareTest(count) {
     const voices = ["A", "B", "C", "D", "E", "F", "G"];
     AppState.currentTtsVoice = voices[Math.floor(Math.random() * voices.length)];
 
-    startTestTracking(count);
+    /* The length actually drawn, not the length asked for. "All questions" comes
+       in as Infinity, and a focus pool can push the selection past `count`;
+       either way the record has to describe the session that exists. */
+    startTestTracking(AppState.currentTest.length);
 
     return AppState.currentTest;
 }
@@ -291,7 +341,9 @@ export function prepareFromCompositeIds(compositeIds, options = {}) {
         );
         if (sourceIds.size > 0) {
             const sources = (AppState.sources || []).filter(s => sourceIds.has(s.id));
-            if (sources.length > 0 && sources.every(s => s.keepOrder || s.metadata?.keepOrder)) {
+            /* The sources this list actually draws from, not the ones switched
+               on - a retake or a streak run can reach outside the active set. */
+            if (activeSourcesKeepOrder(sources)) {
                 shouldShuffle = false;
             }
         }
