@@ -434,8 +434,13 @@ function renderNormalized(rawText) {
             continue;
         }
 
-        // 4. Headings: # through ######
-        const headingMatch = line.match(/^(#{1,6})\s+(.+)$/);
+        /* 4. Headings: # through ######
+           `(.*)`, not `(.+)`: a heading whose text has not been typed yet is
+           still a heading, and startsBlock() has always said so. `##   ` already
+           rendered as an empty one — only `## `, with exactly one space, could
+           not backtrack its way to a match. That inconsistency is what the
+           toolbar's H2 button walked into. */
+        const headingMatch = line.match(/^(#{1,6})\s+(.*)$/);
         if (headingMatch) {
             blocks.push({
                 type: 'heading',
@@ -492,12 +497,26 @@ function renderNormalized(rawText) {
             continue;
         }
 
-        // 9. Paragraph block (accumulates lines until blank or block start)
+        /* 9. Paragraph block (accumulates lines until blank or block start)
+
+           The first line is taken unconditionally, and that is what guarantees
+           the outer loop advances. Asking startsBlock() about it is asking a
+           question the eight branches above already answered - none of them
+           claimed it - so a `true` here is the two predicates disagreeing, and
+           the loop would break with nothing consumed, leave `i` where it was,
+           and spin forever with the tab frozen.
+
+           It was reachable: branch 4 needs text after the hashes (`(.+)`) while
+           startsBlock only needs the hashes and a space, so a line of exactly
+           `## ` fell through every branch and was then called a block start.
+           That is precisely what the H2 toolbar button inserts when nothing is
+           selected. The regex is aligned below too, but the guard is what keeps
+           the next divergence a rendering quirk instead of a hung tab. */
         const paraLines = [];
         while (i < lines.length) {
             const l = lines[i];
             if (!l.trim()) break;
-            if (startsBlock(l, lines[i + 1])) break;
+            if (paraLines.length > 0 && startsBlock(l, lines[i + 1])) break;
             paraLines.push(l);
             i++;
         }
