@@ -139,15 +139,23 @@ test('leaving a clean editor asks nothing', async () => {
         'a clean editor must not put a dialog in the way');
 });
 
-/** Makes the editor dirty, asks to leave, and presses one of the three buttons. */
-function leaveDirtyVia(buttonId) {
+/**
+ * Makes the editor dirty and asks to leave, leaving the dialog on screen.
+ *
+ * showDecision attaches its listeners synchronously inside the promise
+ * executor, so the buttons are live by the time this returns and the caller can
+ * inspect the dialog before answering it.
+ */
+function askToLeaveDirty() {
     openReading();
     document.querySelector('[data-group="content"]').click();
     document.getElementById('edit-text').value = 'prose, revised';
+    return editor.requestEditorExit();
+}
 
-    /* showDecision attaches its listeners synchronously inside the promise
-       executor, so the button is live by the time this call returns. */
-    const outcome = editor.requestEditorExit();
+/** …and presses one of the three buttons straight away. */
+function leaveDirtyVia(buttonId) {
+    const outcome = askToLeaveDirty();
     document.getElementById(buttonId).click();
     return outcome;
 }
@@ -185,27 +193,59 @@ test('pressing Save on a question that cannot be saved refuses the exit too', as
     assert.ok(document.querySelector('.editor-error'), 'and the reason has to be on screen');
 });
 
+test('the three choices stack instead of being clipped by the card', async () => {
+    /* `.btn` never wraps its label and `.modal-card` clips its overflow, so a
+       row that does not fit is cut off rather than squeezed — measured in the
+       browser: "Abbrechen" was sliced in half by the card's left edge. The
+       layout is a class so the card can go back to a row for the next dialog. */
+    const footer = document.getElementById('modalFooter');
+
+    const outcome = askToLeaveDirty();
+    assert.ok(footer.classList.contains('is-decision'), 'three choices read as a list, not a row');
+
+    document.getElementById('modalCancelBtn').click();
+    await outcome;
+    assert.equal(footer.classList.contains('is-decision'), false, 'and the row comes back');
+});
+
+test('the stacked layout puts the primary first and never sets a fixed width', () => {
+    const css = readFileSync(new URL('../src/style.css', import.meta.url), 'utf8')
+        .replace(/\/\*[\s\S]*?\*\//g, '');   // the rules are explained at length beside them
+
+    // DOM order is cancel, alt, confirm — reversing the column leads with Save.
+    assert.match(css, /\.modal-footer\.is-decision\s*\{[^}]*flex-direction:\s*column-reverse/);
+    assert.match(css, /\.modal-footer\.is-decision\s*\{[^}]*align-items:\s*stretch/);
+    // The floor under any footer that outgrows its row, decision or not.
+    assert.match(css, /\.modal-footer\s*\{[^}]*flex-wrap:\s*wrap/);
+});
+
 test('the third button belongs to this dialog alone', async () => {
     /* The card is shared with showConfirm and showAlert. A stray third button
        inherited from a previous dialog is worse than no third button at all, so
        both ends guard it: showDecision puts it away, and the others refuse to
        inherit it. Each is asserted against a card deliberately left dirty. */
     const altBtn = document.getElementById('modalAltBtn');
+    const footer = document.getElementById('modalFooter');
 
     await leaveDirtyVia('modalAltBtn');
     assert.equal(altBtn.style.display, 'none', 'showDecision must put it away');
 
     const { showConfirm, showAlert } = await import('../src/core/utils.js');
 
+    // Deliberately left dirty, so the guard is measured rather than assumed.
     altBtn.style.display = 'inline-flex';
+    footer.classList.add('is-decision');
     const confirmed = showConfirm('anything');
     assert.equal(altBtn.style.display, 'none', 'a plain confirmation must not inherit it');
+    assert.equal(footer.classList.contains('is-decision'), false, 'nor the stacked layout');
     document.getElementById('modalCancelBtn').click();
     await confirmed;
 
     altBtn.style.display = 'inline-flex';
+    footer.classList.add('is-decision');
     const alerted = showAlert('anything');
     assert.equal(altBtn.style.display, 'none', 'nor an alert');
+    assert.equal(footer.classList.contains('is-decision'), false);
     document.getElementById('modalConfirmBtn').click();
     await alerted;
 });
@@ -353,8 +393,11 @@ test('focusing a textarea marks its block and puts the card in focus mode', () =
     assert.ok(unit.querySelector('.editor-live-preview-box'), 'so does the live preview');
 });
 
-test('a control inside the same block does not break the mode', () => {
-    // Pressing a Markdown toolbar button is part of editing that field.
+test('the field\'s own Markdown toolbar does not break the mode', () => {
+    /* Exempt for a mechanical reason, not a conceptual one: exiting on the
+       toolbar's pointerdown re-expands the layout and moves the button out from
+       under the pointer, so the press would land somewhere else and the wrap
+       would silently never happen. */
     openReading();
     document.querySelector('[data-group="content"]').click();
     focusIn(document.getElementById('edit-text'));
@@ -364,6 +407,34 @@ test('a control inside the same block does not break the mode', () => {
     pointerDown(toolbarBtn);
 
     assert.ok(card().classList.contains('is-focus-mode'));
+});
+
+test('clicking the live preview leaves the mode, even though it is in the same block', () => {
+    /* The mode belongs to the textarea, not to the block around it. The block
+       keeps the screen so the preview stays readable while typing, but the
+       preview is a read-only display — touching it means the user is done with
+       the field. An earlier version keyed the exit off the block and so ignored
+       every click inside it, the preview included. */
+    openReading();
+    document.querySelector('[data-group="content"]').click();
+    focusIn(document.getElementById('edit-text'));
+    assert.ok(card().classList.contains('is-focus-mode'));
+
+    const preview = document.querySelector('.editor-focus-unit .editor-live-preview-container');
+    assert.ok(preview, 'the preview must still be inside the focused block');
+    pointerDown(preview);
+
+    assert.equal(card().classList.contains('is-focus-mode'), false);
+});
+
+test('the label above the field leaves the mode too', () => {
+    // Same rule, second surface: only the field and its own controls hold it.
+    openReading();
+    document.querySelector('[data-group="content"]').click();
+    focusIn(document.getElementById('edit-text'));
+
+    pointerDown(document.querySelector('.editor-focus-unit label'));
+    assert.equal(card().classList.contains('is-focus-mode'), false);
 });
 
 test('clicking outside the focused block leaves focus mode', () => {

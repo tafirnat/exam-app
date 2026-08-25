@@ -178,9 +178,12 @@ export function showConfirm(message, title = '') {
         if (closeIconBtn) closeIconBtn.style.display = 'none';
 
         cancelBtn.style.display = 'inline-flex';
-        // The third button belongs to showDecision alone; this card is shared.
+        // The third button and the stacked layout belong to showDecision alone;
+        // this card is shared, and inheriting either is worse than never having
+        // had it.
         const altBtn = document.getElementById('modalAltBtn');
         if (altBtn) altBtn.style.display = 'none';
+        if (footerEl) footerEl.classList.remove('is-decision');
         overlay.classList.add('active');
 
         const handleConfirm = () => {
@@ -248,7 +251,14 @@ export function showDecision(message, title = '', labels = {}) {
         }
 
         const footerEl = document.getElementById('modalFooter');
-        if (footerEl) footerEl.style.display = 'flex';
+        if (footerEl) {
+            footerEl.style.display = 'flex';
+            /* Three buttons do not fit one row of a 440px card, and the card
+               clips what overflows rather than squeezing it. Stacked, the width
+               stops mattering in any language. Removed again on the way out —
+               the next dialog to use this card wants its row back. */
+            footerEl.classList.add('is-decision');
+        }
         const closeIconBtn = document.getElementById('modalCloseIconBtn');
         if (closeIconBtn) closeIconBtn.style.display = 'none';
 
@@ -269,6 +279,7 @@ export function showDecision(message, title = '', labels = {}) {
             cancelBtn.removeEventListener('click', onCancel);
             altBtn.removeEventListener('click', onAlt);
             altBtn.style.display = 'none';
+            if (footerEl) footerEl.classList.remove('is-decision');
             confirmBtn.innerText = previousConfirm;
             cancelBtn.innerText = previousCancel;
             overlay.classList.remove('active');
@@ -339,6 +350,7 @@ export function showAlert(message, title = '') {
         cancelBtn.style.display = 'none'; // Hide cancel button for alerts
         const altBtn = document.getElementById('modalAltBtn');
         if (altBtn) altBtn.style.display = 'none';
+        if (footerEl) footerEl.classList.remove('is-decision');
         overlay.classList.add('active');
 
         const handleConfirm = () => {

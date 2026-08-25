@@ -925,6 +925,36 @@ function exitFocusMode() {
     clearFocusMarks(card);
 }
 
+/**
+ * Whether an interaction belongs to the field being edited.
+ *
+ * The mode is tied to the *textarea*, not to the block around it. The block
+ * keeps the screen — its live preview has to stay readable while typing — but
+ * the preview is a read-only display, so touching it means the user is done
+ * with the field and the mode ends. Anything that is neither the field nor a
+ * control acting on it drops out.
+ *
+ * Three things are exempt, and each for the same reason: exiting on their
+ * *pointerdown* would move them out from under the pointer before the click
+ * lands, so the press would silently do nothing.
+ *
+ *   - the field's own Markdown toolbar — collapsing the layout mid-press puts
+ *     the button somewhere else and the wrap never happens
+ *   - the focus-mode exit button, which only exists while the mode is on
+ *   - the footer, which is how you save and how you reach the next question
+ */
+function belongsToFocusedField(target, card) {
+    const unit = card.querySelector('.editor-focus-unit');
+    if (!unit) return false;
+
+    if (target.tagName === 'TEXTAREA' && unit.contains(target)) return true;
+
+    const toolbar = target.closest('.md-editor-toolbar');
+    if (toolbar && unit.contains(toolbar)) return true;
+
+    return !!(target.closest('.editor-focus-exit') || target.closest('.editor-footer'));
+}
+
 /* The overlay element outlives every render - only its innerHTML is replaced -
    so these listeners are attached to it exactly once. Re-attaching per render
    piles up a copy for each paint, and every stale copy closes over the detached
@@ -952,35 +982,32 @@ function setupFocusMode(overlay) {
        whichever one is on screen when the event fires. */
     const liveCard = () => document.querySelector('#questionEditorOverlay .editor-card');
 
+    /* A textarea takes the screen; anything else that takes focus gives it back.
+       Only `.editor-field` textareas qualify — the mode is about the field being
+       typed into, not about the block it sits in. */
     overlay.addEventListener('focusin', (e) => {
         const card = liveCard();
         if (!card) return;
-        const unit = focusUnitOf(e.target);
 
+        const unit = focusUnitOf(e.target);
         if (e.target.tagName === 'TEXTAREA' && unit) {
             enterFocusMode(unit);
             return;
         }
 
-        /* Focus left for something outside the unit being worked on - another
-           field, the footer, the tab strip. Anything still inside the unit (the
-           Markdown toolbar, a checkbox in the same block) leaves the mode alone. */
-        const active = card.querySelector('.editor-focus-unit');
-        if (active && !active.contains(e.target)) exitFocusMode();
+        if (card.classList.contains('is-focus-mode') && !belongsToFocusedField(e.target, card)) {
+            exitFocusMode();
+        }
     });
 
-    /* focusin alone is not enough: clicking the empty part of the content area
-       moves focus nowhere and fires nothing, so the mode would stick with no way
-       out but a keystroke. pointerdown covers the whole surface.
-
-       The footer is exempt - its buttons are the way out of the editor and the
-       way to the next question, and collapsing the layout underneath a press
-       that is already committed only moves things around. */
+    /* focusin alone is not enough: most of what a user can click here takes no
+       focus at all and fires nothing — the live preview, a label, the empty part
+       of the content area — so the mode would stick with no way out but a
+       keystroke. pointerdown covers the whole surface. */
     overlay.addEventListener('pointerdown', (e) => {
         const card = liveCard();
         if (!card || !card.classList.contains('is-focus-mode')) return;
-        if (e.target.closest('.editor-focus-unit')) return;
-        if (e.target.closest('.editor-footer')) return;
+        if (belongsToFocusedField(e.target, card)) return;
         exitFocusMode();
     });
 }

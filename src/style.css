@@ -2105,8 +2105,30 @@ textarea {
 .modal-footer {
     display: flex;
     justify-content: flex-end;
+    /* `.btn` never wraps its label and `.modal-card` clips its overflow, so a
+       row that does not fit is not squeezed — it is cut off. Three buttons in a
+       440px card did exactly that: "Abbrechen" was sliced in half by the card's
+       left edge. Wrapping is the floor under any footer that outgrows its row. */
+    flex-wrap: wrap;
     gap: 0.75rem;
     margin-top: 2rem;
+}
+
+/* A question with three answers is not a row of buttons — it is a list of
+   choices, and a list reads down. Stacking also makes the width independent of
+   how long the labels get in German. `column-reverse` puts the primary on top
+   while leaving the DOM in cancel/alt/confirm order, which is the order the
+   other dialogs sharing this card expect. Applied and removed by showDecision();
+   flex-direction and align-items are safe to set from a class here because the
+   inline style on #modalFooter only carries display, gap and justify-content. */
+.modal-footer.is-decision {
+    flex-direction: column-reverse;
+    align-items: stretch;
+}
+
+.modal-footer.is-decision .btn {
+    width: 100%;
+    margin: 0;
 }
 
 .text-input-wrapper input.correct,
