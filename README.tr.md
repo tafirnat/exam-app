@@ -27,9 +27,9 @@ Exam App, herhangi bir çalışma materyalini etkileşimli sınavlara ve bilgi k
 
 Exam App, kendi materyallerinden öğrenen herkes için tasarlanmıştır:
 
-- Üniversite, meslek veya dil sınavlarına hazırlanan **öğrenciler**
-- Obsidian gibi Markdown araçlarında not tutan ve bu notları pratik testlere dönüştürmek isteyen **bireysel öğreniciler**
-- Anki, Quizlet vb. uygulamalara abonelik veya bulut kilitlenmesi yaşamadan, dikkat dağıtmayan ve **veri egemenliği (data sovereignty)** sunan bir alternatif arayan **herkes**
+- **Öğrenciler** — üniversite, meslek veya dil sınavlarına hazırlananlar
+- **Bireysel öğreniciler** — Obsidian gibi Markdown araçlarında not tutan ve bu notları pratik testlere dönüştürmek isteyenler
+- **Herkes** — Anki, Quizlet vb. uygulamalara abonelik veya bulut kilitlenmesi yaşamadan, dikkat dağıtmayan ve **veri egemenliği (data sovereignty)** sunan bir alternatif arayanlar
 
 ---
 
