@@ -6,6 +6,7 @@ import { mergeDayBuckets, recomputeDayTotals, bucketsOf, getLocalDateStr } from 
 import { mergeFreezeTokens } from './freeze-tokens.js';
 import { persist, persistRemove, readJSON } from './storage.js';
 import { emit, Slice, getActiveView } from './store.js';
+import { historyEntryTime } from './test-history.js';
 
 /* The Gist holds three files, and a PATCH only touches the ones it names. The
    split is by how big a file is against how often it is written:
@@ -1757,15 +1758,35 @@ export function mergeSyncData(local, remote) {
         }
     });
 
-    // 3. Merge Recent Tests (excluding deleted sources, respecting progress-reset floor)
+    /* 3. Merge Recent Tests (excluding deleted sources, respecting progress-reset floor)
+
+       Both the floor and the sort used to read `t.timestamp`, and a history
+       entry has never carried that field: finishTest writes `id` (Date.now()),
+       `startTime` and `endTime`. So `(t.timestamp || 0)` was 0 for every entry
+       ever written, which made the floor `0 < latestProgressResetAt` - true for
+       all of them the moment a progress or factory reset had happened anywhere.
+       One reset, and from then on EVERY sync emptied the global test log; the
+       device kept writing entries and the next pull kept throwing them away, so
+       "Son Cevaplananlar" worked right after a test and was blank after a
+       reload. Measured: two entries dated after the reset, zero survivors.
+       The sort was dead in the same way - every key was 0, so the order was
+       whatever the two arrays happened to be concatenated in, and the slice(10)
+       kept an arbitrary ten rather than the newest ten. */
     const testMap = new Map();
     [...(remote.recentTests || []), ...(local.recentTests || [])].forEach(t => {
-        if (!t || !t.id || mergedDeletedIds.includes(t.sourceId)) return;
-        if (latestProgressResetAt && (t.timestamp || 0) < latestProgressResetAt) return;
+        if (!t || !t.id) return;
+        /* `t.sourceId` does not exist either - a session spans sources, so the
+           ids live on its questions. The check was a no-op, which is why a
+           deleted source's history outlived it. An entry goes only when every
+           question in it came from a deleted source; one that still has a live
+           question is still a test the user sat. */
+        const ids = (t.questions || []).map(q => q && q.sourceId).filter(Boolean);
+        if (ids.length > 0 && ids.every(id => mergedDeletedIds.includes(id))) return;
+        if (latestProgressResetAt && historyEntryTime(t) < latestProgressResetAt) return;
         testMap.set(t.id, t);
     });
     const mergedRecentTests = Array.from(testMap.values())
-        .sort((a, b) => (b.timestamp || 0) - (a.timestamp || 0))
+        .sort((a, b) => historyEntryTime(b) - historyEntryTime(a))
         .slice(0, 10);
 
     // 4. Merge Quick Presets (by ID, respecting Quick Preset Tombstones and Reset Guard)

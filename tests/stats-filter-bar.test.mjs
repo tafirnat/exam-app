@@ -131,23 +131,72 @@ test('recent falls to the global log while more than one source is active', () =
     assert.equal(historyCount(), 1);
 });
 
-test('one active source reads that source own log', () => {
-    seedHistory();
-    AppState.sources[1].active = false;
-    AppState.sources[0].testResults = [{
-        id: 2,
-        startTime: Date.now(),
-        endTime: Date.now(),
-        sourceNames: ['Alpha'],
-        wrongCount: 0,
-        correctCount: 1,
-        questions: [{ ...q(1, 'a1'), sourceId: 'src-a', isCorrect: true }]
-    }];
+const sourceEntry = (overrides = {}) => ({
+    id: 2,
+    startTime: Date.now(),
+    endTime: Date.now(),
+    sourceNames: ['Alpha'],
+    wrongCount: 0,
+    correctCount: 1,
+    questions: [{ ...q(1, 'a1'), sourceId: 'src-a', isCorrect: true }],
+    ...overrides
+});
+
+const historyTitles = () =>
+    [...document.querySelectorAll('#statsList .history-test-title')].map(e => e.textContent);
+
+/* Both logs are read, always. The tab used to read the source's own log ONLY
+   when the scope was exactly one source, and the global log in every other
+   case - so a source's own log was invisible the moment a second source was
+   active or the toggle was on, and an empty global log meant an empty screen
+   with every per-source log sitting unread. The global log is the fragile half
+   (capped at 10 for the whole library, and it was being emptied by the sync
+   floor), so "the other one is empty" is the normal case, not an edge. */
+test('a source own log shows even while several sources are active', () => {
+    AppState.recentTests = [];
+    AppState.sources[0].testResults = [sourceEntry()];
     renderStatsList('recent', '');
-    assert.deepEqual(
-        [...document.querySelectorAll('#statsList .history-test-title')].map(e => e.textContent),
-        ['Alpha']
-    );
+    assert.deepEqual(historyTitles(), ['Alpha']);
+});
+
+test('the global log shows even when no source kept its own copy', () => {
+    seedHistory();
+    AppState.sources.forEach(s => { s.testResults = []; });
+    renderStatsList('recent', '');
+    assert.deepEqual(historyTitles(), ['Alpha + Beta']);
+});
+
+/* One session is written down twice - whole in recentTests and sliced into
+   each source it touched - and the two copies do not share an id, because the
+   per-source copy is written with Date.now() + Math.random() on purpose. Keyed
+   by id they draw two rows for one test; keyed by startTime they draw one, and
+   the row kept is the complete session rather than one source's slice. */
+test('the two copies of one session draw a single row', () => {
+    seedHistory();
+    const started = AppState.recentTests[0].startTime;
+    AppState.sources[0].testResults = [sourceEntry({ id: 99, startTime: started })];
+    renderStatsList('recent', '');
+    assert.deepEqual(historyTitles(), ['Alpha + Beta']);
+});
+
+/* Scope is the same question the question list answers, so the tab moves with
+   the selection instead of showing the whole log whatever is switched on. */
+test('a session from no active source stays out', () => {
+    /* Seeded into the GLOBAL log on purpose. Its per-source copy is already out
+       of reach - the collector only walks the sources in scope - so a case that
+       seeds only that one passes with the scope check deleted, and the mutant
+       that deletes it survives. Measured: it did. */
+    const gamma = sourceEntry({
+        sourceNames: ['Gamma'],
+        questions: [{ ...q(1, 'c1'), sourceId: 'src-c', isCorrect: true }]
+    });
+    AppState.recentTests = [gamma];
+    AppState.sources[2].testResults = [gamma];
+    renderStatsList('recent', '');
+    assert.deepEqual(historyTitles(), []);
+    document.getElementById('statsGlobalToggle').checked = true;
+    renderStatsList('recent', '');
+    assert.deepEqual(historyTitles(), ['Gamma']);
 });
 
 /* The footer lives outside #statsList, so an early return leaves the previous
@@ -164,12 +213,26 @@ test('an empty history tab still rewrites the footer', () => {
    "does currentSourceKey name a source at all", which is true in the global
    case too, so the flag was written onto a recentTests entry and saveSources()
    was called - the row came straight back on the next redraw. */
-test('the delete saves the log the entry came out of', () => {
-    const src = readFileSync(new URL('../src/features/stats/stats-module.js', import.meta.url), 'utf8');
-    const body = src.slice(src.indexOf('function renderHistoricalTests'));
-    const del = body.slice(body.indexOf('deleteBtn.onclick'), body.indexOf('// Add retake handlers'));
-    assert.ok(del.includes('if (fromSourceLog) {'), 'delete must branch on where the entry came from');
-    assert.ok(!del.includes('if (currentSource)'), 'currentSourceKey does not decide which log was touched');
+/* Hiding a row has to hide the session, not the object that happened to be
+   drawn. Both logs hold a copy, so flagging only the rendered one left the
+   other free to draw the row again on the next redraw and the delete looked
+   like it had done nothing. */
+test('hiding a session hides every copy of it', async () => {
+    seedHistory();
+    const started = AppState.recentTests[0].startTime;
+    AppState.sources[0].testResults = [sourceEntry({ id: 99, startTime: started })];
+    renderStatsList('recent', '');
+
+    const del = document.querySelector('#statsList .history-delete-btn');
+    const done = del.onclick({ stopPropagation() {} });
+    // showConfirm is the shared modal card, so the confirmation is a click.
+    document.getElementById('modalConfirmBtn').click();
+    await done;
+
+    assert.equal(AppState.recentTests[0].hiddenInRecent, true);
+    assert.equal(AppState.sources[0].testResults[0].hiddenInRecent, true,
+        'the per-source copy would redraw the row on the next paint');
+    assert.deepEqual(historyTitles(), []);
 });
 
 /* The footer says "N soru", so it counts questions. It used to pass the number
@@ -179,6 +242,13 @@ test('the history footer counts questions, not test cards', () => {
     seedHistory();
     renderStatsList('recent', '');
     assert.match(document.getElementById('statsFooter').textContent, /\b2\b/);
+});
+
+/* "Yanlis Yapilanlar" left the test logs behind and reads the per-question
+   counters now, so its footer counts questions out of the same pool every other
+   named filter uses - not the questions of a test card. */
+test('the incorrect footer counts questions with a wrong answer', () => {
+    AppState.stats['src-a_1'].wrong = 2;
     renderStatsList('incorrect', '');
     assert.match(document.getElementById('statsFooter').textContent, /\b1\b/);
 });

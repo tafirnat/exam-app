@@ -1,4 +1,4 @@
-import { AppState, saveStats, saveRecentTests, saveActiveTest, clearActiveTest, saveSources, clearPresetSessionData, findMatchingPresetId } from '../../core/state.js';
+import { AppState, saveStats, saveRecentTests, saveActiveTest, clearActiveTest, saveSources, clearPresetSessionData, findMatchingPresetId, touch } from '../../core/state.js';
 import { shuffleArray, getCorrectAnswers } from '../../core/utils.js';
 import { getQuestionCategory } from '../../core/question-rules.js';
 import { gradeCloze } from '../../core/cloze.js';
@@ -538,10 +538,22 @@ export async function finishTest() {
                 source.wrongData.unshift(sourceEntry);
                 if (source.wrongData.length > 5) source.wrongData = source.wrongData.slice(0, 5);
             }
+
+            /* The source object just changed, so it has to say so. mergeSyncData
+               picks sources whole, by `updatedAt` - it does not merge their
+               fields - so an unstamped write loses to whatever copy of this
+               source is already in the Gist, and the log this test just wrote is
+               gone on the next pull. Measured: one test finished, testResults
+               length 1 locally, 0 after a merge against an equally-stamped
+               remote copy; stamping it keeps the 1. Everything else that edits a
+               source (rename, folder move, archive) already calls touch(); this
+               was the one writer that did not. */
+            touch(source);
         });
         saveSources();
 
-        window.dispatchEvent(new CustomEvent('test-finished', { detail: historyEntry }));
+        const CustomEventClass = (typeof window !== 'undefined' && window.CustomEvent) || CustomEvent;
+        window.dispatchEvent(new CustomEventClass('test-finished', { detail: historyEntry }));
         return true;
 
     } catch (err) {

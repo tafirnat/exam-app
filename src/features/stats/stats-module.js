@@ -15,6 +15,7 @@ import {
 import { buildWorkloadBuckets, renderWorkloadChart, workloadSources } from './workload-chart.js';
 import { setPreviewNavList } from './preview-nav.js';
 import { isSourceScope } from './stats-nav.js';
+import { historyEntryTime, historySessionKey } from '../../core/test-history.js';
 
 
 export function renderStatsList(filter = 'all', searchKeyword = '') {
@@ -400,36 +401,110 @@ function updateStatsFooter(filter, keyword, count, questions = []) {
 }
 
 
+/**
+ * Collects the finished-test sessions that belong to the current scope.
+ *
+ * A session is written down twice - whole in AppState.recentTests (global, 10)
+ * and sliced per source in source.testResults (5 each) - so "which log do I
+ * read" was never a real question, and answering it was the bug. The old rule
+ * read the source's own log ONLY when the scope was exactly one source, and the
+ * global log in every other case. That made the tab go blank in the situations
+ * the user actually hits:
+ *
+ *   - "Tüm Kaynaklar" on, or simply two active sources, reads the global log
+ *     and nothing else - so an empty global log showed "no recent tests" with
+ *     every source's own log sitting right there unread;
+ *   - the global log is the fragile one. It is capped at 10 for the whole
+ *     library, and until the two fixes alongside this one every sync emptied it
+ *     (github-sync's floor read a `timestamp` field that does not exist) while
+ *     the per-source logs were dropped by the source merge (finishTest never
+ *     stamped the source). So the tab worked right after a test and was blank
+ *     after a reload - which is exactly what was reported.
+ *
+ * Reading both logs and merging them removes the whole class: no combination of
+ * toggle, active sources and cap can hide a session that is still written down
+ * somewhere. Scope is then the only question left, and it is the same one the
+ * question list answers - the header toggle widens to the live library, off
+ * means the sources being tested with.
+ *
+ * @param {boolean} isGlobal - the "Tüm Kaynaklar" toggle.
+ * @returns {Array<object>} one row per session, newest first.
+ */
+function collectScopedTests(isGlobal) {
+    const scopeSources = isGlobal ? liveSources() : liveSources().filter(s => s.active);
+    const scopeIds = new Set(scopeSources.map(s => String(s.id)));
+
+    /* Both copies of one session share startTime; their ids do not, because the
+       per-source copy is written with `Date.now() + Math.random()` on purpose.
+       Keep the copy that holds more questions, which is the global one whenever
+       it survived - it is the whole session rather than one source's slice. */
+    const bySession = new Map();
+    const consider = (entry) => {
+        if (!entry || !Array.isArray(entry.questions) || entry.questions.length === 0) return;
+
+        /* Entries written before questions carried sourceId cannot be placed, and
+           dropping what cannot be placed is how this screen lost data in the
+           first place - an unattributable session is shown, not hidden. */
+        const ids = entry.questions.map(q => q && q.sourceId).filter(Boolean);
+        if (ids.length > 0 && !ids.some(id => scopeIds.has(String(id)))) return;
+
+        const key = historySessionKey(entry);
+        const existing = bySession.get(key);
+        if (!existing || entry.questions.length > existing.questions.length) {
+            bySession.set(key, entry);
+        }
+    };
+
+    (AppState.recentTests || []).forEach(consider);
+    scopeSources.forEach(src => (src.testResults || []).forEach(consider));
+
+    return Array.from(bySession.values())
+        .sort((a, b) => historyEntryTime(b) - historyEntryTime(a));
+}
+
+/**
+ * Hides one session everywhere it is written down.
+ *
+ * The row on screen is one of two objects describing the same test, so setting
+ * the flag on the rendered one left the other free to draw the row again on the
+ * next redraw - the delete button looked like it did nothing. Both logs are
+ * swept by session key, and both are saved.
+ *
+ * @param {object} entry - the rendered row.
+ * @param {string} flag - 'hiddenInRecent' or 'hiddenInIncorrect'.
+ */
+async function hideSessionEverywhere(entry, flag) {
+    const key = historySessionKey(entry);
+    entry[flag] = true;
+
+    let touchedGlobal = false;
+    let touchedSources = false;
+
+    (AppState.recentTests || []).forEach(t => {
+        if (historySessionKey(t) === key && !t[flag]) { t[flag] = true; touchedGlobal = true; }
+    });
+
+    liveSources().forEach(src => {
+        [src.testResults, src.wrongData].forEach(log => {
+            (log || []).forEach(t => {
+                if (historySessionKey(t) === key && !t[flag]) { t[flag] = true; touchedSources = true; }
+            });
+        });
+    });
+
+    const state = await import('../../core/state.js');
+    if (touchedGlobal) state.saveRecentTests();
+    if (touchedSources) state.saveSources();
+    // Neither log held it (a row rebuilt from something else) - still persist the
+    // global one so the flag set above is not lost.
+    if (!touchedGlobal && !touchedSources) state.saveRecentTests();
+}
+
 function renderHistoricalTests(list, filter) {
     const globalToggle = document.getElementById('statsGlobalToggle');
     const isGlobal = globalToggle ? globalToggle.checked : false;
 
-    /* Same scope rule as the question list above - the toggle decides, and the
-       key that names "the source I switched on last" decides nothing. A source
-       keeps its own log, so it can only be read when the scope is exactly one
-       source; anything wider has to come from the global log, which is the only
-       place a multi-source test is written down. */
-    const activeSources = liveSources().filter(s => s.active);
-    const soleSource = (!isGlobal && activeSources.length === 1) ? activeSources[0] : null;
-
-    /* Which list the entries came out of, so the delete below saves the one it
-       actually mutated. It used to ask whether currentSourceKey named a source
-       at all, which is true in the global case too: hiding a test then wrote the
-       flag onto a recentTests entry and called saveSources(), so the row came
-       back on the next redraw and the delete looked like it had done nothing. */
-    const fromSourceLog = !!soleSource;
-
-    let testsToShow = [];
-    if (soleSource) {
-        testsToShow = soleSource.testResults || [];
-        if (testsToShow.length === 0) {
-            testsToShow = (AppState.recentTests || []).filter(t => 
-                t.questions && t.questions.some(q => String(q.sourceId) === String(soleSource.id))
-            );
-        }
-    } else {
-        testsToShow = AppState.recentTests || [];
-    }
+    const testsToShow = collectScopedTests(isGlobal);
 
     if (testsToShow.length === 0) {
         list.innerHTML = `<div style="text-align:center; padding: 2rem; color: var(--text-secondary);">${t('no_recent_tests')}</div>`;
@@ -450,8 +525,10 @@ function renderHistoricalTests(list, filter) {
             return aHasWrong ? -1 : 1; // Prioritize tests with errors
         }
         
-        // Secondary sort: Date descending (newest first)
-        return new Date(b.startTime) - new Date(a.startTime);
+        // Secondary sort: Date descending (newest first). Via historyEntryTime
+        // so an entry that dates itself only by `id` still sorts instead of
+        // turning the comparator into NaN.
+        return historyEntryTime(b) - historyEntryTime(a);
     });
 
     sortedTests.forEach((test, testIdx) => {
@@ -551,14 +628,7 @@ function renderHistoricalTests(list, filter) {
         deleteBtn.onclick = async (e) => {
             e.stopPropagation();
             if (await showConfirm(t('confirm_delete_history'))) {
-                if (filter === 'recent') test.hiddenInRecent = true;
-                if (filter === 'incorrect') test.hiddenInIncorrect = true;
-
-                if (fromSourceLog) {
-                    import('../../core/state.js').then(m => m.saveSources());
-                } else {
-                    import('../../core/state.js').then(m => m.saveRecentTests());
-                }
+                await hideSessionEverywhere(test, filter === 'incorrect' ? 'hiddenInIncorrect' : 'hiddenInRecent');
                 renderStatsList(filter); // Refresh
             }
         };
