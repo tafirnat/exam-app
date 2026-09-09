@@ -202,9 +202,7 @@ export function renderStatsList(filter = 'all', searchKeyword = '') {
 
         let result = 0;
         if (field === 'original') {
-            const idxA = activeQuestions.findIndex(q => q.id === a.id);
-            const idxB = activeQuestions.findIndex(q => q.id === b.id);
-            result = idxA - idxB;
+            result = (a.originalIndex || 0) - (b.originalIndex || 0);
         } else if (field === 'diff') {
             result = sa.difficulty - sb.difficulty;
         } else if (field === 'success') {
@@ -426,7 +424,7 @@ function renderHistoricalTests(list, filter) {
         testsToShow = soleSource.testResults || [];
         if (testsToShow.length === 0) {
             testsToShow = (AppState.recentTests || []).filter(t => 
-                t.questions && t.questions.some(q => q.sourceId === soleSource.id)
+                t.questions && t.questions.some(q => String(q.sourceId) === String(soleSource.id))
             );
         }
     } else {
