@@ -210,6 +210,16 @@ Exam App, `exam_metadata` ve `questions` dizisinden oluşan temiz, insan tarafı
 }
 ```
 
+### HTML Değil, Markdown
+
+Okuyucunun gördüğü her metin — soru metni, şıklar, açıklamalar ve bilgi kartının arka yüzü — **Obsidian Markdown**'dır. Obsidian kasasında yazılmış notlar dönüştürmeye gerek kalmadan, kayıpsız içe aktarılır.
+
+Ham HTML hiçbir zaman yorumlanmaz. `&`, `<` ve `>` karakterleri render edilmeden önce kaçışlanır; yani `<b>kalın</b>` ekrana açılı parantezleriyle birlikte tam olarak bu karakterler hâlinde gelir. Yerine `**kalın**` yazın, paragrafları `<br>` ile değil boş satırla ayırın.
+
+Kural uygulamanın kendisini de kapsar: her `i` düğmesinin arkasındaki uygulama içi açıklamalar da Markdown olarak yazılır ve aynı render'dan geçer — yani bir etiketin geçerli sayılacağı ikinci bir yol yoktur.
+
+Bilinçli olarak kapsam dışı bırakılan yapılar dahil sözdiziminin tamamı **[MARKDOWN_SPEC.md](./docs/MARKDOWN_SPEC.md)** dosyasında belgelenmiştir.
+
 *Tam şema özellikleri ve AI model talimatları için **[AI_AGENT_PROMPT.md](./AI_AGENT_PROMPT.md)** ve **[schema-guide.md](./public/examples/schema-guide.md)** dosyalarına bakın.*
 
 ---

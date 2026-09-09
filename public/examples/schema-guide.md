@@ -45,7 +45,7 @@ This is a **critical** key for the application's learning algorithm.
 
 ## 3. Question Types
 
-Eight types, in four families. The type decides which fields the question must
+Seven types, in five families. The type decides which fields the question must
 carry — the app refuses to save, and reports on import, anything that
 contradicts its own type.
 
@@ -103,6 +103,8 @@ a note shown alongside. (The legacy spelling `topic_review` is converted to `rea
   - `url`: Full URL to the image.
   - `position`: "above" (default) or "below" the question text.
 - **Rich Text**: The `text` fields support Obsidian-compatible Markdown (e.g., **bold**, *italic*, `code`, ==highlight==, tables, callouts).
+- **No HTML**: raw tags are never evaluated. `&`, `<` and `>` are escaped before rendering, so `<b>bold</b>` reaches the reader as those exact characters, angle brackets included. Write the Markdown equivalent (`**bold**`), and use a blank line for a paragraph break rather than `<br>`.
+- The authoritative syntax surface, including the constructs that are deliberately unsupported, is **[MARKDOWN_SPEC.md](../../docs/MARKDOWN_SPEC.md)**.
 
 ## Example Template
 ```json

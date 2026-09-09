@@ -210,6 +210,16 @@ Exam App nutzt ein sauberes, menschenlesbares JSON-Schema bestehend aus `exam_me
 }
 ```
 
+### Markdown statt HTML
+
+Jeder Text, den Lesende sehen — Fragetext, Optionen, Erklärungen und die Rückseite von Lernkarten — ist **Obsidian Markdown**. In einem Obsidian-Vault verfasste Notizen lassen sich ohne Konvertierung und ohne Verlust importieren.
+
+Rohes HTML wird nie ausgewertet. `&`, `<` und `>` werden escaped, bevor irgendetwas gerendert wird; `<b>fett</b>` erscheint daher genau mit diesen Zeichen samt spitzen Klammern auf dem Bildschirm. Schreiben Sie stattdessen `**fett**` und trennen Sie Absätze durch eine Leerzeile statt durch `<br>`.
+
+Die Regel gilt auch für die Anwendung selbst: Die In-App-Erklärungen hinter den `i`-Schaltflächen sind in Markdown verfasst und werden vom selben Renderer gezeichnet — es gibt keinen zweiten Pfad, auf dem ein Tag ausgewertet würde.
+
+Die vollständige Syntax — einschließlich der bewusst nicht unterstützten Konstrukte — ist in **[MARKDOWN_SPEC.md](./docs/MARKDOWN_SPEC.md)** dokumentiert.
+
 *Vollständige Schema-Spezifikationen finden Sie in **[AI_AGENT_PROMPT.md](./AI_AGENT_PROMPT.md)** und **[schema-guide.md](./public/examples/schema-guide.md)**.*
 
 ---

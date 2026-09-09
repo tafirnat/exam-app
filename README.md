@@ -210,6 +210,16 @@ Exam App uses a clean, human-readable JSON schema consisting of `exam_metadata` 
 }
 ```
 
+### Markdown, Not HTML
+
+Every string a reader sees — question text, options, explanations and flashcard backs — is **Obsidian Markdown**. Notes written in an Obsidian vault import without conversion or loss.
+
+Raw HTML is never evaluated. `&`, `<` and `>` are escaped before anything is rendered, so `<b>bold</b>` reaches the screen as exactly those characters, angle brackets included. Write `**bold**` instead, and separate paragraphs with a blank line rather than `<br>`.
+
+The rule covers the application itself: the in-app explanations behind each `i` button are authored in Markdown and drawn by the same renderer, so there is no second path where a tag would be honoured.
+
+The full syntax surface — including the constructs that are deliberately out of scope — is documented in **[MARKDOWN_SPEC.md](./docs/MARKDOWN_SPEC.md)**.
+
 *See **[AI_AGENT_PROMPT.md](./AI_AGENT_PROMPT.md)** and **[schema-guide.md](./public/examples/schema-guide.md)** for full schema specifications.*
 
 ---

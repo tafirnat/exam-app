@@ -6,6 +6,9 @@ Exam App parses **100% native Obsidian Markdown syntax**. Obsidian is the source
 > [!IMPORTANT]
 > **No HTML support**: Raw HTML tags (`<div>`, `<b>`, `<br>`, etc.) inside content strings are **never** evaluated. All HTML special characters (`&`, `<`, `>`) are automatically escaped prior to rendering.
 
+> [!NOTE]
+> **One renderer, every string.** This is not only a content rule. Question text, options, explanations and flashcard backs go through this parser, and so do the application's own interface texts — the explanations behind each `i` button are authored in Markdown and rendered by the same code. There is no second, HTML-carrying path: a tag is escaped wherever it appears, so writing `<br>` anywhere puts the characters `<br>` on the reader's screen.
+
 ---
 
 ## 1. Inline Syntax Surface

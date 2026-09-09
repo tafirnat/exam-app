@@ -129,3 +129,33 @@ test('block markers in pairs terminate, whichever order they arrive in', async (
     const parsed = await parseAll(cases);
     assert.equal(parsed, cases.length, `${cases.length} two-line documents must all finish`);
 });
+
+/* The shipped samples and exams, through the same deadline.
+ *
+ * `## ` did not freeze the tab as a toolbar insertion alone - it froze it as a
+ * saved question, on every screen that drew it. The content this repo ships is
+ * the first thing a new install imports, so it is the one corpus where a hang
+ * would greet a user before they had written anything of their own. Read off
+ * disk rather than listed, so a newly added exam is covered by existing. */
+test('every shipped example and exam string parses to completion', async () => {
+    const { readdirSync, readFileSync, existsSync } = await import('node:fs');
+
+    const strings = [];
+    const collect = (v) => {
+        if (typeof v === 'string') strings.push(v);
+        else if (Array.isArray(v)) v.forEach(collect);
+        else if (v && typeof v === 'object') Object.values(v).forEach(collect);
+    };
+
+    for (const dir of ['public/examples', 'public/exams']) {
+        const dirUrl = new URL('../' + dir, import.meta.url);
+        if (!existsSync(dirUrl)) continue;
+        for (const name of readdirSync(dirUrl)) {
+            if (!name.endsWith('.json')) continue;
+            collect(JSON.parse(readFileSync(new URL(`../${dir}/${name}`, import.meta.url), 'utf8')));
+        }
+    }
+
+    assert.ok(strings.length > 100, `expected the shipped corpus, collected ${strings.length} strings`);
+    assert.equal(await parseAll(strings), strings.length);
+});
