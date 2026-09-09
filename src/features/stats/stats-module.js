@@ -296,7 +296,11 @@ export function renderStatsList(filter = 'all', searchKeyword = '') {
                 ${tagsHtml}
             </div>
             <div class="stats-item-meta">
-                <span>✓${s.correct} ✗${s.wrong} (${percent}%)</span>
+                <span style="display: inline-flex; align-items: center; gap: 0.3rem;">
+                    <span style="color: var(--success-color, #10b981);">✓${s.correct}</span> 
+                    <span style="color: var(--danger-color, #ef4444);">✗${s.wrong}</span> 
+                    <span style="color: var(--text-secondary); margin-left: 2px;">(${percent}%)</span>
+                </span>
                 <span class="${isLearned ? 'learned-coeff' : ''}">${t('difficulty_label')} ${(s.difficulty / 2).toFixed(1)}</span>
             </div>
         `;
@@ -419,7 +423,12 @@ function renderHistoricalTests(list, filter) {
 
     let testsToShow = [];
     if (soleSource) {
-        testsToShow = (filter === 'recent' ? soleSource.testResults : soleSource.wrongData) || [];
+        testsToShow = soleSource.testResults || [];
+        if (testsToShow.length === 0) {
+            testsToShow = (AppState.recentTests || []).filter(t => 
+                t.questions && t.questions.some(q => q.sourceId === soleSource.id)
+            );
+        }
     } else {
         testsToShow = AppState.recentTests || [];
     }
