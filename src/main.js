@@ -23,7 +23,7 @@ import { initStorageNoticeUI, maybeShowStorageNotice } from './features/sources/
 import { prepareTest, finishTest, prepareRetake, buildQuestionPool } from './features/test/test-engine.js';
 import { isSequentialMode, resolveQuestionCount, countActivePoolQuestions, renderQuestionRangePicker, setQuestionStartIndex, advanceQuestionRange, rangeAdvancedMessage, LONG_SESSION_THRESHOLD } from './features/test/test-range.js';
 import { flushInProgressAnswers } from './features/stats/continuity-engine.js';
-import { renderQuestion, handleCheckAnswer, updateIndicators, handleTranslation, handleDifficultyRating, handleFlashcardRating, renderTestResults, handleTtsToggle, getIsAudioPlaying, stopAudio, decorateReadingSections, renderResumeButton } from './features/test/test-ui.js';
+import { renderQuestion, handleCheckAnswer, updateIndicators, handleTranslation, handleDifficultyRating, handleFlashcardRating, renderTestResults, handleTtsToggle, getIsAudioPlaying, stopAudio, decorateReadingSections, renderResumeButton, cancelAutoFinish } from './features/test/test-ui.js';
 import { renderStatsList, updateHomeStats, setupStatsEventListeners } from './features/stats/stats-module.js';
 import { openQuestionEditor, closeQuestionEditor, requestEditorExit, isQuestionEditorOpen } from './features/stats/question-editor.js';
 import { resolvePreviewQuestion, neighbourQuestion, navPositionLabel, updateNavButtons } from './features/stats/preview-nav.js';
@@ -2176,6 +2176,9 @@ function switchView(view, isBack = false) {
             flushInProgressAnswers();
         }
         stopAudio(true, 'manual');
+        // A pending auto-finish belongs to the test screen; firing it from
+        // anywhere else would end a test the user has already walked away from.
+        cancelAutoFinish();
     }
 
     // History API integration
@@ -2401,6 +2404,8 @@ function resumeActiveTest() {
 }
 
 function prevQuestion() {
+    // Going back means the user is not done, whatever the answer count says.
+    cancelAutoFinish();
     if (AppState.currentIndex > 0) {
         AppState.currentIndex--;
         saveActiveTest();

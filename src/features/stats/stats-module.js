@@ -587,19 +587,20 @@ function renderHistoricalTests(list, filter) {
         list.appendChild(testEl);
     });
 
-    // Update footer for historical tests
-    const visibleCount = testsToShow.filter(test => {
-        if (!test || !Array.isArray(test.questions) || test.questions.length === 0) return false;
-        if (filter === 'recent' && test.hiddenInRecent) return false;
+    /* The footer says "N soru", so it counts questions - the rows on screen,
+       under the same rule the loop above draws them by. It used to pass the
+       number of test cards, which read as a question count and was wrong by
+       however many questions each test held. */
+    const visibleCount = testsToShow.reduce((sum, test) => {
+        if (!test || !Array.isArray(test.questions) || test.questions.length === 0) return sum;
+        if (filter === 'recent' && test.hiddenInRecent) return sum;
         if (filter === 'incorrect') {
-            if (test.hiddenInIncorrect) return false;
-            // For incorrect tab, we already filtered tests with errors into wrongData if source-focused,
-            // but for global view or fallback, we check again.
-            const hasIncorrect = test.questions.some(q => !q.isCorrect && !q.isUnanswered);
-            if (!hasIncorrect) return false;
+            if (test.hiddenInIncorrect) return sum;
+            const wrong = test.questions.filter(q => !q.isCorrect && !q.isUnanswered);
+            return sum + wrong.length;
         }
-        return true;
-    }).length;
+        return sum + test.questions.length;
+    }, 0);
     updateStatsFooter(filter, '', visibleCount);
 }
 

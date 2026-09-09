@@ -171,3 +171,14 @@ test('the delete saves the log the entry came out of', () => {
     assert.ok(del.includes('if (fromSourceLog) {'), 'delete must branch on where the entry came from');
     assert.ok(!del.includes('if (currentSource)'), 'currentSourceKey does not decide which log was touched');
 });
+
+/* The footer says "N soru", so it counts questions. It used to pass the number
+   of test cards, which reads as a question count and is wrong by however many
+   questions each test holds. */
+test('the history footer counts questions, not test cards', () => {
+    seedHistory();
+    renderStatsList('recent', '');
+    assert.match(document.getElementById('statsFooter').textContent, /\b2\b/);
+    renderStatsList('incorrect', '');
+    assert.match(document.getElementById('statsFooter').textContent, /\b1\b/);
+});

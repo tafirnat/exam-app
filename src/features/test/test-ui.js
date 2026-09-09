@@ -698,10 +698,22 @@ export function renderQuestion(isRefresh = false) {
     // Navigation updates
     document.getElementById('prevBtn').disabled = qIndex === 0;
 
+    /* "Nachste" on the last question finishes the test - nextQuestion() has
+       always routed there, but the button was disabled, so that branch was
+       unreachable and the end of a test was a dead end with no way forward. */
     const isLastQuestion = qIndex === AppState.currentTest.length - 1;
     const nextBtn = document.getElementById('nextBtn');
-    nextBtn.disabled = isLastQuestion;
-    nextBtn.style.opacity = isLastQuestion ? '0.3' : '1';
+    nextBtn.disabled = false;
+    nextBtn.style.opacity = '1';
+    nextBtn.classList.toggle('is-finish', isLastQuestion);
+    /* And it says what it does. The label is rewritten rather than left to
+       data-i18n, so applyTranslations() has to be told which one is current -
+       otherwise a language change puts "Nachste" back on the finish button. */
+    const nextText = nextBtn.querySelector('.nav-btn-text');
+    if (nextText) {
+        nextText.setAttribute('data-i18n', isLastQuestion ? 'finish_test' : 'next');
+        nextText.innerText = t(isLastQuestion ? 'finish_test' : 'next');
+    }
 
     const checkBtn = document.getElementById('checkBtn');
     const difficultyPill = document.getElementById('difficultyPill');
@@ -907,44 +919,98 @@ function renderSummarySection() {
         };
     }
 
-    document.getElementById('finishTestBtn').onclick = async () => {
-        // Count questions whose answers were explicitly evaluated/checked
-        let checkedCount = 0;
-        AppState.currentTest.forEach((compositeId, idx) => {
-            if (AppState.isAnswerChecked[idx]) {
-                checkedCount++;
-            }
-        });
-        if (window.updateHomeStats) window.updateHomeStats();
+    document.getElementById('finishTestBtn').onclick = () => finishTestFlow();
+}
 
-        // If no questions were evaluated/checked at all, go home silently without saving a test result
-        if (checkedCount === 0) {
-            const homeBtn = document.getElementById('resHomeBtn');
-            if (homeBtn) homeBtn.click();
+/**
+ * Ends the test and files it.
+ *
+ * Lives out here rather than inside the summary render because the auto-finish
+ * below needs the same sequence: the history entry is written by finishTest()
+ * and by nothing else, so any way of ending a test that skips this leaves the
+ * two history tabs empty while the question list happily shows the marks.
+ */
+export async function finishTestFlow() {
+    cancelAutoFinish();
+    if (!Array.isArray(AppState.currentTest)) return;
+
+    // Count questions whose answers were explicitly evaluated/checked
+    let checkedCount = 0;
+    AppState.currentTest.forEach((compositeId, idx) => {
+        if (AppState.isAnswerChecked[idx]) {
+            checkedCount++;
+        }
+    });
+    if (window.updateHomeStats) window.updateHomeStats();
+
+    // If no questions were evaluated/checked at all, go home silently without saving a test result
+    if (checkedCount === 0) {
+        const homeBtn = document.getElementById('resHomeBtn');
+        if (homeBtn) homeBtn.click();
+        return;
+    }
+
+    // Calculate truly unchecked questions for confirmation
+    const trulyUnansweredCount = AppState.currentTest.length - checkedCount;
+
+    if (trulyUnansweredCount > 0) {
+        if (!await showConfirm(t('confirm_finish_test_unanswered'))) {
             return;
         }
-
-        // Calculate truly unchecked questions for confirmation
-        const trulyUnansweredCount = AppState.currentTest.length - checkedCount;
-
-        if (trulyUnansweredCount > 0) {
-            if (!await showConfirm(t('confirm_finish_test_unanswered'))) {
-                return;
-            }
+    }
+    showToast(t('test_completed'));
+    try {
+        console.log("Finishing test...");
+        const finished = await finishTest();
+        if (finished === false) {
+            if (window.switchView) window.switchView('home');
         }
-        showToast(t('test_completed'));
-        try {
-            console.log("Finishing test...");
-            const finished = await finishTest();
-            if (finished === false) {
-                if (window.switchView) window.switchView('home');
-            }
-            console.log("Test finished successfully.");
-        } catch (err) {
-            console.error("Error finishing test:", err);
-            showToast(t('error_occurred'));
-        }
-    };
+        console.log("Test finished successfully.");
+    } catch (err) {
+        console.error("Error finishing test:", err);
+        showToast(t('error_occurred'));
+    }
+}
+
+/**
+ * A test with nothing left to answer is over, so it ends itself.
+ *
+ * It used to just sit there: "Nachste" is disabled on the last question, so
+ * answering everything left the user on a screen with no way forward, and going
+ * home kept the session open as a resumable test without writing a history
+ * entry at all. The per-question marks are saved on every answer, so the
+ * question list showed the ticks and crosses while both history tabs said there
+ * were no tests - measured, every question answered and both logs empty.
+ *
+ * The beat before it fires is not decoration. Schwer/Einfach only exists on the
+ * question, after checking it, and it feeds FSRS - finishing at zero delay
+ * would quietly take the last question's rating away. Anything that means "I am
+ * not done yet" cancels it and leaves the ordinary button.
+ */
+export const AUTO_FINISH_DELAY_MS = 1500;
+let autoFinishTimer = null;
+
+export function cancelAutoFinish() {
+    if (autoFinishTimer !== null) {
+        clearTimeout(autoFinishTimer);
+        autoFinishTimer = null;
+    }
+}
+
+/** True when no question in the running test is still unanswered. */
+export function testIsComplete() {
+    if (!Array.isArray(AppState.currentTest) || AppState.currentTest.length === 0) return false;
+    return AppState.currentTest.every((_, idx) => !!AppState.isAnswerChecked[idx]);
+}
+
+export function scheduleAutoFinishIfComplete() {
+    cancelAutoFinish();
+    if (!testIsComplete()) return false;
+    autoFinishTimer = setTimeout(() => {
+        autoFinishTimer = null;
+        if (testIsComplete()) finishTestFlow();
+    }, AUTO_FINISH_DELAY_MS);
+    return true;
 }
 
 /* One input per blank, numbered to match the gaps shown in the sentence above.
@@ -1024,6 +1090,7 @@ window.syncTextInput = (val) => {
 };
 
 window.goToQuestion = (idx) => {
+    cancelAutoFinish();
     AppState.currentIndex = idx;
     window.toggleQuickNav(false);
     renderQuestion();
@@ -1121,6 +1188,7 @@ export const handleCheckAnswer = (forceCheck = false) => {
         stopTimer();
     }
     renderQuestion();
+    scheduleAutoFinishIfComplete();
 };
 
 export async function handleTranslation(btn, sid, tid) {
@@ -1315,6 +1383,8 @@ export function handleDifficultyRating(rating) {
     } else {
         showToast(`${t('difficulty_' + rating)} ${t('feedback_received')}.`);
     }
+    // Rating the question just answered means "not done yet".
+    cancelAutoFinish();
 }
 export function handleFlashcardRating(ratingKey) {
     const ratingMap = { again: 1, hard: 2, normal: 3, easy: 4 };
@@ -1328,6 +1398,9 @@ export function handleFlashcardRating(ratingKey) {
     updateFlashcardStats(q.sourceId, q.id, rating);
     if (window.updateHomeStats) window.updateHomeStats();
 
+    /* A flashcard is answered by its rating, not by revealing the back face -
+       the reveal sets isAnswerChecked too, so asking there would end the test
+       with the last card unrated. */
     // Auto-advance to next question
     const isLastQuestion = qIndex === AppState.currentTest.length - 1;
     if (isLastQuestion) {
@@ -1338,6 +1411,7 @@ export function handleFlashcardRating(ratingKey) {
         AppState.currentIndex++;
         renderQuestion();
     }
+    scheduleAutoFinishIfComplete();
 }
 
 export function renderTestResults() {
