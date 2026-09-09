@@ -19,7 +19,7 @@ import { AppState } from './state.js';
 import { renderSourcesList, renderHomeActiveSources } from '../features/sources/sources-ui.js';
 import { renderContinuityBlock, renderGlobalCharts } from '../features/stats/continuity-ui.js';
 import { renderStatsList, updateHomeStats, refreshProgressChartOverlay } from '../features/stats/stats-module.js';
-import { renderResumeButton } from '../features/test/test-ui.js';
+import { renderResumeButton, renderQuestion } from '../features/test/test-ui.js';
 import { renderQuestionRangePicker } from '../features/test/test-range.js';
 import { updateQuickSourcesDot } from '../features/sources/quick-presets-ui.js';
 import { syncQuickPresetsWithLiveSources } from '../features/sources/quick-presets.js';
@@ -157,6 +157,18 @@ const BINDINGS = [
         slices: [Slice.STATS, Slice.SOURCES, Slice.RECENT_TESTS, Slice.STATS_VIEW, Slice.ACTIVITY],
         run: redrawStatsList,
         views: [View.STATS]
+    },
+
+    // ── Test ────────────────────────────────────────────────────────────────
+    {
+        name: 'test:question',
+        slices: [Slice.SOURCES],
+        run: () => {
+            if (AppState.currentTest && AppState.currentTest.length > 0) {
+                renderQuestion(true);
+            }
+        },
+        views: [View.TEST]
     },
 
     // ── Chrome (always current) ─────────────────────────────────────────────

@@ -849,7 +849,16 @@ function setupEditorListeners() {
 
     // Save
     document.getElementById('editor-save-btn').onclick = () => {
-        if (saveEditor()) closeQuestionEditor();
+        if (saveEditor()) {
+            closeQuestionEditor();
+            if (typeof window.renderQuestion === 'function') {
+                const testView = document.getElementById('testView');
+                const isTestActive = (testView && testView.style.display !== 'none') || (window.history?.state?.view === 'test');
+                if (isTestActive && AppState.currentTest && AppState.currentTest.length > 0) {
+                    window.renderQuestion(true);
+                }
+            }
+        }
     };
 
     // Overlay click to close
@@ -1177,7 +1186,8 @@ function applyChangesToState() {
            library to the editor's scratch space: the next keystroke synced from
            an input would land in the source with nothing to persist it, so the
            library and the disk would disagree until something else saved. */
-        source.questions[qIdx] = stripTransientFields(currentEditingQuestion);
+        const stripped = stripTransientFields(currentEditingQuestion);
+        source.questions[qIdx] = stripped;
         source.updatedAt = now;
         saveSources();
 
@@ -1187,6 +1197,65 @@ function applyChangesToState() {
         }
         AppState.stats[statKey].difficulty = currentEditingQuestion.difficulty * 2;
         saveStats();
+
+        // 1. Keep AppState.questionMap in sync with the saved question
+        const compositeKey = `${currentEditingQuestion.sourceId}_${currentEditingQuestion.id}`;
+        if (AppState.questionMap) {
+            if (AppState.questionMap[compositeKey]) {
+                const existing = AppState.questionMap[compositeKey];
+                for (const key of Object.keys(existing)) {
+                    if (!(key in stripped) && key !== 'sourceId') {
+                        delete existing[key];
+                    }
+                }
+                Object.assign(existing, stripped, { sourceId: source.id });
+            } else {
+                AppState.questionMap[compositeKey] = { ...stripped, sourceId: source.id };
+            }
+        }
+
+        // 2. Keep AppState.rawQuestions in sync
+        if (Array.isArray(AppState.rawQuestions)) {
+            const rIdx = AppState.rawQuestions.findIndex(
+                q => String(q.id) === String(currentEditingQuestion.id) && String(q.sourceId) === String(source.id)
+            );
+            if (rIdx !== -1) {
+                const existingRaw = AppState.rawQuestions[rIdx];
+                for (const key of Object.keys(existingRaw)) {
+                    if (!(key in stripped) && key !== 'sourceId') {
+                        delete existingRaw[key];
+                    }
+                }
+                Object.assign(existingRaw, stripped, { sourceId: source.id });
+            }
+        }
+
+        // 3. Keep AppState.shuffledOptionsMap in sync
+        if (AppState.shuffledOptionsMap && AppState.shuffledOptionsMap[currentEditingQuestion.id]) {
+            if (stripped.options && stripped.options.length > 0) {
+                const newOptsById = new Map(stripped.options.map(o => [String(o.id), o]));
+                const updatedShuffled = [];
+                AppState.shuffledOptionsMap[currentEditingQuestion.id].forEach(oldOpt => {
+                    if (newOptsById.has(String(oldOpt.id))) {
+                        updatedShuffled.push({ ...newOptsById.get(String(oldOpt.id)) });
+                        newOptsById.delete(String(oldOpt.id));
+                    }
+                });
+                for (const remainingOpt of newOptsById.values()) {
+                    updatedShuffled.push({ ...remainingOpt });
+                }
+                AppState.shuffledOptionsMap[currentEditingQuestion.id] = updatedShuffled;
+            } else {
+                delete AppState.shuffledOptionsMap[currentEditingQuestion.id];
+            }
+        }
+
+        // 4. Keep AppState.previewQuestion in sync
+        if (AppState.previewQuestion &&
+            String(AppState.previewQuestion.id) === String(currentEditingQuestion.id) &&
+            String(AppState.previewQuestion.sourceId) === String(source.id)) {
+            Object.assign(AppState.previewQuestion, stripped, { sourceId: source.id });
+        }
 
         /* What is on disk is now what is on screen, so the editor is clean again
            - without this, saving and then moving on would ask about changes that
@@ -1198,6 +1267,16 @@ function applyChangesToState() {
         if (window.onQuestionEdited) {
             window.onQuestionEdited(currentEditingQuestion);
         }
+
+        // 5. If test view is currently active or test is in progress, re-render active question
+        if (typeof window.renderQuestion === 'function') {
+            const testView = document.getElementById('testView');
+            const isTestActive = (testView && testView.style.display !== 'none') || (window.history?.state?.view === 'test');
+            if (isTestActive && AppState.currentTest && AppState.currentTest.length > 0) {
+                window.renderQuestion(true);
+            }
+        }
+
         return true;
     }
     return false;

@@ -5,7 +5,7 @@ import test, { before } from 'node:test';
 import assert from 'node:assert/strict';
 import { JSDOM } from 'jsdom';
 
-let dom, openQuestionEditor, wrapSelection;
+let dom, openQuestionEditor, wrapSelection, saveEditor, AppState;
 
 before(async () => {
     dom = new JSDOM('<!doctype html><html><body><div id="toast"></div></body></html>',
@@ -16,7 +16,8 @@ before(async () => {
     global.localStorage = dom.window.localStorage;
     Object.defineProperty(global, 'navigator', { value: dom.window.navigator, configurable: true });
 
-    ({ openQuestionEditor, wrapSelection } = await import('../src/features/stats/question-editor.js'));
+    ({ openQuestionEditor, wrapSelection, saveEditor } = await import('../src/features/stats/question-editor.js'));
+    ({ AppState } = await import('../src/core/state.js'));
 });
 
 const tabs = () => [...document.querySelectorAll('.editor-group-nav .group-btn')].map(b => b.dataset.group);
@@ -243,3 +244,116 @@ test('editor contains Markdown toolbars and live preview box', () => {
     assert.ok(document.querySelector('.md-editor-toolbar'), 'toolbar present');
     assert.ok(document.getElementById('preview-edit-text'), 'live preview box present');
 });
+
+test('saving an edited question synchronizes AppState.questionMap, rawQuestions and re-renders active test', () => {
+    const q1 = {
+        id: 'q1',
+        sourceId: 's1',
+        type: 'single_choice',
+        content: { text: 'Original question text' },
+        options: [{ id: 1, text: 'Opt A' }, { id: 2, text: 'Opt B' }],
+        answer: { correct_ids: [1] }
+    };
+    AppState.sources = [{
+        id: 's1',
+        name: 'Source 1',
+        active: true,
+        questions: [{ ...q1 }]
+    }];
+    AppState.questionMap = {
+        's1_q1': { ...q1 }
+    };
+    AppState.rawQuestions = [{ ...q1 }];
+    AppState.shuffledOptionsMap = {
+        'q1': [{ id: 2, text: 'Opt B' }, { id: 1, text: 'Opt A' }]
+    };
+    AppState.previewQuestion = { ...q1 };
+
+    openQuestionEditor(q1);
+
+    // Edit the question text in the editor
+    document.querySelector('[data-group="content"]').click();
+    const textEl = document.getElementById('edit-text');
+    textEl.value = 'Updated question text by user';
+    textEl.dispatchEvent(new dom.window.Event('input', { bubbles: true }));
+
+    let renderedInTest = false;
+    global.window.renderQuestion = (isRefresh) => { renderedInTest = true; };
+    const testView = document.createElement('div');
+    testView.id = 'testView';
+    testView.style.display = 'flex';
+    document.body.appendChild(testView);
+    AppState.currentTest = ['s1_q1'];
+    AppState.currentIndex = 0;
+
+    const saved = saveEditor();
+    assert.equal(saved, true, 'saveEditor succeeded');
+
+    // Verify storage source question is updated
+    assert.equal(AppState.sources[0].questions[0].content.text, 'Updated question text by user');
+
+    // Verify in-memory questionMap is updated immediately without page reload
+    assert.equal(AppState.questionMap['s1_q1'].content.text, 'Updated question text by user');
+    assert.equal(AppState.questionMap['s1_q1'].text, 'Updated question text by user');
+
+    // Verify rawQuestions is updated
+    assert.equal(AppState.rawQuestions[0].content.text, 'Updated question text by user');
+
+    // Verify previewQuestion is updated
+    assert.equal(AppState.previewQuestion.content.text, 'Updated question text by user');
+
+    // Verify test view re-render was triggered
+    assert.equal(renderedInTest, true, 'test view re-render was triggered on save');
+});
+
+test('navigating away and returning with back button reflects edited question without page reload', () => {
+    const q1 = {
+        id: 'q1',
+        sourceId: 's1',
+        type: 'single_choice',
+        content: { text: 'Question 1 initial' },
+        options: [{ id: 1, text: 'A' }, { id: 2, text: 'B' }],
+        answer: { correct_ids: [1] }
+    };
+    const q2 = {
+        id: 'q2',
+        sourceId: 's1',
+        type: 'single_choice',
+        content: { text: 'Question 2 initial' },
+        options: [{ id: 1, text: 'C' }, { id: 2, text: 'D' }],
+        answer: { correct_ids: [1] }
+    };
+    AppState.sources = [{
+        id: 's1',
+        name: 'Source 1',
+        active: true,
+        questions: [{ ...q1 }, { ...q2 }]
+    }];
+    AppState.questionMap = {
+        's1_q1': { ...q1 },
+        's1_q2': { ...q2 }
+    };
+    AppState.currentTest = ['s1_q1', 's1_q2'];
+    AppState.currentIndex = 0;
+
+    // User is on Question 1, opens editor and modifies it
+    openQuestionEditor(q1);
+    document.querySelector('[data-group="content"]').click();
+    const textEl = document.getElementById('edit-text');
+    textEl.value = 'Question 1 EDITED';
+    textEl.dispatchEvent(new dom.window.Event('input', { bubbles: true }));
+
+    const saved = saveEditor();
+    assert.equal(saved, true);
+
+    // User moves to next question (Question 2)
+    AppState.currentIndex = 1;
+    assert.equal(AppState.questionMap[AppState.currentTest[AppState.currentIndex]].content.text, 'Question 2 initial');
+
+    // User returns to Question 1 with back button (prevQuestion)
+    AppState.currentIndex = 0;
+    const currentQ = AppState.questionMap[AppState.currentTest[AppState.currentIndex]];
+    assert.equal(currentQ.content.text, 'Question 1 EDITED', 'Question 1 must reflect edited content without page reload');
+});
+
+

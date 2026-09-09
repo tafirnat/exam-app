@@ -487,6 +487,10 @@ const initApp = () => {
                     AppState.activeTagFilter = null;
                 }
                 renderStatsList(filter, searchQuery);
+            } else if (targetView === 'test') {
+                if (AppState.currentTest && AppState.currentTest.length > 0) {
+                    renderQuestion(true);
+                }
             }
         };
 
