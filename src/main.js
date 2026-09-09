@@ -1154,7 +1154,9 @@ function setupEventListeners() {
                 updateStaticTranslations();
                 renderSourcesList();
                 renderQuestion();
-                renderStatsList();
+                // Bare, this redraws under "all" - see redrawStatsList() in
+                // ui-bindings.js. Switching language must not drop the filter.
+                renderStatsList(AppState.activeStatsFilter || 'all', AppState.searchKeyword || '');
                 updateHomeStats();
                 renderContinuityBlock();
                 // The heatmap draws its own weekday and month labels, so the
@@ -1875,8 +1877,8 @@ function setupEventListeners() {
 
     document.querySelectorAll('.filter-btn').forEach(btn => {
         btn.onclick = () => {
-            document.querySelectorAll('.filter-btn').forEach(b => b.classList.remove('active'));
-            btn.classList.add('active');
+            // renderStatsList() below moves the highlight - it is the only owner,
+            // so every other way into the list gets the same treatment.
             AppState.activeStatsFilter = btn.dataset.filter;
 
             if (btn.dataset.filter !== 'all') {
@@ -1941,9 +1943,13 @@ function setupEventListeners() {
         statsSearchInput.oninput = () => {
             syncSearchState();
             const query = statsSearchInput.value;
+            /* AppState is the filter, the highlighted button is only its
+               picture. Reading the button back put the two in a loop: any
+               redraw that moved the list without a click left a stale
+               highlight, and the next keystroke re-applied it. */
             const activeFilter = AppState.activeTagFilter 
                 ? ('tag:' + AppState.activeTagFilter) 
-                : (document.querySelector('.filter-btn.active')?.dataset.filter || 'all');
+                : (AppState.activeStatsFilter || 'all');
 
             if (AppState.activeTagFilter) {
                 renderStatsList('tag:' + AppState.activeTagFilter, query);
@@ -2026,8 +2032,7 @@ function setupEventListeners() {
                 if (AppState.activeTagFilter) {
                     renderStatsList('tag:' + AppState.activeTagFilter, '');
                 } else {
-                    const activeFilter = document.querySelector('.filter-btn.active')?.dataset.filter || 'all';
-                    renderStatsList(activeFilter, '');
+                    renderStatsList(AppState.activeStatsFilter || 'all', '');
                 }
                 statsSearchInput.focus();
                 syncSearchState();

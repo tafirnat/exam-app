@@ -45,6 +45,17 @@ export function renderStatsList(filter = 'all', searchKeyword = '') {
     const filterTabs = document.getElementById('statsFilterBar');
     if (filterTabs) {
         filterTabs.style.display = isTagMode ? 'none' : 'flex';
+
+        /* The highlight is a picture of the filter that is running, so it is
+           drawn from the argument rather than left to whoever clicked. Only the
+           click handler used to move it, and every other way in moves the list
+           without a click - the home button restoring the last filter, Back,
+           a tag search, a store redraw. The bar then pointed at one filter while
+           the list showed another, and main.js read that stale highlight back as
+           the filter to re-apply on the next keystroke in the search box. */
+        filterTabs.querySelectorAll('.filter-btn').forEach(b => {
+            b.classList.toggle('active', !isTagMode && b.dataset.filter === filter);
+        });
         
         // Ensure specific filters are hidden/shown correctly if we ever show the bar in tag mode
         const recentFilter = filterTabs.querySelector('[data-filter="recent"]');
@@ -85,29 +96,18 @@ export function renderStatsList(filter = 'all', searchKeyword = '') {
         return getLatest(b) - getLatest(a);
     });
 
-    let filterSources = [];
-    if (isGlobal || isTagMode) {
-        // In Tag Mode, we respect isGlobal for filtering, but start with sortedSources
-        if (isGlobal) {
-            filterSources = sortedSources;
-        } else {
-            const activeSources = sortedSources.filter(s => s.active);
-            const currentSource = sortedSources.find(s => s.id === AppState.currentSourceKey);
-            
-            filterSources = activeSources;
-            if (currentSource && currentSource.active) {
-                filterSources = [currentSource];
-            }
-        }
-    } else {
-        const activeSources = sortedSources.filter(s => s.active);
-        const currentSource = sortedSources.find(s => s.id === AppState.currentSourceKey);
-        
-        filterSources = activeSources;
-        if (currentSource && currentSource.active) {
-            filterSources = [currentSource];
-        }
-    }
+    /* The pool is a SET of sources, and the header toggle is the only thing that
+       widens it: off means "the sources I am testing with" (every active one),
+       on means the whole live library.
+
+       It used to collapse to a single source whenever AppState.currentSourceKey
+       named an active one - and toggleSource() writes that key on every
+       activation while leaving the other sources active, so the collapse fired
+       in the normal case rather than an exceptional one. Three active sources
+       and Starred showed the stars of whichever one was switched on last; the
+       footer said "Aktif Kaynaklar" underneath the whole time, and the history
+       tabs next to it (which never had the collapse) described a wider set. */
+    const filterSources = isGlobal ? sortedSources : sortedSources.filter(s => s.active);
 
     filterSources.forEach(s => {
         if (!s.questions) return;
@@ -389,30 +389,42 @@ function updateStatsFooter(filter, keyword, count, questions = []) {
 
 
 function renderHistoricalTests(list, filter) {
-    let testsToShow = [];
     const globalToggle = document.getElementById('statsGlobalToggle');
     const isGlobal = globalToggle ? globalToggle.checked : false;
-    const currentSource = AppState.sources.find(s => s.id === AppState.currentSourceKey);
 
-    if (!isGlobal && currentSource && currentSource.active && AppState.sources.filter(s => s.active).length === 1) {
-        // Use source-specific logs ONLY if specifically focusing on ONE active source AND not in global mode
-        if (filter === 'recent') {
-            testsToShow = currentSource.testResults || [];
-        } else if (filter === 'incorrect') {
-            testsToShow = currentSource.wrongData || [];
-        }
+    /* Same scope rule as the question list above - the toggle decides, and the
+       key that names "the source I switched on last" decides nothing. A source
+       keeps its own log, so it can only be read when the scope is exactly one
+       source; anything wider has to come from the global log, which is the only
+       place a multi-source test is written down. */
+    const activeSources = liveSources().filter(s => s.active);
+    const soleSource = (!isGlobal && activeSources.length === 1) ? activeSources[0] : null;
+
+    /* Which list the entries came out of, so the delete below saves the one it
+       actually mutated. It used to ask whether currentSourceKey named a source
+       at all, which is true in the global case too: hiding a test then wrote the
+       flag onto a recentTests entry and called saveSources(), so the row came
+       back on the next redraw and the delete looked like it had done nothing. */
+    const fromSourceLog = !!soleSource;
+
+    let testsToShow = [];
+    if (soleSource) {
+        testsToShow = (filter === 'recent' ? soleSource.testResults : soleSource.wrongData) || [];
     } else {
-        // Use global logs if multiple sources are active, no focus, or in global mode
         testsToShow = AppState.recentTests || [];
 
         if (filter === 'incorrect') {
             // Further filter global tests to only show those with mistakes
-            testsToShow = testsToShow.filter(t => t.questions.some(q => !q.isCorrect && !q.isUnanswered));
+            testsToShow = testsToShow.filter(t => Array.isArray(t.questions)
+                && t.questions.some(q => !q.isCorrect && !q.isUnanswered));
         }
     }
 
     if (testsToShow.length === 0) {
         list.innerHTML = `<div style="text-align:center; padding: 2rem; color: var(--text-secondary);">${t('no_recent_tests')}</div>`;
+        // The footer is outside the list, so an early return leaves the previous
+        // filter's scope and count sitting under an empty screen.
+        updateStatsFooter(filter, '', 0);
         return;
     }
 
@@ -535,7 +547,7 @@ function renderHistoricalTests(list, filter) {
                 if (filter === 'recent') test.hiddenInRecent = true;
                 if (filter === 'incorrect') test.hiddenInIncorrect = true;
 
-                if (currentSource) {
+                if (fromSourceLog) {
                     import('../../core/state.js').then(m => m.saveSources());
                 } else {
                     import('../../core/state.js').then(m => m.saveRecentTests());
@@ -829,9 +841,6 @@ export function inspectSourceQuestions(sourceId) {
 
     AppState.activeTagFilter = null;
     AppState.activeStatsFilter = 'all';
-    document.querySelectorAll('.filter-btn').forEach(b => {
-        b.classList.toggle('active', b.dataset.filter === 'all');
-    });
 
     const searchInput = document.getElementById('statsSearchInput');
     if (searchInput) searchInput.value = query;
