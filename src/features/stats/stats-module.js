@@ -5,7 +5,7 @@ import { readJSON } from '../../core/storage.js';
 import { getLocalDateStr } from '../../core/daily-activity.js';
 import { calculateExamReadiness, calculateGlobalStreak, calculateFocusStreak } from './continuity-engine.js';
 import { calculateRetrievability } from '../test/test-engine.js';
-import { plainText } from '../../core/markdown.js';
+import { plainText, renderMarkdown } from '../../core/markdown.js';
 import {
     renderContinuityBlock,
     updateDifficultyUI,
@@ -66,7 +66,7 @@ export function renderStatsList(filter = 'all', searchKeyword = '') {
     }
 
     if (sortBar) {
-        sortBar.style.display = (isTagMode || filter === 'all' || filter === 'starred' || filter === 'flagged' || filter === 'noted') ? 'flex' : 'none';
+        sortBar.style.display = (isTagMode || filter === 'all' || filter === 'starred' || filter === 'flagged' || filter === 'noted' || filter === 'incorrect') ? 'flex' : 'none';
     }
 
     const filterBar = document.getElementById('statsFilterBar');
@@ -74,7 +74,7 @@ export function renderStatsList(filter = 'all', searchKeyword = '') {
         filterBar.classList.toggle('has-border', filter === 'all' || isTagMode);
     }
 
-    if (filter === 'recent' || filter === 'incorrect') {
+    if (filter === 'recent') {
         renderHistoricalTests(list, filter);
         return;
     }
@@ -137,9 +137,10 @@ export function renderStatsList(filter = 'all', searchKeyword = '') {
         filteredQuestions = filteredQuestions.filter(q => {
             const statKey = `${q.sourceId}_${q.id}`;
             const s = AppState.stats[statKey] || {};
-            if (filter === 'starred') return s.starred;
-            if (filter === 'flagged') return s.flagged;
-            if (filter === 'noted') return s.note && s.note.trim() !== '';
+            if (filter === 'starred' && !s.starred) return false;
+            if (filter === 'flagged' && !s.flagged) return false;
+            if (filter === 'noted' && (!s.note || s.note.trim() === '')) return false;
+            if (filter === 'incorrect' && (s.wrong || 0) === 0) return false;
             return true;
         });
     }
@@ -421,12 +422,6 @@ function renderHistoricalTests(list, filter) {
         testsToShow = (filter === 'recent' ? soleSource.testResults : soleSource.wrongData) || [];
     } else {
         testsToShow = AppState.recentTests || [];
-
-        if (filter === 'incorrect') {
-            // Further filter global tests to only show those with mistakes
-            testsToShow = testsToShow.filter(t => Array.isArray(t.questions)
-                && t.questions.some(q => !q.isCorrect && !q.isUnanswered));
-        }
     }
 
     if (testsToShow.length === 0) {
@@ -459,11 +454,7 @@ function renderHistoricalTests(list, filter) {
         if (filter === 'recent' && test.hiddenInRecent) return;
         if (filter === 'incorrect' && test.hiddenInIncorrect) return;
 
-        const questionsToShow = filter === 'incorrect'
-            ? test.questions.filter(q => !q.isCorrect && !q.isUnanswered)
-            : test.questions;
-
-        if (questionsToShow.length === 0 && filter === 'incorrect') return;
+        const questionsToShow = test.questions;
         if (test.questions.length === 0) return;
 
         const sourceTitle = test.sourceTitle || (test.sourceNames?.length > 1 ? test.sourceNames.join(' + ') : (test.sourceNames?.[0] || t('mixed_sources')));
@@ -690,7 +681,7 @@ export function updateHomeStats() {
         avgDiffBox.dataset.bound = 'true';
         avgDiffBox.addEventListener('click', () => {
             import('../../core/utils.js').then(({ showInfoAlert }) => {
-                showInfoAlert(t('avg_diff_info_desc'), t('avg_diff_info_title'));
+                showInfoAlert(renderMarkdown(t('avg_diff_info_desc')), t('avg_diff_info_title'));
             });
         });
     }
@@ -952,7 +943,7 @@ function _bindChartInfoButtons() {
         btn.addEventListener('click', (e) => {
             // The badge row's own click toggles the source star.
             e.stopPropagation();
-            showInfoAlert(t(descKey), t(titleKey));
+            showInfoAlert(renderMarkdown(t(descKey)), t(titleKey));
         });
     });
 }
