@@ -19,6 +19,7 @@ import {
     calculateTopicMastery
 } from './continuity-engine.js';
 import { getDayAnchor, shiftDateStr } from '../../core/daily-activity.js';
+import { persist, readJSON, readString } from '../../core/storage.js';
 import { buildQuestionPool } from '../test/test-engine.js';
 import { buildStreakRun, prepareStreakRun, resolveStreakCount } from './streak-run.js';
 import { renderSourcePicker } from '../sources/sources-ui.js';
@@ -581,12 +582,15 @@ function randomFocalPoint() {
     return ARTWORK_FOCAL_POINTS[Math.floor(Math.random() * ARTWORK_FOCAL_POINTS.length)];
 }
 
+const MOTIVATION_CACHE_KEY = 'motivation_cache';
+const MOTIVATION_LANG_KEY = 'motivation_lang';
+
 function getMotivationCache() {
-    const today = new Date().toLocaleDateString('en-CA');
-    let cache = null;
-    try {
-        cache = JSON.parse(localStorage.getItem('motivation_cache'));
-    } catch (e) {}
+    /* The app's day, not the device's: everything else day-keyed in this file
+       goes through getLocalDateStr(), so reading the clock here would roll the
+       quote over at a different midnight than the streak does. */
+    const today = getLocalDateStr();
+    let cache = readJSON(MOTIVATION_CACHE_KEY, null);
 
     if (!cache || cache.date !== today) {
         const ids = [];
@@ -595,7 +599,7 @@ function getMotivationCache() {
             if(!ids.includes(r)) ids.push(r);
         }
         cache = { date: today, ids: ids, index: 0 };
-        localStorage.setItem('motivation_cache', JSON.stringify(cache));
+        persist(MOTIVATION_CACHE_KEY, cache);
     }
     return cache;
 }
@@ -603,7 +607,7 @@ function getMotivationCache() {
 export function cycleMotivation() {
     const cache = getMotivationCache();
     cache.index = (cache.index + 1) % cache.ids.length;
-    localStorage.setItem('motivation_cache', JSON.stringify(cache));
+    persist(MOTIVATION_CACHE_KEY, cache);
     renderMotivationSlide(true);
 }
 
@@ -615,7 +619,7 @@ export function renderMotivationSlide(isCycle = false) {
     if (!textEl || !authorEl || !card) return;
 
     const appLang = AppState.language || 'en';
-    const overrideLang = localStorage.getItem('motivation_lang');
+    const overrideLang = readString(MOTIVATION_LANG_KEY);
     const lang = overrideLang && ['tr', 'en', 'de'].includes(overrideLang) ? overrideLang : appLang;
     
     const cache = getMotivationCache();
@@ -699,11 +703,11 @@ export function bindMotivationEvents() {
         langToggleEl.addEventListener('click', (e) => {
             e.stopPropagation();
             const supported = ['tr', 'en', 'de'];
-            let current = localStorage.getItem('motivation_lang') || AppState.language || 'en';
+            let current = readString(MOTIVATION_LANG_KEY) || AppState.language || 'en';
             if (!supported.includes(current)) current = 'en';
             
             const nextIdx = (supported.indexOf(current) + 1) % supported.length;
-            localStorage.setItem('motivation_lang', supported[nextIdx]);
+            persist(MOTIVATION_LANG_KEY, supported[nextIdx]);
             
             renderMotivationSlide(false);
             document.dispatchEvent(new CustomEvent('reset-carousel-timer'));
