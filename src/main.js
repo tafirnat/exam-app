@@ -27,6 +27,7 @@ import { renderQuestion, handleCheckAnswer, updateIndicators, handleTranslation,
 import { renderStatsList, updateHomeStats, setupStatsEventListeners } from './features/stats/stats-module.js';
 import { openQuestionEditor, closeQuestionEditor, requestEditorExit, isQuestionEditorOpen } from './features/stats/question-editor.js';
 import { resolvePreviewQuestion, neighbourQuestion, navPositionLabel, updateNavButtons } from './features/stats/preview-nav.js';
+import { keptSearchOnFilterClick, statsHistoryState, stampStatsHistory } from './features/stats/stats-nav.js';
 import { initTimer, stopTimer } from './features/test/timer-module.js';
 import { initSync, syncToGist } from './core/github-sync.js';
 import { renderMarkdown, renderInlineMarkdown, plainText, applySearchHighlight } from './core/markdown.js';
@@ -1662,8 +1663,15 @@ function setupEventListeners() {
         const globalToggle = document.getElementById('statsGlobalToggle');
         if (globalToggle) globalToggle.checked = false;
         const lastFilter = AppState.activeStatsFilter || 'all';
+        const searchInput = document.getElementById('statsSearchInput');
+        /* The box is cleared because the render below drops the search term.
+           Leaving the old text sitting there showed a scope the list was not
+           applying, and the next keystroke re-applied it. */
+        if (searchInput) searchInput.value = '';
+        AppState.activeTagFilter = null;
         switchView('stats');
         renderStatsList(lastFilter.startsWith('tag:') ? 'all' : lastFilter);
+        stampStatsHistory();
     };
 
     const homeStatsBtn = document.getElementById('homeStatsBtn');
@@ -1881,9 +1889,16 @@ function setupEventListeners() {
             // so every other way into the list gets the same treatment.
             AppState.activeStatsFilter = btn.dataset.filter;
 
-            if (btn.dataset.filter !== 'all') {
+            /* A "$Alpha" scope survives so that Yıldızlı means "starred in
+               this source"; everything else in the box is a query, not a
+               scope, and still clears. See stats-nav.js. */
+            const kept = keptSearchOnFilterClick(btn.dataset.filter, getStatsSearchKeyword());
+
+            if (kept === '') {
                 if (statsSearchInput) statsSearchInput.value = '';
                 if (statsSearchClear) statsSearchClear.style.display = 'none';
+            }
+            if (btn.dataset.filter !== 'all' && kept === '') {
                 if (statsSearchWrapper) {
                     statsSearchWrapper.classList.remove('expanded');
                     statsSearchWrapper.classList.add('icon-only');
@@ -1892,7 +1907,8 @@ function setupEventListeners() {
                 if (statsSearchWrapper) statsSearchWrapper.classList.remove('icon-only');
             }
 
-            renderStatsList(btn.dataset.filter, btn.dataset.filter === 'all' ? getStatsSearchKeyword() : '');
+            renderStatsList(btn.dataset.filter, kept);
+            stampStatsHistory();
         };
     });
 
@@ -2094,6 +2110,7 @@ function setupEventListeners() {
 // This closes the setupEventListeners function, assuming the content started within it.
 
 // --- View & Search History Management ---
+
 function executeTagSearch(tag) {
     if (!tag) return;
     const searchQuery = '#' + tag;
@@ -2164,7 +2181,13 @@ function switchView(view, isBack = false) {
     // History API integration
     if (!isBack) {
         if (history.state?.view !== view) {
-            history.pushState({ view, searchQuery: '', filter: 'all' }, '', `#${view}`);
+            /* The stats entry records the filter that is running, not 'all'.
+               popstate believes what the entry says, so inventing a filter here
+               made every return through history reset the list: opening a
+               question from "Yanlış Yapılanlar" and coming back landed on
+               "Tümü" showing every question of every active source, with the
+               tab the user had been reading silently dropped. */
+            history.pushState(statsHistoryState(view), '', `#${view}`);
         }
     }
 

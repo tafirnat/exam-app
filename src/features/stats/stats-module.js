@@ -14,6 +14,7 @@ import {
 } from './continuity-ui.js';
 import { buildWorkloadBuckets, renderWorkloadChart, workloadSources } from './workload-chart.js';
 import { setPreviewNavList } from './preview-nav.js';
+import { isSourceScope } from './stats-nav.js';
 
 
 export function renderStatsList(filter = 'all', searchKeyword = '') {
@@ -106,8 +107,16 @@ export function renderStatsList(filter = 'all', searchKeyword = '') {
        in the normal case rather than an exceptional one. Three active sources
        and Starred showed the stars of whichever one was switched on last; the
        footer said "Aktif Kaynaklar" underneath the whole time, and the history
-       tabs next to it (which never had the collapse) described a wider set. */
-    const filterSources = isGlobal ? sortedSources : sortedSources.filter(s => s.active);
+       tabs next to it (which never had the collapse) described a wider set.
+
+       A "$Alpha" search is the other way to name a scope, and it names it
+       explicitly, so it reaches the whole live library on its own. It used to
+       borrow the toggle instead: inspectSourceQuestions() switched "Tüm
+       Kaynaklar" on to make an inactive source visible and nothing ever switched
+       it back, so from then on every filter the user pressed quietly described
+       the entire library. The footer reads the same keyword, so what it calls
+       the scope and what the pool holds cannot come apart. */
+    const filterSources = (isGlobal || isSourceScope(searchKeyword)) ? sortedSources : sortedSources.filter(s => s.active);
 
     filterSources.forEach(s => {
         if (!s.questions) return;
@@ -820,8 +829,9 @@ export function setupStatsEventListeners() {
 
 /**
  * Opens #stats showing only the questions of one source.
- * Turns on the "all sources" toggle (so the source is in the pool even when it is
- * not active) and runs the existing search with the "$name" source-scope prefix.
+ * Runs the existing search with the "$name" source-scope prefix, which reaches
+ * the whole live library on its own - an inactive source is in the pool because
+ * the query names it, not because a control was switched on behind the user.
  * Archived sources are still excluded - the pool always comes from liveSources().
  */
 export function inspectSourceQuestions(sourceId) {
@@ -835,9 +845,6 @@ export function inspectSourceQuestions(sourceId) {
         if (!source) return;
         query = `$${source.name}`;
     }
-
-    const globalToggle = document.getElementById('statsGlobalToggle');
-    if (globalToggle) globalToggle.checked = true;
 
     AppState.activeTagFilter = null;
     AppState.activeStatsFilter = 'all';
