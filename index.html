@@ -2214,7 +2214,11 @@
                 </button>
             </div>
             <div class="modal-body" style="margin-bottom: 1.5rem;">
-                <p id="modalMessage" style="margin: 0; line-height: 1.6;"></p>
+                <!-- A <div>, not a <p>: showInfoAlert() is handed rendered
+                     Markdown for the chart explanations, and renderMarkdown()
+                     emits a .md-content <div> holding <p> and <ul> blocks.
+                     Nesting those inside a <p> is invalid markup. -->
+                <div id="modalMessage" style="margin: 0; line-height: 1.6;"></div>
             </div>
             <div id="modalFooter" class="modal-footer" style="display: flex; gap: 0.75rem; justify-content: flex-end;">
                 <button class="btn btn-secondary" id="modalCancelBtn" data-i18n="cancel">Vazgeç</button>

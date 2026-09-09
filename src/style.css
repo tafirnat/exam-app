@@ -2096,6 +2096,24 @@ textarea {
     font-size: 0.95rem;
 }
 
+/* Markdown rendered into the shared modal card - the chart explanations go
+   through renderMarkdown() - keeps the card's own type treatment.
+
+   Without this the two block kinds disagree: the emitted <p>s match
+   `.modal-body p` above (0.95rem, --text-secondary) while the <li>s fall
+   through to `.md-content` (1rem, --text-primary), so the bullet list reads a
+   step louder than the prose it belongs to. Scoped to .modal-body, so question
+   content keeps the full markdown scale.
+
+   <strong> is deliberately left out: it stays --text-primary, which is what
+   makes the bold lead-ins in those lists carry. */
+.modal-body .md-content,
+.modal-body .md-content p,
+.modal-body .md-content li {
+    color: var(--text-secondary);
+    font-size: 0.95rem;
+}
+
 .modal-header {
     border-bottom: 1px solid var(--border-color);
     padding-bottom: 0.75rem;

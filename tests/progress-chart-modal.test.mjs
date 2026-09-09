@@ -518,3 +518,132 @@ test('the panel is registered with the store on activity, stats and sources', ()
         'the row must run the renderer that self-gates on the overlay being open'
     );
 });
+
+// ── The explanations are Markdown ───────────────────────────────────────────
+
+/* The four `*_info_desc` strings used to be the one place in the app where
+ * display text carried raw HTML: `<b>`, and `<br>` doubled up to fake
+ * paragraphs and `<br>• ` to fake bullets. Everything else the user reads -
+ * every question, option and explanation - has been Obsidian Markdown for a
+ * long time (docs/MARKDOWN_SPEC.md), rendered through an escaping parser.
+ *
+ * Two things had to be true at once and neither was pinned:
+ *
+ *   - the strings must stay tag-free. i18n.js is written in two dialects
+ *     otherwise, and `updateStaticTranslations()` binds `data-i18n` through
+ *     `innerText` - so the day one of these keys is bound that way instead of
+ *     interpolated, the reader sees `<b>` on screen, in that language only, with
+ *     no error anywhere.
+ *
+ *   - the call sites must render them. Markdown handed to `showInfoAlert()`
+ *     raw is not a crash, it is `**Bugün**` printed literally - the silent half
+ *     of the same coin.
+ */
+const INFO_DESC_KEYS = [
+    'avg_diff_info_desc',
+    'panel_overview_info_desc',
+    'difficulty_info_desc',
+    'workload_info_desc'
+];
+
+test('the chart explanations carry no HTML in any language', async () => {
+    const { translations } = await import('../src/core/i18n.js');
+
+    for (const lang of ['tr', 'en', 'de']) {
+        for (const key of INFO_DESC_KEYS) {
+            const value = translations[lang]?.[key];
+            assert.ok(value, `${lang}.${key} is missing`);
+
+            const tags = value.match(/<\/?[a-z][^>]*>/gi) || [];
+            assert.deepEqual(tags, [],
+                `${lang}.${key} must be Markdown, not HTML - found ${tags.join(' ')}`);
+        }
+    }
+});
+
+/* Asserted on the rendered output rather than on the source string: a string
+   can be tag-free and still be plain text. The <ul> is what says the bullets
+   became a real list instead of "• " typed into a paragraph. */
+test('the explanations render as Markdown blocks, not as one flat paragraph', async () => {
+    const { translations } = await import('../src/core/i18n.js');
+    const { renderMarkdown } = await import('../src/core/markdown.js');
+
+    // The two that carry bullet lists; the other two are prose only.
+    for (const lang of ['tr', 'en', 'de']) {
+        for (const key of ['panel_overview_info_desc', 'workload_info_desc']) {
+            const out = renderMarkdown(translations[lang][key]);
+
+            assert.match(out, /<ul>/, `${lang}.${key} lost its list`);
+            assert.ok((out.match(/<li>/g) || []).length >= 3,
+                `${lang}.${key} must keep every bullet`);
+            assert.match(out, /<p>[\s\S]*<\/p>/, `${lang}.${key} lost its paragraphs`);
+            assert.match(out, /<strong>/, `${lang}.${key} lost its bold lead-ins`);
+        }
+    }
+});
+
+/* The mutant this exists for: `showInfoAlert(t(descKey), ...)` without the
+   renderMarkdown() around it. The dialog still opens, the title is still right
+   and the body is still long - so every assertion in the click test above stays
+   green while the user reads `**Bugün**`. */
+test('clicking an info button shows rendered Markdown, never raw asterisks', async () => {
+    const { t } = await import('../src/core/i18n.js');
+
+    openPanel();
+    showProgressCharts();
+
+    const withLists = new Set(['modalOverviewInfoBtn', 'modalWorkloadInfoBtn']);
+
+    for (const id of ['modalOverviewInfoBtn', 'modalDifficultyInfoBtn', 'modalWorkloadInfoBtn']) {
+        document.getElementById('customModalOverlay').classList.remove('active');
+        document.getElementById(id).dispatchEvent(new window.MouseEvent('click', { bubbles: true }));
+
+        const body = document.getElementById('modalMessage');
+
+        assert.ok(body.querySelector('.md-content'),
+            `#${id} put its explanation on screen unrendered`);
+        assert.ok(body.querySelector('strong'),
+            `#${id} lost the bold lead-ins the text is written around`);
+        assert.ok(!body.textContent.includes('**'),
+            `#${id} leaked Markdown source to the reader`);
+        assert.ok(!body.textContent.includes('•'),
+            `#${id} still fakes its bullets with a typed character`);
+
+        if (withLists.has(id)) {
+            assert.ok(body.querySelector('ul > li'),
+                `#${id} must draw its bullets as a real list`);
+        }
+    }
+
+    // The home screen's average-difficulty box shares the rule but not the
+    // panel, so it is pinned where it is bound.
+    const src = readFileSync(new URL('../src/features/stats/stats-module.js', import.meta.url), 'utf8');
+    assert.match(src, /showInfoAlert\(\s*renderMarkdown\(t\('avg_diff_info_desc'\)\)/,
+        'the average-difficulty explanation must be rendered too');
+
+    document.getElementById('customModalOverlay').classList.remove('active');
+});
+
+/* renderMarkdown() emits `<div class="md-content">` wrapping <p> and <ul>.
+   The shared modal body used to be a <p>, which makes that nesting invalid -
+   jsdom keeps it, a browser is under no obligation to. */
+test('the shared modal body can hold block content', () => {
+    const body = markup.getElementById('modalMessage');
+    assert.ok(body, '#modalMessage is missing from index.html');
+    assert.equal(body.tagName, 'DIV',
+        '#modalMessage must not be a <p>: it is handed <p> and <ul> children');
+});
+
+/* Without this the modal disagrees with itself: the emitted <p>s match
+   `.modal-body p` (0.95rem, --text-secondary) while the <li>s fall through to
+   `.md-content` (1rem, --text-primary), so the bullets read a step louder than
+   the prose they belong to. jsdom has no cascade worth asking, so the rule is
+   read out of the stylesheet. */
+test('markdown in the modal card keeps the card type scale', () => {
+    for (const selector of ['.modal-body .md-content p', '.modal-body .md-content li']) {
+        const decls = declarationsFor(selector);
+        assert.ok(decls, `${selector} needs a rule, or the list outshouts the prose`);
+        assert.match(decls, /font-size:\s*0\.95rem/, `${selector} must match the card size`);
+        assert.match(decls, /--text-secondary/, `${selector} must match the card colour`);
+    }
+});
