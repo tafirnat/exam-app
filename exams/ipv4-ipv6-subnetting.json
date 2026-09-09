@@ -1,0 +1,614 @@
+{
+  "exam_metadata": {
+    "title": "IPv4, IPv6 & Subnetting – Grundlagen für die IHK-FISI-Prüfung",
+    "id": "exam_ipv4_ipv6_subnetting_ihk_fisi",
+    "category": "Netzwerktechnik",
+    "description": "20 Fragen zu den Grundlagen von IPv4, IPv6 und Subnetting – optimal zur Vorbereitung auf die IHK-Prüfung zum Fachinformatiker für Systemintegration (FISI).",
+    "keepOrder": true
+  },
+  "questions": [
+    {
+      "id": "q1",
+      "type": "single_choice",
+      "difficulty": 1.5,
+      "tags": [
+        "ipv4",
+        "adressklassen"
+      ],
+      "content": {
+        "text": "Welche der folgenden IPv4-Adressen gehört zur **Klasse C** (gemäß der klassenbasierten Adressierung)?"
+      },
+      "options": [
+        {
+          "id": 1,
+          "text": "10.0.0.1"
+        },
+        {
+          "id": 2,
+          "text": "172.16.0.1"
+        },
+        {
+          "id": 3,
+          "text": "192.168.1.1"
+        },
+        {
+          "id": 4,
+          "text": "224.0.0.1"
+        }
+      ],
+      "answer": {
+        "correct_ids": [
+          3
+        ],
+        "explanation": "Die Klasse-C-Adressen liegen im Bereich **192.0.0.0 – 223.255.255.255** mit der Standard-Subnetzmaske **255.255.255.0**. 192.168.1.1 ist eine typische Klasse-C-Adresse. 10.0.0.1 ist Klasse A, 172.16.0.1 Klasse B und 224.0.0.1 ist eine Multicast-Adresse (Klasse D)."
+      }
+    },
+    {
+      "id": "q2",
+      "type": "single_choice",
+      "difficulty": 2,
+      "tags": [
+        "ipv4",
+        "private_adressen"
+      ],
+      "content": {
+        "text": "Welcher IPv4-Adressbereich ist **nicht** als privater Adressbereich gemäß RFC 1918 reserviert?"
+      },
+      "options": [
+        {
+          "id": 1,
+          "text": "10.0.0.0 – 10.255.255.255"
+        },
+        {
+          "id": 2,
+          "text": "172.16.0.0 – 172.31.255.255"
+        },
+        {
+          "id": 3,
+          "text": "192.168.0.0 – 192.168.255.255"
+        },
+        {
+          "id": 4,
+          "text": "169.254.0.0 – 169.254.255.255"
+        }
+      ],
+      "answer": {
+        "correct_ids": [
+          4
+        ],
+        "explanation": "Der Bereich **169.254.0.0/16** ist der **APIPA-Bereich** (Automatic Private IP Addressing) und wird verwendet, wenn kein DHCP-Server erreicht werden kann. Er ist **nicht** Teil von RFC 1918. Die privaten Bereiche gemäß RFC 1918 sind: **10.0.0.0/8**, **172.16.0.0/12** und **192.168.0.0/16**."
+      }
+    },
+    {
+      "id": "q3",
+      "type": "true_false",
+      "difficulty": 1,
+      "tags": [
+        "ipv4",
+        "loopback"
+      ],
+      "content": {
+        "text": "Die IPv4-Adresse **127.0.0.1** wird als **Loopback-Adresse** bezeichnet und dient dazu, das eigene Gerät zu adressieren."
+      },
+      "options": [
+        {
+          "id": 1,
+          "text": "Wahr"
+        },
+        {
+          "id": 2,
+          "text": "Falsch"
+        }
+      ],
+      "answer": {
+        "correct_ids": [
+          1
+        ],
+        "explanation": "**Richtig**. Der gesamte Adressblock **127.0.0.0/8** ist für Loopback-Zwecke reserviert. Die Adresse **127.0.0.1** ist die bekannteste Loopback-Adresse, auch als *localhost* bekannt. Pakete an diese Adresse verlassen niemals das Netzwerk, sondern werden direkt an den eigenen Stack zurückgegeben."
+      }
+    },
+    {
+      "id": "q4",
+      "type": "single_choice",
+      "difficulty": 2.5,
+      "tags": [
+        "subnetting",
+        "cidr"
+      ],
+      "content": {
+        "text": "Gegeben ist das Netz **192.168.10.0/24**. Sie benötigen **6 Subnetze** mit jeweils möglichst vielen Hosts. Welche **Subnetzmaske** müssen Sie verwenden?"
+      },
+      "options": [
+        {
+          "id": 1,
+          "text": "255.255.255.192 (/26)"
+        },
+        {
+          "id": 2,
+          "text": "255.255.255.224 (/27)"
+        },
+        {
+          "id": 3,
+          "text": "255.255.255.240 (/28)"
+        },
+        {
+          "id": 4,
+          "text": "255.255.255.248 (/29)"
+        }
+      ],
+      "answer": {
+        "correct_ids": [
+          2
+        ],
+        "explanation": "Für **6 Subnetze** benötigen Sie mindestens **3 Bits** für die Subnetz-ID (2³ = 8 Subnetze; /26 böte nur 4). Bei einem /24-Netz haben Sie 8 Host-Bits. Es bleiben 5 Bits für die Hosts (2⁵ – 2 = 30 Hosts pro Subnetz). Die Subnetzmaske ist **/27** bzw. **255.255.255.224**."
+      }
+    },
+    {
+      "id": "q5",
+      "type": "fill_in_the_blank",
+      "difficulty": 2,
+      "tags": [
+        "subnetting",
+        "netzwerkadresse"
+      ],
+      "content": {
+        "text": "Die Netzwerkadresse des Subnetzes mit der IP **192.168.5.37/28** lautet: **{{192.168.5.32}}**."
+      },
+      "answer": {
+        "caseSensitive": false,
+        "explanation": "Bei einem **/28**-Netz (Subnetzmaske 255.255.255.240) beträgt die Subnetzgröße **16** Adressen. Die Netzwerkadresse ergibt sich, indem man die Host-Bits auf Null setzt: 37 / 16 = 2, Rest 5 → die Netzwerkadresse ist **192.168.5.32** (2 × 16 = 32)."
+      }
+    },
+    {
+      "id": "q6",
+      "type": "single_choice",
+      "difficulty": 2,
+      "tags": [
+        "subnetting",
+        "broadcast"
+      ],
+      "content": {
+        "text": "Welche Adresse ist die **Broadcast-Adresse** im Subnetz **192.168.10.64/26**?"
+      },
+      "options": [
+        {
+          "id": 1,
+          "text": "192.168.10.127"
+        },
+        {
+          "id": 2,
+          "text": "192.168.10.128"
+        },
+        {
+          "id": 3,
+          "text": "192.168.10.255"
+        },
+        {
+          "id": 4,
+          "text": "192.168.10.63"
+        }
+      ],
+      "answer": {
+        "correct_ids": [
+          1
+        ],
+        "explanation": "Ein **/26**-Netz hat eine Subnetzgröße von **64** Adressen (2⁶). Die Netzwerkadresse ist **192.168.10.64**, die Broadcast-Adresse ist die letzte Adresse des Subnetzes: **192.168.10.127** (64 + 64 – 1 = 127)."
+      }
+    },
+    {
+      "id": "q7",
+      "type": "multiple_choice",
+      "difficulty": 3,
+      "tags": [
+        "ipv6",
+        "adresstypen"
+      ],
+      "content": {
+        "text": "Welche der folgenden Aussagen über **IPv6-Adresstypen** sind korrekt?"
+      },
+      "options": [
+        {
+          "id": 1,
+          "text": "**Unicast** – identifiziert einen eindeutigen Interface-Knoten."
+        },
+        {
+          "id": 2,
+          "text": "**Multicast** – identifiziert eine Gruppe von Knoten; Pakete werden an alle Mitglieder gesendet."
+        },
+        {
+          "id": 3,
+          "text": "**Anycast** – identifiziert eine Gruppe von Knoten; Pakete werden an den nächstgelegenen Knoten gesendet."
+        },
+        {
+          "id": 4,
+          "text": "**Broadcast** – ist in IPv6 der Standard für die Adressierung aller Knoten im Netzwerk."
+        }
+      ],
+      "answer": {
+        "correct_ids": [
+          1,
+          2,
+          3
+        ],
+        "explanation": "In **IPv6** gibt es **keinen Broadcast** mehr. Seine Aufgabe übernimmt Multicast (z. B. ff02::1 für alle Knoten auf dem Link). **Unicast**, **Multicast** und **Anycast** sind die drei grundlegenden Adresstypen in IPv6."
+      }
+    },
+    {
+      "id": "q8",
+      "type": "true_false",
+      "difficulty": 2,
+      "tags": [
+        "ipv6",
+        "link_local"
+      ],
+      "content": {
+        "text": "IPv6 **Link-Local-Adressen** beginnen mit dem Präfix **FE80::/10** und sind nur innerhalb eines Netzwerksegments gültig. Sie werden nicht über Router geroutet."
+      },
+      "options": [
+        {
+          "id": 1,
+          "text": "Wahr"
+        },
+        {
+          "id": 2,
+          "text": "Falsch"
+        }
+      ],
+      "answer": {
+        "correct_ids": [
+          1
+        ],
+        "explanation": "**Richtig**. Link-Local-Adressen stammen aus dem Block **FE80::/10**; in der Praxis wird davon **FE80::/64** verwendet. Sie sind nur auf dem lokalen Netzwerksegment gültig und werden von Routern **nicht** weitergeleitet. Jedes IPv6-fähige Interface generiert sie automatisch."
+      }
+    },
+    {
+      "id": "q9",
+      "type": "single_choice",
+      "difficulty": 2.5,
+      "tags": [
+        "ipv6",
+        "unique_local"
+      ],
+      "content": {
+        "text": "Welches Präfix wird für **Unique Local Unicast-Adressen** (ULA) in IPv6 verwendet?"
+      },
+      "options": [
+        {
+          "id": 1,
+          "text": "FC00::/7"
+        },
+        {
+          "id": 2,
+          "text": "FE80::/10"
+        },
+        {
+          "id": 3,
+          "text": "2000::/3"
+        },
+        {
+          "id": 4,
+          "text": "FF00::/8"
+        }
+      ],
+      "answer": {
+        "correct_ids": [
+          1
+        ],
+        "explanation": "**Unique Local Unicast-Adressen** (ULA) verwenden das Präfix **FC00::/7**; praktisch vergeben wird daraus **FD00::/8**. Sie sind das IPv6-Äquivalent zu den privaten IPv4-Adressen nach RFC 1918. **FE80::/10** ist Link-Local, **2000::/3** ist der Global-Unicast-Bereich und **FF00::/8** ist Multicast."
+      }
+    },
+    {
+      "id": "q10",
+      "type": "short_answer",
+      "difficulty": 2,
+      "tags": [
+        "ipv6",
+        "adressformat"
+      ],
+      "content": {
+        "text": "Wie lautet die **verkürzte Schreibweise** der folgenden IPv6-Adresse? **2001:0db8:0000:0000:0000:0000:1428:57ab**"
+      },
+      "answer": {
+        "accepted_texts": [
+          "2001:db8::1428:57ab",
+          "2001:0db8::1428:57ab"
+        ],
+        "caseSensitive": false,
+        "explanation": "Die Regeln zur Verkürzung von IPv6-Adressen:\n1. Führende Nullen in jeder Gruppe können weggelassen werden (0db8 → db8, 0000 → 0).\n2. **Eine** zusammenhängende Sequenz von Null-Gruppen kann durch :: ersetzt werden (hier die sechs Null-Gruppen).\nErgebnis: **2001:db8::1428:57ab**."
+      }
+    },
+    {
+      "id": "q11",
+      "type": "single_choice",
+      "difficulty": 3,
+      "tags": [
+        "subnetting",
+        "cidr",
+        "hostberechnung"
+      ],
+      "content": {
+        "text": "Wie viele **nutzbare Host-Adressen** stehen in einem Subnetz mit der Maske **/29** zur Verfügung?"
+      },
+      "options": [
+        {
+          "id": 1,
+          "text": "6"
+        },
+        {
+          "id": 2,
+          "text": "8"
+        },
+        {
+          "id": 3,
+          "text": "14"
+        },
+        {
+          "id": 4,
+          "text": "30"
+        }
+      ],
+      "answer": {
+        "correct_ids": [
+          1
+        ],
+        "explanation": "Bei einer **/29**-Maske stehen **3 Bits** für die Hosts zur Verfügung (32 – 29 = 3). Die Anzahl der möglichen Adressen beträgt 2³ = 8. Davon sind die **Netzwerkadresse** und die **Broadcast-Adresse** reserviert, es bleiben also **8 – 2 = 6** nutzbare Host-Adressen."
+      }
+    },
+    {
+      "id": "q12",
+      "type": "fill_in_the_blank",
+      "difficulty": 2.5,
+      "tags": [
+        "subnetting",
+        "cidr"
+      ],
+      "content": {
+        "text": "Die CIDR-Notation **/20** entspricht der Subnetzmaske **{{255.255.240.0}}**."
+      },
+      "answer": {
+        "caseSensitive": false,
+        "explanation": "**/20** bedeutet, dass 20 Bits für die Netzwerk-ID verwendet werden. Die Subnetzmaske hat also 20 aufeinanderfolgende 1-Bits: **11111111.11111111.11110000.00000000** = **255.255.240.0**."
+      }
+    },
+    {
+      "id": "q13",
+      "type": "multiple_choice",
+      "difficulty": 3.5,
+      "tags": [
+        "subnetting",
+        "vlsm"
+      ],
+      "content": {
+        "text": "Sie haben das Netz **192.168.1.0/24** und müssen folgende Subnetze bereitstellen: **Subnetz A**: 60 Hosts, **Subnetz B**: 30 Hosts, **Subnetz C**: 12 Hosts. Welche **Subnetzmasken** sind für diese Anforderungen geeignet?"
+      },
+      "options": [
+        {
+          "id": 1,
+          "text": "Subnetz A: /26 (255.255.255.192)"
+        },
+        {
+          "id": 2,
+          "text": "Subnetz B: /27 (255.255.255.224)"
+        },
+        {
+          "id": 3,
+          "text": "Subnetz C: /28 (255.255.255.240)"
+        },
+        {
+          "id": 4,
+          "text": "Subnetz A: /27 (255.255.255.224)"
+        }
+      ],
+      "answer": {
+        "correct_ids": [
+          1,
+          2,
+          3
+        ],
+        "explanation": "Für **60 Hosts** benötigt man mindestens 6 Host-Bits (2⁶ – 2 = 62) → **/26**. Für **30 Hosts** mindestens 5 Host-Bits (2⁵ – 2 = 30) → **/27**. Für **12 Hosts** mindestens 4 Host-Bits (2⁴ – 2 = 14) → **/28**. Option 4 reicht für Subnetz A nicht aus (nur 30 Hosts)."
+      }
+    },
+    {
+      "id": "q14",
+      "type": "true_false",
+      "difficulty": 2,
+      "tags": [
+        "ipv4",
+        "subnetting"
+      ],
+      "content": {
+        "text": "Bei der Verwendung von **CIDR** (Classless Inter-Domain Routing) entfällt die starre Einteilung in Adressklassen (A, B, C). Stattdessen wird die Netzwerk-ID durch die **Subnetzmaske** beliebig festgelegt."
+      },
+      "options": [
+        {
+          "id": 1,
+          "text": "Wahr"
+        },
+        {
+          "id": 2,
+          "text": "Falsch"
+        }
+      ],
+      "answer": {
+        "correct_ids": [
+          1
+        ],
+        "explanation": "**Richtig**. CIDR wurde eingeführt, um die Verschwendung von IPv4-Adressen durch die klassenbasierte Adressierung zu beheben. Die Grenze zwischen Netzwerk-ID und Host-ID kann **beliebig** gezogen werden (nicht nur bei /8, /16, /24), was eine flexiblere und effizientere Adressvergabe ermöglicht."
+      }
+    },
+    {
+      "id": "q15",
+      "type": "single_choice",
+      "difficulty": 2,
+      "tags": [
+        "ipv6",
+        "global_unicast"
+      ],
+      "content": {
+        "text": "Welcher Adressblock ist für **Global Unicast-Adressen** (im Internet routbar) reserviert?"
+      },
+      "options": [
+        {
+          "id": 1,
+          "text": "2000::/3"
+        },
+        {
+          "id": 2,
+          "text": "FE80::/10"
+        },
+        {
+          "id": 3,
+          "text": "FC00::/7"
+        },
+        {
+          "id": 4,
+          "text": "FF00::/8"
+        }
+      ],
+      "answer": {
+        "correct_ids": [
+          1
+        ],
+        "explanation": "Global Unicast-Adressen stammen aus dem Block **2000::/3** (2000:: bis 3FFF:FFFF:...). Daraus vergibt die IANA einzelne Teilbereiche an die RIRs, z. B. **2001::/16**; 2001:db8::/32 ist der Dokumentationsbereich. **FE80::/10** ist Link-Local, **FC00::/7** ist ULA und **FF00::/8** ist Multicast."
+      }
+    },
+    {
+      "id": "q16",
+      "type": "short_answer",
+      "difficulty": 3,
+      "tags": [
+        "subnetting",
+        "netzwerkplanung"
+      ],
+      "content": {
+        "text": "Sie haben das Netz **10.0.0.0/8** und müssen **2000 Subnetze** mit jeweils möglichst vielen Hosts erstellen. Wie viele **Bits** müssen Sie für die Subnetz-ID ausleihen? (Geben Sie nur die Zahl an.)"
+      },
+      "answer": {
+        "accepted_texts": [
+          "11"
+        ],
+        "caseSensitive": false,
+        "explanation": "Bei einem **/8**-Netz haben Sie 24 Host-Bits. Für **2000 Subnetze** benötigen Sie 2¹¹ = 2048 Subnetze (2¹⁰ = 1024 wäre zu wenig). Sie müssen also **11 Bits** für die Subnetz-ID ausleihen. Es bleiben 13 Bits für die Hosts (2¹³ – 2 = 8190 Hosts pro Subnetz), die Maske wird zu **/19**."
+      }
+    },
+    {
+      "id": "q17",
+      "type": "single_choice",
+      "difficulty": 2.5,
+      "tags": [
+        "ipv6",
+        "slaac"
+      ],
+      "content": {
+        "text": "Was bedeutet **SLAAC** (Stateless Address Autoconfiguration) in IPv6?"
+      },
+      "options": [
+        {
+          "id": 1,
+          "text": "Ein Verfahren, bei dem ein Gerät seine IPv6-Adresse selbstständig aus dem vom Router angekündigten Netzwerkpräfix und einem selbst gebildeten Interface-Identifier erzeugt."
+        },
+        {
+          "id": 2,
+          "text": "Ein Protokoll zur automatischen Vergabe von IPv6-Adressen durch einen DHCPv6-Server."
+        },
+        {
+          "id": 3,
+          "text": "Ein Mechanismus zur Umwandlung von IPv4- in IPv6-Adressen."
+        },
+        {
+          "id": 4,
+          "text": "Eine Methode zur Statistik der Netzwerkauslastung in IPv6-Netzen."
+        }
+      ],
+      "answer": {
+        "correct_ids": [
+          1
+        ],
+        "explanation": "**SLAAC** ermöglicht es einem IPv6-Gerät, sich **ohne** DHCP-Server eine Adresse zu geben. Es kombiniert das per **Router Advertisement** empfangene Präfix mit einem Interface-Identifier – klassisch **EUI-64** aus der MAC-Adresse (mit eingefügtem FFFE), heute meist zufällig gebildet (Privacy Extensions, RFC 4941/7217). DHCPv6 ist ein separates, zustandsbehaftetes Verfahren."
+      }
+    },
+    {
+      "id": "q18",
+      "type": "true_false",
+      "difficulty": 1.5,
+      "tags": [
+        "ipv4",
+        "subnetting"
+      ],
+      "content": {
+        "text": "Die Subnetzmaske **255.255.255.0** entspricht der CIDR-Notation **/24**."
+      },
+      "options": [
+        {
+          "id": 1,
+          "text": "Wahr"
+        },
+        {
+          "id": 2,
+          "text": "Falsch"
+        }
+      ],
+      "answer": {
+        "correct_ids": [
+          1
+        ],
+        "explanation": "**Richtig**. Die Subnetzmaske **255.255.255.0** hat 24 aufeinanderfolgende 1-Bits (11111111.11111111.11111111.00000000), daher entspricht sie der CIDR-Notation **/24**."
+      }
+    },
+    {
+      "id": "q19",
+      "type": "multiple_choice",
+      "difficulty": 3,
+      "tags": [
+        "ipv6",
+        "vorteile"
+      ],
+      "content": {
+        "text": "Welche der folgenden Aussagen sind **Vorteile von IPv6** gegenüber IPv4?"
+      },
+      "options": [
+        {
+          "id": 1,
+          "text": "Deutlich größerer Adressraum (128-Bit-Adressen)"
+        },
+        {
+          "id": 2,
+          "text": "IPsec ist von Anfang an Bestandteil der Protokollarchitektur"
+        },
+        {
+          "id": 3,
+          "text": "Wegfall von NAT (Network Address Translation) in vielen Szenarien"
+        },
+        {
+          "id": 4,
+          "text": "Vereinfachter Header mit fester Länge (40 Byte) und weniger Feldern – dadurch schnellere Verarbeitung durch Router"
+        }
+      ],
+      "answer": {
+        "correct_ids": [
+          1,
+          2,
+          3,
+          4
+        ],
+        "explanation": "**Alle** genannten Punkte sind Vorteile von IPv6:\n- **128-Bit-Adressen** → 2¹²⁸ Adressen (statt 2³² bei IPv4)\n- **IPsec** war von Beginn an Teil der Architektur (bei IPv4 nachträglich ergänzt)\n- **Wegfall von NAT** möglich, da genügend öffentliche Adressen vorhanden sind\n- **Fester 40-Byte-Header** mit weniger Feldern, ohne Prüfsumme und ohne Fragmentierung durch Router → schnellere Weiterleitung.\n\nAchtung für die Prüfung: Der IPv6-Header ist nicht *kürzer* als der IPv4-Header (min. 20 Byte), sondern **einfacher und gleichbleibend lang**."
+      }
+    },
+    {
+      "id": "q20",
+      "type": "flashcard",
+      "difficulty": 2.5,
+      "tags": [
+        "subnetting",
+        "zusammenfassung"
+      ],
+      "content": {
+        "text": "**Subnetting – die wichtigsten Formeln**\n\nWie berechnet man ...\n1. die Anzahl der Subnetze?\n2. die Anzahl der Hosts pro Subnetz?\n3. die Subnetzmaske aus der CIDR-Notation?"
+      },
+      "answer": {
+        "back": "**1. Anzahl der Subnetze** = 2^(ausgeliehene Bits)\n\n**2. Hosts pro Subnetz** = 2^(verbleibende Host-Bits) – 2\n(Abzug von 2 für Netzwerk- und Broadcast-Adresse)\n\n**3. Subnetzmaske aus CIDR**\n- /24 → 255.255.255.0\n- /25 → 255.255.255.128\n- /26 → 255.255.255.192\n- /27 → 255.255.255.224\n- /28 → 255.255.255.240\n- /29 → 255.255.255.248\n- /30 → 255.255.255.252",
+        "explanation": "Diese Formeln sind das Fundament für jede Subnetting-Aufgabe in der IHK-Prüfung. Üben Sie sie bis zur sicheren Anwendung!"
+      }
+    }
+  ]
+}
