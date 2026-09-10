@@ -10,6 +10,7 @@ import { parseCloze, clozeMarkup, matchesBlank } from '../../core/cloze.js';
 import { renderMarkdown, renderInlineMarkdown, plainText } from '../../core/markdown.js';
 import { openQuestionEditor } from '../stats/question-editor.js';
 import { setPreviewNavList } from '../stats/preview-nav.js';
+import { cleanTextForSpeech } from '../../core/tts-cleaner.js';
 
 // --- TTS State Machine ---
 // States: 'IDLE' | 'SCHEDULED' | 'PLAYING'
@@ -47,24 +48,25 @@ const TTS = {
         if (!silent && wasActive) renderQuestion(true);
     },
 
-    schedule(text, delay) {
+    schedule(text, delay, options = {}) {
         this._cancelSchedule();
         this.state = 'SCHEDULED';
         this.timerId = setTimeout(() => {
             this.timerId = null;
             if (AppState.ttsAutoplay && this.state === 'SCHEDULED') {
-                this._play(text);
+                this._play(text, null, options);
             } else {
                 this.state = 'IDLE';
             }
         }, delay);
     },
 
-    _play(text, sectionKey = null) {
+    _play(text, sectionKey = null, options = {}) {
         if (!text) { this.state = 'IDLE'; this.sectionKey = null; return; }
-        const cleanText = text.replace(/<[^>]*>/g, ' ').replace(/\s+/g, ' ').trim();
-        if (!cleanText) { this.state = 'IDLE'; this.sectionKey = null; return; }
         const lang = AppState.language === 'tr' ? 'tr' : (AppState.language === 'de' ? 'de' : 'en');
+        const isAnswered = options.revealAnswers ?? (AppState.isAnswerChecked || AppState.testAnswers?.[AppState.currentIndex] !== undefined);
+        const cleanText = cleanTextForSpeech(text, { lang, revealAnswers: isAnswered });
+        if (!cleanText) { this.state = 'IDLE'; this.sectionKey = null; return; }
         const voicePrefix = lang === 'tr' ? 'tr-TR-Wavenet-' : (lang === 'de' ? 'de-DE-Wavenet-' : 'en-US-Wavenet-');
         const voice = AppState.currentTtsVoice || 'A';
         const speed = AppState.ttsSpeed || 0.5;
@@ -96,12 +98,12 @@ const TTS = {
     /* A second click on whatever is currently speaking stops it; a click on any
        other target replaces it. That is what keeps the card button and the
        per-section buttons from ever playing over each other. */
-    toggle(text, sectionKey = null) {
+    toggle(text, sectionKey = null, options = {}) {
         if (this.state === 'PLAYING' && this.sectionKey === sectionKey) {
             this.stop(false);
         } else {
             this.stop(true);
-            this._play(text, sectionKey);
+            this._play(text, sectionKey, options);
         }
     },
 
@@ -578,7 +580,7 @@ export function renderQuestion(isRefresh = false) {
                 const tBtn = document.createElement('button');
                 tBtn.className = 'tts-btn';
                 tBtn.innerHTML = '<svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2.5"><polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5"></polygon><path d="M19.07 4.93a10 10 0 0 1 0 14.14M15.54 8.46a5 5 0 0 1 0 7.07"></path></svg>';
-                tBtn.onclick = () => TTS.toggle(q.answer?.back || '');
+                tBtn.onclick = () => TTS.toggle(q.answer?.back || '', null, { revealAnswers: true });
                 backFace.appendChild(tBtn);
             }
 
@@ -1540,7 +1542,7 @@ window.showQuestionResult = (testId, questionId) => {
 };
 
 // handleTtsToggle: preview bağlamı için onRefresh callback desteğiyle TTS toggle
-export function handleTtsToggle(text, onRefresh = null, sectionKey = null) {
+export function handleTtsToggle(text, onRefresh = null, sectionKey = null, options = {}) {
     if (onRefresh) {
         // Preview context: use a custom refresh callback via a one-shot wrapper
         if (TTS.isPlaying && TTS.sectionKey === sectionKey) {
@@ -1548,7 +1550,7 @@ export function handleTtsToggle(text, onRefresh = null, sectionKey = null) {
             onRefresh();
         } else {
             TTS.stop(true);
-            TTS._play(text, sectionKey);
+            TTS._play(text, sectionKey, options);
             if (TTS.audio) {
                 const origOnEnded = TTS.audio.onended;
                 TTS.audio.onended = () => {
@@ -1559,7 +1561,7 @@ export function handleTtsToggle(text, onRefresh = null, sectionKey = null) {
             onRefresh();
         }
     } else {
-        TTS.toggle(text, sectionKey);
+        TTS.toggle(text, sectionKey, options);
     }
 }
 
