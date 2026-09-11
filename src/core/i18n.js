@@ -765,6 +765,10 @@ export const translations = {
         nugget_edit_title: "Yeni İpucu Ekle",
         nugget_edit_title_edit: "İpucunu Düzenle",
         nugget_text_placeholder: "Örn: Everest Dağı dünyanın en yüksek zirvesidir.",
+        ai_provider_missing_fields: "Lütfen servis adı ve URL girin.",
+        ai_provider_min_required: "En az bir AI servisi olmalıdır.",
+        search_results_title: "Arama Sonuçları ({count} Soru)",
+        questions_count_badge: "{count} Soru",
     },
     en: {
         nugget_edit_title: "Add Nugget",
@@ -1513,6 +1517,10 @@ export const translations = {
         heatmap_less: "Less",
         heatmap_more: "More",
         heatmap_questions_in_progress: "{date} — {count} questions (in progress)",
+        ai_provider_missing_fields: "Please enter service name and URL.",
+        ai_provider_min_required: "At least one AI service is required.",
+        search_results_title: "Search Results ({count} Questions)",
+        questions_count_badge: "{count} Questions",
     },
     de: {
         nugget_edit_title: "Wissenshappen hinzufügen",
@@ -2265,18 +2273,31 @@ export const translations = {
         nugget_edit_title: "Neuer Einblick",
         nugget_edit_title_edit: "Einblick bearbeiten",
         nugget_text_placeholder: "Bsp: Der Mount Everest ist der höchste Berg der Welt.",
+        ai_provider_missing_fields: "Bitte Dienstname und URL eingeben.",
+        ai_provider_min_required: "Mindestens ein KI-Dienst muss vorhanden sein.",
+        search_results_title: "Suchergebnisse ({count} Fragen)",
+        questions_count_badge: "{count} Fragen",
     },
 };
 
 export function t(key, params = {}) {
-    const lang = AppState.language || 'en';
-    let text = translations[lang]?.[key] || translations['en'][key] || key;
+    const lang = (AppState && AppState.language && ['tr', 'en', 'de'].includes(AppState.language))
+        ? AppState.language
+        : 'en';
+    let text = translations[lang]?.[key] || translations['en']?.[key] || translations['tr']?.[key] || key;
 
-    Object.keys(params).forEach(p => {
-        text = text.replace(`{${p}}`, params[p]);
-    });
+    if (typeof text === 'string') {
+        Object.keys(params).forEach(p => {
+            text = text.replace(`{${p}}`, params[p]);
+        });
+    }
 
     return text;
+}
+
+export const getI18nText = t;
+if (typeof window !== 'undefined') {
+    window.getI18nText = t;
 }
 
 export function detectLanguage() {

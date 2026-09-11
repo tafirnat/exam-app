@@ -116,16 +116,16 @@ function updateAddCurrentButtonState() {
 
     if (addLabel) {
         if (activeCount > 1) {
-            addLabel.textContent = t('qs_add_current_multiple') || 'Kullanılan Kaynakları Ekle';
+            addLabel.textContent = t('qs_add_current_multiple') || 'Add Active Sources';
         } else {
-            addLabel.textContent = t('qs_add_current_single') || 'Kullanılan Kaynağı Ekle';
+            addLabel.textContent = t('qs_add_current_single') || 'Add Active Source';
         }
     }
 
     const activeIds = activeSources.map(s => s.id).sort();
     if (activeIds.length === 0) {
         addBtn.disabled = true;
-        addBtn.title = t('qs_no_active') || 'Aktif kaynak yok';
+        addBtn.title = t('qs_no_active') || 'No active sources';
     } else {
         const isDuplicate = (AppState.quickPresets || []).some(p => {
             if (!p.sourceIds || p.sourceIds.length !== activeIds.length) return false;
@@ -135,7 +135,7 @@ function updateAddCurrentButtonState() {
 
         if (isDuplicate) {
             addBtn.disabled = true;
-            addBtn.title = t('qs_duplicate_warning') || 'Bu kaynak kombinasyonu zaten Hızlı Erişim\'de kayıtlı';
+            addBtn.title = t('qs_duplicate_warning') || 'This source preset is already saved in Quick Access';
         } else {
             addBtn.disabled = false;
             addBtn.removeAttribute('title');
@@ -312,8 +312,8 @@ function renderManageList() {
         deleteBtn.addEventListener('click', async (e) => {
             e.stopPropagation();
             const confirmed = await showConfirm(
-                t('qs_delete_confirm') || 'Bu hızlı erişim ögesi kaldırılacak. Onaylıyor musunuz?',
-                t('qs_delete_title') || 'Hızlı Erişimden Kaldır'
+                t('qs_delete_confirm') || 'This quick access item will be removed. Are you sure?',
+                t('qs_delete_title') || 'Remove from Quick Access'
             );
             if (confirmed) {
                 deletePreset(preset.id);

@@ -74,8 +74,9 @@ window.startTestFromFilteredQuestions = async (questions, searchOrFilterName) =>
     let title = '';
     if (typeof searchOrFilterName === 'string' && searchOrFilterName.trim() !== '') {
         const raw = searchOrFilterName.trim();
+        const qCountText = t('questions_count_badge', { count: questions.length }) || `${questions.length} Questions`;
         if (raw.startsWith('#')) {
-            title = `"${raw}" (${questions.length} Soru)`;
+            title = `"${raw}" (${qCountText})`;
         } else if (['all', 'starred', 'flagged', 'noted'].includes(raw)) {
             const filterTitles = {
                 all: t('filter_all'),
@@ -83,12 +84,12 @@ window.startTestFromFilteredQuestions = async (questions, searchOrFilterName) =>
                 flagged: t('filter_flagged'),
                 noted: t('filter_noted')
             };
-            title = `${filterTitles[raw] || raw} (${questions.length} Soru)`;
+            title = `${filterTitles[raw] || raw} (${qCountText})`;
         } else {
-            title = `"${raw}" (${questions.length} Soru)`;
+            title = `"${raw}" (${qCountText})`;
         }
     } else {
-        title = `Arama Sonuçları (${questions.length} Soru)`;
+        title = t('search_results_title', { count: questions.length }) || `Search Results (${questions.length} Questions)`;
     }
 
     if (prepareFromCompositeIds(compositeIds, { shuffle: true, sourceTitle: title, mode: 'custom_filter' })) {
@@ -2269,13 +2270,13 @@ function switchView(view, isBack = false) {
         // about their library, which is the one thing they are not doing mid-test.
         maybeShowStorageNotice();
     } else if (view === 'sources') {
-        const titleText = (typeof getI18nText === 'function' ? getI18nText('saved_sources') : '') || 'Kayıtlı Kaynaklar';
+        const titleText = t('saved_sources') || 'Saved Sources';
         const headerTitle = document.getElementById('headerTitle');
         headerTitle.setAttribute('data-i18n', 'saved_sources');
         headerTitle.innerText = titleText;
         renderSourcesList();
     } else if (view === 'stats') {
-        const titleText = (typeof getI18nText === 'function' ? getI18nText('show_stats') : '') || 'Soru Detayları';
+        const titleText = t('show_stats') || 'Question Details';
         const headerTitle = document.getElementById('headerTitle');
         headerTitle.setAttribute('data-i18n', 'show_stats');
         headerTitle.innerText = titleText;
@@ -2622,7 +2623,7 @@ function executeAiSearch(providerId, isPreview = false) {
         window.open(targetUrl, '_blank', 'noopener,noreferrer');
     } else {
         navigator.clipboard.writeText(prompt).then(() => {
-            showToast(t('prompt_copied_toast') || 'Soru promptu panoya alındı. AI sayfasına yapıştırabilirsiniz.');
+            showToast(t('prompt_copied_toast') || 'Prompt copied to clipboard. You can paste it into the AI page.');
             window.open(provider.url, '_blank', 'noopener,noreferrer');
         }).catch(err => console.error('Clipboard error:', err));
     }
@@ -2633,7 +2634,7 @@ function copyAIPrompt(isPreview = false) {
     if (!prompt) return;
 
     navigator.clipboard.writeText(prompt).then(() => {
-        showToast(t('prompt_copied_toast') || 'Soru promptu panoya alındı.');
+        showToast(t('prompt_copied_toast') || 'Question prompt copied to clipboard.');
         flashAiMenuButton(isPreview);
     }).catch(err => console.error('Clipboard error:', err));
 }
@@ -2665,7 +2666,7 @@ function sharePrompt(isPreview = false) {
 
     if (!navigator.share) {
         navigator.clipboard.writeText(prompt)
-            .then(() => showToast(t('prompt_copied_toast') || 'Soru promptu panoya alındı.'))
+            .then(() => showToast(t('prompt_copied_toast') || 'Question prompt copied to clipboard.'))
             .catch(err => console.error('Clipboard error:', err));
         return;
     }
@@ -2689,7 +2690,7 @@ function copyQuestionAndAnswer(isPreview = false) {
     if (!text) return;
 
     navigator.clipboard.writeText(text)
-        .then(() => showToast(t('copy_success') || 'Panoya kopyalandı.'))
+        .then(() => showToast(t('copy_success') || 'Copied to clipboard.'))
         .catch(err => console.error('Clipboard error:', err));
 
     flashAiMenuButton(isPreview);
@@ -2821,7 +2822,7 @@ function renderPromptLibraryList() {
                     <span class="ai-manage-item-url">${escapeHTML(preview)}</span>
                 </div>
                 <div style="display: flex; align-items: center; gap: 0.25rem; flex-shrink: 0;">
-                    <button class="icon-btn edit-prompt-btn" title="${escapeHTML(t('edit') || 'Düzenle')}">
+                    <button class="icon-btn edit-prompt-btn" title="${escapeHTML(t('edit') || 'Edit')}">
                         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="16" height="16">
                             <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"></path>
                             <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"></path>
@@ -3136,7 +3137,7 @@ function addNewAiProvider() {
     let url = urlInput.value.trim();
 
     if (!name || !url) {
-        showToast('Lütfen servis adı ve URL girin.');
+        showToast(t('ai_provider_missing_fields') || 'Please enter service name and URL.');
         return;
     }
 
@@ -3165,18 +3166,18 @@ function addNewAiProvider() {
     urlInput.value = '';
 
     renderAiManagerList();
-    showToast(t('save_success') || 'Kaydedildi');
+    showToast(t('save_success') || 'Saved');
 }
 
 function deleteAiProvider(id) {
     if (AppState.aiProviders.length <= 1) {
-        showToast('En az bir AI servisi olmalıdır.');
+        showToast(t('ai_provider_min_required') || 'At least one AI service is required.');
         return;
     }
     AppState.aiProviders = AppState.aiProviders.filter(p => p.id !== id);
     saveAiProviders();
     renderAiManagerList();
-    showToast(t('reset_success') || 'Silindi');
+    showToast(t('reset_success') || 'Deleted');
 }
 
 function closeAllModals() {

@@ -31,16 +31,18 @@ export function renderStatsList(filter = 'all', searchKeyword = '') {
     const isTagMode = filter.startsWith('tag:');
     const tagName = isTagMode ? filter.split('tag:')[1] : null;
 
-    // Restore/Update Top Header Title based on context
+    // Restore/Update Top Header Title based on context (only when stats view is active)
+    const statsView = document.getElementById('statsView');
+    const isStatsVisible = statsView && statsView.style.display !== 'none';
     const topTitleEl = document.getElementById('headerTitle');
     
-    if (topTitleEl) {
+    if (topTitleEl && isStatsVisible) {
         if (isTagMode) {
             topTitleEl.removeAttribute('data-i18n');
-            topTitleEl.innerText = `${t('tag_label') || 'Etiket'}: ${tagName}`;
+            topTitleEl.innerText = `${t('tag_label') || 'Tag'}: ${tagName}`;
         } else {
             topTitleEl.setAttribute('data-i18n', 'show_stats');
-            topTitleEl.innerText = t('show_stats') || 'Soru Detayları';
+            topTitleEl.innerText = t('show_stats') || 'Question Details';
         }
     }
 
@@ -738,7 +740,7 @@ export function updateHomeStats() {
         totalBox.dataset.bound = 'true';
         totalBox.addEventListener('click', () => {
             import('../../core/utils.js').then(({ showInfoAlert }) => {
-                showInfoAlert(t('total_questions_info_desc') || "Bu metrik sistemde kayıtlı toplam soru sayısını ifade eder.", t('total_questions_info_title') || "Toplam Soru");
+                showInfoAlert(t('total_questions_info_desc') || "This metric shows the total number of available questions in the system or selected sources.", t('total_questions_info_title') || "About Total Questions");
             });
         });
     }

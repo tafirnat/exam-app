@@ -180,10 +180,10 @@ function renderStep(index, isInitial = false) {
     const isLast = index === activeSteps.length - 1;
 
     const btnNextText = isLast
-        ? (t('onboarding_btn_finish') || 'Tamamla')
-        : (t('onboarding_btn_next') || 'Sonraki');
-    const btnPrevText = t('onboarding_btn_prev') || 'Önceki';
-    const btnSkipText = t('onboarding_btn_skip') || 'Atla';
+        ? (t('onboarding_btn_finish') || 'Finish')
+        : (t('onboarding_btn_next') || 'Next');
+    const btnPrevText = t('onboarding_btn_prev') || 'Previous';
+    const btnSkipText = t('onboarding_btn_skip') || 'Skip';
 
     const dotsHTML = activeSteps.map((_, i) => `<div class="onboarding-dot ${i === index ? 'active' : ''}"></div>`).join('');
 

@@ -64,3 +64,76 @@ test('every issue code from question-rules has a validation_ message', async () 
     const missing = [...new Set(codes)].filter(code => !tr.has(`validation_${code}`)).sort();
     assert.deepEqual(missing, [], 'issue codes are turned into t(`validation_${code}`) at runtime');
 });
+
+test('t() returns correct translations across languages, getI18nText works, and defaults to en', async () => {
+    const { t, getI18nText } = await import('../src/core/i18n.js');
+    const { AppState } = await import('../src/core/state.js');
+    const prevLang = AppState.language;
+
+    try {
+        assert.equal(typeof getI18nText, 'function');
+        assert.equal(getI18nText, t);
+
+        // German
+        AppState.language = 'de';
+        assert.equal(t('saved_sources'), 'Gespeicherte Quellen');
+        assert.equal(t('show_stats'), 'Fragen-Details');
+
+        // Turkish
+        AppState.language = 'tr';
+        assert.equal(t('saved_sources'), 'Kayıtlı Kaynaklar');
+        assert.equal(t('show_stats'), 'Soru Detayları');
+
+        // English
+        AppState.language = 'en';
+        assert.equal(t('saved_sources'), 'Saved Sources');
+        assert.equal(t('show_stats'), 'Question Details');
+
+        // Unknown / corrupted language falls back to English
+        AppState.language = 'invalid_lang';
+        assert.equal(t('saved_sources'), 'Saved Sources');
+
+        // Falsy language falls back to English
+        AppState.language = null;
+        assert.equal(t('saved_sources'), 'Saved Sources');
+    } finally {
+        AppState.language = prevLang;
+    }
+});
+
+test('updateStaticTranslations updates headerTitle with data-i18n across languages', async () => {
+    const { JSDOM } = await import('jsdom');
+    const dom = new JSDOM(`<!doctype html><html><body>
+        <div id="headerTitle" data-i18n="saved_sources">Exam App</div>
+    </body></html>`);
+    const prevWindow = global.window;
+    const prevDocument = global.document;
+    global.window = dom.window;
+    global.document = dom.window.document;
+
+    const { updateStaticTranslations } = await import('../src/core/i18n.js');
+    const { AppState } = await import('../src/core/state.js');
+    const prevLang = AppState.language;
+    const headerTitle = dom.window.document.getElementById('headerTitle');
+
+    try {
+        // German
+        AppState.language = 'de';
+        updateStaticTranslations();
+        assert.equal(headerTitle.innerText, 'Gespeicherte Quellen');
+
+        // English
+        AppState.language = 'en';
+        updateStaticTranslations();
+        assert.equal(headerTitle.innerText, 'Saved Sources');
+
+        // Turkish
+        AppState.language = 'tr';
+        updateStaticTranslations();
+        assert.equal(headerTitle.innerText, 'Kayıtlı Kaynaklar');
+    } finally {
+        AppState.language = prevLang;
+        global.window = prevWindow;
+        global.document = prevDocument;
+    }
+});

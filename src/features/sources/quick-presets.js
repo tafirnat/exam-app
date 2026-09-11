@@ -128,7 +128,7 @@ export function addCurrentAsPreset() {
     });
 
     if (isDuplicate) {
-        showAlert(t('qs_duplicate_warning') || 'Bu kaynak grubu zaten Hızlı Erişim\'de kayıtlı', t('warning_title'));
+        showAlert(t('qs_duplicate_warning') || 'This source preset is already saved in Quick Access', t('warning_title') || 'Warning');
         return null;
     }
 

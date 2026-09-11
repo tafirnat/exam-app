@@ -681,7 +681,7 @@ export function bindMotivationEvents() {
             const textToCopy = `${textEl.textContent} ${authorEl.textContent}`;
             if (navigator.clipboard && navigator.clipboard.writeText) {
                 navigator.clipboard.writeText(textToCopy).then(() => {
-                    showToast(t('motivation_copied') || 'Motivasyon sözü kopyalandı');
+                    showToast(t('motivation_copied') || 'Motivation quote copied');
                 }).catch(() => {
                     showToast(textToCopy);
                 });
@@ -1645,7 +1645,7 @@ export function getDifficultyNavItems(isModal = false) {
     const unstarred = ordered.filter(item => !item.source.starred);
 
     const items = [
-        { id: 'all', name: t('all_active_sources') || 'Tüm Kaynaklar', isAll: true }
+        { id: 'all', name: t('all_active_sources') || 'All Sources', isAll: true }
     ];
 
     starred.forEach(item => {
@@ -3001,7 +3001,7 @@ export function renderNuggetSlide(direction = 0) {
     
     const activeSources = (AppState.sources || []).filter(s => s.active && !s.archived);
     if (activeSources.length === 0) {
-        textEl.textContent = t('nugget_empty_no_source') || "Çalışmak için lütfen ana ekrandan bir kaynak seçin veya ekleyin.";
+        textEl.textContent = t('nugget_empty_no_source') || "Please select or add a source from the home screen to study.";
         textEl.style.color = "var(--text-secondary)";
         textEl.style.fontStyle = "italic";
         if (editBtn) editBtn.style.display = 'none';
@@ -3014,7 +3014,7 @@ export function renderNuggetSlide(direction = 0) {
     currentNuggetList = nuggets;
     
     if (nuggets.length === 0) {
-        textEl.textContent = t('nugget_empty') || "Aktif kaynaklarınızdan derlenen ipuçları burada gösterilir. Eklemek için + butonuna tıklayın.";
+        textEl.textContent = t('nugget_empty') || "Insights from your active sources will appear here. Tap + to add.";
         textEl.style.color = "var(--text-secondary)";
         textEl.style.fontStyle = "italic";
         if (editBtn) editBtn.style.display = 'none';
@@ -3083,7 +3083,7 @@ function openNuggetModal(sourceId = null, nugget = null) {
     select.innerHTML = '';
     const activeSources = (AppState.sources || []).filter(s => s.active && !s.archived);
     if (activeSources.length === 0) {
-        showToast(t('no_active_sources_available') || "Lütfen önce çalışmak için bir kaynak seçin.");
+        showToast(t('no_active_sources_available') || "Please select a source to study first.");
         return;
     }
     
@@ -3102,13 +3102,13 @@ function openNuggetModal(sourceId = null, nugget = null) {
     }
     
     if (nugget) {
-        title.textContent = t('nugget_edit_title_edit') || "Hap Bilgiyi Düzenle";
+        title.textContent = t('nugget_edit_title_edit') || "Edit Insight";
         input.value = nugget.text;
         select.value = nugget.sourceId;
         deleteBtn.style.display = 'block';
         modal.dataset.editingId = nugget.id;
     } else {
-        title.textContent = t('nugget_edit_title') || "Hap Bilgi Ekle";
+        title.textContent = t('nugget_edit_title') || "Add Insight";
         input.value = '';
         select.value = sourceId || activeSources[0].id;
         deleteBtn.style.display = 'none';
@@ -3128,7 +3128,7 @@ function saveNugget() {
     
     const text = input.value.trim();
     if (!text) {
-        showToast(t('nugget_empty_warn') || "Bilgi notu boş olamaz!");
+        showToast(t('nugget_empty_warn') || "Note cannot be empty!");
         return;
     }
     

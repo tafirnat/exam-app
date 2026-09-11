@@ -380,7 +380,7 @@ export function getDailyQuote(lang = 'en') {
     return {
         id: item.id,
         author: item.author,
-        text: item[safeLang] || item.tr,
+        text: item[safeLang] || item.en || item.tr,
         artwork: item.artwork
     };
 }
@@ -415,7 +415,7 @@ export function getRandomQuote(lang = 'en', excludeId = null, excludeArtworkUrl 
     return {
         id: item.id,
         author: item.author,
-        text: item[safeLang] || item.tr,
+        text: item[safeLang] || item.en || item.tr,
         artwork: item.artwork
     };
 }
