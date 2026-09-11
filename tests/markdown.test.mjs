@@ -356,3 +356,20 @@ test('audit: a callout is ended by a blank line, not by the next block', () => {
     const html = renderMarkdown('> [!note] Note\n> body\n\nPlain paragraph.');
     assert.match(html, /<\/div><\/div><p>Plain paragraph\.<\/p>/);
 });
+
+test('code block copy button appears on long or multiline code and is omitted for short snippets', () => {
+    // Short snippet (< 40 chars and single line)
+    const shortHtml = renderMarkdown('```\nx = 1;\n```');
+    assert.equal(shortHtml.includes('md-code-copy-btn'), false);
+
+    // Long snippet (>= 40 chars)
+    const longCode = '```\nDu bist eine Kollegin am Empfang eines IT-Systemhauses. Begrüße ihn.\n```';
+    const longHtml = renderMarkdown(longCode);
+    assert.equal(longHtml.includes('md-code-copy-btn'), true);
+    assert.equal(longHtml.includes('Kopieren'), true);
+
+    // Multiline prompt (>= 25 chars)
+    const multilineCode = '```\nLine 1: system prompt\nLine 2: user role\n```';
+    const multilineHtml = renderMarkdown(multilineCode);
+    assert.equal(multilineHtml.includes('md-code-copy-btn'), true);
+});

@@ -4592,10 +4592,10 @@ input:checked+.slider-small:before {
 .heading-tools {
     display: inline-flex;
     align-items: center;
-    gap: 0.1em;
-    margin-left: 0.45em;
+    gap: 0.25rem;
+    margin-left: 0.5rem;
     vertical-align: middle;
-    font-size: 0.75em;
+    font-size: 1rem;
     font-weight: 400;
     user-select: none;
     -webkit-user-select: none;
@@ -4605,14 +4605,14 @@ input:checked+.slider-small:before {
     display: inline-flex;
     align-items: center;
     justify-content: center;
-    width: 1.5em;
-    height: 1.5em;
+    width: 28px;
+    height: 28px;
     padding: 0;
     background: none;
     border: none;
     border-radius: var(--radius-sm);
     color: var(--text-secondary);
-    opacity: 0.4;
+    opacity: 0.45;
     cursor: pointer;
     transition: opacity 0.2s ease, color 0.2s ease;
     -webkit-tap-highlight-color: transparent;
@@ -4620,8 +4620,8 @@ input:checked+.slider-small:before {
 
 .heading-tool-btn svg {
     display: block;
-    width: 1em;
-    height: 1em;
+    width: 16px;
+    height: 16px;
 }
 
 .heading-tool-btn:hover,

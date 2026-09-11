@@ -262,7 +262,7 @@ export function decorateReadingSections(hostEl, { scope, cacheKey, onRefresh = n
        one that decorates the same DOM twice must not get two sets of icons. */
     rootEl.querySelectorAll('.heading-tools, .md-section-translation').forEach(el => el.remove());
     const sections = collectReadingSections(rootEl);
-    if (sections.length === 0) return;
+    if (sections.length <= 1) return;
 
     const entries = sectionTranslationEntries(scope, cacheKey);
 

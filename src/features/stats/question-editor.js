@@ -250,8 +250,21 @@ export function openQuestionEditor(question) {
     pristineSnapshot = stableStringify(currentEditingQuestion);
 }
 
+function getQuestionSourceName(q) {
+    if (!q) return '';
+    let source = null;
+    if (q.sourceId) {
+        source = (AppState.sources || []).find(s => s.id === q.sourceId);
+    }
+    if (!source && q.id) {
+        source = (AppState.sources || []).find(s => s.questions && s.questions.some(item => item.id === q.id));
+    }
+    return source ? (source.name || source.title || source.id) : (q.sourceName || '');
+}
+
 function renderEditorModal() {
     const category = getQuestionCategory(currentEditingQuestion.type || 'single_choice');
+    const sourceName = getQuestionSourceName(currentEditingQuestion);
 
     // A tab the current type does not have cannot stay selected.
     const groups = getGroupsForCategory(category);
@@ -393,6 +406,14 @@ function renderEditorModal() {
                             </div>
                         </div>
                     </div>
+                    ${sourceName ? `
+                    <div class="editor-input-group editor-source-group" style="margin-top: 1rem;">
+                        <label>${t('source_origin_label')}</label>
+                        <div class="editor-source-display" style="padding: 0.55rem 0.75rem; background: var(--surface-hover); border: 1px solid var(--border-color); border-radius: var(--radius-sm); font-size: 0.85rem; color: var(--text-secondary); word-break: break-word;">
+                            ${escapeHTML(sourceName)}
+                        </div>
+                    </div>
+                    ` : ''}
                 </div>
 
                 ${isFlashcard ? '' : `

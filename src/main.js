@@ -1411,6 +1411,43 @@ function setupEventListeners() {
 
     setupStatsEventListeners();
 
+    // Delegated click handler for Markdown code block copy buttons
+    document.addEventListener('click', async (e) => {
+        const btn = e.target.closest('.md-code-copy-btn');
+        if (!btn) return;
+        e.stopPropagation();
+
+        const pre = btn.closest('pre');
+        const codeEl = pre ? pre.querySelector('code') : null;
+        const textToCopy = codeEl ? codeEl.textContent : '';
+        if (!textToCopy) return;
+
+        try {
+            if (navigator.clipboard && navigator.clipboard.writeText) {
+                await navigator.clipboard.writeText(textToCopy);
+            } else {
+                const ta = document.createElement('textarea');
+                ta.value = textToCopy;
+                ta.style.position = 'fixed';
+                ta.style.opacity = '0';
+                document.body.appendChild(ta);
+                ta.select();
+                document.execCommand('copy');
+                ta.remove();
+            }
+
+            btn.classList.add('copied');
+            btn.innerHTML = `<svg viewBox="0 0 24 24" width="13" height="13" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"></polyline></svg><span class="copy-text">${t('copied_code')}</span>`;
+
+            setTimeout(() => {
+                btn.classList.remove('copied');
+                btn.innerHTML = `<svg viewBox="0 0 24 24" width="13" height="13" fill="none" stroke="currentColor" stroke-width="2"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path></svg><span class="copy-text">${t('copy_code')}</span>`;
+            }, 1500);
+        } catch (err) {
+            console.warn('Failed to copy code to clipboard:', err);
+        }
+    });
+
     // ---- Notification Settings ----
     (async function initNotificationSettings() {
         const status = getNotificationStatus();

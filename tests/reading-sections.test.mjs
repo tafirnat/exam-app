@@ -101,6 +101,11 @@ test('a passage without headings gets no controls at all', () => {
     assert.equal(host.querySelectorAll('.heading-tools').length, 0);
 });
 
+test('a passage with only a single heading gets no section controls as card-level controls suffice', () => {
+    draw('## Nur ein Titel\n\nEin Absatz darunter.');
+    assert.equal(host.querySelectorAll('.heading-tools').length, 0);
+});
+
 test('decorating the same body twice does not double the controls', () => {
     draw();
     decorateReadingSections(host, { scope: 'test', cacheKey: drawn.cacheKey });
@@ -135,7 +140,11 @@ Zweite Zeile desselben Absatzes.
 
 - eins
     - verschachtelt
-- zwei`);
+- zwei
+
+## Zweiter Titel
+
+Weiterer Absatz.`);
     click(speakButtons()[0]);
     const text = spoken.at(-1);
     assert.ok(text.includes('Ein fetter Satz mit kursiv und code darin.'), `inline markup broke the sentence: ${text}`);
