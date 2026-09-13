@@ -312,6 +312,42 @@ function startTestTracking(count) {
     };
 }
 
+/** Drops the running session. Both ways out of finishTest() need it. */
+function endSessionState() {
+    AppState.testTracking = null;
+    AppState.currentTest = [];
+    AppState.currentIndex = 0;
+    AppState.userAnswers = {};
+    AppState.isAnswerChecked = {};
+    AppState.shuffledOptionsMap = {};
+}
+
+/**
+ * The record an answer is written against, rebuilt when a running test has lost
+ * it.
+ *
+ * Not defensive padding: that record is where the pre-session snapshot of every
+ * answered question lives, and the snapshot is the only reason rating the same
+ * card twice replaces the first rating instead of stacking on top of it. With
+ * no record, `_preSessionState` cannot be found, so each click ran applyFSRS()
+ * over the already-updated stat and bumped correct/wrong again - the day's
+ * totals stayed right (they are committed from this same record, so they simply
+ * counted nothing) while the question's own history came apart. A session can
+ * arrive here without one: an older build's saved session, a device that synced
+ * a record written before this field existed, or any resume path that restores
+ * `currentTest` and nothing else.
+ *
+ * Rebuilding loses the answers given before the record went missing - they are
+ * already in the stats, so the only cost is that finishing files them as
+ * unanswered. Being able to finish at all is worth more.
+ */
+export function ensureTestTracking() {
+    if (AppState.testTracking) return AppState.testTracking;
+    if (!Array.isArray(AppState.currentTest) || AppState.currentTest.length === 0) return null;
+    startTestTracking(AppState.currentTest.length);
+    return AppState.testTracking;
+}
+
 /**
  * Installs an explicit, already-ordered list of questions as the current test.
  * Shared by the retake flow and the streak run: both know exactly which
@@ -411,7 +447,12 @@ export function prepareRetake(historyEntry, onlyIncorrect = false) {
 
 export async function finishTest() {
     if (!AppState.testTracking) {
+        /* Nothing to file, but the session still has to end. Measured in Edge:
+           it returned here and left the record on disk, so the home screen went
+           on offering to resume the same dead test after every attempt. */
         console.warn("finishTest: No active testTracking found.");
+        endSessionState();
+        clearActiveTest();
         return;
     }
 
@@ -559,7 +600,20 @@ export async function finishTest() {
     } catch (err) {
         console.error("Critical error in finishTest:", err);
     } finally {
-        AppState.testTracking = null;
+        /* The whole session ends here, not just its tracking record.
+           AppState.currentTest used to stay populated after a finish, and
+           "currentTest has entries" is exactly how every writer decides there is
+           a session worth saving: the debounced saveActiveTest(), the preset
+           freeze in applyPreset(), and savePresetSessionData() through it. Each
+           of them then wrote the finished test back as a resumable one carrying
+           `testTracking: null`, checkActiveTest() promoted it on the next visit
+           home, and resuming it landed the user on an unfinishable test - the
+           finish button returns early without a tracking record, and every
+           flashcard rating reapplied FSRS from scratch because the pre-session
+           snapshot lives on that same record. Measured: three clicks on Schwer
+           with no tracking record moved difficulty 4.46 -> 7.35 and wrong 1 -> 3. */
+        endSessionState();
+
         // A streak run was never filed under a preset, so it must not clear one
         // either - the user's saved preset session has to survive it.
         if (!isStreakRun) {
@@ -621,6 +675,8 @@ export function updateFlashcardStats(sourceId, questionId, rating) {
     }
     const stat = AppState.stats[key];
     const q = AppState.questionMap?.[key];
+
+    ensureTestTracking();
 
     // Snapshot for toggle logic
     let existingResult = AppState.testTracking?.results?.find(r =>
@@ -693,6 +749,8 @@ export function updateStats(sourceId, questionId, isCorrect, userAnswer, feedbac
     }
     let stat = AppState.stats[key];
     if (stat.streak === undefined) stat.streak = 0;
+
+    ensureTestTracking();
 
     let existingResult = null;
     if (AppState.testTracking && AppState.testTracking.results) {

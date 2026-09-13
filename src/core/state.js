@@ -1051,6 +1051,18 @@ export function saveActiveTest() {
  * resumeActiveTest() key off currentTest having entries, and this has none.
  */
 export function clearActiveTest() {
+    /* The debounced write above is the one thing that can outlive the test it
+       belongs to. saveActiveTest() fires on every answer and every navigation,
+       so a finish that lands inside that 300ms window used to be followed by a
+       write that put the just-filed session back on disk as a resumable one -
+       overwriting this tombstone, with testTracking already nulled by
+       finishTest()'s finally. Measured: tombstone written, 300ms later a record
+       with ten question ids and no tracking record. What the user sees is a
+       finished test offering to resume, and a session that cannot be finished
+       again because finishTest() returns early without a tracking record. */
+    clearTimeout(_saveActiveTestTimer);
+    _saveActiveTestTimer = null;
+
     persist('focus_app_active_test', {
         cleared: true,
         deviceId: AppState.deviceId || null,

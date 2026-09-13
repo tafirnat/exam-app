@@ -964,7 +964,15 @@ export async function finishTestFlow() {
     try {
         console.log("Finishing test...");
         const finished = await finishTest();
-        if (finished === false) {
+        /* Anything short of a filed test still has to let go of the screen.
+           finishTest() returns true only when it wrote a history entry; it
+           returns false for an empty session, and undefined both when it caught
+           an error and when there was no tracking record to file. That last case
+           used to leave the user on the test view with a finish button that did
+           nothing at all and no error anywhere - the session was over, so
+           nothing could end it, and the only thing still alive on that screen
+           was the flashcard rating bar. */
+        if (finished !== true) {
             if (window.switchView) window.switchView('home');
         }
         console.log("Test finished successfully.");
