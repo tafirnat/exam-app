@@ -31,6 +31,7 @@ import { keptSearchOnFilterClick, statsHistoryState, stampStatsHistory } from '.
 import { initTimer, stopTimer } from './features/test/timer-module.js';
 import { initSync, syncToGist } from './core/github-sync.js';
 import { renderMarkdown, renderInlineMarkdown, plainText, applySearchHighlight } from './core/markdown.js';
+import { initLightbox } from './core/lightbox.js';
 import { setupQuickPresets, updateQuickSourcesDot } from './features/sources/quick-presets-ui.js';
 import { syncQuickPresetsWithLiveSources } from './features/sources/quick-presets.js';
 import { startOnboarding, stopOnboarding } from './features/onboarding/onboarding.js';
@@ -415,6 +416,9 @@ const initApp = () => {
         console.log('Setting up Quick Presets...');
         setupQuickPresets();
         syncQuickPresetsWithLiveSources();
+
+        console.log('Initializing Lightbox...');
+        initLightbox();
 
 
         console.log('App initialized v1.2.3');

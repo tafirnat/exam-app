@@ -3185,6 +3185,19 @@
         </div>
     </div>
 
+    <!-- Image Lightbox Overlay -->
+    <div id="imageLightboxOverlay" class="image-lightbox-overlay">
+        <button id="imageLightboxClose" class="icon-btn lightbox-close-btn" aria-label="Kapat">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <line x1="18" y1="6" x2="6" y2="18"></line>
+                <line x1="6" y1="6" x2="18" y2="18"></line>
+            </svg>
+        </button>
+        <div id="imageLightboxScrollContainer" class="image-lightbox-scroll-container">
+            <img id="imageLightboxImg" class="image-lightbox-img" alt="Büyütülmüş Görsel" />
+        </div>
+    </div>
+
     <script type="module" src="src/main.js" data-cfasync="false"></script>
     <script>
         if ('serviceWorker' in navigator) {
