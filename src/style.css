@@ -476,6 +476,8 @@ main {
     gap: 2.5rem;
     position: relative;
     overflow: hidden;
+    max-width: 100%;
+    box-sizing: border-box;
 }
 
 .results-stats-grid {
@@ -5021,6 +5023,8 @@ input:checked+.slider-small:before {
     padding: 2.5rem 1.5rem;
     margin-bottom: 2rem;
     box-shadow: var(--shadow-lg);
+    max-width: 100%;
+    box-sizing: border-box;
 }
 
 .results-stats-grid {
@@ -5038,6 +5042,7 @@ input:checked+.slider-small:before {
     padding: 1.5rem;
     flex: 1;
     max-width: 140px;
+    min-width: 0;
     display: flex;
     flex-direction: column;
     align-items: center;
@@ -5076,6 +5081,9 @@ input:checked+.slider-small:before {
     color: var(--text-secondary);
     text-align: center;
     line-height: 1.3;
+    word-wrap: break-word;
+    overflow-wrap: break-word;
+    max-width: 100%;
 }
 
 /* Success Rate Gauge (3-Segment Donut) */
@@ -6859,7 +6867,7 @@ body.dnd-active {
 
 /* Diff Card Source Title Row replacing badge pill - formatted like homeActiveSourcesSection */
 .diff-card-source-row {
-    display: inline-flex;
+    display: flex;
     align-items: center;
     gap: 0.4rem;
     margin-top: 2px;
