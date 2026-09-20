@@ -12,6 +12,21 @@ import { openQuestionEditor } from '../stats/question-editor.js';
 import { setPreviewNavList } from '../stats/preview-nav.js';
 import { cleanTextForSpeech } from '../../core/tts-cleaner.js';
 
+/* Every speakable thing on screen is a TTS target with its own key, and one
+   target speaks at a time. A card can carry any number of buttons — the
+   question, a flashcard's back, one per reading heading — and the key is the
+   only thing that tells a rebuilt button whether it is the one playing. Keying
+   only the sections and leaving every card-level button on `null` made them
+   indistinguishable: pressing the flashcard back's button lit up the question's
+   button instead, because that is the first `null`-keyed button drawn. */
+export const TtsTarget = {
+    QUESTION: 'card:question',
+    FLASHCARD_BACK: 'card:flashcardBack',
+    PREVIEW: 'card:preview',
+    /** Reading sections namespace themselves by view: `test:0`, `preview:1`. */
+    section: (scope, index) => `${scope}:${index}`
+};
+
 // --- TTS State Machine ---
 // States: 'IDLE' | 'SCHEDULED' | 'PLAYING'
 const TTS = {
@@ -19,11 +34,10 @@ const TTS = {
     audio: null,
     timerId: null,
     lastQIndex: -1,
-    /* Which reading section is being spoken, or null when the target is a whole
-       card. Every state change re-renders the question, which rebuilds the
-       heading buttons from nothing, so this is what tells the rebuilt ones
-       which single button should look like it is playing. */
-    sectionKey: null,
+    /* Which target is being spoken, or null when nothing is. Every state change
+       re-renders the question, which rebuilds the buttons from nothing, so this
+       is what tells the rebuilt ones which single button is playing. */
+    targetKey: null,
 
     get isPlaying() { return this.state === 'PLAYING'; },
     get wasInterrupted() { return this.state === 'SCHEDULED' || this.state === 'PLAYING'; },
@@ -44,7 +58,7 @@ const TTS = {
         }
         const wasActive = this.state !== 'IDLE';
         this.state = 'IDLE';
-        this.sectionKey = null;
+        this.targetKey = null;
         if (!silent && wasActive) renderQuestion(true);
     },
 
@@ -54,19 +68,20 @@ const TTS = {
         this.timerId = setTimeout(() => {
             this.timerId = null;
             if (AppState.ttsAutoplay && this.state === 'SCHEDULED') {
-                this._play(text, null, options);
+                // Autoplay reads the question, so it belongs to that button.
+                this._play(text, TtsTarget.QUESTION, options);
             } else {
                 this.state = 'IDLE';
             }
         }, delay);
     },
 
-    _play(text, sectionKey = null, options = {}) {
-        if (!text) { this.state = 'IDLE'; this.sectionKey = null; return; }
+    _play(text, targetKey = TtsTarget.QUESTION, options = {}) {
+        if (!text) { this.state = 'IDLE'; this.targetKey = null; return; }
         const lang = AppState.language === 'tr' ? 'tr' : (AppState.language === 'de' ? 'de' : 'en');
         const isAnswered = options.revealAnswers ?? (AppState.isAnswerChecked || AppState.testAnswers?.[AppState.currentIndex] !== undefined);
         const cleanText = cleanTextForSpeech(text, { lang, revealAnswers: isAnswered });
-        if (!cleanText) { this.state = 'IDLE'; this.sectionKey = null; return; }
+        if (!cleanText) { this.state = 'IDLE'; this.targetKey = null; return; }
         const voicePrefix = lang === 'tr' ? 'tr-TR-Wavenet-' : (lang === 'de' ? 'de-DE-Wavenet-' : 'en-US-Wavenet-');
         const voice = AppState.currentTtsVoice || 'A';
         const speed = AppState.ttsSpeed || 0.5;
@@ -76,34 +91,34 @@ const TTS = {
 
         this.audio = new Audio(url);
         this.state = 'PLAYING';
-        this.sectionKey = sectionKey;
+        this.targetKey = targetKey;
         renderQuestion(true);
 
         this.audio.play().catch(err => {
             console.error('TTS Playback failed:', err);
             this.audio = null;
             this.state = 'IDLE';
-            this.sectionKey = null;
+            this.targetKey = null;
             renderQuestion(true);
         });
 
         this.audio.onended = () => {
             this.audio = null;
             this.state = 'IDLE';
-            this.sectionKey = null;
+            this.targetKey = null;
             renderQuestion(true);
         };
     },
 
     /* A second click on whatever is currently speaking stops it; a click on any
-       other target replaces it. That is what keeps the card button and the
-       per-section buttons from ever playing over each other. */
-    toggle(text, sectionKey = null, options = {}) {
-        if (this.state === 'PLAYING' && this.sectionKey === sectionKey) {
+       other target replaces it. That is what keeps any two TTS buttons from
+       ever playing over each other, or from both looking active. */
+    toggle(text, targetKey = TtsTarget.QUESTION, options = {}) {
+        if (this.state === 'PLAYING' && this.targetKey === targetKey) {
             this.stop(false);
         } else {
             this.stop(true);
-            this._play(text, sectionKey, options);
+            this._play(text, targetKey, options);
         }
     },
 
@@ -124,16 +139,60 @@ const TTS = {
 };
 
 /**
- * Whether the whole card is being spoken — false while a single reading section
- * is, since that is the heading button's state to show and the card button is
- * still an offer to read the whole text.
+ * Whether this one target is being spoken. Every TTS button asks about its own
+ * key and no other, so exactly the button that started the playback shows it —
+ * no matter how many buttons the card carries.
+ * @param {string} targetKey One of TtsTarget, or TtsTarget.section(...).
+ */
+export function isTtsPlaying(targetKey) {
+    return TTS.isPlaying && TTS.targetKey === targetKey;
+}
+
+/**
+ * Whether the question text is being spoken — false while a reading section or
+ * a flashcard's back is, since those are other buttons' state to show and this
+ * one is still an offer to read the question.
  */
 export function getIsAudioPlaying() {
-    return TTS.isPlaying && TTS.sectionKey === null;
+    return isTtsPlaying(TtsTarget.QUESTION);
 }
 
 export function stopAudio(silent = false) {
     TTS.stop(silent);
+}
+
+const TTS_ICON_PLAY = '<svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2.5"><polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5"></polygon><path d="M19.07 4.93a10 10 0 0 1 0 14.14M15.54 8.46a5 5 0 0 1 0 7.07"></path></svg>';
+const TTS_ICON_STOP = '<svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2.5"><rect x="6" y="4" width="4" height="16"></rect><rect x="14" y="4" width="4" height="16"></rect></svg>';
+
+/**
+ * The single place a card-level TTS button is built. Three callers draw one
+ * (question, flashcard back, preview) and a card can show more than one at a
+ * time; building them separately is how they came to share one state and how a
+ * fourth would inherit the same defect.
+ *
+ * @param {Object} options
+ * @param {string} options.text What this button speaks.
+ * @param {string} options.targetKey Identifies the playback, and so the button.
+ * @param {Object} [options.playOptions] Passed through to the player.
+ * @param {(() => void)|null} [options.onRefresh] Preview only: how to redraw,
+ *        since renderQuestion is not what draws it.
+ * @returns {HTMLButtonElement}
+ */
+export function createTtsButton({ text, targetKey, playOptions = {}, onRefresh = null }) {
+    const playing = isTtsPlaying(targetKey);
+    const btn = document.createElement('button');
+    btn.type = 'button';
+    btn.className = 'tts-btn';
+    if (playing) btn.classList.add('playing');
+    // Its own wording: a card button reads the whole text, not "this section".
+    btn.title = t(playing ? 'tts_stop' : 'tts_listen');
+    btn.setAttribute('aria-label', btn.title);
+    btn.innerHTML = playing ? TTS_ICON_STOP : TTS_ICON_PLAY;
+    btn.onclick = (e) => {
+        e.stopPropagation();
+        handleTtsToggle(text, onRefresh, targetKey, playOptions);
+    };
+    return btn;
 }
 
 /* ---------------------------------------------------------------------------
@@ -267,14 +326,14 @@ export function decorateReadingSections(hostEl, { scope, cacheKey, onRefresh = n
     const entries = sectionTranslationEntries(scope, cacheKey);
 
     sections.forEach((section, index) => {
-        const sectionKey = `${scope}:${index}`;
+        const sectionKey = TtsTarget.section(scope, index);
         const tools = document.createElement('span');
         tools.className = 'heading-tools';
 
         // The speech control follows the Text-to-Speech setting, exactly as the
         // card-level button does: switching it off leaves no speech anywhere.
         if (AppState.ttsEnabled) {
-            const speaking = TTS.isPlaying && TTS.sectionKey === sectionKey;
+            const speaking = isTtsPlaying(sectionKey);
             const speakBtn = document.createElement('button');
             speakBtn.type = 'button';
             speakBtn.className = 'heading-tool-btn heading-tts-btn';
@@ -452,15 +511,10 @@ export function renderQuestion(isRefresh = false) {
     // Remove existing TTS elements
     card.querySelectorAll('.tts-btn').forEach(c => c.remove());
     if (AppState.ttsEnabled) {
-        const playing = getIsAudioPlaying();
-        const tBtn = document.createElement('button');
-        tBtn.className = 'tts-btn';
-        if (playing) tBtn.classList.add('playing');
-        tBtn.innerHTML = playing ?
-            '<svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2.5"><rect x="6" y="4" width="4" height="16"></rect><rect x="14" y="4" width="4" height="16"></rect></svg>' :
-            '<svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2.5"><polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5"></polygon><path d="M19.07 4.93a10 10 0 0 1 0 14.14M15.54 8.46a5 5 0 0 1 0 7.07"></path></svg>';
-        tBtn.onclick = () => TTS.toggle(q.content?.text || q.text || '');
-        card.appendChild(tBtn);
+        card.appendChild(createTtsButton({
+            text: q.content?.text || q.text || '',
+            targetKey: TtsTarget.QUESTION
+        }));
         // Autoplay is now handled by TTS.onNewQuestion() called above
     }
 
@@ -575,13 +629,14 @@ export function renderQuestion(isRefresh = false) {
 
             const backFace = container.querySelector('.flashcard-back');
 
-            // TTS button for back face
+            // TTS button for back face — its own target, so pressing it shows
+            // the stop icon here and leaves the front's button alone.
             if (AppState.ttsEnabled) {
-                const tBtn = document.createElement('button');
-                tBtn.className = 'tts-btn';
-                tBtn.innerHTML = '<svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2.5"><polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5"></polygon><path d="M19.07 4.93a10 10 0 0 1 0 14.14M15.54 8.46a5 5 0 0 1 0 7.07"></path></svg>';
-                tBtn.onclick = () => TTS.toggle(q.answer?.back || '', null, { revealAnswers: true });
-                backFace.appendChild(tBtn);
+                backFace.appendChild(createTtsButton({
+                    text: q.answer?.back || '',
+                    targetKey: TtsTarget.FLASHCARD_BACK,
+                    playOptions: { revealAnswers: true }
+                }));
             }
 
             // Translate button for back face
@@ -1550,15 +1605,15 @@ window.showQuestionResult = (testId, questionId) => {
 };
 
 // handleTtsToggle: preview bağlamı için onRefresh callback desteğiyle TTS toggle
-export function handleTtsToggle(text, onRefresh = null, sectionKey = null, options = {}) {
+export function handleTtsToggle(text, onRefresh = null, targetKey = TtsTarget.QUESTION, options = {}) {
     if (onRefresh) {
         // Preview context: use a custom refresh callback via a one-shot wrapper
-        if (TTS.isPlaying && TTS.sectionKey === sectionKey) {
+        if (TTS.isPlaying && TTS.targetKey === targetKey) {
             TTS.stop(true);
             onRefresh();
         } else {
             TTS.stop(true);
-            TTS._play(text, sectionKey, options);
+            TTS._play(text, targetKey, options);
             if (TTS.audio) {
                 const origOnEnded = TTS.audio.onended;
                 TTS.audio.onended = () => {
@@ -1569,7 +1624,7 @@ export function handleTtsToggle(text, onRefresh = null, sectionKey = null, optio
             onRefresh();
         }
     } else {
-        TTS.toggle(text, sectionKey, options);
+        TTS.toggle(text, targetKey, options);
     }
 }
 
