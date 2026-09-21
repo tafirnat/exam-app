@@ -12,7 +12,7 @@ Every part of the app: what it is for and how to use it. Tap the heading you nee
 4. [Starting a test and quick groups](#starting-a-test-and-quick-groups)
 5. [Question types](#question-types)
 6. [During a test](#during-a-test)
-7. [The results screen and the retry round](#the-results-screen-and-the-retry-round)
+7. [The results screen and retaking](#the-results-screen-and-retaking)
 8. [Question details and editing](#question-details-and-editing)
 9. [What the statistics show](#what-the-statistics-show)
 10. [Charts and the progress panel](#charts-and-the-progress-panel)
@@ -170,15 +170,13 @@ All three carry **un-marking** too: clear a star on one device and it clears on 
 
 ---
 
-## The results screen and the retry round
+## The results screen and retaking
 
 When a test ends you see correct / wrong / blank counts, the success rate and the elapsed time. Below them every question of the test is listed; tap any of them to read the answer and explanation again.
 
-**The retry round.** If you missed anything, a "Start retry round (n)" button appears. It asks only the questions you missed, one more time - while the explanation is still fresh.
+The **Retake** button asks the test's questions once more - most useful after a lot of misses, while the explanations are still fresh.
 
-In a retry round **a right answer does not count as a full success**. Getting something right that you missed minutes ago is a *recovery*, not the same event as getting it right first time, and the app records it as "Hard". Without that, missing a question and then recovering it would leave a **better** record than answering it correctly in the first place.
-
-The **Retake** button asks the whole test again; that is an ordinary test.
+In a retake, getting right a question you got **wrong** the first time **does not count as a full success**. Knowing something you missed minutes ago is a *recovery*, not the same event as knowing it first time, and the app records it as "Hard". Without that, missing a question and then getting it right straight after would leave a **better** record than answering it correctly in the first place. Questions you got right or left blank the first time are rated normally.
 
 ---
 

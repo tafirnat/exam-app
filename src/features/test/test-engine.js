@@ -6,7 +6,8 @@ import { gradeCloze } from '../../core/cloze.js';
 import { getDailyOverdueSnapshot, applyFocusPools, recordTestFinished, commitOneAnswerToActivity } from '../stats/continuity-engine.js';
 
 // FSRS v5 Constants (19 parameters)
-/** The best FSRS rating a right answer can earn in a retry round: Hard. */
+/** The best FSRS rating a right answer can earn on a question the user missed in
+    the session being retaken: Hard. */
 export const RETRY_MAX_RATING = 2;
 
 export const FSRS_W = [0.40255, 1.18385, 3.173, 15.69105, 7.1949, 0.5345, 1.4604, 0.0046, 1.54575, 0.1192, 1.01925, 1.9395, 0.11, 0.29605, 2.2698, 0.2315, 2.9898, 0.51655, 0.6621];
@@ -370,7 +371,7 @@ export function ensureTestTracking() {
  * knows to keep a streak run out of the preset sessions.
  */
 export function prepareFromCompositeIds(compositeIds, options = {}) {
-    const { shuffle = true, mode = null, retakeOfId = null, retryRound = false, sourceNames, sourceTitle } = options;
+    const { shuffle = true, mode = null, retakeOfId = null, recoveringKeys = null, sourceNames, sourceTitle } = options;
 
     const known = (compositeIds || []).filter(cid => AppState.questionMap[cid]);
     if (known.length === 0) return null;
@@ -427,16 +428,31 @@ export function prepareFromCompositeIds(compositeIds, options = {}) {
     };
     if (mode) AppState.testTracking.mode = mode;
     if (retakeOfId) AppState.testTracking.retakeOfId = retakeOfId;
-    /* A second look at questions the user has just missed. It is a real session
-       in every other respect - the day counts it, it files its own history
-       entry - but a right answer in it is not the same event as a right answer
-       first time, so updateStats caps the FSRS rating. See RETRY_MAX_RATING. */
-    if (retryRound) AppState.testTracking.retryRound = true;
+    /* The questions this session is a second look at: missed in the session
+       being retaken. It is a real session in every other respect - the day
+       counts it, it files its own history entry - but a right answer to one of
+       these is not the same event as a right answer first time, so updateStats
+       caps its FSRS rating. See RETRY_MAX_RATING. Stored on the tracking record
+       so a resumed session keeps it. */
+    if (Array.isArray(recoveringKeys) && recoveringKeys.length > 0) {
+        AppState.testTracking.recoveringKeys = [...recoveringKeys];
+    }
 
     return AppState.currentTest;
 }
 
-export function prepareRetake(historyEntry, onlyIncorrect = false, options = {}) {
+/**
+ * The questions of a finished session that were answered WRONG - not the blank
+ * ones: a question the user never tried is not being recovered, and a right
+ * answer to it now is an ordinary first success.
+ */
+export function missedKeysOf(historyEntry) {
+    return (historyEntry?.questions || [])
+        .filter(q => q && !q.isCorrect && !q.isUnanswered)
+        .map(q => `${q.sourceId}_${q.id}`);
+}
+
+export function prepareRetake(historyEntry, onlyIncorrect = false) {
     if (!historyEntry || !Array.isArray(historyEntry.questions)) return null;
 
     let retakeQuestions = historyEntry.questions;
@@ -455,7 +471,7 @@ export function prepareRetake(historyEntry, onlyIncorrect = false, options = {})
         retakeQuestions.map(rq => `${rq.sourceId}_${rq.id}`),
         {
             shuffle: true,
-            retryRound: !!options.retryRound,
+            recoveringKeys: missedKeysOf(historyEntry),
             retakeOfId: historyEntry.id,
             sourceNames: historyEntry.sourceNames,
             sourceTitle: historyEntry.sourceTitle
@@ -811,15 +827,17 @@ export function updateStats(sourceId, questionId, isCorrect, userAnswer, feedbac
         if (feedback === 'easy') rating = 4;
     }
 
-    /* In a retry round the question was missed minutes ago, so getting it right
-       now is a recovery rather than a success and it is rated as one. Hard is
+    /* A retake asks again the questions just missed, so getting one of those
+       right now is a recovery rather than a success and it is rated as one. Hard is
        FSRS's own word for "right, but only just", which is exactly the claim -
        there is no need to invent a sixth rating for it.
        The cap is a minimum, not an override: a wrong answer is still 1, and
        marking a recovered question Easy cannot lift it back to 4. Without this,
-       a wrong answer followed by a retry rated Good leaves the record BETTER
-       than if the question had been answered correctly the first time. */
-    if (isCorrect && AppState.testTracking?.retryRound) {
+       a wrong answer followed by a retake rated Good leaves the record BETTER
+       than if the question had been answered correctly the first time.
+       Only the missed ones: a question answered right the first time is not
+       being recovered. */
+    if (isCorrect && AppState.testTracking?.recoveringKeys?.includes(key)) {
         rating = Math.min(rating, RETRY_MAX_RATING);
     }
 

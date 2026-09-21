@@ -12,7 +12,7 @@ Jeder Teil der App: wofür er da ist und wie man ihn benutzt. Tippen Sie auf die
 4. [Test starten und Schnellgruppen](#test-starten-und-schnellgruppen)
 5. [Fragetypen](#fragetypen)
 6. [Während eines Tests](#während-eines-tests)
-7. [Ergebnisseite und Wiederholungsrunde](#ergebnisseite-und-wiederholungsrunde)
+7. [Ergebnisseite und Wiederholen](#ergebnisseite-und-wiederholen)
 8. [Fragendetails und Bearbeiten](#fragendetails-und-bearbeiten)
 9. [Was die Statistiken zeigen](#was-die-statistiken-zeigen)
 10. [Diagramme und das Fortschrittsfenster](#diagramme-und-das-fortschrittsfenster)
@@ -170,15 +170,13 @@ Alle drei tragen auch das **Entfernen**: Löschen Sie einen Stern auf einem Ger�
 
 ---
 
-## Ergebnisseite und Wiederholungsrunde
+## Ergebnisseite und Wiederholen
 
 Am Ende eines Tests sehen Sie die Zahlen für richtig / falsch / leer, die Erfolgsquote und die verstrichene Zeit. Darunter sind alle Fragen des Tests aufgelistet; tippen Sie eine an, um Antwort und Erklärung noch einmal zu lesen.
 
-**Die Wiederholungsrunde.** Wenn Sie etwas falsch hatten, erscheint eine Schaltfläche "Wiederholungsrunde starten (n)". Sie stellt nur die verpassten Fragen noch einmal - solange die Erklärung noch frisch ist.
+Die Schaltfläche **Wiederholen** stellt die Fragen des Tests noch einmal - besonders nützlich nach vielen Fehlern, solange die Erklärungen noch frisch sind.
 
-In einer Wiederholungsrunde zählt **eine richtige Antwort nicht als voller Erfolg**. Etwas jetzt zu wissen, was Sie vor Minuten verpasst haben, ist eine *Erholung* und nicht dasselbe wie es beim ersten Mal zu wissen; die App verbucht es als "Schwer". Sonst würde eine falsch beantwortete und dann erholte Frage einen **besseren** Eintrag hinterlassen als eine, die gleich richtig war.
-
-Die Schaltfläche **Wiederholen** stellt den ganzen Test erneut; das ist ein gewöhnlicher Test.
+Beim Wiederholen zählt eine richtige Antwort auf eine Frage, die Sie beim ersten Mal **falsch** hatten, **nicht als voller Erfolg**. Etwas zu wissen, was Sie vor Minuten verpasst haben, ist eine *Erholung* und nicht dasselbe wie es beim ersten Mal zu wissen; die App verbucht es als "Schwer". Sonst würde eine falsch beantwortete und gleich danach richtig beantwortete Frage einen **besseren** Eintrag hinterlassen als eine, die gleich richtig war. Fragen, die beim ersten Mal richtig oder leer waren, werden normal gewertet.
 
 ---
 

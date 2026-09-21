@@ -12,7 +12,7 @@ Uygulamanın her bölümü: ne işe yaradığı ve nasıl kullanıldığı. Arad
 4. [Test başlatma ve hızlı test grupları](#test-başlatma-ve-hızlı-test-grupları)
 5. [Soru tipleri](#soru-tipleri)
 6. [Test sırasında](#test-sırasında)
-7. [Sonuç ekranı ve tekrar turu](#sonuç-ekranı-ve-tekrar-turu)
+7. [Sonuç ekranı ve yeniden çözme](#sonuç-ekranı-ve-yeniden-çözme)
 8. [Soru detayları ve düzenleme](#soru-detayları-ve-düzenleme)
 9. [İstatistikler neyi gösterir](#istatistikler-neyi-gösterir)
 10. [Grafikler ve ilerleme paneli](#grafikler-ve-ilerleme-paneli)
@@ -170,15 +170,13 @@ Yedi tip vardır ve bu küme kapalıdır — yenisi eklenmez.
 
 ---
 
-## Sonuç ekranı ve tekrar turu
+## Sonuç ekranı ve yeniden çözme
 
 Test bitince doğru / yanlış / boş sayıları, başarı oranı ve süre görünür. Altında testin bütün soruları listelenir; herhangi birine dokunup cevabı ve açıklamayı yeniden okuyabilirsiniz.
 
-**Tekrar turu.** Yanlış yaptığınız soru varsa ekranda "Tekrar Turuna Başla (n)" düğmesi çıkar. Bu, yalnızca kaçırdığınız soruları bir kez daha sorar — açıklama hâlâ aklınızdayken.
+**Yeniden Çöz** düğmesi testin sorularını bir kez daha sorar — özellikle çok hata yaptığınızda, açıklamalar hâlâ aklınızdayken.
 
-Tekrar turunda **doğru cevap tam başarı sayılmaz**. Az önce kaçırdığınız bir soruyu şimdi bilmeniz bir *toparlanma*dır, ilk seferde bilmekle aynı şey değil; uygulama bunu "Zor" olarak kaydeder. Böyle olmasaydı bir soruyu yanlış yapıp sonra tekrarda doğru yapmak, o soruyu ilk seferde doğru yapmaktan **daha iyi** bir kayıt bırakırdı.
-
-**Yeniden Çöz** düğmesi ise testin tamamını baştan sorar; o normal bir testtir.
+Yeniden çözerken, ilk seferde **yanlış** yaptığınız bir soruyu şimdi doğru bilmeniz **tam başarı sayılmaz**. Az önce kaçırdığınız bir soruyu bilmek bir *toparlanma*dır, ilk seferde bilmekle aynı şey değil; uygulama bunu "Zor" olarak kaydeder. Böyle olmasaydı bir soruyu yanlış yapıp hemen ardından doğru yapmak, o soruyu ilk seferde doğru yapmaktan **daha iyi** bir kayıt bırakırdı. İlk seferde doğru bildiğiniz ya da boş bıraktığınız sorular normal değerlendirilir.
 
 ---
 

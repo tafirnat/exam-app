@@ -420,29 +420,23 @@ Alle drei tragen auch das **Entfernen**: Löschen Sie einen Stern auf einem Ger�
 },
 {
     id: 'results',
-    title: { tr: 'Sonuç ekranı ve tekrar turu', en: 'The results screen and the retry round', de: 'Ergebnisseite und Wiederholungsrunde' },
+    title: { tr: 'Sonuç ekranı ve yeniden çözme', en: 'The results screen and retaking', de: 'Ergebnisseite und Wiederholen' },
     body: {
 tr: `Test bitince doğru / yanlış / boş sayıları, başarı oranı ve süre görünür. Altında testin bütün soruları listelenir; herhangi birine dokunup cevabı ve açıklamayı yeniden okuyabilirsiniz.
 
-**Tekrar turu.** Yanlış yaptığınız soru varsa ekranda "Tekrar Turuna Başla (n)" düğmesi çıkar. Bu, yalnızca kaçırdığınız soruları bir kez daha sorar — açıklama hâlâ aklınızdayken.
+**Yeniden Çöz** düğmesi testin sorularını bir kez daha sorar — özellikle çok hata yaptığınızda, açıklamalar hâlâ aklınızdayken.
 
-Tekrar turunda **doğru cevap tam başarı sayılmaz**. Az önce kaçırdığınız bir soruyu şimdi bilmeniz bir *toparlanma*dır, ilk seferde bilmekle aynı şey değil; uygulama bunu "Zor" olarak kaydeder. Böyle olmasaydı bir soruyu yanlış yapıp sonra tekrarda doğru yapmak, o soruyu ilk seferde doğru yapmaktan **daha iyi** bir kayıt bırakırdı.
-
-**Yeniden Çöz** düğmesi ise testin tamamını baştan sorar; o normal bir testtir.`,
+Yeniden çözerken, ilk seferde **yanlış** yaptığınız bir soruyu şimdi doğru bilmeniz **tam başarı sayılmaz**. Az önce kaçırdığınız bir soruyu bilmek bir *toparlanma*dır, ilk seferde bilmekle aynı şey değil; uygulama bunu "Zor" olarak kaydeder. Böyle olmasaydı bir soruyu yanlış yapıp hemen ardından doğru yapmak, o soruyu ilk seferde doğru yapmaktan **daha iyi** bir kayıt bırakırdı. İlk seferde doğru bildiğiniz ya da boş bıraktığınız sorular normal değerlendirilir.`,
 en: `When a test ends you see correct / wrong / blank counts, the success rate and the elapsed time. Below them every question of the test is listed; tap any of them to read the answer and explanation again.
 
-**The retry round.** If you missed anything, a "Start retry round (n)" button appears. It asks only the questions you missed, one more time - while the explanation is still fresh.
+The **Retake** button asks the test's questions once more - most useful after a lot of misses, while the explanations are still fresh.
 
-In a retry round **a right answer does not count as a full success**. Getting something right that you missed minutes ago is a *recovery*, not the same event as getting it right first time, and the app records it as "Hard". Without that, missing a question and then recovering it would leave a **better** record than answering it correctly in the first place.
-
-The **Retake** button asks the whole test again; that is an ordinary test.`,
+In a retake, getting right a question you got **wrong** the first time **does not count as a full success**. Knowing something you missed minutes ago is a *recovery*, not the same event as knowing it first time, and the app records it as "Hard". Without that, missing a question and then getting it right straight after would leave a **better** record than answering it correctly in the first place. Questions you got right or left blank the first time are rated normally.`,
 de: `Am Ende eines Tests sehen Sie die Zahlen für richtig / falsch / leer, die Erfolgsquote und die verstrichene Zeit. Darunter sind alle Fragen des Tests aufgelistet; tippen Sie eine an, um Antwort und Erklärung noch einmal zu lesen.
 
-**Die Wiederholungsrunde.** Wenn Sie etwas falsch hatten, erscheint eine Schaltfläche "Wiederholungsrunde starten (n)". Sie stellt nur die verpassten Fragen noch einmal - solange die Erklärung noch frisch ist.
+Die Schaltfläche **Wiederholen** stellt die Fragen des Tests noch einmal - besonders nützlich nach vielen Fehlern, solange die Erklärungen noch frisch sind.
 
-In einer Wiederholungsrunde zählt **eine richtige Antwort nicht als voller Erfolg**. Etwas jetzt zu wissen, was Sie vor Minuten verpasst haben, ist eine *Erholung* und nicht dasselbe wie es beim ersten Mal zu wissen; die App verbucht es als "Schwer". Sonst würde eine falsch beantwortete und dann erholte Frage einen **besseren** Eintrag hinterlassen als eine, die gleich richtig war.
-
-Die Schaltfläche **Wiederholen** stellt den ganzen Test erneut; das ist ein gewöhnlicher Test.`
+Beim Wiederholen zählt eine richtige Antwort auf eine Frage, die Sie beim ersten Mal **falsch** hatten, **nicht als voller Erfolg**. Etwas zu wissen, was Sie vor Minuten verpasst haben, ist eine *Erholung* und nicht dasselbe wie es beim ersten Mal zu wissen; die App verbucht es als "Schwer". Sonst würde eine falsch beantwortete und gleich danach richtig beantwortete Frage einen **besseren** Eintrag hinterlassen als eine, die gleich richtig war. Fragen, die beim ersten Mal richtig oder leer waren, werden normal gewertet.`
     }
 },
 {

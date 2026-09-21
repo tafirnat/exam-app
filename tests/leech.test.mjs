@@ -6,7 +6,7 @@ import { JSDOM } from 'jsdom';
 let AppState, initState;
 let isLeech, isSuspended, setSuspended, toggleSuspended, countLeeches;
 let LEECH_WRONG_THRESHOLD, LEECH_RECOVERY_STREAK;
-let buildQuestionPool, updateStats, prepareFromCompositeIds, RETRY_MAX_RATING;
+let buildQuestionPool, updateStats, prepareFromCompositeIds, prepareRetake, RETRY_MAX_RATING;
 let mergeSyncData;
 
 before(async () => {
@@ -26,7 +26,7 @@ before(async () => {
     initState();
 
     const engine = await import('../src/features/test/test-engine.js');
-    ({ buildQuestionPool, updateStats, prepareFromCompositeIds, RETRY_MAX_RATING } = engine);
+    ({ buildQuestionPool, updateStats, prepareFromCompositeIds, prepareRetake, RETRY_MAX_RATING } = engine);
 
     mergeSyncData = (await import('../src/core/github-sync.js')).mergeSyncData;
 });
@@ -150,9 +150,9 @@ test('un-suspending brings the question straight back', () => {
     assert.equal(buildQuestionPool().length, 2);
 });
 
-// ── the retry round ─────────────────────────────────────────────────────────
+// ── retaking: a missed question recovered ───────────────────────────────────
 
-test('a right answer in a retry round is rated a recovery, not a success', () => {
+test('a right answer to a question missed in the retaken session is rated a recovery, not a success', () => {
     AppState.sources = [sourceWith('s1', 1)];
     buildQuestionPool();
 
@@ -161,9 +161,9 @@ test('a right answer in a retry round is rated a recovery, not a success', () =>
     updateStats('s1', 'q1', false, ['b']);
     const afterMiss = { ...AppState.stats['s1_q1'] };
 
-    // Now the same question, right, inside a retry round.
+    // Now the same question, right, in a retake that knows it was missed.
     AppState.stats['s1_q1'] = { ...afterMiss, lastReview: null, stability: 0 };
-    AppState.testTracking = { results: [], retryRound: true };
+    AppState.testTracking = { results: [], recoveringKeys: ['s1_q1'] };
     updateStats('s1', 'q1', true, ['a']);
     const retryStability = AppState.stats['s1_q1'].stability;
 
@@ -179,20 +179,20 @@ test('a right answer in a retry round is rated a recovery, not a success', () =>
     );
 });
 
-test('Easy cannot lift a retry answer back to a full success', () => {
+test('Easy cannot lift a recovered answer back to a full success', () => {
     AppState.sources = [sourceWith('s1', 1)];
     buildQuestionPool();
-    AppState.testTracking = { results: [], retryRound: true };
+    AppState.testTracking = { results: [], recoveringKeys: ['s1_q1'] };
     updateStats('s1', 'q1', true, ['a'], 'easy');
     const easyStability = AppState.stats['s1_q1'].stability;
 
     AppState.stats['s1_q1'] = undefined;
     delete AppState.stats['s1_q1'];
-    AppState.testTracking = { results: [], retryRound: true };
+    AppState.testTracking = { results: [], recoveringKeys: ['s1_q1'] };
     updateStats('s1', 'q1', true, ['a']);
     assert.equal(
         AppState.stats['s1_q1'].stability, easyStability,
-        'the cap is a ceiling: Easy in a retry round is still a recovery'
+        'the cap is a ceiling: Easy on a recovered question is still a recovery'
     );
 });
 
@@ -200,7 +200,7 @@ test('the cap does not touch a wrong answer', () => {
     // A miss is rated 1 either way; capping at 2 must not soften it.
     AppState.sources = [sourceWith('s1', 1)];
     buildQuestionPool();
-    AppState.testTracking = { results: [], retryRound: true };
+    AppState.testTracking = { results: [], recoveringKeys: ['s1_q1'] };
     updateStats('s1', 'q1', false, ['b']);
     const retryStability = AppState.stats['s1_q1'].stability;
 
@@ -210,18 +210,41 @@ test('the cap does not touch a wrong answer', () => {
     assert.equal(AppState.stats['s1_q1'].stability, retryStability);
 });
 
-test('an ordinary session is not a retry round', () => {
+test('a question answered right the first time is not capped in the retake', () => {
+    AppState.sources = [sourceWith('s1', 2)];
+    buildQuestionPool();
+    AppState.testTracking = { results: [], recoveringKeys: ['s1_q2'] };
+    updateStats('s1', 'q1', true, ['a']);
+    const retakeStability = AppState.stats['s1_q1'].stability;
+
+    delete AppState.stats['s1_q1'];
+    AppState.testTracking = { results: [] };
+    updateStats('s1', 'q1', true, ['a']);
+    assert.equal(AppState.stats['s1_q1'].stability, retakeStability);
+});
+
+test('an ordinary session recovers nothing', () => {
     AppState.sources = [sourceWith('s1', 2)];
     buildQuestionPool();
     prepareFromCompositeIds(['s1_q1', 's1_q2'], {});
-    assert.ok(!AppState.testTracking.retryRound);
+    assert.equal(AppState.testTracking.recoveringKeys, undefined);
 });
 
-test('a session asked for as a retry round says so', () => {
-    AppState.sources = [sourceWith('s1', 2)];
+test('a retake carries the WRONG answers of the retaken session - not the right, not the blank', () => {
+    AppState.sources = [sourceWith('s1', 3)];
     buildQuestionPool();
-    prepareFromCompositeIds(['s1_q1'], { retryRound: true });
-    assert.equal(AppState.testTracking.retryRound, true);
+    const entry = { id: 'h1', questions: [
+        { sourceId: 's1', id: 'q1', isCorrect: true, isUnanswered: false },
+        { sourceId: 's1', id: 'q2', isCorrect: false, isUnanswered: false },
+        { sourceId: 's1', id: 'q3', isCorrect: false, isUnanswered: true }
+    ] };
+    assert.ok(prepareRetake(entry));
+    assert.deepEqual(AppState.testTracking.recoveringKeys, ['s1_q2']);
+    assert.equal(AppState.currentTest.length, 3, 'the retake still asks the whole session');
+});
+
+test('the results screen has no separate retry button any more', () => {
+    assert.equal(/id="resRetryWrongBtn"/.test(read('../index.html')), false);
 });
 
 test('RETRY_MAX_RATING is Hard - FSRS already has a word for this', () => {
@@ -236,7 +259,7 @@ test('the Stuck filter exists in the bar and is translated in all three', async 
     const { translations } = await import('../src/core/i18n.js');
     ['tr', 'en', 'de'].forEach(lang => {
         ['filter_leech', 'leech_info_title', 'leech_info_body', 'leech_empty',
-         'suspend_question', 'unsuspend_question', 'retry_round_start'].forEach(key => {
+         'suspend_question', 'unsuspend_question'].forEach(key => {
             assert.ok(translations[lang][key], `${lang}.${key} is missing`);
         });
     });
@@ -252,7 +275,3 @@ test('the Stuck filter keeps suspended questions on screen', () => {
     );
 });
 
-test('the retry button is offered only when something was missed', () => {
-    const src = read('../src/features/test/test-ui.js');
-    assert.ok(/missed > 0 \? '' : 'none'/.test(src), 'the retry button is shown with nothing to retry');
-});
