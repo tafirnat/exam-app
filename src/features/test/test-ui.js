@@ -1503,6 +1503,22 @@ export function renderTestResults() {
     const totalQuestions = correct + wrong + unanswered;
     const rate = totalQuestions > 0 ? Math.round((correct / totalQuestions) * 100) : 0;
 
+    /* The retry button is only ever offered when there is something to retry,
+       and it names how many - a button that opens an empty session reads as
+       broken, and one that says only "retry" makes the user guess what it
+       would ask. It is hidden rather than disabled: on the results screen a
+       greyed-out control next to two live ones is one more thing to decode. */
+    const retryBtn = document.getElementById('resRetryWrongBtn');
+    if (retryBtn) {
+        const missed = (latestTest.questions || []).filter(q => !q.isCorrect).length;
+        retryBtn.style.display = missed > 0 ? '' : 'none';
+        /* The count sits in its own node rather than in the translated label:
+           updateStaticTranslations rewrites every [data-i18n] on a language
+           change and would drop it. */
+        const countEl = document.getElementById('resRetryWrongCount');
+        if (countEl) countEl.textContent = missed > 0 ? ` (${missed})` : '';
+    }
+
     document.getElementById('resCorrectCount').textContent = correct;
     document.getElementById('resWrongCount').textContent = wrong;
     document.getElementById('resUnansweredCount').textContent = unanswered;

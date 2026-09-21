@@ -1,6 +1,6 @@
-import { AppState, liveSources } from '../../core/state.js';
+import { AppState, liveSources, saveStats } from '../../core/state.js';
 import { t } from '../../core/i18n.js';
-import { showConfirm, escapeHTML, showInfoAlert } from '../../core/utils.js';
+import { showConfirm, escapeHTML, showInfoAlert, showToast } from '../../core/utils.js';
 import { readJSON } from '../../core/storage.js';
 import { getLocalDateStr } from '../../core/daily-activity.js';
 import { calculateExamReadiness, calculateGlobalStreak, calculateFocusStreak } from './continuity-engine.js';
@@ -16,6 +16,8 @@ import { buildWorkloadBuckets, renderWorkloadChart, workloadSources } from './wo
 import { setPreviewNavList } from './preview-nav.js';
 import { isSourceScope } from './stats-nav.js';
 import { historyEntryTime, historySessionKey } from '../../core/test-history.js';
+import { isLeech, isSuspended, toggleSuspended, LEECH_WRONG_THRESHOLD } from '../../core/leech.js';
+import { openQuestionEditor } from './question-editor.js';
 
 
 export function renderStatsList(filter = 'all', searchKeyword = '') {
@@ -69,7 +71,7 @@ export function renderStatsList(filter = 'all', searchKeyword = '') {
     }
 
     if (sortBar) {
-        sortBar.style.display = (isTagMode || filter === 'all' || filter === 'starred' || filter === 'flagged' || filter === 'noted' || filter === 'incorrect') ? 'flex' : 'none';
+        sortBar.style.display = (isTagMode || filter === 'all' || filter === 'starred' || filter === 'flagged' || filter === 'noted' || filter === 'incorrect' || filter === 'leech') ? 'flex' : 'none';
     }
 
     const filterBar = document.getElementById('statsFilterBar');
@@ -144,6 +146,11 @@ export function renderStatsList(filter = 'all', searchKeyword = '') {
             if (filter === 'flagged' && !s.flagged) return false;
             if (filter === 'noted' && (!s.note || s.note.trim() === '')) return false;
             if (filter === 'incorrect' && (s.wrong || 0) === 0) return false;
+            /* Stuck questions, plus the ones already suspended. The filter is
+               the screen the user manages them from, so a question they have
+               just suspended has to stay visible - otherwise the act of dealing
+               with it makes it vanish and un-suspending becomes unreachable. */
+            if (filter === 'leech' && !isLeech(s) && !isSuspended(s)) return false;
             return true;
         });
     }
@@ -248,12 +255,49 @@ export function renderStatsList(filter = 'all', searchKeyword = '') {
                 <line x1="12" y1="8" x2="12" y2="12"></line>
                 <line x1="12" y1="16" x2="12.01" y2="16"></line>
             </svg>
-            <div>${t('no_questions_available')}</div>
+            <div>${filter === 'leech' ? t('leech_empty') : t('no_questions_available')}</div>
         </div>`;
+        if (filter === 'leech') {
+            const btn = document.createElement('button');
+            btn.type = 'button';
+            btn.className = 'continuity-icon-btn chart-info-btn';
+            btn.innerHTML = '<span class="info-italic-icon">i</span>';
+            btn.title = t('leech_info_title');
+            btn.setAttribute('aria-label', t('leech_info_title'));
+            btn.onclick = () => showInfoAlert(t('leech_info_body', { n: LEECH_WRONG_THRESHOLD }), t('leech_info_title'));
+            const wrap = document.createElement('div');
+            wrap.className = 'stats-leech-hint';
+            wrap.appendChild(btn);
+            list.appendChild(wrap);
+        }
         return;
     }
 
     const isTagSearch = searchKeyword.trim().startsWith('#');
+
+    /* Only the Stuck filter carries row actions. Everywhere else the row is a
+       single target that opens the question, and hanging buttons off it would
+       make the whole list harder to hit on a phone for the sake of a decision
+       that belongs on one screen. */
+    const showRowActions = filter === 'leech';
+
+
+    /* The Stuck filter is the one filter whose name does not explain itself.
+       The strip says what landed here and opens the same showInfoAlert card the
+       progress panel's `i` buttons use - one component, one place to read a
+       long explanation, no new dialog shape. */
+    if (showRowActions) {
+        const hint = document.createElement('div');
+        hint.className = 'stats-leech-hint';
+        hint.innerHTML = `<span>${escapeHTML(t('stats_count_short', { count: filteredQuestions.length }))}</span>
+            <button type="button" class="continuity-icon-btn chart-info-btn" id="leechInfoBtn"
+                    title="${escapeHTML(t('leech_info_title'))}" aria-label="${escapeHTML(t('leech_info_title'))}">
+                <span class="info-italic-icon">i</span>
+            </button>`;
+        hint.querySelector('#leechInfoBtn').onclick = () =>
+            showInfoAlert(t('leech_info_body', { n: LEECH_WRONG_THRESHOLD }), t('leech_info_title'));
+        list.appendChild(hint);
+    }
 
     filteredQuestions.forEach((q, i) => {
         const statKey = `${q.sourceId}_${q.id}`;
@@ -292,6 +336,7 @@ export function renderStatsList(filter = 'all', searchKeyword = '') {
                     ${rPercent !== null ? `<span class="stats-item-retrievability ${r <= 0.9 ? 'overdue' : ''}" title="Retrievability: ${rPercent}%" style="font-size: 0.72rem; line-height: 1;">🧠 ${rPercent}%</span>` : ''}
                     ${s.starred ? `<span class="stats-indicator starred"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"></polygon></svg></span>` : ''}
                     ${s.flagged ? `<span class="stats-indicator flagged"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"><path d="M4 15s1-1 4-1 5 2 8 2 4-1 4-1V3s-1 1-4 1-5-2-8-2-4 1-4 1z"></path><line x1="4" y1="22" x2="4" y2="15"></line></svg></span>` : ''}
+                    ${isSuspended(s) ? `<span class="stats-indicator suspended" title="${t('suspended_badge')}"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"><rect x="6" y="4" width="4" height="16"></rect><rect x="14" y="4" width="4" height="16"></rect></svg></span>` : ''}
                     ${(s.note && s.note.trim() !== '') ? `<span class="stats-indicator noted"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"></path></svg></span>` : ''}
                 </div>
                 ${tagsHtml}
@@ -304,10 +349,40 @@ export function renderStatsList(filter = 'all', searchKeyword = '') {
                 </span>
                 <span class="${isLearned ? 'learned-coeff' : ''}">${t('difficulty_label')} ${(s.difficulty / 2).toFixed(1)}</span>
             </div>
+        
+            ${showRowActions ? `
+            <div class="stats-item-actions">
+                <button class="icon-btn stats-row-action" data-row-action="edit" title="${t('edit')}" aria-label="${t('edit')}">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"></path><path d="M18.5 2.5a2.12 2.12 0 0 1 3 3L12 15l-4 1 1-4z"></path></svg>
+                </button>
+                <button class="icon-btn stats-row-action ${isSuspended(s) ? 'is-on' : ''}" data-row-action="suspend"
+                        title="${isSuspended(s) ? t('unsuspend_question') : t('suspend_question')}"
+                        aria-label="${isSuspended(s) ? t('unsuspend_question') : t('suspend_question')}">
+                    ${isSuspended(s)
+                        ? `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"><polygon points="5 3 19 12 5 21 5 3"></polygon></svg>`
+                        : `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"><rect x="6" y="4" width="4" height="16"></rect><rect x="14" y="4" width="4" height="16"></rect></svg>`}
+                </button>
+            </div>` : ''}
         `;
         item.onclick = () => {
             if (window.onPreviewQuestion) window.onPreviewQuestion(q, null, 'stats');
         };
+        /* The actions live inside a row whose own click opens the preview, so
+           every one of them has to stop the event. A row action that also
+           opened the question would look like the button did nothing. */
+        item.querySelectorAll('[data-row-action]').forEach(btn => {
+            btn.onclick = (e) => {
+                e.stopPropagation();
+                if (btn.dataset.rowAction === 'edit') {
+                    openQuestionEditor(q);
+                    return;
+                }
+                const stat = AppState.stats[statKey] || (AppState.stats[statKey] = { difficulty: 5.0, correct: 0, wrong: 0 });
+                const now = toggleSuspended(stat);
+                saveStats();
+                showToast(t(now ? 'toast_suspended' : 'toast_unsuspended'));
+            };
+        });
         item.querySelectorAll('.stats-tag-pill').forEach(pill => {
             pill.onclick = (e) => {
                 e.stopPropagation();

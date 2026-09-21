@@ -1723,6 +1723,8 @@ function setupEventListeners() {
     // Results View
     document.getElementById('resHomeBtn').onclick = goHome;
     document.getElementById('resRetakeBtn').onclick = retakeSession;
+    const retryWrongBtn = document.getElementById('resRetryWrongBtn');
+    if (retryWrongBtn) retryWrongBtn.onclick = retryWrongSession;
 
     const sourcesBackBtn = document.getElementById('sourcesBackBtn');
     if (sourcesBackBtn) {
@@ -2742,6 +2744,32 @@ function copyQuestionAndAnswer(isPreview = false) {
 function goHome() {
     switchView('home');
     updateHomeStats();
+}
+
+/**
+ * A second look at the questions just missed.
+ *
+ * Wrong answers are never re-asked inside a session - prepareTest() picks the
+ * whole set up front - so a question the user got wrong was last seen wrong,
+ * and the next time it comes round is whenever FSRS says so. The one moment
+ * the explanation is still in front of them is now.
+ *
+ * It is an ordinary session in every respect but one: a right answer in it is
+ * capped at Hard, because it is a recovery and not a success. See
+ * RETRY_MAX_RATING in test-engine.js.
+ */
+async function retryWrongSession() {
+    const latestTest = AppState.recentTests[0];
+    if (!latestTest) return;
+
+    const { prepareRetake } = await import('./features/test/test-engine.js');
+    const qIds = prepareRetake(latestTest, true, { retryRound: true });
+    if (!qIds) {
+        showToast(t('no_questions_available'));
+        return;
+    }
+    switchView('test');
+    renderQuestion();
 }
 
 async function retakeSession() {

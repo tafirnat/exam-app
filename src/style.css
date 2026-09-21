@@ -4060,6 +4060,48 @@ input:checked+.slider-small:before {
     color: var(--primary-color);
 }
 
+/* A suspended question is out of rotation, so it reads muted rather than
+   primary - the other three indicators mean "I marked this", this one means
+   "this is not in play". */
+.stats-indicator.suspended {
+    color: var(--text-secondary);
+}
+
+/* Row actions, shown only in the Stuck filter. Same .icon-btn component the
+   rest of the app uses, scaled to the row: the list item's own type is
+   0.85rem, so a 24px glyph in it reads as a different control. */
+.stats-item-actions {
+    display: flex;
+    align-items: center;
+    gap: 2px;
+    flex-shrink: 0;
+}
+
+.icon-btn.stats-row-action {
+    padding: 0.35rem;
+}
+
+.icon-btn.stats-row-action svg {
+    width: 17px;
+    height: 17px;
+}
+
+.icon-btn.stats-row-action.is-on {
+    color: var(--primary-color);
+}
+
+/* The Stuck filter's one-line strip. Same muted footer voice the scope row
+   uses, so it reads as a label on the list rather than a card in it. */
+.stats-leech-hint {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 6px;
+    padding: 2px 0 6px;
+    font-size: 0.75rem;
+    color: var(--text-secondary);
+}
+
 .stats-item-meta {
     display: flex;
     flex-direction: column;

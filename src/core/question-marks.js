@@ -19,8 +19,12 @@
  * direct assignments outside this module.
  */
 
-/** The marks that carry a stamp. */
-export const MARK_KEYS = Object.freeze(['starred', 'flagged']);
+/* The marks that carry a stamp.
+   `suspended` (see leech.js) is one of them rather than a field of its own:
+   it is the same shape - a boolean the user sets and unsets, that no answer
+   touches - and it is the one where an un-mergeable unset does the most
+   damage, since the question would stay out of rotation for good. */
+export const MARK_KEYS = Object.freeze(['starred', 'flagged', 'suspended']);
 
 /** The field holding the moment a mark was last written. */
 export function markStampKey(mark) {

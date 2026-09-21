@@ -1442,6 +1442,13 @@
             </div>
 
             <div class="results-actions">
+                <button class="btn btn-secondary" id="resRetryWrongBtn" style="display: none;">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+                        <path d="M1 4v6h6"></path>
+                        <path d="M3.51 15a9 9 0 1 0 2.13-9.36L1 10"></path>
+                    </svg>
+                    <span data-i18n="retry_round_start">Tekrar Turuna Basla</span><span id="resRetryWrongCount"></span>
+                </button>
                 <button class="btn btn-secondary" id="resRetakeBtn">
                     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
                         <path d="M23 4v6h-6"></path>
@@ -1663,6 +1670,14 @@
                                 <line x1="4" y1="22" x2="4" y2="15"></line>
                             </svg>
                             <span class="filter-btn-text" data-i18n="filter_flagged">Bayraklı</span>
+                        </button>
+                        <button class="filter-btn" data-filter="leech">
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"
+                                stroke-linecap="round" stroke-linejoin="round">
+                                <path d="M12 2a10 10 0 1 0 10 10"></path>
+                                <path d="M12 7v5l3 2"></path>
+                            </svg>
+                            <span class="filter-btn-text" data-i18n="filter_leech">Takilanlar</span>
                         </button>
                         <button class="filter-btn" data-filter="noted">
                             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"
