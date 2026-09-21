@@ -221,3 +221,105 @@ test('the picker limit message is translated rather than hard-coded Turkish', ()
     const src = read('../src/features/sources/sources-ui.js');
     assert.ok(!/En fazla \$\{max\} kaynak/.test(src), 'the German build still says this in Turkish');
 });
+
+// ── quick access from one source (#modalToggleQuickAccessBtn) ───────────────
+/* The source actions dialog opens a list of every group with this source's
+   membership as the toggle. It could join and leave groups but never START
+   one, and leaving the last group's last source left an empty group behind. */
+
+const sqp = () => import('../src/features/sources/quick-presets-ui.js');
+const sqpRows = () => [...document.querySelectorAll('#sourceQuickPresetsList .sqp-preset-row')];
+const flush = () => new Promise(r => setTimeout(r, 0));
+
+async function openForSource(id, presets) {
+    AppState.quickPresets = presets;
+    const { showSourceQuickPresetsModal } = await sqp();
+    showSourceQuickPresetsModal(AppState.sources.find(s => s.id === id));
+}
+
+test('the source dialog offers a new group, and it opens the editor with this source in it', async () => {
+    await openForSource('s2', [{ id: 'p1', name: 'Other', sourceIds: ['s1'], order: 0 }]);
+    const btn = document.getElementById('sqpNewPresetBtn');
+    assert.ok(btn, 'no way to start a group from a source');
+    btn.click();
+
+    assert.ok(document.getElementById('presetEditOverlay').classList.contains('active'));
+    assert.equal(document.getElementById('presetEditNameInput').value, 'Beta', 'named after the source');
+    assert.equal(document.getElementById('presetEditCount').textContent,
+        translations[AppState.language].qs_group_selected_count.replace('{count}', '1'),
+        'the source is not preselected');
+});
+
+test('a new group is a draft: cancelling creates nothing, saving creates it', async () => {
+    await openForSource('s2', [{ id: 'p1', name: 'Other', sourceIds: ['s1'], order: 0 }]);
+    document.getElementById('sqpNewPresetBtn').click();
+    document.getElementById('presetEditCancelBtn').click();
+    assert.equal(AppState.quickPresets.length, 1, 'cancel left a group behind');
+
+    document.getElementById('sqpNewPresetBtn').click();
+    clickSource('s3');
+    document.getElementById('presetEditSaveBtn').click();
+    assert.equal(AppState.quickPresets.length, 2);
+    const created = AppState.quickPresets[1];
+    assert.equal(created.name, 'Beta');
+    assert.deepEqual([...created.sourceIds].sort(), ['s2', 's3']);
+    assert.ok(created.updatedAt > 0, 'unstamped: the merge would not carry it');
+    // and the list behind it shows the new group, with this source ticked
+    const row = sqpRows().find(r => r.dataset.presetId === created.id);
+    assert.ok(row && row.classList.contains('active'));
+});
+
+test('a new group does not take a name that is already there', async () => {
+    await openForSource('s2', [{ id: 'p1', name: 'Beta', sourceIds: ['s1'], order: 0 }]);
+    document.getElementById('sqpNewPresetBtn').click();
+    assert.equal(document.getElementById('presetEditNameInput').value, 'Beta (2)');
+});
+
+test('a group with exactly the sources of another one is refused', async () => {
+    await openForSource('s2', [{ id: 'p1', name: 'Solo', sourceIds: ['s2'], order: 0 }]);
+    document.getElementById('sqpNewPresetBtn').click();
+    document.getElementById('presetEditSaveBtn').click();
+    assert.equal(AppState.quickPresets.length, 1, 'a duplicate group was saved');
+    assert.ok(document.getElementById('presetEditOverlay').classList.contains('active'), 'the editor closed on a refusal');
+    document.getElementById('presetEditCancelBtn').click();
+});
+
+test('taking the last source out asks, and removes the group only on yes', async () => {
+    await openForSource('s1', [{ id: 'p1', name: 'Only', sourceIds: ['s1'], order: 0 }]);
+
+    sqpRows()[0].click();
+    await flush();
+    assert.ok(document.getElementById('customModalOverlay').classList.contains('active'), 'no question asked');
+    document.getElementById('modalCancelBtn').click();
+    await flush();
+    assert.deepEqual(AppState.quickPresets.map(p => p.sourceIds), [['s1']], 'no must leave the group as it was');
+
+    sqpRows()[0].click();
+    await flush();
+    document.getElementById('modalConfirmBtn').click();
+    await flush();
+    assert.equal(AppState.quickPresets.length, 0, 'an empty group was left behind');
+    assert.ok(AppState.deletedQuickPresetIds.includes('p1'), 'no tombstone: the next pull brings it back');
+});
+
+test('a row shows the question count and its pencil opens the group editor', async () => {
+    await openForSource('s1', [{ id: 'p1', name: 'Pair', sourceIds: ['s1', 's2'], order: 0 }]);
+    const row = sqpRows()[0];
+    assert.equal(row.querySelector('.qs-count').textContent, '4');
+    row.querySelector('.sqp-edit-btn').click();
+    assert.ok(document.getElementById('presetEditOverlay').classList.contains('active'));
+    assert.deepEqual([...AppState.quickPresets[0].sourceIds], ['s1', 's2'], 'the pencil must not toggle membership');
+    document.getElementById('presetEditCancelBtn').click();
+});
+
+test('the source dialog sits under the group editor it opens', () => {
+    const src = html();
+    const z = (id) => Number((new RegExp(`id="${id}"[^>]*z-index:\\s*(\\d+)`).exec(src) || [])[1]);
+    assert.ok(z('sourceQuickPresetsOverlay') < z('presetEditOverlay'), 'the editor would open underneath');
+});
+
+test('the new strings are in all three languages', () => {
+    ['qs_group_created', 'qs_new_with_source', 'qs_remove_last_confirm'].forEach(key => {
+        ['tr', 'en', 'de'].forEach(lang => assert.ok(translations[lang][key], `${lang}.${key} is missing`));
+    });
+});

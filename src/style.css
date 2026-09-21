@@ -6090,6 +6090,21 @@ body.dnd-active {
     color: #ffffff;
 }
 
+.sqp-preset-row {
+    gap: 0.5rem;
+}
+
+.sqp-preset-bar {
+    width: 28px;
+    height: 14px;
+    border-radius: 3px;
+    flex-shrink: 0;
+}
+
+.sqp-edit-btn {
+    flex-shrink: 0;
+}
+
 /* System Folder Edit Icon Micro-Animation Feedback */
 @keyframes folderGridSquaresPulse {
     0% {

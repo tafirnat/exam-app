@@ -1,7 +1,7 @@
 import { AppState, saveSources, saveQuickPresets, trackDeletedQuickPreset, savePresetSessionData, clearPresetSessionData, findMatchingPresetId, clearActiveTest } from '../../core/state.js';
 import { t } from '../../core/i18n.js';
 import { showConfirm, showToast } from '../../core/utils.js';
-import { applySwatch, applyPresetBar, addCurrentAsPreset } from './quick-presets.js';
+import { applySwatch, applyPresetBar, addCurrentAsPreset, generateAutoName } from './quick-presets.js';
 import { buildQuestionPool } from '../test/test-engine.js';
 import { renderSourcePicker } from './sources-ui.js';
 import { persist } from '../../core/storage.js';
@@ -426,12 +426,50 @@ export function setupQuickPresets() {
     updateQuickSourcesDot();
 }
 
+/** Same set of sources, in any order. */
+function sameSourceSet(a, b) {
+    if (!Array.isArray(a) || !Array.isArray(b) || a.length !== b.length) return false;
+    const sa = [...a].sort();
+    const sb = [...b].sort();
+    return sa.every((id, i) => id === sb[i]);
+}
+
+/** A group name no other group carries yet: the base, then "base (2)"... */
+export function uniquePresetName(base) {
+    const root = (typeof base === 'string' ? base.trim() : '') || generateAutoName();
+    const taken = new Set((AppState.quickPresets || []).map(p => p.name));
+    if (!taken.has(root)) return root;
+    let n = 2;
+    while (taken.has(`${root} (${n})`)) n++;
+    return `${root} (${n})`;
+}
+
+function presetQuestionCount(preset) {
+    return (AppState.sources || [])
+        .filter(s => (preset.sourceIds || []).includes(s.id) && !s.archived)
+        .reduce((acc, s) => acc + (s.questions ? s.questions.length : 0), 0);
+}
+
+/**
+ * Quick access seen from ONE source (the source actions dialog): every group,
+ * with this source's membership as the toggle, plus a way to start a new group
+ * from it. Three things this dialog used to be missing:
+ * - there was no way to CREATE a group here, only to join existing ones - a
+ *   library with no groups yet showed an empty list and a dead end;
+ * - taking the last source out left a group with no sources, which starts a
+ *   test with no questions and only disappeared at the next sync prune. It now
+ *   asks and removes the group - the same outcome the edit modal enforces by
+ *   refusing to save an empty group;
+ * - a row carried only a name. It now shows what the manage list shows (bar,
+ *   question count) and has the same pencil into the full group editor.
+ */
 export function showSourceQuickPresetsModal(source) {
     if (!source) return;
     const overlay = document.getElementById('sourceQuickPresetsOverlay');
     const subTitle = document.getElementById('sourceQuickPresetsSub');
     const listContainer = document.getElementById('sourceQuickPresetsList');
     const closeXBtn = document.getElementById('sourceQuickPresetsCloseXBtn');
+    const newBtn = document.getElementById('sqpNewPresetBtn');
 
     if (!overlay || !listContainer) return;
 
@@ -442,7 +480,36 @@ export function showSourceQuickPresetsModal(source) {
     const closeSelf = () => {
         overlay.classList.remove('active');
         if (closeXBtn) closeXBtn.onclick = null;
+        if (newBtn) newBtn.onclick = null;
         overlay.onclick = null;
+    };
+
+    const afterChange = () => {
+        updateQuickSourcesDot();
+        if (typeof window.updateHomeStats === 'function') window.updateHomeStats();
+        renderList();
+    };
+
+    const toggleMembership = async (preset) => {
+        const ids = preset.sourceIds || [];
+        if (ids.includes(source.id)) {
+            if (ids.length === 1) {
+                const confirmed = await showConfirm(
+                    t('qs_remove_last_confirm', { name: preset.name }),
+                    t('qs_delete_title')
+                );
+                if (!confirmed) return;
+                deletePreset(preset.id);
+                afterChange();
+                return;
+            }
+            preset.sourceIds = ids.filter(id => id !== source.id);
+        } else {
+            preset.sourceIds = [...ids, source.id];
+        }
+        preset.updatedAt = Date.now();
+        saveQuickPresets();
+        afterChange();
     };
 
     const renderList = () => {
@@ -466,45 +533,53 @@ export function showSourceQuickPresetsModal(source) {
 
             const row = document.createElement('div');
             row.className = `sqp-preset-row ${isIncluded ? 'active' : ''}`;
+            row.dataset.presetId = preset.id;
+            row.title = isIncluded ? t('qs_toggle_remove') : t('qs_toggle_add');
 
             const infoDiv = document.createElement('div');
             infoDiv.className = 'sqp-preset-info';
 
             const barSpan = document.createElement('div');
-            barSpan.className = 'qpm-proportional-bar';
-            barSpan.style.width = '28px';
-            barSpan.style.height = '14px';
-            barSpan.style.borderRadius = '3px';
-            barSpan.style.flexShrink = '0';
+            barSpan.className = 'qpm-proportional-bar sqp-preset-bar';
             applyPresetBar(barSpan, preset);
 
             const nameSpan = document.createElement('span');
             nameSpan.className = 'sqp-preset-name';
             nameSpan.textContent = preset.name;
 
+            const countSpan = document.createElement('span');
+            countSpan.className = 'qs-count';
+            countSpan.textContent = presetQuestionCount(preset);
+
             infoDiv.appendChild(barSpan);
             infoDiv.appendChild(nameSpan);
+            infoDiv.appendChild(countSpan);
+
+            const editBtn = document.createElement('button');
+            editBtn.type = 'button';
+            editBtn.className = 'icon-btn qpm-edit-btn sqp-edit-btn';
+            editBtn.setAttribute('title', t('qs_edit_preset'));
+            editBtn.setAttribute('aria-label', t('qs_edit_preset'));
+            editBtn.innerHTML = `
+                <svg viewBox="0 0 24 24" width="13" height="13" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                    <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"></path>
+                    <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"></path>
+                </svg>
+            `;
+            editBtn.addEventListener('click', (e) => {
+                e.stopPropagation();
+                openPresetEditModal(preset, afterChange);
+            });
 
             const checkDiv = document.createElement('div');
             checkDiv.className = 'sqp-check-icon';
             checkDiv.innerHTML = `<svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"></polyline></svg>`;
 
             row.appendChild(infoDiv);
+            row.appendChild(editBtn);
             row.appendChild(checkDiv);
 
-            row.onclick = () => {
-                let currentSourceIds = preset.sourceIds || [];
-                if (currentSourceIds.includes(source.id)) {
-                    preset.sourceIds = currentSourceIds.filter(id => id !== source.id);
-                } else {
-                    preset.sourceIds = [...currentSourceIds, source.id];
-                }
-                preset.updatedAt = Date.now();
-                saveQuickPresets();
-                updateQuickSourcesDot();
-                if (typeof window.updateHomeStats === 'function') window.updateHomeStats();
-                renderList();
-            };
+            row.onclick = () => toggleMembership(preset);
 
             listContainer.appendChild(row);
         });
@@ -512,6 +587,24 @@ export function showSourceQuickPresetsModal(source) {
 
     renderList();
     overlay.classList.add('active');
+
+    if (newBtn) {
+        /* The new group opens in the full editor, pre-filled with this source
+           and its name, so the user can add more sources or rename it first.
+           It is a draft until Save: cancelling creates nothing. */
+        newBtn.onclick = () => {
+            const draft = {
+                id: 'qp_' + Date.now() + '_' + Math.random().toString(36).substr(2, 4),
+                name: uniquePresetName(source.name),
+                sourceIds: [source.id],
+                color: null,
+                order: (AppState.quickPresets || []).length,
+                createdAt: Date.now(),
+                updatedAt: Date.now()
+            };
+            openPresetEditModal(draft, afterChange, { isNew: true });
+        };
+    }
 
     if (closeXBtn) closeXBtn.onclick = closeSelf;
     overlay.onclick = (e) => {
@@ -532,7 +625,7 @@ export function showSourceQuickPresetsModal(source) {
    never fires. */
 let presetEditPicker = null;
 
-export function openPresetEditModal(preset, onSaved) {
+export function openPresetEditModal(preset, onSaved, { isNew = false } = {}) {
     const overlay = document.getElementById('presetEditOverlay');
     const nameInput = document.getElementById('presetEditNameInput');
     const listEl = document.getElementById('presetEditSourceList');
@@ -581,14 +674,27 @@ export function openPresetEditModal(preset, onSaved) {
             return;
         }
 
+        /* The same set saved twice is two rows that do the same thing -
+           addCurrentAsPreset refuses it, and so does this. */
+        const duplicate = (AppState.quickPresets || []).some(p => p.id !== preset.id && sameSourceSet(p.sourceIds, ids));
+        if (duplicate) {
+            showToast(t('qs_duplicate_warning'));
+            return;
+        }
+
         preset.name = newName;
         preset.sourceIds = ids;
         /* The stamp is what carries this edit to the other devices: quick
            presets merge by id on updatedAt, so an unstamped change is one the
            merge cannot see and the next pull writes over. */
         preset.updatedAt = Date.now();
+        /* A new group is a draft until here, so a cancelled one leaves nothing. */
+        if (isNew && !(AppState.quickPresets || []).some(p => p.id === preset.id)) {
+            if (!Array.isArray(AppState.quickPresets)) AppState.quickPresets = [];
+            AppState.quickPresets.push(preset);
+        }
         saveQuickPresets();
-        showToast(t('qs_group_saved'));
+        showToast(t(isNew ? 'qs_group_created' : 'qs_group_saved'));
         close();
         if (typeof onSaved === 'function') onSaved();
     };

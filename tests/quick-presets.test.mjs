@@ -146,7 +146,8 @@ test('showSourceQuickPresetsModal renders presets and toggles source inclusion',
     AppState.sources = [testSource];
     AppState.quickPresets = [
         { id: 'qp_1', name: 'Preset Alpha', sourceIds: [], order: 0 },
-        { id: 'qp_2', name: 'Preset Beta', sourceIds: ['src_test_1'], order: 1 }
+        // Two sources: taking the LAST one out asks first (preset-edit-modal.test.mjs)
+        { id: 'qp_2', name: 'Preset Beta', sourceIds: ['src_test_1', 'src_other'], order: 1 }
     ];
 
     showSourceQuickPresetsModal(testSource);
