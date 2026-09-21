@@ -92,6 +92,8 @@ A **source** is a set of questions about one subject: a course, a chapter, an ex
 
 **Folders.** Sources can be put into folders and folders can be coloured. Anything without a folder collects in "Uncategorized", which always exists and cannot be deleted. A folder that stays empty is removed on its own after 10 minutes, or at the next start if you closed the app. A folder with sources in the archive does not count as empty.
 
+**Folder hint.** A data set can name a folder in its `exam_metadata.folder` field. With "Apply folder hints" on in the menu, the set goes into the folder of that name when it is imported or first arrives by sync (from Obsidian, for example); case, accents and punctuation do not matter. If there is no such folder it is created, and a folder you renamed since is still found. Without a hint the set goes to "Uncategorized". It happens once per set: a set you move later stays where you put it. Importing a set you deleted again, from the same file, brings it back on every device.
+
 **The source menu** (long-press a source, or tap its three dots):
 
 - **Rename / edit details** - title and category.

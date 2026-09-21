@@ -279,9 +279,9 @@ test('a hint folder removed while empty comes back under the same id and outlive
     const deletedAt = Date.now() - MIN;
     trackDeletedFolder(hint.hintFolderBaseId('Networks'), deletedAt);
     const { folderId } = hint.applyFolderHint('Networks');
-    assert.equal(folderId, 'folder_hint_networks');
+    assert.equal(folderId, hint.hintFolderBaseId('Networks'));
 
     const local = payload({ folders: JSON.parse(JSON.stringify(AppState.folders)) }, { deletedFolderAt: { ...AppState.deletedFolderAt } });
-    const remote = payload({ folders: [createUncategorizedFolderRecord()] }, { deletedFolderAt: { folder_hint_networks: deletedAt } });
-    assert.ok(mergeSyncData(local, remote).folders.some(f => f.id === 'folder_hint_networks'));
+    const remote = payload({ folders: [createUncategorizedFolderRecord()] }, { deletedFolderAt: { [folderId]: deletedAt } });
+    assert.ok(mergeSyncData(local, remote).folders.some(f => f.id === folderId));
 });

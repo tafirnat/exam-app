@@ -92,6 +92,8 @@ Eine **Quelle** ist eine Menge von Fragen zu einem Thema: ein Kurs, ein Kapitel,
 
 **Ordner.** Quellen lassen sich in Ordner legen, Ordner lassen sich einfärben. Alles ohne Ordner sammelt sich in "Ohne Kategorie", der immer existiert und nicht gelöscht werden kann. Ein Ordner, der leer bleibt, wird nach 10 Minuten von selbst entfernt, oder beim nächsten Start, wenn Sie die App geschlossen haben. Ein Ordner mit Quellen im Archiv gilt nicht als leer.
 
+**Ordnerhinweis.** Ein Datensatz kann im Feld `exam_metadata.folder` einen Ordner nennen. Ist im Menü "Ordnerhinweise anwenden" an, landet der Satz beim Import oder wenn er zum ersten Mal per Sync ankommt (etwa aus Obsidian) in dem Ordner dieses Namens; Groß-/Kleinschreibung, Akzente und Satzzeichen spielen keine Rolle. Gibt es keinen, wird er angelegt, und auch ein inzwischen umbenannter Ordner wird gefunden. Ohne Hinweis kommt der Satz nach "Ohne Kategorie". Das geschieht einmal pro Satz: Einen Satz, den Sie später verschieben, lässt die App, wo er ist. Einen gelöschten Satz aus derselben Datei erneut zu importieren, holt ihn auf allen Geräten zurück.
+
 **Das Quellenmenü** (lange auf eine Quelle drücken oder die drei Punkte antippen):
 
 - **Umbenennen / Details bearbeiten** - Titel und Kategorie.

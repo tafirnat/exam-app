@@ -9,6 +9,7 @@ import { emit, Slice, getActiveView } from './store.js';
 import { historyEntryTime } from './test-history.js';
 import { MARK_KEYS, markStampKey, pickMark, hasUserAnnotation } from './question-marks.js';
 import { mergeFolderDeletions, folderOutlivesDeletion } from './folder-tombstones.js';
+import { resolveSourceTombstones, mergeDatedIds } from './source-tombstones.js';
 
 /* The Gist holds three files, and a PATCH only touches the ones it names. The
    split is by how big a file is against how often it is written:
@@ -195,6 +196,9 @@ export function getSyncPayload() {
         aiPrompts: AppState.aiPrompts || [],
         deletedAiPromptIds: AppState.deletedAiPromptIds || [],
         deletedSourceIds: AppState.deletedSourceIds || [],
+        // Dated deletions and revivals of sources - see core/source-tombstones.js.
+        deletedSourceAt: AppState.deletedSourceAt || {},
+        revivedSourceAt: AppState.revivedSourceAt || {},
         deletedFolderIds: AppState.deletedFolderIds || [],
         deletedFolderAt: AppState.deletedFolderAt || {},
         deletedQuickPresetIds: AppState.deletedQuickPresetIds || [],
@@ -589,6 +593,28 @@ export async function logout() {
     showToast(t('github_logout'));
 }
 
+/* The dated half of the source tombstones (core/source-tombstones.js). Adopted
+   as they come: the merge has already combined them with this side's. */
+function applySourceTombstoneDates(payload) {
+    if (payload?.deletedSourceAt && typeof payload.deletedSourceAt === 'object') {
+        AppState.deletedSourceAt = mergeDatedIds(payload.deletedSourceAt);
+        persist('focus_app_deleted_source_at', AppState.deletedSourceAt);
+    }
+    if (payload?.revivedSourceAt && typeof payload.revivedSourceAt === 'object') {
+        AppState.revivedSourceAt = mergeDatedIds(payload.revivedSourceAt);
+        persist('focus_app_revived_source_at', AppState.revivedSourceAt);
+    }
+}
+
+/* A set that arrives by sync never passes through an import, so its folder hint
+   is spent here - features/sources/folder-hint.js. After the folders and the
+   settings are in, so it sees the folders to match and the switch as it now is. */
+function applyArrivedFolderHints() {
+    return import('../features/sources/folder-hint.js')
+        .then(m => m.applyPendingFolderHints())
+        .catch(() => 0);
+}
+
 /**
  * Fetches remote Gist data and overwrites local state cleanly without merging
  * previous account data back to Gist. Reads through AppState, which the caller
@@ -624,6 +650,8 @@ async function pullRemoteGistOnly() {
                 AppState.deletedSourceIds = remotePayload.deletedSourceIds;
                 persist('focus_app_deleted_sources', remotePayload.deletedSourceIds);
             }
+            applySourceTombstoneDates(remotePayload);
+            applyArrivedFolderHints();
 
             if (Array.isArray(remotePayload.deletedFolderIds)) {
                 AppState.deletedFolderIds = remotePayload.deletedFolderIds;
@@ -1012,13 +1040,14 @@ export async function syncFromGist(options = {}) {
                     });
                     saveSources();
                 }
-            }).catch(() => {});
+            }).then(applyArrivedFolderHints).catch(() => {});
 
             // Apply merged deleted source IDs (Tombstones)
             if (Array.isArray(merged.deletedSourceIds)) {
                 AppState.deletedSourceIds = merged.deletedSourceIds;
                 persist('focus_app_deleted_sources', merged.deletedSourceIds);
             }
+            applySourceTombstoneDates(merged);
 
             if (Array.isArray(merged.deletedFolderIds)) {
                 AppState.deletedFolderIds = merged.deletedFolderIds;
@@ -1534,12 +1563,27 @@ export function mergeSyncData(local, remote) {
     const localResetIsNewer = localResetAt > 0 && localResetAt > remoteLastUpdated;
     // ────────────────────────────────────────────────────────────────────────
 
-    // 0. Combine Tombstone Deletion Trackers
-    const mergedDeletedIds = Array.from(new Set([
-        ...(remote.deletedSourceIds || []),
-        ...(local.deletedSourceIds || []),
-        ...(AppState.deletedSourceIds || [])
-    ]));
+    // 0. Combine Tombstone Deletion Trackers. Not a plain union any more: a
+    // deliberate revival newer than the deletion takes the id back out of the
+    // list - see core/source-tombstones.js.
+    const sourceTombstones = resolveSourceTombstones({
+        lists: [remote.deletedSourceIds, local.deletedSourceIds, AppState.deletedSourceIds],
+        deletedAt: [remote.deletedSourceAt, local.deletedSourceAt, AppState.deletedSourceAt],
+        revivedAt: [remote.revivedSourceAt, local.revivedSourceAt, AppState.revivedSourceAt]
+    });
+    const mergedDeletedIds = sourceTombstones.deletedSourceIds;
+    // The remote lists a revived id, or misses a date this side holds: push.
+    {
+        const remoteList = new Set(remote.deletedSourceIds || []);
+        const sameList = remoteList.size === mergedDeletedIds.length && mergedDeletedIds.every(id => remoteList.has(id));
+        const sameDates = (merged, theirs) =>
+            JSON.stringify(merged) === JSON.stringify(mergeDatedIds(theirs || {}));
+        if (!sameList
+            || !sameDates(sourceTombstones.deletedSourceAt, remote.deletedSourceAt)
+            || !sameDates(sourceTombstones.revivedSourceAt, remote.revivedSourceAt)) {
+            hasLocalChanges = true;
+        }
+    }
 
     // 0b. Combine Folder Tombstones
     const mergedDeletedFolderIds = Array.from(new Set([
@@ -2087,6 +2131,8 @@ export function mergeSyncData(local, remote) {
         studyActivity: mergedStudyActivity,
         continuityConfig: mergedContinuityConfig,
         deletedSourceIds: mergedDeletedIds,
+        deletedSourceAt: sourceTombstones.deletedSourceAt,
+        revivedSourceAt: sourceTombstones.revivedSourceAt,
         deletedFolderIds: mergedDeletedFolderIds,
         deletedFolderAt: mergedDeletedFolderAt,
         deletedQuickPresetIds: mergedDeletedQuickPresetIds,
@@ -2193,6 +2239,12 @@ export function _resetSyncQueue() {
     pendingScopes = new Set();
     isSyncing = false;
     lastPullAt = 0;
+}
+
+/** Test seam: the replace-local-data pull, which is otherwise only reachable
+ *  through the account-switch dialog. */
+export function _pullRemoteGistOnly() {
+    return pullRemoteGistOnly();
 }
 
 /**

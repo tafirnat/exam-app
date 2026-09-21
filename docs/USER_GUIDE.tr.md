@@ -92,6 +92,8 @@ Bir **kaynak**, bir konuya ait soru kümesidir: bir ders, bir kitap bölümü, b
 
 **Klasörler.** Kaynakları klasörlere koyabilir, klasöre renk verebilirsiniz. Klasörsüz kalan her şey "Kategorisiz" klasöründe toplanır — bu klasör silinemez, hep vardır. Boş kalan bir klasör 10 dakika sonra kendiliğinden kaldırılır; uygulamayı kapattıysanız bir sonraki açılışta. Arşivde kaynağı olan klasör boş sayılmaz.
 
+**Klasör bildirimi.** Bir veri seti `exam_metadata.folder` alanında klasör adı verebilir. Menüde "Klasör ipuçlarını uygula" açıksa set, içe aktarılırken ya da senkronla (örneğin Obsidian'dan) ilk geldiğinde o ada sahip klasöre konur; büyük/küçük harf, aksan ve noktalama önemsizdir. O adda klasör yoksa oluşturulur; sonradan adını değiştirdiğiniz klasör de bulunur. Bildirim yoksa set "Kategorisiz"e gider. Her set için bir kez uygulanır: sonradan taşıdığınız set yerinde kalır. Sildiğiniz bir seti aynı dosyayla yeniden içe aktarmak onu bütün cihazlarda geri getirir.
+
 **Kaynak menüsü** (bir kaynağa uzun basın ya da üç noktaya dokunun):
 
 - **Yeniden adlandır / bilgileri düzenle** — başlık ve kategori.

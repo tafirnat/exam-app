@@ -2,6 +2,7 @@ import { detectLanguage, detectTranslationTarget } from './i18n.js';
 import { persist, persistIfChanged, persistRemove, readJSON, readString, readInt, readFloat } from './storage.js';
 import { emit, Slice } from './store.js';
 import { mergeFolderDeletions, sanitizeFolderDeletions } from './folder-tombstones.js';
+import { mergeDatedIds } from './source-tombstones.js';
 
 /**
  * Safely reads and parses a JSON item from localStorage.
@@ -193,6 +194,10 @@ export const AppState = {
     settingsRevisions: {},
     githubGistUrl: null,
     deletedSourceIds: [],
+    // Dated source deletions and deliberate revivals (id -> ms); the later one
+    // wins - see core/source-tombstones.js.
+    deletedSourceAt: {},
+    revivedSourceAt: {},
     // Legacy, undated folder tombstones: they win outright, see folder-tombstones.js.
     deletedFolderIds: [],
     // Dated folder deletions (id -> ms). A folder can outlive one of these.
@@ -303,6 +308,8 @@ export function initState({ force = false } = {}) {
         syncFailureKind: readString('focus_app_sync_failure_kind') || null,
         githubGistUrl: readString('focus_app_github_gist_url') || null,
         deletedSourceIds: readJSON('focus_app_deleted_sources', []),
+        deletedSourceAt: sanitizeFolderDeletions(readJSON('focus_app_deleted_source_at', {})),
+        revivedSourceAt: sanitizeFolderDeletions(readJSON('focus_app_revived_source_at', {})),
         deletedFolderIds: readJSON('focus_app_deleted_folders', []),
         deletedFolderAt: sanitizeFolderDeletions(readJSON('focus_app_deleted_folder_at', {})),
         quickPresets: readJSON('focus_app_quick_presets', []),
@@ -466,6 +473,7 @@ export function clearLocalStudyData() {
     persistRemove('focus_app_recent_tests');
     // Persist tombstones (not remove!) so the next sync push carries them
     persist('focus_app_deleted_sources', allDeletedSourceIds);
+    stampSourceDeletions(priorSourceIds, AppState.lastResetTimestamp);
     persist('focus_app_deleted_folders', allDeletedFolderIds);
     persist('focus_app_quick_presets', []);
     persist('focus_app_deleted_quick_presets', allDeletedPresetIds);
@@ -592,6 +600,7 @@ export function clearSourcesData() {
     persist('focus_app_quick_presets', []);
     // Persist tombstones so the next sync push carries them
     persist('focus_app_deleted_sources', allDeletedSourceIds);
+    stampSourceDeletions(priorSourceIds, AppState.lastResetTimestamp);
     persist('focus_app_deleted_folders', allDeletedFolderIds);
     persist('focus_app_deleted_quick_presets', allDeletedPresetIds);
     persistRemove('focus_app_current_source');
@@ -635,13 +644,42 @@ export function findMatchingPresetId() {
     return preset ? preset.id : null;
 }
 
-export function trackDeletedSource(id) {
+/* Dates deletions, so a later deliberate revival can outlive them and a revival
+   older than them cannot - see core/source-tombstones.js. */
+function stampSourceDeletions(ids, at = Date.now()) {
+    const stamps = {};
+    (ids || []).forEach(id => { if (id) stamps[id] = at; });
+    if (Object.keys(stamps).length === 0) return;
+    AppState.deletedSourceAt = mergeDatedIds(AppState.deletedSourceAt, stamps);
+    persist('focus_app_deleted_source_at', AppState.deletedSourceAt);
+}
+
+export function trackDeletedSource(id, at = Date.now()) {
     if (!id) return;
     if (!AppState.deletedSourceIds.includes(id)) {
         AppState.deletedSourceIds.push(id);
         persist('focus_app_deleted_sources', AppState.deletedSourceIds);
-        emit(Slice.SOURCES);
     }
+    stampSourceDeletions([id], at);
+    emit(Slice.SOURCES);
+}
+
+/**
+ * Brings a deleted source id back: a deliberate act (the same file imported
+ * again), dated so it outlives every earlier deletion on every device.
+ * @returns {boolean} whether the id was deleted
+ */
+export function reviveSource(id, at = Date.now()) {
+    if (!id) return false;
+    const listed = (AppState.deletedSourceIds || []).includes(id);
+    const deletedAt = Number(AppState.deletedSourceAt?.[id]) || 0;
+    if (!listed && deletedAt <= 0) return false;
+    const when = Math.max(at, deletedAt + 1);
+    AppState.deletedSourceIds = (AppState.deletedSourceIds || []).filter(x => x !== id);
+    AppState.revivedSourceAt = mergeDatedIds(AppState.revivedSourceAt, { [id]: when });
+    persist('focus_app_deleted_sources', AppState.deletedSourceIds);
+    persist('focus_app_revived_source_at', AppState.revivedSourceAt);
+    return true;
 }
 
 /**

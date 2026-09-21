@@ -210,6 +210,8 @@ tr: `**Açık / kapalı.** Bir kaynağın anahtarı, o kaynağın testlere girip
 
 **Klasörler.** Kaynakları klasörlere koyabilir, klasöre renk verebilirsiniz. Klasörsüz kalan her şey "Kategorisiz" klasöründe toplanır — bu klasör silinemez, hep vardır. Boş kalan bir klasör 10 dakika sonra kendiliğinden kaldırılır; uygulamayı kapattıysanız bir sonraki açılışta. Arşivde kaynağı olan klasör boş sayılmaz.
 
+**Klasör bildirimi.** Bir veri seti \`exam_metadata.folder\` alanında klasör adı verebilir. Menüde "Klasör ipuçlarını uygula" açıksa set, içe aktarılırken ya da senkronla (örneğin Obsidian'dan) ilk geldiğinde o ada sahip klasöre konur; büyük/küçük harf, aksan ve noktalama önemsizdir. O adda klasör yoksa oluşturulur; sonradan adını değiştirdiğiniz klasör de bulunur. Bildirim yoksa set "Kategorisiz"e gider. Her set için bir kez uygulanır: sonradan taşıdığınız set yerinde kalır. Sildiğiniz bir seti aynı dosyayla yeniden içe aktarmak onu bütün cihazlarda geri getirir.
+
 **Kaynak menüsü** (bir kaynağa uzun basın ya da üç noktaya dokunun):
 
 - **Yeniden adlandır / bilgileri düzenle** — başlık ve kategori.
@@ -227,6 +229,8 @@ en: `**On / off.** A source's switch decides whether it takes part in tests. You
 
 **Folders.** Sources can be put into folders and folders can be coloured. Anything without a folder collects in "Uncategorized", which always exists and cannot be deleted. A folder that stays empty is removed on its own after 10 minutes, or at the next start if you closed the app. A folder with sources in the archive does not count as empty.
 
+**Folder hint.** A data set can name a folder in its \`exam_metadata.folder\` field. With "Apply folder hints" on in the menu, the set goes into the folder of that name when it is imported or first arrives by sync (from Obsidian, for example); case, accents and punctuation do not matter. If there is no such folder it is created, and a folder you renamed since is still found. Without a hint the set goes to "Uncategorized". It happens once per set: a set you move later stays where you put it. Importing a set you deleted again, from the same file, brings it back on every device.
+
 **The source menu** (long-press a source, or tap its three dots):
 
 - **Rename / edit details** - title and category.
@@ -243,6 +247,8 @@ en: `**On / off.** A source's switch decides whether it takes part in tests. You
 de: `**Ein / aus.** Der Schalter einer Quelle entscheidet, ob sie an Tests teilnimmt. Sie können mehrere gleichzeitig einschalten; ein Test zieht dann aus allen.
 
 **Ordner.** Quellen lassen sich in Ordner legen, Ordner lassen sich einfärben. Alles ohne Ordner sammelt sich in "Ohne Kategorie", der immer existiert und nicht gelöscht werden kann. Ein Ordner, der leer bleibt, wird nach 10 Minuten von selbst entfernt, oder beim nächsten Start, wenn Sie die App geschlossen haben. Ein Ordner mit Quellen im Archiv gilt nicht als leer.
+
+**Ordnerhinweis.** Ein Datensatz kann im Feld \`exam_metadata.folder\` einen Ordner nennen. Ist im Menü "Ordnerhinweise anwenden" an, landet der Satz beim Import oder wenn er zum ersten Mal per Sync ankommt (etwa aus Obsidian) in dem Ordner dieses Namens; Groß-/Kleinschreibung, Akzente und Satzzeichen spielen keine Rolle. Gibt es keinen, wird er angelegt, und auch ein inzwischen umbenannter Ordner wird gefunden. Ohne Hinweis kommt der Satz nach "Ohne Kategorie". Das geschieht einmal pro Satz: Einen Satz, den Sie später verschieben, lässt die App, wo er ist. Einen gelöschten Satz aus derselben Datei erneut zu importieren, holt ihn auf allen Geräten zurück.
 
 **Das Quellenmenü** (lange auf eine Quelle drücken oder die drei Punkte antippen):
 

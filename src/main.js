@@ -22,6 +22,7 @@ import { renderSourcesList, showMergeModal, closeAllSourcesModals, showSourceOpt
 import { renderContinuityBlock, renderGlobalCharts, showDailyMotivationToast } from './features/stats/continuity-ui.js';
 import { initArchiveUI } from './features/sources/archive.js';
 import { initEmptyFolderSweep } from './features/sources/empty-folders.js';
+import { applyPendingFolderHints } from './features/sources/folder-hint.js';
 import { initStorageNoticeUI, maybeShowStorageNotice } from './features/sources/storage-notice.js';
 import { prepareTest, finishTest, prepareRetake, buildQuestionPool } from './features/test/test-engine.js';
 import { isSequentialMode, resolveQuestionCount, countActivePoolQuestions, renderQuestionRangePicker, setQuestionStartIndex, advanceQuestionRange, rangeAdvancedMessage, LONG_SESSION_THRESHOLD } from './features/test/test-range.js';
@@ -280,6 +281,10 @@ const initApp = () => {
         // empty in an earlier session goes now. One the Gist shows in use again
         // comes back with the pull - see core/folder-tombstones.js.
         initEmptyFolderSweep();
+
+        // A set that arrived by sync in an earlier session (or before the switch
+        // was on) is placed now - features/sources/folder-hint.js.
+        applyPendingFolderHints();
 
         // Runs before anything reads studyActivity: the additive Gist merge left
         // inflated daily counters behind, and every streak, ring and chart on the
@@ -1220,6 +1225,8 @@ function setupEventListeners() {
             AppState.folderHintsEnabled = e.target.checked;
             persist('focus_app_folder_hints_enabled', e.target.checked);
             saveLanguageSettings();
+            // What arrived while it was off is placed the moment it goes on.
+            if (e.target.checked) applyPendingFolderHints();
         };
     }
 

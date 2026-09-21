@@ -80,7 +80,9 @@ test('a hint with no matching folder creates one and places the set in it', () =
     const folders = userFolders();
     assert.equal(folders.length, 1);
     assert.equal(folders[0].name, 'ITIL 4 Foundation');
-    assert.equal(folders[0].id, 'folder_hint_itil_4_foundation');
+    // Short slug for the eye, hash of the whole normalised name for uniqueness.
+    assert.match(folders[0].id, /^folder_hint_itil_4_foundation_[0-9a-f]{8}$/);
+    assert.equal(folders[0].id, hint.hintFolderBaseId('itil-4 FOUNDATION'));
     assert.equal(source.folderId, folders[0].id);
 });
 
@@ -189,12 +191,12 @@ test('a set the user moved is not pulled back by later syncs', async () => {
 });
 
 test('a deleted hint folder is not resurrected under its old id', () => {
-    AppState.deletedFolderIds = ['folder_hint_itil_4_foundation'];
+    const base = hint.hintFolderBaseId('ITIL 4 Foundation');
+    AppState.deletedFolderIds = [base];
     const source = importSet({ folder: 'ITIL 4 Foundation' });
-    assert.equal(source.folderId, 'folder_hint_itil_4_foundation_2');
+    assert.equal(source.folderId, `${base}_2`);
     // And that choice is still the same on a second device holding the same tombstones.
-    assert.equal(hint.freeHintFolderId('itil 4 foundation', [], ['folder_hint_itil_4_foundation']),
-        'folder_hint_itil_4_foundation_2');
+    assert.equal(hint.freeHintFolderId('itil 4 foundation', [], [base]), `${base}_2`);
 });
 
 test('the setting travels with the other synced settings', () => {

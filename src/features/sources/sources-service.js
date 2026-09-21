@@ -1,4 +1,4 @@
-import { AppState, saveSources } from '../../core/state.js';
+import { AppState, saveSources, reviveSource } from '../../core/state.js';
 import { getCorrectAnswers, showAlert, showToast, escapeHTML } from '../../core/utils.js';
 import { t } from '../../core/i18n.js';
 import { KNOWN_TYPES, LEGACY_TYPE_ALIASES, canonicalType, findContentGaps } from '../../core/question-rules.js';
@@ -173,6 +173,10 @@ export function processJSON(rawData, name, options = {}) {
     // Preserve existing exam_metadata.id or root id if provided, otherwise generate a hybrid ID
     const existingId = data.exam_metadata?.id || data.id || null;
     const id = generateHybridExamId(title, existingId);
+    /* Importing a set whose id was deleted is bringing it back. Without this the
+       tombstone outlived the import and the next sync dropped the set again -
+       silently, and for good (core/source-tombstones.js). */
+    reviveSource(id);
 
     const sourceName = name || 'Unknown Source';
 
