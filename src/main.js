@@ -5,6 +5,7 @@ import { updateStaticTranslations, updateDocumentTitle, t, targetLanguages, tran
 import { showToast, showConfirm, getCorrectAnswers, highlightText, escapeHTML } from './core/utils.js';
 import { migrateOldData, migrateFolderColors, sanitizeStudyActivity, migrateExamIds, seedAiPrompts } from './core/migration.js';
 import { getQuestionCategory } from './core/question-rules.js';
+import { openGuide } from './features/help/guide-ui.js';
 import { toggleMark } from './core/question-marks.js';
 import { persist, readJSON, readString } from './core/storage.js';
 import * as store from './core/store.js';
@@ -1105,6 +1106,10 @@ function setupEventListeners() {
     // Menu
     setClick('menuToggleBtn', toggleMenu);
     setClick('menuTheme', toggleTheme);
+    setClick('menuOpenGuide', () => {
+        if (menuActive) toggleMenu();
+        openGuide();
+    });
     setClick('menuStartOnboarding', () => {
         if (menuActive) toggleMenu();
         startOnboarding(true);
