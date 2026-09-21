@@ -92,11 +92,13 @@ test('an unsupported language falls back to English rather than blank', () => {
 
 // ── the guide renders in the app ────────────────────────────────────────────
 
-test('opening the guide shows the contents, one link per section', () => {
+test('opening the guide shows one heading per section, and no separate contents list', () => {
     openGuide();
     assert.ok(document.getElementById('guideOverlay').classList.contains('active'));
-    const links = document.querySelectorAll('#guideToc [data-guide-jump]');
-    assert.equal(links.length, GUIDE_SECTIONS.length);
+    const heads = document.querySelectorAll('#guideSections [data-guide-toggle]');
+    assert.equal(heads.length, GUIDE_SECTIONS.length);
+    // The headings ARE the contents; a second list of the same titles was removed.
+    assert.equal(document.getElementById('guideToc'), null);
 });
 
 test('nothing is open, and no section body is parsed, until one is asked for', () => {
@@ -108,9 +110,9 @@ test('nothing is open, and no section body is parsed, until one is asked for', (
     assert.equal(filled.length, 0, 'a closed section had already been rendered');
 });
 
-test('a contents link opens its section and fills it', () => {
+test('a heading opens its section and fills it', () => {
     openGuide();
-    document.querySelector('[data-guide-jump="sync"]').click();
+    document.querySelector('[data-guide-toggle="sync"]').click();
     const item = document.getElementById('guideItem-sync');
     assert.ok(item.classList.contains('is-open'));
     assert.ok(document.getElementById('guideBody-sync').innerHTML.includes('Gist'));
@@ -118,8 +120,8 @@ test('a contents link opens its section and fills it', () => {
 
 test('only one section is open at a time', () => {
     openGuide();
-    document.querySelector('[data-guide-jump="sync"]').click();
-    document.querySelector('[data-guide-jump="streaks"]').click();
+    document.querySelector('[data-guide-toggle="sync"]').click();
+    document.querySelector('[data-guide-toggle="streaks"]').click();
     const open = [...document.querySelectorAll('.guide-item.is-open')].map(el => el.id);
     assert.deepEqual(open, ['guideItem-streaks']);
 });
@@ -141,7 +143,7 @@ test('the guide follows the interface language', () => {
     AppState.language = 'de';
     openGuide();
     assert.equal(document.getElementById('guideTitle').textContent, GUIDE_TITLE.de);
-    assert.match(document.querySelector('#guideToc .guide-toc-link').textContent, /Erste Schritte/);
+    assert.match(document.querySelector('#guideSections .guide-head').textContent, /Erste Schritte/);
     assert.equal(document.getElementById('guideIntro').textContent, GUIDE_INTRO.de);
 });
 

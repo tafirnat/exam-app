@@ -9,10 +9,11 @@ import {
 /**
  * The in-app user guide.
  *
- * Reads like a web page rather than a wall of prose: a list of links at the
- * top, and a section that opens where it stands when you pick one. The
- * question it is built to answer is "how do I do X" - so the first thing on
- * screen is the list of X.
+ * Reads like a web page rather than a wall of prose: every section is a
+ * collapsed heading that opens where it stands when you pick it. The question
+ * it is built to answer is "how do I do X" - so the first thing on screen is
+ * the list of X, and the headings are that list. (A separate contents grid
+ * above them repeated the same seventeen titles and was removed.)
  *
  * Only the OPEN section's Markdown is rendered. The guide is around 40KB of
  * text across three languages and parsing all of it on open would be work
@@ -55,7 +56,7 @@ function openSection(id, { scroll = true } = {}) {
     const wasOpen = item.classList.contains('is-open');
 
     /* One at a time. Several open sections turn the page back into the wall of
-       text the contents list exists to avoid. */
+       text the collapsed headings exist to avoid. */
     document.querySelectorAll('.guide-item.is-open').forEach(el => {
         el.classList.remove('is-open');
         const h = el.querySelector('.guide-head');
@@ -89,14 +90,8 @@ function render() {
     const verEl = document.getElementById('guideVersion');
     if (verEl) verEl.textContent = `v${APP_VERSION}`;
 
-    const toc = document.getElementById('guideToc');
     const list = document.getElementById('guideSections');
-    if (!toc || !list) return;
-
-    toc.innerHTML = GUIDE_SECTIONS.map((s, i) => `
-        <button type="button" class="guide-toc-link" data-guide-jump="${escapeHTML(s.id)}">
-            <span class="guide-toc-num">${i + 1}</span>${escapeHTML(s.title[lang])}
-        </button>`).join('');
+    if (!list) return;
 
     list.innerHTML = GUIDE_SECTIONS.map(s => `
         <div class="guide-item" id="guideItem-${escapeHTML(s.id)}">
@@ -136,11 +131,6 @@ export function openGuide(sectionId = null) {
            copy per open and every stale copy would be deciding on a detached
            node - the trap the editor's focus mode hit. */
         overlay.addEventListener('click', (e) => {
-            const jump = e.target.closest('[data-guide-jump]');
-            if (jump) {
-                openSection(jump.dataset.guideJump);
-                return;
-            }
             const toggle = e.target.closest('[data-guide-toggle]');
             if (toggle) {
                 openSection(toggle.dataset.guideToggle, { scroll: false });

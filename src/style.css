@@ -7857,52 +7857,6 @@ body.dnd-active {
     color: var(--text-secondary);
 }
 
-/* The contents. Links rather than a list, because the whole point is that the
-   reader picks a heading instead of scrolling past sixteen of them. */
-.guide-toc {
-    display: grid;
-    grid-template-columns: repeat(auto-fill, minmax(210px, 1fr));
-    gap: 0.35rem;
-    margin-bottom: 1.5rem;
-}
-
-.guide-toc-link {
-    display: flex;
-    align-items: center;
-    gap: 0.5rem;
-    width: 100%;
-    padding: 0.5rem 0.65rem;
-    background: var(--surface-hover);
-    border: 1px solid var(--border-color);
-    border-radius: var(--radius-md);
-    color: var(--text-primary);
-    font-family: inherit;
-    font-size: 0.82rem;
-    font-weight: 600;
-    text-align: left;
-    cursor: pointer;
-    transition: border-color 0.2s, background-color 0.2s;
-}
-
-.guide-toc-link:hover {
-    border-color: var(--primary-color);
-    background: var(--surface-color);
-}
-
-.guide-toc-num {
-    flex-shrink: 0;
-    min-width: 1.4rem;
-    height: 1.4rem;
-    display: inline-flex;
-    align-items: center;
-    justify-content: center;
-    border-radius: 50%;
-    background: rgba(var(--primary-rgb), 0.12);
-    color: var(--primary-color);
-    font-size: 0.7rem;
-    font-weight: 700;
-}
-
 .guide-item {
     border-bottom: 1px solid var(--border-color);
 }
@@ -7980,10 +7934,6 @@ body.dnd-active {
 @media (max-width: 600px) {
     .guide-card {
         max-height: 92vh;
-    }
-
-    .guide-toc {
-        grid-template-columns: 1fr;
     }
 
     .guide-scroll {
