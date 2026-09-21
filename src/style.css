@@ -6419,6 +6419,30 @@ body.dnd-active {
     flex-shrink: 0;
 }
 
+/* The word in front of the source gear. Deliberately the quietest type on the
+   card - the same 0.72rem/--text-secondary the card's other sub-labels use -
+   because it is a signpost, not a third thing competing for attention. It sits
+   tight against its button (the row's own 0.65rem gap would read as a separate
+   item) and disappears below 380px, where the row has no width to spare and
+   the gear is the only thing that has to survive. */
+.continuity-icon-label {
+    font-size: 0.72rem;
+    font-weight: 600;
+    color: var(--text-secondary);
+    opacity: 0.85;
+    white-space: nowrap;
+    margin-right: -0.35rem;
+    user-select: none;
+    -webkit-user-select: none;
+    pointer-events: none;
+}
+
+@media (max-width: 380px) {
+    .continuity-icon-label {
+        display: none;
+    }
+}
+
 
 /* ══════════════════════════════════════════════
    Comet Ring System — direct port of App.tsx

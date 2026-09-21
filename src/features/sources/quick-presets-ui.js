@@ -1,8 +1,9 @@
 import { AppState, saveSources, saveQuickPresets, trackDeletedQuickPreset, savePresetSessionData, clearPresetSessionData, findMatchingPresetId, clearActiveTest } from '../../core/state.js';
 import { t } from '../../core/i18n.js';
-import { showConfirm } from '../../core/utils.js';
+import { showConfirm, showToast } from '../../core/utils.js';
 import { applySwatch, applyPresetBar, addCurrentAsPreset } from './quick-presets.js';
 import { buildQuestionPool } from '../test/test-engine.js';
+import { renderSourcePicker } from './sources-ui.js';
 import { persist } from '../../core/storage.js';
 
 export function updateQuickSourcesDot() {
@@ -296,7 +297,12 @@ function renderManageList() {
         `;
         editBtn.addEventListener('click', (e) => {
             e.stopPropagation();
-            startInlineEdit();
+            /* Renaming is still here - it is the one thing this button always
+               did - but it is no longer all it can do. A quick group IS its
+               sources, and until now the only way to change them was to switch
+               the right sources on somewhere else and re-save the group, which
+               meant leaving this screen to edit what this screen is about. */
+            openPresetEditModal(preset, () => renderManageList());
         });
 
         const deleteBtn = document.createElement('button');
@@ -513,3 +519,80 @@ export function showSourceQuickPresetsModal(source) {
     };
 }
 
+
+
+/* ── Editing one quick group ────────────────────────────────────────────────
+   Name and sources in one place. The source list is renderSourcePicker(), the
+   same component the focus-source popup uses, rather than a second list that
+   would drift from it - folders, counts, selected state and the folded-by-
+   default behaviour all come for free.
+
+   `max: Infinity` because a quick group has no ceiling: it is the user's own
+   study set, not the focus streak's three. The picker's limit toast simply
+   never fires. */
+let presetEditPicker = null;
+
+export function openPresetEditModal(preset, onSaved) {
+    const overlay = document.getElementById('presetEditOverlay');
+    const nameInput = document.getElementById('presetEditNameInput');
+    const listEl = document.getElementById('presetEditSourceList');
+    const countEl = document.getElementById('presetEditCount');
+    if (!overlay || !nameInput || !listEl) return;
+
+    nameInput.value = preset.name || '';
+
+    const paintCount = (n) => {
+        if (countEl) countEl.textContent = t('qs_group_selected_count', { count: n });
+    };
+
+    presetEditPicker = renderSourcePicker(listEl, {
+        selected: [...(preset.sourceIds || [])],
+        max: Infinity,
+        /* Open, unlike the focus picker. That one opens onto the whole library
+           with nothing chosen yet, so folding it lets the user pick a folder
+           first. This one is about ONE group's membership: folding it hides
+           the very sources the user came here to look at. */
+        startCollapsed: false,
+        onChange: (ids) => paintCount(ids.length)
+    });
+    paintCount((preset.sourceIds || []).length);
+
+    const close = () => {
+        overlay.classList.remove('active');
+        presetEditPicker = null;
+    };
+
+    document.getElementById('presetEditCloseBtn').onclick = close;
+    document.getElementById('presetEditCancelBtn').onclick = close;
+
+    document.getElementById('presetEditSaveBtn').onclick = () => {
+        const newName = nameInput.value.trim();
+        if (!newName) {
+            showToast(t('qs_group_name_required'));
+            nameInput.focus();
+            return;
+        }
+        const ids = presetEditPicker ? presetEditPicker.getSelected() : [];
+        /* A group with no sources starts a test with no questions, so it is
+           refused here rather than left to fail later with nothing to explain
+           it. Deleting the group is the other button on the row. */
+        if (ids.length === 0) {
+            showToast(t('qs_group_needs_source'));
+            return;
+        }
+
+        preset.name = newName;
+        preset.sourceIds = ids;
+        /* The stamp is what carries this edit to the other devices: quick
+           presets merge by id on updatedAt, so an unstamped change is one the
+           merge cannot see and the next pull writes over. */
+        preset.updatedAt = Date.now();
+        saveQuickPresets();
+        showToast(t('qs_group_saved'));
+        close();
+        if (typeof onSaved === 'function') onSaved();
+    };
+
+    overlay.classList.add('active');
+    nameInput.focus();
+}

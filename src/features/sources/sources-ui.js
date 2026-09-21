@@ -1274,7 +1274,11 @@ export function renderSourcePicker(container, options = {}) {
             selectedSet.delete(sourceId);
         } else {
             if (pickableCount() >= max) {
-                showToast(`En fazla ${max} kaynak seçebilirsiniz!`);
+                /* Was hard-coded Turkish, and read as Turkish in the German and
+                   English builds. `max` can also be Infinity now - the quick
+                   group picker has no ceiling - and this branch simply never
+                   fires there. */
+                showToast(t('source_picker_max', { max }));
                 return;
             }
             selectedSet.add(sourceId);
