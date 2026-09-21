@@ -226,22 +226,20 @@ export function processJSON(rawData, name, options = {}) {
 
     reconcileSourceFolder(source, { notify: !options.silent });
 
-    // Only when nothing more specific placed it: an explicit folderId that
-    // resolved wins, and without the setting a hint is inert.
-    // Either outcome is said out loud: a hint that was ignored looked exactly
-    // like a file without one, and "no folder was created" had no answer on screen.
+    /* Only when nothing more specific placed it: an explicit folderId that
+       resolved wins. Otherwise a file that names its folder goes there - no
+       switch: the author said where the set belongs when writing it, and a
+       setting that could silently overrule that was only ever a surprise.
+       The outcome is said out loud, so "which folder did it go to" has an
+       answer on screen. */
     let folderNote = '';
     if (!source.folderId && !source.archived && folderHint) {
-        if (AppState.folderHintsEnabled) {
-            const placed = applyFolderHint(folderHint);
-            if (placed) {
-                source.folderId = placed.folderId;
-                const folder = (AppState.folders || []).find(f => f.id === placed.folderId);
-                const key = placed.created ? 'import_folder_created' : 'import_folder_used';
-                folderNote = t(key, { folder: folder ? folder.name : folderHint });
-            }
-        } else {
-            folderNote = t('import_folder_hint_off', { folder: folderHint });
+        const placed = applyFolderHint(folderHint);
+        if (placed) {
+            source.folderId = placed.folderId;
+            const folder = (AppState.folders || []).find(f => f.id === placed.folderId);
+            const key = placed.created ? 'import_folder_created' : 'import_folder_used';
+            folderNote = t(key, { folder: folder ? folder.name : folderHint });
         }
     }
 

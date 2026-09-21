@@ -282,8 +282,8 @@ const initApp = () => {
         // comes back with the pull - see core/folder-tombstones.js.
         initEmptyFolderSweep();
 
-        // A set that arrived by sync in an earlier session (or before the switch
-        // was on) is placed now - features/sources/folder-hint.js.
+        // A set that arrived by sync in an earlier session is placed now -
+        // features/sources/folder-hint.js.
         applyPendingFolderHints();
 
         // Runs before anything reads studyActivity: the additive Gist merge left
@@ -1217,19 +1217,6 @@ function setupEventListeners() {
         };
     }
 
-    // Folder hints (add-source panel) - see features/sources/folder-hint.js
-    const folderHintsToggle = document.getElementById('folderHintsToggle');
-    if (folderHintsToggle) {
-        folderHintsToggle.checked = !!AppState.folderHintsEnabled;
-        folderHintsToggle.onchange = (e) => {
-            AppState.folderHintsEnabled = e.target.checked;
-            persist('focus_app_folder_hints_enabled', e.target.checked);
-            saveLanguageSettings();
-            // What arrived while it was off is placed the moment it goes on.
-            if (e.target.checked) applyPendingFolderHints();
-        };
-    }
-
     // TTS Toggle
     const ttsToggle = document.getElementById('ttsToggle');
     const ttsAutoplayToggle = document.getElementById('ttsAutoplayToggle');
@@ -1382,7 +1369,6 @@ function setupEventListeners() {
         if (transSelect) transSelect.value = AppState.translationTarget;
         if (transToggle) transToggle.checked = AppState.translationEnabled;
         updateTranslationUI();
-        if (folderHintsToggle) folderHintsToggle.checked = !!AppState.folderHintsEnabled;
 
         if (ttsToggle) ttsToggle.checked = AppState.ttsEnabled;
         if (ttsAutoplayToggle) ttsAutoplayToggle.checked = AppState.ttsAutoplay;

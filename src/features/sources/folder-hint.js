@@ -208,12 +208,12 @@ export function applyFolderHint(name) {
  * The marked set is stamped (touch): the mark has to travel with it, or the next
  * pull brings back the unmarked copy and this runs again on every device.
  *
- * Archived sets are left alone. With the setting off nothing happens and nothing
- * is marked, so turning it on later still places what arrived meanwhile.
+ * Archived sets are left alone. There is no switch: a file that names its folder
+ * is followed, whichever way it arrived.
  * @returns {number} how many sets were placed in a folder
  */
 export function applyPendingFolderHints(sources = AppState.sources) {
-    if (!AppState.folderHintsEnabled || !Array.isArray(sources)) return 0;
+    if (!Array.isArray(sources)) return 0;
     let placed = 0;
     let changed = false;
     sources.forEach(source => {

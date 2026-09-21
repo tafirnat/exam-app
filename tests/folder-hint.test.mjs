@@ -29,7 +29,7 @@ before(async () => {
 });
 
 /** A fresh, empty library on "a device". */
-function freshDevice({ hints = true } = {}) {
+function freshDevice() {
     localStorage.clear();
     initState({ force: true });
     AppState.sources.length = 0;
@@ -37,7 +37,6 @@ function freshDevice({ hints = true } = {}) {
     AppState.deletedSourceIds = [];
     AppState.deletedFolderIds = [];
     AppState.deletedQuickPresetIds = [];
-    AppState.folderHintsEnabled = hints;
 }
 
 beforeEach(() => freshDevice());
@@ -95,18 +94,28 @@ test('an existing folder with a similar name is reused, not duplicated', () => {
     assert.equal(source.folderId, 'folder_123');
 });
 
-test('without the setting a hint is inert and the import is unchanged', () => {
-    freshDevice({ hints: false });
-    const source = importSet({ folder: 'ITIL 4 Foundation' });
-    assert.equal(userFolders().length, 0);
-    assert.equal(source.folderId, null);
-});
-
 test('a set without a hint behaves exactly as before', () => {
     const before = JSON.stringify(AppState.folders);
     const source = importSet({});
     assert.equal(JSON.stringify(AppState.folders), before, 'folders untouched');
     assert.equal(source.folderId, null);
+});
+
+test('there is no switch: a hint is followed on every import', async () => {
+    // The setting is gone, and nothing left behind by an older build can
+    // silence a hint - the file says where the set belongs.
+    assert.equal('folderHintsEnabled' in AppState, false);
+    assert.ok(!SYNCED_SETTINGS.includes('folderHintsEnabled'));
+    localStorage.setItem('focus_app_folder_hints_enabled', 'false');
+    initState({ force: true });
+    const source = importSet({ folder: 'Networks' });
+    assert.equal(AppState.folders.find(f => f.id === source.folderId)?.name, 'Networks');
+});
+
+test('the add-source panel carries no folder-hint switch', async () => {
+    const { readFileSync } = await import('node:fs');
+    const html = readFileSync(new URL('../index.html', import.meta.url), 'utf8');
+    assert.equal(html.includes('folderHintsToggle'), false);
 });
 
 test('an explicit folderId that resolves wins over the hint', () => {
@@ -199,12 +208,6 @@ test('a deleted hint folder is not resurrected under its old id', () => {
     assert.equal(hint.freeHintFolderId('itil 4 foundation', [], [base]), `${base}_2`);
 });
 
-test('the setting travels with the other synced settings', () => {
-    assert.ok(SYNCED_SETTINGS.includes('folderHintsEnabled'));
-});
-
-// ── Sharing ─────────────────────────────────────────────────────────────────
-
 test('a share carries no folder name unless asked, and then the current one', async () => {
     const source = importSet({ folder: 'ITIL 4 Foundation' });
     source.metadata.folder = 'Stale name'; // e.g. written by an older build
@@ -255,14 +258,6 @@ test('the success message names the existing folder a hint reused', async () => 
     AppState.folders.push({ id: 'folder_123', name: 'ITIL 4 Foundation', color: '#0667ff', order: 1 });
     const msg = importLoud({ folder: 'itil 4 foundation' });
     assert.ok(msg.includes(t('import_folder_used', { folder: 'ITIL 4 Foundation' })), msg);
-});
-
-test('an ignored hint is not silent: the message says the switch is off', async () => {
-    const { t } = await import('../src/core/i18n.js');
-    freshDevice({ hints: false });
-    const msg = importLoud({ folder: 'Plain' });
-    assert.equal(userFolders().length, 0, 'still inert');
-    assert.ok(msg.includes('Plain') && msg.includes(t('folder_hints_toggle')), msg);
 });
 
 test('a set without a hint gets no folder line', async () => {

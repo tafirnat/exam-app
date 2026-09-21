@@ -154,10 +154,6 @@ export const AppState = {
     language: 'en',
     translationTarget: 'de',
     translationEnabled: true,
-    /* Whether an imported data set's `exam_metadata.folder` may place it in (or
-       create) a folder by that name - see features/sources/folder-hint.js.
-       Opt-in: without it an import behaves exactly as it always has. */
-    folderHintsEnabled: false,
     recentTests: [],
     customAIPrompt: '',
     /* The prompt library and its tombstones - see core/ai-prompts.js. Records
@@ -284,7 +280,6 @@ export function initState({ force = false } = {}) {
         language: detectLanguage(),
         translationTarget: detectTranslationTarget(),
         translationEnabled: readJSON('focus_app_translation_enabled', true),
-        folderHintsEnabled: readJSON('focus_app_folder_hints_enabled', false) === true,
         recentTests: readJSON('focus_app_recent_tests', []).slice(0, 10),
         customAIPrompt: readString('focus_app_custom_ai_prompt', '') || '',
         aiPrompts: readJSON('focus_app_ai_prompts', []),
@@ -825,7 +820,7 @@ export const SYNCED_SETTINGS = Object.freeze([
     'language', 'translationTarget', 'translationEnabled',
     'ttsEnabled', 'ttsAutoplay', 'ttsSpeed', 'customAIPrompt', 'activePromptId',
     'timerStopwatchEnabled', 'timerCountdownEnabled',
-    'timerCountdownLimit', 'timerAutoCheckEnabled', 'folderHintsEnabled'
+    'timerCountdownLimit', 'timerAutoCheckEnabled'
 ]);
 
 /** Where each synced setting already lives in storage. */
@@ -841,8 +836,7 @@ const SETTINGS_STORAGE_KEYS = Object.freeze({
     timerStopwatchEnabled: 'focus_app_timer_stopwatch',
     timerCountdownEnabled: 'focus_app_timer_countdown',
     timerCountdownLimit: 'focus_app_timer_limit',
-    timerAutoCheckEnabled: 'focus_app_timer_auto_check',
-    folderHintsEnabled: 'focus_app_folder_hints_enabled'
+    timerAutoCheckEnabled: 'focus_app_timer_auto_check'
 });
 
 /** The synced settings as they stand, for the sync payload. */

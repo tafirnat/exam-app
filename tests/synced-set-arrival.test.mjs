@@ -36,7 +36,7 @@ before(async () => {
     tomb = await import('../src/core/source-tombstones.js');
 });
 
-function freshDevice({ hints = true } = {}) {
+function freshDevice() {
     sync._resetSyncQueue();
     localStorage.clear();
     initState({ force: true });
@@ -52,7 +52,6 @@ function freshDevice({ hints = true } = {}) {
     AppState.githubGistId = null;
     AppState.lastResetTimestamp = 0;
     AppState.lastProgressResetTimestamp = 0;
-    AppState.folderHintsEnabled = hints;
 }
 
 beforeEach(() => freshDevice());
@@ -209,16 +208,6 @@ test('a folderId that names no folder is no folder: the hint places the set', ()
     AppState.sources.push(syncedSet({ folderId: 'folder_gone' }));
     hint.applyPendingFolderHints();
     assert.equal(AppState.folders.find(f => f.id === AppState.sources[0].folderId)?.name, 'ITIL 4 Foundation');
-});
-
-test('with the switch off nothing is placed or marked; switching on places it', () => {
-    freshDevice({ hints: false });
-    AppState.sources.push(syncedSet());
-    assert.equal(hint.applyPendingFolderHints(), 0);
-    assert.equal(AppState.sources[0].folderHintSpent, undefined);
-
-    AppState.folderHintsEnabled = true;
-    assert.equal(hint.applyPendingFolderHints(), 1);
 });
 
 test('archived sets are left alone', () => {
