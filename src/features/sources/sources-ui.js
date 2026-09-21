@@ -4,6 +4,7 @@ import { showConfirm, showAlert, showToast, escapeHTML } from '../../core/utils.
 import { syncQuickPresetsWithLiveSources } from './quick-presets.js';
 import { persist, readString } from '../../core/storage.js';
 import { calculateTopicMastery } from '../stats/continuity-engine.js';
+import { FOLDER_COLORS } from './folder-hint.js';
 
 export function toggleSource(id) {
     let activeCount = 0;
@@ -118,9 +119,28 @@ export async function resetSourceStats(id) {
     showAlert(t('source_reset_msg', { name: source.name }), t('info_title'));
 }
 
-export function getCleanSourceData(source) {
+/** The folder a source sits in now, if it is a real one (not the default). */
+export function currentFolderName(source) {
+    const id = source?.folderId;
+    if (!id || id === UNCATEGORIZED_FOLDER_ID) return null;
+    const folder = (AppState.folders || []).find(f => f.id === id);
+    if (!folder || folder.isSystem) return null;
+    return (folder.name || '').trim() || null;
+}
+
+/**
+ * `includeFolder` writes the folder the set is in NOW as `exam_metadata.folder`,
+ * by name - the same field a hint arrives in (folder-hint.js), so a recipient
+ * with hints on gets the sender's grouping. Without it no folder name leaves:
+ * whatever `folder` the stored metadata might still carry is dropped too.
+ */
+export function getCleanSourceData(source, { includeFolder = false } = {}) {
+    const metadata = { ...(source.metadata || { title: source.name }) };
+    delete metadata.folder;
+    const folderName = includeFolder ? currentFolderName(source) : null;
+    if (folderName) metadata.folder = folderName;
     return {
-        exam_metadata: source.metadata || { title: source.name },
+        exam_metadata: metadata,
         questions: (source.questions || []).map(q => {
             const cleanQ = {
                 id: q.id,
@@ -135,8 +155,8 @@ export function getCleanSourceData(source) {
     };
 }
 
-export async function downloadSourceJSON(source) {
-    const cleanData = getCleanSourceData(source);
+export async function downloadSourceJSON(source, options = {}) {
+    const cleanData = getCleanSourceData(source, options);
     const jsonStr = JSON.stringify(cleanData, null, 2);
     const fileName = `${source.name.replace(/\s+/g, '_')}_original.json`;
     const blob = new Blob([jsonStr], { type: 'application/json' });
@@ -152,8 +172,19 @@ export async function downloadSourceJSON(source) {
 }
 
 export async function shareSourceJSON(source) {
-    const cleanData = getCleanSourceData(source);
-    const jsonStr = JSON.stringify(cleanData, null, 2);
+    const folderRow = document.getElementById('shareIncludeFolderRow');
+    const folderCheck = document.getElementById('shareIncludeFolderCheck');
+    const folderLabel = document.getElementById('shareIncludeFolderLabel');
+    const folderName = currentFolderName(source);
+    if (folderRow && folderCheck) {
+        folderRow.style.display = folderName ? 'flex' : 'none';
+        folderCheck.checked = false;
+        if (folderLabel && folderName) folderLabel.textContent = t('share_include_folder', { name: folderName });
+    }
+    const shareOptions = () => ({ includeFolder: !!(folderName && folderCheck && folderCheck.checked) });
+    let jsonStr = JSON.stringify(getCleanSourceData(source), null, 2);
+    // Read at click time: the switch sits in the same dialog as the buttons.
+    const refreshJson = () => { jsonStr = JSON.stringify(getCleanSourceData(source, shareOptions()), null, 2); };
 
     const overlay = document.getElementById('shareOptionsOverlay');
     const nameEl = document.getElementById('shareOptionsSourceName');
@@ -201,6 +232,7 @@ export async function shareSourceJSON(source) {
 
     // 1. Panoya Kopyala (Copy to Clipboard - Pure JSON string for easy pasting)
     copyBtn.onclick = async () => {
+        refreshJson();
         closeShareOptions();
         try {
             if (navigator.clipboard && navigator.clipboard.writeText) {
@@ -222,6 +254,7 @@ export async function shareSourceJSON(source) {
 
     // 2. Metin Olarak Paylaş (Share Text via Web Share API)
     textBtn.onclick = async () => {
+        refreshJson();
         closeShareOptions();
         if (navigator.share) {
             try {
@@ -242,13 +275,14 @@ export async function shareSourceJSON(source) {
                     showToast(t('copy_success'));
                 }
             } catch (e) {
-                downloadSourceJSON(source);
+                downloadSourceJSON(source, shareOptions());
             }
         }
     };
 
     // 3. JSON Dosyası Olarak Paylaş (Share JSON File)
     fileBtn.onclick = async () => {
+        refreshJson();
         closeShareOptions();
         const sanitizeFileName = (source.name || 'exam_source').replace(/\s+/g, '_');
         const fileName = `${sanitizeFileName}.json`;
@@ -269,12 +303,13 @@ export async function shareSourceJSON(source) {
         }
 
         // Fallback for browsers that don't support file sharing
-        downloadSourceJSON(source);
+        downloadSourceJSON(source, shareOptions());
     };
 
     // 4. Tarayıcıda Aç (Open JSON natively in Browser)
     if (viewBrowserBtn) {
         viewBrowserBtn.onclick = () => {
+            refreshJson();
             closeShareOptions();
             try {
                 const blob = new Blob([jsonStr], { type: 'application/json;charset=utf-8;' });
@@ -1489,8 +1524,7 @@ export function showFolderManageModal(folder = null) {
     // legend would need; twelve slots simply cannot reach that here. It is well clear
     // of the palette this replaces (ΔE 3.5 worst, and five of twelve below 3:1 on
     // white), and a folder's name always sits beside its colour.
-    const colors = ['#ff0053', '#f75a00', '#ca8400', '#929b00', '#27ac00', '#00a97a',
-                    '#00a2b9', '#0098fe', '#0667ff', '#8a43ff', '#d200fe', '#ff00b7'];
+    const colors = FOLDER_COLORS;
     colorPicker.innerHTML = '';
     colors.forEach(c => {
         const d = document.createElement('div');

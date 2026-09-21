@@ -285,7 +285,9 @@ function renderStorageNotice(level, usage = measureStorageUsage()) {
         }
 
         actions.push(iconButton(t('quota_action_download_delete'), ICONS.download, async () => {
-            await downloadSourceJSON(source);
+            // The user's own copy of a set about to leave the device: keep the
+            // folder, so re-importing it with hints on puts it back.
+            await downloadSourceJSON(source, { includeFolder: true });
             if (!await showConfirm(t('quota_download_delete_confirm', { name: source.name }), t('quota_title_suggest'))) return;
             purgeSource(source.id);
             showToast(t('quota_removed', { name: source.name }));

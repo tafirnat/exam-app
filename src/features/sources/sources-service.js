@@ -1,9 +1,10 @@
 import { AppState, saveSources } from '../../core/state.js';
-import { getCorrectAnswers, showAlert, showToast } from '../../core/utils.js';
+import { getCorrectAnswers, showAlert, showToast, escapeHTML } from '../../core/utils.js';
 import { t } from '../../core/i18n.js';
 import { KNOWN_TYPES, LEGACY_TYPE_ALIASES, canonicalType, findContentGaps } from '../../core/question-rules.js';
 import { showImportReport } from './import-report.js';
 import { markArchived } from './archive.js';
+import { readFolderHint, applyFolderHint } from './folder-hint.js';
 
 // Files written against legacy type names stay importable; normalizeQuestions
 // rewrites them to their canonical spellings so only honest types reach storage.
@@ -197,6 +198,11 @@ export function processJSON(rawData, name, options = {}) {
         ...(data.exam_metadata || {}),
         id: id
     };
+    /* The folder hint is spent here and not kept: kept, it would outlive the
+       user moving the set elsewhere and ride along on every share. What a share
+       carries is the folder the set is in now (getCleanSourceData). */
+    const folderHint = readFolderHint(data);
+    delete metadata.folder;
 
     const source = {
         id,
@@ -216,6 +222,25 @@ export function processJSON(rawData, name, options = {}) {
 
     reconcileSourceFolder(source, { notify: !options.silent });
 
+    // Only when nothing more specific placed it: an explicit folderId that
+    // resolved wins, and without the setting a hint is inert.
+    // Either outcome is said out loud: a hint that was ignored looked exactly
+    // like a file without one, and "no folder was created" had no answer on screen.
+    let folderNote = '';
+    if (!source.folderId && !source.archived && folderHint) {
+        if (AppState.folderHintsEnabled) {
+            const placed = applyFolderHint(folderHint);
+            if (placed) {
+                source.folderId = placed.folderId;
+                const folder = (AppState.folders || []).find(f => f.id === placed.folderId);
+                const key = placed.created ? 'import_folder_created' : 'import_folder_used';
+                folderNote = t(key, { folder: folder ? folder.name : folderHint });
+            }
+        } else {
+            folderNote = t('import_folder_hint_off', { folder: folderHint });
+        }
+    }
+
     AppState.sources.push(source);
 
     saveSources();
@@ -226,8 +251,12 @@ export function processJSON(rawData, name, options = {}) {
         const gaps = findContentGaps(normalizedQuestions);
         if (gaps.length > 0) {
             showImportReport(source, gaps);
+            if (folderNote) showToast(folderNote);
         } else if (!source.archived) {
-            showAlert(t('import_success_msg', { name: title, count: normalizedQuestions.length }), t('success_title'));
+            // showAlert writes innerHTML and both the title and the folder name
+            // come from the file.
+            const msg = escapeHTML(t('import_success_msg', { name: title, count: normalizedQuestions.length }));
+            showAlert(folderNote ? `${msg}<br><br>${escapeHTML(folderNote)}` : msg, t('success_title'));
         }
     }
     return source;

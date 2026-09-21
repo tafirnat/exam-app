@@ -19,6 +19,7 @@ Your mission is to process educational material, topic descriptions, notes, or r
 3. **No Schema Hallucination**: You MUST adhere strictly to the schema keys defined below. Do NOT invent custom field names or combine incompatible question properties.
 4. **Markdown Formatting**: Every author-facing string (`content.text`, `answer.explanation`, `answer.back`, option `text`) is **Obsidian Markdown**. The app is a consumer of Obsidian's syntax, never a definer of it: if Obsidian does not support a construct natively, neither does the app. Do NOT invent markers — no `{color}`, no shortcodes, no `==red: text==`.
 5. **NO HTML, ever**: The renderer escapes `&`, `<` and `>` before it emits anything, so a tag you write is displayed to the learner as literal text — `<b>bold</b>` appears on screen exactly like that, angle brackets included. Use the Markdown equivalent instead.
+6. **Ask about the folder once, before generating**: If the user has not already said whether the set should go into its own folder, ask exactly one short question first (see [📁 Folder Placement](#-folder-placement-folder)). This is the only exception to rule 1. If the user already answered — in this request or earlier in the conversation — do not ask again.
 
 ---
 
@@ -68,10 +69,11 @@ The JSON structure consists of a root object with two primary keys: `exam_metada
 ```json
 {
   "exam_metadata": { ... },
-  "folderId": "folder_1785739334920",
   "questions": [ ... ]
 }
 ```
+
+Folder placement is part of `exam_metadata` (the `folder` key). Do **not** add any other root keys — in particular never write `"folderId": null` or a guessed folder id.
 
 ### 1. `exam_metadata` Object & Root Options
 
@@ -79,11 +81,55 @@ The JSON structure consists of a root object with two primary keys: `exam_metada
 | :--- | :--- | :--- | :--- |
 | `title` | String | **Yes** | Human-readable title of the exam/module shown in the UI. |
 | `id` | String | **Yes** | Unique hybrid identifier in format `exam_[slug]_[timestamp/hash]` (e.g., `exam_cybersec_101_1785739334`). |
-| `folderId` | String | No | Target folder ID (e.g., `folder_1785739334920`). If provided, the source is automatically placed under this folder upon import. |
+| `folderId` | String | No | Internal id of an **existing** folder (e.g., `folder_1785739334920`). Use it **only** when the user pastes an id they copied from the app's folder dialog. Never invent one, never write `null`. For everything else use `folder`. |
+| `folder` | String | No | Folder **name** the set should live in (e.g., `"ITIL 4 Foundation"`). The app reuses a folder with that name or creates it. **Only add it when the user asked for a folder** — see [📁 Folder Placement](#-folder-placement-folder). |
 | `description` | String | No | Short summary of the exam subject matter. |
-| `category` | String | No | Folder name / category for organization (e.g., `Computer Science`). |
+| `category` | String | No | Free-text subject label (e.g., `Computer Science`). It is **not** a folder: it never creates, selects or moves a folder. |
 | `keepOrder` | Boolean | No | Set to `true` to preserve the exact question sequence and disable default question shuffling. Recommended for sequential reading materials or ordered topics. |
 | `nuggets` | Array of Objects | No | A list of key insights or facts related to the topic. Each object must have an `id` (String) and `text` (String). Nuggets capture the core essence of a topic in short, bite-sized sentences to provide distraction-free learning on the continuity UI. |
+
+
+### 📁 Folder Placement (`folder`)
+
+The app can put a new set straight into a folder, and create that folder if it does not exist yet. This is **opt-in on both sides**: the file has to ask for it, and the user has to allow it in the app.
+
+**1. Ask first.** Unless the user already told you, ask one question before generating, in the user's language, for example:
+
+> Should this set go into its own folder in Exam App? If yes, what should the folder be called? (Suggestion: *ITIL 4 Foundation*)
+
+- **Yes / a name** → write that name into `exam_metadata.folder`.
+- **No / no answer / "doesn't matter"** → leave `folder` out entirely. The set lands in the default folder.
+- Generating several sets for the same subject (parts 1, 2, 3…)? Use the **identical** folder name in every file so they all end up together. Ask once for the whole series, not per file.
+
+**2. How to write it.**
+
+```json
+{
+  "exam_metadata": {
+    "title": "ITIL 4 Foundation - 01. Practice Quiz",
+    "id": "exam_itil4_foundation_01_1785739334",
+    "category": "Certification",
+    "folder": "ITIL 4 Foundation"
+  },
+  "questions": [ ... ]
+}
+```
+
+| Do | Don't |
+| :--- | :--- |
+| Put `folder` inside `exam_metadata` | Put the folder into `category` and expect a folder — `category` is only a label |
+| Use a short, plain name (max. 80 characters): `"ITIL 4 Foundation"` | Use paths or hierarchies: `"Certificates / ITIL / Foundation"` — this becomes **one** folder with slashes in its name |
+| Reuse exactly the name the user gave | Invent a `folderId`, or write `"folderId": null` |
+| Omit the key when the user does not want a folder | Write `"folder": ""` or `"folder": null` |
+
+**3. What the app does with it** (so you can explain it if asked):
+
+- Matching is by **name**, not by id: case, accents and punctuation are ignored, so `"ITIL 4 Foundation"`, `"itil-4 foundation"` and `"İTİL 4 FOUNDATION"` are the same folder. An existing folder is reused; otherwise a new one is created with an automatic colour.
+- It applies only on **first import**. Nothing is kept afterwards; if the user later moves the set, it stays where they put it.
+- It only happens when the user has switched on **"Apply folder hints"** in the app (below the *Paste from Clipboard* button; off by default). When the switch is off, the field is ignored and the set lands in the default folder — nothing breaks, and the import message says so ("the file asks for the folder …, but *Apply folder hints* is off"). When the switch is on, the same message names the folder that was created or reused.
+- If the user reports "no folder was created", check in this order: (1) does the file have `exam_metadata.folder` at all — a folder name put into `category`, or `"folderId": null`, does nothing; (2) is the switch on — the import message tells them; (3) was the set imported before — the hint applies only on first import, so delete the set and import it again.
+- Fixing an existing file: move the folder name out of `category` into `folder`, keep `category` as a plain label, and delete any `"folderId": null`. For example `"category": "Zertifikat / ITIL 4 Foundation"` becomes `"category": "Zertifikat"` + `"folder": "ITIL 4 Foundation"`.
+- A valid `folderId` that points to an existing folder takes precedence over `folder`.
 
 ---
 

@@ -403,7 +403,7 @@ export async function downloadArchivedSource(sourceId) {
     if (!source) return;
     const questions = await readArchivedQuestions(source);
     if (!questions) return;
-    await downloadSourceJSON({ ...source, questions });
+    await downloadSourceJSON({ ...source, questions }, { includeFolder: true });
 }
 
 export async function previewArchivedSource(sourceId) {

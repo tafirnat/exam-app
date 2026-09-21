@@ -1206,6 +1206,17 @@ function setupEventListeners() {
         };
     }
 
+    // Folder hints (add-source panel) - see features/sources/folder-hint.js
+    const folderHintsToggle = document.getElementById('folderHintsToggle');
+    if (folderHintsToggle) {
+        folderHintsToggle.checked = !!AppState.folderHintsEnabled;
+        folderHintsToggle.onchange = (e) => {
+            AppState.folderHintsEnabled = e.target.checked;
+            persist('focus_app_folder_hints_enabled', e.target.checked);
+            saveLanguageSettings();
+        };
+    }
+
     // TTS Toggle
     const ttsToggle = document.getElementById('ttsToggle');
     const ttsAutoplayToggle = document.getElementById('ttsAutoplayToggle');
@@ -1358,6 +1369,7 @@ function setupEventListeners() {
         if (transSelect) transSelect.value = AppState.translationTarget;
         if (transToggle) transToggle.checked = AppState.translationEnabled;
         updateTranslationUI();
+        if (folderHintsToggle) folderHintsToggle.checked = !!AppState.folderHintsEnabled;
 
         if (ttsToggle) ttsToggle.checked = AppState.ttsEnabled;
         if (ttsAutoplayToggle) ttsAutoplayToggle.checked = AppState.ttsAutoplay;

@@ -1882,6 +1882,17 @@
                             <span data-i18n="load_clipboard">Panodan Al</span>
                         </button>
                     </div>
+                    <div
+                        style="display: flex; justify-content: space-between; align-items: center; gap: 0.75rem; margin-top: 1rem;">
+                        <span style="display: flex; flex-direction: column; gap: 2px; min-width: 0;">
+                            <span data-i18n="folder_hints_toggle" style="font-size: 0.85rem;">Klasör ipuçlarını uygula</span>
+                            <span data-i18n="folder_hints_desc" style="font-size: 0.72rem; color: var(--text-secondary);"></span>
+                        </span>
+                        <label class="switch-small" style="flex-shrink: 0;">
+                            <input type="checkbox" id="folderHintsToggle">
+                            <span class="slider-small"></span>
+                        </label>
+                    </div>
                 </div>
                 <div id="sourcesList"></div>
             </div>
@@ -2453,6 +2464,17 @@
                     </svg>
                     <span id="shareLargeDataHintText"></span>
                 </div>
+
+                <!-- Carry the folder name along (off by default: the folder is how
+                     the sender organises, the recipient may not want it) -->
+                <label id="shareIncludeFolderRow"
+                    style="display: none; align-items: center; justify-content: space-between; gap: 0.75rem; font-size: 0.85rem; padding: 0 0.25rem;">
+                    <span id="shareIncludeFolderLabel"></span>
+                    <span class="switch-small">
+                        <input type="checkbox" id="shareIncludeFolderCheck">
+                        <span class="slider-small"></span>
+                    </span>
+                </label>
 
                 <!-- Option 1: Copy to Clipboard -->
                 <button class="btn btn-secondary btn-block modal-action-btn" id="shareCopyClipboardBtn">

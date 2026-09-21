@@ -16,7 +16,8 @@ The JSON must be a single object containing two main keys:
 | `title` | String | The name of the exam shown in the UI. |
 | `id` | String | A unique hybrid identifier for conflict-free sync in format `exam_[slug]_[timestamp/hash]` (e.g., `exam_topic_name_1785739334`). |
 | `description` | String | (Optional) Short summary of the exam content. |
-| `category` | String | (Optional) Folder-like grouping for management. |
+| `category` | String | (Optional) Free-text subject label. Not a folder: it never creates or selects one. |
+| `folder` | String | (Optional) Folder **name** to place the set in on first import (e.g. `"ITIL 4 Foundation"`). An existing folder with that name is reused (case/accents ignored), otherwise one is created. Applied only when the user has switched on *Apply folder hints* in the app. Ask the user first whether they want a separate folder; if not, leave the key out. Use a plain name, not a path, and never `folderId: null`. Details: [AI_AGENT_PROMPT.md → Folder Placement](../../AI_AGENT_PROMPT.md#-folder-placement-folder). |
 
 ---
 
