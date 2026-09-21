@@ -184,8 +184,8 @@ function renderManageList() {
 
         const handle = document.createElement('div');
         handle.className = 'drag-handle';
-        handle.setAttribute('aria-label', 'Sürükle Sırala');
-        handle.setAttribute('title', 'Sürükle Sırala');
+        handle.setAttribute('aria-label', t('qs_drag_reorder'));
+        handle.setAttribute('title', t('qs_drag_reorder'));
         handle.innerHTML = `<svg width="16" height="24" viewBox="0 0 16 24" fill="currentColor"><circle cx="6" cy="6" r="1.5"/><circle cx="10" cy="6" r="1.5"/><circle cx="6" cy="12" r="1.5"/><circle cx="10" cy="12" r="1.5"/><circle cx="6" cy="18" r="1.5"/><circle cx="10" cy="18" r="1.5"/></svg>`;
 
         const mainContent = document.createElement('div');
@@ -197,7 +197,7 @@ function renderManageList() {
         const nameSpan = document.createElement('span');
         nameSpan.className = 'qpm-name-text';
         nameSpan.textContent = preset.name;
-        nameSpan.setAttribute('title', 'Tıkla & Uygula / İki kere tıkla ve Düzenle');
+        nameSpan.setAttribute('title', t('qs_name_hint'));
         nameSpan.contentEditable = 'false';
         nameSpan.spellcheck = false;
 

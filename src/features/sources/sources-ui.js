@@ -1346,7 +1346,7 @@ export function renderSourcePicker(container, options = {}) {
             empty.style.fontSize = '0.82rem';
             empty.style.color = 'var(--text-secondary)';
             empty.style.padding = '0.75rem 0.25rem';
-            empty.textContent = 'Henüz ekli kaynak yok.';
+            empty.textContent = t('picker_no_sources');
             container.appendChild(empty);
             return;
         }
@@ -1422,7 +1422,7 @@ export function renderSourcePicker(container, options = {}) {
                     badge.style.borderRadius = '999px';
                     badge.style.color = '#fff';
                     badge.style.backgroundColor = 'var(--primary-color)';
-                    badge.textContent = `${selectedHere} seçili`;
+                    badge.textContent = t('picker_selected_badge', { count: selectedHere });
                     titleDiv.appendChild(badge);
                 }
 

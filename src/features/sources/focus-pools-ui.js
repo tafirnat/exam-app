@@ -1,6 +1,13 @@
 import { AppState, saveContinuityConfig } from '../../core/state.js';
 import { getFocusPools } from '../stats/continuity-engine.js';
 import { showToast } from '../../core/utils.js';
+import { t } from '../../core/i18n.js';
+
+/* The limits, named once. They were each written twice - a literal in the
+   condition and a digit in the sentence - so changing one changed only half of
+   what the user is told. */
+const MAX_FOCUS_POOLS = 3;
+const MAX_POOL_QUESTIONS = 15;
 
 export function showFocusPoolModal(target) {
     const overlay = document.getElementById('focusPoolOverlay');
@@ -31,13 +38,13 @@ export function showFocusPoolModal(target) {
         let totalOthers = pools.filter(p => p.targetId !== target.id).reduce((sum, p) => sum + p.count, 0);
         let poolsCount = pools.filter(p => p.targetId !== target.id).length + 1;
         
-        if (poolsCount > 3) {
-            warning.textContent = "Maksimum 3 farklı odak havuzu seçebilirsiniz.";
+        if (poolsCount > MAX_FOCUS_POOLS) {
+            warning.textContent = t('focus_pool_max_pools', { max: MAX_FOCUS_POOLS });
             warning.style.display = 'block';
             return false;
         }
-        if (totalOthers + count > 15) {
-            warning.textContent = "Tüm havuzların toplamı 15 soruyu geçemez.";
+        if (totalOthers + count > MAX_POOL_QUESTIONS) {
+            warning.textContent = t('focus_pool_max_total', { max: MAX_POOL_QUESTIONS });
             warning.style.display = 'block';
             return false;
         }
@@ -70,7 +77,7 @@ export function showFocusPoolModal(target) {
     removeBtn.onclick = () => {
         AppState.continuityConfig.focusPools = pools.filter(p => p.targetId !== target.id);
         saveContinuityConfig();
-        showToast("Odak havuzu kaldırıldı.");
+        showToast(t('focus_pool_removed'));
         closeActions();
     };
     
@@ -85,7 +92,7 @@ export function showFocusPoolModal(target) {
             AppState.continuityConfig.focusPools.push(newPool);
         }
         saveContinuityConfig();
-        showToast("Odak havuzu güncellendi.");
+        showToast(t('focus_pool_saved'));
         closeActions();
     };
 }

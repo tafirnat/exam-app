@@ -167,15 +167,27 @@ test('the edit button opens the modal rather than only renaming inline', () => {
 });
 
 test('the overlay sits above the manage modal and below customModalOverlay', () => {
-    // It opens on top of #quickPresetsManageOverlay, which takes the
-    // .modal-overlay default of 9999; customModalOverlay must stay on top of
-    // everything - see CLAUDE.md rule 6.
+    /* Not a literal bar. style.css carries a SECOND `.modal-overlay` rule, later
+       in the file, that raises the default from 9999 to 10010, and
+       #quickPresetsManageOverlay declares no z-index of its own - so it lands on
+       that default. The first version of this modal used 10004 and was measured
+       in Edge sitting UNDERNEATH the modal it opens from, with its Save button
+       covered and nothing thrown. The rule is therefore "above whatever an
+       overlay with no inline z-index gets", read from the stylesheet. */
+    const css = read('../src/style.css');
+    const defaults = [...css.matchAll(/\.modal-overlay[^{]*\{[^}]*?z-index:\s*(\d+)/g)].map(m => Number(m[1]));
+    assert.ok(defaults.length > 0, 'no .modal-overlay z-index found to compare against');
+    const effectiveDefault = defaults[defaults.length - 1]; // the last rule wins
+
     const src = html();
     const z = /id="presetEditOverlay"[^>]*z-index:\s*(\d+)/.exec(src);
     assert.ok(z, 'presetEditOverlay declares no z-index');
     const n = Number(z[1]);
-    assert.ok(n > 9999, 'it would open behind the modal it was opened from');
-    assert.ok(n < 10100, 'it would cover the shared confirm box');
+    assert.ok(n > effectiveDefault,
+        `${n} is not above the .modal-overlay default of ${effectiveDefault} - it would open behind the manage modal`);
+
+    const confirm = /id="customModalOverlay"[^>]*z-index:\s*(\d+)/.exec(src);
+    assert.ok(n < Number(confirm[1]), 'it would cover the shared confirm box');
 });
 
 // ── the label in front of the focus source gear ─────────────────────────────

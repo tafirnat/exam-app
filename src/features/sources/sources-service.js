@@ -150,8 +150,9 @@ export function processJSON(rawData, name, options = {}) {
     const validation = validateExamSchema(data);
     if (!validation.valid) {
         const errorList = validation.errors.slice(0, 5).join('\n• ');
-        const suffix = validation.errors.length > 5 ? `\n... ve ${validation.errors.length - 5} hata daha.` : '';
-        showAlert(`Şema doğrulama hatası:\n• ${errorList}${suffix}`, t('invalid_format'));
+        const extra = validation.errors.length - 5;
+        const suffix = extra > 0 ? `\n${t('schema_error_more', { count: extra })}` : '';
+        showAlert(`${t('schema_error_intro')}\n• ${errorList}${suffix}`, t('invalid_format'));
         return null;
     }
 

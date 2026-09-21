@@ -3,6 +3,7 @@ import assert from 'node:assert/strict';
 import { JSDOM } from 'jsdom';
 
 let AppState,
+    t,
     UNCATEGORIZED_FOLDER_ID,
     renderSourcePicker,
     getFocusSources,
@@ -47,6 +48,7 @@ before(async () => {
     AppState = stateMod.AppState;
     UNCATEGORIZED_FOLDER_ID = stateMod.UNCATEGORIZED_FOLDER_ID;
 
+    t = (await import('../src/core/i18n.js')).t;
     const sourcesMod = await import('../src/features/sources/sources-ui.js');
     renderSourcePicker = sourcesMod.renderSourcePicker;
 
@@ -90,12 +92,17 @@ test('startCollapsed folds every folder and still flags where picks live', () =>
     assert.equal(lists.length, 2);
     assert.ok(lists.every(el => el.style.display === 'none'), 'all folders should start folded');
 
-    // The folded folder holding srcB advertises the selection.
+    /* The folded folder holding srcB advertises the selection. Built with t()
+       rather than a Turkish literal: the badge used to be hard-coded Turkish
+       and the test language is not Turkish, so the literal was asserting a
+       string the German and English builds never showed. */
+    const expected = t('picker_selected_badge', { count: 1 });
     const badges = [...container.querySelectorAll('.folder-header')]
         .map(el => el.textContent.replace(/\s+/g, ' ').trim())
-        .filter(txt => txt.includes('seçili'));
+        .filter(txt => txt.includes(expected));
     assert.equal(badges.length, 1);
-    assert.match(badges[0], /^Dersler1 seçili/);
+    // The header reads: folder name, then the badge, then the watermark count.
+    assert.ok(badges[0].startsWith(`Dersler${expected}`), badges[0]);
 });
 
 test('expanding a folder reveals its rows without touching the others', () => {
@@ -170,7 +177,7 @@ test('empty folders are skipped and an empty library shows a hint', () => {
     renderSourcePicker(container, { selected: [], max: 3 });
 
     assert.equal(container.querySelectorAll('.folder-header').length, 0);
-    assert.match(container.textContent, /Henüz ekli kaynak yok/);
+    assert.equal(container.textContent.trim(), t('picker_no_sources'));
 });
 
 test('getLiveFocusSources drops archived and deleted ids from the selection', () => {
