@@ -21,6 +21,7 @@ import { processJSON, loadFromUrl, loadFromFile, normalizeQuestions, mergeSource
 import { renderSourcesList, showMergeModal, closeAllSourcesModals, showSourceOptionsModal, renderHomeActiveSources } from './features/sources/sources-ui.js';
 import { renderContinuityBlock, renderGlobalCharts, showDailyMotivationToast } from './features/stats/continuity-ui.js';
 import { initArchiveUI } from './features/sources/archive.js';
+import { initEmptyFolderSweep } from './features/sources/empty-folders.js';
 import { initStorageNoticeUI, maybeShowStorageNotice } from './features/sources/storage-notice.js';
 import { prepareTest, finishTest, prepareRetake, buildQuestionPool } from './features/test/test-engine.js';
 import { isSequentialMode, resolveQuestionCount, countActivePoolQuestions, renderQuestionRangePicker, setQuestionStartIndex, advanceQuestionRange, rangeAdvancedMessage, LONG_SESSION_THRESHOLD } from './features/test/test-range.js';
@@ -274,6 +275,11 @@ const initApp = () => {
         // After the language is settled by initState, so the starter prompts are
         // written in the language the user actually reads.
         seedAiPrompts(t);
+
+        // After the folder repairs above, before the first pull: a folder left
+        // empty in an earlier session goes now. One the Gist shows in use again
+        // comes back with the pull - see core/folder-tombstones.js.
+        initEmptyFolderSweep();
 
         // Runs before anything reads studyActivity: the additive Gist merge left
         // inflated daily counters behind, and every streak, ring and chart on the

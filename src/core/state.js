@@ -1,6 +1,7 @@
 import { detectLanguage, detectTranslationTarget } from './i18n.js';
 import { persist, persistIfChanged, persistRemove, readJSON, readString, readInt, readFloat } from './storage.js';
 import { emit, Slice } from './store.js';
+import { mergeFolderDeletions, sanitizeFolderDeletions } from './folder-tombstones.js';
 
 /**
  * Safely reads and parses a JSON item from localStorage.
@@ -192,7 +193,10 @@ export const AppState = {
     settingsRevisions: {},
     githubGistUrl: null,
     deletedSourceIds: [],
+    // Legacy, undated folder tombstones: they win outright, see folder-tombstones.js.
     deletedFolderIds: [],
+    // Dated folder deletions (id -> ms). A folder can outlive one of these.
+    deletedFolderAt: {},
     quickPresets: [],
     deletedQuickPresetIds: [],
     // Timestamp of the last destructive reset on this device (sources/full reset).
@@ -300,6 +304,7 @@ export function initState({ force = false } = {}) {
         githubGistUrl: readString('focus_app_github_gist_url') || null,
         deletedSourceIds: readJSON('focus_app_deleted_sources', []),
         deletedFolderIds: readJSON('focus_app_deleted_folders', []),
+        deletedFolderAt: sanitizeFolderDeletions(readJSON('focus_app_deleted_folder_at', {})),
         quickPresets: readJSON('focus_app_quick_presets', []),
         deletedQuickPresetIds: readJSON('focus_app_deleted_quick_presets', []),
         lastResetTimestamp: readInt('focus_app_last_reset', 0),
@@ -639,13 +644,18 @@ export function trackDeletedSource(id) {
     }
 }
 
-export function trackDeletedFolder(id) {
+/**
+ * Records a folder deletion with the time it was made. Dated, not added to the
+ * legacy `deletedFolderIds`: a dated deletion can be outlived by a folder that
+ * another device is still using - see core/folder-tombstones.js.
+ */
+export function trackDeletedFolder(id, at = Date.now()) {
     if (!id) return;
-    if (!AppState.deletedFolderIds.includes(id)) {
-        AppState.deletedFolderIds.push(id);
-        persist('focus_app_deleted_folders', AppState.deletedFolderIds);
-        emit(Slice.FOLDERS);
-    }
+    const prev = Number(AppState.deletedFolderAt?.[id]) || 0;
+    if (at <= prev) return;
+    AppState.deletedFolderAt = mergeFolderDeletions(AppState.deletedFolderAt, { [id]: at });
+    persist('focus_app_deleted_folder_at', AppState.deletedFolderAt);
+    emit(Slice.FOLDERS);
 }
 
 export function trackDeletedQuickPreset(id) {

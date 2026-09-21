@@ -90,7 +90,7 @@ Bir **kaynak**, bir konuya ait soru kümesidir: bir ders, bir kitap bölümü, b
 
 **Açık / kapalı.** Bir kaynağın anahtarı, o kaynağın testlere girip girmeyeceğini belirler. Birden fazla kaynağı aynı anda açabilirsiniz; test hepsinden soru çeker.
 
-**Klasörler.** Kaynakları klasörlere koyabilir, klasöre renk verebilirsiniz. Klasörsüz kalan her şey "Kategorisiz" klasöründe toplanır — bu klasör silinemez, hep vardır.
+**Klasörler.** Kaynakları klasörlere koyabilir, klasöre renk verebilirsiniz. Klasörsüz kalan her şey "Kategorisiz" klasöründe toplanır — bu klasör silinemez, hep vardır. Boş kalan bir klasör 10 dakika sonra kendiliğinden kaldırılır; uygulamayı kapattıysanız bir sonraki açılışta. Arşivde kaynağı olan klasör boş sayılmaz.
 
 **Kaynak menüsü** (bir kaynağa uzun basın ya da üç noktaya dokunun):
 

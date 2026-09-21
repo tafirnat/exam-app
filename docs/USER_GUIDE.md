@@ -90,7 +90,7 @@ A **source** is a set of questions about one subject: a course, a chapter, an ex
 
 **On / off.** A source's switch decides whether it takes part in tests. You can have several on at once; a test then draws from all of them.
 
-**Folders.** Sources can be put into folders and folders can be coloured. Anything without a folder collects in "Uncategorized", which always exists and cannot be deleted.
+**Folders.** Sources can be put into folders and folders can be coloured. Anything without a folder collects in "Uncategorized", which always exists and cannot be deleted. A folder that stays empty is removed on its own after 10 minutes, or at the next start if you closed the app. A folder with sources in the archive does not count as empty.
 
 **The source menu** (long-press a source, or tap its three dots):
 

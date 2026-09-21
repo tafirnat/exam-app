@@ -8,6 +8,7 @@ import { persist, persistRemove, readJSON } from './storage.js';
 import { emit, Slice, getActiveView } from './store.js';
 import { historyEntryTime } from './test-history.js';
 import { MARK_KEYS, markStampKey, pickMark, hasUserAnnotation } from './question-marks.js';
+import { mergeFolderDeletions, folderOutlivesDeletion } from './folder-tombstones.js';
 
 /* The Gist holds three files, and a PATCH only touches the ones it names. The
    split is by how big a file is against how often it is written:
@@ -195,6 +196,7 @@ export function getSyncPayload() {
         deletedAiPromptIds: AppState.deletedAiPromptIds || [],
         deletedSourceIds: AppState.deletedSourceIds || [],
         deletedFolderIds: AppState.deletedFolderIds || [],
+        deletedFolderAt: AppState.deletedFolderAt || {},
         deletedQuickPresetIds: AppState.deletedQuickPresetIds || [],
         stats: AppState.stats || {},
         /* No totalStats. It was carried here for years without a single
@@ -628,6 +630,11 @@ async function pullRemoteGistOnly() {
                 persist('focus_app_deleted_folders', remotePayload.deletedFolderIds);
             }
 
+            if (remotePayload.deletedFolderAt && typeof remotePayload.deletedFolderAt === 'object') {
+                AppState.deletedFolderAt = mergeFolderDeletions(remotePayload.deletedFolderAt);
+                persist('focus_app_deleted_folder_at', AppState.deletedFolderAt);
+            }
+
             if (remotePayload.stats && typeof remotePayload.stats === 'object') {
                 AppState.stats = remotePayload.stats;
                 saveStats();
@@ -1016,6 +1023,11 @@ export async function syncFromGist(options = {}) {
             if (Array.isArray(merged.deletedFolderIds)) {
                 AppState.deletedFolderIds = merged.deletedFolderIds;
                 persist('focus_app_deleted_folders', merged.deletedFolderIds);
+            }
+
+            if (merged.deletedFolderAt && typeof merged.deletedFolderAt === 'object') {
+                AppState.deletedFolderAt = merged.deletedFolderAt;
+                persist('focus_app_deleted_folder_at', merged.deletedFolderAt);
             }
 
             if (Array.isArray(merged.quickPresets)) {
@@ -1536,6 +1548,21 @@ export function mergeSyncData(local, remote) {
         ...(AppState.deletedFolderIds || [])
     ]));
 
+    // 0b'. Combine dated folder deletions (latest per id). Unlike the list
+    // above these do not decide on their own: a folder outlives one when it was
+    // written after it or a merged source still belongs to it - see 1b and
+    // core/folder-tombstones.js.
+    const remoteFolderDeletions = remote.deletedFolderAt || {};
+    const mergedDeletedFolderAt = mergeFolderDeletions(
+        remoteFolderDeletions,
+        local.deletedFolderAt,
+        AppState.deletedFolderAt
+    );
+    // The remote is missing a deletion (or holds an older one): push.
+    if (Object.entries(mergedDeletedFolderAt).some(([id, at]) => (Number(remoteFolderDeletions[id]) || 0) < at)) {
+        hasLocalChanges = true;
+    }
+
     // 0c. Combine Quick Preset Tombstones
     const mergedDeletedQuickPresetIds = Array.from(new Set([
         ...(remote.deletedQuickPresetIds || []),
@@ -1648,7 +1675,16 @@ export function mergeSyncData(local, remote) {
         }
     });
 
-    const mergedFolders = Array.from(foldersMap.values());
+    // Dated deletions are judged on the merged result, not per side: whichever
+    // copy of the folder won is the one that has to be newer than the deletion,
+    // and the sources it is weighed against are the merged library.
+    const mergedFolders = Array.from(foldersMap.values()).filter(f => {
+        const at = mergedDeletedFolderAt[f.id];
+        if (!at || folderOutlivesDeletion(f, at, mergedSources)) return true;
+        // The remote still lists a folder the merge drops: the Gist needs it gone.
+        if ((remote.folders || []).some(r => r && r.id === f.id)) hasLocalChanges = true;
+        return false;
+    });
 
     // ── Progress-reset guard ──────────────────────────────────────────────
     // Mirrors the source-reset guard above but covers stats, study activity,
@@ -2052,6 +2088,7 @@ export function mergeSyncData(local, remote) {
         continuityConfig: mergedContinuityConfig,
         deletedSourceIds: mergedDeletedIds,
         deletedFolderIds: mergedDeletedFolderIds,
+        deletedFolderAt: mergedDeletedFolderAt,
         deletedQuickPresetIds: mergedDeletedQuickPresetIds,
         deletedAiPromptIds: mergedDeletedAiPromptIds,
         // Propagate the most recent reset timestamps so all devices stay in sync

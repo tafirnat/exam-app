@@ -16,9 +16,11 @@
  * Two devices importing sets with the same hint before they sync must not end
  * up with two folders of one name. Folders merge by id, so the id of a folder
  * created from a hint is DERIVED from the name: both devices write the same
- * record and the merge collapses it. When that id is tombstoned (the user
- * deleted the folder once), the next free `_2`, `_3`... is taken - also
- * deterministic, since tombstones sync too.
+ * record and the merge collapses it. When that id carries a legacy (undated)
+ * tombstone, the next free `_2`, `_3`... is taken - also deterministic, since
+ * tombstones sync too. A dated deletion does not reserve the id: the folder
+ * created again is written after it and so outlives it (core/folder-tombstones.js),
+ * which matters now that empty folders are removed on their own.
  */
 import { AppState, saveFolders, touch, UNCATEGORIZED_FOLDER_ID } from '../../core/state.js';
 

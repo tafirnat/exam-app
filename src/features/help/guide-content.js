@@ -208,7 +208,7 @@ de: `Eine **Quelle** ist eine Menge von Fragen zu einem Thema: ein Kurs, ein Kap
     body: {
 tr: `**Açık / kapalı.** Bir kaynağın anahtarı, o kaynağın testlere girip girmeyeceğini belirler. Birden fazla kaynağı aynı anda açabilirsiniz; test hepsinden soru çeker.
 
-**Klasörler.** Kaynakları klasörlere koyabilir, klasöre renk verebilirsiniz. Klasörsüz kalan her şey "Kategorisiz" klasöründe toplanır — bu klasör silinemez, hep vardır.
+**Klasörler.** Kaynakları klasörlere koyabilir, klasöre renk verebilirsiniz. Klasörsüz kalan her şey "Kategorisiz" klasöründe toplanır — bu klasör silinemez, hep vardır. Boş kalan bir klasör 10 dakika sonra kendiliğinden kaldırılır; uygulamayı kapattıysanız bir sonraki açılışta. Arşivde kaynağı olan klasör boş sayılmaz.
 
 **Kaynak menüsü** (bir kaynağa uzun basın ya da üç noktaya dokunun):
 
@@ -225,7 +225,7 @@ tr: `**Açık / kapalı.** Bir kaynağın anahtarı, o kaynağın testlere girip
 **Depolama uyarısı.** Tarayıcı deposu dolmaya yaklaşınca uyarı çıkar. Uyarı yüzde göstermez, çünkü tarayıcılar tavanı bildirmez; onun yerine kaç soru daha sığacağını tahmin eder.`,
 en: `**On / off.** A source's switch decides whether it takes part in tests. You can have several on at once; a test then draws from all of them.
 
-**Folders.** Sources can be put into folders and folders can be coloured. Anything without a folder collects in "Uncategorized", which always exists and cannot be deleted.
+**Folders.** Sources can be put into folders and folders can be coloured. Anything without a folder collects in "Uncategorized", which always exists and cannot be deleted. A folder that stays empty is removed on its own after 10 minutes, or at the next start if you closed the app. A folder with sources in the archive does not count as empty.
 
 **The source menu** (long-press a source, or tap its three dots):
 
@@ -242,7 +242,7 @@ en: `**On / off.** A source's switch decides whether it takes part in tests. You
 **The storage warning.** A warning appears as browser storage fills up. It shows no percentage, because browsers do not publish the ceiling; it estimates how many more questions will fit instead.`,
 de: `**Ein / aus.** Der Schalter einer Quelle entscheidet, ob sie an Tests teilnimmt. Sie können mehrere gleichzeitig einschalten; ein Test zieht dann aus allen.
 
-**Ordner.** Quellen lassen sich in Ordner legen, Ordner lassen sich einfärben. Alles ohne Ordner sammelt sich in "Ohne Kategorie", der immer existiert und nicht gelöscht werden kann.
+**Ordner.** Quellen lassen sich in Ordner legen, Ordner lassen sich einfärben. Alles ohne Ordner sammelt sich in "Ohne Kategorie", der immer existiert und nicht gelöscht werden kann. Ein Ordner, der leer bleibt, wird nach 10 Minuten von selbst entfernt, oder beim nächsten Start, wenn Sie die App geschlossen haben. Ein Ordner mit Quellen im Archiv gilt nicht als leer.
 
 **Das Quellenmenü** (lange auf eine Quelle drücken oder die drei Punkte antippen):
 

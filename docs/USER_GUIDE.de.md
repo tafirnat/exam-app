@@ -90,7 +90,7 @@ Eine **Quelle** ist eine Menge von Fragen zu einem Thema: ein Kurs, ein Kapitel,
 
 **Ein / aus.** Der Schalter einer Quelle entscheidet, ob sie an Tests teilnimmt. Sie können mehrere gleichzeitig einschalten; ein Test zieht dann aus allen.
 
-**Ordner.** Quellen lassen sich in Ordner legen, Ordner lassen sich einfärben. Alles ohne Ordner sammelt sich in "Ohne Kategorie", der immer existiert und nicht gelöscht werden kann.
+**Ordner.** Quellen lassen sich in Ordner legen, Ordner lassen sich einfärben. Alles ohne Ordner sammelt sich in "Ohne Kategorie", der immer existiert und nicht gelöscht werden kann. Ein Ordner, der leer bleibt, wird nach 10 Minuten von selbst entfernt, oder beim nächsten Start, wenn Sie die App geschlossen haben. Ein Ordner mit Quellen im Archiv gilt nicht als leer.
 
 **Das Quellenmenü** (lange auf eine Quelle drücken oder die drei Punkte antippen):
 
