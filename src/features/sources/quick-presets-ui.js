@@ -505,7 +505,14 @@ export function showSourceQuickPresetsModal(source) {
             }
             preset.sourceIds = ids.filter(id => id !== source.id);
         } else {
-            preset.sourceIds = [...ids, source.id];
+            /* The editor refuses a second group with the same set of sources;
+               joining one here must not be the way around that. */
+            const next = [...ids, source.id];
+            if ((AppState.quickPresets || []).some(p => p.id !== preset.id && sameSourceSet(p.sourceIds, next))) {
+                showToast(t('qs_duplicate_warning'));
+                return;
+            }
+            preset.sourceIds = next;
         }
         preset.updatedAt = Date.now();
         saveQuickPresets();

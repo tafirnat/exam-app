@@ -284,6 +284,17 @@ test('a group with exactly the sources of another one is refused', async () => {
     document.getElementById('presetEditCancelBtn').click();
 });
 
+test('joining a group from the source dialog cannot make it a copy of another group', async () => {
+    // p2 + s2 would be exactly p1's set.
+    await openForSource('s2', [
+        { id: 'p1', name: 'Both', sourceIds: ['s1', 's2'], order: 0 },
+        { id: 'p2', name: 'One', sourceIds: ['s1'], order: 1 }
+    ]);
+    sqpRows().find(r => r.dataset.presetId === 'p2').click();
+    await flush();
+    assert.deepEqual(AppState.quickPresets.find(p => p.id === 'p2').sourceIds, ['s1'], 'the toggle made a duplicate group');
+});
+
 test('taking the last source out asks, and removes the group only on yes', async () => {
     await openForSource('s1', [{ id: 'p1', name: 'Only', sourceIds: ['s1'], order: 0 }]);
 
