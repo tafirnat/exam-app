@@ -7,6 +7,7 @@ import { mergeFreezeTokens } from './freeze-tokens.js';
 import { persist, persistRemove, readJSON } from './storage.js';
 import { emit, Slice, getActiveView } from './store.js';
 import { historyEntryTime } from './test-history.js';
+import { MARK_KEYS, markStampKey, pickMark, hasUserAnnotation } from './question-marks.js';
 
 /* The Gist holds three files, and a PATCH only touches the ones it names. The
    split is by how big a file is against how often it is written:
@@ -1675,10 +1676,41 @@ export function mergeSyncData(local, remote) {
     // their progress counters are zeroed so they do not inflate charts.
     const passesProgressFloor = (stat) => {
         if (!latestProgressResetAt) return true; // no reset ever happened
-        const reviewTime = stat && stat.lastReview
-            ? new Date(stat.lastReview).getTime()
-            : 0;
-        return Number.isFinite(reviewTime) && reviewTime >= latestProgressResetAt;
+        const at = stat && stat.lastReview ? new Date(stat.lastReview).getTime() : 0;
+        if (Number.isFinite(at) && at >= latestProgressResetAt) return true;
+        /* The comment above promised this and the code did not do it: a plain
+           `false` here threw away the star, the flag and - the one that cannot
+           be recovered - the NOTE the user typed. A reset clears progress, not
+           the user's own writing. Annotated records survive; stripProgress()
+           zeroes what the reset was actually aimed at. */
+        return hasUserAnnotation(stat);
+    };
+
+    /* An annotated record that predates the floor keeps only the annotation.
+       Its counters and FSRS block belong to the run that was reset away, and
+       leaving them in would put the question straight back into the overdue
+       set the daily bar is measured from. */
+    const stripProgress = (stat) => {
+        const kept = { difficulty: 5.0, correct: 0, wrong: 0, coeff: 2.5 };
+        if (stat.note) {
+            kept.note = stat.note;
+            if (stat.noteUpdatedAt) kept.noteUpdatedAt = stat.noteUpdatedAt;
+        }
+        MARK_KEYS.forEach(mark => {
+            if (!stat[mark]) return;
+            kept[mark] = true;
+            const at = stat[markStampKey(mark)];
+            if (at) kept[markStampKey(mark)] = at;
+        });
+        return kept;
+    };
+
+    /* Does this record survive the floor on its own merits, or only because it
+       carries an annotation? The second kind has to be stripped. */
+    const earnedAfterFloor = (stat) => {
+        if (!latestProgressResetAt) return true;
+        const at = stat && stat.lastReview ? new Date(stat.lastReview).getTime() : 0;
+        return Number.isFinite(at) && at >= latestProgressResetAt;
     };
 
     const mergedStats = {};
@@ -1688,7 +1720,7 @@ export function mergeSyncData(local, remote) {
         const sourceId = qid.split('_')[0];
         if (mergedDeletedIds.includes(sourceId)) return;
         if (passesProgressFloor(rStat)) {
-            mergedStats[qid] = rStat;
+            mergedStats[qid] = earnedAfterFloor(rStat) ? rStat : stripProgress(rStat);
         }
     });
 
@@ -1698,8 +1730,9 @@ export function mergeSyncData(local, remote) {
         const sourceId = qid.split('_')[0];
         if (mergedDeletedIds.includes(sourceId)) return;
 
-        const lStat = localStats[qid];
-        if (!passesProgressFloor(lStat)) return; // predates the reset floor
+        const lStatRaw = localStats[qid];
+        if (!passesProgressFloor(lStatRaw)) return; // predates the reset floor
+        const lStat = earnedAfterFloor(lStatRaw) ? lStatRaw : stripProgress(lStatRaw);
 
         const rStat = mergedStats[qid];
 
@@ -1724,6 +1757,21 @@ export function mergeSyncData(local, remote) {
                 hasLocalChanges = true;
             }
 
+            /* The star and the flag follow their own stamps, exactly as the
+               note does. They used to be merged with OR, and OR cannot carry an
+               unset: clearing a star on one device was written straight back by
+               the other on the next sync, so the mark came back every time. */
+            const marks = {};
+            MARK_KEYS.forEach(mark => {
+                const picked = pickMark(lStat, rStat, mark);
+                marks[mark] = picked.value;
+                if (picked.updatedAt) marks[markStampKey(mark)] = picked.updatedAt;
+                if (picked.value !== !!rStat[mark]) {
+                    // The remote is holding an older state of this mark.
+                    hasLocalChanges = true;
+                }
+            });
+
             mergedStats[qid] = {
                 /* Counters, not FSRS state: they only ever go up, and the higher
                    figure is the one that has seen both devices' answers. */
@@ -1734,14 +1782,12 @@ export function mergeSyncData(local, remote) {
                 // dropping it here made every synced question read as average.
                 coeff: Number.isFinite(difficulty) ? difficulty / 2 : fsrs.coeff,
                 /* The user's own marks, which no answer touches and which
-                   therefore cannot ride along with the review. The star and the
-                   flag are merged forgivingly - unsetting one does not
-                   propagate - while the note, which is writing rather than a
-                   toggle, follows its own stamp. See pickNote(). */
+                   therefore cannot ride along with the review. All three follow
+                   their own stamp, so setting AND unsetting propagate.
+                   See pickNote() and pickMark(). */
                 note: noteResult.note,
                 noteUpdatedAt: noteResult.noteUpdatedAt,
-                starred: !!(lStat.starred || rStat.starred),
-                flagged: !!(lStat.flagged || rStat.flagged),
+                ...marks,
                 learned: !!fsrs.learned,
                 streak: fsrs.streak || 0,
                 stability: fsrs.stability || 0,

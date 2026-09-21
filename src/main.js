@@ -5,6 +5,7 @@ import { updateStaticTranslations, updateDocumentTitle, t, targetLanguages, tran
 import { showToast, showConfirm, getCorrectAnswers, highlightText, escapeHTML } from './core/utils.js';
 import { migrateOldData, migrateFolderColors, sanitizeStudyActivity, migrateExamIds, seedAiPrompts } from './core/migration.js';
 import { getQuestionCategory } from './core/question-rules.js';
+import { toggleMark } from './core/question-marks.js';
 import { persist, readJSON, readString } from './core/storage.js';
 import * as store from './core/store.js';
 import { emit, Slice } from './core/store.js';
@@ -1784,11 +1785,18 @@ function setupEventListeners() {
     // Generic Data Export/Import
     const handleExport = () => {
         const data = {
-            version: "1.6",
+            version: "1.7",
             sources: AppState.sources,
             folders: AppState.folders,
             stats: AppState.stats,
+            /* handleImport has always read these two back; the export simply
+               never wrote them. A manual backup therefore restored the library
+               and the FSRS records but not a single day of the streak - the one
+               thing a user reaches for a backup to save. */
+            studyActivity: AppState.studyActivity,
+            continuityConfig: AppState.continuityConfig,
             recentTests: AppState.recentTests,
+            quickPresets: AppState.quickPresets,
             settings: {
                 language: AppState.language,
                 translationTarget: AppState.translationTarget,
@@ -1819,6 +1827,7 @@ function setupEventListeners() {
                         if (data.studyActivity) AppState.studyActivity = data.studyActivity;
                         if (data.continuityConfig) AppState.continuityConfig = data.continuityConfig;
                         if (data.recentTests) AppState.recentTests = data.recentTests;
+                        if (data.quickPresets) AppState.quickPresets = data.quickPresets;
                         saveStats();
                         saveSources();
                         if (data.folders) {
@@ -1832,6 +1841,10 @@ function setupEventListeners() {
                         if (data.continuityConfig) {
                             const { saveContinuityConfig } = await import('./core/state.js');
                             saveContinuityConfig();
+                        }
+                        if (data.quickPresets) {
+                            const { saveQuickPresets } = await import('./core/state.js');
+                            saveQuickPresets();
                         }
                         import('./core/state.js').then(m => m.saveRecentTests());
                         location.reload(); // Simplest way to re-init everything safely
@@ -2466,7 +2479,7 @@ function toggleStar() {
     if (!q) return;
     const statKey = `${q.sourceId}_${q.id}`;
     if (!AppState.stats[statKey]) AppState.stats[statKey] = { difficulty: 5.0, correct: 0, wrong: 0 };
-    AppState.stats[statKey].starred = !AppState.stats[statKey].starred;
+    toggleMark(AppState.stats[statKey], 'starred');
     saveStats();
     if (isPreview) {
         updateIndicatorsPreview();
@@ -2485,7 +2498,7 @@ function toggleFlag() {
     if (!q) return;
     const statKey = `${q.sourceId}_${q.id}`;
     if (!AppState.stats[statKey]) AppState.stats[statKey] = { difficulty: 5.0, correct: 0, wrong: 0 };
-    AppState.stats[statKey].flagged = !AppState.stats[statKey].flagged;
+    toggleMark(AppState.stats[statKey], 'flagged');
     saveStats();
     if (isPreview) {
         updateIndicatorsPreview();

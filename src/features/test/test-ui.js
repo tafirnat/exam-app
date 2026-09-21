@@ -6,6 +6,7 @@ import { t, targetLanguages, updateDocumentTitle } from '../../core/i18n.js';
 import { evaluateAnswer, updateStats, updateFlashcardStats, finishTest, calculateRetrievability } from './test-engine.js';
 import { resetTimerForNewQuestion, stopTimer } from './timer-module.js';
 import { getQuestionCategory } from '../../core/question-rules.js';
+import { setMark } from '../../core/question-marks.js';
 import { parseCloze, clozeMarkup, matchesBlank } from '../../core/cloze.js';
 import { renderMarkdown, renderInlineMarkdown, plainText } from '../../core/markdown.js';
 import { openQuestionEditor } from '../stats/question-editor.js';
@@ -1422,7 +1423,7 @@ export function handleDifficultyRating(rating) {
     if (!isCurrentlyActive && rating === 'easy' && existingResult?.feedback === 'hard') {
         const statKey = `${q.sourceId}_${q.id}`;
         if (!AppState.stats[statKey]) AppState.stats[statKey] = { difficulty: 5.0, correct: 0, wrong: 0 };
-        AppState.stats[statKey].starred = true;
+        setMark(AppState.stats[statKey], 'starred', true);
         updateIndicators();
     }
 

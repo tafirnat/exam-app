@@ -1,6 +1,7 @@
 import { AppState, saveSources, saveStats } from '../../core/state.js';
 import { t } from '../../core/i18n.js';
 import { escapeHTML, showToast } from '../../core/utils.js';
+import { setMark } from '../../core/question-marks.js';
 import { renderSourcesList } from './sources-ui.js';
 
 /* Shown after an import that parsed cleanly but produced questions nobody can
@@ -34,7 +35,7 @@ function flagGaps(source, gaps) {
         if (!AppState.stats[key]) {
             AppState.stats[key] = { difficulty: 5.0, correct: 0, wrong: 0 };
         }
-        AppState.stats[key].flagged = true;
+        setMark(AppState.stats[key], 'flagged', true);
     });
     saveStats();
     showToast(t('import_gaps_flagged', { count: gaps.length }));
