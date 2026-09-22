@@ -1755,15 +1755,30 @@ function setupEventListeners() {
     };
 
     document.getElementById('toggleAddSourceBtn').onclick = toggleAddSourcePanel;
-    document.getElementById('loadUrlBtn').onclick = async () => {
-        const url = document.getElementById('urlInput').value.trim();
-        const source = await loadFromUrl(url);
-        if (source) {
-            document.getElementById('urlInput').value = '';
-            toggleAddSourcePanel();
-            renderSourcesList();
-        }
-    };
+    let urlImportTimeout;
+    const urlInputEl = document.getElementById('urlInput');
+    if (urlInputEl) {
+        urlInputEl.addEventListener('input', (e) => {
+            clearTimeout(urlImportTimeout);
+            const url = e.target.value.trim();
+            if (!url) return;
+            
+            urlImportTimeout = setTimeout(async () => {
+                // Ensure it's somewhat like a URL before attempting
+                if (!/^https?:\/\//i.test(url)) {
+                    showAlert(t('import_failed') + ': Invalid URL format', t('warning_title') || 'Warning');
+                    return;
+                }
+                
+                const source = await loadFromUrl(url);
+                if (source) {
+                    urlInputEl.value = '';
+                    toggleAddSourcePanel();
+                    renderSourcesList();
+                }
+            }, 800);
+        });
+    }
     const handleFileInput = async (files) => {
         if (!files || files.length === 0) return;
         const result = await loadFromFiles(files);

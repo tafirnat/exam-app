@@ -1854,7 +1854,7 @@
                                 <polyline points="17 8 12 3 7 8"></polyline>
                                 <line x1="12" y1="3" x2="12" y2="15"></line>
                             </svg>
-                            <div class="drop-zone-text-desktop" data-i18n="drop_zone_desktop">JSON dosyalarını buraya sürükleyin veya <strong>Dosya Seçin</strong></div>
+                            <div class="drop-zone-text-desktop" data-i18n-html="drop_zone_desktop">JSON dosyalarını buraya sürükleyin veya <strong>Dosya Seçin</strong></div>
                             <div class="drop-zone-text-mobile" data-i18n="drop_zone_mobile" style="display: none;">Dosya Seç (.json)</div>
                         </div>
                         <input type="file" id="fileInput" accept=".json" multiple style="position: absolute; top: 0; left: 0; width: 100%; height: 100%; opacity: 0; cursor: pointer;">
@@ -1869,11 +1869,8 @@
                     <!-- Secondary Options Container -->
                     <div class="secondary-import-options">
                         <div class="input-group" style="margin-bottom: 0;">
-                            <div style="display: flex; gap: 0.5rem; height: 100%;">
-                                <input type="text" id="urlInput" data-i18n-placeholder="ph_url"
-                                    placeholder="https://.../questions.json">
-                                <button class="btn btn-primary" id="loadUrlBtn" data-i18n="load">Yükle</button>
-                            </div>
+                            <input type="text" id="urlInput" data-i18n-placeholder="ph_url"
+                                placeholder="https://.../questions.json" style="height: 100%; min-height: 42px;">
                         </div>
                         <div class="input-group" style="margin-bottom: 0;">
                             <button class="btn btn-secondary btn-block" id="loadClipboardBtn" style="height: 100%; min-height: 42px;">

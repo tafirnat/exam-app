@@ -2488,6 +2488,11 @@ export function updateStaticTranslations() {
         el.innerText = t(key);
     });
 
+    document.querySelectorAll('[data-i18n-html]').forEach(el => {
+        const key = el.getAttribute('data-i18n-html');
+        el.innerHTML = t(key);
+    });
+
     document.querySelectorAll('[data-i18n-placeholder]').forEach(el => {
         const key = el.getAttribute('data-i18n-placeholder');
         // setAttribute, not `.placeholder`: the note areas are contenteditable
