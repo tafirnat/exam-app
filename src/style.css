@@ -635,6 +635,22 @@ textarea {
     transition: border-color 0.2s;
 }
 
+.file-drop-zone {
+    transition: all 0.2s ease;
+    border-radius: var(--radius-md);
+}
+
+.file-drop-zone.drag-over {
+    background-color: rgba(var(--primary-rgb), 0.08);
+    outline: 2px dashed var(--primary-color);
+    outline-offset: 4px;
+}
+
+.file-drop-zone.drag-over input[type="file"] {
+    border-color: var(--primary-color);
+    background-color: var(--surface-color);
+}
+
 select {
     width: 100%;
     padding: 0.5rem 2.5rem 0.5rem 1rem;

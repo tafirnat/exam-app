@@ -150,10 +150,12 @@ export function processJSON(rawData, name, options = {}) {
     const data = sanitizeImportedData(rawData);
     const validation = validateExamSchema(data);
     if (!validation.valid) {
-        const errorList = validation.errors.slice(0, 5).join('\n• ');
-        const extra = validation.errors.length - 5;
-        const suffix = extra > 0 ? `\n${t('schema_error_more', { count: extra })}` : '';
-        showAlert(`${t('schema_error_intro')}\n• ${errorList}${suffix}`, t('invalid_format'));
+        if (!options.silent) {
+            const errorList = validation.errors.slice(0, 5).join('\n• ');
+            const extra = validation.errors.length - 5;
+            const suffix = extra > 0 ? `\n${t('schema_error_more', { count: extra })}` : '';
+            showAlert(`${t('schema_error_intro')}\n• ${errorList}${suffix}`, t('invalid_format'));
+        }
         return null;
     }
 
@@ -245,7 +247,9 @@ export function processJSON(rawData, name, options = {}) {
 
     AppState.sources.push(source);
 
-    saveSources();
+    if (!options.skipSave) {
+        saveSources();
+    }
 
     if (!options.silent) {
         // The file parsed, but some questions may still be unanswerable. Let the
@@ -311,20 +315,110 @@ export async function loadFromUrl(url, options = {}) {
     }
 }
 
-export function loadFromFile(file) {
+export function loadFromFile(file, options = {}) {
     return new Promise((resolve, reject) => {
         const reader = new FileReader();
         reader.onload = (e) => {
             try {
-                const source = processJSON(JSON.parse(e.target.result), file.name);
+                const source = processJSON(JSON.parse(e.target.result), file.name, options);
                 resolve(source);
             } catch (err) {
-                showAlert(t('json_error_invalid_json'), t('invalid_format'));
+                if (!options.silent) {
+                    showAlert(t('json_error_invalid_json'), t('invalid_format'));
+                }
                 reject(err);
             }
         };
+        reader.onerror = (err) => {
+            if (!options.silent) {
+                showAlert(t('json_error_invalid_json'), t('invalid_format'));
+            }
+            reject(err);
+        };
         reader.readAsText(file);
     });
+}
+
+export async function loadFromFiles(files, options = {}) {
+    if (!files || files.length === 0) return { sources: [], failed: [] };
+
+    const fileList = Array.from(files);
+
+    if (fileList.length === 1) {
+        try {
+            const source = await loadFromFile(fileList[0], options);
+            return {
+                sources: source ? [source] : [],
+                failed: source ? [] : [{ file: fileList[0].name, reason: t('invalid_format') }]
+            };
+        } catch (err) {
+            return {
+                sources: [],
+                failed: [{ file: fileList[0].name, reason: err.message || t('json_error_invalid_json') }]
+            };
+        }
+    }
+
+    const successfulSources = [];
+    const failed = [];
+
+    const readFileText = (file) => new Promise((resolve, reject) => {
+        const reader = new FileReader();
+        reader.onload = (e) => resolve(e.target.result);
+        reader.onerror = (err) => reject(err);
+        reader.readAsText(file);
+    });
+
+    for (const file of fileList) {
+        try {
+            const text = await readFileText(file);
+            let json;
+            try {
+                json = JSON.parse(text);
+            } catch (parseErr) {
+                failed.push({ file: file.name, reason: t('json_error_invalid_json') });
+                continue;
+            }
+
+            const source = processJSON(json, file.name, { ...options, silent: true, skipSave: true });
+            if (source) {
+                successfulSources.push(source);
+            } else {
+                failed.push({ file: file.name, reason: t('invalid_format') });
+            }
+        } catch (err) {
+            failed.push({ file: file.name, reason: err.message || t('invalid_format') });
+        }
+    }
+
+    if (successfulSources.length > 0) {
+        saveSources();
+    }
+
+    if (!options.silent) {
+        const totalQuestions = successfulSources.reduce((acc, s) => acc + (s.questions?.length || 0), 0);
+
+        if (failed.length === 0 && successfulSources.length > 0) {
+            showAlert(
+                t('batch_import_success', { count: successfulSources.length, questions: totalQuestions }),
+                t('success_title')
+            );
+        } else if (successfulSources.length > 0 && failed.length > 0) {
+            const failList = failed.map(f => `• ${escapeHTML(f.file)}: ${escapeHTML(f.reason)}`).join('<br>');
+            showAlert(
+                `${t('batch_import_partial', { successCount: successfulSources.length, failCount: failed.length })}<br><br><strong>${t('failed_files_title')}:</strong><br>${failList}`,
+                t('info_title')
+            );
+        } else if (successfulSources.length === 0 && failed.length > 0) {
+            const failList = failed.map(f => `• ${escapeHTML(f.file)}: ${escapeHTML(f.reason)}`).join('<br>');
+            showAlert(
+                `${t('import_failed')}:<br><br>${failList}`,
+                t('invalid_format')
+            );
+        }
+    }
+
+    return { sources: successfulSources, failed };
 }
 
 export function mergeSources(selectedIds) {

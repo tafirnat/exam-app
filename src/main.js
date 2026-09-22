@@ -17,7 +17,7 @@ import { registerUIBindings, paintAll, notifyViewChanged, View } from './core/ui
    session: a dynamic import() gets Vite's version-stamped copy of the module,
    which is a different instance with an empty subscriber table. */
 window.appStore = store;
-import { processJSON, loadFromUrl, loadFromFile, normalizeQuestions, mergeSources } from './features/sources/sources-service.js';
+import { processJSON, loadFromUrl, loadFromFile, loadFromFiles, normalizeQuestions, mergeSources } from './features/sources/sources-service.js';
 import { renderSourcesList, showMergeModal, closeAllSourcesModals, showSourceOptionsModal, renderHomeActiveSources } from './features/sources/sources-ui.js';
 import { renderContinuityBlock, renderGlobalCharts, showDailyMotivationToast } from './features/stats/continuity-ui.js';
 import { initArchiveUI } from './features/sources/archive.js';
@@ -1764,15 +1764,49 @@ function setupEventListeners() {
             renderSourcesList();
         }
     };
-    document.getElementById('fileInput').onchange = async (e) => {
-        const source = await loadFromFile(e.target.files[0]);
-        if (source) {
-            e.target.value = '';
+    const handleFileInput = async (files) => {
+        if (!files || files.length === 0) return;
+        const result = await loadFromFiles(files);
+        if (result && result.sources && result.sources.length > 0) {
+            const input = document.getElementById('fileInput');
+            if (input) input.value = '';
             const panel = document.getElementById('addSourcePanel');
-            if (panel.style.display !== 'none') toggleAddSourcePanel();
+            if (panel && panel.style.display !== 'none') toggleAddSourcePanel();
             renderSourcesList();
         }
     };
+
+    const fileInputEl = document.getElementById('fileInput');
+    if (fileInputEl) {
+        fileInputEl.onchange = async (e) => {
+            await handleFileInput(e.target.files);
+        };
+    }
+
+    const dropZone = document.getElementById('fileDropZone');
+    if (dropZone) {
+        dropZone.addEventListener('dragover', (e) => {
+            if (e.dataTransfer && e.dataTransfer.types && Array.from(e.dataTransfer.types).includes('Files')) {
+                e.preventDefault();
+                e.dataTransfer.dropEffect = 'copy';
+                dropZone.classList.add('drag-over');
+            }
+        });
+
+        dropZone.addEventListener('dragleave', (e) => {
+            if (!dropZone.contains(e.relatedTarget)) {
+                dropZone.classList.remove('drag-over');
+            }
+        });
+
+        dropZone.addEventListener('drop', async (e) => {
+            if (e.dataTransfer && e.dataTransfer.files && e.dataTransfer.files.length > 0) {
+                e.preventDefault();
+                dropZone.classList.remove('drag-over');
+                await handleFileInput(e.dataTransfer.files);
+            }
+        });
+    }
 
     document.getElementById('loadClipboardBtn').onclick = async () => {
         try {
