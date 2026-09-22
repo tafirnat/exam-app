@@ -148,3 +148,32 @@ test('loadFromFiles with all invalid files loads zero sources and lists all fail
     assert.equal(result.failed.length, 2);
     assert.equal(AppState.sources.length, 0);
 });
+
+test('loadFromFiles prevents duplicate imports based on exam_metadata.id or data.id', async () => {
+    const file1 = createFakeFile('original.json', {
+        exam_metadata: { id: 'exam_duplicate_test_123', title: 'Original Exam' },
+        questions: [
+            { id: 'q1', type: 'single_choice', content: { text: 'Q1' }, options: [{ text: 'A', isCorrect: true }] }
+        ]
+    });
+
+    const file2 = createFakeFile('duplicate.json', {
+        exam_metadata: { id: 'exam_duplicate_test_123', title: 'Duplicate Exam' },
+        questions: [
+            { id: 'q2', type: 'single_choice', content: { text: 'Q2' }, options: [{ text: 'B', isCorrect: true }] }
+        ]
+    });
+
+    // First load should succeed
+    const result1 = await loadFromFiles([file1], { silent: true });
+    assert.equal(result1.sources.length, 1);
+    assert.equal(result1.failed.length, 0);
+    assert.equal(AppState.sources.length, 1);
+    assert.equal(AppState.sources[0].id, 'exam_duplicate_test_123');
+
+    // Second load with the same ID should fail as duplicate
+    const result2 = await loadFromFiles([file2], { silent: true });
+    assert.equal(result2.sources.length, 0);
+    assert.equal(result2.failed.length, 1);
+    assert.equal(AppState.sources.length, 1); // Still 1
+});

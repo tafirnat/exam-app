@@ -174,6 +174,15 @@ export function processJSON(rawData, name, options = {}) {
 
     // Preserve existing exam_metadata.id or root id if provided, otherwise generate a hybrid ID
     const existingId = data.exam_metadata?.id || data.id || null;
+    
+    // Duplicate prevention: If the source has an ID and it already exists, reject it
+    if (existingId && AppState.sources.some(s => s.id === existingId)) {
+        if (!options.silent) {
+            showAlert(t('duplicate_source_error') || 'Duplicate source', t('warning_title') || 'Warning');
+        }
+        return null; // Signals failure (e.g., to batch import)
+    }
+
     const id = generateHybridExamId(title, existingId);
     /* Importing a set whose id was deleted is bringing it back. Without this the
        tombstone outlived the import and the next sync dropped the set again -

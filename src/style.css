@@ -637,18 +637,51 @@ textarea {
 
 .file-drop-zone {
     transition: all 0.2s ease;
-    border-radius: var(--radius-md);
+    border-radius: var(--radius-lg);
+    border: 2px dashed var(--border-color);
+    background-color: var(--surface-color);
+    cursor: pointer;
+}
+
+.file-drop-zone:hover {
+    border-color: var(--primary-color);
+    background-color: rgba(var(--primary-rgb), 0.04);
 }
 
 .file-drop-zone.drag-over {
     background-color: rgba(var(--primary-rgb), 0.08);
-    outline: 2px dashed var(--primary-color);
-    outline-offset: 4px;
+    border-color: var(--primary-color);
+    transform: scale(1.02);
 }
 
-.file-drop-zone.drag-over input[type="file"] {
-    border-color: var(--primary-color);
-    background-color: var(--surface-color);
+.secondary-import-options {
+    display: flex;
+    flex-direction: row;
+    gap: 1rem;
+    align-items: stretch;
+}
+
+.secondary-import-options .input-group {
+    flex: 1;
+}
+
+@media (max-width: 600px) {
+    .secondary-import-options {
+        flex-direction: column;
+        gap: 0.75rem;
+    }
+    
+    .drop-zone-text-desktop {
+        display: none;
+    }
+    
+    .drop-zone-text-mobile {
+        display: block !important;
+    }
+    
+    .file-drop-zone-content {
+        padding: 1.5rem 1rem !important;
+    }
 }
 
 select {
