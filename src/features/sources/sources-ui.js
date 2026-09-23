@@ -1080,7 +1080,7 @@ export function renderSourcesList() {
         countDiv.style.color = '#ffffff';
         countDiv.style.opacity = '0.08';
         countDiv.style.position = 'absolute';
-        countDiv.style.right = '50px';
+        countDiv.style.right = '85px';
         countDiv.style.top = '50%';
         countDiv.style.transform = 'translateY(-50%) skewX(-12deg)';
         countDiv.style.userSelect = 'none';
@@ -1118,7 +1118,7 @@ export function renderSourcesList() {
         sortBtn.onclick = (e) => {
             e.stopPropagation();
             const sourcesInFolder = AppState.sources.filter(s => getEffectiveFolderId(s) === folder.id);
-            if (sourcesInFolder.length === 0) return;
+            if (sourcesInFolder.length < 2) return;
             
             const currentState = folderSortStates.get(folder.id) || 'desc';
             const newState = currentState === 'asc' ? 'desc' : 'asc';
@@ -1142,7 +1142,12 @@ export function renderSourcesList() {
         actionsDiv.style.alignItems = 'center';
         actionsDiv.style.gap = '0.25rem';
         actionsDiv.appendChild(countDiv);
-        actionsDiv.appendChild(sortBtn);
+        if (folderSourcesCount >= 2) {
+            actionsDiv.appendChild(sortBtn);
+        } else {
+            // Adjust countDiv right position if sortBtn is not shown
+            countDiv.style.right = '50px';
+        }
         actionsDiv.appendChild(editBtn);
         
         header.appendChild(titleDiv);
