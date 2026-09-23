@@ -975,6 +975,8 @@ function moveSourceToFolder(draggedId, folderId) {
     renderSourcesList();
 }
 
+const folderSortStates = new Map();
+
 export function renderSourcesList() {
     const container = document.getElementById('sourcesList');
     if (!container) return;
@@ -1108,10 +1110,39 @@ export function renderSourcesList() {
             };
         }
         
+        const sortBtn = document.createElement('button');
+        sortBtn.className = 'icon-btn';
+        sortBtn.title = 'A-Z / Z-A';
+        sortBtn.innerHTML = `<svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="opacity: ${folderHasActive ? '0.7' : '0.4'};"><path d="M3 6h18M3 12h12M3 18h6"/></svg>`;
+        
+        sortBtn.onclick = (e) => {
+            e.stopPropagation();
+            const sourcesInFolder = AppState.sources.filter(s => getEffectiveFolderId(s) === folder.id);
+            if (sourcesInFolder.length === 0) return;
+            
+            const currentState = folderSortStates.get(folder.id) || 'desc';
+            const newState = currentState === 'asc' ? 'desc' : 'asc';
+            folderSortStates.set(folder.id, newState);
+            
+            sourcesInFolder.sort((a, b) => {
+                const cmp = (a.name || '').localeCompare(b.name || '');
+                return newState === 'asc' ? cmp : -cmp;
+            });
+            
+            sourcesInFolder.forEach((s, idx) => {
+                s.order = idx;
+            });
+            
+            saveSources();
+            renderSourcesList();
+        };
+
         const actionsDiv = document.createElement('div');
         actionsDiv.style.display = 'flex';
         actionsDiv.style.alignItems = 'center';
+        actionsDiv.style.gap = '0.25rem';
         actionsDiv.appendChild(countDiv);
+        actionsDiv.appendChild(sortBtn);
         actionsDiv.appendChild(editBtn);
         
         header.appendChild(titleDiv);
