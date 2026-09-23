@@ -9,7 +9,11 @@ import { t } from '../../core/i18n.js';
 const MAX_FOCUS_POOLS = 3;
 const MAX_POOL_QUESTIONS = 15;
 
-export function showFocusPoolModal(target) {
+export function showFocusPoolModal(targetOrArray) {
+    if (!targetOrArray) return;
+    const targets = Array.isArray(targetOrArray) ? targetOrArray : [targetOrArray];
+    if (targets.length === 0) return;
+
     const overlay = document.getElementById('focusPoolOverlay');
     const desc = document.getElementById('focusPoolDesc');
     const countEl = document.getElementById('focusPoolCount');
@@ -19,14 +23,19 @@ export function showFocusPoolModal(target) {
     if (!overlay || !AppState.continuityConfig) return;
     
     let pools = getFocusPools();
-    let existingPool = pools.find(p => p.targetId === target.id && p.targetType === target.type);
+    // Default to the count of the first existing pool in the selection
+    let existingPool = pools.find(p => targets.some(t => p.targetId === t.id && p.targetType === t.type));
     let count = existingPool ? existingPool.count : 3; // Default 3
     
-    desc.textContent = target.name;
+    // Check if ALL selected targets are in the pool
+    const allIncluded = targets.every(t => pools.some(p => p.targetId === t.id && p.targetType === t.type));
+
+    const displayName = targets.length === 1 ? targets[0].name : t('bulk_selected', { count: targets.length }) || `${targets.length} sources`;
+    desc.textContent = displayName;
     countEl.textContent = count;
     warning.style.display = 'none';
     
-    if (existingPool) {
+    if (allIncluded) {
         removeBtn.style.display = 'block';
     } else {
         removeBtn.style.display = 'none';
@@ -35,15 +44,16 @@ export function showFocusPoolModal(target) {
     overlay.classList.add('active');
     
     const updateWarning = () => {
-        let totalOthers = pools.filter(p => p.targetId !== target.id).reduce((sum, p) => sum + p.count, 0);
-        let poolsCount = pools.filter(p => p.targetId !== target.id).length + 1;
+        const targetIds = targets.map(t => t.id);
+        let totalOthers = pools.filter(p => !targetIds.includes(p.targetId)).reduce((sum, p) => sum + p.count, 0);
+        let poolsCount = pools.filter(p => !targetIds.includes(p.targetId)).length + targets.length;
         
         if (poolsCount > MAX_FOCUS_POOLS) {
             warning.textContent = t('focus_pool_max_pools', { max: MAX_FOCUS_POOLS });
             warning.style.display = 'block';
             return false;
         }
-        if (totalOthers + count > MAX_POOL_QUESTIONS) {
+        if (totalOthers + (count * targets.length) > MAX_POOL_QUESTIONS) {
             warning.textContent = t('focus_pool_max_total', { max: MAX_POOL_QUESTIONS });
             warning.style.display = 'block';
             return false;
@@ -75,7 +85,8 @@ export function showFocusPoolModal(target) {
     document.getElementById('focusPoolCancelBtn').onclick = closeActions;
     
     removeBtn.onclick = () => {
-        AppState.continuityConfig.focusPools = pools.filter(p => p.targetId !== target.id);
+        const targetIds = targets.map(t => t.id);
+        AppState.continuityConfig.focusPools = pools.filter(p => !targetIds.includes(p.targetId));
         saveContinuityConfig();
         showToast(t('focus_pool_removed'));
         closeActions();
@@ -84,13 +95,15 @@ export function showFocusPoolModal(target) {
     document.getElementById('focusPoolSaveBtn').onclick = () => {
         if (!updateWarning()) return;
         
-        const newPool = { targetId: target.id, targetType: target.type, count: count };
+        targets.forEach(target => {
+            const existing = AppState.continuityConfig.focusPools.find(p => p.targetId === target.id && p.targetType === target.type);
+            if (existing) {
+                existing.count = count;
+            } else {
+                AppState.continuityConfig.focusPools.push({ targetId: target.id, targetType: target.type, count: count });
+            }
+        });
         
-        if (existingPool) {
-            existingPool.count = count;
-        } else {
-            AppState.continuityConfig.focusPools.push(newPool);
-        }
         saveContinuityConfig();
         showToast(t('focus_pool_saved'));
         closeActions();

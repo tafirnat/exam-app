@@ -985,7 +985,11 @@ export function inspectSourceQuestions(sourceId) {
     if (sourceId === 'all') {
         const activeSources = liveSources().filter(s => s.active);
         if (activeSources.length === 0) return;
-        query = '$' + activeSources.map(s => s.name).join(' & ');
+        query = '$' + activeSources.map(s => s.name).join(' | $');
+    } else if (Array.isArray(sourceId)) {
+        const sources = liveSources().filter(s => sourceId.includes(s.id));
+        if (sources.length === 0) return;
+        query = '$' + sources.map(s => s.name).join(' | $');
     } else {
         const source = liveSources().find(s => s.id === sourceId);
         if (!source) return;

@@ -316,10 +316,33 @@ export async function loadFromUrl(url, options = {}) {
         const res = await fetch(fullUrl);
         if (!res.ok) throw new Error('Network response was not ok');
         const data = await res.json();
-        return processJSON(data, fullUrl.hostname || 'local', options);
+        
+        if (Array.isArray(data)) {
+            const results = data.map((d, i) => processJSON(d, `${fullUrl.hostname || 'local'} - ${i+1}`, options)).filter(Boolean);
+            if (results.length > 0) saveSources();
+            return results.length > 0 ? results[0] : null; // return first for compatibility
+        } else {
+            return processJSON(data, fullUrl.hostname || 'local', options);
+        }
     } catch (e) {
         showAlert(t('import_failed') + ': ' + e.message, t('invalid_format'));
         console.error(e);
+        return null;
+    }
+}
+
+export function loadFromText(text, options = {}) {
+    try {
+        const data = JSON.parse(text);
+        if (Array.isArray(data)) {
+            const results = data.map((d, i) => processJSON(d, `Pasted Source ${i+1}`, options)).filter(Boolean);
+            if (results.length > 0) saveSources();
+            return results.length > 0 ? results[0] : null;
+        } else {
+            return processJSON(data, 'Pasted Source', options);
+        }
+    } catch (e) {
+        if (!options.silent) showAlert(t('import_failed') + ': ' + e.message, t('invalid_format'));
         return null;
     }
 }
@@ -329,8 +352,14 @@ export function loadFromFile(file, options = {}) {
         const reader = new FileReader();
         reader.onload = (e) => {
             try {
-                const source = processJSON(JSON.parse(e.target.result), file.name, options);
-                resolve(source);
+                const data = JSON.parse(e.target.result);
+                if (Array.isArray(data)) {
+                    const results = data.map((d, i) => processJSON(d, `${file.name} - ${i+1}`, options)).filter(Boolean);
+                    resolve(results.length > 0 ? results[0] : null);
+                } else {
+                    const source = processJSON(data, file.name, options);
+                    resolve(source);
+                }
             } catch (err) {
                 if (!options.silent) {
                     showAlert(t('json_error_invalid_json'), t('invalid_format'));
@@ -381,19 +410,27 @@ export async function loadFromFiles(files, options = {}) {
     for (const file of fileList) {
         try {
             const text = await readFileText(file);
-            let json;
+            let data;
             try {
-                json = JSON.parse(text);
+                data = JSON.parse(text);
             } catch (parseErr) {
                 failed.push({ file: file.name, reason: t('json_error_invalid_json') });
                 continue;
             }
 
-            const source = processJSON(json, file.name, { ...options, silent: true, skipSave: true });
-            if (source) {
-                successfulSources.push(source);
+            if (Array.isArray(data)) {
+                data.forEach((d, i) => {
+                    const source = processJSON(d, `${file.name} - ${i+1}`, { ...options, silent: true, skipSave: true });
+                    if (source) successfulSources.push(source);
+                    else failed.push({ file: `${file.name} (item ${i+1})`, reason: t('invalid_format') });
+                });
             } else {
-                failed.push({ file: file.name, reason: t('invalid_format') });
+                const source = processJSON(data, file.name, { ...options, silent: true, skipSave: true });
+                if (source) {
+                    successfulSources.push(source);
+                } else {
+                    failed.push({ file: file.name, reason: t('invalid_format') });
+                }
             }
         } catch (err) {
             failed.push({ file: file.name, reason: err.message || t('invalid_format') });

@@ -463,8 +463,13 @@ function presetQuestionCount(preset) {
  * - a row carried only a name. It now shows what the manage list shows (bar,
  *   question count) and has the same pencil into the full group editor.
  */
-export function showSourceQuickPresetsModal(source) {
-    if (!source) return;
+export function showSourceQuickPresetsModal(sourceOrArray) {
+    if (!sourceOrArray) return;
+    const sources = Array.isArray(sourceOrArray) ? sourceOrArray : [sourceOrArray];
+    if (sources.length === 0) return;
+    
+    const displayName = sources.length === 1 ? sources[0].name : t('bulk_selected', { count: sources.length }) || `${sources.length} sources`;
+
     const overlay = document.getElementById('sourceQuickPresetsOverlay');
     const subTitle = document.getElementById('sourceQuickPresetsSub');
     const listContainer = document.getElementById('sourceQuickPresetsList');
@@ -474,7 +479,7 @@ export function showSourceQuickPresetsModal(source) {
     if (!overlay || !listContainer) return;
 
     if (subTitle) {
-        subTitle.textContent = source.name || t('untitled_source');
+        subTitle.textContent = displayName || t('untitled_source');
     }
 
     const closeSelf = () => {
@@ -491,9 +496,11 @@ export function showSourceQuickPresetsModal(source) {
     };
 
     const toggleMembership = async (preset) => {
-        const ids = preset.sourceIds || [];
-        if (ids.includes(source.id)) {
-            if (ids.length === 1) {
+        let ids = preset.sourceIds || [];
+        const isIncluded = sources.every(s => ids.includes(s.id));
+        
+        if (isIncluded) {
+            if (ids.length === sources.length && sources.length > 0) {
                 const confirmed = await showConfirm(
                     t('qs_remove_last_confirm', { name: preset.name }),
                     t('qs_delete_title')
@@ -503,11 +510,12 @@ export function showSourceQuickPresetsModal(source) {
                 afterChange();
                 return;
             }
-            preset.sourceIds = ids.filter(id => id !== source.id);
+            // Remove all selected sources
+            preset.sourceIds = ids.filter(id => !sources.some(s => s.id === id));
         } else {
-            /* The editor refuses a second group with the same set of sources;
-               joining one here must not be the way around that. */
-            const next = [...ids, source.id];
+            // Add all selected sources, avoiding duplicates
+            const newIds = sources.map(s => s.id).filter(id => !ids.includes(id));
+            const next = [...ids, ...newIds];
             if ((AppState.quickPresets || []).some(p => p.id !== preset.id && sameSourceSet(p.sourceIds, next))) {
                 showToast(t('qs_duplicate_warning'));
                 return;
@@ -536,7 +544,7 @@ export function showSourceQuickPresetsModal(source) {
         }
 
         presets.forEach(preset => {
-            const isIncluded = (preset.sourceIds || []).includes(source.id);
+            const isIncluded = sources.every(s => (preset.sourceIds || []).includes(s.id));
 
             const row = document.createElement('div');
             row.className = `sqp-preset-row ${isIncluded ? 'active' : ''}`;
@@ -602,8 +610,8 @@ export function showSourceQuickPresetsModal(source) {
         newBtn.onclick = () => {
             const draft = {
                 id: 'qp_' + Date.now() + '_' + Math.random().toString(36).substr(2, 4),
-                name: uniquePresetName(source.name),
-                sourceIds: [source.id],
+                name: uniquePresetName(sources[0].name),
+                sourceIds: sources.map(s => s.id),
                 color: null,
                 order: (AppState.quickPresets || []).length,
                 createdAt: Date.now(),

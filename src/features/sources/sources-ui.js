@@ -463,15 +463,18 @@ export function showSourceActions(source) {
     const inspectQuestionsBtn = document.getElementById('modalInspectQuestionsBtn');
     if (inspectQuestionsBtn) {
         inspectQuestionsBtn.onclick = async () => {
-            if (isBulk) return;
             closeActions();
             const { inspectSourceQuestions } = await import('../stats/stats-module.js');
-            inspectSourceQuestions(source.id);
+            if (isBulk) {
+                inspectSourceQuestions(targetIds);
+                exitSelectionMode();
+            } else {
+                inspectSourceQuestions(source.id);
+            }
         };
     }
 
     const toggleOrderBtn = document.getElementById('modalToggleOrderBtn');
-    if (toggleOrderBtn) toggleOrderBtn.style.display = isBulk ? 'none' : '';
     const toggleOrderLabel = document.getElementById('modalToggleOrderLabel');
     const toggleOrderIconContainer = document.getElementById('modalToggleOrderIconContainer');
 
@@ -492,35 +495,61 @@ export function showSourceActions(source) {
 
     if (toggleOrderBtn) {
         toggleOrderBtn.onclick = () => {
-            source.keepOrder = !source.keepOrder;
-            if (!source.metadata) source.metadata = {};
-            source.metadata.keepOrder = source.keepOrder;
-            touch(source);
+            const newValue = !source.keepOrder;
+            if (isBulk) {
+                targetIds.forEach(id => {
+                    const s = AppState.sources.find(src => src.id === id);
+                    if (s) {
+                        s.keepOrder = newValue;
+                        if (!s.metadata) s.metadata = {};
+                        s.metadata.keepOrder = newValue;
+                        touch(s);
+                    }
+                });
+                source.keepOrder = newValue; // Update pseudoSource state
+            } else {
+                source.keepOrder = newValue;
+                if (!source.metadata) source.metadata = {};
+                source.metadata.keepOrder = newValue;
+                touch(source);
+            }
             saveSources();
             syncOrderBtnUI();
-            const msgKey = source.keepOrder ? 'order_mode_changed_sequential' : 'order_mode_changed_shuffled';
+            const msgKey = newValue ? 'order_mode_changed_sequential' : 'order_mode_changed_shuffled';
             showToast(t(msgKey));
+            if (isBulk) exitSelectionMode();
         };
     }
 
     if (toggleQaBtn) {
-        toggleQaBtn.style.display = isBulk ? 'none' : '';
         toggleQaBtn.onclick = async () => {
-            if (isBulk) return;
             closeActions();
             const { showSourceQuickPresetsModal } = await import('./quick-presets-ui.js');
-            showSourceQuickPresetsModal(source);
+            if (isBulk) {
+                const targetSources = targetIds.map(id => AppState.sources.find(s => s.id === id)).filter(Boolean);
+                showSourceQuickPresetsModal(targetSources);
+                exitSelectionMode();
+            } else {
+                showSourceQuickPresetsModal(source);
+            }
         };
     }
 
     const focusPoolBtn = document.getElementById('modalFocusPoolBtn');
     if (focusPoolBtn) {
-        focusPoolBtn.style.display = isBulk ? 'none' : '';
         focusPoolBtn.onclick = async () => {
-            if (isBulk) return;
             closeActions();
             const { showFocusPoolModal } = await import('./focus-pools-ui.js');
-            showFocusPoolModal({ id: source.id, name: source.name, type: 'source' });
+            if (isBulk) {
+                const targets = targetIds.map(id => {
+                    const s = AppState.sources.find(src => src.id === id);
+                    return s ? { id: s.id, name: s.name, type: 'source' } : null;
+                }).filter(Boolean);
+                showFocusPoolModal(targets);
+                exitSelectionMode();
+            } else {
+                showFocusPoolModal({ id: source.id, name: source.name, type: 'source' });
+            }
         };
     }
 
@@ -562,19 +591,44 @@ export function showSourceActions(source) {
 
     resetBtn.onclick = async () => {
         closeActions();
-        // The resetSourceStats function exists in scope
-        await resetSourceStats(source.id);
+        if (isBulk) {
+            const confMsg = t('bulk_reset_stats_confirm') || `Seçili ${targetIds.length} kaynağın istatistiklerini sıfırlamak istediğinize emin misiniz?`;
+            if (!await showConfirm(confMsg)) return;
+            for (const id of targetIds) {
+                await resetSourceStats(id, true); // true could mean silent
+            }
+            saveStats();
+            renderSourcesList();
+            showToast(t('bulk_reset_stats_success') || 'İstatistikler sıfırlandı.');
+            exitSelectionMode();
+        } else {
+            await resetSourceStats(source.id);
+        }
     };
 
-    downloadBtn.onclick = () => {
+    downloadBtn.onclick = async () => {
         closeActions();
-        // The downloadSourceJSON exists
-        downloadSourceJSON(source);
+        if (isBulk) {
+            for (const id of targetIds) {
+                const s = AppState.sources.find(src => src.id === id);
+                if (s) downloadSourceJSON(s);
+                await new Promise(resolve => setTimeout(resolve, 300)); // Small delay to avoid browser blocking
+            }
+            exitSelectionMode();
+        } else {
+            downloadSourceJSON(source);
+        }
     };
 
     shareBtn.onclick = () => {
         closeActions();
-        shareSourceJSON(source);
+        if (isBulk) {
+            const sourcesToShare = targetIds.map(id => AppState.sources.find(src => src.id === id)).filter(Boolean);
+            shareSourceJSON(sourcesToShare);
+            exitSelectionMode();
+        } else {
+            shareSourceJSON(source);
+        }
     };
 
     closeBtn.onclick = closeActions;
@@ -1122,16 +1176,34 @@ export function renderSourcesList() {
         const folderTitle = (folder.id === UNCATEGORIZED_FOLDER_ID || folder.isSystem) ? t('uncategorized_folder') : folder.name;
         const folderDesc = (folder.id === UNCATEGORIZED_FOLDER_ID || folder.isSystem) ? t('uncategorized_folder_desc') : folder.description;
 
+        const isSelectionMode = selectionModeFolderId === folder.id;
+        let folderIconSvg = '';
+        if (isSelectionMode) {
+            folderIconSvg = `<svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="var(--primary-color, #3b82f6)" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" style="margin-left: 0.2rem; cursor: pointer; color: var(--primary-color, #3b82f6);" class="folder-select-trigger"><polyline points="20 6 9 17 4 12"></polyline></svg>`;
+        } else {
+            folderIconSvg = `<svg viewBox="0 0 24 24" width="18" height="18" fill="${folder.color || DEFAULT_FOLDER_COLOR}" fill-opacity="${folderHasActive ? '0.4' : '0'}" stroke="${folder.color || DEFAULT_FOLDER_COLOR}" stroke-width="2" style="margin-left: 0.2rem; cursor: pointer;" class="folder-select-trigger"><path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"></path></svg>`;
+        }
+
         titleDiv.innerHTML = `
             ${toggleIcon}
-            <svg viewBox="0 0 24 24" width="18" height="18" fill="${folder.color || DEFAULT_FOLDER_COLOR}" fill-opacity="${folderHasActive ? '0.4' : '0'}" stroke="${folder.color || DEFAULT_FOLDER_COLOR}" stroke-width="2" style="margin-left: 0.2rem;">
-                <path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"></path>
-            </svg>
+            ${folderIconSvg}
             <div style="display: flex; flex-direction: column; min-width: 0;">
                 <span class="truncate" style="font-weight: 600; font-size: 0.95rem;">${escapeHTML(folderTitle)}</span>
                 ${folderDesc ? `<span class="truncate" style="font-size: 0.7rem; color: var(--text-secondary);">${escapeHTML(folderDesc)}</span>` : ''}
             </div>
         `;
+        
+        const folderTrigger = titleDiv.querySelector('.folder-select-trigger');
+        if (folderTrigger) {
+            folderTrigger.onclick = (e) => {
+                e.stopPropagation();
+                if (isSelectionMode) {
+                    exitSelectionMode();
+                } else {
+                    enterSelectionMode(folder.id);
+                }
+            };
+        }
         // Same grip element/markup as a source item, always the first child.
         titleDiv.prepend(createDragHandle(header));
 
@@ -1153,23 +1225,36 @@ export function renderSourcesList() {
         const isSystemFolder = folder.isSystem || folder.id === UNCATEGORIZED_FOLDER_ID;
         const editBtn = document.createElement('button');
         editBtn.className = 'icon-btn';
-        editBtn.innerHTML = `<svg viewBox="0 0 24 24" width="18" height="18" class="folder-grid-svg"><rect x="4" y="4" width="7" height="7" rx="1.5" fill="${folder.color || DEFAULT_FOLDER_COLOR}" opacity="${folderHasActive ? '1' : '0.2'}"></rect><rect x="13" y="4" width="7" height="7" rx="1.5" fill="${folder.color || DEFAULT_FOLDER_COLOR}" opacity="0.7"></rect><rect x="4" y="13" width="7" height="7" rx="1.5" fill="${folder.color || DEFAULT_FOLDER_COLOR}" opacity="0.4"></rect><rect x="13" y="13" width="7" height="7" rx="1.5" fill="${folder.color || DEFAULT_FOLDER_COLOR}" opacity="0.2"></rect></svg>`;
-
-        if (isSystemFolder) {
+        
+        if (isSelectionMode) {
+            editBtn.innerHTML = `<svg viewBox="0 0 24 24" width="20" height="20" class="source-actions-icon"><rect x="4" y="4" width="7" height="7" rx="1.5" class="sq sq-tl" fill="var(--primary-color)"></rect><circle cx="16.5" cy="7.5" r="3.5" stroke="var(--primary-color)" stroke-width="2" fill="var(--primary-color)" fill-opacity="0.2"></circle><rect x="4" y="13" width="7" height="7" rx="1.5" class="sq sq-bl" fill="var(--primary-color)"></rect><rect x="13" y="13" width="7" height="7" rx="1.5" class="sq sq-br" fill="var(--primary-color)"></rect></svg>`;
             editBtn.onclick = (e) => {
                 e.stopPropagation();
-                const svg = editBtn.querySelector('svg');
-                if (svg) {
-                    svg.classList.remove('folder-grid-icon-pulse');
-                    void svg.offsetWidth; // Reflow
-                    svg.classList.add('folder-grid-icon-pulse');
+                if (selectedSourceIds.size === 0) {
+                    showToast(t('bulk_none_selected') || 'No sources selected');
+                    return;
                 }
+                const pseudoSource = { id: 'bulk', name: t('bulk_selected', { count: selectedSourceIds.size }) };
+                showSourceActions(pseudoSource);
             };
         } else {
-            editBtn.onclick = (e) => {
-                e.stopPropagation();
-                showFolderManageModal(folder);
-            };
+            editBtn.innerHTML = `<svg viewBox="0 0 24 24" width="18" height="18" class="folder-grid-svg"><rect x="4" y="4" width="7" height="7" rx="1.5" fill="${folder.color || DEFAULT_FOLDER_COLOR}" opacity="${folderHasActive ? '1' : '0.2'}"></rect><rect x="13" y="4" width="7" height="7" rx="1.5" fill="${folder.color || DEFAULT_FOLDER_COLOR}" opacity="0.7"></rect><rect x="4" y="13" width="7" height="7" rx="1.5" fill="${folder.color || DEFAULT_FOLDER_COLOR}" opacity="0.4"></rect><rect x="13" y="13" width="7" height="7" rx="1.5" fill="${folder.color || DEFAULT_FOLDER_COLOR}" opacity="0.2"></rect></svg>`;
+            if (isSystemFolder) {
+                editBtn.onclick = (e) => {
+                    e.stopPropagation();
+                    const svg = editBtn.querySelector('svg');
+                    if (svg) {
+                        svg.classList.remove('folder-grid-icon-pulse');
+                        void svg.offsetWidth; // Reflow
+                        svg.classList.add('folder-grid-icon-pulse');
+                    }
+                };
+            } else {
+                editBtn.onclick = (e) => {
+                    e.stopPropagation();
+                    showFolderManageModal(folder);
+                };
+            }
         }
         
         const sortBtn = document.createElement('button');
@@ -1199,26 +1284,6 @@ export function renderSourcesList() {
             renderSourcesList();
         };
 
-        const isSelectionMode = selectionModeFolderId === folder.id;
-        const multiSelectBtn = document.createElement('button');
-        multiSelectBtn.className = 'icon-btn';
-        multiSelectBtn.title = isSelectionMode ? (t('cancel') || 'İptal') : (t('select_multiple') || 'Çoklu Seçim');
-        
-        if (isSelectionMode) {
-            multiSelectBtn.innerHTML = `<svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="var(--danger-color, #ef4444)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>`;
-        } else {
-            multiSelectBtn.innerHTML = `<svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="opacity: ${folderHasActive ? '0.7' : '0.4'};"><polyline points="9 11 12 14 22 4"></polyline><path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"></path></svg>`;
-        }
-
-        multiSelectBtn.onclick = (e) => {
-            e.stopPropagation();
-            if (isSelectionMode) {
-                exitSelectionMode();
-            } else {
-                enterSelectionMode(folder.id);
-            }
-        };
-
         const actionsDiv = document.createElement('div');
         actionsDiv.style.display = 'flex';
         actionsDiv.style.alignItems = 'center';
@@ -1226,10 +1291,8 @@ export function renderSourcesList() {
         actionsDiv.appendChild(countDiv);
         
         if (folderSourcesCount >= 2) {
-            actionsDiv.appendChild(multiSelectBtn);
             actionsDiv.appendChild(sortBtn);
         } else {
-            // Adjust countDiv right position if extra buttons are not shown
             countDiv.style.right = '50px';
         }
         
@@ -1416,10 +1479,16 @@ function createSourceItemDOM(s, folderId) {
             <rect x="13" y="13" width="7" height="7" rx="1.5" class="sq sq-br"></rect>
         </svg>
     `;
-    actionsBtn.onclick = (e) => {
-        e.stopPropagation();
-        showSourceActions(s);
-    };
+    
+    if (isSelectionMode) {
+        actionsBtn.style.opacity = '0.3';
+        actionsBtn.style.cursor = 'not-allowed';
+    } else {
+        actionsBtn.onclick = (e) => {
+            e.stopPropagation();
+            showSourceActions(s);
+        };
+    }
 
     const actions = document.createElement('div');
     actions.style.display = 'flex';

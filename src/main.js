@@ -1764,6 +1764,18 @@ function setupEventListeners() {
             if (!url) return;
             
             urlImportTimeout = setTimeout(async () => {
+                if (url.startsWith('[') || url.startsWith('{')) {
+                    // Try to parse as JSON text directly
+                    const { loadFromText } = await import('./features/sources/sources-service.js');
+                    const source = await loadFromText(url);
+                    if (source) {
+                        urlInputEl.value = '';
+                        toggleAddSourcePanel();
+                        renderSourcesList();
+                    }
+                    return;
+                }
+                
                 // Ensure it's somewhat like a URL before attempting
                 if (!/^https?:\/\//i.test(url)) {
                     showAlert(t('import_failed') + ': Invalid URL format', t('warning_title') || 'Warning');
