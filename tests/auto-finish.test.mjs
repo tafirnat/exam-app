@@ -39,31 +39,31 @@ beforeEach(() => {
     cancelAutoFinish();
 });
 
-test('a test with an unanswered question is not complete', () => {
+test('a test with an unanswered question is not complete', async () => {
     AppState.isAnswerChecked = [true, true];
     assert.equal(testIsComplete(), false);
 });
 
-test('a test is complete only when every question has been answered', () => {
+test('a test is complete only when every question has been answered', async () => {
     AppState.isAnswerChecked = [true, true, true];
     assert.equal(testIsComplete(), true);
 });
 
 /* A skipped question in the middle is not "the end" - the user left it on
    purpose and can still come back to it, so the finish button stays theirs. */
-test('a gap in the middle keeps the test running', () => {
+test('a gap in the middle keeps the test running', async () => {
     AppState.isAnswerChecked = [true, undefined, true];
     assert.equal(testIsComplete(), false);
 });
 
-test('an empty or missing test is never complete', () => {
+test('an empty or missing test is never complete', async () => {
     AppState.currentTest = [];
     assert.equal(testIsComplete(), false);
     AppState.currentTest = null;
     assert.equal(testIsComplete(), false);
 });
 
-test('the finish is only scheduled once the test is complete', () => {
+test('the finish is only scheduled once the test is complete', async () => {
     AppState.isAnswerChecked = [true, true];
     assert.equal(scheduleAutoFinishIfComplete(), false);
     AppState.isAnswerChecked = [true, true, true];
@@ -74,14 +74,14 @@ test('the finish is only scheduled once the test is complete', () => {
 /* The delay is not decoration: Schwer/Einfach only exists on the question,
    after checking it, and it feeds FSRS. Finishing at zero would quietly take
    the last question's rating away. */
-test('the finish is deferred, not immediate', () => {
+test('the finish is deferred, not immediate', async () => {
     assert.ok(AUTO_FINISH_DELAY_MS >= 1000,
         'the user has to be able to see the last answer and rate it');
 });
 
 /* --- the wiring ----------------------------------------------------------- */
 
-test('an answer asks whether the test is over, and a reveal does not', () => {
+test('an answer asks whether the test is over, and a reveal does not', async () => {
     const src = readFileSync(new URL('../src/features/test/test-ui.js', import.meta.url), 'utf8');
 
     const check = src.slice(src.indexOf('export const handleCheckAnswer'));
@@ -103,7 +103,7 @@ test('an answer asks whether the test is over, and a reveal does not', () => {
         'revealing a flashcard is not answering it');
 });
 
-test('everything that means "not done yet" cancels the pending finish', () => {
+test('everything that means "not done yet" cancels the pending finish', async () => {
     const ui = readFileSync(new URL('../src/features/test/test-ui.js', import.meta.url), 'utf8');
     const main = readFileSync(new URL('../src/main.js', import.meta.url), 'utf8');
 
@@ -129,7 +129,7 @@ test('everything that means "not done yet" cancels the pending finish', () => {
 /* nextQuestion() has always finished the test on the last question. The button
    was disabled there, so the branch was unreachable: answering the last
    question left a screen with no way forward at all. */
-test('the last question is not a dead end', () => {
+test('the last question is not a dead end', async () => {
     const src = readFileSync(new URL('../src/features/test/test-ui.js', import.meta.url), 'utf8');
     const nav = src.slice(src.indexOf('// Navigation updates'));
     const block = nav.slice(0, nav.indexOf('const checkBtn'));
@@ -146,7 +146,7 @@ test('the last question is not a dead end', () => {
 
 /* One sequence, two callers: the button and the auto-finish. A second copy is
    how a way of ending a test ends up skipping the write that files it. */
-test('the finish sequence has one body', () => {
+test('the finish sequence has one body', async () => {
     const src = readFileSync(new URL('../src/features/test/test-ui.js', import.meta.url), 'utf8');
     assert.ok(src.includes('export async function finishTestFlow()'));
     assert.ok(src.includes("document.getElementById('finishTestBtn').onclick = () => finishTestFlow();"),

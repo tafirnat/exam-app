@@ -23,7 +23,7 @@ before(async () => {
     const stateMod = await import('../src/core/state.js');
     AppState = stateMod.AppState;
     initState = stateMod.initState;
-    initState();
+    await initState();
 
     const engine = await import('../src/features/test/test-engine.js');
     ({ buildQuestionPool, updateStats, prepareFromCompositeIds, prepareRetake, RETRY_MAX_RATING } = engine);
@@ -57,15 +57,15 @@ beforeEach(() => {
 
 // ── detection ───────────────────────────────────────────────────────────────
 
-test('a question under the miss threshold is not stuck', () => {
+test('a question under the miss threshold is not stuck', async () => {
     assert.equal(isLeech({ wrong: LEECH_WRONG_THRESHOLD - 1, streak: -3 }), false);
 });
 
-test('a question at the threshold that is still going wrong is stuck', () => {
+test('a question at the threshold that is still going wrong is stuck', async () => {
     assert.equal(isLeech({ wrong: LEECH_WRONG_THRESHOLD, streak: -1 }), true);
 });
 
-test('a question that has recovered is not stuck any more', () => {
+test('a question that has recovered is not stuck any more', async () => {
     // `wrong` only ever goes up, so the miss count alone can never clear
     // itself: a question the user has since fixed would stay flagged forever.
     // The current streak is what says the trouble is still live.
@@ -73,13 +73,13 @@ test('a question that has recovered is not stuck any more', () => {
     assert.equal(isLeech({ wrong: 40, streak: LEECH_RECOVERY_STREAK - 1 }), true);
 });
 
-test('an already-suspended question is not reported as stuck', () => {
+test('an already-suspended question is not reported as stuck', async () => {
     // It has been dealt with; reporting it again would ask the user to decide
     // the same thing twice.
     assert.equal(isLeech({ wrong: 40, streak: -5, suspended: true }), false);
 });
 
-test('countLeeches counts only the stuck ones', () => {
+test('countLeeches counts only the stuck ones', async () => {
     const stats = {
         a: { wrong: 9, streak: -2 },
         b: { wrong: 1, streak: -1 },
@@ -91,14 +91,14 @@ test('countLeeches counts only the stuck ones', () => {
 
 // ── suspension ──────────────────────────────────────────────────────────────
 
-test('suspending stamps, so the change can be merged', () => {
+test('suspending stamps, so the change can be merged', async () => {
     const stat = {};
     setSuspended(stat, true, 1234);
     assert.equal(stat.suspended, true);
     assert.equal(stat.suspendedUpdatedAt, 1234);
 });
 
-test('un-suspending propagates - the direction that matters most', () => {
+test('un-suspending propagates - the direction that matters most', async () => {
     // Without a stamp the other device writes `suspended: true` straight back
     // and the question never returns to rotation.
     const local = emptyPayload({ stats: { 's1_q1': { suspended: false, suspendedUpdatedAt: 2000 } } });
@@ -106,13 +106,13 @@ test('un-suspending propagates - the direction that matters most', () => {
     assert.equal(mergeSyncData(local, remote).stats['s1_q1'].suspended, false);
 });
 
-test('suspending propagates the other way too', () => {
+test('suspending propagates the other way too', async () => {
     const local = emptyPayload({ stats: { 's1_q1': { suspended: false } } });
     const remote = emptyPayload({ stats: { 's1_q1': { suspended: true, suspendedUpdatedAt: 1000 } } });
     assert.equal(mergeSyncData(local, remote).stats['s1_q1'].suspended, true);
 });
 
-test('toggleSuspended flips and re-stamps', () => {
+test('toggleSuspended flips and re-stamps', async () => {
     const stat = {};
     toggleSuspended(stat, 10);
     assert.equal(isSuspended(stat), true);
@@ -123,14 +123,14 @@ test('toggleSuspended flips and re-stamps', () => {
 
 // ── the pool ────────────────────────────────────────────────────────────────
 
-test('a suspended question is not drawn for a test', () => {
+test('a suspended question is not drawn for a test', async () => {
     AppState.sources = [sourceWith('s1', 3)];
     setSuspended(AppState.stats['s1_q2'] = {}, true);
     const pool = buildQuestionPool();
     assert.deepEqual(pool.map(q => q.id), ['q1', 'q3']);
 });
 
-test('a suspended question stays in the map, so the stats screen keeps it', () => {
+test('a suspended question stays in the map, so the stats screen keeps it', async () => {
     // Suspension takes a question out of rotation and out of nothing else -
     // every figure it has is untouched and the user can still open it.
     AppState.sources = [sourceWith('s1', 3)];
@@ -141,7 +141,7 @@ test('a suspended question stays in the map, so the stats screen keeps it', () =
     assert.equal(AppState.stats['s1_q2'].wrong, 11);
 });
 
-test('un-suspending brings the question straight back', () => {
+test('un-suspending brings the question straight back', async () => {
     AppState.sources = [sourceWith('s1', 2)];
     const stat = AppState.stats['s1_q1'] = {};
     setSuspended(stat, true);
@@ -152,7 +152,7 @@ test('un-suspending brings the question straight back', () => {
 
 // ── retaking: a missed question recovered ───────────────────────────────────
 
-test('a right answer to a question missed in the retaken session is rated a recovery, not a success', () => {
+test('a right answer to a question missed in the retaken session is rated a recovery, not a success', async () => {
     AppState.sources = [sourceWith('s1', 1)];
     buildQuestionPool();
 
@@ -179,7 +179,7 @@ test('a right answer to a question missed in the retaken session is rated a reco
     );
 });
 
-test('Easy cannot lift a recovered answer back to a full success', () => {
+test('Easy cannot lift a recovered answer back to a full success', async () => {
     AppState.sources = [sourceWith('s1', 1)];
     buildQuestionPool();
     AppState.testTracking = { results: [], recoveringKeys: ['s1_q1'] };
@@ -196,7 +196,7 @@ test('Easy cannot lift a recovered answer back to a full success', () => {
     );
 });
 
-test('the cap does not touch a wrong answer', () => {
+test('the cap does not touch a wrong answer', async () => {
     // A miss is rated 1 either way; capping at 2 must not soften it.
     AppState.sources = [sourceWith('s1', 1)];
     buildQuestionPool();
@@ -210,7 +210,7 @@ test('the cap does not touch a wrong answer', () => {
     assert.equal(AppState.stats['s1_q1'].stability, retryStability);
 });
 
-test('a question answered right the first time is not capped in the retake', () => {
+test('a question answered right the first time is not capped in the retake', async () => {
     AppState.sources = [sourceWith('s1', 2)];
     buildQuestionPool();
     AppState.testTracking = { results: [], recoveringKeys: ['s1_q2'] };
@@ -223,14 +223,14 @@ test('a question answered right the first time is not capped in the retake', () 
     assert.equal(AppState.stats['s1_q1'].stability, retakeStability);
 });
 
-test('an ordinary session recovers nothing', () => {
+test('an ordinary session recovers nothing', async () => {
     AppState.sources = [sourceWith('s1', 2)];
     buildQuestionPool();
     prepareFromCompositeIds(['s1_q1', 's1_q2'], {});
     assert.equal(AppState.testTracking.recoveringKeys, undefined);
 });
 
-test('a retake carries the WRONG answers of the retaken session - not the right, not the blank', () => {
+test('a retake carries the WRONG answers of the retaken session - not the right, not the blank', async () => {
     AppState.sources = [sourceWith('s1', 3)];
     buildQuestionPool();
     const entry = { id: 'h1', questions: [
@@ -243,11 +243,11 @@ test('a retake carries the WRONG answers of the retaken session - not the right,
     assert.equal(AppState.currentTest.length, 3, 'the retake still asks the whole session');
 });
 
-test('the results screen has no separate retry button any more', () => {
+test('the results screen has no separate retry button any more', async () => {
     assert.equal(/id="resRetryWrongBtn"/.test(read('../index.html')), false);
 });
 
-test('RETRY_MAX_RATING is Hard - FSRS already has a word for this', () => {
+test('RETRY_MAX_RATING is Hard - FSRS already has a word for this', async () => {
     assert.equal(RETRY_MAX_RATING, 2);
 });
 
@@ -265,7 +265,7 @@ test('the Stuck filter exists in the bar and is translated in all three', async 
     });
 });
 
-test('the Stuck filter keeps suspended questions on screen', () => {
+test('the Stuck filter keeps suspended questions on screen', async () => {
     // Suspending from this screen must not make the row vanish, or the user
     // cannot undo what they just did.
     const src = read('../src/features/stats/stats-module.js');

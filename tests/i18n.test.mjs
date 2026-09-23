@@ -20,13 +20,13 @@ function languageKeySets() {
     ));
 }
 
-test('the three language blocks were found', () => {
+test('the three language blocks were found', async () => {
     const sets = languageKeySets();
     assert.equal(sets.length, 3);
     for (const keys of sets) assert.ok(keys.size > 100, `expected a full block, got ${keys.size} keys`);
 });
 
-test('no language is missing a key another one has', () => {
+test('no language is missing a key another one has', async () => {
     const [tr, en, de] = languageKeySets();
     const all = new Set([...tr, ...en, ...de]);
     const missing = [];

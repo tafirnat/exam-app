@@ -23,7 +23,7 @@ before(async () => {
     getHeatmapDayLabels = mod.getHeatmapDayLabels;
 });
 
-test('every language labels one row per grid row, Monday first and Sunday last', () => {
+test('every language labels one row per grid row, Monday first and Sunday last', async () => {
     for (const lang of ['tr', 'de', 'en', 'fr']) {
         const labels = getHeatmapDayLabels(lang);
         assert.equal(labels.length, 7, `${lang}: one slot per weekday row`);
@@ -32,45 +32,45 @@ test('every language labels one row per grid row, Monday first and Sunday last',
     }
 });
 
-test('the Turkish rows do not repeat an abbreviation', () => {
+test('the Turkish rows do not repeat an abbreviation', async () => {
     // Pazartesi and Pazar both start "Paz" - collapsing them would put the same
     // word on two rows and make the axis unreadable.
     const named = getHeatmapDayLabels('tr').filter(Boolean);
     assert.equal(new Set(named).size, named.length, `expected distinct labels, got ${named.join(', ')}`);
 });
 
-test('an unknown language falls back to the English rows', () => {
+test('an unknown language falls back to the English rows', async () => {
     assert.deepEqual(getHeatmapDayLabels('fr'), getHeatmapDayLabels('en'));
 });
 
-test('a desktop card fits the full year', () => {
+test('a desktop card fits the full year', async () => {
     // 53 columns at a 12px pitch need 636px; a desktop card has more than that.
     assert.equal(fitHeatmapWeeks(900, 10), 53);
     assert.equal(fitHeatmapWeeks(636, 10), 53);
 });
 
-test('the year is never exceeded, however wide the screen', () => {
+test('the year is never exceeded, however wide the screen', async () => {
     assert.equal(fitHeatmapWeeks(4000, 10), 53);
 });
 
-test('a phone gets the weeks that actually fit', () => {
+test('a phone gets the weeks that actually fit', async () => {
     // ~284px of grid on a 390px phone, 8px cells: 28 columns, no overflow.
     const weeks = fitHeatmapWeeks(284, 8);
     assert.equal(weeks, 28);
     assert.ok(weeks * 10 <= 284, 'the fitted grid must not overflow the width it was given');
 });
 
-test('an absurdly narrow card still gets a readable floor', () => {
+test('an absurdly narrow card still gets a readable floor', async () => {
     assert.equal(fitHeatmapWeeks(40, 8), 12, 'below the floor the card scrolls rather than showing a sliver');
 });
 
-test('an unmeasurable width falls back to the full year', () => {
+test('an unmeasurable width falls back to the full year', async () => {
     // A display:none card reports 0 - drawing 0 columns would blank the card.
     assert.equal(fitHeatmapWeeks(0, 10), 53);
     assert.equal(fitHeatmapWeeks(-20, 10), 53);
 });
 
-test('the window ends on today and starts on a Monday', () => {
+test('the window ends on today and starts on a Monday', async () => {
     for (const iso of ['2026-08-01', '2026-08-03', '2026-08-09', '2026-01-01']) {
         const today = new Date(`${iso}T12:00:00`);
         const { start, numDays } = buildHeatmapWindow(26, today);
@@ -83,7 +83,7 @@ test('the window ends on today and starts on a Monday', () => {
     }
 });
 
-test('every column is a whole week, whatever the count', () => {
+test('every column is a whole week, whatever the count', async () => {
     const today = new Date('2026-08-01T12:00:00'); // a Saturday
     for (const weeks of [12, 26, 53]) {
         const { numDays } = buildHeatmapWindow(weeks, today);
@@ -91,7 +91,7 @@ test('every column is a whole week, whatever the count', () => {
     }
 });
 
-test('a Monday today leaves a single-day final column', () => {
+test('a Monday today leaves a single-day final column', async () => {
     const monday = new Date('2026-08-03T12:00:00');
     const { numDays } = buildHeatmapWindow(20, monday);
     assert.equal(numDays, 19 * 7 + 1);

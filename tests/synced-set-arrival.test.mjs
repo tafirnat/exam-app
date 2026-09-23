@@ -39,7 +39,7 @@ before(async () => {
 function freshDevice() {
     sync._resetSyncQueue();
     localStorage.clear();
-    initState({ force: true });
+    await initState({ force: true });
     AppState.sources.length = 0;
     AppState.folders = [createUncategorizedFolderRecord()];
     AppState.deletedSourceIds = [];
@@ -88,7 +88,7 @@ const clone = (x) => JSON.parse(JSON.stringify(x));
 
 // ── The folder id ───────────────────────────────────────────────────────────
 
-test('a hint folder id is a short slug plus a hash of the whole name', () => {
+test('a hint folder id is a short slug plus a hash of the whole name', async () => {
     const id = hint.hintFolderBaseId('ITIL 4 Foundation');
     assert.match(id, /^folder_hint_itil_4_foundation_[0-9a-f]{8}$/);
     // Spelling that the name key ignores gives the same id on every device.
@@ -99,14 +99,14 @@ test('a hint folder id is a short slug plus a hash of the whole name', () => {
     assert.ok(long.length <= 'folder_hint_'.length + 30 + 9, long);
 });
 
-test('two long names that share their first 60 characters get different ids', () => {
+test('two long names that share their first 60 characters get different ids', async () => {
     const prefix = 'Zertifikat IT Service Management Grundlagen und Praxis Teil ';
     const a = hint.hintFolderBaseId(`${prefix}Eins`);
     const b = hint.hintFolderBaseId(`${prefix}Zwei`);
     assert.notEqual(a, b);
 });
 
-test('a renamed hint folder keeps its id, and the original hint still finds it', () => {
+test('a renamed hint folder keeps its id, and the original hint still finds it', async () => {
     const first = processJSON(file({ id: 'a1' }), 'a.json', { silent: true });
     const folder = AppState.folders.find(f => f.id === first.folderId);
     const idBefore = folder.id;
@@ -120,14 +120,14 @@ test('a renamed hint folder keeps its id, and the original hint still finds it',
     assert.equal(userFolders().length, 1, 'no second folder');
 });
 
-test('a folder made by the first build of this feature is still found after a rename', () => {
+test('a folder made by the first build of this feature is still found after a rename', async () => {
     AppState.folders.push({ id: 'folder_hint_itil_4_foundation', name: 'ITIL', color: '#0667ff', order: 1 });
     const s = processJSON(file(), 'a.json', { silent: true });
     assert.equal(s.folderId, 'folder_hint_itil_4_foundation');
     assert.equal(userFolders().length, 1);
 });
 
-test('a name match wins over an id match', () => {
+test('a name match wins over an id match', async () => {
     // The hint's own folder was renamed away; a folder by that name exists too.
     AppState.folders.push({ id: hint.hintFolderBaseId('ITIL 4 Foundation'), name: 'Old ITIL', color: '#0667ff', order: 1 });
     AppState.folders.push({ id: 'folder_manual', name: 'itil 4 foundation', color: '#0667ff', order: 2 });
@@ -135,7 +135,7 @@ test('a name match wins over an id match', () => {
     assert.equal(s.folderId, 'folder_manual');
 });
 
-test('an archived folder is not a match by id either', () => {
+test('an archived folder is not a match by id either', async () => {
     const base = hint.hintFolderBaseId('ITIL 4 Foundation');
     AppState.folders.push({ id: base, name: 'ITIL', color: '#0667ff', order: 1, archived: true });
     const s = processJSON(file(), 'a.json', { silent: true });
@@ -145,7 +145,7 @@ test('an archived folder is not a match by id either', () => {
 
 // ── A set that arrives by sync ──────────────────────────────────────────────
 
-test('a synced set with a hint is placed in (a new) folder of that name', () => {
+test('a synced set with a hint is placed in (a new) folder of that name', async () => {
     AppState.sources.push(syncedSet());
     const placed = hint.applyPendingFolderHints();
     const s = AppState.sources[0];
@@ -157,7 +157,7 @@ test('a synced set with a hint is placed in (a new) folder of that name', () => 
     assert.ok(s.updatedAt > 0, 'stamped, so the placement travels');
 });
 
-test('a synced set goes into the existing folder of that name', () => {
+test('a synced set goes into the existing folder of that name', async () => {
     AppState.folders.push({ id: 'folder_mine', name: 'ITIL 4 – Foundation', color: '#0667ff', order: 1 });
     AppState.sources.push(syncedSet());
     hint.applyPendingFolderHints();
@@ -165,7 +165,7 @@ test('a synced set goes into the existing folder of that name', () => {
     assert.equal(userFolders().length, 1);
 });
 
-test('a set the plugin unwrapped carries the hint in metadata, and that counts too', () => {
+test('a set the plugin unwrapped carries the hint in metadata, and that counts too', async () => {
     const s = syncedSet();
     s.metadata = { ...s.exam_metadata };
     delete s.exam_metadata;
@@ -174,14 +174,14 @@ test('a set the plugin unwrapped carries the hint in metadata, and that counts t
     assert.equal(AppState.folders.find(f => f.id === s.folderId)?.name, 'ITIL 4 Foundation');
 });
 
-test('a set without a hint stays in Uncategorized and nothing is created', () => {
+test('a set without a hint stays in Uncategorized and nothing is created', async () => {
     AppState.sources.push(syncedSet({ folder: null }));
     assert.equal(hint.applyPendingFolderHints(), 0);
     assert.equal(AppState.sources[0].folderId, undefined);
     assert.equal(userFolders().length, 0);
 });
 
-test('the hint is spent once: a set the user moves back to Uncategorized stays there', () => {
+test('the hint is spent once: a set the user moves back to Uncategorized stays there', async () => {
     AppState.sources.push(syncedSet());
     hint.applyPendingFolderHints();
     const s = AppState.sources[0];
@@ -191,7 +191,7 @@ test('the hint is spent once: a set the user moves back to Uncategorized stays t
     assert.equal(s.folderId, null);
 });
 
-test('a set already in a folder is only marked, and a later move out of it sticks', () => {
+test('a set already in a folder is only marked, and a later move out of it sticks', async () => {
     AppState.folders.push({ id: 'folder_elsewhere', name: 'Elsewhere', color: '#0667ff', order: 1 });
     AppState.sources.push(syncedSet({ folderId: 'folder_elsewhere' }));
     const s = AppState.sources[0];
@@ -204,19 +204,19 @@ test('a set already in a folder is only marked, and a later move out of it stick
     assert.equal(s.folderId, null);
 });
 
-test('a folderId that names no folder is no folder: the hint places the set', () => {
+test('a folderId that names no folder is no folder: the hint places the set', async () => {
     AppState.sources.push(syncedSet({ folderId: 'folder_gone' }));
     hint.applyPendingFolderHints();
     assert.equal(AppState.folders.find(f => f.id === AppState.sources[0].folderId)?.name, 'ITIL 4 Foundation');
 });
 
-test('archived sets are left alone', () => {
+test('archived sets are left alone', async () => {
     AppState.sources.push(syncedSet({ archived: true }));
     assert.equal(hint.applyPendingFolderHints(), 0);
     assert.equal(userFolders().length, 0);
 });
 
-test('a hint edited in the file is followed again if the set has no folder', () => {
+test('a hint edited in the file is followed again if the set has no folder', async () => {
     AppState.sources.push(syncedSet());
     hint.applyPendingFolderHints();
     const s = AppState.sources[0];
@@ -226,7 +226,7 @@ test('a hint edited in the file is followed again if the set has no folder', () 
     assert.equal(AppState.folders.find(f => f.id === s.folderId)?.name, 'ITIL Practice');
 });
 
-test('two devices placing the same synced set end up with one folder', () => {
+test('two devices placing the same synced set end up with one folder', async () => {
     AppState.sources.push(syncedSet());
     hint.applyPendingFolderHints();
     const a = clone({ sources: AppState.sources, folders: AppState.folders });
@@ -244,7 +244,7 @@ test('two devices placing the same synced set end up with one folder', () => {
 
 // ── Deleted, then brought back ──────────────────────────────────────────────
 
-test('the tombstone rule: the later of deletion and revival wins; undated counts as 0', () => {
+test('the tombstone rule: the later of deletion and revival wins; undated counts as 0', async () => {
     const { isSourceDeleted } = tomb;
     assert.equal(isSourceDeleted('x', ['x']), true);
     assert.equal(isSourceDeleted('x', ['x'], {}, { x: 5 }), false, 'a revival outlives an undated deletion');
@@ -253,7 +253,7 @@ test('the tombstone rule: the later of deletion and revival wins; undated counts
     assert.equal(isSourceDeleted('x', ['y']), false);
 });
 
-test('importing a deleted set again brings it back, and the next sync keeps it', () => {
+test('importing a deleted set again brings it back, and the next sync keeps it', async () => {
     trackDeletedSource('itil4fnd_wayground_01');
     const remote = payload({ deletedSourceIds: ['itil4fnd_wayground_01'] }); // the Gist still says deleted
 
@@ -268,7 +268,7 @@ test('importing a deleted set again brings it back, and the next sync keeps it',
     assert.equal(AppState.folders.find(f => f.id === s.folderId)?.name, 'ITIL 4 Foundation');
 });
 
-test('another device that still holds the tombstone takes the set back', () => {
+test('another device that still holds the tombstone takes the set back', async () => {
     // Device A re-imports.
     trackDeletedSource('itil4fnd_wayground_01', 1000);
     processJSON(file(), 'itil.json', { silent: true });
@@ -282,7 +282,7 @@ test('another device that still holds the tombstone takes the set back', () => {
     assert.ok(!merged.deletedSourceIds.includes('itil4fnd_wayground_01'));
 });
 
-test('an older build re-adding the id to the undated list does not undo the revival', () => {
+test('an older build re-adding the id to the undated list does not undo the revival', async () => {
     processJSON(file(), 'itil.json', { silent: true });
     reviveSource('itil4fnd_wayground_01'); // no-op: not deleted
     trackDeletedSource('itil4fnd_wayground_01', 1000);
@@ -294,7 +294,7 @@ test('an older build re-adding the id to the undated list does not undo the revi
     assert.ok(merged.sources.some(x => x.id === 'itil4fnd_wayground_01'));
 });
 
-test('deleting it again after the revival wins on every device', () => {
+test('deleting it again after the revival wins on every device', async () => {
     trackDeletedSource('itil4fnd_wayground_01', 1000);
     reviveSource('itil4fnd_wayground_01', 2000);
     const revivedHere = clone(sync.getSyncPayload());
@@ -311,7 +311,7 @@ test('deleting it again after the revival wins on every device', () => {
     assert.ok(!merged.sources.some(x => x.id === 'itil4fnd_wayground_01'));
 });
 
-test('a reset after the revival deletes the set again', () => {
+test('a reset after the revival deletes the set again', async () => {
     processJSON(file(), 'itil.json', { silent: true });
     AppState.revivedSourceAt = { itil4fnd_wayground_01: Date.now() - 1000 };
     clearLocalStudyData();
@@ -319,7 +319,7 @@ test('a reset after the revival deletes the set again', () => {
         AppState.deletedSourceAt, AppState.revivedSourceAt), 'the reset is dated after the revival');
 });
 
-test('a remote that still lists a revived id is told, even when nothing else differs', () => {
+test('a remote that still lists a revived id is told, even when nothing else differs', async () => {
     AppState.sources.push(syncedSet());
     trackDeletedSource('itil4fnd_wayground_01', 1000);
     reviveSource('itil4fnd_wayground_01', 2000);
@@ -333,7 +333,7 @@ test('a remote that still lists a revived id is told, even when nothing else dif
     assert.equal(sync.mergeSyncData(sync.getSyncPayload(), stale).hasLocalChanges, true);
 });
 
-test('a sources reset after the revival deletes the set again', () => {
+test('a sources reset after the revival deletes the set again', async () => {
     processJSON(file(), 'itil.json', { silent: true });
     AppState.revivedSourceAt = { itil4fnd_wayground_01: Date.now() - 1000 };
     clearSourcesData();
@@ -341,7 +341,7 @@ test('a sources reset after the revival deletes the set again', () => {
         AppState.deletedSourceAt, AppState.revivedSourceAt));
 });
 
-test('the payload carries both dates', () => {
+test('the payload carries both dates', async () => {
     trackDeletedSource('x', 1000);
     reviveSource('x', 2000);
     const p = sync.getSyncPayload();

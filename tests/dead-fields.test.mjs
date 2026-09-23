@@ -36,7 +36,7 @@ function codeOnly(text) {
         .replace(/^\s*\/\/.*$/gm, '');
 }
 
-test('totalStats stays gone from the sync payload and the merge', () => {
+test('totalStats stays gone from the sync payload and the merge', async () => {
     const offenders = jsFilesUnder(SRC)
         .filter(file => /totalStats/.test(codeOnly(readFileSync(file, 'utf8'))))
         .map(file => file.slice(SRC.length));
@@ -45,7 +45,7 @@ test('totalStats stays gone from the sync payload and the merge', () => {
         'totalStats had no reader and no writer; the per-question counts in `stats` are the real ones');
 });
 
-test('the scan would notice if it came back', () => {
+test('the scan would notice if it came back', async () => {
     // Guarding the guard: a scan that cannot fail is worse than no scan, and a
     // comment-stripping one is exactly the shape that quietly stops matching.
     const withField = 'const payload = { stats: {}, totalStats: AppState.totalStats };';

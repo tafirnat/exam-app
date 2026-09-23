@@ -65,7 +65,7 @@ beforeEach(() => {
     AppState.stats = {};
 });
 
-test('time in the archive is not consumed: the question resumes where it paused', () => {
+test('time in the archive is not consumed: the question resumes where it paused', async () => {
     // Reviewed 15 days ago, archived 10 days ago -> 5 days had elapsed on the
     // way in, and with stability 10 that leaves 5 days before it falls due.
     const source = seedArchived({ reviewedDaysAgo: 15, archivedDaysAgo: 10 });
@@ -76,7 +76,7 @@ test('time in the archive is not consumed: the question resumes where it paused'
     assert.ok(Math.abs(elapsedDays(AppState.stats.srcA_1) - 5) < SLACK / DAY);
 });
 
-test('the whole retrievability curve is preserved, not just the due date', () => {
+test('the whole retrievability curve is preserved, not just the due date', async () => {
     const source = seedArchived({ reviewedDaysAgo: 15, archivedDaysAgo: 10, stability: 10 });
     const stat = AppState.stats.srcA_1;
 
@@ -89,7 +89,7 @@ test('the whole retrievability curve is preserved, not just the due date', () =>
     assert.ok(Math.abs(rAfterRestore - rAtArchive) < 0.001);
 });
 
-test('a question already overdue on the way in comes back exactly as overdue', () => {
+test('a question already overdue on the way in comes back exactly as overdue', async () => {
     // 30 days elapsed against stability 10 - deep into overdue territory.
     const source = seedArchived({ reviewedDaysAgo: 40, archivedDaysAgo: 10, stability: 10 });
     const stat = AppState.stats.srcA_1;
@@ -102,7 +102,7 @@ test('a question already overdue on the way in comes back exactly as overdue', (
     assert.ok(calculateRetrievability(stat.stability, stat.lastReview) <= 0.9);
 });
 
-test('repeated archive cycles each shift only their own episode', () => {
+test('repeated archive cycles each shift only their own episode', async () => {
     // Reviewed 20 days ago, archived 15 days ago: 5 days had elapsed on the way in.
     const source = seedArchived({ reviewedDaysAgo: 20, archivedDaysAgo: 15 });
 
@@ -119,7 +119,7 @@ test('repeated archive cycles each shift only their own episode', () => {
     assert.ok(Math.abs(elapsedDays(AppState.stats.srcA_1) - 3) < SLACK / DAY);
 });
 
-test('a restored source cannot be shifted twice: no archivedAt, no shift', () => {
+test('a restored source cannot be shifted twice: no archivedAt, no shift', async () => {
     const source = seedArchived({ reviewedDaysAgo: 15, archivedDaysAgo: 10 });
     thawStatsOnRestore(source);
     const settled = AppState.stats.srcA_1.lastReview;
@@ -130,7 +130,7 @@ test('a restored source cannot be shifted twice: no archivedAt, no shift', () =>
     assert.equal(AppState.stats.srcA_1.lastReview, settled);
 });
 
-test('a source with no archivedAt is left completely alone', () => {
+test('a source with no archivedAt is left completely alone', async () => {
     const source = seedArchived({ reviewedDaysAgo: 15, archivedDaysAgo: 10 });
     delete source.archivedAt;
     const before = AppState.stats.srcA_1.lastReview;
@@ -139,14 +139,14 @@ test('a source with no archivedAt is left completely alone', () => {
     assert.equal(AppState.stats.srcA_1.lastReview, before);
 });
 
-test('never-reviewed questions stay null instead of gaining a fake review date', () => {
+test('never-reviewed questions stay null instead of gaining a fake review date', async () => {
     const source = seedArchived({ reviewedDaysAgo: null, archivedDaysAgo: 10 });
 
     assert.equal(thawStatsOnRestore(source), 0);
     assert.equal(AppState.stats.srcA_1.lastReview, null);
 });
 
-test('a corrupt review date is not turned into NaN', () => {
+test('a corrupt review date is not turned into NaN', async () => {
     const source = seedArchived({ reviewedDaysAgo: 15, archivedDaysAgo: 10 });
     AppState.stats.srcA_1.lastReview = 'not-a-date';
 
@@ -156,7 +156,7 @@ test('a corrupt review date is not turned into NaN', () => {
     assert.equal(AppState.stats.srcA_1.lastReview, 'not-a-date');
 });
 
-test('the shift never pushes a review date into the future', () => {
+test('the shift never pushes a review date into the future', async () => {
     // Archived almost immediately after the review, then parked for a year.
     const source = seedArchived({ reviewedDaysAgo: 365, archivedDaysAgo: 364 });
 
@@ -165,7 +165,7 @@ test('the shift never pushes a review date into the future', () => {
     assert.ok(new Date(AppState.stats.srcA_1.lastReview).getTime() <= Date.now());
 });
 
-test('questions without a stat record are skipped without throwing', () => {
+test('questions without a stat record are skipped without throwing', async () => {
     const source = seedArchived({ reviewedDaysAgo: 15, archivedDaysAgo: 10 });
     source.questions.push({ id: 2 });
 

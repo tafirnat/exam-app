@@ -45,13 +45,13 @@ beforeEach(() => {
     AppState.previewQuestion = entry(2);
 });
 
-test('the position is read from the list, in the order it was given', () => {
+test('the position is read from the list, in the order it was given', async () => {
     assert.equal(currentNavIndex(), 1);
     assert.deepEqual(getPreviewNavPosition(), { index: 1, total: 4, hasPrev: true, hasNext: true });
     assert.equal(navPositionLabel(), '2 / 4');
 });
 
-test('the ends of the list are ends', () => {
+test('the ends of the list are ends', async () => {
     AppState.previewQuestion = entry(1);
     assert.equal(getPreviewNavPosition().hasPrev, false);
     assert.equal(neighbourQuestion(-1), null);
@@ -61,7 +61,7 @@ test('the ends of the list are ends', () => {
     assert.equal(neighbourQuestion(1), null);
 });
 
-test('a question outside the list is navigable nowhere, not to position zero', () => {
+test('a question outside the list is navigable nowhere, not to position zero', async () => {
     AppState.previewQuestion = entry(99);
     assert.equal(currentNavIndex(), -1);
     assert.equal(navPositionLabel(), '');
@@ -69,7 +69,7 @@ test('a question outside the list is navigable nowhere, not to position zero', (
     assert.equal(neighbourQuestion(-1), null);
 });
 
-test('two sources numbering their questions alike are two different questions', () => {
+test('two sources numbering their questions alike are two different questions', async () => {
     /* Identity is the composite key. Matching on id alone would let a click on
        source B's "q2" navigate through source A's list. */
     setPreviewNavList([entry(2), { ...entry(2), sourceId: 'exam_other_1700000001_bb' }]);
@@ -77,7 +77,7 @@ test('two sources numbering their questions alike are two different questions', 
     assert.equal(currentNavIndex(), 1);
 });
 
-test('the neighbour comes back with the stored text, not the copy the list made', () => {
+test('the neighbour comes back with the stored text, not the copy the list made', async () => {
     // The edit an editor save would have made: the source now holds new text.
     AppState.sources[0].questions[2].content.text = 'Edited in the editor';
 
@@ -86,7 +86,7 @@ test('the neighbour comes back with the stored text, not the copy the list made'
     assert.equal(next.content.text, 'Edited in the editor');
 });
 
-test('resolving keeps what only the copy knows', () => {
+test('resolving keeps what only the copy knows', async () => {
     /* userAnswer / isCorrect are what a results or history row is ABOUT, and
        sourceName / originalIndex are decorations the stats list added. The
        stored question has none of them; overwriting them with its blanks would
@@ -100,20 +100,20 @@ test('resolving keeps what only the copy knows', () => {
     assert.equal(fresh.originalIndex, 2);
 });
 
-test('the stored question wins over the stale copy', () => {
+test('the stored question wins over the stale copy', async () => {
     AppState.sources[0].questions[1].content.text = 'Newer';
     const fresh = resolvePreviewQuestion(entry(2));
     assert.equal(fresh.content.text, 'Newer');
 });
 
-test('a question that no longer exists comes back untouched', () => {
+test('a question that no longer exists comes back untouched', async () => {
     // A history row is allowed to outlive the source it describes.
     const orphan = { id: 'gone', sourceId: 'exam_deleted_1700000009_zz', content: { text: 'Old' } };
     assert.deepEqual(resolvePreviewQuestion(orphan), orphan);
     assert.equal(resolvePreviewQuestion(null), null);
 });
 
-test('an edit made two questions ago is there when the arrows come back to it', () => {
+test('an edit made two questions ago is there when the arrows come back to it', async () => {
     // Every step reconciles, so the list never serves a copy that went stale.
     neighbourQuestion(1);
     AppState.sources[0].questions[2].content.text = 'Edited later';
@@ -122,7 +122,7 @@ test('an edit made two questions ago is there when the arrows come back to it', 
     assert.equal(neighbourQuestion(-1).content.text, 'Edited later');
 });
 
-test('a stale review stored on the library question does not win', () => {
+test('a stale review stored on the library question does not win', async () => {
     /* The editor is opened with whatever the preview shows, and from the results
        screen that object carries an answer. Library questions have therefore been
        written with a `userAnswer` on them (now stripped on save, but old data and
@@ -136,7 +136,7 @@ test('a stale review stored on the library question does not win', () => {
     assert.equal(fresh.isCorrect, false);
 });
 
-test('the arrows reflect the ends, and leave the tooltip alone', () => {
+test('the arrows reflect the ends, and leave the tooltip alone', async () => {
     const prev = dom.window.document.createElement('button');
     const next = dom.window.document.createElement('button');
     prev.title = 'Previous question';
@@ -155,7 +155,7 @@ test('the arrows reflect the ends, and leave the tooltip alone', () => {
     assert.equal(next.disabled, true);
 });
 
-test('an empty list disables both arrows rather than throwing', () => {
+test('an empty list disables both arrows rather than throwing', async () => {
     setPreviewNavList(null);
     const prev = dom.window.document.createElement('button');
     const next = dom.window.document.createElement('button');

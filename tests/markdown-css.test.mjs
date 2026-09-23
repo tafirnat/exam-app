@@ -43,11 +43,11 @@ const referenced = [...new Set(
     [...markdownCss.matchAll(/var\((--[a-z0-9-]+)/g)].map(match => match[1])
 )].sort();
 
-test('markdown.css references at least the tokens it needs', () => {
+test('markdown.css references at least the tokens it needs', async () => {
     assert.ok(referenced.length > 20, `expected a real token surface, got ${referenced.length}`);
 });
 
-test('every colour token markdown.css uses is defined in BOTH themes', () => {
+test('every colour token markdown.css uses is defined in BOTH themes', async () => {
     const missing = [];
     for (const property of referenced) {
         if (LOCALLY_BOUND.has(property) || THEME_INDEPENDENT.test(property)) continue;
@@ -57,14 +57,14 @@ test('every colour token markdown.css uses is defined in BOTH themes', () => {
     assert.deepEqual(missing, [], `Tokens without a value in both themes:\n  ${missing.join('\n  ')}`);
 });
 
-test('theme-independent tokens still resolve somewhere', () => {
+test('theme-independent tokens still resolve somewhere', async () => {
     for (const property of referenced) {
         if (LOCALLY_BOUND.has(property) || !THEME_INDEPENDENT.test(property)) continue;
         assert.equal(defines(root, property), true, `${property} is used but never defined`);
     }
 });
 
-test('no colour is hard-coded in the content pipeline', () => {
+test('no colour is hard-coded in the content pipeline', async () => {
     // P4: colour is semantic. A hex here would only be right in one theme —
     // including as a var() fallback, which is how the light-only values got in.
     const hexes = markdownCss.match(/#[0-9a-fA-F]{3,8}\b/g) || [];
@@ -73,7 +73,7 @@ test('no colour is hard-coded in the content pipeline', () => {
     assert.deepEqual(rgbFallbacks, [], `colour fallbacks in markdown.css: ${rgbFallbacks.join(', ')}`);
 });
 
-test('markdown.css never styles app chrome', () => {
+test('markdown.css never styles app chrome', async () => {
     // An unscoped element selector here would restyle the whole application,
     // which is exactly what the retired global code/pre block in style.css did.
     const withoutComments = markdownCss.replace(/\/\*[\s\S]*?\*\//g, '');
@@ -88,7 +88,7 @@ test('markdown.css never styles app chrome', () => {
     assert.deepEqual(offenders, [], `selectors not scoped to .md-content:\n  ${offenders.join('\n  ')}`);
 });
 
-test('the global code/pre rules stay retired', () => {
+test('the global code/pre rules stay retired', async () => {
     // They were written for hand-authored HTML and styled the entire app.
     assert.equal(/^code\s*\{/m.test(styleCss), false, 'global `code` selector is back');
     assert.equal(/^pre\s*\{/m.test(styleCss), false, 'global `pre` selector is back');
@@ -147,7 +147,7 @@ for (const theme of ['light', 'dark']) {
         return (scoped ?? base)?.[1]?.trim();
     };
 
-    test(`${theme} theme: rendered text clears WCAG AA on its own surface`, () => {
+    test(`${theme} theme: rendered text clears WCAG AA on its own surface`, async () => {
         const page = parseColour(token('--bg-color'));
         assert.ok(page, `--bg-color must parse in ${theme}`);
 
@@ -174,7 +174,7 @@ for (const theme of ['light', 'dark']) {
     });
 }
 
-test('pre and table scroll inside the card, not the page', () => {
+test('pre and table scroll inside the card, not the page', async () => {
     for (const selector of ['.md-content pre', '.md-content table']) {
         const body = ruleBody(markdownCss, selector);
         assert.match(body, /overflow-x:\s*auto/, `${selector} must scroll within itself`);

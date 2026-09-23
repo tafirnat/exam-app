@@ -347,7 +347,7 @@ function visibleState(device) {
     });
 }
 
-test('three devices working in turn end up holding the same data', () => {
+test('three devices working in turn end up holding the same data', async () => {
     for (let seed = 1; seed <= 60; seed++) {
         const w = world(seed);
 
@@ -366,7 +366,7 @@ test('three devices working in turn end up holding the same data', () => {
     }
 });
 
-test('a progress reset does not stop the devices converging afterwards', () => {
+test('a progress reset does not stop the devices converging afterwards', async () => {
     /* The reset instant is propagated to every device by the pull, so "both
        sides hold the same non-zero instant" is where every device that has ever
        seen a progress reset permanently lives. Deciding the config on those two
@@ -401,7 +401,7 @@ test('a progress reset does not stop the devices converging afterwards', () => {
     }
 });
 
-test('a reset voids the freezes it cleared, on every device', () => {
+test('a reset voids the freezes it cleared, on every device', async () => {
     /* Convergence alone would be satisfied by three devices agreeing that the
        pre-reset spends are still charged - and they would, because the ledger
        merges by union and a union is unconditional. The days those freezes
@@ -427,7 +427,7 @@ test('a reset voids the freezes it cleared, on every device', () => {
     }
 });
 
-test('the settled state does not depend on who syncs first', () => {
+test('the settled state does not depend on who syncs first', async () => {
     // A merge that converged only in the order it happened to be tested in
     // would leave the last device to sync deciding what everyone believes.
     for (let seed = 1; seed <= 40; seed++) {
@@ -450,7 +450,7 @@ test('the settled state does not depend on who syncs first', () => {
     }
 });
 
-test('syncing again changes nothing', () => {
+test('syncing again changes nothing', async () => {
     // Idempotence. Counters that grew on every sync are what once turned a
     // day's total into millions within a few page loads.
     for (let seed = 1; seed <= 30; seed++) {
@@ -472,7 +472,7 @@ test('syncing again changes nothing', () => {
    with either rule in place. These two say *which* value they have to settle
    on, by recomputing it independently from what the devices held. */
 
-test('every day settles on the measurement that was taken first', () => {
+test('every day settles on the measurement that was taken first', async () => {
     for (let seed = 1; seed <= 40; seed++) {
         const w = world(seed);
         for (let turn = 0; turn < 20; turn++) w.step(w.devices[turn % 3]);
@@ -497,7 +497,7 @@ test('every day settles on the measurement that was taken first', () => {
     }
 });
 
-test('every question settles on the record from its most recent review', () => {
+test('every question settles on the record from its most recent review', async () => {
     for (let seed = 1; seed <= 40; seed++) {
         const w = world(seed);
         for (let turn = 0; turn < 20; turn++) w.step(w.devices[turn % 3]);
@@ -532,7 +532,7 @@ test('every question settles on the record from its most recent review', () => {
    once and never re-earned, and no case in this file could see it, because every
    device started with both tiers already earned. */
 
-test('no token that was earned is lost, and none is earned twice', () => {
+test('no token that was earned is lost, and none is earned twice', async () => {
     for (let seed = 1; seed <= 60; seed++) {
         const w = world(seed);
         for (let turn = 0; turn < 24; turn++) {
@@ -559,7 +559,7 @@ test('no token that was earned is lost, and none is earned twice', () => {
     }
 });
 
-test('the token count settles on what the run actually did', () => {
+test('the token count settles on what the run actually did', async () => {
     /* The correctness half. Convergence alone is satisfied by three devices
        agreeing on a wrong number - and they would agree, because dropping a
        grant is perfectly convergent too. Recomputed here from the run's own
@@ -585,7 +585,7 @@ test('the token count settles on what the run actually did', () => {
     }
 });
 
-test('a reset voids the grants it cleared as well as the freezes', () => {
+test('a reset voids the grants it cleared as well as the freezes', async () => {
     /* A grant that forgave a voided spend has nothing left to forgive. Keeping
        it while dropping the spend leaves a credit standing against a freeze that
        no longer exists - the reset's refill, counted a second time. */
@@ -607,7 +607,7 @@ test('a reset voids the grants it cleared as well as the freezes', () => {
     }
 });
 
-test('no answer is lost and none is counted twice', () => {
+test('no answer is lost and none is counted twice', async () => {
     /* Two devices are two *parts* of a day, so the settled total is the sum of
        what each one actually answered - not the larger of the two, which is
        what Math.max gave and which simply lost the smaller side, and not the

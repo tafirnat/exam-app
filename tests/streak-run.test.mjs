@@ -98,7 +98,7 @@ beforeEach(() => {
     AppState.studyActivity = {};
 });
 
-test('resolveStreakCount floors at 15 but respects a larger user preference', () => {
+test('resolveStreakCount floors at 15 but respects a larger user preference', async () => {
     assert.equal(resolveStreakCount(5), MIN_STREAK_QUESTIONS);
     assert.equal(resolveStreakCount(15), MIN_STREAK_QUESTIONS);
     assert.equal(resolveStreakCount(40), 40);
@@ -107,7 +107,7 @@ test('resolveStreakCount floors at 15 but respects a larger user preference', ()
     assert.equal(resolveStreakCount(NaN), MIN_STREAK_QUESTIONS);
 });
 
-test('mixed order puts the most overdue question first', () => {
+test('mixed order puts the most overdue question first', async () => {
     seed([
         src('A', 'f1', [{ id: 1, due: 12 }, { id: 2, due: 40 }]),
         src('B', 'f1', [{ id: 1, due: 25 }])
@@ -118,7 +118,7 @@ test('mixed order puts the most overdue question first', () => {
     assert.deepEqual(ids, ['A_2', 'B_1', 'A_1']);
 });
 
-test('the run ignores whether a source is active', () => {
+test('the run ignores whether a source is active', async () => {
     seed([
         src('A', 'f1', [{ id: 1, due: 12 }], { active: true }),
         src('B', 'f1', [{ id: 1, due: 40 }], { active: false })
@@ -129,7 +129,7 @@ test('the run ignores whether a source is active', () => {
     assert.equal(ids[0], 'B_1', 'and it must keep its urgency ranking');
 });
 
-test('archived sources are excluded outright', () => {
+test('archived sources are excluded outright', async () => {
     const sources = [
         src('A', 'f1', [{ id: 1, due: 12 }]),
         src('B', 'f1', [{ id: 1, due: 40 }])
@@ -147,7 +147,7 @@ test('archived sources are excluded outright', () => {
    thing it was meant to reward. Due now wins; the flag only decides who fills
    a run that has no backlog left. */
 
-test('a due question is scheduled even when it is marked learned', () => {
+test('a due question is scheduled even when it is marked learned', async () => {
     seed([
         src('A', 'f1', [{ id: 1, due: 40, learned: true }, { id: 2, due: 12 }])
     ]);
@@ -156,7 +156,7 @@ test('a due question is scheduled even when it is marked learned', () => {
     assert.deepEqual(ids, ['A_1', 'A_2'], 'and it leads, being the more overdue of the two');
 });
 
-test('a learned question that is not due yet stays out of the filler', () => {
+test('a learned question that is not due yet stays out of the filler', async () => {
     // stability 10, reviewed 5 days ago -> R ~0.95, above the 0.9 due line.
     seed([
         src('A', 'f1', [{ id: 1, due: 5, learned: true }, { id: 2, due: 5 }])
@@ -174,7 +174,7 @@ test('a learned question that is not due yet stays out of the filler', () => {
    below is the one that noticed, and it noticed by failing about one full-suite
    run in three while passing every time on its own. */
 
-test('two identical questions measured in one pass get identical R', () => {
+test('two identical questions measured in one pass get identical R', async () => {
     const lastReview = new Date(Date.now() - 20 * DAY).toISOString();
     const at = Date.now();
 
@@ -185,7 +185,7 @@ test('two identical questions measured in one pass get identical R', () => {
     assert.equal(first, second);
 });
 
-test('a millisecond between two reads is enough to separate them', () => {
+test('a millisecond between two reads is enough to separate them', async () => {
     // Why the parameter has to exist at all: this is the gap that used to open
     // up inside a single pass over the library.
     const lastReview = new Date(Date.now() - 20 * DAY).toISOString();
@@ -196,7 +196,7 @@ test('a millisecond between two reads is enough to separate them', () => {
         calculateRetrievability(10, lastReview, at + 1));
 });
 
-test('the run measures the whole pass at one instant', () => {
+test('the run measures the whole pass at one instant', async () => {
     seed([
         src('A', 'f1', [
             { id: 1, due: 20, difficulty: 3 },
@@ -225,7 +225,7 @@ test('the run measures the whole pass at one instant', () => {
     }
 });
 
-test('equal retrievability breaks on difficulty, then id - never on library order', () => {
+test('equal retrievability breaks on difficulty, then id - never on library order', async () => {
     seed([
         src('A', 'f1', [
             { id: 1, due: 20, difficulty: 3 },
@@ -239,7 +239,7 @@ test('equal retrievability breaks on difficulty, then id - never on library orde
     assert.deepEqual(ids, ['A_2', 'A_3', 'A_1']);
 });
 
-test('new questions get a reserved share even when the backlog is large', () => {
+test('new questions get a reserved share even when the backlog is large', async () => {
     const overdue = Array.from({ length: 30 }, (_, i) => ({ id: i + 1, due: 30 }));
     const fresh = Array.from({ length: 20 }, (_, i) => ({ id: 100 + i, fresh: true }));
     seed([src('A', 'f1', [...overdue, ...fresh])]);
@@ -252,7 +252,7 @@ test('new questions get a reserved share even when the backlog is large', () => 
     assert.equal(freshCount, 3);
 });
 
-test('the new-question slice is stable within a day and moves on the next', () => {
+test('the new-question slice is stable within a day and moves on the next', async () => {
     const fresh = Array.from({ length: 40 }, (_, i) => ({ id: i + 1, fresh: true }));
     seed([src('A', 'f1', fresh)]);
 
@@ -265,14 +265,14 @@ test('the new-question slice is stable within a day and moves on the next', () =
     assert.notDeepEqual(monday, tuesday);
 });
 
-test('a fresh-only library still fills the session instead of returning nothing', () => {
+test('a fresh-only library still fills the session instead of returning nothing', async () => {
     const fresh = Array.from({ length: 40 }, (_, i) => ({ id: i + 1, fresh: true }));
     seed([src('A', 'f1', fresh)]);
 
     assert.equal(buildStreakRun({ order: 'mixed', count: 15 }).length, 15);
 });
 
-test('upcoming questions are filler only, nearest due first', () => {
+test('upcoming questions are filler only, nearest due first', async () => {
     seed([
         src('A', 'f1', [
             { id: 1, due: 40 },          // overdue
@@ -285,17 +285,17 @@ test('upcoming questions are filler only, nearest due first', () => {
     assert.deepEqual(ids, ['A_1', 'A_3', 'A_2']);
 });
 
-test('a short pool returns what exists rather than padding', () => {
+test('a short pool returns what exists rather than padding', async () => {
     seed([src('A', 'f1', [{ id: 1, due: 20 }])]);
     assert.equal(buildStreakRun({ order: 'mixed', count: 15 }).length, 1);
 });
 
-test('an empty library returns an empty run', () => {
+test('an empty library returns an empty run', async () => {
     seed([]);
     assert.deepEqual(buildStreakRun({ order: 'mixed', count: 15 }), []);
 });
 
-test('grouped order keeps a source together and follows its folder', () => {
+test('grouped order keeps a source together and follows its folder', async () => {
     seed([
         // Most urgent question lives in B, so B's folder leads.
         src('A', 'f1', [{ id: 1, due: 14 }, { id: 2, due: 13 }]),
@@ -314,7 +314,7 @@ test('grouped order keeps a source together and follows its folder', () => {
     assert.deepEqual(order, ['B', 'C', 'C', 'A', 'A']);
 });
 
-test('grouped order caps a single source at a third of the session', () => {
+test('grouped order caps a single source at a third of the session', async () => {
     // A holds the most urgent questions and enough of them to swallow the run;
     // B and C are less urgent but deep enough to take the slots the cap frees.
     const deck = (dueDays) => Array.from({ length: 30 }, (_, i) => ({ id: i + 1, due: dueDays }));
@@ -338,7 +338,7 @@ test('grouped order caps a single source at a third of the session', () => {
     assert.ok(counts.B > 0 && counts.C > 0);
 });
 
-test('the cap lifts when no other source can fill the session', () => {
+test('the cap lifts when no other source can fill the session', async () => {
     const many = Array.from({ length: 30 }, (_, i) => ({ id: i + 1, due: 40 }));
     seed([src('A', 'f1', many)]);
 
@@ -347,7 +347,7 @@ test('the cap lifts when no other source can fill the session', () => {
     assert.equal(ids.length, 15);
 });
 
-test('sources without a folder are grouped under Uncategorized, not dropped', () => {
+test('sources without a folder are grouped under Uncategorized, not dropped', async () => {
     seed([
         src('A', null, [{ id: 1, due: 40 }]),
         src('B', 'f1', [{ id: 1, due: 20 }])
@@ -357,7 +357,7 @@ test('sources without a folder are grouped under Uncategorized, not dropped', ()
     assert.deepEqual(sourceOrder(ids), ['A', 'B']);
 });
 
-test('both orders select the same questions and differ only in sequence', () => {
+test('both orders select the same questions and differ only in sequence', async () => {
     seed([
         src('A', 'f1', [{ id: 1, due: 14 }, { id: 2, due: 40 }]),
         src('B', 'f2', [{ id: 1, due: 25 }, { id: 2, due: 12 }])
@@ -373,7 +373,7 @@ test('both orders select the same questions and differ only in sequence', () => 
     assert.notDeepEqual(mixed, grouped);
 });
 
-test('focus scope draws only from the selected focus sources', () => {
+test('focus scope draws only from the selected focus sources', async () => {
     seed([
         src('A', 'f1', [{ id: 1, due: 40 }]),
         src('B', 'f1', [{ id: 1, due: 20 }])
@@ -384,14 +384,14 @@ test('focus scope draws only from the selected focus sources', () => {
     assert.deepEqual(ids, ['B_1']);
 });
 
-test('focus scope with no selection returns an empty run', () => {
+test('focus scope with no selection returns an empty run', async () => {
     seed([src('A', 'f1', [{ id: 1, due: 40 }])]);
     AppState.continuityConfig = { focusSources: [] };
 
     assert.deepEqual(buildStreakRun({ scope: 'focus', count: 10 }), []);
 });
 
-test('shuffleArraySeeded is deterministic and preserves membership', () => {
+test('shuffleArraySeeded is deterministic and preserves membership', async () => {
     const input = Array.from({ length: 25 }, (_, i) => i);
 
     assert.deepEqual(shuffleArraySeeded(input, 'x'), shuffleArraySeeded(input, 'x'));

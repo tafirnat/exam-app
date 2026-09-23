@@ -59,7 +59,7 @@ beforeEach(() => {
    learned question reaching the session therefore proves the overdue pool took
    it, which is the rule. Without that ballast the fallback rescues the question
    on its own and the case passes with the rule reverted. */
-test('a due question is selected even when it is marked learned', () => {
+test('a due question is selected even when it is marked learned', async () => {
     seed([
         { id: 1, due: 40, learned: true },
         { id: 2, due: 2 },
@@ -72,7 +72,7 @@ test('a due question is selected even when it is marked learned', () => {
 
 /* The consolidated question is the only thing left once the backlog is gone.
    Serving it anyway would re-drill what already holds while `fresh` waits. */
-test('a learned question that is not due yet is left for last', () => {
+test('a learned question that is not due yet is left for last', async () => {
     seed([
         { id: 1, due: 2, learned: true },
         { id: 2, fresh: true }
@@ -86,7 +86,7 @@ test('a learned question that is not due yet is left for last', () => {
 /* With nothing else to offer, the final fallback still hands it over rather
    than returning a short test - a study session that refuses to start is worse
    than one that repeats a well-known question. */
-test('with nothing else available the learned question is still served', () => {
+test('with nothing else available the learned question is still served', async () => {
     seed([{ id: 1, due: 2, learned: true }]);
 
     assert.deepEqual(prepareTest(5), ['S_1']);
@@ -104,7 +104,7 @@ const item = (id, { overdue = false, learned = false, r = 0.5 } = {}) => ({
     retrievability: r
 });
 
-test('a focus pool injects a due question that is marked learned', () => {
+test('a focus pool injects a due question that is marked learned', async () => {
     AppState.sources = [{ id: 'S', active: true, questions: [] }];
     AppState.continuityConfig = { focusPools: [{ targetId: 'S', count: 1 }] };
 
@@ -113,7 +113,7 @@ test('a focus pool injects a due question that is marked learned', () => {
     assert.equal(result.length, 1, 'due material is the point of pinning a topic');
 });
 
-test('a focus pool passes over a learned question that is not due', () => {
+test('a focus pool passes over a learned question that is not due', async () => {
     AppState.sources = [{ id: 'S', active: true, questions: [] }];
     AppState.continuityConfig = { focusPools: [{ targetId: 'S', count: 2 }] };
 
@@ -129,7 +129,7 @@ test('a focus pool passes over a learned question that is not due', () => {
    the count skipped learned questions and selection did too they agreed; if
    only one of them changed, the bar would either ask for work the app would
    not hand over, or hide work it was about to. */
-test('the overdue count admits the same questions selection does', () => {
+test('the overdue count admits the same questions selection does', async () => {
     seed([
         { id: 1, due: 40, learned: true },
         { id: 2, due: 12 },

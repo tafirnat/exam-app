@@ -20,12 +20,12 @@ const tokens = (extra = {}) => ({
     spentOn: [], ...extra
 });
 
-test('a freeze is named for what it bought', () => {
+test('a freeze is named for what it bought', async () => {
     assert.equal(spendName('global', '2026-08-01'), 'global:2026-08-01');
     assert.notEqual(spendName('focus', '2026-08-01'), spendName('global', '2026-08-01'));
 });
 
-test('spending is recorded and the count follows it', () => {
+test('spending is recorded and the count follows it', async () => {
     const t = tokens();
 
     assert.equal(chargeSpend(t, spendName('global', '2026-08-01')), true);
@@ -34,7 +34,7 @@ test('spending is recorded and the count follows it', () => {
     assert.equal(t.remaining, 1);
 });
 
-test('the same freeze charged twice costs once', () => {
+test('the same freeze charged twice costs once', async () => {
     // Which is what makes a second device freezing the same day free.
     const t = tokens();
     const name = spendName('global', '2026-08-01');
@@ -46,7 +46,7 @@ test('the same freeze charged twice costs once', () => {
     assert.equal(t.spentOn.length, 1);
 });
 
-test('an empty account cannot spend', () => {
+test('an empty account cannot spend', async () => {
     const t = tokens({ total: 1 });
     assert.equal(chargeSpend(t, spendName('global', '2026-08-01')), true);
 
@@ -66,7 +66,7 @@ test('an empty account cannot spend', () => {
    So a grant is a named entry of its own, and it forgives one spend older than
    itself. */
 
-test('earning a tier hands one back', () => {
+test('earning a tier hands one back', async () => {
     const t = tokens();
     chargeSpend(t, spendName('global', '2026-07-30'));
     chargeSpend(t, spendName('global', '2026-08-01'));
@@ -79,7 +79,7 @@ test('earning a tier hands one back', () => {
         'and the spends stay on the record - forgiven, not erased');
 });
 
-test('an earned token survives the merge that follows it', () => {
+test('an earned token survives the merge that follows it', async () => {
     /* The whole point of naming the grant. Both sides already hold the spend,
        so a merge that only unions spends hands the freeze back and the earning
        is silently undone. */
@@ -97,7 +97,7 @@ test('an earned token survives the merge that follows it', () => {
     assert.equal(mergeFreezeTokens(pushed, pushed, true).remaining, 1, 'and re-merging keeps it');
 });
 
-test('earning while nothing is outstanding cannot be banked', () => {
+test('earning while nothing is outstanding cannot be banked', async () => {
     /* A grant forgives a spend *older* than itself, so a credit earned today
        does not quietly pay for a freeze made next week. Without that clause the
        additive count leaves remaining at 1 through a spend that should empty it. */
@@ -110,7 +110,7 @@ test('earning while nothing is outstanding cannot be banked', () => {
     assert.equal(t.remaining, 0, 'and it does not pay for the freeze that came after it');
 });
 
-test('the same tier earned on two devices the same day is one grant', () => {
+test('the same tier earned on two devices the same day is one grant', async () => {
     const a = tokens({ total: 1, spentOn: ['global:2026-07-20'] });
     const b = tokens({ total: 1, spentOn: ['global:2026-07-20'] });
     grantToken(a, grantName('tier1', '2026-08-08'));
@@ -122,7 +122,7 @@ test('the same tier earned on two devices the same day is one grant', () => {
     assert.equal(merged.remaining, 1, 'one spend forgiven, not two');
 });
 
-test('grants merge as a union, so neither device loses one', () => {
+test('grants merge as a union, so neither device loses one', async () => {
     const a = tokens({ spentOn: ['global:2026-07-20', 'global:2026-07-21'], grants: ['tier1:2026-08-01'] });
     const b = tokens({ spentOn: ['global:2026-07-20', 'global:2026-07-21'], grants: ['tier2:2026-08-02'] });
 
@@ -132,7 +132,7 @@ test('grants merge as a union, so neither device loses one', () => {
     assert.equal(merged.remaining, 2, 'both spends forgiven');
 });
 
-test('a record from before grants existed reads exactly as it used to', () => {
+test('a record from before grants existed reads exactly as it used to', async () => {
     // Its grants were applied by deleting spends, so its spend ledger is short
     // already; an empty grant ledger has to leave that arithmetic alone.
     const old = { total: 2, remaining: 1, tier1Earned: true, tier2Earned: true, initialized: true, spentOn: ['global:2026-07-20'] };
@@ -142,7 +142,7 @@ test('a record from before grants existed reads exactly as it used to', () => {
 
 // ── Merging ─────────────────────────────────────────────────────────────────
 
-test('two devices freezing different days keep both spends', () => {
+test('two devices freezing different days keep both spends', async () => {
     // The measured defect, in one case: a max or a last-writer-wins here keeps
     // one decrement and the account stops matching the frozen days.
     const a = tokens({ spentOn: ['global:2026-08-01'], remaining: 1 });
@@ -154,14 +154,14 @@ test('two devices freezing different days keep both spends', () => {
     assert.equal(merged.remaining, 0);
 });
 
-test('two devices freezing the same day spend once', () => {
+test('two devices freezing the same day spend once', async () => {
     const a = tokens({ spentOn: ['global:2026-08-01'], remaining: 1 });
     const b = tokens({ spentOn: ['global:2026-08-01'], remaining: 1 });
 
     assert.equal(mergeFreezeTokens(a, b, true).remaining, 1);
 });
 
-test('the merge lands the same way whichever device runs it', () => {
+test('the merge lands the same way whichever device runs it', async () => {
     const a = tokens({ spentOn: ['global:2026-08-01'], remaining: 1 });
     const b = tokens({ spentOn: ['focus:2026-07-30'], remaining: 1 });
 
@@ -172,7 +172,7 @@ test('the merge lands the same way whichever device runs it', () => {
     assert.equal(fromA.remaining, fromB.remaining);
 });
 
-test('merging again changes nothing', () => {
+test('merging again changes nothing', async () => {
     let merged = mergeFreezeTokens(
         tokens({ spentOn: ['global:2026-08-01'], remaining: 1 }),
         tokens({ spentOn: ['global:2026-07-30'], remaining: 1 }),
@@ -184,7 +184,7 @@ test('merging again changes nothing', () => {
     assert.equal(merged.remaining, 0);
 });
 
-test('the scalars still follow the stamp', () => {
+test('the scalars still follow the stamp', async () => {
     const a = tokens({ total: 1, tier2Earned: false, spentOn: [] });
     const b = tokens({ total: 2, tier2Earned: true, spentOn: [] });
 
@@ -192,7 +192,7 @@ test('the scalars still follow the stamp', () => {
     assert.equal(mergeFreezeTokens(a, b, true).tier2Earned, false, 'local won the stamp');
 });
 
-test('over-spending across devices settles at zero rather than going negative', () => {
+test('over-spending across devices settles at zero rather than going negative', async () => {
     // Three devices each had two and each spent one while offline. The days are
     // a fait accompli; the account has to stay a number a UI can show.
     let merged = mergeFreezeTokens(
@@ -212,7 +212,7 @@ test('over-spending across devices settles at zero rather than going negative', 
    floor is the reset's day, because a spend names the day it bought and the sync
    merge drops those same day records by the same line. */
 
-test('a spend for a day the reset cleared is not handed back', () => {
+test('a spend for a day the reset cleared is not handed back', async () => {
     const reset = tokens({ total: 1, spentOn: [], remaining: 1 });
     const missedIt = tokens({ total: 1, spentOn: ['global:2026-07-30'], remaining: 0 });
 
@@ -222,7 +222,7 @@ test('a spend for a day the reset cleared is not handed back', () => {
     assert.equal(merged.remaining, 1);
 });
 
-test('a spend for the reset day itself is kept, because that day survives', () => {
+test('a spend for the reset day itself is kept, because that day survives', async () => {
     /* The day record for the reset day is not dropped - work done on it after the
        reset is real - so the charge for freezing it is real too. It also cannot
        predate the reset: a day is only frozen once it is past, so a charge naming
@@ -237,7 +237,7 @@ test('a spend for the reset day itself is kept, because that day survives', () =
     assert.equal(merged.remaining, 0);
 });
 
-test('a spend made after the reset is kept', () => {
+test('a spend made after the reset is kept', async () => {
     const merged = mergeFreezeTokens(
         tokens({ total: 1, spentOn: [] }),
         tokens({ total: 1, spentOn: ['global:2026-08-04'] }),
@@ -247,7 +247,7 @@ test('a spend made after the reset is kept', () => {
     assert.equal(merged.remaining, 0);
 });
 
-test('the reset cuts grants on the same line as spends', () => {
+test('the reset cuts grants on the same line as spends', async () => {
     /* A grant that forgave a voided spend has nothing left to forgive. Keeping
        it while dropping the spend would leave a credit standing against a freeze
        that no longer exists - the reset's refill, counted twice. */
@@ -261,7 +261,7 @@ test('the reset cuts grants on the same line as spends', () => {
     assert.equal(merged.remaining, 2);
 });
 
-test('a legacy entry names no day, so the reset voids it', () => {
+test('a legacy entry names no day, so the reset voids it', async () => {
     // It predates the ledger, which means it cannot predate the reset any less.
     const legacy = { total: 2, remaining: 0, tier1Earned: true, tier2Earned: true, initialized: true };
 
@@ -271,7 +271,7 @@ test('a legacy entry names no day, so the reset voids it', () => {
     assert.equal(merged.remaining, 2);
 });
 
-test('without a reset the ledger is untouched', () => {
+test('without a reset the ledger is untouched', async () => {
     // Every merge on a device that has never reset goes through here, so the
     // floor has to be inert when there is none.
     const merged = mergeFreezeTokens(
@@ -284,21 +284,21 @@ test('without a reset the ledger is untouched', () => {
 
 // ── Records from before the ledger ──────────────────────────────────────────
 
-test('a record without a ledger gets one built from its own count', () => {
+test('a record without a ledger gets one built from its own count', async () => {
     const legacy = { total: 2, remaining: 0, tier1Earned: true, tier2Earned: true, initialized: true };
 
     assert.equal(spendLedger(legacy).length, 2);
     assert.equal(recomputeRemaining(legacy).remaining, 0, 'and the count it had is preserved');
 });
 
-test('an untouched legacy record keeps every token it had', () => {
+test('an untouched legacy record keeps every token it had', async () => {
     const legacy = { total: 2, remaining: 2, tier1Earned: true, tier2Earned: true, initialized: true };
 
     assert.deepEqual(spendLedger(legacy), []);
     assert.equal(recomputeRemaining(legacy).remaining, 2);
 });
 
-test('two devices synthesise the same legacy entries, so they do not double up', () => {
+test('two devices synthesise the same legacy entries, so they do not double up', async () => {
     /* Both sides name their carried-over spends identically, so the union keeps
        the larger of the two counts - which is what the old merge did with the
        counter - rather than adding one device's history to the other's. */
@@ -308,7 +308,7 @@ test('two devices synthesise the same legacy entries, so they do not double up',
     assert.equal(mergeFreezeTokens(a, b, true).remaining, 1);
 });
 
-test('a legacy record and a named spend add up', () => {
+test('a legacy record and a named spend add up', async () => {
     const legacy = { total: 2, remaining: 1, tier1Earned: true, tier2Earned: true, initialized: true };
     const modern = tokens({ spentOn: ['global:2026-08-01'], remaining: 1 });
 

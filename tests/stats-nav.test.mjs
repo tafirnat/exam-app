@@ -66,24 +66,24 @@ const rowTexts = () => [...document.querySelectorAll('#statsList .stats-item-tex
 /* "İncele" opens a source that may not be active. It used to get there by
    switching "Tüm Kaynaklar" on, and nothing ever switched it back: from then
    on every filter the user pressed quietly described the whole library. */
-test('a $source scope reaches a live source that is not active', () => {
+test('a $source scope reaches a live source that is not active', async () => {
     renderStatsList('all', '$Gamma');
     assert.deepEqual(rowTexts().sort(), ['c1', 'c2']);
     assert.equal(document.getElementById('statsGlobalToggle').checked, false,
         'the header toggle is the user\'s, not a lever the scope pulls');
 });
 
-test('a named filter narrows inside the $source scope, not around it', () => {
+test('a named filter narrows inside the $source scope, not around it', async () => {
     renderStatsList('starred', '$Alpha');
     assert.deepEqual(rowTexts(), ['a1']);
 });
 
-test('without a scope the pool is still only the active sources', () => {
+test('without a scope the pool is still only the active sources', async () => {
     renderStatsList('starred', '');
     assert.deepEqual(rowTexts().sort(), ['a1', 'b1']);
 });
 
-test('inspectSourceQuestions leaves the header toggle alone', () => {
+test('inspectSourceQuestions leaves the header toggle alone', async () => {
     global.window.switchView = () => {};
     inspectSourceQuestions('exam_gamma_3_c');
     assert.equal(document.getElementById('statsGlobalToggle').checked, false);
@@ -92,7 +92,7 @@ test('inspectSourceQuestions leaves the header toggle alone', () => {
 
 /* --- what a filter click keeps ------------------------------------------- */
 
-test('a filter button keeps a source scope and drops everything else', () => {
+test('a filter button keeps a source scope and drops everything else', async () => {
     assert.equal(keptSearchOnFilterClick('starred', '$Alpha'), '$Alpha');
     assert.equal(keptSearchOnFilterClick('starred', 'a1'), '');
     assert.equal(keptSearchOnFilterClick('starred', '#etiket'), '');
@@ -103,7 +103,7 @@ test('a filter button keeps a source scope and drops everything else', () => {
 
 /* The two history tabs list tests, not questions - the search box has never
    reached them, so leaving a scope in the box would show a scope they ignore. */
-test('the history tabs clear the box rather than ignore it', () => {
+test('the history tabs clear the box rather than ignore it', async () => {
     assert.equal(keptSearchOnFilterClick('recent', '$Alpha'), '');
     assert.equal(keptSearchOnFilterClick('incorrect', '$Alpha'), '');
 });
@@ -113,7 +113,7 @@ test('the history tabs clear the box rather than ignore it', () => {
 /* popstate believes what the entry says. Writing filter: 'all' into every entry
    made opening a question from "Yanlış Yapılanlar" and coming back land on
    "Tümü" with every question of every active source. */
-test('the stats history entry records the running filter and search', () => {
+test('the stats history entry records the running filter and search', async () => {
     AppState.activeStatsFilter = 'flagged';
     AppState.searchKeyword = '$Alpha';
     assert.deepEqual(statsHistoryState('stats'), {
@@ -121,13 +121,13 @@ test('the stats history entry records the running filter and search', () => {
     });
 });
 
-test('a tag search is recorded as the tag filter it is', () => {
+test('a tag search is recorded as the tag filter it is', async () => {
     AppState.activeTagFilter = 'kimya';
     AppState.activeStatsFilter = 'all';
     assert.equal(statsHistoryState('stats').filter, 'tag:kimya');
 });
 
-test('every other view keeps the plain entry', () => {
+test('every other view keeps the plain entry', async () => {
     AppState.activeStatsFilter = 'flagged';
     assert.deepEqual(statsHistoryState('statsPreview'), {
         view: 'statsPreview', searchQuery: '', filter: 'all'
@@ -137,14 +137,14 @@ test('every other view keeps the plain entry', () => {
 /* The entry is written once on the way in, but the user goes on changing the
    filter inside it, so it has to be re-pointed or Back restores the filter that
    was running when the screen was opened. */
-test('stamping re-points the entry at the filter now on screen', () => {
+test('stamping re-points the entry at the filter now on screen', async () => {
     history.replaceState({ view: 'stats', searchQuery: '', filter: 'all' }, '', '#stats');
     AppState.activeStatsFilter = 'starred';
     stampStatsHistory();
     assert.equal(history.state.filter, 'starred');
 });
 
-test('stamping never touches an entry belonging to another view', () => {
+test('stamping never touches an entry belonging to another view', async () => {
     history.replaceState({ view: 'statsPreview', searchQuery: '', filter: 'all' }, '', '#statsPreview');
     AppState.activeStatsFilter = 'starred';
     stampStatsHistory();
@@ -156,7 +156,7 @@ test('stamping never touches an entry belonging to another view', () => {
 
 /* The rules above are only worth anything if the click handler and switchView
    actually run them; a mutant that drops either call passes every case above. */
-test('main.js runs the rules it delegates', () => {
+test('main.js runs the rules it delegates', async () => {
     const src = readFileSync(new URL('../src/main.js', import.meta.url), 'utf8');
     assert.ok(src.includes('keptSearchOnFilterClick(btn.dataset.filter'),
         'the filter click has to ask what the search box keeps');

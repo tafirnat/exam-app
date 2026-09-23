@@ -2,7 +2,7 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import { renderMarkdown, renderInlineMarkdown, plainText, headingDelta, clampHeadingLevel } from '../src/core/markdown.js';
 
-test('1. Escape first security requirement - XSS payload escaping', () => {
+test('1. Escape first security requirement - XSS payload escaping', async () => {
     const input = '<script>alert(1)</script><iframe src="javascript:alert(2)"></iframe>';
     const output = renderMarkdown(input);
 
@@ -12,7 +12,7 @@ test('1. Escape first security requirement - XSS payload escaping', () => {
     assert.equal(output.includes('&lt;iframe src=&quot;javascript:alert(2)&quot;&gt;'), true);
 });
 
-test('Tag whitelist enforcement', () => {
+test('Tag whitelist enforcement', async () => {
     const markdown = `# Title\n\n- item 1\n- [ ] task 1\n\n> [!note] Callout\n> Body\n\n\`\`\`js\nconst x = 1;\n\`\`\`\n\n| H1 | H2 |\n|---|---|\n| C1 | C2 |\n\n[link](https://example.com)`;
     const html = renderMarkdown(markdown);
     
@@ -30,7 +30,7 @@ test('Tag whitelist enforcement', () => {
     }
 });
 
-test('2. Inline Markdown formatting table 2.1', () => {
+test('2. Inline Markdown formatting table 2.1', async () => {
     assert.equal(renderInlineMarkdown('**bold**'), '<strong>bold</strong>');
     assert.equal(renderInlineMarkdown('__bold__'), '<strong>bold</strong>');
     assert.equal(renderInlineMarkdown('*italic*'), '<em>italic</em>');
@@ -45,11 +45,11 @@ test('2. Inline Markdown formatting table 2.1', () => {
     assert.equal(renderInlineMarkdown('\\*escaped\\*'), '*escaped*');
 });
 
-test('Intra-word underscores preserve snake_case', () => {
+test('Intra-word underscores preserve snake_case', async () => {
     assert.equal(renderInlineMarkdown('user_profile_name'), 'user_profile_name');
 });
 
-test('3. Block Markdown formatting table 2.2', () => {
+test('3. Block Markdown formatting table 2.2', async () => {
     const listMd = '- Apple\n- Banana';
     assert.equal(renderMarkdown(listMd), '<div class="md-content"><ul><li>Apple</li><li>Banana</li></ul></div>');
 
@@ -68,14 +68,14 @@ test('3. Block Markdown formatting table 2.2', () => {
     assert.equal(renderMarkdown(hrMd), '<div class="md-content"><hr></div>');
 });
 
-test('Table rendering', () => {
+test('Table rendering', async () => {
     const tableMd = '| Col 1 | Col 2 |\n| :--- | :---: |\n| A | B |';
     const tableHtml = renderMarkdown(tableMd);
     assert.equal(tableHtml.includes('<table><thead><tr><th style="text-align: left">Col 1</th><th style="text-align: center">Col 2</th></tr></thead>'), true);
     assert.equal(tableHtml.includes('<tbody><tr><td style="text-align: left">A</td><td style="text-align: center">B</td></tr></tbody></table>'), true);
 });
 
-test('4. Obsidian behaviors - Soft breaks, Heading clamp, Comments, Frontmatter, Callouts, Embeds', () => {
+test('4. Obsidian behaviors - Soft breaks, Heading clamp, Comments, Frontmatter, Callouts, Embeds', async () => {
     // Soft line break -> <br>
     const softBreakMd = 'Line 1\nLine 2';
     assert.equal(renderMarkdown(softBreakMd), '<div class="md-content"><p>Line 1<br>Line 2</p></div>');
@@ -112,7 +112,7 @@ test('4. Obsidian behaviors - Soft breaks, Heading clamp, Comments, Frontmatter,
     assert.equal(renderInlineMarkdown(embedMd), 'Check <span class="md-embed-missing">[[Embedded Architecture Note]]</span>');
 });
 
-test('5. Fenced and inline code inviolability', () => {
+test('5. Fenced and inline code inviolability', async () => {
     const codeBlock = '```js\nconst x = "**not bold** {{not_cloze}}";\n```';
     const codeHtml = renderMarkdown(codeBlock);
     assert.equal(codeHtml.includes('<strong>'), false);
@@ -124,7 +124,7 @@ test('5. Fenced and inline code inviolability', () => {
     assert.equal(inlineHtml, 'Use <code>**not bold**</code> here');
 });
 
-test('6. Link safety filtering', () => {
+test('6. Link safety filtering', async () => {
     const safeLink = '[Safe](https://example.com)';
     assert.equal(renderInlineMarkdown(safeLink).includes('<a href="https://example.com"'), true);
 
@@ -133,20 +133,20 @@ test('6. Link safety filtering', () => {
     assert.equal(renderInlineMarkdown(dangerousLink), '[Bad](javascript:alert(1))');
 });
 
-test('7. Out-of-scope syntax renders literally without error', () => {
+test('7. Out-of-scope syntax renders literally without error', async () => {
     const outOfScope = '$E = mc^2$ and block $$a^2+b^2=c^2$$ with footnote[^1] and #tag';
     const html = renderInlineMarkdown(outOfScope);
     assert.equal(html.includes('$E = mc^2$'), true);
     assert.equal(html.includes('#tag'), true);
 });
 
-test('8. plainText extraction', () => {
+test('8. plainText extraction', async () => {
     const md = '# Header\n\n**Bold** and *italic* and ==highlighted== with [Link](https://x.com) and [[Wiki Note|Alias]].';
     const text = plainText(md);
     assert.equal(text, 'Header\n\nBold and italic and highlighted with Link and Alias.');
 });
 
-test('9. Never throw on malformed input & fuzzing fragments', () => {
+test('9. Never throw on malformed input & fuzzing fragments', async () => {
     const fragments = [
         '```js\nunclosed code fence',
         '> [!warning',
@@ -174,7 +174,7 @@ test('9. Never throw on malformed input & fuzzing fragments', () => {
    than for the spec section they belong to.
    --------------------------------------------------------------------------- */
 
-test('audit: a line the table detector rejects is still rendered, not swallowed', () => {
+test('audit: a line the table detector rejects is still rendered, not swallowed', async () => {
     // The detector used to consume lines before deciding, then fall through to
     // paragraph with the cursor already advanced — deleting the line silently.
     const html = renderMarkdown('Intro paragraph\n\n| orphan pipe line\n\nAfter paragraph');
@@ -183,14 +183,14 @@ test('audit: a line the table detector rejects is still rendered, not swallowed'
     assert.equal(html.includes('After paragraph'), true);
 });
 
-test('audit: pipe rows without a delimiter row stay text, losing no row', () => {
+test('audit: pipe rows without a delimiter row stay text, losing no row', async () => {
     const html = renderMarkdown('| a | b |\n| c | d |');
     assert.equal(html.includes('<table>'), false);
     assert.equal(html.includes('| a | b |'), true);
     assert.equal(html.includes('| c | d |'), true);
 });
 
-test('audit: prose containing a pipe is not a table', () => {
+test('audit: prose containing a pipe is not a table', async () => {
     const html = renderMarkdown('Use the | character to separate cloze alternatives.');
     assert.equal(html.includes('<table>'), false);
     assert.equal(
@@ -199,7 +199,7 @@ test('audit: prose containing a pipe is not a table', () => {
     );
 });
 
-test('audit: lists nest by indentation', () => {
+test('audit: lists nest by indentation', async () => {
     assert.equal(
         renderMarkdown('- a\n  - a1\n  - a2\n- b'),
         '<div class="md-content"><ul><li>a<ul><li>a1</li><li>a2</li></ul></li><li>b</li></ul></div>'
@@ -220,7 +220,7 @@ test('audit: lists nest by indentation', () => {
     );
 });
 
-test('audit: nested and bare task items', () => {
+test('audit: nested and bare task items', async () => {
     const html = renderMarkdown('- [ ] parent\n  - [x] child');
     assert.equal(html.includes('<input type="checkbox" disabled> parent<ul>'), true);
     assert.equal(html.includes('<input type="checkbox" disabled checked> child'), true);
@@ -228,14 +228,14 @@ test('audit: nested and bare task items', () => {
     assert.equal(renderMarkdown('- [x]').includes('disabled checked>'), true);
 });
 
-test('audit: an indented continuation line joins its item instead of vanishing', () => {
+test('audit: an indented continuation line joins its item instead of vanishing', async () => {
     assert.equal(
         renderMarkdown('- first line\n  continued here\n- second'),
         '<div class="md-content"><ul><li>first line continued here</li><li>second</li></ul></div>'
     );
 });
 
-test('audit: a list or table directly under prose starts its own block', () => {
+test('audit: a list or table directly under prose starts its own block', async () => {
     assert.equal(
         renderMarkdown('Intro line\n- one\n- two'),
         '<div class="md-content"><p>Intro line</p><ul><li>one</li><li>two</li></ul></div>'
@@ -244,7 +244,7 @@ test('audit: a list or table directly under prose starts its own block', () => {
     assert.equal(table.includes('<p>Intro line</p><table>'), true);
 });
 
-test('audit: emphasis nests in both directions', () => {
+test('audit: emphasis nests in both directions', async () => {
     assert.equal(
         renderMarkdown('x **bold with *italic* inside** y'),
         '<div class="md-content"><p>x <strong>bold with <em>italic</em> inside</strong> y</p></div>'
@@ -263,7 +263,7 @@ test('audit: emphasis nests in both directions', () => {
     );
 });
 
-test('audit: a delimiter followed by a space does not open emphasis', () => {
+test('audit: a delimiter followed by a space does not open emphasis', async () => {
     // Arithmetic must survive; Obsidian applies the same rule.
     assert.equal(
         renderMarkdown('2 * 3 and 4 * 5'),
@@ -276,7 +276,7 @@ test('audit: a delimiter followed by a space does not open emphasis', () => {
     assert.equal(plainText('2 * 3 and **bold**'), '2 * 3 and bold');
 });
 
-test('audit: %% inside code is content, not a comment', () => {
+test('audit: %% inside code is content, not a comment', async () => {
     const fenced = renderMarkdown('```js\nlet a = 1; %%keep me%%\n```');
     assert.equal(fenced.includes('%%keep me%%'), true);
     const inline = renderMarkdown('run `x %%keep%% y` now');
@@ -285,7 +285,7 @@ test('audit: %% inside code is content, not a comment', () => {
     assert.equal(renderMarkdown('visible %%hidden%% tail').includes('hidden'), false);
 });
 
-test('audit: escaped backtick does not open a code span', () => {
+test('audit: escaped backtick does not open a code span', async () => {
     assert.equal(
         renderMarkdown('literal \\`not code\\` here'),
         '<div class="md-content"><p>literal `not code` here</p></div>'
@@ -294,7 +294,7 @@ test('audit: escaped backtick does not open a code span', () => {
     assert.equal(renderInlineMarkdown('`a\\*b`'), '<code>a\\*b</code>');
 });
 
-test('audit: every escape in the spec table yields its literal character', () => {
+test('audit: every escape in the spec table yields its literal character', async () => {
     const cases = [
         ['a \\*x\\* b', 'a *x* b'],
         ['a \\_x\\_ b', 'a _x_ b'],
@@ -308,7 +308,7 @@ test('audit: every escape in the spec table yields its literal character', () =>
     }
 });
 
-test('audit: author text cannot forge a parser placeholder', () => {
+test('audit: author text cannot forge a parser placeholder', async () => {
     // Control characters are stripped on the way in, so the NUL-delimited
     // placeholders used internally are unforgeable — an author who writes one
     // must not have their text deleted or substituted.
@@ -323,7 +323,7 @@ test('audit: author text cannot forge a parser placeholder', () => {
     assert.equal(renderMarkdown('text __MD_CODE_TOKEN_0__ more').includes('MD_CODE_TOKEN_0'), true);
 });
 
-test('audit: heading clamp is a pure function, testable on its own', () => {
+test('audit: heading clamp is a pure function, testable on its own', async () => {
     assert.equal(headingDelta([3, 4, 2]), 0, 'shallowest is already h2');
     assert.equal(headingDelta([3, 4]), -1, 'h3 shifts up to h2');
     assert.equal(headingDelta([1]), 1, 'h1 shifts down to h2');
@@ -334,7 +334,7 @@ test('audit: heading clamp is a pure function, testable on its own', () => {
     assert.equal(clampHeadingLevel(1, -1), 2, 'never shallower than h2');
 });
 
-test('audit: adjacent callouts stay separate', () => {
+test('audit: adjacent callouts stay separate', async () => {
     // Continuing a callout across a blank line merged two of them and left the
     // second one's [!type] Title as literal text in the first one's body.
     const html = renderMarkdown('> [!tip] First\n> body one\n\n> [!warning] Second\n> body two');
@@ -344,7 +344,7 @@ test('audit: adjacent callouts stay separate', () => {
     assert.match(html, /First<\/div><div class="md-callout-body"><p>body one<\/p><\/div><\/div><div class="md-callout md-callout-warning"/);
 });
 
-test('audit: a callout paragraph break uses > on the empty line', () => {
+test('audit: a callout paragraph break uses > on the empty line', async () => {
     // This is Obsidian's way to keep one callout with two paragraphs, and it is
     // what makes the blank-line rule above safe.
     const html = renderMarkdown('> [!tip] Title\n> para one\n>\n> para two');
@@ -352,12 +352,12 @@ test('audit: a callout paragraph break uses > on the empty line', () => {
     assert.match(html, /<p>para one<\/p><p>para two<\/p>/);
 });
 
-test('audit: a callout is ended by a blank line, not by the next block', () => {
+test('audit: a callout is ended by a blank line, not by the next block', async () => {
     const html = renderMarkdown('> [!note] Note\n> body\n\nPlain paragraph.');
     assert.match(html, /<\/div><\/div><p>Plain paragraph\.<\/p>/);
 });
 
-test('code block copy button appears on long or multiline code and is omitted for short snippets', () => {
+test('code block copy button appears on long or multiline code and is omitted for short snippets', async () => {
     // Short snippet (< 40 chars and single line)
     const shortHtml = renderMarkdown('```\nx = 1;\n```');
     assert.equal(shortHtml.includes('md-code-copy-btn'), false);

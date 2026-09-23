@@ -87,7 +87,7 @@ function payload(over = {}) {
 
 // ── The standard prompt ─────────────────────────────────────────────────────
 
-test('the standard prompt is not a record, so there is nothing to delete', () => {
+test('the standard prompt is not a record, so there is nothing to delete', async () => {
     AppState.aiPrompts = [prompt('p1', 'Mine', 'body')];
 
     const all = listPrompts();
@@ -100,7 +100,7 @@ test('the standard prompt is not a record, so there is nothing to delete', () =>
     assert.equal(AppState.aiPrompts.some(p => p.id === DEFAULT_PROMPT_ID), false);
 });
 
-test('an un-overridden standard prompt follows the app language', () => {
+test('an un-overridden standard prompt follows the app language', async () => {
     AppState.language = 'de';
     assert.equal(defaultPromptBody(), translations.de.ai_prompt_template);
 
@@ -113,17 +113,17 @@ test('an un-overridden standard prompt follows the app language', () => {
     assert.equal(defaultPromptBody(), 'my own wording');
 });
 
-test('an unknown language falls back rather than showing a key', () => {
+test('an unknown language falls back rather than showing a key', async () => {
     AppState.language = 'fr';
     assert.equal(defaultPromptBody(), translations.en.ai_prompt_template);
 });
 
 // ── Selection ───────────────────────────────────────────────────────────────
 
-test('the selection is a synced setting', () => {
+test('the selection is a synced setting', async () => {
     assert.ok(SYNCED_SETTINGS.includes('activePromptId'));
 
-    initState({ force: true });
+    await initState({ force: true });
     AppState.activePromptId = 'p1';
     saveActivePromptId();
     assert.equal(localStorage.getItem('focus_app_active_prompt_id'), 'p1');
@@ -131,7 +131,7 @@ test('the selection is a synced setting', () => {
     assert.ok(AppState.settingsRevisions.activePromptId?.at > 0);
 });
 
-test('a selection naming a deleted prompt falls back to the standard one', () => {
+test('a selection naming a deleted prompt falls back to the standard one', async () => {
     AppState.aiPrompts = [prompt('p1', 'Mine', 'body')];
     AppState.activePromptId = 'p1';
     assert.equal(resolveActivePrompt().id, 'p1');
@@ -146,7 +146,7 @@ test('a selection naming a deleted prompt falls back to the standard one', () =>
 
 // ── The one-off prompt ──────────────────────────────────────────────────────
 
-test('the ad-hoc prompt never enters the sync payload', () => {
+test('the ad-hoc prompt never enters the sync payload', async () => {
     AppState.adhocPrompt = 'just for this question';
     saveAdhocPrompt();
 
@@ -155,14 +155,14 @@ test('the ad-hoc prompt never enters the sync payload', () => {
     assert.equal(JSON.stringify(sent).includes('just for this question'), false);
 });
 
-test('the ad-hoc prompt is not a synced setting either', () => {
+test('the ad-hoc prompt is not a synced setting either', async () => {
     /* The other route it could leak by: SYNCED_SETTINGS travels inside the
        payload's `settings`, so a key added there would sync without ever
        appearing as a top-level field. */
     assert.equal(SYNCED_SETTINGS.includes('adhocPrompt'), false);
 });
 
-test('the ad-hoc prompt is selectable while it lives', () => {
+test('the ad-hoc prompt is selectable while it lives', async () => {
     AppState.adhocPrompt = 'one-off';
     AppState.activePromptId = ADHOC_PROMPT_ID;
 
@@ -176,14 +176,14 @@ test('the ad-hoc prompt is selectable while it lives', () => {
     assert.equal(resolveActivePrompt().id, DEFAULT_PROMPT_ID);
 });
 
-test('a blank ad-hoc prompt is not an entry', () => {
+test('a blank ad-hoc prompt is not an entry', async () => {
     AppState.adhocPrompt = '   ';
     assert.equal(listPrompts().some(p => p.id === ADHOC_PROMPT_ID), false);
 });
 
 // ── Filling the template ────────────────────────────────────────────────────
 
-test('a variable with no value takes its whole line with it', () => {
+test('a variable with no value takes its whole line with it', async () => {
     const body = 'Question: {question}\nOptions: {options}\nMy answer: {answer}';
     const out = fillTemplate(body, { question: 'Explain the OSI model.', options: '', answer: '7 layers' });
 
@@ -194,19 +194,19 @@ test('a variable with no value takes its whole line with it', () => {
     assert.equal(out.includes('Options:'), false);
 });
 
-test('one filled variable keeps a line that has several', () => {
+test('one filled variable keeps a line that has several', async () => {
     const out = fillTemplate('Q: {question} — A: {answer}', { question: 'Why?', answer: '' });
     // Dropping would throw away the question, which the user can see is there.
     assert.ok(out.includes('Why?'));
 });
 
-test('text outside the known variables is left alone', () => {
+test('text outside the known variables is left alone', async () => {
     const out = fillTemplate('Reply as {"role":"tutor"} about {question}', { question: 'X' });
     assert.ok(out.includes('{"role":"tutor"}'));
     assert.ok(out.includes('about X'));
 });
 
-test('every variable the editor advertises is one the formatter substitutes', () => {
+test('every variable the editor advertises is one the formatter substitutes', async () => {
     /* The hint in the editor is built from PROMPT_VARIABLES, so a name listed
        there but not handled would be offered to the user and then printed
        literally into the prompt. */
@@ -222,14 +222,14 @@ test('every variable the editor advertises is one the formatter substitutes', ()
 
 // ── Inserting a variable from the hint ──────────────────────────────────────
 
-test('a variable is inserted at the caret, not at the end', () => {
+test('a variable is inserted at the caret, not at the end', async () => {
     const { value, caret } = insertVariableAt('Frage:  — bewerte das.', 'question', 7, 7);
     assert.equal(value, 'Frage: {question} — bewerte das.');
     // The caret follows the inserted name, so a second click carries on from there.
     assert.equal(caret, 'Frage: {question}'.length);
 });
 
-test('an untouched field appends rather than prepends', () => {
+test('an untouched field appends rather than prepends', async () => {
     /* selectionStart is 0 on a textarea nobody has focused, so this is the case
        the editor guards by putting the caret at the end when it opens - and the
        one that would otherwise write the name in front of the whole prompt. */
@@ -238,7 +238,7 @@ test('an untouched field appends rather than prepends', () => {
     assert.equal(value, 'Bewerte meine Antwort. {answer}');
 });
 
-test('a separator is added only where one is missing', () => {
+test('a separator is added only where one is missing', async () => {
     assert.equal(insertVariableAt('Frage:', 'question', 6).value, 'Frage: {question}');
     // Already spaced - a second space would show.
     assert.equal(insertVariableAt('Frage: ', 'question', 7).value, 'Frage: {question}');
@@ -248,12 +248,12 @@ test('a separator is added only where one is missing', () => {
     assert.equal(insertVariableAt('', 'question', 0).value, '{question}');
 });
 
-test('a selection is replaced rather than pushed aside', () => {
+test('a selection is replaced rather than pushed aside', async () => {
     const { value } = insertVariableAt('Frage: XXXX bewerten', 'question', 7, 11);
     assert.equal(value, 'Frage: {question} bewerten');
 });
 
-test('an out-of-range caret does not corrupt the body', () => {
+test('an out-of-range caret does not corrupt the body', async () => {
     /* The body has to be longer than the negative offset, or the case passes
        for the wrong reason: String.slice reads a negative index as "from the
        end", and on a short string that happens to land on 0 anyway. Measured -
@@ -263,7 +263,7 @@ test('an out-of-range caret does not corrupt the body', () => {
     assert.equal(insertVariableAt(body, 'question', -5).value, `{question}${body}`);
 });
 
-test('a backwards selection does not duplicate what it spans', () => {
+test('a backwards selection does not duplicate what it spans', async () => {
     // start > end, which is what a drag from right to left reports.
     const { value } = insertVariableAt('Frage: XXXX bewerten', 'question', 11, 7);
     assert.equal(value, 'Frage: XXXX {question} bewerten');
@@ -284,7 +284,7 @@ const openQuestion = () => ({
     answer: { accepted_texts: ['Seven layers, from physical to application.'] }
 });
 
-test('a choice question resolves options, the marked answer and the user pick', () => {
+test('a choice question resolves options, the marked answer and the user pick', async () => {
     const vars = buildPromptVars(choiceQuestion(), { userAnswer: ['a'], sourceName: 'Networking' });
     assert.equal(vars.options, 'Data link, Network');
     assert.equal(vars.correct, 'Network');
@@ -292,7 +292,7 @@ test('a choice question resolves options, the marked answer and the user pick', 
     assert.equal(vars.source, 'Networking');
 });
 
-test('an open-ended question carries the typed answer and no options at all', () => {
+test('an open-ended question carries the typed answer and no options at all', async () => {
     const vars = buildPromptVars(openQuestion(), { userAnswer: ['The OSI model has 7 layers…'] });
 
     /* This is the case the whole feature turns on: "evaluate my answer" is
@@ -306,7 +306,7 @@ test('an open-ended question carries the typed answer and no options at all', ()
     assert.equal(out, 'Q: Explain the OSI model.\nMine: The OSI model has 7 layers…');
 });
 
-test('an unanswered question yields no answer rather than an empty label', () => {
+test('an unanswered question yields no answer rather than an empty label', async () => {
     const vars = buildPromptVars(openQuestion(), { userAnswer: null });
     assert.equal(vars.answer, '');
     assert.equal(fillTemplate('Mine: {answer}', vars), '');
@@ -325,7 +325,7 @@ const unmarkedOpenQuestion = () => ({
     content: { text: 'Describe your own study routine.' }
 });
 
-test('copying takes the question with its answer, and nothing else', () => {
+test('copying takes the question with its answer, and nothing else', async () => {
     const text = buildQuestionAnswerText(choiceQuestion());
 
     assert.ok(text.includes('Which layer routes packets?'));
@@ -337,7 +337,7 @@ test('copying takes the question with its answer, and nothing else', () => {
     assert.ok(!text.includes('Data link'));
 });
 
-test('an open-ended question with no marked answer copies the question alone', () => {
+test('an open-ended question with no marked answer copies the question alone', async () => {
     const text = buildQuestionAnswerText(unmarkedOpenQuestion());
 
     /* Nothing to copy as the answer - the user writes it themselves. A bare
@@ -347,20 +347,20 @@ test('an open-ended question with no marked answer copies the question alone', (
     assert.ok(!text.includes(translations.en.correct_answer));
 });
 
-test('the copy label follows the app language', () => {
+test('the copy label follows the app language', async () => {
     AppState.language = 'de';
     const text = buildQuestionAnswerText(choiceQuestion());
     assert.ok(text.includes(`${translations.de.correct_answer}: Network`));
 });
 
-test('a question with no text copies nothing', () => {
+test('a question with no text copies nothing', async () => {
     assert.equal(buildQuestionAnswerText(null), '');
     assert.equal(buildQuestionAnswerText({ id: 'q4', type: 'single_choice', content: {} }), '');
 });
 
 // ── Merge ───────────────────────────────────────────────────────────────────
 
-test('two devices each adding a prompt end up with both', () => {
+test('two devices each adding a prompt end up with both', async () => {
     /* The reason the library is not a synced setting. A stamped scalar ranks
        the two lists and keeps one, so whichever device pushed second would
        silently lose the other's prompt. */
@@ -373,7 +373,7 @@ test('two devices each adding a prompt end up with both', () => {
     assert.equal(merged.hasLocalChanges, true);
 });
 
-test('the newer edit of the same prompt wins', () => {
+test('the newer edit of the same prompt wins', async () => {
     const local = payload({ aiPrompts: [prompt('p1', 'New title', 'new body', 2000)] });
     const remote = payload({ aiPrompts: [prompt('p1', 'Old title', 'old body', 1000)] });
 
@@ -386,7 +386,7 @@ test('the newer edit of the same prompt wins', () => {
     assert.equal(back.aiPrompts[0].body, 'new body');
 });
 
-test('a deleted prompt is not resurrected by a device that still has it', () => {
+test('a deleted prompt is not resurrected by a device that still has it', async () => {
     const local = payload({ aiPrompts: [], deletedAiPromptIds: ['p1'] });
     const remote = payload({ aiPrompts: [prompt('p1', 'Gone', 'body')] });
 
@@ -395,15 +395,15 @@ test('a deleted prompt is not resurrected by a device that still has it', () => 
     assert.ok(merged.deletedAiPromptIds.includes('p1'));
 });
 
-test('a deletion learned from the remote is applied locally', () => {
+test('a deletion learned from the remote is applied locally', async () => {
     const local = payload({ aiPrompts: [prompt('p1', 'Still here', 'body')] });
     const remote = payload({ aiPrompts: [], deletedAiPromptIds: ['p1'] });
 
     assert.deepEqual(mergeSyncData(local, remote).aiPrompts, []);
 });
 
-test('tracking a deletion writes the tombstone through storage', () => {
-    initState({ force: true });
+test('tracking a deletion writes the tombstone through storage', async () => {
+    await initState({ force: true });
     trackDeletedAiPrompt('p1');
     assert.deepEqual(JSON.parse(localStorage.getItem('focus_app_deleted_ai_prompts')), ['p1']);
 
@@ -414,8 +414,8 @@ test('tracking a deletion writes the tombstone through storage', () => {
 
 // ── Resets ──────────────────────────────────────────────────────────────────
 
-test('a progress reset leaves the prompt library alone', () => {
-    initState({ force: true });
+test('a progress reset leaves the prompt library alone', async () => {
+    await initState({ force: true });
     AppState.aiPrompts = [prompt('p1', 'Mine', 'body')];
     saveAiPrompts();
 
@@ -428,8 +428,8 @@ test('a progress reset leaves the prompt library alone', () => {
     assert.equal(AppState.aiPrompts[0].id, 'p1');
 });
 
-test('a factory reset leaves the prompt library alone too', () => {
-    initState({ force: true });
+test('a factory reset leaves the prompt library alone too', async () => {
+    await initState({ force: true });
     AppState.aiPrompts = [prompt('p1', 'Mine', 'body')];
     saveAiPrompts();
 
@@ -437,7 +437,7 @@ test('a factory reset leaves the prompt library alone too', () => {
     assert.equal(AppState.aiPrompts.length, 1);
 });
 
-test('a reset on one device does not delete the other devices prompts', () => {
+test('a reset on one device does not delete the other devices prompts', async () => {
     /* The merge-side half of the same rule. Quick presets drop the remote side
        when the local reset is newer; doing that here would make clearing this
        device's progress delete prompts written on the other two. */
@@ -455,8 +455,8 @@ test('a reset on one device does not delete the other devices prompts', () => {
 
 // ── Seeding ─────────────────────────────────────────────────────────────────
 
-test('the starter prompts are seeded once, in the reader language', () => {
-    initState({ force: true });
+test('the starter prompts are seeded once, in the reader language', async () => {
+    await initState({ force: true });
     AppState.language = 'de';
     AppState.aiPrompts = [];
 
@@ -470,8 +470,8 @@ test('the starter prompts are seeded once, in the reader language', () => {
     assert.equal(AppState.aiPrompts.length, 3);
 });
 
-test('a deleted starter prompt is not seeded back', () => {
-    initState({ force: true });
+test('a deleted starter prompt is not seeded back', async () => {
+    await initState({ force: true });
     AppState.aiPrompts = [];
     AppState.deletedAiPromptIds = ['seed-explain'];
 
@@ -483,8 +483,8 @@ test('a deleted starter prompt is not seeded back', () => {
     assert.deepEqual(AppState.aiPrompts.map(p => p.id).sort(), ['seed-evaluate', 'seed-verify']);
 });
 
-test('the starter prompts carry fixed ids so three devices seed the same three', () => {
-    initState({ force: true });
+test('the starter prompts carry fixed ids so three devices seed the same three', async () => {
+    await initState({ force: true });
     AppState.aiPrompts = [];
     seedAiPrompts(key => translations.en[key]);
     const first = AppState.aiPrompts.map(p => p.id);
@@ -500,7 +500,7 @@ test('the starter prompts carry fixed ids so three devices seed the same three',
     assert.deepEqual(first, second);
 });
 
-test('the starter prompts use the variables they need', () => {
+test('the starter prompts use the variables they need', async () => {
     // "Evaluate my answer" is the reason {answer} exists. A seeded prompt that
     // forgot it would ship the feature's headline case broken.
     assert.ok(translations.en.seed_evaluate_body.includes('{answer}'));
@@ -510,7 +510,7 @@ test('the starter prompts use the variables they need', () => {
 
 // ── i18n ────────────────────────────────────────────────────────────────────
 
-test('both AI menus carry the two actions, and both are bound', () => {
+test('both AI menus carry the two actions, and both are bound', async () => {
     /* The menu exists twice - the test screen and the stats preview - and the
        twins are bound in two separate blocks of main.js. Adding a control to
        one and not the other is the standing failure mode here; so is leaving a
@@ -565,7 +565,7 @@ test('both AI menus carry the two actions, and both are bound', () => {
     });
 });
 
-test('sharing hands out the prompt, copying does not', () => {
+test('sharing hands out the prompt, copying does not', async () => {
     /* The whole point of the split. Pointing share at the question text would
        ship the AI half of the menu broken - an external AI asked to check a
        question it cannot see the options of - and nothing would throw. */
@@ -583,7 +583,7 @@ test('sharing hands out the prompt, copying does not', () => {
     assert.ok(!copy[0].includes('getFormattedPrompt('), 'copy must not send the prompt');
 });
 
-test('every prompt string exists in all three languages', () => {
+test('every prompt string exists in all three languages', async () => {
     /* Hardcoded Turkish has shipped into the German UI before (see CLAUDE.md
        (27)), and these strings were all written in one pass. */
     const keys = Object.keys(translations.tr).filter(k => k.startsWith('prompt_') || k.startsWith('seed_'));

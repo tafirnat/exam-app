@@ -15,7 +15,7 @@ before(async () => {
     ({ sanitizeImportedData } = await import('../src/features/sources/sources-service.js'));
 });
 
-test('isSafeUrl rejects malicious protocols and accepts safe ones', () => {
+test('isSafeUrl rejects malicious protocols and accepts safe ones', async () => {
     // Malicious
     assert.strictEqual(isSafeUrl('javascript:alert(1)'), false);
     assert.strictEqual(isSafeUrl('JAVASCRIPT:alert(1)'), false);
@@ -33,13 +33,13 @@ test('isSafeUrl rejects malicious protocols and accepts safe ones', () => {
     assert.strictEqual(isSafeUrl('#section'), true);
 });
 
-test('renderMarkdown neutralizes javascript: links', () => {
+test('renderMarkdown neutralizes javascript: links', async () => {
     const maliciousMarkdown = '[Click Me](javascript:alert("xss"))';
     const html = renderMarkdown(maliciousMarkdown);
     assert.strictEqual(html.includes('href="javascript:'), false);
 });
 
-test('sanitizeImportedData strips prototype pollution keys', () => {
+test('sanitizeImportedData strips prototype pollution keys', async () => {
     const maliciousJSON = {
         exam_metadata: { title: 'Test Exam' },
         __proto__: { polluted: true },

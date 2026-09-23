@@ -41,7 +41,7 @@ before(async () => {
     initState = stateMod.initState;
     saveActiveTest = stateMod.saveActiveTest;
     clearActiveTest = stateMod.clearActiveTest;
-    initState();
+    await initState();
 
     readJSON = (await import('../src/core/storage.js')).readJSON;
 
@@ -115,7 +115,7 @@ test('a write scheduled just before the finish cannot outlive the tombstone', as
    record, and it is the only reason rating the same card twice replaces the
    first rating instead of stacking on it. Measured before the fix: three clicks
    on Schwer moved difficulty 4.46 -> 7.35 and wrong 1 -> 3. */
-test('rating the same card three times counts once, with or without a record', () => {
+test('rating the same card three times counts once, with or without a record', async () => {
     for (let i = 0; i < 3; i++) updateFlashcardStats('exam_a', 'q1', 2);
     const withRecord = { ...AppState.stats['exam_a_q1'] };
 

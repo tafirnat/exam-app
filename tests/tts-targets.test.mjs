@@ -65,7 +65,7 @@ test.beforeEach(() => {
     spoken.length = 0;
 });
 
-test('the button that was pressed is the button that shows it', () => {
+test('the button that was pressed is the button that shows it', async () => {
     /* Every index in turn, not just the pair that shipped: a fix that special-
        cases the flashcard back would pass a two-button case and fail here. */
     for (let i = 0; i < FOUR.length; i++) {
@@ -77,7 +77,7 @@ test('the button that was pressed is the button that shows it', () => {
     }
 });
 
-test('exactly one button is ever playing', () => {
+test('exactly one button is ever playing', async () => {
     // Walking across the card: each press must take the state off the last one.
     for (let i = 0; i < FOUR.length; i++) {
         click(draw(FOUR)[i]);
@@ -85,14 +85,14 @@ test('exactly one button is ever playing', () => {
     }
 });
 
-test('each button speaks its own text', () => {
+test('each button speaks its own text', async () => {
     click(draw(FOUR)[1]);
     assert.match(spoken.at(-1), /Rueckseite/);
     click(draw(FOUR)[3]);
     assert.match(spoken.at(-1), /Abschnitt zwei/);
 });
 
-test('the playing button offers to stop, and a second press does', () => {
+test('the playing button offers to stop, and a second press does', async () => {
     const idle = draw(FOUR)[1];
     const idleIcon = idle.innerHTML;
     click(idle);
@@ -107,7 +107,7 @@ test('the playing button offers to stop, and a second press does', () => {
     assert.deepEqual(playingFlags(draw(FOUR)), [false, false, false, false]);
 });
 
-test('the question card does not claim another target playback', () => {
+test('the question card does not claim another target playback', async () => {
     // getIsAudioPlaying() is the question button's own state, nothing wider.
     click(draw(FOUR)[1]);
     assert.equal(getIsAudioPlaying(), false);
@@ -118,7 +118,7 @@ test('the question card does not claim another target playback', () => {
     assert.equal(isTtsPlaying(TtsTarget.FLASHCARD_BACK), false);
 });
 
-test('every card-level target has a key of its own', () => {
+test('every card-level target has a key of its own', async () => {
     const keys = [TtsTarget.QUESTION, TtsTarget.FLASHCARD_BACK, TtsTarget.PREVIEW];
     assert.equal(new Set(keys).size, keys.length, 'two card targets share a key');
     // A keyless target is the defect itself: it cannot be told from any other.
@@ -148,7 +148,7 @@ function readCode(path) {
 
 const SOURCES = ['../src/features/test/test-ui.js', '../src/main.js'];
 
-test('no two TTS buttons are built under the same key', () => {
+test('no two TTS buttons are built under the same key', async () => {
     const named = [];
     for (const path of SOURCES) {
         // The lookbehind skips the factory's own signature, which destructures
@@ -165,7 +165,7 @@ test('no two TTS buttons are built under the same key', () => {
     assert.equal(new Set(named).size, named.length, `two buttons share a key: ${named.join(', ')}`);
 });
 
-test('no playback is started without a target', () => {
+test('no playback is started without a target', async () => {
     /* A null key is not "the default" — it is what stop() writes to mean that
        nothing is playing, so starting under it makes the question's button the
        accidental owner of someone else's audio. */
@@ -175,7 +175,7 @@ test('no playback is started without a target', () => {
     }
 });
 
-test('a card-level button is never hand-rolled past the factory', () => {
+test('a card-level button is never hand-rolled past the factory', async () => {
     // One builder means one answer to "which button is playing"; a second copy
     // is how the two that shipped came to disagree in the first place.
     for (const path of SOURCES) {

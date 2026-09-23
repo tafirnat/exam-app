@@ -26,7 +26,7 @@ before(async () => {
     const stateMod = await import('../src/core/state.js');
     AppState = stateMod.AppState;
     initState = stateMod.initState;
-    initState();
+    await initState();
 
     mergeSyncData = (await import('../src/core/github-sync.js')).mergeSyncData;
     finishTest = (await import('../src/features/test/test-engine.js')).finishTest;
@@ -65,7 +65,7 @@ const payload = (extra = {}) => ({
    emptied the global log. The device kept writing entries and the next pull kept
    throwing them away. Measured before the fix: two entries dated a day after the
    reset, zero survivors. */
-test('a session finished after a progress reset survives the merge', () => {
+test('a session finished after a progress reset survives the merge', async () => {
     const resetAt = Date.now() - 86400000;
     const local = payload({
         recentTests: [entry(Date.now()), entry(Date.now() - 1000)],
@@ -79,7 +79,7 @@ test('a session finished after a progress reset survives the merge', () => {
 });
 
 /* The floor still has to do its job - what the reset cleared stays cleared. */
-test('a session finished before the reset is still dropped', () => {
+test('a session finished before the reset is still dropped', async () => {
     const resetAt = Date.now();
     const local = payload({
         recentTests: [entry(resetAt - 86400000)],
@@ -92,7 +92,7 @@ test('a session finished before the reset is still dropped', () => {
 /* Every sort key was 0 too, so the order was whatever the two arrays happened to
    be concatenated in and the slice(10) kept an arbitrary ten rather than the
    newest ten - the cap quietly threw away the recent tests it exists to keep. */
-test('the log is capped at the newest ten, not an arbitrary ten', () => {
+test('the log is capped at the newest ten, not an arbitrary ten', async () => {
     const base = Date.now() - 20 * 60000;
     const local = payload({ recentTests: Array.from({ length: 8 }, (_, i) => entry(base + i * 60000)) });
     const remote = payload({
@@ -109,7 +109,7 @@ test('the log is capped at the newest ten, not an arbitrary ten', () => {
    its questions. The deleted-source check was a no-op, which is why a deleted
    source's history outlived it; a session that still has a live question in it is
    still a test the user sat, so only an entirely dead one goes. */
-test('history goes with the source only when nothing live is left in it', () => {
+test('history goes with the source only when nothing live is left in it', async () => {
     const dead = payload({
         recentTests: [entry(Date.now())],
         deletedSourceIds: ['exam_a'],

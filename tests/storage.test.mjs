@@ -58,7 +58,7 @@ function failWithQuotaError() {
     global.localStorage.failWith = err;
 }
 
-test('persist stores objects as JSON and strings verbatim', () => {
+test('persist stores objects as JSON and strings verbatim', async () => {
     assert.equal(storage.persist('obj', { a: 1 }), true);
     assert.equal(global.localStorage.getItem('obj'), '{"a":1}');
 
@@ -66,7 +66,7 @@ test('persist stores objects as JSON and strings verbatim', () => {
     assert.equal(global.localStorage.getItem('str'), 'plain');
 });
 
-test('persist returns false instead of throwing when the quota is full', () => {
+test('persist returns false instead of throwing when the quota is full', async () => {
     failWithQuotaError();
 
     let returned;
@@ -91,20 +91,20 @@ test('a full quota is reported to the user only once per session', async () => {
     assert.equal(alerts.length, 1, `three failed writes must produce exactly one dialog, got ${alerts.length}`);
 });
 
-test('persistRemove never throws', () => {
+test('persistRemove never throws', async () => {
     storage.persist('gone', 'value');
     assert.doesNotThrow(() => storage.persistRemove('gone'));
     assert.equal(global.localStorage.getItem('gone'), null);
 });
 
-test('readJSON falls back on a missing key and on corrupt text', () => {
+test('readJSON falls back on a missing key and on corrupt text', async () => {
     assert.deepEqual(storage.readJSON('absent', { d: true }), { d: true });
 
     global.localStorage.setItem('broken', '{not json');
     assert.deepEqual(storage.readJSON('broken', []), []);
 });
 
-test('readInt and readFloat fall back rather than yielding NaN', () => {
+test('readInt and readFloat fall back rather than yielding NaN', async () => {
     assert.equal(storage.readInt('absent', 59), 59);
     assert.equal(storage.readFloat('absent', 0.5), 0.5);
 
@@ -116,7 +116,7 @@ test('readInt and readFloat fall back rather than yielding NaN', () => {
     assert.equal(storage.readInt('num', 0), 42);
 });
 
-test('readString distinguishes a missing key from a stored empty string', () => {
+test('readString distinguishes a missing key from a stored empty string', async () => {
     assert.equal(storage.readString('absent', null), null);
     global.localStorage.setItem('empty', '');
     assert.equal(storage.readString('empty', null), '');
@@ -154,7 +154,7 @@ function rawAccesses(code) {
     return hits;
 }
 
-test('storage.js is the only module that writes to localStorage directly', () => {
+test('storage.js is the only module that writes to localStorage directly', async () => {
     const offenders = [];
 
     for (const file of modulesUnderTheRule()) {
@@ -176,7 +176,7 @@ test('storage.js is the only module that writes to localStorage directly', () =>
    missing or corrupt value - or, twice on the home screen, no idea at all, so a
    damaged record threw before anything was drawn. Reading through the same door
    makes "the stored value is nonsense" one behaviour instead of eighteen. */
-test('storage.js is the only module that reads localStorage directly', () => {
+test('storage.js is the only module that reads localStorage directly', async () => {
     const offenders = [];
 
     for (const file of modulesUnderTheRule()) {
@@ -192,7 +192,7 @@ test('storage.js is the only module that reads localStorage directly', () => {
     );
 });
 
-test('the scan can tell code from the prose that describes it', () => {
+test('the scan can tell code from the prose that describes it', async () => {
     // Guards the guard: a rule this cheap to satisfy is worth nothing if it
     // fires on its own documentation, because the next person deletes it.
     assert.deepEqual(rawAccesses(' * Safely reads and parses a JSON item from localStorage.'), []);

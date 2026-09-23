@@ -25,7 +25,7 @@ const grade = (question, answer) => {
     return evaluateAnswer(0, answer);
 };
 
-test('short_answer matches any accepted text, trimmed and case-insensitive', () => {
+test('short_answer matches any accepted text, trimmed and case-insensitive', async () => {
     const q = { type: 'short_answer', content: { text: 'Başkent?' }, answer: { accepted_texts: ['Ankara', 'ANK'] } };
     assert.equal(grade(q, ['Ankara']), true);
     assert.equal(grade(q, ['  ankara ']), true);
@@ -34,19 +34,19 @@ test('short_answer matches any accepted text, trimmed and case-insensitive', () 
     assert.equal(grade(q, ['']), false);
 });
 
-test('short_answer honours caseSensitive when the question asks for it', () => {
+test('short_answer honours caseSensitive when the question asks for it', async () => {
     const q = { type: 'short_answer', content: { text: 'q' }, answer: { accepted_texts: ['Ankara'], caseSensitive: true } };
     assert.equal(grade(q, ['Ankara']), true);
     assert.equal(grade(q, ['ankara']), false);
 });
 
-test('a legacy open_ended question grades exactly as short_answer', () => {
+test('a legacy open_ended question grades exactly as short_answer', async () => {
     const q = { type: 'open_ended', content: { text: 'q' }, answer: { accepted_texts: ['Jura'] } };
     assert.equal(grade(q, ['jura']), true, 'old files keep working after the rename');
     assert.equal(grade(q, ['Medizin']), false);
 });
 
-test('fill_in_the_blank grades each blank against its own marker', () => {
+test('fill_in_the_blank grades each blank against its own marker', async () => {
     const q = { type: 'fill_in_the_blank', content: { text: "Ankara {{Türkiye'nin}} başkentidir." } };
     assert.equal(grade(q, ["Türkiye'nin"]), true);
     assert.equal(grade(q, ["türkiye'nin"]), true, 'case-insensitive like short answers');
@@ -54,21 +54,21 @@ test('fill_in_the_blank grades each blank against its own marker', () => {
     assert.equal(grade(q, []), false);
 });
 
-test('every blank must be right, not just the first', () => {
+test('every blank must be right, not just the first', async () => {
     const q = { type: 'fill_in_the_blank', content: { text: 'HTTP {{80}}, HTTPS {{443}}.' } };
     assert.equal(grade(q, ['80', '443']), true);
     assert.equal(grade(q, ['80', '8443']), false, 'a wrong second blank fails the question');
     assert.equal(grade(q, ['80']), false, 'an unanswered second blank fails too');
 });
 
-test('a blank accepts the alternatives its marker lists', () => {
+test('a blank accepts the alternatives its marker lists', async () => {
     const q = { type: 'fill_in_the_blank', content: { text: 'DNS {{53|Port 53}} kullanır.' } };
     assert.equal(grade(q, ['53']), true);
     assert.equal(grade(q, ['Port 53']), true);
     assert.equal(grade(q, ['54']), false);
 });
 
-test('choice grading still needs the exact set, no more and no less', () => {
+test('choice grading still needs the exact set, no more and no less', async () => {
     const q = {
         type: 'multiple_choice', content: { text: 'q' },
         options: [{ id: 1 }, { id: 2 }, { id: 3 }], answer: { correct_ids: [1, 2] }

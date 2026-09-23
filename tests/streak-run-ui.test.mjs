@@ -65,11 +65,11 @@ beforeEach(() => {
     AppState.continuityConfig = { focusSources: [] };
 });
 
-test('no remembered mode yet, so the first tap has to ask', () => {
+test('no remembered mode yet, so the first tap has to ask', async () => {
     assert.equal(getStreakOrder(), null);
 });
 
-test('a remembered mode is honoured, an unknown one is ignored', () => {
+test('a remembered mode is honoured, an unknown one is ignored', async () => {
     AppState.continuityConfig.streakRunOrder = 'grouped';
     assert.equal(getStreakOrder(), 'grouped');
 
@@ -77,14 +77,14 @@ test('a remembered mode is honoured, an unknown one is ignored', () => {
     assert.equal(getStreakOrder(), null);
 });
 
-test('both documented modes are accepted', () => {
+test('both documented modes are accepted', async () => {
     STREAK_ORDERS.forEach(order => {
         AppState.continuityConfig.streakRunOrder = order;
         assert.equal(getStreakOrder(), order);
     });
 });
 
-test('an empty library disables the button instead of promising a run', () => {
+test('an empty library disables the button instead of promising a run', async () => {
     const state = describeStreakRun('global');
 
     assert.equal(state.available, 0);
@@ -92,7 +92,7 @@ test('an empty library disables the button instead of promising a run', () => {
     assert.match(state.label, /Tekrar bekleyen soru yok/);
 });
 
-test('while the day is unmet the button offers to rescue the streak', () => {
+test('while the day is unmet the button offers to rescue the streak', async () => {
     const source = overdueSource('A', 30);
     AppState.sources = [source];
     seedOverdue(source);
@@ -105,7 +105,7 @@ test('while the day is unmet the button offers to rescue the streak', () => {
     assert.equal(state.label, 'Seriyi Koru (15)');
 });
 
-test('once the day is secured the button keeps working but stops claiming a rescue', () => {
+test('once the day is secured the button keeps working but stops claiming a rescue', async () => {
     const source = overdueSource('A', 30);
     AppState.sources = [source];
     seedOverdue(source);
@@ -117,7 +117,7 @@ test('once the day is secured the button keeps working but stops claiming a resc
     assert.equal(state.label, 'FSRS ile Çalış (15)');
 });
 
-test('the count reflects the real run, not the nominal target', () => {
+test('the count reflects the real run, not the nominal target', async () => {
     const source = overdueSource('A', 4);
     AppState.sources = [source];
     seedOverdue(source);
@@ -130,7 +130,7 @@ test('the count reflects the real run, not the nominal target', () => {
     assert.equal(state.label, 'Seriyi Koru (4)');
 });
 
-test('an inactive source still counts towards the global run', () => {
+test('an inactive source still counts towards the global run', async () => {
     const source = overdueSource('A', 20);
     source.active = false;
     AppState.sources = [source];
@@ -140,7 +140,7 @@ test('an inactive source still counts towards the global run', () => {
     assert.equal(describeStreakRun('global').enabled, true);
 });
 
-test('the focus button is disabled until focus sources are selected', () => {
+test('the focus button is disabled until focus sources are selected', async () => {
     const source = overdueSource('A', 20);
     AppState.sources = [source];
     seedOverdue(source);
@@ -152,7 +152,7 @@ test('the focus button is disabled until focus sources are selected', () => {
     assert.equal(describeStreakRun('focus').enabled, true);
 });
 
-test('the focus button reads the focus track, not the global one', () => {
+test('the focus button reads the focus track, not the global one', async () => {
     const source = overdueSource('A', 30);
     AppState.sources = [source];
     seedOverdue(source);

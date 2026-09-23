@@ -81,7 +81,7 @@ beforeEach(() => { if (global.localStorage) global.localStorage.clear(); });
 
 // ── The Odak track has to exist before it is worth protecting ───────────────
 
-test('no focus source selected means no focus day is ever frozen', () => {
+test('no focus source selected means no focus day is ever frozen', async () => {
     seed({ focusSources: [], global: { total: 2, remaining: 2, tier1Earned: true, tier2Earned: true } });
 
     engine.initTodayActivity();
@@ -93,7 +93,7 @@ test('no focus source selected means no focus day is ever frozen', () => {
     assert.equal(AppState.studyActivity[day(-1)].focusFrozen, false);
 });
 
-test('a global joker is never spent on a focus day the user cannot study', () => {
+test('a global joker is never spent on a focus day the user cannot study', async () => {
     /* The measured drain, at its sharpest: the joker exists to protect the streak
        the user is actually running, and it was going to the one they never
        opened. */
@@ -108,7 +108,7 @@ test('a global joker is never spent on a focus day the user cannot study', () =>
         'no global token paid for a focus day');
 });
 
-test('a selection whose sources are all archived counts as no selection', () => {
+test('a selection whose sources are all archived counts as no selection', async () => {
     // The requirement cannot be met either way, so freezing only burns tokens.
     seed({ focusSources: ['src-a'] });
     AppState.sources = [{ id: 'src-a', name: 'A', archived: true, questions: [] }];
@@ -119,7 +119,7 @@ test('a selection whose sources are all archived counts as no selection', () => 
     assert.equal(AppState.studyActivity[day(-1)].focusFrozen, false);
 });
 
-test('with a live focus source the focus day is frozen as before', () => {
+test('with a live focus source the focus day is frozen as before', async () => {
     // The gate must not turn the feature off for the users it is meant for.
     seed({ focusSources: ['src-a'] });
 
@@ -131,7 +131,7 @@ test('with a live focus source the focus day is frozen as before', () => {
 
 // ── Own tokens first, jokers second ────────────────────────────────────────
 
-test('the Genel track does not take the Odak token while Odak still needs it', () => {
+test('the Genel track does not take the Odak token while Odak still needs it', async () => {
     seed({
         focusSources: ['src-a'],
         // Genel is out of its own, Odak holds one and has a joker earned.
@@ -147,7 +147,7 @@ test('the Genel track does not take the Odak token while Odak still needs it', (
     assert.equal(yesterday.frozen, false, 'and Genel went without rather than taking it');
 });
 
-test('cross-use still happens once every track has been offered its own', () => {
+test('cross-use still happens once every track has been offered its own', async () => {
     seed({
         focusSources: ['src-a'],
         global: { total: 1, remaining: 0, tier1Earned: true, spentOn: ['global:2026-01-01'] },
@@ -163,7 +163,7 @@ test('cross-use still happens once every track has been offered its own', () => 
     assert.equal(tokens()[1].remaining, 0);
 });
 
-test('only a Tier 2 token crosses tracks', () => {
+test('only a Tier 2 token crosses tracks', async () => {
     seed({
         focusSources: ['src-a'],
         global: { total: 1, remaining: 0, tier1Earned: true, spentOn: ['global:2026-01-01'] },
@@ -179,7 +179,7 @@ test('only a Tier 2 token crosses tracks', () => {
 
 // ── The records have to exist before the freeze reads them ─────────────────
 
-test('a config that has never held token records still freezes its first miss', () => {
+test('a config that has never held token records still freezes its first miss', async () => {
     /* freezeMissedDaysIfPossible() used to run before the records were created,
        so a config from an older build missed its first freeze entirely and the
        streak dropped with a token sitting unspent. */
@@ -196,7 +196,7 @@ test('a config that has never held token records still freezes its first miss', 
 
 // ── Earning ────────────────────────────────────────────────────────────────
 
-test('a frozen day does not count towards earning the next token', () => {
+test('a frozen day does not count towards earning the next token', async () => {
     /* Otherwise the two feed each other: freeze a day, earn a replacement,
        freeze another. Both the spec and the card say "kesintisiz seri". */
     seed({ history: 20, focusSources: [] });
@@ -207,7 +207,7 @@ test('a frozen day does not count towards earning the next token', () => {
     assert.equal(tokens()[0].tier1Earned, false, 'the window has a coasted day in it');
 });
 
-test('a clean window still earns', () => {
+test('a clean window still earns', async () => {
     seed({ history: 20, focusSources: [] });
 
     engine.initTodayActivity();
@@ -218,7 +218,7 @@ test('a clean window still earns', () => {
     assert.ok(g.grants.length > 0, 'and the grant is recorded rather than applied by deletion');
 });
 
-test('an earned grant is named for the day it was earned', () => {
+test('an earned grant is named for the day it was earned', async () => {
     seed({ history: 20, focusSources: [] });
 
     engine.initTodayActivity();

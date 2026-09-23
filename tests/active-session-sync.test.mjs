@@ -84,7 +84,7 @@ beforeEach(() => {
 
 // ── Carrying a session between devices ──────────────────────────────────────
 
-test('a session from the other device is picked up when this one has none', () => {
+test('a session from the other device is picked up when this one has none', async () => {
     const remote = session(OTHER_DEVICE, { answered: 4 });
 
     const merged = mergedSession(null, remote);
@@ -93,7 +93,7 @@ test('a session from the other device is picked up when this one has none', () =
     assert.equal(merged.currentTest.length, 7);
 });
 
-test('the session record names questions, not question bodies', () => {
+test('the session record names questions, not question bodies', async () => {
     const merged = mergedSession(null, session(OTHER_DEVICE));
 
     assert.ok(merged.currentTest.every(id => typeof id === 'string'),
@@ -101,7 +101,7 @@ test('the session record names questions, not question bodies', () => {
     assert.ok(JSON.stringify(merged).length < 2000);
 });
 
-test('the newer of two idle sessions wins', () => {
+test('the newer of two idle sessions wins', async () => {
     const older = session(THIS_DEVICE, { answered: 1, agoMs: 60 * 60 * 1000 });
     const newer = session(OTHER_DEVICE, { answered: 5, agoMs: 10 * 60 * 1000 });
 
@@ -111,7 +111,7 @@ test('the newer of two idle sessions wins', () => {
 
 // ── The device actually sitting in the test ─────────────────────────────────
 
-test('a live local session is never replaced, even by a newer remote one', () => {
+test('a live local session is never replaced, even by a newer remote one', async () => {
     const live = session(THIS_DEVICE, { answered: 3, agoMs: 1000 });
     // The other device wrote its copy a moment later - and is wrong to.
     const remote = session(OTHER_DEVICE, { answered: 6, agoMs: 0 });
@@ -122,14 +122,14 @@ test('a live local session is never replaced, even by a newer remote one', () =>
     assert.equal(merged.deviceId, THIS_DEVICE);
 });
 
-test('a local session goes stale once the device stops writing to it', () => {
+test('a local session goes stale once the device stops writing to it', async () => {
     const abandoned = session(THIS_DEVICE, { answered: 3, agoMs: 30 * 60 * 1000 });
     const remote = session(OTHER_DEVICE, { answered: 6, agoMs: 60 * 1000 });
 
     assert.equal(mergedSession(abandoned, remote).currentIndex, 6);
 });
 
-test('a live session belonging to some other device does not get the exemption', () => {
+test('a live session belonging to some other device does not get the exemption', async () => {
     // Same record, but this device is not the one that wrote it.
     const notOurs = { ...session(OTHER_DEVICE, { answered: 3, agoMs: 1000 }) };
     const newer = session(OTHER_DEVICE, { answered: 6, agoMs: 0 });
@@ -139,7 +139,7 @@ test('a live session belonging to some other device does not get the exemption',
 
 // ── Finishing ───────────────────────────────────────────────────────────────
 
-test('a finished test is not resurrected by the other device\'s stale copy', () => {
+test('a finished test is not resurrected by the other device\'s stale copy', async () => {
     const stale = session(OTHER_DEVICE, { answered: 4, agoMs: 60 * 60 * 1000 });
     const done = finished(THIS_DEVICE, 1000);
 
@@ -149,14 +149,14 @@ test('a finished test is not resurrected by the other device\'s stale copy', () 
     assert.ok(!merged.currentTest, 'a cleared record offers nothing to resume');
 });
 
-test('finishing on the other device clears it here too', () => {
+test('finishing on the other device clears it here too', async () => {
     const mine = session(THIS_DEVICE, { answered: 4, agoMs: 60 * 60 * 1000 });
     const done = finished(OTHER_DEVICE, 1000);
 
     assert.equal(mergedSession(mine, done).cleared, true);
 });
 
-test('finishing does not out-rank a test being taken right now', () => {
+test('finishing does not out-rank a test being taken right now', async () => {
     const live = session(THIS_DEVICE, { answered: 2, agoMs: 500 });
     const done = finished(OTHER_DEVICE, 0);
 
@@ -165,18 +165,18 @@ test('finishing does not out-rank a test being taken right now', () => {
 
 // ── Degenerate records ──────────────────────────────────────────────────────
 
-test('no session on either side stays no session', () => {
+test('no session on either side stays no session', async () => {
     assert.equal(mergedSession(null, null), null);
 });
 
-test('an undated record from an older build loses to a dated one', () => {
+test('an undated record from an older build loses to a dated one', async () => {
     const undated = { currentTest: ['src-1_q0'], currentIndex: 0, deviceId: THIS_DEVICE };
     const dated = session(OTHER_DEVICE, { answered: 3, agoMs: 60 * 60 * 1000 });
 
     assert.equal(mergedSession(undated, dated).currentIndex, 3);
 });
 
-test('an undated record still beats having nothing at all', () => {
+test('an undated record still beats having nothing at all', async () => {
     const undated = { currentTest: ['src-1_q0'], currentIndex: 0 };
 
     assert.ok(mergedSession(undated, null));
@@ -185,7 +185,7 @@ test('an undated record still beats having nothing at all', () => {
 
 // ── Getting it back to the Gist ─────────────────────────────────────────────
 
-test('keeping the local session marks the merge as having local changes', () => {
+test('keeping the local session marks the merge as having local changes', async () => {
     const [local, remote] = sides(
         session(THIS_DEVICE, { answered: 3, agoMs: 1000 }),
         session(OTHER_DEVICE, { answered: 6, agoMs: 0 })
@@ -195,7 +195,7 @@ test('keeping the local session marks the merge as having local changes', () => 
         'the remote is holding a session this device has already moved past');
 });
 
-test('the session travels in the progress file, not the sources file', () => {
+test('the session travels in the progress file, not the sources file', async () => {
     AppState.sources = [];
     const files = sync.splitSyncPayload({
         ...sync.getSyncPayload(),

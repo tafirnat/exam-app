@@ -32,12 +32,12 @@ beforeEach(() => {
     document.documentElement.removeAttribute('data-theme');
 });
 
-test('the stored theme is what getActiveTheme reports', () => {
+test('the stored theme is what getActiveTheme reports', async () => {
     storage.persist('focus_theme', 'light');
     assert.equal(theme.getActiveTheme(), 'light');
 });
 
-test('an unset theme is dark, the same default initTheme paints', () => {
+test('an unset theme is dark, the same default initTheme paints', async () => {
     assert.equal(theme.getActiveTheme(), 'dark');
 
     theme.initTheme();
@@ -45,13 +45,13 @@ test('an unset theme is dark, the same default initTheme paints', () => {
         'the default must not differ between the reader and the painter');
 });
 
-test('initTheme paints the stored theme', () => {
+test('initTheme paints the stored theme', async () => {
     storage.persist('focus_theme', 'light');
     theme.initTheme();
     assert.equal(document.documentElement.getAttribute('data-theme'), 'light');
 });
 
-test('toggling stores under the same key getActiveTheme reads', () => {
+test('toggling stores under the same key getActiveTheme reads', async () => {
     theme.initTheme();                       // dark
     theme.toggleTheme();                     // -> light
 
@@ -74,7 +74,7 @@ function jsFiles(dir) {
    deleted by the next person who trips over it. */
 const PHANTOM_KEY_CALL = /(?:persist|persistRemove|read[A-Za-z]*|getItem|setItem)\(\s*['"]focus_app_theme['"]/;
 
-test('nothing reads or writes a second theme key', () => {
+test('nothing reads or writes a second theme key', async () => {
     // 'focus_app_theme' is a key nothing ever wrote. Reading it cannot fail
     // loudly - it just quietly yields the fallback, which is how the backup
     // ended up claiming a light theme for everyone.
@@ -86,7 +86,7 @@ test('nothing reads or writes a second theme key', () => {
         `these touch a theme key nothing writes - ask theme.js instead:\n  ${offenders.join('\n  ')}`);
 });
 
-test('the phantom-key scan looks at calls, not at prose', () => {
+test('the phantom-key scan looks at calls, not at prose', async () => {
     assert.equal(PHANTOM_KEY_CALL.test("   'focus_app_theme' and default to 'light', so backups"), false);
     assert.equal(PHANTOM_KEY_CALL.test("readString('focus_app_theme') || 'light'"), true);
     assert.equal(PHANTOM_KEY_CALL.test('localStorage.getItem("focus_app_theme")'), true);

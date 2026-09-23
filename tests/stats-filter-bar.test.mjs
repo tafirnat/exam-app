@@ -52,23 +52,23 @@ const rowTexts = () => [...document.querySelectorAll('#statsList .stats-item-tex
 /* The header toggle is the only control that widens the pool. Without this the
    list collapses to AppState.currentSourceKey - and toggleSource() writes that
    key on every activation, so the collapse is the normal case, not an edge. */
-test('the pool is every active source, not the one switched on last', () => {
+test('the pool is every active source, not the one switched on last', async () => {
     renderStatsList('all', '');
     assert.deepEqual(rowTexts().sort(), ['a1', 'a2', 'b1']);
 });
 
-test('a named filter reaches across every active source too', () => {
+test('a named filter reaches across every active source too', async () => {
     renderStatsList('starred', '');
     assert.deepEqual(rowTexts().sort(), ['a1', 'b1']);
 });
 
-test('the toggle is what widens the pool to the whole live library', () => {
+test('the toggle is what widens the pool to the whole live library', async () => {
     document.getElementById('statsGlobalToggle').checked = true;
     renderStatsList('starred', '');
     assert.deepEqual(rowTexts().sort(), ['a1', 'b1', 'c1']);
 });
 
-test('flagged and noted read their own stat keys', () => {
+test('flagged and noted read their own stat keys', async () => {
     renderStatsList('flagged', '');
     assert.deepEqual(rowTexts(), ['b1']);
     renderStatsList('noted', '');
@@ -82,7 +82,7 @@ test('flagged and noted read their own stat keys', () => {
    last filter, Back, a tag search, a store redraw - has to move the highlight
    with it. main.js reads the running filter back off AppState to re-apply it on
    the next keystroke, so a bar that disagrees with the list gets believed. */
-test('the highlighted button is the filter that ran', () => {
+test('the highlighted button is the filter that ran', async () => {
     renderStatsList('flagged', '');
     assert.deepEqual(
         [...document.querySelectorAll('#statsFilterBar .filter-btn.active')].map(b => b.dataset.filter),
@@ -96,7 +96,7 @@ test('the highlighted button is the filter that ran', () => {
     );
 });
 
-test('the footer counts what the list is showing', () => {
+test('the footer counts what the list is showing', async () => {
     renderStatsList('starred', '');
     assert.match(document.getElementById('statsFooter').textContent, /2/);
 });
@@ -125,7 +125,7 @@ const historyCount = () => document.querySelectorAll('#statsList .history-test-i
 /* Two active sources means the test that spanned them, and the global log is
    the only place a multi-source test is written down. The tab used to reach for
    one source's own log whenever currentSourceKey named an active source. */
-test('recent falls to the global log while more than one source is active', () => {
+test('recent falls to the global log while more than one source is active', async () => {
     seedHistory();
     renderStatsList('recent', '');
     assert.equal(historyCount(), 1);
@@ -152,14 +152,14 @@ const historyTitles = () =>
    with every per-source log sitting unread. The global log is the fragile half
    (capped at 10 for the whole library, and it was being emptied by the sync
    floor), so "the other one is empty" is the normal case, not an edge. */
-test('a source own log shows even while several sources are active', () => {
+test('a source own log shows even while several sources are active', async () => {
     AppState.recentTests = [];
     AppState.sources[0].testResults = [sourceEntry()];
     renderStatsList('recent', '');
     assert.deepEqual(historyTitles(), ['Alpha']);
 });
 
-test('the global log shows even when no source kept its own copy', () => {
+test('the global log shows even when no source kept its own copy', async () => {
     seedHistory();
     AppState.sources.forEach(s => { s.testResults = []; });
     renderStatsList('recent', '');
@@ -171,7 +171,7 @@ test('the global log shows even when no source kept its own copy', () => {
    per-source copy is written with Date.now() + Math.random() on purpose. Keyed
    by id they draw two rows for one test; keyed by startTime they draw one, and
    the row kept is the complete session rather than one source's slice. */
-test('the two copies of one session draw a single row', () => {
+test('the two copies of one session draw a single row', async () => {
     seedHistory();
     const started = AppState.recentTests[0].startTime;
     AppState.sources[0].testResults = [sourceEntry({ id: 99, startTime: started })];
@@ -181,7 +181,7 @@ test('the two copies of one session draw a single row', () => {
 
 /* Scope is the same question the question list answers, so the tab moves with
    the selection instead of showing the whole log whatever is switched on. */
-test('a session from no active source stays out', () => {
+test('a session from no active source stays out', async () => {
     /* Seeded into the GLOBAL log on purpose. Its per-source copy is already out
        of reach - the collector only walks the sources in scope - so a case that
        seeds only that one passes with the scope check deleted, and the mutant
@@ -201,7 +201,7 @@ test('a session from no active source stays out', () => {
 
 /* The footer lives outside #statsList, so an early return leaves the previous
    filter's scope and count sitting under an empty screen. */
-test('an empty history tab still rewrites the footer', () => {
+test('an empty history tab still rewrites the footer', async () => {
     renderStatsList('starred', '');
     const before = document.getElementById('statsFooter').textContent;
     AppState.recentTests = [];
@@ -238,7 +238,7 @@ test('hiding a session hides every copy of it', async () => {
 /* The footer says "N soru", so it counts questions. It used to pass the number
    of test cards, which reads as a question count and is wrong by however many
    questions each test holds. */
-test('the history footer counts questions, not test cards', () => {
+test('the history footer counts questions, not test cards', async () => {
     seedHistory();
     renderStatsList('recent', '');
     assert.match(document.getElementById('statsFooter').textContent, /\b2\b/);
@@ -247,7 +247,7 @@ test('the history footer counts questions, not test cards', () => {
 /* "Yanlis Yapilanlar" left the test logs behind and reads the per-question
    counters now, so its footer counts questions out of the same pool every other
    named filter uses - not the questions of a test card. */
-test('the incorrect footer counts questions with a wrong answer', () => {
+test('the incorrect footer counts questions with a wrong answer', async () => {
     AppState.stats['src-a_1'].wrong = 2;
     renderStatsList('incorrect', '');
     assert.match(document.getElementById('statsFooter').textContent, /\b1\b/);

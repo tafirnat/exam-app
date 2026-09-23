@@ -127,7 +127,7 @@ beforeEach(() => {
    phone reading as five - and every merge case would still pass, because the
    merge would be doing exactly what it was told. */
 
-test("the day's answers land in this device's own bucket", () => {
+test("the day's answers land in this device's own bucket", async () => {
     AppState.deviceId = 'dev-x';
     const questions = startSession(3);
     initTodayActivity();
@@ -139,7 +139,7 @@ test("the day's answers land in this device's own bucket", () => {
     assert.equal(today().questionCount, 3, 'and the day totals its buckets');
 });
 
-test('finishing a test writes to the same bucket the live path used', () => {
+test('finishing a test writes to the same bucket the live path used', async () => {
     AppState.deviceId = 'dev-x';
     const questions = startSession(4);
     initTodayActivity();
@@ -152,7 +152,7 @@ test('finishing a test writes to the same bucket the live path used', () => {
     assert.equal(today().questionCount, 4);
 });
 
-test('another device answering the same day writes a bucket of its own', () => {
+test('another device answering the same day writes a bucket of its own', async () => {
     AppState.deviceId = 'dev-x';
     let questions = startSession(2);
     initTodayActivity();
@@ -175,7 +175,7 @@ test('another device answering the same day writes a bucket of its own', () => {
     assert.equal(today().questionCount, 5, 'the day is the sum of both');
 });
 
-test('finishing a test counts each answer exactly once', () => {
+test('finishing a test counts each answer exactly once', async () => {
     const questions = startSession(6);
     initTodayActivity();
     for (let i = 0; i < 6; i++) answer(questions, i, i % 2 === 0);
@@ -190,7 +190,7 @@ test('finishing a test counts each answer exactly once', () => {
     assert.equal(today().wrongCount, 3);
 });
 
-test('flush then finish counts each answer exactly once', () => {
+test('flush then finish counts each answer exactly once', async () => {
     const questions = startSession(5);
     initTodayActivity();
     for (let i = 0; i < 3; i++) answer(questions, i, true);
@@ -206,7 +206,7 @@ test('flush then finish counts each answer exactly once', () => {
     assert.equal(today().wrongCount, 2);
 });
 
-test('repeated flushes are idempotent', () => {
+test('repeated flushes are idempotent', async () => {
     const questions = startSession(4);
     initTodayActivity();
     for (let i = 0; i < 4; i++) answer(questions, i, true);
@@ -219,7 +219,7 @@ test('repeated flushes are idempotent', () => {
     assert.equal(today().correctCount, 4);
 });
 
-test('the focus track advances with every answer, not only at flush', () => {
+test('the focus track advances with every answer, not only at flush', async () => {
     const questions = startSession(3);
     initTodayActivity();
 
@@ -232,7 +232,7 @@ test('the focus track advances with every answer, not only at flush', () => {
     assert.equal(today().questionCount, 3, 'global and focus must agree on the same answers');
 });
 
-test('a session the browser ends still has both tracks in step', () => {
+test('a session the browser ends still has both tracks in step', async () => {
     const questions = startSession(4);
     initTodayActivity();
     for (let i = 0; i < 4; i++) answer(questions, i, true);
@@ -244,7 +244,7 @@ test('a session the browser ends still has both tracks in step', () => {
     assert.equal(today().focusQuestionCount, 4, 'focus must not be left behind by a closed tab');
 });
 
-test('answers outside the focus sources count globally but not for focus', () => {
+test('answers outside the focus sources count globally but not for focus', async () => {
     const questions = startSession(2, { sourceId: OTHER_SOURCE });
     initTodayActivity();
     answer(questions, 0, true);
@@ -258,7 +258,7 @@ test('answers outside the focus sources count globally but not for focus', () =>
     assert.equal(today().focusQuestionCount, 0);
 });
 
-test('focus counting ignores answers that predate the source being selected', () => {
+test('focus counting ignores answers that predate the source being selected', async () => {
     const questions = startSession(2);
     initTodayActivity();
     // The source joined the focus set after these answers were given.
@@ -271,7 +271,7 @@ test('focus counting ignores answers that predate the source being selected', ()
     assert.equal(today().focusQuestionCount, 0);
 });
 
-test('both tracks stay in step across live, flush and finish combined', () => {
+test('both tracks stay in step across live, flush and finish combined', async () => {
     const questions = startSession(7);
     initTodayActivity();
 
@@ -305,7 +305,7 @@ function logOf(activity) {
     return Object.assign({}, ...buckets.map(b => b.questionLog || {}));
 }
 
-test('the day names a logged question by its source and its id', () => {
+test('the day names a logged question by its source and its id', async () => {
     AppState.studyActivity = {};
     AppState.questionMap = {};
     AppState.testTracking = { results: [], mode: 'normal' };
@@ -320,7 +320,7 @@ test('the day names a logged question by its source and its id', () => {
     assert.deepEqual(Object.keys(logOf(today())).sort(), [`${SOURCE}_q1`, `${OTHER_SOURCE}_q1`].sort());
 });
 
-test('a question answered twice in one day is logged once', () => {
+test('a question answered twice in one day is logged once', async () => {
     const questions = startSession(1);
 
     answer(questions, 0, false);

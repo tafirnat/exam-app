@@ -83,7 +83,7 @@ const sleep = ms => new Promise(r => setTimeout(r, ms));
 
 // ── The split ───────────────────────────────────────────────────────────────
 
-test('the question library goes in the sources file and nowhere else', () => {
+test('the question library goes in the sources file and nowhere else', async () => {
     AppState.sources = [librarySource()];
     AppState.stats = { 'src-1_q0': { correct: 1, wrong: 0 } };
 
@@ -96,7 +96,7 @@ test('the question library goes in the sources file and nowhere else', () => {
     assert.ok(!JSON.stringify(files[BACKUP]).includes('NEEDLE-QUESTION-BODY'));
 });
 
-test('the progress file keeps the parts the merge guards depend on', () => {
+test('the progress file keeps the parts the merge guards depend on', async () => {
     AppState.deletedSourceIds = ['gone-1'];
     AppState.lastResetTimestamp = 111;
     AppState.lastProgressResetTimestamp = 222;
@@ -112,7 +112,7 @@ test('the progress file keeps the parts the merge guards depend on', () => {
     assert.equal(progress.studyActivity['2026-08-02'].questionCount, 9);
 });
 
-test('an offloaded archive entry stays a stub in the sources file', () => {
+test('an offloaded archive entry stays a stub in the sources file', async () => {
     AppState.sources = [{ ...librarySource('arch-1'), archived: true, offloaded: true }];
 
     const files = sync.splitSyncPayload();

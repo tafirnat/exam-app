@@ -55,7 +55,7 @@ function jsFiles(dir) {
     });
 }
 
-test('no innerHTML template interpolates user data without escapeHTML()', () => {
+test('no innerHTML template interpolates user data without escapeHTML()', async () => {
     const offenders = [];
 
     for (const file of jsFiles(SRC)) {
@@ -76,7 +76,7 @@ test('no innerHTML template interpolates user data without escapeHTML()', () => 
     );
 });
 
-test('escapeHTML neutralises the payloads that reach these templates', () => {
+test('escapeHTML neutralises the payloads that reach these templates', async () => {
     const payloads = [
         '<img src=x onerror=alert(1)>',
         '"><script>alert(1)</script>',

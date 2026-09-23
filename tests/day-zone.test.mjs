@@ -24,11 +24,11 @@ import {
 /** The instant at `hhmm` UTC on the given date. */
 const utc = (y, m, d, hh, mm = 0) => new Date(Date.UTC(y, m - 1, d, hh, mm));
 
-test('the day is anchored to one named zone, not to whatever the device says', () => {
+test('the day is anchored to one named zone, not to whatever the device says', async () => {
     assert.equal(DAY_ZONE, 'Europe/Berlin');
 });
 
-test('one instant is one day key, whatever the device clock reads', () => {
+test('one instant is one day key, whatever the device clock reads', async () => {
     /* 22:30 UTC on 2 August is 01:30 on the 3rd in Istanbul and 00:30 on the
        3rd in Berlin - but 23:30 on the 2nd in London. Devices in all three
        places have to agree, and under device-local formatting they did not. */
@@ -37,41 +37,41 @@ test('one instant is one day key, whatever the device clock reads', () => {
     assert.equal(getLocalDateStr(instant), '2026-08-03');
 });
 
-test('the hour before the zone rolls over still belongs to the previous day', () => {
+test('the hour before the zone rolls over still belongs to the previous day', async () => {
     // 21:30 UTC = 00:30 on the 3rd in Istanbul, but 23:30 on the 2nd in Berlin.
     // This is the window the three devices used to disagree in.
     assert.equal(getLocalDateStr(utc(2026, 8, 2, 21, 30)), '2026-08-02');
 });
 
-test('the zone is followed across its own clock change, not a fixed offset', () => {
+test('the zone is followed across its own clock change, not a fixed offset', async () => {
     // Berlin is UTC+2 in August and UTC+1 in December. A hard-coded offset
     // would put one of these two on the wrong day.
     assert.equal(getLocalDateStr(utc(2026, 8, 2, 22, 30)), '2026-08-03', 'summer');
     assert.equal(getLocalDateStr(utc(2026, 12, 2, 22, 30)), '2026-12-02', 'winter');
 });
 
-test('the same instant read twice gives the same key', () => {
+test('the same instant read twice gives the same key', async () => {
     const instant = utc(2026, 8, 2, 22, 30);
     assert.equal(getLocalDateStr(instant), getLocalDateStr(new Date(instant.getTime())));
 });
 
 // ── Walking a run of days ───────────────────────────────────────────────────
 
-test('stepping back a day steps back exactly one calendar day', () => {
+test('stepping back a day steps back exactly one calendar day', async () => {
     assert.equal(shiftDateStr('2026-08-03', -1), '2026-08-02');
     assert.equal(shiftDateStr('2026-08-03', -2), '2026-08-01');
     assert.equal(shiftDateStr('2026-08-03', 0), '2026-08-03');
     assert.equal(shiftDateStr('2026-08-03', 1), '2026-08-04');
 });
 
-test('stepping crosses month and year boundaries', () => {
+test('stepping crosses month and year boundaries', async () => {
     assert.equal(shiftDateStr('2026-08-01', -1), '2026-07-31');
     assert.equal(shiftDateStr('2026-01-01', -1), '2025-12-31');
     assert.equal(shiftDateStr('2024-02-28', 1), '2024-02-29', 'leap year');
     assert.equal(shiftDateStr('2025-02-28', 1), '2025-03-01');
 });
 
-test('a 365-day walk visits 365 distinct days, clock changes included', () => {
+test('a 365-day walk visits 365 distinct days, clock changes included', async () => {
     /* The streak walk runs exactly this loop. Mutating a Date instead would
        repeat or skip a key on the two nights a year the offsets move apart,
        and a repeated key reads as a day studied twice - or a broken streak. */
@@ -88,7 +88,7 @@ test('a 365-day walk visits 365 distinct days, clock changes included', () => {
 
 // ── The calendar the UI draws ───────────────────────────────────────────────
 
-test('the drawing anchor carries the app day in its own fields', () => {
+test('the drawing anchor carries the app day in its own fields', async () => {
     /* The heatmap takes its weekday column and month tick off a Date and keys
        the cell with getLocalDateStr(). Seeding that walk with `new Date()`
        leaves the two on different calendars for as long as the device's date
@@ -101,13 +101,13 @@ test('the drawing anchor carries the app day in its own fields', () => {
     assert.equal(getLocalDateStr(anchor), '2026-08-03', 'and reads back as the day it stands for');
 });
 
-test('the anchor survives being stepped a day at a time', () => {
+test('the anchor survives being stepped a day at a time', async () => {
     const anchor = getDayAnchor('2026-03-29'); // the day Berlin's clocks go forward
     anchor.setDate(anchor.getDate() - 1);
 
     assert.equal(getLocalDateStr(anchor), '2026-03-28');
 });
 
-test('the anchor defaults to the day it currently is', () => {
+test('the anchor defaults to the day it currently is', async () => {
     assert.equal(getLocalDateStr(getDayAnchor()), getLocalDateStr());
 });

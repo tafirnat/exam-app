@@ -25,7 +25,7 @@ before(async () => {
     global.syncQuickPresetsWithLiveSources = quickPresetsModule.syncQuickPresetsWithLiveSources;
 });
 
-test('generateAutoName resolves name collisions correctly', () => {
+test('generateAutoName resolves name collisions correctly', async () => {
     const prefix = t('qs_default_name');
     AppState.quickPresets = [
         { name: `${prefix}-1` },
@@ -36,7 +36,7 @@ test('generateAutoName resolves name collisions correctly', () => {
     assert.equal(newName, `${prefix}-3`);
 });
 
-test('resolvePresetColor uses custom preset.color override when defined', () => {
+test('resolvePresetColor uses custom preset.color override when defined', async () => {
     const preset = {
         id: 'qp_1',
         name: 'Custom Preset',
@@ -48,7 +48,7 @@ test('resolvePresetColor uses custom preset.color override when defined', () => 
     assert.deepEqual(res, { type: 'solid', value: '#ff0053' });
 });
 
-test('resolvePresetColor resolves single folder color', () => {
+test('resolvePresetColor resolves single folder color', async () => {
     AppState.folders = [
         { id: 'f1', name: 'Folder 1', color: '#8a43ff' }
     ];
@@ -68,7 +68,7 @@ test('resolvePresetColor resolves single folder color', () => {
     assert.deepEqual(res, { type: 'solid', value: '#8a43ff' });
 });
 
-test('resolvePresetColor resolves root sources to DEFAULT_FOLDER_COLOR', () => {
+test('resolvePresetColor resolves root sources to DEFAULT_FOLDER_COLOR', async () => {
     AppState.folders = [];
     AppState.sources = [
         { id: 's1', folderId: null, active: true, archived: false }
@@ -85,7 +85,7 @@ test('resolvePresetColor resolves root sources to DEFAULT_FOLDER_COLOR', () => {
     assert.deepEqual(res, { type: 'solid', value: DEFAULT_FOLDER_COLOR });
 });
 
-test('resolvePresetColor computes proportional conic-gradient for mixed folders', () => {
+test('resolvePresetColor computes proportional conic-gradient for mixed folders', async () => {
     AppState.folders = [
         { id: 'f1', name: 'Folder 1', color: '#ff0053' },
         { id: 'f2', name: 'Folder 2', color: '#00a97a' }
@@ -111,7 +111,7 @@ test('resolvePresetColor computes proportional conic-gradient for mixed folders'
     assert.ok(res.value.includes('#00a97a 180.00deg 360.00deg'));
 });
 
-test('resolvePresetColor gracefully handles missing or deleted sources', () => {
+test('resolvePresetColor gracefully handles missing or deleted sources', async () => {
     AppState.folders = [
         { id: 'f1', name: 'Folder 1', color: '#ff0053' }
     ];
@@ -168,7 +168,7 @@ test('showSourceQuickPresetsModal renders presets and toggles source inclusion',
     assert.ok(!AppState.quickPresets[1].sourceIds.includes('src_test_1'));
 });
 
-test('syncQuickPresetsWithLiveSources removes single-source preset when source is archived or deleted', () => {
+test('syncQuickPresetsWithLiveSources removes single-source preset when source is archived or deleted', async () => {
     AppState.sources = [
         { id: 's1', name: 'Source 1', archived: true }, // archived
         { id: 's2', name: 'Source 2', archived: false } // live
@@ -185,7 +185,7 @@ test('syncQuickPresetsWithLiveSources removes single-source preset when source i
     assert.equal(AppState.quickPresets[0].id, 'qp_single_s2');
 });
 
-test('restoring an archived source does not automatically re-add it to quick presets', () => {
+test('restoring an archived source does not automatically re-add it to quick presets', async () => {
     // 1. Source s1 was archived and removed from preset
     AppState.sources = [{ id: 's1', name: 'Source 1', archived: true }];
     AppState.quickPresets = [{ id: 'qp_single_s1', name: 'Single S1', sourceIds: ['s1'] }];
@@ -201,7 +201,7 @@ test('restoring an archived source does not automatically re-add it to quick pre
     assert.equal(AppState.quickPresets.length, 0);
 });
 
-test('syncQuickPresetsWithLiveSources unlinks archived/deleted source from multi-source preset', () => {
+test('syncQuickPresetsWithLiveSources unlinks archived/deleted source from multi-source preset', async () => {
     AppState.sources = [
         { id: 's1', name: 'Source 1', archived: false },
         { id: 's2', name: 'Source 2', archived: true }, // archived
@@ -218,7 +218,7 @@ test('syncQuickPresetsWithLiveSources unlinks archived/deleted source from multi
     assert.deepEqual(AppState.quickPresets[0].sourceIds, ['s1', 's3']);
 });
 
-test('syncQuickPresetsWithLiveSources removes multi-source preset completely when no live source remains', () => {
+test('syncQuickPresetsWithLiveSources removes multi-source preset completely when no live source remains', async () => {
     AppState.sources = [
         { id: 's1', name: 'Source 1', archived: true },
         { id: 's2', name: 'Source 2', archived: true }

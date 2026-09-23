@@ -139,7 +139,7 @@ test('one failing consumer does not stop the others', async () => {
    chained pass is its own macrotask - so they step the store synchronously
    through flushNow() instead. Same code path, no interleaving. */
 
-test('a consumer that writes state gets a follow-up pass, not a freeze', () => {
+test('a consumer that writes state gets a follow-up pass, not a freeze', async () => {
     let repairs = 0;
     let observers = 0;
 
@@ -159,7 +159,7 @@ test('a consumer that writes state gets a follow-up pass, not a freeze', () => {
     assert.equal(observers, 1, 'the follow-up emit must reach its consumer');
 });
 
-test('a runaway emit/render loop is cut off rather than freezing the tab', () => {
+test('a runaway emit/render loop is cut off rather than freezing the tab', async () => {
     let runs = 0;
     store.subscribe('loop', [store.Slice.STATS], () => {
         runs++;
@@ -207,7 +207,7 @@ test('re-registering the same name replaces rather than duplicates', async () =>
     assert.equal(second, 1, 'registerUIBindings() must be safe to call twice');
 });
 
-test('an unknown slice is rejected at registration', () => {
+test('an unknown slice is rejected at registration', async () => {
     assert.throws(
         () => store.subscribe('c', ['notASlice'], () => {}),
         /unknown slice/,
@@ -215,7 +215,7 @@ test('an unknown slice is rejected at registration', () => {
     );
 });
 
-test('runAll paints visible consumers and defers the rest', () => {
+test('runAll paints visible consumers and defers the rest', async () => {
     let home = 0;
     let stats = 0;
     store.subscribe('home', [store.Slice.STATS], () => { home++; }, { views: ['home'] });

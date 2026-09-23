@@ -40,7 +40,7 @@ const optionsOf = () => {
     return select ? [...select.options].map(o => ({ value: o.value, text: o.textContent.trim(), selected: o.selected })) : null;
 };
 
-test('the uncategorised folder is not offered beside the root option', () => {
+test('the uncategorised folder is not offered beside the root option', async () => {
     AppState.folders = [systemFolder(), { id: 'f1', name: 'Matematik', order: 1 }];
     const source = { id: 's1', name: 'Kaynak', folderId: null };
     AppState.sources = [source];
@@ -60,7 +60,7 @@ test('the uncategorised folder is not offered beside the root option', () => {
    the bucket. A picker whose one destination is where the source already sits
    has nothing to offer, and the old length check ran on the unfiltered list -
    which is how the duplicate reached the screen in the first place. */
-test('with no real folders the picker stays hidden', () => {
+test('with no real folders the picker stays hidden', async () => {
     const source = { id: 's1', name: 'Kaynak', folderId: null };
     AppState.sources = [source];
 
@@ -73,7 +73,7 @@ test('with no real folders the picker stays hidden', () => {
 /* The control already marked a real folder as selected; an uncategorised
    source fell through and left the prompt showing, so the same state was drawn
    two different ways depending on where the source happened to live. */
-test('the option matching the source is the selected one', () => {
+test('the option matching the source is the selected one', async () => {
     AppState.folders = [systemFolder(), { id: 'f1', name: 'Matematik', order: 1 }];
 
     const homeless = { id: 's1', name: 'A', folderId: null };
@@ -89,7 +89,7 @@ test('the option matching the source is the selected one', () => {
 
 /* Picking the prompt used to fall through to the bookkeeping: it renumbered
    the source and closed the dialog while moving nothing. */
-test('choosing the prompt moves nothing and leaves the dialog open', () => {
+test('choosing the prompt moves nothing and leaves the dialog open', async () => {
     AppState.folders = [systemFolder(), { id: 'f1', name: 'Matematik', order: 1 }];
     const source = { id: 's1', name: 'Kaynak', folderId: 'f1', order: 7 };
     AppState.sources = [source];

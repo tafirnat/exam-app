@@ -1,14 +1,14 @@
 import { detectLanguage, detectTranslationTarget } from './i18n.js';
-import { persist, persistIfChanged, persistRemove, readJSON, readString, readInt, readFloat } from './storage.js';
+import { persistAsync, persistIfChangedAsync, persistRemoveAsync, readJSONAsync, readStringAsync, readIntAsync, readFloatAsync, migrateFromLocalStorage } from './storage.js';
 import { emit, Slice } from './store.js';
 import { mergeFolderDeletions, sanitizeFolderDeletions } from './folder-tombstones.js';
 import { mergeDatedIds } from './source-tombstones.js';
 
 /**
- * Safely reads and parses a JSON item from localStorage.
+ * Safely reads and parses a JSON item from localStorage/IndexedDB.
  * Kept as the historical name; storage.js owns the implementation now.
  */
-export const safeJSONParse = readJSON;
+export const safeJSONParse = readJSONAsync;
 
 export const DEFAULT_AI_PROVIDERS = [
     { id: 'google', name: 'Google AI (Search)', url: 'https://www.google.com/search?q={PROMPT}&udm=50', domain: 'google.com' },
@@ -220,8 +220,8 @@ export const AppState = {
  * Unconditionally persisting here is what used to put a storage *write* into
  * module evaluation - importing this file was enough to touch the user's disk.
  */
-function loadFolders() {
-    let folders = readJSON('focus_app_folders', null);
+async function loadFoldersAsync() {
+    let folders = await readJSONAsync('focus_app_folders', null);
     if (!Array.isArray(folders)) folders = [];
 
     let hasUncategorized = false;
@@ -241,7 +241,7 @@ function loadFolders() {
         folders.unshift(createUncategorizedFolderRecord());
     }
 
-    persistIfChanged('focus_app_folders', folders);
+    await persistIfChangedAsync('focus_app_folders', folders);
     return folders;
 }
 
@@ -265,57 +265,59 @@ let stateInitialized = false;
  *
  * @returns {typeof AppState} the same object, now populated.
  */
-export function initState({ force = false } = {}) {
+export async function initState({ force = false } = {}) {
     if (stateInitialized && !force) return AppState;
 
-    const sources = readJSON('focus_app_sources', null);
+    await migrateFromLocalStorage();
+
+    const sources = await readJSONAsync('focus_app_sources', null);
 
     Object.assign(AppState, {
-        stats: readJSON('focus_app_stats_local', {}),
-        folders: loadFolders(),
+        stats: await readJSONAsync('focus_app_stats_local', {}),
+        folders: await loadFoldersAsync(),
         sources: Array.isArray(sources)
             ? sources.filter(s => s && s.questions && Array.isArray(s.questions))
             : [],
-        currentSourceKey: readString('focus_app_current_source') || null,
+        currentSourceKey: await readStringAsync('focus_app_current_source') || null,
         language: detectLanguage(),
         translationTarget: detectTranslationTarget(),
-        translationEnabled: readJSON('focus_app_translation_enabled', true),
-        recentTests: readJSON('focus_app_recent_tests', []).slice(0, 10),
-        customAIPrompt: readString('focus_app_custom_ai_prompt', '') || '',
-        aiPrompts: readJSON('focus_app_ai_prompts', []),
-        deletedAiPromptIds: readJSON('focus_app_deleted_ai_prompts', []),
-        activePromptId: readString('focus_app_active_prompt_id', 'default') || 'default',
-        adhocPrompt: readString('focus_app_adhoc_prompt', '') || '',
-        aiProviders: readJSON('focus_app_ai_providers', DEFAULT_AI_PROVIDERS),
-        ttsEnabled: readJSON('focus_app_tts_enabled', false),
-        ttsAutoplay: readJSON('focus_app_tts_autoplay', false),
-        ttsSpeed: readFloat('focus_app_tts_speed', 0.5),
-        timerStopwatchEnabled: readJSON('focus_app_timer_stopwatch', false),
-        timerCountdownEnabled: readJSON('focus_app_timer_countdown', false),
-        timerCountdownLimit: readInt('focus_app_timer_limit', 59),
-        timerAutoCheckEnabled: readJSON('focus_app_timer_auto_check', true),
-        githubToken: readString('focus_app_github_token') || null,
-        githubGistId: readString('focus_app_github_gist_id') || null,
-        githubUser: readJSON('focus_app_github_user', null),
-        lastGithubUser: readString('focus_app_last_github_user') || null,
-        lastSyncTime: readInt('focus_app_last_sync', 0),
-        syncFailureCount: readInt('focus_app_sync_failures', 0),
-        syncFailureKind: readString('focus_app_sync_failure_kind') || null,
-        githubGistUrl: readString('focus_app_github_gist_url') || null,
-        deletedSourceIds: readJSON('focus_app_deleted_sources', []),
-        deletedSourceAt: sanitizeFolderDeletions(readJSON('focus_app_deleted_source_at', {})),
-        revivedSourceAt: sanitizeFolderDeletions(readJSON('focus_app_revived_source_at', {})),
-        deletedFolderIds: readJSON('focus_app_deleted_folders', []),
-        deletedFolderAt: sanitizeFolderDeletions(readJSON('focus_app_deleted_folder_at', {})),
-        quickPresets: readJSON('focus_app_quick_presets', []),
-        deletedQuickPresetIds: readJSON('focus_app_deleted_quick_presets', []),
-        lastResetTimestamp: readInt('focus_app_last_reset', 0),
-        lastProgressResetTimestamp: readInt('focus_app_last_progress_reset', 0),
-        presetSessions: readJSON('focus_app_preset_sessions', {}),
-        continuityConfig: readJSON('focus_app_continuity_config', createDefaultContinuityConfig()),
-        studyActivity: readJSON('focus_app_study_activity', {}),
-        settingsRevisions: readJSON('focus_app_settings_revisions', {}),
-        deviceId: loadDeviceId()
+        translationEnabled: await readJSONAsync('focus_app_translation_enabled', true),
+        recentTests: (await readJSONAsync('focus_app_recent_tests', [])).slice(0, 10),
+        customAIPrompt: await readStringAsync('focus_app_custom_ai_prompt', '') || '',
+        aiPrompts: await readJSONAsync('focus_app_ai_prompts', []),
+        deletedAiPromptIds: await readJSONAsync('focus_app_deleted_ai_prompts', []),
+        activePromptId: await readStringAsync('focus_app_active_prompt_id', 'default') || 'default',
+        adhocPrompt: await readStringAsync('focus_app_adhoc_prompt', '') || '',
+        aiProviders: await readJSONAsync('focus_app_ai_providers', DEFAULT_AI_PROVIDERS),
+        ttsEnabled: await readJSONAsync('focus_app_tts_enabled', false),
+        ttsAutoplay: await readJSONAsync('focus_app_tts_autoplay', false),
+        ttsSpeed: await readFloatAsync('focus_app_tts_speed', 0.5),
+        timerStopwatchEnabled: await readJSONAsync('focus_app_timer_stopwatch', false),
+        timerCountdownEnabled: await readJSONAsync('focus_app_timer_countdown', false),
+        timerCountdownLimit: await readIntAsync('focus_app_timer_limit', 59),
+        timerAutoCheckEnabled: await readJSONAsync('focus_app_timer_auto_check', true),
+        githubToken: await readStringAsync('focus_app_github_token') || null,
+        githubGistId: await readStringAsync('focus_app_github_gist_id') || null,
+        githubUser: await readJSONAsync('focus_app_github_user', null),
+        lastGithubUser: await readStringAsync('focus_app_last_github_user') || null,
+        lastSyncTime: await readIntAsync('focus_app_last_sync', 0),
+        syncFailureCount: await readIntAsync('focus_app_sync_failures', 0),
+        syncFailureKind: await readStringAsync('focus_app_sync_failure_kind') || null,
+        githubGistUrl: await readStringAsync('focus_app_github_gist_url') || null,
+        deletedSourceIds: await readJSONAsync('focus_app_deleted_sources', []),
+        deletedSourceAt: sanitizeFolderDeletions(await readJSONAsync('focus_app_deleted_source_at', {})),
+        revivedSourceAt: sanitizeFolderDeletions(await readJSONAsync('focus_app_revived_source_at', {})),
+        deletedFolderIds: await readJSONAsync('focus_app_deleted_folders', []),
+        deletedFolderAt: sanitizeFolderDeletions(await readJSONAsync('focus_app_deleted_folder_at', {})),
+        quickPresets: await readJSONAsync('focus_app_quick_presets', []),
+        deletedQuickPresetIds: await readJSONAsync('focus_app_deleted_quick_presets', []),
+        lastResetTimestamp: await readIntAsync('focus_app_last_reset', 0),
+        lastProgressResetTimestamp: await readIntAsync('focus_app_last_progress_reset', 0),
+        presetSessions: await readJSONAsync('focus_app_preset_sessions', {}),
+        continuityConfig: await readJSONAsync('focus_app_continuity_config', createDefaultContinuityConfig()),
+        studyActivity: await readJSONAsync('focus_app_study_activity', {}),
+        settingsRevisions: await readJSONAsync('focus_app_settings_revisions', {}),
+        deviceId: await loadDeviceIdAsync()
     });
 
     /* Same baseline rule as the continuity config: the settings as loaded are
@@ -358,14 +360,14 @@ export function initState({ force = false } = {}) {
  * keep its own session even if the other device's copy carries a later
  * timestamp. Nothing else reads this, and it never leaves the Gist.
  */
-function loadDeviceId() {
-    const existing = readString('focus_app_device_id');
+async function loadDeviceIdAsync() {
+    const existing = await readStringAsync('focus_app_device_id');
     if (existing) return existing;
 
     const id = (typeof crypto !== 'undefined' && crypto.randomUUID)
         ? crypto.randomUUID()
         : `dev-${Date.now()}-${Math.random().toString(36).slice(2, 10)}`;
-    persist('focus_app_device_id', id);
+    await persistAsync('focus_app_device_id', id);
     return id;
 }
 
@@ -460,21 +462,21 @@ export function clearLocalStudyData() {
     // guard in mergeSyncData() fires for stats / activity / continuity as well.
     AppState.lastProgressResetTimestamp = AppState.lastResetTimestamp;
 
-    persistRemove('focus_app_preset_sessions');
-    persist('focus_app_folders', AppState.folders);
-    persist('focus_app_sources', AppState.sources);
-    persistRemove('focus_app_stats_local');
-    persistRemove('focus_app_stats_global');
-    persistRemove('focus_app_recent_tests');
+    persistRemoveAsync('focus_app_preset_sessions');
+    persistAsync('focus_app_folders', AppState.folders);
+    persistAsync('focus_app_sources', AppState.sources);
+    persistRemoveAsync('focus_app_stats_local');
+    persistRemoveAsync('focus_app_stats_global');
+    persistRemoveAsync('focus_app_recent_tests');
     // Persist tombstones (not remove!) so the next sync push carries them
-    persist('focus_app_deleted_sources', allDeletedSourceIds);
+    persistAsync('focus_app_deleted_sources', allDeletedSourceIds);
     stampSourceDeletions(priorSourceIds, AppState.lastResetTimestamp);
-    persist('focus_app_deleted_folders', allDeletedFolderIds);
-    persist('focus_app_quick_presets', []);
-    persist('focus_app_deleted_quick_presets', allDeletedPresetIds);
-    persistRemove('focus_app_current_source');
-    persistRemove('focus_app_active_test');
-    persistRemove('focus_app_continuity_config');
+    persistAsync('focus_app_deleted_folders', allDeletedFolderIds);
+    persistAsync('focus_app_quick_presets', []);
+    persistAsync('focus_app_deleted_quick_presets', allDeletedPresetIds);
+    persistRemoveAsync('focus_app_current_source');
+    persistRemoveAsync('focus_app_active_test');
+    persistRemoveAsync('focus_app_continuity_config');
     /* Factory config, stamped - see clearProgressData() for why the stamps are
        what defends a reset once the merge's timestamp guard has expired. This
        reset needs them more than that one does: createDefaultContinuityConfig()
@@ -482,11 +484,11 @@ export function clearLocalStudyData() {
        the merge's content tie-break gives a non-empty value the win - a device
        that missed the reset hands its focus selection straight back. */
     saveContinuityConfig();
-    persistRemove('focus_app_study_activity');
+    persistRemoveAsync('focus_app_study_activity');
     // Clear sample loaded key so the starter sample JSON for active language is auto-loaded on reset
-    persistRemove(SAMPLE_LOADED_KEY);
-    persist('focus_app_last_reset', AppState.lastResetTimestamp.toString());
-    persist('focus_app_last_progress_reset', AppState.lastProgressResetTimestamp.toString());
+    persistRemoveAsync(SAMPLE_LOADED_KEY);
+    persistAsync('focus_app_last_reset', AppState.lastResetTimestamp.toString());
+    persistAsync('focus_app_last_progress_reset', AppState.lastProgressResetTimestamp.toString());
 
     // A factory reset invalidates everything the UI shows.
     emit(
@@ -527,11 +529,11 @@ export function clearProgressData() {
     // pull back stats / activity / continuity data that predates this clear.
     AppState.lastProgressResetTimestamp = Date.now();
 
-    persistRemove('focus_app_stats_local');
-    persistRemove('focus_app_stats_global');
-    persistRemove('focus_app_recent_tests');
-    persistRemove('focus_app_preset_sessions');
-    persistRemove('focus_app_study_activity');
+    persistRemoveAsync('focus_app_stats_local');
+    persistRemoveAsync('focus_app_stats_global');
+    persistRemoveAsync('focus_app_recent_tests');
+    persistRemoveAsync('focus_app_preset_sessions');
+    persistRemoveAsync('focus_app_study_activity');
     /* Stamped like any other edit, because that is what it is. The
        lastProgressResetTimestamp guard in the sync merge only holds until this
        device has pushed - it has to, or it never expires and the config stops
@@ -542,7 +544,7 @@ export function clearProgressData() {
        instant, while the focus selection and the notification settings are
        carried over untouched above and keep whatever stamps they already had. */
     saveContinuityConfig();
-    persist('focus_app_last_progress_reset', AppState.lastProgressResetTimestamp.toString());
+    persistAsync('focus_app_last_progress_reset', AppState.lastProgressResetTimestamp.toString());
 
     // Sources and folders survive a progress reset, so they are not emitted.
     emit(Slice.STATS, Slice.ACTIVITY, Slice.CONTINUITY, Slice.RECENT_TESTS, Slice.PRESETS);
@@ -589,18 +591,18 @@ export function clearSourcesData() {
     AppState.presetSessions = {};
     AppState.lastResetTimestamp = Date.now();
 
-    persistRemove('focus_app_preset_sessions');
-    persist('focus_app_folders', AppState.folders);
-    persist('focus_app_sources', AppState.sources);
-    persist('focus_app_quick_presets', []);
+    persistRemoveAsync('focus_app_preset_sessions');
+    persistAsync('focus_app_folders', AppState.folders);
+    persistAsync('focus_app_sources', AppState.sources);
+    persistAsync('focus_app_quick_presets', []);
     // Persist tombstones so the next sync push carries them
-    persist('focus_app_deleted_sources', allDeletedSourceIds);
+    persistAsync('focus_app_deleted_sources', allDeletedSourceIds);
     stampSourceDeletions(priorSourceIds, AppState.lastResetTimestamp);
-    persist('focus_app_deleted_folders', allDeletedFolderIds);
-    persist('focus_app_deleted_quick_presets', allDeletedPresetIds);
-    persistRemove('focus_app_current_source');
-    persistRemove(SAMPLE_LOADED_KEY);
-    persist('focus_app_last_reset', AppState.lastResetTimestamp.toString());
+    persistAsync('focus_app_deleted_folders', allDeletedFolderIds);
+    persistAsync('focus_app_deleted_quick_presets', allDeletedPresetIds);
+    persistRemoveAsync('focus_app_current_source');
+    persistRemoveAsync(SAMPLE_LOADED_KEY);
+    persistAsync('focus_app_last_reset', AppState.lastResetTimestamp.toString());
 
     // Stats and activity survive a sources-only reset, so they are not emitted.
     emit(Slice.SOURCES, Slice.FOLDERS, Slice.PRESETS);
@@ -609,9 +611,9 @@ export function clearSourcesData() {
 }
 
 export function savePresetSessions() {
-    const ok = persist('focus_app_preset_sessions', AppState.presetSessions || {});
+    persistAsync('focus_app_preset_sessions', AppState.presetSessions || {});
     emit(Slice.PRESETS);
-    return ok;
+    return true;
 }
 
 export function savePresetSessionData(presetId, sessionData) {
@@ -646,14 +648,14 @@ function stampSourceDeletions(ids, at = Date.now()) {
     (ids || []).forEach(id => { if (id) stamps[id] = at; });
     if (Object.keys(stamps).length === 0) return;
     AppState.deletedSourceAt = mergeDatedIds(AppState.deletedSourceAt, stamps);
-    persist('focus_app_deleted_source_at', AppState.deletedSourceAt);
+    persistAsync('focus_app_deleted_source_at', AppState.deletedSourceAt);
 }
 
 export function trackDeletedSource(id, at = Date.now()) {
     if (!id) return;
     if (!AppState.deletedSourceIds.includes(id)) {
         AppState.deletedSourceIds.push(id);
-        persist('focus_app_deleted_sources', AppState.deletedSourceIds);
+        persistAsync('focus_app_deleted_sources', AppState.deletedSourceIds);
     }
     stampSourceDeletions([id], at);
     emit(Slice.SOURCES);
@@ -672,8 +674,8 @@ export function reviveSource(id, at = Date.now()) {
     const when = Math.max(at, deletedAt + 1);
     AppState.deletedSourceIds = (AppState.deletedSourceIds || []).filter(x => x !== id);
     AppState.revivedSourceAt = mergeDatedIds(AppState.revivedSourceAt, { [id]: when });
-    persist('focus_app_deleted_sources', AppState.deletedSourceIds);
-    persist('focus_app_revived_source_at', AppState.revivedSourceAt);
+    persistAsync('focus_app_deleted_sources', AppState.deletedSourceIds);
+    persistAsync('focus_app_revived_source_at', AppState.revivedSourceAt);
     return true;
 }
 
@@ -687,7 +689,7 @@ export function trackDeletedFolder(id, at = Date.now()) {
     const prev = Number(AppState.deletedFolderAt?.[id]) || 0;
     if (at <= prev) return;
     AppState.deletedFolderAt = mergeFolderDeletions(AppState.deletedFolderAt, { [id]: at });
-    persist('focus_app_deleted_folder_at', AppState.deletedFolderAt);
+    persistAsync('focus_app_deleted_folder_at', AppState.deletedFolderAt);
     emit(Slice.FOLDERS);
 }
 
@@ -695,7 +697,7 @@ export function trackDeletedQuickPreset(id) {
     if (!id) return;
     if (!AppState.deletedQuickPresetIds.includes(id)) {
         AppState.deletedQuickPresetIds.push(id);
-        persist('focus_app_deleted_quick_presets', AppState.deletedQuickPresetIds);
+        persistAsync('focus_app_deleted_quick_presets', AppState.deletedQuickPresetIds);
         emit(Slice.PRESETS);
     }
 }
@@ -715,11 +717,12 @@ export function trackDeletedQuickPreset(id) {
    question in the app. */
 
 export function saveQuickPresets() {
-    const { ok, changed } = persistIfChanged('focus_app_quick_presets', AppState.quickPresets);
-    if (!changed) return ok;
-    emit(Slice.PRESETS);
-    import('./github-sync.js').then(m => m.scheduleSync(300, m.SyncScope.PROGRESS)).catch(() => {});
-    return ok;
+    persistIfChangedAsync('focus_app_quick_presets', AppState.quickPresets).then(({ changed }) => {
+        if (!changed) return;
+        emit(Slice.PRESETS);
+        import('./github-sync.js').then(m => m.scheduleSync(300, m.SyncScope.PROGRESS)).catch(() => {});
+    });
+    return true;
 }
 
 /* ── Continuity config revisions ────────────────────────────────────────────
@@ -779,27 +782,30 @@ export function saveContinuityConfig({ stamp = true } = {}) {
     if (stamp) stampContinuityRevisions(AppState.continuityConfig);
     rebaseContinuityRevisions(AppState.continuityConfig);
 
-    const { ok, changed } = persistIfChanged('focus_app_continuity_config', AppState.continuityConfig);
-    if (!changed) return ok;
-    emit(Slice.CONTINUITY);
-    import('./github-sync.js').then(m => m.scheduleSync(300, m.SyncScope.PROGRESS)).catch(() => {});
-    return ok;
+    persistIfChangedAsync('focus_app_continuity_config', AppState.continuityConfig).then(({ changed }) => {
+        if (!changed) return;
+        emit(Slice.CONTINUITY);
+        import('./github-sync.js').then(m => m.scheduleSync(300, m.SyncScope.PROGRESS)).catch(() => {});
+    });
+    return true;
 }
 
 export function saveStudyActivity() {
-    const { ok, changed } = persistIfChanged('focus_app_study_activity', AppState.studyActivity);
-    if (!changed) return ok;
-    emit(Slice.ACTIVITY);
-    import('./github-sync.js').then(m => m.scheduleSync(300, m.SyncScope.PROGRESS)).catch(() => {});
-    return ok;
+    persistIfChangedAsync('focus_app_study_activity', AppState.studyActivity).then(({ changed }) => {
+        if (!changed) return;
+        emit(Slice.ACTIVITY);
+        import('./github-sync.js').then(m => m.scheduleSync(300, m.SyncScope.PROGRESS)).catch(() => {});
+    });
+    return true;
 }
 
 export function saveStats() {
-    const { ok, changed } = persistIfChanged('focus_app_stats_local', AppState.stats);
-    if (!changed) return ok;
-    emit(Slice.STATS);
-    import('./github-sync.js').then(m => m.scheduleSync(1500, m.SyncScope.PROGRESS)).catch(() => {});
-    return ok;
+    persistIfChangedAsync('focus_app_stats_local', AppState.stats).then(({ changed }) => {
+        if (!changed) return;
+        emit(Slice.STATS);
+        import('./github-sync.js').then(m => m.scheduleSync(1500, m.SyncScope.PROGRESS)).catch(() => {});
+    });
+    return true;
 }
 
 /* ── Synced settings ────────────────────────────────────────────────────────
@@ -877,9 +883,8 @@ export function saveSyncedSettings() {
     rebaseSettingsRevisions();
     if (!stamped) return true;
 
-    const { ok } = persistIfChanged('focus_app_settings_revisions', AppState.settingsRevisions);
-    import('./github-sync.js').then(m => m.scheduleSync(300, m.SyncScope.PROGRESS)).catch(() => {});
-    return ok;
+    persistIfChangedAsync('focus_app_settings_revisions', AppState.settingsRevisions).then(() => { import('./github-sync.js').then(m => m.scheduleSync(300, m.SyncScope.PROGRESS)).catch(() => {}); });
+    return true;
 }
 
 /**
@@ -912,13 +917,13 @@ export function applySyncedSettings(values, revisions) {
         if (next === undefined || next === null) return;
         if (JSON.stringify(AppState[key] ?? null) === JSON.stringify(next)) return;
         AppState[key] = next;
-        persist(SETTINGS_STORAGE_KEYS[key], next);
+        persistAsync(SETTINGS_STORAGE_KEYS[key], next);
         changed = true;
     });
 
     if (revisions && typeof revisions === 'object') {
         AppState.settingsRevisions = revisions;
-        persistIfChanged('focus_app_settings_revisions', revisions);
+        persistIfChangedAsync('focus_app_settings_revisions', revisions);
     }
     rebaseSettingsRevisions();
 
@@ -927,10 +932,10 @@ export function applySyncedSettings(values, revisions) {
 }
 
 export function saveCustomAIPrompt() {
-    const ok = persist('focus_app_custom_ai_prompt', AppState.customAIPrompt);
+    persistAsync('focus_app_custom_ai_prompt', AppState.customAIPrompt);
     saveSyncedSettings();
     emit(Slice.SETTINGS);
-    return ok;
+    return true;
 }
 
 /* ── The prompt library ─────────────────────────────────────────────────────
@@ -940,28 +945,29 @@ export function saveCustomAIPrompt() {
    would keep one of the two lists and silently drop the other. */
 
 export function saveAiPrompts() {
-    const { ok, changed } = persistIfChanged('focus_app_ai_prompts', AppState.aiPrompts);
-    if (!changed) return ok;
-    emit(Slice.SETTINGS);
-    import('./github-sync.js').then(m => m.scheduleSync(300, m.SyncScope.PROGRESS)).catch(() => {});
-    return ok;
+    persistIfChangedAsync('focus_app_ai_prompts', AppState.aiPrompts).then(({ changed }) => {
+        if (!changed) return;
+        emit(Slice.SETTINGS);
+        import('./github-sync.js').then(m => m.scheduleSync(300, m.SyncScope.PROGRESS)).catch(() => {});
+    });
+    return true;
 }
 
 export function trackDeletedAiPrompt(id) {
     if (!id) return;
     if (!AppState.deletedAiPromptIds.includes(id)) {
         AppState.deletedAiPromptIds.push(id);
-        persist('focus_app_deleted_ai_prompts', AppState.deletedAiPromptIds);
+        persistAsync('focus_app_deleted_ai_prompts', AppState.deletedAiPromptIds);
         emit(Slice.SETTINGS);
     }
 }
 
 /** The menu's current selection. Synced, so it goes through the stamping path. */
 export function saveActivePromptId() {
-    const ok = persist('focus_app_active_prompt_id', AppState.activePromptId || 'default');
+    persistAsync('focus_app_active_prompt_id', AppState.activePromptId || 'default');
     saveSyncedSettings();
     emit(Slice.SETTINGS);
-    return ok;
+    return true;
 }
 
 /**
@@ -973,40 +979,40 @@ export function saveActivePromptId() {
  * a prompt the user there never wrote and cannot account for.
  */
 export function saveAdhocPrompt() {
-    const ok = persist('focus_app_adhoc_prompt', AppState.adhocPrompt || '');
+    persistAsync('focus_app_adhoc_prompt', AppState.adhocPrompt || '');
     emit(Slice.SETTINGS);
-    return ok;
+    return true;
 }
 
 
 export function saveAiProviders() {
     // Not synced: the provider list is a device's own set of external tools.
-    const ok = persist('focus_app_ai_providers', AppState.aiProviders);
+    persistAsync('focus_app_ai_providers', AppState.aiProviders);
     emit(Slice.SETTINGS);
-    return ok;
+    return true;
 }
 
 export function saveTtsSettings() {
-    const ok = [
-        persist('focus_app_tts_enabled', AppState.ttsEnabled),
-        persist('focus_app_tts_autoplay', AppState.ttsAutoplay),
-        persist('focus_app_tts_speed', AppState.ttsSpeed.toString())
+    [
+        persistAsync('focus_app_tts_enabled', AppState.ttsEnabled),
+        persistAsync('focus_app_tts_autoplay', AppState.ttsAutoplay),
+        persistAsync('focus_app_tts_speed', AppState.ttsSpeed.toString())
     ].every(Boolean);
     saveSyncedSettings();
     emit(Slice.SETTINGS);
-    return ok;
+    return true;
 }
 
 export function saveTimerSettings() {
-    const ok = [
-        persist('focus_app_timer_stopwatch', AppState.timerStopwatchEnabled),
-        persist('focus_app_timer_countdown', AppState.timerCountdownEnabled),
-        persist('focus_app_timer_limit', AppState.timerCountdownLimit.toString()),
-        persist('focus_app_timer_auto_check', AppState.timerAutoCheckEnabled)
+    [
+        persistAsync('focus_app_timer_stopwatch', AppState.timerStopwatchEnabled),
+        persistAsync('focus_app_timer_countdown', AppState.timerCountdownEnabled),
+        persistAsync('focus_app_timer_limit', AppState.timerCountdownLimit.toString()),
+        persistAsync('focus_app_timer_auto_check', AppState.timerAutoCheckEnabled)
     ].every(Boolean);
     saveSyncedSettings();
     emit(Slice.SETTINGS);
-    return ok;
+    return true;
 }
 
 /**
@@ -1019,36 +1025,39 @@ export function saveLanguageSettings() {
 }
 
 export function saveSources() {
-    const { ok, changed } = persistIfChanged('focus_app_sources', AppState.sources);
-    if (!changed) return ok;
-    emit(Slice.SOURCES);
-    /* The only save in this file that rewrites the question library on the
-       remote side. */
-    import('./github-sync.js').then(m => m.scheduleSync(300, m.SyncScope.SOURCES)).catch(() => {});
-    return ok;
+    persistIfChangedAsync('focus_app_sources', AppState.sources).then(({ changed }) => {
+        if (!changed) return;
+        emit(Slice.SOURCES);
+        /* The only save in this file that rewrites the question library on the
+           remote side. */
+        import('./github-sync.js').then(m => m.scheduleSync(300, m.SyncScope.SOURCES)).catch(() => {});
+    });
+    return true;
 }
 
 export function saveFolders() {
-    const { ok, changed } = persistIfChanged('focus_app_folders', AppState.folders);
-    if (!changed) return ok;
-    emit(Slice.FOLDERS);
-    import('./github-sync.js').then(m => m.scheduleSync(300, m.SyncScope.PROGRESS)).catch(() => {});
-    return ok;
+    persistIfChangedAsync('focus_app_folders', AppState.folders).then(({ changed }) => {
+        if (!changed) return;
+        emit(Slice.FOLDERS);
+        import('./github-sync.js').then(m => m.scheduleSync(300, m.SyncScope.PROGRESS)).catch(() => {});
+    });
+    return true;
 }
 
 export function saveCurrentSource(key) {
     AppState.currentSourceKey = key;
-    const ok = persist('focus_app_current_source', key || '');
+    persistAsync('focus_app_current_source', key || '');
     emit(Slice.SOURCES);
-    return ok;
+    return true;
 }
 
 export function saveRecentTests() {
-    const { ok, changed } = persistIfChanged('focus_app_recent_tests', AppState.recentTests);
-    if (!changed) return ok;
-    emit(Slice.RECENT_TESTS);
-    import('./github-sync.js').then(m => m.scheduleSync(300, m.SyncScope.PROGRESS)).catch(() => {});
-    return ok;
+    persistIfChangedAsync('focus_app_recent_tests', AppState.recentTests).then(({ changed }) => {
+        if (!changed) return;
+        emit(Slice.RECENT_TESTS);
+        import('./github-sync.js').then(m => m.scheduleSync(300, m.SyncScope.PROGRESS)).catch(() => {});
+    });
+    return true;
 }
 
 let _saveActiveTestTimer = null;
@@ -1067,7 +1076,7 @@ export function saveActiveTest() {
             deviceId: AppState.deviceId || null,
             updatedAt: Date.now()
         };
-        persist('focus_app_active_test', activeData);
+        persistAsync('focus_app_active_test', activeData);
         emit(Slice.ACTIVE_TEST);
         import('./github-sync.js').then(m => m.scheduleSync(3000, m.SyncScope.PROGRESS)).catch(() => {});
 
@@ -1111,7 +1120,7 @@ export function clearActiveTest() {
     clearTimeout(_saveActiveTestTimer);
     _saveActiveTestTimer = null;
 
-    persist('focus_app_active_test', {
+    persistAsync('focus_app_active_test', {
         cleared: true,
         deviceId: AppState.deviceId || null,
         updatedAt: Date.now()

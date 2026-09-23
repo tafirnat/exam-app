@@ -49,14 +49,14 @@ function authorStrings(value, path = '', out = []) {
 const FILES = contentFiles();
 const load = (f) => JSON.parse(readFileSync(new URL('../' + f, import.meta.url), 'utf8'));
 
-test('there is shipped content to check', () => {
+test('there is shipped content to check', async () => {
     // Guards the discovery itself: a rename that empties the list would turn
     // every rule below into a loop over nothing, and pass.
     assert.ok(FILES.length >= 4, `expected the shipped samples and exams, found ${FILES.length}`);
     assert.ok(FILES.some(f => f.includes('sample-')), 'the language samples must be among them');
 });
 
-test('no shipped content string carries HTML', () => {
+test('no shipped content string carries HTML', async () => {
     for (const file of FILES) {
         for (const [path, value] of authorStrings(load(file))) {
             const tags = value.match(/<\/?[a-zA-Z][^>]*>/g) || [];
@@ -74,7 +74,7 @@ test('no shipped content string carries HTML', () => {
    text that is tag-free and still not Markdown, because the bullets were typed
    as a character. Such a list renders as one run-on paragraph - no <ul>, no
    hanging indent - and reads as a rendering bug rather than an authoring one. */
-test('lists in shipped content are Markdown lists, not typed bullet characters', () => {
+test('lists in shipped content are Markdown lists, not typed bullet characters', async () => {
     for (const file of FILES) {
         for (const [path, value] of authorStrings(load(file))) {
             assert.ok(!value.includes(BULLET),

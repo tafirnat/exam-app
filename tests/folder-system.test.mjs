@@ -17,17 +17,17 @@ before(async () => {
     createUncategorizedFolderRecord = stateModule.createUncategorizedFolderRecord;
     /* Importing no longer loads the user's data - boot does, explicitly. These
        cases are about what that load produces, so they have to ask for it. */
-    stateModule.initState();
+    await stateModule.initState();
 
     const archiveModule = await import('../src/features/sources/archive.js');
     archiveFolder = archiveModule.archiveFolder;
 });
 
-test('UNCATEGORIZED_FOLDER_ID is set to uncategorized-folder', () => {
+test('UNCATEGORIZED_FOLDER_ID is set to uncategorized-folder', async () => {
     assert.equal(UNCATEGORIZED_FOLDER_ID, 'uncategorized-folder');
 });
 
-test('createUncategorizedFolderRecord returns system folder with gray color #8a99ad', () => {
+test('createUncategorizedFolderRecord returns system folder with gray color #8a99ad', async () => {
     const folder = createUncategorizedFolderRecord();
     assert.equal(folder.id, 'uncategorized-folder');
     assert.equal(folder.color, '#8a99ad');
@@ -35,7 +35,7 @@ test('createUncategorizedFolderRecord returns system folder with gray color #8a9
     assert.equal(folder.name, 'Uncategorized');
 });
 
-test('AppState initializes with uncategorized-folder present', () => {
+test('AppState initializes with uncategorized-folder present', async () => {
     const systemFolder = AppState.folders.find(f => f.id === UNCATEGORIZED_FOLDER_ID);
     assert.ok(systemFolder);
     assert.equal(systemFolder.color, '#8a99ad');

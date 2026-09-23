@@ -16,13 +16,13 @@ before(async () => {
     ({ AppState } = await import('../src/core/state.js'));
 });
 
-test('slugify converts special characters to clean snake_case', () => {
+test('slugify converts special characters to clean snake_case', async () => {
     assert.strictEqual(slugify('03. Systemhaus & Support Praxis'), '03_systemhaus_support_praxis');
     assert.strictEqual(slugify('Başlangıç — Soru Tipleri'), 'baslangic_soru_tipleri');
     assert.strictEqual(slugify('Erste Schritte — Fragetypen'), 'erste_schritte_fragetypen');
 });
 
-test('generateHybridExamId creates hybrid format or preserves existing ID', () => {
+test('generateHybridExamId creates hybrid format or preserves existing ID', async () => {
     const title = '03. Systemhaus & Support Praxis';
     const id1 = generateHybridExamId(title);
     assert.match(id1, /^exam_03_systemhaus_support_praxis_[a-z0-9]+_[a-z0-9]+$/);
@@ -31,7 +31,7 @@ test('generateHybridExamId creates hybrid format or preserves existing ID', () =
     assert.strictEqual(preserved, 'exam_custom_id_123');
 });
 
-test('processJSON preserves existing exam_metadata.id or generates hybrid ID', () => {
+test('processJSON preserves existing exam_metadata.id or generates hybrid ID', async () => {
     const rawWithId = {
         exam_metadata: { title: 'Test Exam', id: 'exam_existing_999' },
         questions: [{ id: 'q1', type: 'single_choice', options: ['A'], answer: { correct_ids: ['A'] } }]
@@ -49,7 +49,7 @@ test('processJSON preserves existing exam_metadata.id or generates hybrid ID', (
     assert.strictEqual(s2.metadata.id, s2.id);
 });
 
-test('migrateExamIds is idempotent and preserves existing IDs', () => {
+test('migrateExamIds is idempotent and preserves existing IDs', async () => {
     AppState.sources = [
         { name: 'Source A', id: 'exam_fixed_1', metadata: { id: 'exam_fixed_1' } },
         { name: 'Source B', metadata: {} } // missing id

@@ -20,7 +20,7 @@ before(async () => {
     const stateMod = await import('../src/core/state.js');
     AppState = stateMod.AppState;
     initState = stateMod.initState;
-    initState();
+    await initState();
 
     ({ GUIDE_SECTIONS, GUIDE_LANGUAGES, GUIDE_TITLE, GUIDE_INTRO, CONTACT_EMAIL, guideLang } =
         await import('../src/features/help/guide-content.js'));
@@ -37,7 +37,7 @@ beforeEach(() => {
 
 // ── the content is complete ─────────────────────────────────────────────────
 
-test('every section is written in all three languages', () => {
+test('every section is written in all three languages', async () => {
     const missing = [];
     GUIDE_SECTIONS.forEach(s => {
         GUIDE_LANGUAGES.forEach(lang => {
@@ -48,12 +48,12 @@ test('every section is written in all three languages', () => {
     assert.deepEqual(missing, []);
 });
 
-test('section ids are unique - they are anchors', () => {
+test('section ids are unique - they are anchors', async () => {
     const ids = GUIDE_SECTIONS.map(s => s.id);
     assert.equal(new Set(ids).size, ids.length);
 });
 
-test('the guide covers what the user asked it to cover', () => {
+test('the guide covers what the user asked it to cover', async () => {
     // Named one by one because "there are seventeen sections" is an assertion
     // about a number, not about whether the guide answers anything.
     ['add-sources', 'manage-sources', 'sync', 'streaks', 'stats',
@@ -62,7 +62,7 @@ test('the guide covers what the user asked it to cover', () => {
     });
 });
 
-test('merging, exporting and suspending are each explained somewhere', () => {
+test('merging, exporting and suspending are each explained somewhere', async () => {
     // The screen names are what a reader searches for; a guide that never uses
     // them cannot be found by the person who needs it.
     const tr = GUIDE_SECTIONS.map(s => s.body.tr).join('\n').toLowerCase();
@@ -70,7 +70,7 @@ test('merging, exporting and suspending are each explained somewhere', () => {
         .forEach(word => assert.ok(tr.includes(word), `the Turkish guide never mentions "${word}"`));
 });
 
-test('the contact address and the version are in the guide', () => {
+test('the contact address and the version are in the guide', async () => {
     const about = GUIDE_SECTIONS.find(s => s.id === 'about');
     GUIDE_LANGUAGES.forEach(lang => {
         assert.ok(about.body[lang].includes(CONTACT_EMAIL), `${lang} is missing the contact address`);
@@ -78,13 +78,13 @@ test('the contact address and the version are in the guide', () => {
     });
 });
 
-test('the version is declared once, not twice', () => {
+test('the version is declared once, not twice', async () => {
     // Two copies of a version string drift the first time one of them is bumped.
     const pkg = JSON.parse(read('../package.json'));
     assert.equal(pkg.version, APP_VERSION, 'package.json and version.js disagree');
 });
 
-test('an unsupported language falls back to English rather than blank', () => {
+test('an unsupported language falls back to English rather than blank', async () => {
     assert.equal(guideLang('fr'), 'en');
     assert.equal(guideLang(undefined), 'en');
     assert.equal(guideLang('de'), 'de');
@@ -92,7 +92,7 @@ test('an unsupported language falls back to English rather than blank', () => {
 
 // ── the guide renders in the app ────────────────────────────────────────────
 
-test('opening the guide shows one heading per section, and no separate contents list', () => {
+test('opening the guide shows one heading per section, and no separate contents list', async () => {
     openGuide();
     assert.ok(document.getElementById('guideOverlay').classList.contains('active'));
     const heads = document.querySelectorAll('#guideSections [data-guide-toggle]');
@@ -101,7 +101,7 @@ test('opening the guide shows one heading per section, and no separate contents 
     assert.equal(document.getElementById('guideToc'), null);
 });
 
-test('nothing is open, and no section body is parsed, until one is asked for', () => {
+test('nothing is open, and no section body is parsed, until one is asked for', async () => {
     // The guide is tens of kilobytes of Markdown. Parsing all of it on open is
     // work nobody asked for, so a body stays empty until its section opens.
     openGuide();
@@ -110,7 +110,7 @@ test('nothing is open, and no section body is parsed, until one is asked for', (
     assert.equal(filled.length, 0, 'a closed section had already been rendered');
 });
 
-test('a heading opens its section and fills it', () => {
+test('a heading opens its section and fills it', async () => {
     openGuide();
     document.querySelector('[data-guide-toggle="sync"]').click();
     const item = document.getElementById('guideItem-sync');
@@ -118,7 +118,7 @@ test('a heading opens its section and fills it', () => {
     assert.ok(document.getElementById('guideBody-sync').innerHTML.includes('Gist'));
 });
 
-test('only one section is open at a time', () => {
+test('only one section is open at a time', async () => {
     openGuide();
     document.querySelector('[data-guide-toggle="sync"]').click();
     document.querySelector('[data-guide-toggle="streaks"]').click();
@@ -126,7 +126,7 @@ test('only one section is open at a time', () => {
     assert.deepEqual(open, ['guideItem-streaks']);
 });
 
-test('tapping an open heading closes it again', () => {
+test('tapping an open heading closes it again', async () => {
     openGuide();
     document.getElementById('guideHead-stats').click();
     assert.ok(document.getElementById('guideItem-stats').classList.contains('is-open'));
@@ -134,12 +134,12 @@ test('tapping an open heading closes it again', () => {
     assert.ok(!document.getElementById('guideItem-stats').classList.contains('is-open'));
 });
 
-test('the guide can be opened straight at a section', () => {
+test('the guide can be opened straight at a section', async () => {
     openGuide('streaks');
     assert.ok(document.getElementById('guideItem-streaks').classList.contains('is-open'));
 });
 
-test('the guide follows the interface language', () => {
+test('the guide follows the interface language', async () => {
     AppState.language = 'de';
     openGuide();
     assert.equal(document.getElementById('guideTitle').textContent, GUIDE_TITLE.de);
@@ -147,7 +147,7 @@ test('the guide follows the interface language', () => {
     assert.equal(document.getElementById('guideIntro').textContent, GUIDE_INTRO.de);
 });
 
-test('a language change re-renders the bodies, not just the headings', () => {
+test('a language change re-renders the bodies, not just the headings', async () => {
     // The parsed bodies are cached. Keeping them across a language change would
     // put the previous language's text under the new language's heading.
     AppState.language = 'tr';
@@ -161,7 +161,7 @@ test('a language change re-renders the bodies, not just the headings', () => {
     assert.ok(en.includes('Personal Access Token'));
 });
 
-test('the parsed-body memo is keyed by language, not just by section', () => {
+test('the parsed-body memo is keyed by language, not just by section', async () => {
     // This is what makes a language change safe without an explicit cache
     // flush: German can never be served the Turkish parse. A memo keyed on the
     // section id alone would hand back whichever language was read first.
@@ -184,19 +184,19 @@ test('the parsed-body memo is keyed by language, not just by section', () => {
     assert.notEqual(tr, de);
 });
 
-test('the contact address is a mailto link the reader can actually press', () => {
+test('the contact address is a mailto link the reader can actually press', async () => {
     openGuide();
     const link = document.querySelector('#guideContact a');
     assert.ok(link, 'the contact address is not a link');
     assert.equal(link.getAttribute('href'), `mailto:${CONTACT_EMAIL}`);
 });
 
-test('the version is on screen', () => {
+test('the version is on screen', async () => {
     openGuide();
     assert.equal(document.getElementById('guideVersion').textContent, `v${APP_VERSION}`);
 });
 
-test('the menu entry opens the guide, and the tour keeps its own entry', () => {
+test('the menu entry opens the guide, and the tour keeps its own entry', async () => {
     const html = read('../index.html');
     assert.ok(/id="menuOpenGuide"/.test(html), 'nothing in the menu opens the guide');
     assert.ok(/id="menuStartOnboarding"/.test(html), 'the interactive tour lost its entry');
@@ -205,7 +205,7 @@ test('the menu entry opens the guide, and the tour keeps its own entry', () => {
         'the menu entry is not wired to openGuide');
 });
 
-test('the overlay clears the default and stays below customModalOverlay', () => {
+test('the overlay clears the default and stays below customModalOverlay', async () => {
     /* Both bars are read from the stylesheet rather than written down. The
        second `.modal-overlay` rule in style.css raises the default to 10010,
        which is what an overlay with no inline z-index gets - the quick-group
@@ -225,14 +225,14 @@ test('the overlay clears the default and stays below customModalOverlay', () => 
     assert.ok(n < Number(confirm[1]));
 });
 
-test('the guide uses the app markdown renderer rather than a second one', () => {
+test('the guide uses the app markdown renderer rather than a second one', async () => {
     const src = read('../src/features/help/guide-ui.js');
     assert.ok(/renderMarkdown\(/.test(src));
 });
 
 // ── the generated files on disk ─────────────────────────────────────────────
 
-test('the checked-in Markdown matches what the source generates', () => {
+test('the checked-in Markdown matches what the source generates', async () => {
     // These files are what an AI asked "how does this app work" reads. Two
     // hand-kept copies would drift within a month, so the copy on disk is
     // generated and this case is what stops it going stale.
@@ -245,7 +245,7 @@ test('the checked-in Markdown matches what the source generates', () => {
     });
 });
 
-test('the generated file carries every section and the contents list', () => {
+test('the generated file carries every section and the contents list', async () => {
     const md = renderGuideMarkdown('en');
     GUIDE_SECTIONS.forEach(s => {
         assert.ok(md.includes(`## ${s.title.en}`), `${s.id} has no heading in the Markdown`);
@@ -254,7 +254,7 @@ test('the generated file carries every section and the contents list', () => {
     assert.ok(md.includes(CONTACT_EMAIL));
 });
 
-test('the generated file says it is generated', () => {
+test('the generated file says it is generated', async () => {
     // Otherwise the first person to improve a sentence edits the copy that gets
     // overwritten.
     GUIDE_LANGUAGES.forEach(lang => {
@@ -262,14 +262,14 @@ test('the generated file says it is generated', () => {
     });
 });
 
-test('npm run build:guide exists', () => {
+test('npm run build:guide exists', async () => {
     const pkg = JSON.parse(read('../package.json'));
     assert.ok(pkg.scripts['build:guide'], 'the generator has no script to run it');
 });
 
 // ── i18n around the guide ───────────────────────────────────────────────────
 
-test('the menu labels are translated in all three languages', () => {
+test('the menu labels are translated in all three languages', async () => {
     ['onboarding_menu_title', 'onboarding_tour_menu_title', 'guide_contact_label']
         .forEach(key => {
             ['tr', 'en', 'de'].forEach(lang => {

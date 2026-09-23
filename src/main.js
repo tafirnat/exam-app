@@ -132,7 +132,7 @@ window.onSourcesUpdated = () => {
 // --- Initialize ---
 let isAppInitialized = false;
 
-const initApp = () => {
+const initApp = async () => {
     if (isAppInitialized) return;
     isAppInitialized = true;
     console.log('initApp start');
@@ -141,7 +141,7 @@ const initApp = () => {
        explicit step now, not something that happened while the import graph was
        being evaluated. Everything below - migrations, sync, the first paint -
        assumes it has already run. */
-    initState();
+    await initState();
 
     // Backwards compatibility helper to make contenteditable divs act like textareas
     const setupDivInput = (id) => {

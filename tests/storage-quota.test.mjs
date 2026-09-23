@@ -76,26 +76,26 @@ beforeEach(() => {
 
 // ── Measuring ───────────────────────────────────────────────────────────────
 
-test('usage counts key and value as UTF-16, which is what localStorage stores', () => {
+test('usage counts key and value as UTF-16, which is what localStorage stores', async () => {
     localStorage.setItem('ab', 'cde');   // (2 + 3) * 2 = 10 bytes
     const usage = storage.measureStorageUsage();
     assert.equal(usage.usedBytes, 10);
 });
 
-test('a non-ASCII value is not undercounted', () => {
+test('a non-ASCII value is not undercounted', async () => {
     // Turkish content is the normal case here, not an edge case: counting bytes
     // as if every character were one would understate the library.
     localStorage.setItem('k', 'ğüşiöç');
     assert.equal(storage.measureStorageUsage().usedBytes, (1 + 6) * 2);
 });
 
-test('the largest single value is reported - a rewrite needs room for it', () => {
+test('the largest single value is reported - a rewrite needs room for it', async () => {
     localStorage.setItem('small', 'x'.repeat(10));
     localStorage.setItem('library', 'x'.repeat(5000));
     assert.equal(storage.measureStorageUsage().largestValueBytes, 10000);
 });
 
-test('usage survives a store that cannot be read', () => {
+test('usage survives a store that cannot be read', async () => {
     const original = Object.getOwnPropertyDescriptor(global, 'localStorage');
     Object.defineProperty(global, 'localStorage', {
         configurable: true,
@@ -111,40 +111,40 @@ test('usage survives a store that cannot be read', () => {
 
 // ── The two rungs ───────────────────────────────────────────────────────────
 
-test('an empty store is on no rung at all', () => {
+test('an empty store is on no rung at all', async () => {
     assert.equal(notice.evaluateStorageLevel(), null);
 });
 
-test('60% reaches the suggestion rung', () => {
+test('60% reaches the suggestion rung', async () => {
     fillTo(storage.ASSUMED_QUOTA_BYTES * 0.62);
     assert.equal(notice.evaluateStorageLevel(), notice.QuotaLevel.SUGGEST);
 });
 
-test('85% reaches the critical rung', () => {
+test('85% reaches the critical rung', async () => {
     fillTo(storage.ASSUMED_QUOTA_BYTES * 0.87);
     assert.equal(notice.evaluateStorageLevel(), notice.QuotaLevel.CRITICAL);
 });
 
-test('just under a threshold stays quiet', () => {
+test('just under a threshold stays quiet', async () => {
     fillTo(storage.ASSUMED_QUOTA_BYTES * 0.55);
     assert.equal(notice.evaluateStorageLevel(), null);
 });
 
 // ── Saying it in questions, not percentages ─────────────────────────────────
 
-test('the remaining estimate is rounded, not a fake-precise number', () => {
+test('the remaining estimate is rounded, not a fake-precise number', async () => {
     fillTo(storage.ASSUMED_QUOTA_BYTES * 0.5);
     const remaining = notice.estimateRemainingQuestions();
     assert.ok(remaining > 0);
     assert.equal(remaining % 100, 0, 'a four-digit estimate claiming single-question precision is a lie');
 });
 
-test('a full store offers no remaining questions rather than a negative number', () => {
+test('a full store offers no remaining questions rather than a negative number', async () => {
     fillTo(storage.ASSUMED_QUOTA_BYTES * 1.2);
     assert.equal(notice.estimateRemainingQuestions(), 0);
 });
 
-test('the estimate leaves room to rewrite the biggest value', () => {
+test('the estimate leaves room to rewrite the biggest value', async () => {
     // Half the quota used, and nearly all of it in one blob that must be
     // rewritable. What is really free is much less than the arithmetic says.
     localStorage.setItem('focus_app_sources', 'x'.repeat(storage.ASSUMED_QUOTA_BYTES * 0.25));
@@ -157,7 +157,7 @@ test('the estimate leaves room to rewrite the biggest value', () => {
 
 // ── Which sources get offered ───────────────────────────────────────────────
 
-test('the coldest source comes first, by real study dates', () => {
+test('the coldest source comes first, by real study dates', async () => {
     AppState.sources = [
         sourceWith({ id: 'warm', studiedDaysAgo: 2 }),
         sourceWith({ id: 'cold', studiedDaysAgo: 200 }),
@@ -166,7 +166,7 @@ test('the coldest source comes first, by real study dates', () => {
     assert.deepEqual(notice.coldestSources().map(c => c.source.id), ['cold', 'mid', 'warm']);
 });
 
-test('a source left switched on but never opened is not treated as fresh', () => {
+test('a source left switched on but never opened is not treated as fresh', async () => {
     // lastUsed is written when a source is toggled on, so it says nothing about
     // whether the user has actually studied it since.
     const stale = sourceWith({ id: 'stale', studiedDaysAgo: 300 });
@@ -177,7 +177,7 @@ test('a source left switched on but never opened is not treated as fresh', () =>
     assert.equal(notice.coldestSources()[0].source.id, 'stale');
 });
 
-test('a never-studied source sorts coldest of all', () => {
+test('a never-studied source sorts coldest of all', async () => {
     AppState.sources = [
         sourceWith({ id: 'old', studiedDaysAgo: 500 }),
         sourceWith({ id: 'untouched' })
@@ -185,7 +185,7 @@ test('a never-studied source sorts coldest of all', () => {
     assert.equal(notice.coldestSources()[0].source.id, 'untouched');
 });
 
-test('stats are matched on the whole key, so one source id cannot steal another\'s', () => {
+test('stats are matched on the whole key, so one source id cannot steal another\'s', async () => {
     // "src" is a prefix of "src_2": splitting a stat key on "_" to find the
     // source would hand src_2's reviews to src.
     const prefix = sourceWith({ id: 'src' });                       // never studied
@@ -197,7 +197,7 @@ test('stats are matched on the whole key, so one source id cannot steal another\
     assert.ok(notice.lastStudiedAt(longer) > 0);
 });
 
-test('the source being studied right now is never offered up for deletion', () => {
+test('the source being studied right now is never offered up for deletion', async () => {
     AppState.sources = [
         sourceWith({ id: 'focus', studiedDaysAgo: 900 }),
         sourceWith({ id: 'other', studiedDaysAgo: 10 })
@@ -206,7 +206,7 @@ test('the source being studied right now is never offered up for deletion', () =
     assert.deepEqual(notice.coldestSources().map(c => c.source.id), ['other']);
 });
 
-test('already archived sources are not offered again', () => {
+test('already archived sources are not offered again', async () => {
     AppState.sources = [
         sourceWith({ id: 'gone', studiedDaysAgo: 900, archived: true }),
         sourceWith({ id: 'live', studiedDaysAgo: 10 })
@@ -214,7 +214,7 @@ test('already archived sources are not offered again', () => {
     assert.deepEqual(notice.coldestSources().map(c => c.source.id), ['live']);
 });
 
-test('only three are offered - a list of ten is a chore, not an offer', () => {
+test('only three are offered - a list of ten is a chore, not an offer', async () => {
     AppState.sources = Array.from({ length: 9 }, (_, i) =>
         sourceWith({ id: `s${i}`, studiedDaysAgo: 100 + i }));
     assert.equal(notice.coldestSources().length, 3);
@@ -222,19 +222,19 @@ test('only three are offered - a list of ten is a chore, not an offer', () => {
 
 // ── Archiving only counts when it actually frees space ──────────────────────
 
-test('without GitHub, archiving is not offered - it would free nothing', () => {
+test('without GitHub, archiving is not offered - it would free nothing', async () => {
     AppState.githubToken = null;
     AppState.githubGistId = null;
     assert.equal(notice.archivingFreesSpace(), false);
 });
 
-test('with a working GitHub connection, archiving is offered', () => {
+test('with a working GitHub connection, archiving is offered', async () => {
     AppState.githubToken = 'tok';
     AppState.githubGistId = 'gist';
     assert.equal(notice.archivingFreesSpace(), true);
 });
 
-test('with a dead token, archiving is not offered either', () => {
+test('with a dead token, archiving is not offered either', async () => {
     // The offload would fail, archive.js would (correctly) keep the questions on
     // the device, and the user would have "fixed" their storage by freeing zero
     // bytes.
@@ -245,7 +245,7 @@ test('with a dead token, archiving is not offered either', () => {
     assert.equal(notice.archivingFreesSpace(), false);
 });
 
-test('the dialog says why archiving is missing instead of hiding it silently', () => {
+test('the dialog says why archiving is missing instead of hiding it silently', async () => {
     fillTo(storage.ASSUMED_QUOTA_BYTES * 0.9);
     AppState.sources = [sourceWith({ id: 'cold', studiedDaysAgo: 100 })];
 
@@ -258,12 +258,12 @@ test('the dialog says why archiving is missing instead of hiding it silently', (
 
 // ── When it speaks ──────────────────────────────────────────────────────────
 
-test('a store below the first rung shows nothing', () => {
+test('a store below the first rung shows nothing', async () => {
     assert.equal(notice.maybeShowStorageNotice(), false);
     assert.equal(document.getElementById('storageNoticeOverlay').classList.contains('active'), false);
 });
 
-test('the suggestion appears once and then not again the same day', () => {
+test('the suggestion appears once and then not again the same day', async () => {
     fillTo(storage.ASSUMED_QUOTA_BYTES * 0.65);
     assert.equal(notice.maybeShowStorageNotice(), true);
 
@@ -271,7 +271,7 @@ test('the suggestion appears once and then not again the same day', () => {
     assert.equal(notice.maybeShowStorageNotice(), false);
 });
 
-test('the critical warning ignores the date and speaks every session', () => {
+test('the critical warning ignores the date and speaks every session', async () => {
     fillTo(storage.ASSUMED_QUOTA_BYTES * 0.9);
     assert.equal(notice.maybeShowStorageNotice(), true);
 
@@ -279,13 +279,13 @@ test('the critical warning ignores the date and speaks every session', () => {
     assert.equal(notice.maybeShowStorageNotice(), true);
 });
 
-test('it speaks only once within one session', () => {
+test('it speaks only once within one session', async () => {
     fillTo(storage.ASSUMED_QUOTA_BYTES * 0.9);
     assert.equal(notice.maybeShowStorageNotice(), true);
     assert.equal(notice.maybeShowStorageNotice(), false, 'once per session, not once per home visit');
 });
 
-test('nothing interrupts a test in progress', () => {
+test('nothing interrupts a test in progress', async () => {
     fillTo(storage.ASSUMED_QUOTA_BYTES * 0.95);
     document.getElementById('testView').style.display = 'flex';
 
@@ -296,7 +296,7 @@ test('nothing interrupts a test in progress', () => {
     assert.equal(notice.maybeShowStorageNotice(), true);
 });
 
-test('it does not stack on top of another dialog', () => {
+test('it does not stack on top of another dialog', async () => {
     fillTo(storage.ASSUMED_QUOTA_BYTES * 0.95);
     const other = document.createElement('div');
     other.className = 'modal-overlay active';
@@ -310,7 +310,7 @@ test('it does not stack on top of another dialog', () => {
 
 // ── What the dialog puts on screen ──────────────────────────────────────────
 
-test('the dialog lists the cold sources with an action per row', () => {
+test('the dialog lists the cold sources with an action per row', async () => {
     fillTo(storage.ASSUMED_QUOTA_BYTES * 0.9);
     AppState.githubToken = 'tok';
     AppState.githubGistId = 'gist';
@@ -328,7 +328,7 @@ test('the dialog lists the cold sources with an action per row', () => {
     assert.equal(rows[0].querySelectorAll('button').length, 3);
 });
 
-test('without GitHub each row drops to two actions', () => {
+test('without GitHub each row drops to two actions', async () => {
     fillTo(storage.ASSUMED_QUOTA_BYTES * 0.9);
     AppState.sources = [sourceWith({ id: 'cold', studiedDaysAgo: 120 })];
 
@@ -338,7 +338,7 @@ test('without GitHub each row drops to two actions', () => {
     assert.equal(row.querySelectorAll('button').length, 2);
 });
 
-test('the headline talks about questions, never a percentage', () => {
+test('the headline talks about questions, never a percentage', async () => {
     fillTo(storage.ASSUMED_QUOTA_BYTES * 0.65);
     AppState.sources = [sourceWith({ id: 'cold', studiedDaysAgo: 120, questions: 40 })];
 
@@ -349,7 +349,7 @@ test('the headline talks about questions, never a percentage', () => {
     assert.ok(/\d/.test(text));
 });
 
-test('a user with nothing to offer gets the empty state, not three blank rows', () => {
+test('a user with nothing to offer gets the empty state, not three blank rows', async () => {
     fillTo(storage.ASSUMED_QUOTA_BYTES * 0.9);
     AppState.sources = [];
 
@@ -359,7 +359,7 @@ test('a user with nothing to offer gets the empty state, not three blank rows', 
     assert.notEqual(document.getElementById('storageNoticeEmpty').style.display, 'none');
 });
 
-test('the dialog can be opened deliberately even when storage is fine', () => {
+test('the dialog can be opened deliberately even when storage is fine', async () => {
     assert.equal(notice.maybeShowStorageNotice(), false);
     assert.equal(notice.maybeShowStorageNotice({ force: true }), true);
 });

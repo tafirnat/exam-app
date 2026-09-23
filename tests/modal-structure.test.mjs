@@ -13,7 +13,7 @@ const document = new JSDOM(html).window.document;
 
 const OVERLAY_SELECTOR = '.modal-overlay, .modal';
 
-test('every modal overlay is a direct child of <body>', () => {
+test('every modal overlay is a direct child of <body>', async () => {
     const misplaced = [...document.querySelectorAll(OVERLAY_SELECTOR)]
         .filter(el => el.parentElement !== document.body)
         .map(el => `#${el.id || el.className} inside #${el.parentElement.closest(OVERLAY_SELECTOR)?.id || el.parentElement.tagName}`);
@@ -21,7 +21,7 @@ test('every modal overlay is a direct child of <body>', () => {
     assert.deepEqual(misplaced, [], `modal(s) nested inside another element: ${misplaced.join(', ')}`);
 });
 
-test('no modal overlay contains another modal overlay', () => {
+test('no modal overlay contains another modal overlay', async () => {
     const nested = [...document.querySelectorAll(OVERLAY_SELECTOR)]
         .filter(el => el.querySelector(OVERLAY_SELECTOR))
         .map(el => el.id || el.className);
@@ -29,7 +29,7 @@ test('no modal overlay contains another modal overlay', () => {
     assert.deepEqual(nested, [], `modal(s) wrapping other modals: ${nested.join(', ')}`);
 });
 
-test('continuity popups the carousel icons open are reachable', () => {
+test('continuity popups the carousel icons open are reachable', async () => {
     for (const id of ['infoPopupOverlay', 'focusSourceModal']) {
         const el = document.getElementById(id);
         assert.ok(el, `#${id} is missing from index.html`);

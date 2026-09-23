@@ -68,7 +68,7 @@ beforeEach(() => {
     AppState.studyActivity = {};
 });
 
-test('picker renders folders and source rows but no management controls', () => {
+test('picker renders folders and source rows but no management controls', async () => {
     const container = makeContainer();
     renderSourcePicker(container, { selected: [], max: 3 });
 
@@ -84,7 +84,7 @@ test('picker renders folders and source rows but no management controls', () => 
     assert.equal(container.querySelectorAll('[draggable="true"]').length, 0);
 });
 
-test('startCollapsed folds every folder and still flags where picks live', () => {
+test('startCollapsed folds every folder and still flags where picks live', async () => {
     const container = makeContainer();
     renderSourcePicker(container, { selected: ['srcB'], max: 3, startCollapsed: true });
 
@@ -105,7 +105,7 @@ test('startCollapsed folds every folder and still flags where picks live', () =>
     assert.ok(badges[0].startsWith(`Dersler${expected}`), badges[0]);
 });
 
-test('expanding a folder reveals its rows without touching the others', () => {
+test('expanding a folder reveals its rows without touching the others', async () => {
     const container = makeContainer();
     renderSourcePicker(container, { selected: [], max: 3, startCollapsed: true });
 
@@ -117,7 +117,7 @@ test('expanding a folder reveals its rows without touching the others', () => {
     assert.equal(other.style.display, 'none');
 });
 
-test('picker marks pre-selected sources as active', () => {
+test('picker marks pre-selected sources as active', async () => {
     const container = makeContainer();
     const handle = renderSourcePicker(container, { selected: ['srcB'], max: 3 });
 
@@ -127,7 +127,7 @@ test('picker marks pre-selected sources as active', () => {
     assert.deepEqual(handle.getSelected(), ['srcB']);
 });
 
-test('clicking a row toggles selection and reports it through onChange', () => {
+test('clicking a row toggles selection and reports it through onChange', async () => {
     const container = makeContainer();
     const seen = [];
     const handle = renderSourcePicker(container, {
@@ -145,7 +145,7 @@ test('clicking a row toggles selection and reports it through onChange', () => {
     assert.deepEqual(seen, [[], ['srcA'], []]);
 });
 
-test('picker refuses a fourth selection', () => {
+test('picker refuses a fourth selection', async () => {
     const container = makeContainer();
     const handle = renderSourcePicker(container, { selected: [], max: 3 });
 
@@ -157,7 +157,7 @@ test('picker refuses a fourth selection', () => {
     assert.deepEqual(handle.getSelected(), ['srcA', 'srcB', 'srcC']);
 });
 
-test('archived sources are hidden and never occupy a selection slot', () => {
+test('archived sources are hidden and never occupy a selection slot', async () => {
     AppState.sources.find(s => s.id === 'srcA').archived = true;
 
     const container = makeContainer();
@@ -171,7 +171,7 @@ test('archived sources are hidden and never occupy a selection slot', () => {
     assert.equal(handle.getSelected().length, 3);
 });
 
-test('empty folders are skipped and an empty library shows a hint', () => {
+test('empty folders are skipped and an empty library shows a hint', async () => {
     AppState.sources = [];
     const container = makeContainer();
     renderSourcePicker(container, { selected: [], max: 3 });
@@ -180,7 +180,7 @@ test('empty folders are skipped and an empty library shows a hint', () => {
     assert.equal(container.textContent.trim(), t('picker_no_sources'));
 });
 
-test('getLiveFocusSources drops archived and deleted ids from the selection', () => {
+test('getLiveFocusSources drops archived and deleted ids from the selection', async () => {
     AppState.continuityConfig.focusSources = ['srcA', 'srcB', 'ghost'];
     AppState.sources.find(s => s.id === 'srcB').archived = true;
 
@@ -188,7 +188,7 @@ test('getLiveFocusSources drops archived and deleted ids from the selection', ()
     assert.deepEqual(getLiveFocusSources(), ['srcA']);
 });
 
-test('a deleted source keeps its label through the saved name snapshot', () => {
+test('a deleted source keeps its label through the saved name snapshot', async () => {
     AppState.continuityConfig.focusSources = ['srcA'];
     AppState.continuityConfig.focusSourceNames = { srcA: 'Almanca B1' };
     AppState.sources = AppState.sources.filter(s => s.id !== 'srcA');
@@ -196,7 +196,7 @@ test('a deleted source keeps its label through the saved name snapshot', () => {
     assert.equal(getFocusSourceLabel('srcA'), 'Almanca B1');
 });
 
-test('focus streak survives archiving, deleting and re-picking sources', () => {
+test('focus streak survives archiving, deleting and re-picking sources', async () => {
     const dayKey = (offset) => {
         const d = new Date();
         d.setDate(d.getDate() - offset);

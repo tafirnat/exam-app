@@ -47,7 +47,7 @@ before(async () => {
    undated if the engine stopped writing the stamp, which would leave the merge
    silently back on "take the larger" without a single failing case to say so. */
 
-test('measuring the day records when it was measured', () => {
+test('measuring the day records when it was measured', async () => {
     AppState.studyActivity = {};
     AppState.stats = {};
     AppState.sources = [];
@@ -61,7 +61,7 @@ test('measuring the day records when it was measured', () => {
     assert.ok(day.overdueSnapshotAt >= before, 'and the moment it was measured is on the record');
 });
 
-test('the focus bar is stamped the same way', () => {
+test('the focus bar is stamped the same way', async () => {
     AppState.studyActivity = {};
     AppState.stats = {};
     AppState.sources = [];
@@ -75,7 +75,7 @@ test('the focus bar is stamped the same way', () => {
     assert.ok(day.focusOverdueSnapshotAt >= before);
 });
 
-test('a measured day is not measured again', () => {
+test('a measured day is not measured again', async () => {
     AppState.studyActivity = {};
     AppState.stats = {};
     AppState.sources = [];
@@ -91,7 +91,7 @@ test('a measured day is not measured again', () => {
     assert.equal(AppState.studyActivity[getLocalDateStr()].overdueSnapshotAt, firstAt);
 });
 
-test('getDailyRequirement calculates correct limits', () => {
+test('getDailyRequirement calculates correct limits', async () => {
     assert.equal(getDailyRequirement(25), 15);
     assert.equal(getDailyRequirement(15), 15);
     assert.equal(getDailyRequirement(8), 8);
@@ -100,7 +100,7 @@ test('getDailyRequirement calculates correct limits', () => {
     assert.equal(getDailyRequirement(null), 15);
 });
 
-test('isActivityRequirementMet evaluates global study requirement correctly', () => {
+test('isActivityRequirementMet evaluates global study requirement correctly', async () => {
     assert.equal(isActivityRequirementMet({ frozen: true }), true);
     assert.equal(isActivityRequirementMet({ studied: false, questionCount: 10 }), false);
     assert.equal(isActivityRequirementMet({ studied: true, questionCount: 10, overdueSnapshot: 20 }), false);
@@ -108,14 +108,14 @@ test('isActivityRequirementMet evaluates global study requirement correctly', ()
     assert.equal(isActivityRequirementMet({ studied: true, questionCount: 5, overdueSnapshot: 5 }), true);
 });
 
-test('isFocusActivityRequirementMet evaluates focus study requirement correctly', () => {
+test('isFocusActivityRequirementMet evaluates focus study requirement correctly', async () => {
     assert.equal(isFocusActivityRequirementMet({ focusFrozen: true }), true);
     assert.equal(isFocusActivityRequirementMet({ focusStudied: false, focusQuestionCount: 10 }), false);
     assert.equal(isFocusActivityRequirementMet({ focusStudied: true, focusQuestionCount: 15, focusOverdueSnapshot: 15 }), true);
     assert.equal(isFocusActivityRequirementMet({ focusStudied: true, focusQuestionCount: 5, focusOverdueSnapshot: 5 }), true);
 });
 
-test('calculateFocusTargetDistribution divides targets across sources properly', () => {
+test('calculateFocusTargetDistribution divides targets across sources properly', async () => {
     AppState.questions = [
         { id: 1, sourceId: 'srcA' },
         { id: 2, sourceId: 'srcA' },
@@ -142,7 +142,7 @@ test('calculateFocusTargetDistribution divides targets across sources properly',
     assert.equal(dist3.distribution['srcC'], 5);
 });
 
-test('initTodayActivity and checkAndReplenishTokens do not exceed maximum call stack size', () => {
+test('initTodayActivity and checkAndReplenishTokens do not exceed maximum call stack size', async () => {
     assert.doesNotThrow(() => {
         initTodayActivity();
         checkAndReplenishTokens();
@@ -157,7 +157,7 @@ test('initTodayActivity and checkAndReplenishTokens do not exceed maximum call s
    for free. The name is what makes the spend survive the trip, and it has to be
    the day itself so the same freeze made twice is recognised as one. */
 
-test('an auto-freeze is charged by name, so another device can see what it paid for', () => {
+test('an auto-freeze is charged by name, so another device can see what it paid for', async () => {
     const dayAgo = (n) => {
         const d = new Date();
         d.setDate(d.getDate() - n);
@@ -263,7 +263,7 @@ test('recordTestFinished deduplicates correct and wrong counts if flushInProgres
 
 
 
-test('the overdue scan measures every question at one instant', () => {
+test('the overdue scan measures every question at one instant', async () => {
     /* This count IS the day's bar. Reading the clock per question makes each
        successive question look staler than the last, so questions sitting near
        the R = 0.9 line fall on different sides of it depending only on where

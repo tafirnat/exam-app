@@ -64,8 +64,8 @@ beforeEach(() => {
 
 // ── Stamping ────────────────────────────────────────────────────────────────
 
-test('only the key that actually changed gets a new stamp', () => {
-    initState({ force: true });
+test('only the key that actually changed gets a new stamp', async () => {
+    await initState({ force: true });
     AppState.deviceId = 'dev-a';
 
     AppState.continuityConfig.focusSources = ['anatomy'];
@@ -80,7 +80,7 @@ test('only the key that actually changed gets a new stamp', () => {
     assert.equal(revisions.notificationSettings, undefined);
 });
 
-test('the config as loaded is a baseline, not an edit', () => {
+test('the config as loaded is a baseline, not an edit', async () => {
     // A device upgrading has a full config on disk and no stamps anywhere. If
     // loading counted as editing, the first device to save after the upgrade
     // would claim every key and out-rank everyone else's real changes.
@@ -89,7 +89,7 @@ test('the config as loaded is a baseline, not an edit', () => {
         freezeTokens: tokens(1)
     }));
 
-    initState({ force: true });
+    await initState({ force: true });
     AppState.deviceId = 'dev-a';
     AppState.continuityConfig.streakRunOrder = 'grouped';
     saveContinuityConfig();
@@ -100,8 +100,8 @@ test('the config as loaded is a baseline, not an edit', () => {
     assert.equal(revisions.freezeTokens, undefined, 'loaded, not edited');
 });
 
-test('the apply path adopts the stamps it was given rather than re-dating them', () => {
-    initState({ force: true });
+test('the apply path adopts the stamps it was given rather than re-dating them', async () => {
+    await initState({ force: true });
     AppState.deviceId = 'dev-a';
 
     // What a pull hands over: values that won on another device, with the
@@ -115,8 +115,8 @@ test('the apply path adopts the stamps it was given rather than re-dating them',
     assert.deepEqual(AppState.continuityConfig.revisions.focusSources, { at: 500, by: 'dev-b' });
 });
 
-test('a pulled value is not treated as a local edit on the next save', () => {
-    initState({ force: true });
+test('a pulled value is not treated as a local edit on the next save', async () => {
+    await initState({ force: true });
     AppState.deviceId = 'dev-a';
 
     AppState.continuityConfig = stamped(
@@ -136,7 +136,7 @@ test('a pulled value is not treated as a local edit on the next save', () => {
 
 // ── The per-key pick ────────────────────────────────────────────────────────
 
-test('a locally stamped change reaches the remote instead of being folded away', () => {
+test('a locally stamped change reaches the remote instead of being folded away', async () => {
     const local = stamped(
         { focusSources: ['anatomy', 'physio'], freezeTokens: tokens(1) },
         { focusSources: [2000, 'dev-b'] }
@@ -151,7 +151,7 @@ test('a locally stamped change reaches the remote instead of being folded away',
     assert.equal(merged.hasLocalChanges, true);
 });
 
-test('each key is decided on its own stamp, so two devices keep both changes', () => {
+test('each key is decided on its own stamp, so two devices keep both changes', async () => {
     // The whole point of dropping the blob: dev-a picked focus sources, dev-b
     // set the run order, and neither edit knows about the other.
     const local = stamped(
@@ -169,7 +169,7 @@ test('each key is decided on its own stamp, so two devices keep both changes', (
     assert.equal(merged.streakRunOrder, 'grouped', 'newer remote key survives');
 });
 
-test('a spent freeze token propagates - the decrement a max merge could never carry', () => {
+test('a spent freeze token propagates - the decrement a max merge could never carry', async () => {
     const local = stamped({ freezeTokens: tokens(0) }, { freezeTokens: [2000, 'dev-a'] });
     const remote = stamped({ freezeTokens: tokens(1) }, { freezeTokens: [1000, 'dev-b'] });
 
@@ -186,7 +186,7 @@ test('a spent freeze token propagates - the decrement a max merge could never ca
    merge - wiring only the global one leaves the focus track silently regressed,
    which is exactly the shape of bug nobody notices until a streak breaks. */
 
-test('a freeze spent on the device that lost the stamp is still charged', () => {
+test('a freeze spent on the device that lost the stamp is still charged', async () => {
     const local = stamped(
         { freezeTokens: spent(['global:2026-07-30']) },
         { freezeTokens: [1000, 'dev-a'] }
@@ -204,7 +204,7 @@ test('a freeze spent on the device that lost the stamp is still charged', () => 
     assert.equal(merged.freezeTokens.remaining, 0, 'and the count follows the ledger');
 });
 
-test('the focus track is routed through the ledger too, not just the global one', () => {
+test('the focus track is routed through the ledger too, not just the global one', async () => {
     const local = stamped(
         { focusFreezeTokens: spent(['focus:2026-07-30']) },
         { focusFreezeTokens: [1000, 'dev-a'] }
@@ -220,7 +220,7 @@ test('the focus track is routed through the ledger too, not just the global one'
     assert.equal(merged.focusFreezeTokens.remaining, 0);
 });
 
-test('the winning value carries its stamp forward, so the next device compares fairly', () => {
+test('the winning value carries its stamp forward, so the next device compares fairly', async () => {
     const local = stamped({ focusSources: ['anatomy'] }, { focusSources: [2000, 'dev-a'] });
     const remote = stamped({ focusSources: [] }, { focusSources: [1000, 'dev-b'] });
 
@@ -231,7 +231,7 @@ test('the winning value carries its stamp forward, so the next device compares f
     assert.deepEqual(merged.revisions.focusSources, { at: 2000, by: 'dev-a' });
 });
 
-test('identical stamps resolve the same way on both devices', () => {
+test('identical stamps resolve the same way on both devices', async () => {
     const a = stamped({ focusSources: ['anatomy'] }, { focusSources: [2000, 'dev-a'] });
     const b = stamped({ focusSources: ['physio'] }, { focusSources: [2000, 'dev-b'] });
 
@@ -243,7 +243,7 @@ test('identical stamps resolve the same way on both devices', () => {
     assert.deepEqual(fromA.focusSources, fromB.focusSources);
 });
 
-test('a key neither side ever stamped keeps its content when the other side has none', () => {
+test('a key neither side ever stamped keeps its content when the other side has none', async () => {
     // Both devices are mid-upgrade: no stamps anywhere. A real value has to beat
     // an absent one, or the upgrade silently clears the user's selection.
     const local = stamped({ focusSources: ['anatomy'], focusPools: [] }, {});
@@ -255,7 +255,7 @@ test('a key neither side ever stamped keeps its content when the other side has 
     assert.equal(merged.hasLocalChanges, true);
 });
 
-test('a stamped key beats an unstamped one whatever the content', () => {
+test('a stamped key beats an unstamped one whatever the content', async () => {
     const local = stamped({ focusSources: [] }, { focusSources: [1000, 'dev-a'] });
     const remote = stamped({ focusSources: ['stale'] }, {});
 
@@ -266,7 +266,7 @@ test('a stamped key beats an unstamped one whatever the content', () => {
     assert.deepEqual(merged.focusSources, []);
 });
 
-test('a key only one side has ever heard of survives the merge', () => {
+test('a key only one side has ever heard of survives the merge', async () => {
     const local = stamped({ focusSources: [] }, {});
     const remote = stamped({ notificationSettings: { enabled: true } }, { notificationSettings: [900, 'dev-b'] });
 
@@ -280,7 +280,7 @@ test('a key only one side has ever heard of survives the merge', () => {
 
 // ── The reset boundary ──────────────────────────────────────────────────────
 
-test('a newer progress reset still takes the whole config, stamps and all', () => {
+test('a newer progress reset still takes the whole config, stamps and all', async () => {
     const local = stamped({ freezeTokens: tokens(1), focusSources: [] }, {});
     const remote = stamped(
         { freezeTokens: tokens(0), focusSources: ['anatomy'] },
@@ -299,7 +299,7 @@ test('a newer progress reset still takes the whole config, stamps and all', () =
     assert.equal(merged.hasLocalChanges, true);
 });
 
-test('the remote wins the whole config when its progress reset is the newer one', () => {
+test('the remote wins the whole config when its progress reset is the newer one', async () => {
     const local = stamped({ focusSources: ['anatomy'] }, { focusSources: [9000, 'dev-a'] });
     const remote = stamped({ focusSources: [] }, {});
 
@@ -324,7 +324,7 @@ test('the remote wins the whole config when its progress reset is the newer one'
    derived from stayed identical. Which is exactly how it looked from the outside:
    the daily FSRS synced, Odak Seri did not. */
 
-test('the config merges again once the reset has reached both sides', () => {
+test('the config merges again once the reset has reached both sides', async () => {
     const local = stamped({ focusSources: [] }, {});
     const remote = stamped({ focusSources: ['anatomy'] }, { focusSources: [12000, 'dev-b'] });
 
@@ -337,7 +337,7 @@ test('the config merges again once the reset has reached both sides', () => {
     assert.deepEqual(merged.continuityConfig.focusSources, ['anatomy']);
 });
 
-test('and a change made after the reset still gets off the device that made it', () => {
+test('and a change made after the reset still gets off the device that made it', async () => {
     const local = stamped({ focusSources: ['anatomy'] }, { focusSources: [12000, 'dev-a'] });
     const remote = stamped({ focusSources: [] }, {});
 
@@ -350,7 +350,7 @@ test('and a change made after the reset still gets off the device that made it',
     assert.equal(merged.hasLocalChanges, true);
 });
 
-test('a reset the remote has not seen yet still takes the whole config', () => {
+test('a reset the remote has not seen yet still takes the whole config', async () => {
     // The window itself: local reset after the remote payload was written, so
     // remote is holding pre-reset values however they are stamped.
     const local = stamped({ freezeTokens: tokens(1), focusSources: [] }, {});
@@ -368,7 +368,7 @@ test('a reset the remote has not seen yet still takes the whole config', () => {
     assert.equal(merged.continuityConfig.freezeTokens.remaining, 1);
 });
 
-test('a device that missed the reset cannot out-stamp it afterwards', () => {
+test('a device that missed the reset cannot out-stamp it afterwards', async () => {
     /* Once the window has closed the per-key stamps are the only defence left,
        which is why clearProgressData() stamps what it rewrites. dev-c here has
        been offline since before the reset and comes back with its own older
@@ -406,13 +406,13 @@ test('a device that missed the reset cannot out-stamp it afterwards', () => {
     assert.deepEqual(merged.continuityConfig.focusSources, ['anatomy']);
 });
 
-test('a progress reset stamps the records it rewrites and nothing else', () => {
+test('a progress reset stamps the records it rewrites and nothing else', async () => {
     /* The write that feeds the rule above. Without it the reset leaves the token
        records carrying the stamps of the spends it just cleared, and the case
        above passes for the wrong reason - or not at all. */
     const realNow = Date.now;
     try {
-        initState({ force: true });
+        await initState({ force: true });
         AppState.deviceId = 'dev-a';
 
         Date.now = () => 5000;

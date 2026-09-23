@@ -14,7 +14,7 @@ const choice = (over = {}) => ({
     ...over
 });
 
-test('a sound question of each type reports nothing', () => {
+test('a sound question of each type reports nothing', async () => {
     assert.deepEqual(codes(choice()), []);
     assert.deepEqual(codes(choice({ type: 'multiple_choice', answer: { correct_ids: [1, 2] } })), []);
     assert.deepEqual(codes(choice({ type: 'true_false' })), []);
@@ -23,25 +23,25 @@ test('a sound question of each type reports nothing', () => {
     assert.deepEqual(codes({ type: 'flashcard', content: { text: 'f' }, answer: { back: 'b' } }), []);
 });
 
-test('a choice question needs at least two options', () => {
+test('a choice question needs at least two options', async () => {
     assert.deepEqual(codes(choice({ options: [{ id: 1, text: 'a' }] })), ['min_options']);
     assert.deepEqual(codes(choice({ options: [], answer: {} })), ['min_options', 'single_correct']);
 });
 
-test('every option needs text or media', () => {
+test('every option needs text or media', async () => {
     assert.deepEqual(codes(choice({ options: [{ id: 1, text: 'a' }, { id: 2, text: '  ' }] })), ['empty_option']);
     assert.deepEqual(codes(choice({
         options: [{ id: 1, text: 'a' }, { id: 2, text: '', media: [{ url: 'u' }] }]
     })), []);
 });
 
-test('single_choice and true_false need exactly one correct option', () => {
+test('single_choice and true_false need exactly one correct option', async () => {
     assert.deepEqual(codes(choice({ answer: {} })), ['single_correct']);
     assert.deepEqual(codes(choice({ answer: { correct_ids: [1, 2] } })), ['single_correct']);
     assert.deepEqual(codes(choice({ type: 'true_false', answer: { correct_ids: [2] } })), []);
 });
 
-test('true_false is a closed pair — not two-or-more', () => {
+test('true_false is a closed pair — not two-or-more', async () => {
     const tf = (options) => codes(choice({ type: 'true_false', options, answer: { correct_ids: [1] } }));
 
     assert.deepEqual(tf([{ id: 1, text: 'T' }, { id: 2, text: 'F' }]), [], 'exactly two is the only valid shape');
@@ -53,21 +53,21 @@ test('true_false is a closed pair — not two-or-more', () => {
     assert.deepEqual(codes(choice({ options: [{ id: 1, text: 'a' }, { id: 2, text: 'b' }, { id: 3, text: 'c' }] })), []);
 });
 
-test('multiple_choice needs at least two correct options', () => {
+test('multiple_choice needs at least two correct options', async () => {
     assert.deepEqual(codes(choice({ type: 'multiple_choice' })), ['multi_correct']);
     assert.deepEqual(codes(choice({ type: 'multiple_choice', answer: { correct_ids: [1, 2] } })), []);
 });
 
-test('a mark pointing at a missing option does not count', () => {
+test('a mark pointing at a missing option does not count', async () => {
     assert.deepEqual(codes(choice({ answer: { correct_ids: [99] } })), ['single_correct']);
 });
 
-test('short_answer questions need an accepted answer', () => {
+test('short_answer questions need an accepted answer', async () => {
     assert.deepEqual(codes({ type: 'short_answer', content: { text: 'q' }, answer: {} }), ['accepted_required']);
     assert.deepEqual(codes({ type: 'short_answer', content: { text: 'q' }, answer: { accepted_texts: ['a'] } }), []);
 });
 
-test('the retired type spellings still resolve to canonical types', () => {
+test('the retired type spellings still resolve to canonical types', async () => {
     for (const legacy of ['text', 'text_input', 'open_ended']) {
         assert.equal(canonicalType(legacy), 'short_answer', `${legacy} maps to the surviving name`);
         assert.equal(getQuestionCategory(legacy), 'text', `${legacy} is still gradeable`);
@@ -83,7 +83,7 @@ test('the retired type spellings still resolve to canonical types', () => {
     assert.equal(canonicalType('flashcard'), 'flashcard');
 });
 
-test('fill_in_the_blank is graded from its markers, not accepted_texts', () => {
+test('fill_in_the_blank is graded from its markers, not accepted_texts', async () => {
     const cloze = (text) => codes({ type: 'fill_in_the_blank', content: { text } });
 
     assert.deepEqual(cloze("Ankara {{Türkiye'nin}} başkentidir."), []);
@@ -98,30 +98,30 @@ test('fill_in_the_blank is graded from its markers, not accepted_texts', () => {
     );
 });
 
-test('a cloze issue points at Question Content, where the sentence is edited', () => {
+test('a cloze issue points at Question Content, where the sentence is edited', async () => {
     const [issue] = findQuestionIssues({ type: 'fill_in_the_blank', content: { text: 'no gap' } });
     assert.equal(issue.group, 'content');
 });
 
-test('a flashcard needs both sides', () => {
+test('a flashcard needs both sides', async () => {
     assert.deepEqual(codes({ type: 'flashcard', content: { text: 'f' }, answer: {} }), ['back_required']);
     assert.deepEqual(codes({ type: 'flashcard' }), ['front_required', 'back_required']);
 });
 
-test('question text is required, but media alone satisfies it', () => {
+test('question text is required, but media alone satisfies it', async () => {
     assert.deepEqual(codes({ type: 'reading', content: { text: '' } }), ['text_required']);
     assert.deepEqual(codes({ type: 'reading', content: { text: '', media: [{ url: 'u' }] } }), []);
     assert.deepEqual(codes({ type: 'reading', text: 'top level prose' }), []);
 });
 
-test('legacy answer spellings from imported files are honoured', () => {
+test('legacy answer spellings from imported files are honoured', async () => {
     assert.deepEqual(codes(choice({ answer: { correct_id: 1 } })), []);
     assert.deepEqual(codes(choice({ type: 'multiple_choice', answer: { correct_option_ids: [1, 2] } })), []);
     assert.deepEqual(codes(choice({ answer: {}, correctOptionIds: [2] })), []);
     assert.deepEqual(codes({ type: 'text_input', content: { text: 'q' }, answer: { correct_answer: 'x' } }), []);
 });
 
-test('findContentGaps lists only broken questions, with usable labels', () => {
+test('findContentGaps lists only broken questions, with usable labels', async () => {
     const gaps = findContentGaps([
         { id: 'ok1', type: 'reading', content: { text: 'fine' } },
         { id: 'bad1', type: 'flashcard', content: { text: '<b>front</b> here' }, answer: {} }
@@ -133,12 +133,12 @@ test('findContentGaps lists only broken questions, with usable labels', () => {
     assert.deepEqual(gaps[0].issues.map(i => i.code), ['back_required']);
 });
 
-test('findContentGaps tolerates junk input', () => {
+test('findContentGaps tolerates junk input', async () => {
     assert.deepEqual(findContentGaps(null), []);
     assert.deepEqual(findContentGaps(undefined), []);
 });
 
-test('each issue names the editor tab that fixes it', () => {
+test('each issue names the editor tab that fixes it', async () => {
     const groupOf = (q, code) => findQuestionIssues(q).find(i => i.code === code)?.group;
     assert.equal(groupOf(choice({ options: [] }), 'min_options'), 'options');
     assert.equal(groupOf({ type: 'text_input', content: { text: 'q' } }, 'accepted_required'), 'answer');

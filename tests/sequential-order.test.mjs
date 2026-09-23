@@ -76,12 +76,12 @@ function seedLibrary({ keepOrder = true, overdueHalf = 'tail' } = {}) {
 
 beforeEach(() => seedLibrary());
 
-test('a sequential session takes the first N in stored order', () => {
+test('a sequential session takes the first N in stored order', async () => {
     const list = prepareTest(10);
     assert.deepEqual(list, [1, 2, 3, 4, 5, 6, 7, 8, 9, 10].map(cid));
 });
 
-test('the same setup shuffled does NOT return the first N in order', () => {
+test('the same setup shuffled does NOT return the first N in order', async () => {
     /* The other half of the claim: without this, a selection that happened to be
        ordered anyway would satisfy the case above for the wrong reason. */
     seedLibrary({ keepOrder: false });
@@ -93,17 +93,17 @@ test('the same setup shuffled does NOT return the first N in order', () => {
         'the shuffled branch must still honour FSRS priority');
 });
 
-test('the starting offset moves the window without reordering it', () => {
+test('the starting offset moves the window without reordering it', async () => {
     const list = prepareTest(10, { startIndex: 10 });
     assert.deepEqual(list, [11, 12, 13, 14, 15, 16, 17, 18, 19, 20].map(cid));
 });
 
-test('a final block shorter than the session size is not padded from elsewhere', () => {
+test('a final block shorter than the session size is not padded from elsewhere', async () => {
     const list = prepareTest(10, { startIndex: 25 });
     assert.deepEqual(list, [26, 27, 28, 29, 30].map(cid));
 });
 
-test('focus pool injections land in stored order, not appended to the end', () => {
+test('focus pool injections land in stored order, not appended to the end', async () => {
     /* applyFocusPools pushes onto the END of the selection, so the re-sort is
        the only thing keeping a sequential session ascending.
 
@@ -127,19 +127,19 @@ test('focus pool injections land in stored order, not appended to the end', () =
         'a sequential session must be ascending in pool position');
 });
 
-test('"all questions" takes the whole pool and is not clipped to the largest preset', () => {
+test('"all questions" takes the whole pool and is not clipped to the largest preset', async () => {
     const list = prepareTest(resolveQuestionCount(ALL_QUESTIONS));
     assert.equal(list.length, POOL_SIZE);
     assert.deepEqual(list, Array.from({ length: POOL_SIZE }, (_, i) => cid(i + 1)));
 });
 
-test('the session record names the length actually drawn, never Infinity', () => {
+test('the session record names the length actually drawn, never Infinity', async () => {
     prepareTest(resolveQuestionCount(ALL_QUESTIONS));
     assert.equal(AppState.testTracking.questionCount, POOL_SIZE);
     assert.ok(Number.isFinite(AppState.testTracking.questionCount));
 });
 
-test('one shuffled source among ordered ones decides for the whole session', () => {
+test('one shuffled source among ordered ones decides for the whole session', async () => {
     // Interleaving an ordered pool with a random one produces neither.
     AppState.sources.push({
         id: 'exam_other_1700000001_cd', name: 'Other', active: true, archived: false,
@@ -148,7 +148,7 @@ test('one shuffled source among ordered ones decides for the whole session', () 
     assert.equal(activeSourcesKeepOrder(), false);
 });
 
-test('an archived or switched-off source does not veto sequential mode', () => {
+test('an archived or switched-off source does not veto sequential mode', async () => {
     AppState.sources.push({
         id: 'exam_archived_1700000002_ef', name: 'Archived', active: true, archived: true,
         keepOrder: false, questions: []
@@ -156,21 +156,21 @@ test('an archived or switched-off source does not veto sequential mode', () => {
     assert.equal(activeSourcesKeepOrder(), true);
 });
 
-test('the range picker offers one block per session-sized slice of the pool', () => {
+test('the range picker offers one block per session-sized slice of the pool', async () => {
     assert.deepEqual(buildRangeOptions(30, 10).map(b => b.label), ['1–10', '11–20', '21–30']);
     // A ragged tail is named honestly rather than rounded up.
     assert.deepEqual(buildRangeOptions(25, 10).map(b => b.label), ['1–10', '11–20', '21–25']);
     assert.deepEqual(buildRangeOptions(25, 10).map(b => b.start), [0, 10, 20]);
 });
 
-test('there is nothing to choose when the pool fits in one session', () => {
+test('there is nothing to choose when the pool fits in one session', async () => {
     assert.deepEqual(buildRangeOptions(10, 10), []);
     assert.deepEqual(buildRangeOptions(4, 10), []);
     // "All questions" is Infinity, which is never smaller than the pool.
     assert.deepEqual(buildRangeOptions(500, Infinity), []);
 });
 
-test('the pool is counted without rebuilding the test pool', () => {
+test('the pool is counted without rebuilding the test pool', async () => {
     AppState.rawQuestions = [];
     AppState.questionMap = {};
     assert.equal(countActivePoolQuestions(), POOL_SIZE);

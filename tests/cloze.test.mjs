@@ -12,7 +12,7 @@ import { SENTINEL } from '../src/core/markdown.js';
 
 const SENTENCE = "Ankara {{Türkiye'nin}} başkentidir.";
 
-test('a sentence splits into its literal text and its blanks', () => {
+test('a sentence splits into its literal text and its blanks', async () => {
     const { segments, blanks } = parseCloze(SENTENCE);
     assert.deepEqual(segments.map(s => s.type), ['text', 'blank', 'text']);
     assert.equal(segments[0].value, 'Ankara ');
@@ -21,31 +21,31 @@ test('a sentence splits into its literal text and its blanks', () => {
     assert.deepEqual(blanks[0].answers, ["Türkiye'nin"]);
 });
 
-test('several blanks are numbered in reading order', () => {
+test('several blanks are numbered in reading order', async () => {
     const { blanks } = parseCloze('HTTP {{80}} portunu, HTTPS {{443}} portunu kullanır.');
     assert.deepEqual(blanks.map(b => b.index), [0, 1]);
     assert.deepEqual(clozeAnswers('HTTP {{80}} portunu, HTTPS {{443}} portunu kullanır.'), ['80', '443']);
 });
 
-test('a pipe lists alternative spellings, the first one being canonical', () => {
+test('a pipe lists alternative spellings, the first one being canonical', async () => {
     const { blanks } = parseCloze('DNS {{53|Port 53|port 53}} kullanır.');
     assert.deepEqual(blanks[0].answers, ['53', 'Port 53', 'port 53']);
     assert.deepEqual(clozeAnswers('DNS {{53|Port 53}} kullanır.'), ['53'], 'feedback shows the first');
 });
 
-test('text without markers has no blanks', () => {
+test('text without markers has no blanks', async () => {
     assert.equal(hasBlanks('Ankara başkenttir.'), false);
     assert.deepEqual(parseCloze('Ankara başkenttir.').segments.map(s => s.type), ['text']);
 });
 
-test('an empty marker is detected rather than silently accepted', () => {
+test('an empty marker is detected rather than silently accepted', async () => {
     assert.equal(hasBlanks('Ankara {{}} başkentidir.'), false, 'a blank with no answer is not usable');
     assert.equal(countEmptyBlanks('Ankara {{}} başkentidir.'), 1);
     assert.equal(countEmptyBlanks('Ankara {{ | }} başkentidir.'), 1, 'whitespace-only alternatives count as empty');
     assert.equal(countEmptyBlanks(SENTENCE), 0);
 });
 
-test('a blank accepts any of its spellings, trimmed and case-insensitive', () => {
+test('a blank accepts any of its spellings, trimmed and case-insensitive', async () => {
     const [blank] = parseCloze('{{53|Port 53}}').blanks;
     assert.equal(matchesBlank(blank, '53'), true);
     assert.equal(matchesBlank(blank, '  Port 53  '), true, 'trimmed');
@@ -55,7 +55,7 @@ test('a blank accepts any of its spellings, trimmed and case-insensitive', () =>
     assert.equal(matchesBlank(blank, ''), false, 'an empty answer is never right');
 });
 
-test('grading requires every blank, not just one', () => {
+test('grading requires every blank, not just one', async () => {
     const two = 'HTTP {{80}}, HTTPS {{443}}.';
     assert.equal(gradeCloze(two, ['80', '443']), true);
     assert.equal(gradeCloze(two, ['80', '444']), false);
@@ -64,7 +64,7 @@ test('grading requires every blank, not just one', () => {
     assert.equal(gradeCloze('no markers here', []), false, 'nothing to grade is not a pass');
 });
 
-test('the sentence renders with numbered gaps inside Markdown', () => {
+test('the sentence renders with numbered gaps inside Markdown', async () => {
     const markup = clozeMarkup(SENTENCE);
     assert.equal(markup, '<div class="md-content"><p>Ankara <span class="cloze-gap" data-blank="0">1</span> başkentidir.</p></div>');
 
@@ -72,14 +72,14 @@ test('the sentence renders with numbered gaps inside Markdown', () => {
     assert.ok(!risky.includes('<script>'), 'XSS tags are escaped before rendering');
 });
 
-test('Step 3 (a): cloze sentence with bold formatting around a blank', () => {
+test('Step 3 (a): cloze sentence with bold formatting around a blank', async () => {
     const markdownCloze = '**Ankara** {{Türkiye\'nin}} başkentidir.';
     const html = clozeMarkup(markdownCloze);
     assert.equal(html.includes('<strong>Ankara</strong>'), true);
     assert.equal(html.includes('<span class="cloze-gap" data-blank="0">1</span>'), true);
 });
 
-test('Step 3 (b): {{x}} inside inline code or fenced code is NOT a gap', () => {
+test('Step 3 (b): {{x}} inside inline code or fenced code is NOT a gap', async () => {
     const inlineCodeCloze = 'Code `{{var}}` is raw';
     const { blanks: inlineBlanks } = parseCloze(inlineCodeCloze);
     assert.equal(inlineBlanks.length, 0);
@@ -94,7 +94,7 @@ test('Step 3 (b): {{x}} inside inline code or fenced code is NOT a gap', () => {
     assert.equal(fencedHtml.includes('class="cloze-gap"'), false);
 });
 
-test('Step 3 (c): corpus gap count and order parity with parseCloze', () => {
+test('Step 3 (c): corpus gap count and order parity with parseCloze', async () => {
     const corpus = [
         'Plain {{one}} and {{two}} gaps.',
         'Heading\n\n- List {{item1}}\n- List {{item2}}',
@@ -114,18 +114,18 @@ test('Step 3 (c): corpus gap count and order parity with parseCloze', () => {
     }
 });
 
-test('filling in shows the solved sentence', () => {
+test('filling in shows the solved sentence', async () => {
     assert.equal(fillCloze(SENTENCE), "Ankara Türkiye'nin başkentidir.");
     assert.equal(fillCloze(SENTENCE, ['Türkiyenin']), 'Ankara Türkiyenin başkentidir.');
 });
 
-test('junk input does not throw', () => {
+test('junk input does not throw', async () => {
     assert.deepEqual(parseCloze(null).blanks, []);
     assert.deepEqual(parseCloze(undefined).segments, []);
     assert.equal(hasBlanks(''), false);
 });
 
-test('audit: a forged cloze placeholder cannot manufacture a gap', () => {
+test('audit: a forged cloze placeholder cannot manufacture a gap', async () => {
     // parseCloze is the sole authority on what a blank is. An author who writes
     // the renderer's internal placeholder must not create a gap the grader has
     // no answer for, which would make the question ungradeable.
@@ -139,7 +139,7 @@ test('audit: a forged cloze placeholder cannot manufacture a gap', () => {
     assert.equal(html.includes('baskentidir'), true);
 });
 
-test('audit: gaps survive inside every block construct', () => {
+test('audit: gaps survive inside every block construct', async () => {
     // Each case renders its blank through a different code path — list item,
     // callout body, table cell, heading, nested list — and all of them must
     // still agree with parseCloze on how many gaps there are and in what order.

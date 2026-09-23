@@ -19,7 +19,7 @@ before(async () => {
     AppState = stateMod.AppState;
     initState = stateMod.initState;
     UNCATEGORIZED_FOLDER_ID = stateMod.UNCATEGORIZED_FOLDER_ID;
-    initState();
+    await initState();
 
     ({ openPresetEditModal } = await import('../src/features/sources/quick-presets-ui.js'));
     ({ translations } = await import('../src/core/i18n.js'));
@@ -53,27 +53,27 @@ const clickSource = (id) => {
 
 // ── the modal opens with the group in it ────────────────────────────────────
 
-test('the modal opens carrying the group name', () => {
+test('the modal opens carrying the group name', async () => {
     const overlay = open({ id: 'p1', name: 'Exam prep', sourceIds: ['s1'] });
     assert.ok(overlay.classList.contains('active'));
     assert.equal(document.getElementById('presetEditNameInput').value, 'Exam prep');
 });
 
-test('the sources already in the group come up selected', () => {
+test('the sources already in the group come up selected', async () => {
     open({ id: 'p1', name: 'g', sourceIds: ['s1', 's3'] });
     const selected = [...document.querySelectorAll('#presetEditSourceList .source-item.active')]
         .map(el => el.dataset.sourceId);
     assert.deepEqual(selected.sort(), ['s1', 's3']);
 });
 
-test('the count says how many are selected', () => {
+test('the count says how many are selected', async () => {
     open({ id: 'p1', name: 'g', sourceIds: ['s1', 's2'] });
     assert.match(document.getElementById('presetEditCount').textContent, /2/);
 });
 
 // ── adding and removing ─────────────────────────────────────────────────────
 
-test('a source can be added to the group from here', () => {
+test('a source can be added to the group from here', async () => {
     const preset = { id: 'p1', name: 'g', sourceIds: ['s1'] };
     open(preset);
     clickSource('s2');
@@ -81,7 +81,7 @@ test('a source can be added to the group from here', () => {
     assert.deepEqual(preset.sourceIds.sort(), ['s1', 's2']);
 });
 
-test('a selected source can be removed from the group from here', () => {
+test('a selected source can be removed from the group from here', async () => {
     const preset = { id: 'p1', name: 'g', sourceIds: ['s1', 's2'] };
     open(preset);
     clickSource('s1');
@@ -89,7 +89,7 @@ test('a selected source can be removed from the group from here', () => {
     assert.deepEqual(preset.sourceIds, ['s2']);
 });
 
-test('the group has no source ceiling - it is the user study set, not the focus three', () => {
+test('the group has no source ceiling - it is the user study set, not the focus three', async () => {
     const preset = { id: 'p1', name: 'g', sourceIds: [] };
     open(preset);
     // Four, deliberately: the focus picker's ceiling is three, so a case that
@@ -101,7 +101,7 @@ test('the group has no source ceiling - it is the user study set, not the focus 
 
 // ── renaming, which the button always did ───────────────────────────────────
 
-test('renaming still works - it is what this button was for', () => {
+test('renaming still works - it is what this button was for', async () => {
     const preset = { id: 'p1', name: 'old', sourceIds: ['s1'] };
     open(preset);
     document.getElementById('presetEditNameInput').value = 'new name';
@@ -109,7 +109,7 @@ test('renaming still works - it is what this button was for', () => {
     assert.equal(preset.name, 'new name');
 });
 
-test('an empty name is refused rather than written', () => {
+test('an empty name is refused rather than written', async () => {
     const preset = { id: 'p1', name: 'keep me', sourceIds: ['s1'] };
     const overlay = open(preset);
     document.getElementById('presetEditNameInput').value = '   ';
@@ -118,7 +118,7 @@ test('an empty name is refused rather than written', () => {
     assert.ok(overlay.classList.contains('active'), 'the modal closed on a refused save');
 });
 
-test('a group with no sources is refused - it would start an empty test', () => {
+test('a group with no sources is refused - it would start an empty test', async () => {
     const preset = { id: 'p1', name: 'g', sourceIds: ['s1'] };
     const overlay = open(preset);
     clickSource('s1');
@@ -129,7 +129,7 @@ test('a group with no sources is refused - it would start an empty test', () => 
 
 // ── persistence and sync ────────────────────────────────────────────────────
 
-test('a save stamps the preset, or the merge cannot see the edit', () => {
+test('a save stamps the preset, or the merge cannot see the edit', async () => {
     // Quick presets merge by id on updatedAt. An unstamped change is one the
     // merge has no way to prefer, so the next pull writes over it.
     const preset = { id: 'p1', name: 'g', sourceIds: ['s1'], updatedAt: 1 };
@@ -139,7 +139,7 @@ test('a save stamps the preset, or the merge cannot see the edit', () => {
     assert.ok(preset.updatedAt > 1, 'the edit was not stamped');
 });
 
-test('cancel changes nothing', () => {
+test('cancel changes nothing', async () => {
     const preset = { id: 'p1', name: 'g', sourceIds: ['s1'] };
     const overlay = open(preset);
     clickSource('s2');
@@ -152,7 +152,7 @@ test('cancel changes nothing', () => {
 
 // ── the component it is built from ──────────────────────────────────────────
 
-test('the picker is the shared one, not a second source list', () => {
+test('the picker is the shared one, not a second source list', async () => {
     // A hand-rolled list here would drift from the focus picker: folders,
     // counts, folded-by-default and selected state all come from that one
     // component.
@@ -160,13 +160,13 @@ test('the picker is the shared one, not a second source list', () => {
     assert.ok(/renderSourcePicker\(/.test(src), 'the modal builds its own list');
 });
 
-test('the edit button opens the modal rather than only renaming inline', () => {
+test('the edit button opens the modal rather than only renaming inline', async () => {
     const src = read('../src/features/sources/quick-presets-ui.js');
     const btnBlock = src.slice(src.indexOf("editBtn.addEventListener"), src.indexOf("const deleteBtn"));
     assert.ok(/openPresetEditModal\(/.test(btnBlock), 'the pencil still only renames');
 });
 
-test('the overlay sits above the manage modal and below customModalOverlay', () => {
+test('the overlay sits above the manage modal and below customModalOverlay', async () => {
     /* Not a literal bar. style.css carries a SECOND `.modal-overlay` rule, later
        in the file, that raises the default from 9999 to 10010, and
        #quickPresetsManageOverlay declares no z-index of its own - so it lands on
@@ -192,7 +192,7 @@ test('the overlay sits above the manage modal and below customModalOverlay', () 
 
 // ── the label in front of the focus source gear ─────────────────────────────
 
-test('the focus source gear has a word in front of it', () => {
+test('the focus source gear has a word in front of it', async () => {
     const src = html();
     const row = src.slice(src.indexOf('<div class="continuity-icon-row">'), src.indexOf('id="focusContinuityInfoBtn"'));
     const labelAt = row.indexOf('data-i18n="focus_sources_label"');
@@ -201,13 +201,13 @@ test('the focus source gear has a word in front of it', () => {
     assert.ok(labelAt < btnAt, 'the label has to come before the button it points at');
 });
 
-test('the label is a label - it does not steal the gear taps', () => {
+test('the label is a label - it does not steal the gear taps', async () => {
     const css = read('../src/style.css');
     const rule = css.slice(css.indexOf('.continuity-icon-label {'));
     assert.ok(/pointer-events:\s*none/.test(rule.slice(0, 400)), 'a tap on the word would hit nothing');
 });
 
-test('every new string is in all three languages', () => {
+test('every new string is in all three languages', async () => {
     ['focus_sources_label', 'qs_edit_group_title', 'qs_group_name', 'qs_group_sources',
      'qs_group_selected_count', 'qs_group_saved', 'qs_group_name_required',
      'qs_group_needs_source', 'source_picker_max'].forEach(key => {
@@ -217,7 +217,7 @@ test('every new string is in all three languages', () => {
     });
 });
 
-test('the picker limit message is translated rather than hard-coded Turkish', () => {
+test('the picker limit message is translated rather than hard-coded Turkish', async () => {
     const src = read('../src/features/sources/sources-ui.js');
     assert.ok(!/En fazla \$\{max\} kaynak/.test(src), 'the German build still says this in Turkish');
 });
@@ -323,13 +323,13 @@ test('a row shows the question count and its pencil opens the group editor', asy
     document.getElementById('presetEditCancelBtn').click();
 });
 
-test('the source dialog sits under the group editor it opens', () => {
+test('the source dialog sits under the group editor it opens', async () => {
     const src = html();
     const z = (id) => Number((new RegExp(`id="${id}"[^>]*z-index:\\s*(\\d+)`).exec(src) || [])[1]);
     assert.ok(z('sourceQuickPresetsOverlay') < z('presetEditOverlay'), 'the editor would open underneath');
 });
 
-test('the new strings are in all three languages', () => {
+test('the new strings are in all three languages', async () => {
     ['qs_group_created', 'qs_new_with_source', 'qs_remove_last_confirm'].forEach(key => {
         ['tr', 'en', 'de'].forEach(lang => assert.ok(translations[lang][key], `${lang}.${key} is missing`));
     });

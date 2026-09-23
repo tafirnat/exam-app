@@ -40,7 +40,7 @@ before(async () => {
 
 function freshDevice() {
     localStorage.clear();
-    initState({ force: true });
+    await initState({ force: true });
     AppState.sources.length = 0;
     AppState.folders = [createUncategorizedFolderRecord()];
     AppState.deletedSourceIds = [];
@@ -71,14 +71,14 @@ function payload({ sources = [], folders = [] }, extra = {}) {
 
 // ── The sweep ───────────────────────────────────────────────────────────────
 
-test('a folder seen empty is not removed at once; the wait starts and is stored', () => {
+test('a folder seen empty is not removed at once; the wait starts and is stored', async () => {
     AppState.folders.push(folder('f1'));
     assert.deepEqual(run(T0), []);
     assert.deepEqual(ids(), ['f1']);
     assert.deepEqual(emptySince(), { f1: T0 });
 });
 
-test('it goes once the grace period has passed, and not a moment before', () => {
+test('it goes once the grace period has passed, and not a moment before', async () => {
     AppState.folders.push(folder('f1'));
     run(T0);
     assert.deepEqual(run(T0 + sweep.EMPTY_FOLDER_GRACE_MS - 1), []);
@@ -91,18 +91,18 @@ test('it goes once the grace period has passed, and not a moment before', () => 
     assert.deepEqual(emptySince(), {});
 });
 
-test('a folder left empty before the app was closed goes at the first sweep after reopening', () => {
+test('a folder left empty before the app was closed goes at the first sweep after reopening', async () => {
     AppState.folders.push(folder('f1'));
     localStorage.setItem('focus_app_folders', JSON.stringify(AppState.folders));
     run(T0);
     // Three hours later, a new session: memory is gone, storage is not.
-    initState({ force: true });
+    await initState({ force: true });
     assert.deepEqual(ids(), ['f1']);
     run(T0 + 3 * 60 * MIN);
     assert.deepEqual(ids(), []);
 });
 
-test('the deletion is dated, not added to the legacy list, and reaches the payload', () => {
+test('the deletion is dated, not added to the legacy list, and reaches the payload', async () => {
     AppState.folders.push(folder('f1'));
     run(T0);
     const now = T0 + sweep.EMPTY_FOLDER_GRACE_MS;
@@ -114,7 +114,7 @@ test('the deletion is dated, not added to the legacy list, and reaches the paylo
     assert.deepEqual(JSON.parse(localStorage.getItem('focus_app_folders')).map(f => f.id), [UNCATEGORIZED_FOLDER_ID]);
 });
 
-test('a folder that fills again forgets its wait; emptied again, it starts over', () => {
+test('a folder that fills again forgets its wait; emptied again, it starts over', async () => {
     AppState.folders.push(folder('f1'));
     run(T0);
     AppState.sources.push(source('s1', { folderId: 'f1' }));
@@ -129,7 +129,7 @@ test('a folder that fills again forgets its wait; emptied again, it starts over'
     assert.deepEqual(ids(), []);
 });
 
-test('an archived member keeps its folder: the restore needs somewhere to go', () => {
+test('an archived member keeps its folder: the restore needs somewhere to go', async () => {
     AppState.folders.push(folder('f1'));
     AppState.sources.push(source('s1', { folderId: null, archived: true, archivedFrom: { folderId: 'f1', name: 'Folder f1' } }));
     run(T0);
@@ -137,14 +137,14 @@ test('an archived member keeps its folder: the restore needs somewhere to go', (
     assert.deepEqual(ids(), ['f1']);
 });
 
-test('the system folder and archived folders are never swept', () => {
+test('the system folder and archived folders are never swept', async () => {
     AppState.folders.push(folder('fa', { archived: true }));
     run(T0);
     run(T0 + 60 * MIN);
     assert.deepEqual(AppState.folders.map(f => f.id), [UNCATEGORIZED_FOLDER_ID, 'fa']);
 });
 
-test('editing an empty folder restarts the wait from the edit', () => {
+test('editing an empty folder restarts the wait from the edit', async () => {
     AppState.folders.push(folder('f1'));
     run(T0);
     AppState.folders[1].updatedAt = T0 + 8 * MIN; // renamed
@@ -154,7 +154,7 @@ test('editing an empty folder restarts the wait from the edit', () => {
     assert.deepEqual(ids(), []);
 });
 
-test('nothing is removed while a dialog is open', () => {
+test('nothing is removed while a dialog is open', async () => {
     AppState.folders.push(folder('f1'));
     run(T0);
     const overlay = document.createElement('div');
@@ -167,7 +167,7 @@ test('nothing is removed while a dialog is open', () => {
     assert.deepEqual(ids(), []);
 });
 
-test('the removal is announced by name', () => {
+test('the removal is announced by name', async () => {
     AppState.folders.push(folder('f1', { name: 'Networks' }));
     run(T0);
     run(T0 + 60 * MIN, { notify: true });
@@ -175,7 +175,7 @@ test('the removal is announced by name', () => {
         t('empty_folder_removed', { name: 'Networks' }));
 });
 
-test('a library change runs the sweep: boot registers it on SOURCES', () => {
+test('a library change runs the sweep: boot registers it on SOURCES', async () => {
     AppState.folders.push(folder('f1'));
     AppState.sources.push(source('s1', { folderId: 'f1' }));
     sweep.initEmptyFolderSweep();
@@ -186,14 +186,14 @@ test('a library change runs the sweep: boot registers it on SOURCES', () => {
     assert.ok(emptySince().f1 > 0, 'emptying the folder must start its wait without waiting for the minute tick');
 });
 
-test('boot starts the sweep', () => {
+test('boot starts the sweep', async () => {
     const main = readFileSync(new URL('../src/main.js', import.meta.url), 'utf8');
     assert.match(main, /\n\s*initEmptyFolderSweep\(\);/);
 });
 
 // ── The merge ───────────────────────────────────────────────────────────────
 
-test('a folder another device put a source into survives the deletion, even if the move came first', () => {
+test('a folder another device put a source into survives the deletion, even if the move came first', async () => {
     const deletedAt = T0;
     // This device swept f1 away; the other moved s1 into it before hearing of that.
     const local = payload({ folders: [createUncategorizedFolderRecord()] }, { deletedFolderAt: { f1: deletedAt } });
@@ -207,7 +207,7 @@ test('a folder another device put a source into survives the deletion, even if t
     assert.deepEqual(merged.deletedFolderAt, { f1: deletedAt }, 'the deletion stays on record; it just does not apply');
 });
 
-test('a stale copy of a deleted, unused folder does not come back, and the Gist is told', () => {
+test('a stale copy of a deleted, unused folder does not come back, and the Gist is told', async () => {
     const local = payload({ folders: [createUncategorizedFolderRecord()] }, { deletedFolderAt: { f1: T0 } });
     const remote = payload({ folders: [createUncategorizedFolderRecord(), folder('f1')] });
     const merged = mergeSyncData(local, remote);
@@ -215,7 +215,7 @@ test('a stale copy of a deleted, unused folder does not come back, and the Gist 
     assert.equal(merged.hasLocalChanges, true);
 });
 
-test('a Gist that knows the deletion but still lists the folder (an older build wrote it back) is corrected', () => {
+test('a Gist that knows the deletion but still lists the folder (an older build wrote it back) is corrected', async () => {
     const local = payload({ folders: [createUncategorizedFolderRecord()] }, { deletedFolderAt: { f1: T0 } });
     const remote = payload({ folders: [createUncategorizedFolderRecord(), folder('f1')] }, { deletedFolderAt: { f1: T0 } });
     const merged = mergeSyncData(local, remote);
@@ -223,14 +223,14 @@ test('a Gist that knows the deletion but still lists the folder (an older build 
     assert.equal(merged.hasLocalChanges, true);
 });
 
-test('the deletion arriving from the other device removes the folder here', () => {
+test('the deletion arriving from the other device removes the folder here', async () => {
     const local = payload({ folders: [createUncategorizedFolderRecord(), folder('f1')] });
     const remote = payload({ folders: [createUncategorizedFolderRecord()] }, { deletedFolderAt: { f1: T0 } });
     const merged = mergeSyncData(local, remote);
     assert.equal(merged.folders.some(f => f.id === 'f1'), false);
 });
 
-test('a source moved OUT after the deletion does not hold the folder: the newest copy decides', () => {
+test('a source moved OUT after the deletion does not hold the folder: the newest copy decides', async () => {
     const local = payload({
         folders: [createUncategorizedFolderRecord()],
         sources: [source('s1', { folderId: null, updatedAt: T0 - MIN })]
@@ -243,13 +243,13 @@ test('a source moved OUT after the deletion does not hold the folder: the newest
     assert.equal(merged.folders.some(f => f.id === 'f1'), false);
 });
 
-test('a folder written after its deletion survives it', () => {
+test('a folder written after its deletion survives it', async () => {
     const local = payload({ folders: [createUncategorizedFolderRecord()] }, { deletedFolderAt: { f1: T0 } });
     const remote = payload({ folders: [createUncategorizedFolderRecord(), folder('f1', { updatedAt: T0 + MIN })] });
     assert.ok(mergeSyncData(local, remote).folders.some(f => f.id === 'f1'));
 });
 
-test('a legacy undated deletion still wins outright', () => {
+test('a legacy undated deletion still wins outright', async () => {
     const local = payload({ folders: [createUncategorizedFolderRecord()] }, { deletedFolderIds: ['f1'] });
     const remote = payload({
         folders: [createUncategorizedFolderRecord(), folder('f1', { updatedAt: T0 + MIN })],
@@ -258,7 +258,7 @@ test('a legacy undated deletion still wins outright', () => {
     assert.equal(mergeSyncData(local, remote).folders.some(f => f.id === 'f1'), false);
 });
 
-test('deletions merge as the latest per folder, in a stable order', () => {
+test('deletions merge as the latest per folder, in a stable order', async () => {
     assert.deepEqual(
         tomb.mergeFolderDeletions({ b: 5, a: 1 }, { a: 3, c: 2 }, { b: 4, bad: 'x', z: -1 }),
         { a: 3, b: 5, c: 2 }
@@ -267,14 +267,14 @@ test('deletions merge as the latest per folder, in a stable order', () => {
         JSON.stringify(tomb.mergeFolderDeletions({ a: 1, b: 1 })));
 });
 
-test('deleting by hand writes a dated deletion too', () => {
+test('deleting by hand writes a dated deletion too', async () => {
     trackDeletedFolder('f9', T0);
     trackDeletedFolder('f9', T0 - MIN); // an older deletion does not move it back
     assert.deepEqual(AppState.deletedFolderAt, { f9: T0 });
     assert.deepEqual(AppState.deletedFolderIds, []);
 });
 
-test('a hint folder removed while empty comes back under the same id and outlives the deletion', () => {
+test('a hint folder removed while empty comes back under the same id and outlives the deletion', async () => {
     // Real clock here: applyFolderHint stamps the new folder with Date.now().
     const deletedAt = Date.now() - MIN;
     trackDeletedFolder(hint.hintFolderBaseId('Networks'), deletedAt);

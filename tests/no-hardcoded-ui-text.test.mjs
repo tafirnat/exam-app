@@ -45,7 +45,7 @@ function stripComments(src) {
     return src.replace(/\/\*[\s\S]*?\*\//g, '').replace(/\/\/.*$/gm, '');
 }
 
-test('no user-visible literal is written in a single language', () => {
+test('no user-visible literal is written in a single language', async () => {
     const offenders = [];
     walk(SRC).forEach(file => {
         // i18n.js IS the translations; guide-content.js is prose, by language.
@@ -61,14 +61,14 @@ test('no user-visible literal is written in a single language', () => {
     assert.deepEqual(offenders, [], 'route these through t() and add the key in tr/en/de');
 });
 
-test('the scan actually catches something - a deliberate violation', () => {
+test('the scan actually catches something - a deliberate violation', async () => {
     // Guards against the scan silently matching nothing, which is how a green
     // static scan hides a whole class of bug.
     const sample = `showToast('En fazla 3 kaynak seçebilirsiniz');`;
     assert.ok(TURKISH.test(sample) && SINKS.some(re => re.test(sample)));
 });
 
-test('the scan ignores the rule written in a comment', () => {
+test('the scan ignores the rule written in a comment', async () => {
     const sample = `// showToast('Kaynak seçildi') would be an offence\nconst x = 1;`;
     const stripped = stripComments(sample);
     assert.ok(!TURKISH.test(stripped) || !SINKS.some(re => re.test(stripped)));

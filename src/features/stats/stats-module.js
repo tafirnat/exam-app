@@ -19,8 +19,15 @@ import { historyEntryTime, historySessionKey } from '../../core/test-history.js'
 import { isLeech, isSuspended, toggleSuspended, LEECH_WRONG_THRESHOLD } from '../../core/leech.js';
 import { openQuestionEditor } from './question-editor.js';
 
+let renderStatsTask = null;
+
 
 export function renderStatsList(filter = 'all', searchKeyword = '') {
+    if (renderStatsTask) {
+        cancelAnimationFrame(renderStatsTask);
+        renderStatsTask = null;
+    }
+
     AppState.searchKeyword = searchKeyword;
     AppState.activeStatsFilter = filter;
 
@@ -299,106 +306,119 @@ export function renderStatsList(filter = 'all', searchKeyword = '') {
         list.appendChild(hint);
     }
 
-    filteredQuestions.forEach((q, i) => {
-        const statKey = `${q.sourceId}_${q.id}`;
-        const s = AppState.stats[statKey] || { correct: 0, wrong: 0, difficulty: 5.0 };
-        const total = s.correct + s.wrong;
-        const percent = total > 0 ? Math.round((s.correct / total) * 100) : 0;
-        const item = document.createElement('div');
-        item.className = 'stats-list-item';
-        const rawQText = q.content?.text || q.text || t('untitled_question');
-        const qText = escapeHTML(plainText(rawQText));
-        const safeSourceName = q.sourceName ? escapeHTML(q.sourceName) : '';
+    let renderIndex = 0;
+    const CHUNK_SIZE = 50;
 
-        const isLearned = !!s.learned;
-        const streak = s.streak || 0;
-        const streakIcon = streak > 0 ? '🔥' : (streak < 0 ? '❄️' : '');
-        const streakAbs = Math.abs(streak);
-        const r = calculateRetrievability(s.stability, s.lastReview, measuredAt);
-        const rPercent = r > 0 ? Math.round(r * 100) : null;
+    function renderChunk() {
+        const end = Math.min(renderIndex + CHUNK_SIZE, filteredQuestions.length);
+        for (let i = renderIndex; i < end; i++) {
+            const q = filteredQuestions[i];
+            const statKey = `${q.sourceId}_${q.id}`;
+            const s = AppState.stats[statKey] || { correct: 0, wrong: 0, difficulty: 5.0 };
+            const total = s.correct + s.wrong;
+            const percent = total > 0 ? Math.round((s.correct / total) * 100) : 0;
+            const item = document.createElement('div');
+            item.className = 'stats-list-item';
+            const rawQText = q.content?.text || q.text || t('untitled_question');
+            const qText = escapeHTML(plainText(rawQText));
+            const safeSourceName = q.sourceName ? escapeHTML(q.sourceName) : '';
 
-        const rawTags = q.tags || q.content?.tags || q.tag || [];
-        const qTags = Array.isArray(rawTags) ? rawTags : (rawTags ? [rawTags] : []);
+            const isLearned = !!s.learned;
+            const streak = s.streak || 0;
+            const streakIcon = streak > 0 ? '🔥' : (streak < 0 ? '❄️' : '');
+            const streakAbs = Math.abs(streak);
+            const r = calculateRetrievability(s.stability, s.lastReview, measuredAt);
+            const rPercent = r > 0 ? Math.round(r * 100) : null;
 
-        const tagsHtml = qTags.length > 0 ? `
-            <div class="stats-item-tags" style="display: flex; align-items: center; gap: 4px; flex-wrap: wrap; margin-top: 4px;">
-                ${qTags.map(tName => `<span class="stats-tag-pill" data-tag="${escapeHTML(tName)}">#${escapeHTML(tName)}</span>`).join('')}
-            </div>
-        ` : '';
+            const rawTags = q.tags || q.content?.tags || q.tag || [];
+            const qTags = Array.isArray(rawTags) ? rawTags : (rawTags ? [rawTags] : []);
 
-        item.innerHTML = `
-            <div style="flex: 1; min-width: 0;">
-                <div class="stats-item-text">${isLearned ? `<span class="learned-badge" title="${t('learned_label')}">🎓</span> ` : ''}${qText}</div>
-                <div style="display: flex; align-items: center; gap: 6px; flex-wrap: wrap; margin-top: 2px;">
-                    ${(!isTagSearch && safeSourceName) ? `<div class="stats-item-source">${safeSourceName}</div>` : ''}
-                    ${(!isTagSearch) ? `<div class="stats-item-ref">#${q.originalIndex}</div>` : ''}
-                    ${streakAbs > 1 ? `<span class="stats-item-streak" title="Streak: ${streak}" style="font-size: 0.72rem; line-height: 1;">${streakIcon}${streakAbs}</span>` : ''}
-                    ${rPercent !== null ? `<span class="stats-item-retrievability ${r <= 0.9 ? 'overdue' : ''}" title="Retrievability: ${rPercent}%" style="font-size: 0.72rem; line-height: 1;">🧠 ${rPercent}%</span>` : ''}
-                    ${s.starred ? `<span class="stats-indicator starred"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"></polygon></svg></span>` : ''}
-                    ${s.flagged ? `<span class="stats-indicator flagged"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"><path d="M4 15s1-1 4-1 5 2 8 2 4-1 4-1V3s-1 1-4 1-5-2-8-2-4 1-4 1z"></path><line x1="4" y1="22" x2="4" y2="15"></line></svg></span>` : ''}
-                    ${isSuspended(s) ? `<span class="stats-indicator suspended" title="${t('suspended_badge')}"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"><rect x="6" y="4" width="4" height="16"></rect><rect x="14" y="4" width="4" height="16"></rect></svg></span>` : ''}
-                    ${(s.note && s.note.trim() !== '') ? `<span class="stats-indicator noted"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"></path></svg></span>` : ''}
+            const tagsHtml = qTags.length > 0 ? `
+                <div class="stats-item-tags" style="display: flex; align-items: center; gap: 4px; flex-wrap: wrap; margin-top: 4px;">
+                    ${qTags.map(tName => `<span class="stats-tag-pill" data-tag="${escapeHTML(tName)}">#${escapeHTML(tName)}</span>`).join('')}
                 </div>
-                ${tagsHtml}
-            </div>
-            <div class="stats-item-meta">
-                <span style="display: inline-flex; align-items: center; gap: 0.3rem;">
-                    <span style="color: var(--success-color, #10b981);">✓${s.correct}</span> 
-                    <span style="color: var(--danger-color, #ef4444);">✗${s.wrong}</span> 
-                    <span style="color: var(--text-secondary); margin-left: 2px;">(${percent}%)</span>
-                </span>
-                <span class="${isLearned ? 'learned-coeff' : ''}">${t('difficulty_label')} ${(s.difficulty / 2).toFixed(1)}</span>
-            </div>
+            ` : '';
+
+            item.innerHTML = `
+                <div style="flex: 1; min-width: 0;">
+                    <div class="stats-item-text">${isLearned ? `<span class="learned-badge" title="${t('learned_label')}">🎓</span> ` : ''}${qText}</div>
+                    <div style="display: flex; align-items: center; gap: 6px; flex-wrap: wrap; margin-top: 2px;">
+                        ${(!isTagSearch && safeSourceName) ? `<div class="stats-item-source">${safeSourceName}</div>` : ''}
+                        ${(!isTagSearch) ? `<div class="stats-item-ref">#${q.originalIndex}</div>` : ''}
+                        ${streakAbs > 1 ? `<span class="stats-item-streak" title="Streak: ${streak}" style="font-size: 0.72rem; line-height: 1;">${streakIcon}${streakAbs}</span>` : ''}
+                        ${rPercent !== null ? `<span class="stats-item-retrievability ${r <= 0.9 ? 'overdue' : ''}" title="Retrievability: ${rPercent}%" style="font-size: 0.72rem; line-height: 1;">🧠 ${rPercent}%</span>` : ''}
+                        ${s.starred ? `<span class="stats-indicator starred"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"></polygon></svg></span>` : ''}
+                        ${s.flagged ? `<span class="stats-indicator flagged"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"><path d="M4 15s1-1 4-1 5 2 8 2 4-1 4-1V3s-1 1-4 1-5-2-8-2-4 1-4 1z"></path><line x1="4" y1="22" x2="4" y2="15"></line></svg></span>` : ''}
+                        ${isSuspended(s) ? `<span class="stats-indicator suspended" title="${t('suspended_badge')}"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"><rect x="6" y="4" width="4" height="16"></rect><rect x="14" y="4" width="4" height="16"></rect></svg></span>` : ''}
+                        ${(s.note && s.note.trim() !== '') ? `<span class="stats-indicator noted"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"></path></svg></span>` : ''}
+                    </div>
+                    ${tagsHtml}
+                </div>
+                <div class="stats-item-meta">
+                    <span style="display: inline-flex; align-items: center; gap: 0.3rem;">
+                        <span style="color: var(--success-color, #10b981);">✓${s.correct}</span> 
+                        <span style="color: var(--danger-color, #ef4444);">✗${s.wrong}</span> 
+                        <span style="color: var(--text-secondary); margin-left: 2px;">(${percent}%)</span>
+                    </span>
+                    <span class="${isLearned ? 'learned-coeff' : ''}">${t('difficulty_label')} ${(s.difficulty / 2).toFixed(1)}</span>
+                </div>
+            
+                ${showRowActions ? `
+                <div class="stats-item-actions">
+                    <button class="icon-btn stats-row-action" data-row-action="edit" title="${t('edit')}" aria-label="${t('edit')}">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"></path><path d="M18.5 2.5a2.12 2.12 0 0 1 3 3L12 15l-4 1 1-4z"></path></svg>
+                    </button>
+                    <button class="icon-btn stats-row-action ${isSuspended(s) ? 'is-on' : ''}" data-row-action="suspend"
+                            title="${isSuspended(s) ? t('unsuspend_question') : t('suspend_question')}"
+                            aria-label="${isSuspended(s) ? t('unsuspend_question') : t('suspend_question')}">
+                        ${isSuspended(s)
+                            ? `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"><polygon points="5 3 19 12 5 21 5 3"></polygon></svg>`
+                            : `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"><rect x="6" y="4" width="4" height="16"></rect><rect x="14" y="4" width="4" height="16"></rect></svg>`}
+                    </button>
+                </div>` : ''}
+            `;
+            item.onclick = () => {
+                if (window.onPreviewQuestion) window.onPreviewQuestion(q, null, 'stats');
+            };
+            item.querySelectorAll('[data-row-action]').forEach(btn => {
+                btn.onclick = (e) => {
+                    e.stopPropagation();
+                    if (btn.dataset.rowAction === 'edit') {
+                        openQuestionEditor(q);
+                        return;
+                    }
+                    const stat = AppState.stats[statKey] || (AppState.stats[statKey] = { difficulty: 5.0, correct: 0, wrong: 0 });
+                    const now = toggleSuspended(stat);
+                    saveStats();
+                    showToast(t(now ? 'toast_suspended' : 'toast_unsuspended'));
+                };
+            });
+            item.querySelectorAll('.stats-tag-pill').forEach(pill => {
+                pill.onclick = (e) => {
+                    e.stopPropagation();
+                    const tag = pill.dataset.tag;
+                    if (typeof window.executeTagSearch === 'function') {
+                        window.executeTagSearch(tag);
+                    } else {
+                        const searchInput = document.getElementById('statsSearchInput');
+                        if (searchInput) searchInput.value = '#' + tag;
+                        if (typeof window.syncStatsSearchUI === 'function') window.syncStatsSearchUI(true);
+                        renderStatsList('all', '#' + tag);
+                    }
+                };
+            });
+            list.appendChild(item);
+        }
         
-            ${showRowActions ? `
-            <div class="stats-item-actions">
-                <button class="icon-btn stats-row-action" data-row-action="edit" title="${t('edit')}" aria-label="${t('edit')}">
-                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"></path><path d="M18.5 2.5a2.12 2.12 0 0 1 3 3L12 15l-4 1 1-4z"></path></svg>
-                </button>
-                <button class="icon-btn stats-row-action ${isSuspended(s) ? 'is-on' : ''}" data-row-action="suspend"
-                        title="${isSuspended(s) ? t('unsuspend_question') : t('suspend_question')}"
-                        aria-label="${isSuspended(s) ? t('unsuspend_question') : t('suspend_question')}">
-                    ${isSuspended(s)
-                        ? `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"><polygon points="5 3 19 12 5 21 5 3"></polygon></svg>`
-                        : `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"><rect x="6" y="4" width="4" height="16"></rect><rect x="14" y="4" width="4" height="16"></rect></svg>`}
-                </button>
-            </div>` : ''}
-        `;
-        item.onclick = () => {
-            if (window.onPreviewQuestion) window.onPreviewQuestion(q, null, 'stats');
-        };
-        /* The actions live inside a row whose own click opens the preview, so
-           every one of them has to stop the event. A row action that also
-           opened the question would look like the button did nothing. */
-        item.querySelectorAll('[data-row-action]').forEach(btn => {
-            btn.onclick = (e) => {
-                e.stopPropagation();
-                if (btn.dataset.rowAction === 'edit') {
-                    openQuestionEditor(q);
-                    return;
-                }
-                const stat = AppState.stats[statKey] || (AppState.stats[statKey] = { difficulty: 5.0, correct: 0, wrong: 0 });
-                const now = toggleSuspended(stat);
-                saveStats();
-                showToast(t(now ? 'toast_suspended' : 'toast_unsuspended'));
-            };
-        });
-        item.querySelectorAll('.stats-tag-pill').forEach(pill => {
-            pill.onclick = (e) => {
-                e.stopPropagation();
-                const tag = pill.dataset.tag;
-                if (typeof window.executeTagSearch === 'function') {
-                    window.executeTagSearch(tag);
-                } else {
-                    const searchInput = document.getElementById('statsSearchInput');
-                    if (searchInput) searchInput.value = '#' + tag;
-                    if (typeof window.syncStatsSearchUI === 'function') window.syncStatsSearchUI(true);
-                    renderStatsList('all', '#' + tag);
-                }
-            };
-        });
-        list.appendChild(item);
-    });
+        renderIndex = end;
+        if (renderIndex < filteredQuestions.length) {
+            renderStatsTask = requestAnimationFrame(renderChunk);
+        } else {
+            renderStatsTask = null;
+        }
+    }
+    
+    renderChunk();
 }
 
 function updateStatsFooter(filter, keyword, count, questions = []) {

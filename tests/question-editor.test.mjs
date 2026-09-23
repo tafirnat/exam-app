@@ -36,21 +36,21 @@ const openReading = () => openQuestionEditor({
     content: { text: 'prose' }, answer: { explanation: 'e' }
 });
 
-test('a reading card opens on its real type, with no Options tab', () => {
+test('a reading card opens on its real type, with no Options tab', async () => {
     openReading();
     assert.equal(typeEl().value, 'reading', 'the select must not fall back to the first option');
     assert.deepEqual(tabs(), ['general', 'content', 'answer']);
     assert.equal(navCount(), '3');
 });
 
-test('a reading card offers no accepted-answers field', () => {
+test('a reading card offers no accepted-answers field', async () => {
     openReading();
     document.querySelector('[data-group="answer"]').click();
     assert.equal(document.getElementById('edit-accepted-texts'), null);
     assert.ok(document.getElementById('edit-explanation'));
 });
 
-test('choosing a choice type adds the Options tab and seeds two options', () => {
+test('choosing a choice type adds the Options tab and seeds two options', async () => {
     openReading();
     setType('single_choice');
     assert.deepEqual(tabs(), ['general', 'content', 'options', 'answer']);
@@ -58,7 +58,7 @@ test('choosing a choice type adds the Options tab and seeds two options', () => 
     assert.equal(document.querySelectorAll('.option-edit-card').length, 2);
 });
 
-test('choosing flashcard collapses to two tabs and swaps in the card fields', () => {
+test('choosing flashcard collapses to two tabs and swaps in the card fields', async () => {
     openReading();
     setType('flashcard');
     assert.deepEqual(tabs(), ['general', 'flashcard']);
@@ -67,7 +67,7 @@ test('choosing flashcard collapses to two tabs and swaps in the card fields', ()
     assert.ok(document.getElementById('edit-fc-back'));
 });
 
-test('choosing short_answer brings back the accepted-answers field', () => {
+test('choosing short_answer brings back the accepted-answers field', async () => {
     openReading();
     setType('short_answer');
     assert.deepEqual(tabs(), ['general', 'content', 'answer']);
@@ -75,7 +75,7 @@ test('choosing short_answer brings back the accepted-answers field', () => {
     assert.ok(document.getElementById('edit-accepted-texts'));
 });
 
-test('the retired type spellings are gone from the picker', () => {
+test('the retired type spellings are gone from the picker', async () => {
     openReading();
     const offered = [...typeEl().options].map(o => o.value);
     for (const retired of ['text', 'text_input', 'open_ended', 'topic_review']) {
@@ -86,7 +86,7 @@ test('the retired type spellings are gone from the picker', () => {
     assert.ok(offered.includes('reading'));
 });
 
-test('a question stored under a legacy spelling still opens as short answer', () => {
+test('a question stored under a legacy spelling still opens as short answer', async () => {
     openQuestionEditor({
         id: 'legacy1', sourceId: 's1', type: 'open_ended',
         content: { text: 'q' }, answer: { accepted_texts: ['a'] }
@@ -97,7 +97,7 @@ test('a question stored under a legacy spelling still opens as short answer', ()
     assert.equal(typeEl().value, 'open_ended', 'and the old value is kept until the user changes it');
 });
 
-test('a question stored under topic_review still opens as reading', () => {
+test('a question stored under topic_review still opens as reading', async () => {
     openQuestionEditor({
         id: 'legacy_topic', sourceId: 's1', type: 'topic_review',
         content: { text: 'prose' }, answer: { explanation: 'e' }
@@ -106,7 +106,7 @@ test('a question stored under topic_review still opens as reading', () => {
     assert.equal(typeEl().value, 'topic_review', 'and the old value is kept until the user changes it');
 });
 
-test('fill_in_the_blank derives its answers from the sentence', () => {
+test('fill_in_the_blank derives its answers from the sentence', async () => {
     openQuestionEditor({
         id: 'cloze1', sourceId: 's1', type: 'fill_in_the_blank',
         content: { text: "Ankara {{Türkiye'nin}} başkentidir." }, answer: {}
@@ -119,7 +119,7 @@ test('fill_in_the_blank derives its answers from the sentence', () => {
     assert.deepEqual(derived, ["Türkiye'nin"]);
 });
 
-test('a tab that the new type does not have cannot stay selected', () => {
+test('a tab that the new type does not have cannot stay selected', async () => {
     openReading();
     setType('single_choice');
     document.querySelector('[data-group="options"]').click();
@@ -130,7 +130,7 @@ test('a tab that the new type does not have cannot stay selected', () => {
     assert.ok(document.getElementById('section-general').classList.contains('active'));
 });
 
-test('text typed before a type switch is not lost', () => {
+test('text typed before a type switch is not lost', async () => {
     openReading();
     setType('flashcard');
     document.getElementById('edit-fc-front').value = 'FRONT TEXT';
@@ -138,7 +138,7 @@ test('text typed before a type switch is not lost', () => {
     assert.equal(document.getElementById('edit-text').value, 'FRONT TEXT');
 });
 
-test('an unrecognised type is preserved rather than coerced', () => {
+test('an unrecognised type is preserved rather than coerced', async () => {
     openQuestionEditor({ id: 'x1', sourceId: 's1', type: 'weird_type', content: { text: 'hi' } });
     assert.equal(typeEl().value, 'weird_type');
 });
@@ -149,7 +149,7 @@ const openChoice = (type, options) => openQuestionEditor({
 });
 const optionCards = () => document.querySelectorAll('.option-edit-card').length;
 
-test('true_false offers no way to add or remove an option', () => {
+test('true_false offers no way to add or remove an option', async () => {
     openChoice('true_false', [{ id: 1, text: 'True' }, { id: 2, text: 'False' }]);
     document.querySelector('[data-group="options"]').click();
 
@@ -158,7 +158,7 @@ test('true_false offers no way to add or remove an option', () => {
     assert.equal(document.querySelectorAll('.delete-opt-btn').length, 0, 'no per-option delete');
 });
 
-test('the other choice types keep both controls', () => {
+test('the other choice types keep both controls', async () => {
     openChoice('single_choice', [{ id: 1, text: 'a' }, { id: 2, text: 'b' }]);
     document.querySelector('[data-group="options"]').click();
 
@@ -166,7 +166,7 @@ test('the other choice types keep both controls', () => {
     assert.equal(document.querySelectorAll('.delete-opt-btn').length, 2);
 });
 
-test('switching to true_false drops any option beyond the pair', () => {
+test('switching to true_false drops any option beyond the pair', async () => {
     openChoice('single_choice', [{ id: 1, text: 'a' }, { id: 2, text: 'b' }, { id: 3, text: 'c' }]);
     document.querySelector('[data-group="options"]').click();
     assert.equal(optionCards(), 3);
@@ -181,7 +181,7 @@ test('switching to true_false drops any option beyond the pair', () => {
 const save = () => document.getElementById('editor-save-btn').click();
 const errorText = () => document.querySelector('.editor-header .editor-error')?.textContent.trim() ?? null;
 
-test('a refused save explains itself in the header', () => {
+test('a refused save explains itself in the header', async () => {
     openQuestionEditor({ id: 'e1', sourceId: 's1', type: 'reading', content: { text: '' } });
     assert.equal(errorText(), null, 'nothing is shown before the first attempt');
 
@@ -191,7 +191,7 @@ test('a refused save explains itself in the header', () => {
         'and lands on the tab that fixes it');
 });
 
-test('the message names the actual problem', () => {
+test('the message names the actual problem', async () => {
     openQuestionEditor({
         id: 'e2', sourceId: 's1', type: 'single_choice',
         content: { text: 'q' }, options: [{ id: 1, text: 'a' }, { id: 2, text: 'b' }], answer: {}
@@ -201,7 +201,7 @@ test('the message names the actual problem', () => {
     assert.ok(document.getElementById('section-options').classList.contains('active'));
 });
 
-test('acting on the message retires it', () => {
+test('acting on the message retires it', async () => {
     openQuestionEditor({ id: 'e3', sourceId: 's1', type: 'reading', content: { text: '' } });
     save();
     assert.ok(errorText());
@@ -213,13 +213,13 @@ test('acting on the message retires it', () => {
     assert.ok(errorText(), 'and the next attempt raises it again while still true');
 });
 
-test('a sound question saves without an error ever appearing', () => {
+test('a sound question saves without an error ever appearing', async () => {
     openQuestionEditor({ id: 'e4', sourceId: 's1', type: 'reading', content: { text: 'prose' } });
     save();
     assert.equal(errorText(), null);
 });
 
-test('wrapSelection wraps text selection and positions caret correctly', () => {
+test('wrapSelection wraps text selection and positions caret correctly', async () => {
     const textarea = document.createElement('textarea');
     textarea.value = 'hello world';
     document.body.appendChild(textarea);
@@ -238,14 +238,14 @@ test('wrapSelection wraps text selection and positions caret correctly', () => {
     assert.equal(textarea.selectionEnd, 7);
 });
 
-test('editor contains Markdown toolbars and live preview box', () => {
+test('editor contains Markdown toolbars and live preview box', async () => {
     openReading();
     document.querySelector('[data-group="content"]').click();
     assert.ok(document.querySelector('.md-editor-toolbar'), 'toolbar present');
     assert.ok(document.getElementById('preview-edit-text'), 'live preview box present');
 });
 
-test('saving an edited question synchronizes AppState.questionMap, rawQuestions and re-renders active test', () => {
+test('saving an edited question synchronizes AppState.questionMap, rawQuestions and re-renders active test', async () => {
     const q1 = {
         id: 'q1',
         sourceId: 's1',
@@ -306,7 +306,7 @@ test('saving an edited question synchronizes AppState.questionMap, rawQuestions 
     assert.equal(renderedInTest, true, 'test view re-render was triggered on save');
 });
 
-test('navigating away and returning with back button reflects edited question without page reload', () => {
+test('navigating away and returning with back button reflects edited question without page reload', async () => {
     const q1 = {
         id: 'q1',
         sourceId: 's1',

@@ -45,7 +45,7 @@ const shownStats = (el) => el.querySelector('.source-ticker-slide.slide-in .sour
 const html = readFileSync(new URL('../index.html', import.meta.url), 'utf8');
 const markup = new JSDOM(html).window.document;
 
-test('both continuity cards carry a strip container', () => {
+test('both continuity cards carry a strip container', async () => {
     const globalStrip = markup.getElementById('continuitySourcesList');
     const focusStrip = markup.getElementById('focusContinuitySourcesList');
 
@@ -67,7 +67,7 @@ test('both continuity cards carry a strip container', () => {
 /* The Genel Seri target is built with `buildQuestionPool({ scope: 'all' })`,
    i.e. the whole library. A strip that named only the active sources would put
    a smaller set under a streak measured on a larger one. */
-test('the library strip names every non-archived source, active or not', () => {
+test('the library strip names every non-archived source, active or not', async () => {
     AppState.folders = [{ id: 'f1', name: 'Klasör', order: 0 }];
     AppState.sources = [
         { id: 'lib1', name: 'Aktif', folderId: 'f1', order: 0, active: true, questions: [{ id: 1 }] },
@@ -82,7 +82,7 @@ test('the library strip names every non-archived source, active or not', () => {
     assert.ok(items.every(i => i.measurable), 'a live source is always measurable');
 });
 
-test('the focus strip labels a selection that left the library and stops measuring it', () => {
+test('the focus strip labels a selection that left the library and stops measuring it', async () => {
     AppState.sources = [{ id: 'keep', name: 'Duran', active: true, questions: [{ id: 1 }] }];
     AppState.continuityConfig = {
         focusSources: ['keep', 'gone'],
@@ -97,7 +97,7 @@ test('the focus strip labels a selection that left the library and stops measuri
     assert.match(items[1].label, /^Silinen \(.+\)$/, 'the snapshot name carries a missing marker');
 });
 
-test('a strip line carries the source name over its own count, mastery and difficulty', () => {
+test('a strip line carries the source name over its own count, mastery and difficulty', async () => {
     AppState.sources = [{ id: 'lib1', name: 'Anatomi', active: true, questions: [{ id: 1 }, { id: 2 }] }];
     /* stability 21 caps sFactor at 1 and a review of "now" puts r at 1, so one
        of two questions answered is 50%. difficulty 6 on both halves to 3.0. */
@@ -117,7 +117,7 @@ test('a strip line carries the source name over its own count, mastery and diffi
     assert.ok(stats.includes('3.0'), `average difficulty is missing from "${stats}"`);
 });
 
-test('an empty item list clears the strip', () => {
+test('an empty item list clears the strip', async () => {
     AppState.sources = [{ id: 'lib1', name: 'Anatomi', active: true, questions: [{ id: 1 }] }];
 
     const el = strip();
@@ -132,7 +132,7 @@ test('an empty item list clears the strip', () => {
    for a single card, and would silently stop the first strip the moment the
    second one rendered - the two cards render on different triggers, so the
    Genel strip would freeze on whichever source it happened to be showing. */
-test('two strips rotate independently', () => {
+test('two strips rotate independently', async () => {
     mock.timers.enable({ apis: ['setInterval', 'setTimeout'] });
     try {
         const items = [
@@ -162,7 +162,7 @@ test('two strips rotate independently', () => {
     }
 });
 
-test('a single source does not rotate', () => {
+test('a single source does not rotate', async () => {
     mock.timers.enable({ apis: ['setInterval', 'setTimeout'] });
     try {
         const el = strip();
@@ -180,7 +180,7 @@ test('a single source does not rotate', () => {
     }
 });
 
-test('re-rendering a strip does not leave the old rotation running', () => {
+test('re-rendering a strip does not leave the old rotation running', async () => {
     mock.timers.enable({ apis: ['setInterval', 'setTimeout'] });
     try {
         const el = strip();

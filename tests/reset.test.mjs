@@ -35,7 +35,7 @@ beforeEach(() => {
     };
 });
 
-test('clearProgressData resets stats & streaks but keeps sources, folders, and presets', () => {
+test('clearProgressData resets stats & streaks but keeps sources, folders, and presets', async () => {
     clearProgressData();
 
     // Stats & Progress cleared
@@ -54,7 +54,7 @@ test('clearProgressData resets stats & streaks but keeps sources, folders, and p
     assert.equal(AppState.quickPresets.length, 1);
 });
 
-test('clearSourcesData resets sources & folders but preserves state structure', () => {
+test('clearSourcesData resets sources & folders but preserves state structure', async () => {
     clearSourcesData();
 
     // Sources, folders, presets cleared
@@ -64,7 +64,7 @@ test('clearSourcesData resets sources & folders but preserves state structure', 
     assert.deepEqual(AppState.quickPresets, []);
 });
 
-test('clearLocalStudyData performs a full factory reset and clears sample key so sample JSON auto-loads', () => {
+test('clearLocalStudyData performs a full factory reset and clears sample key so sample JSON auto-loads', async () => {
     clearLocalStudyData();
 
     assert.deepEqual(AppState.sources, []);

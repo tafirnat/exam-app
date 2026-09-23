@@ -34,7 +34,7 @@ const declarationsFor = (selector) => [...css.matchAll(/([^{}]+)\{([^{}]*)\}/g)]
     .map(m => m[2])
     .join(';');
 
-test('the trend card carries both faces and every chart container', () => {
+test('the trend card carries both faces and every chart container', async () => {
     const card = markup.getElementById('homeWeeklyTrendCard');
     assert.ok(card, '#homeWeeklyTrendCard is missing from index.html');
     assert.ok(card.classList.contains('chart-flip-card'), 'the card must be a flip card');
@@ -59,7 +59,7 @@ test('the trend card carries both faces and every chart container', () => {
    pointing at a month opened a weekday's tooltip and the monthly one never
    appeared at all. jsdom hit-tests nothing, so the rule is read off the
    stylesheet; the behaviour behind it was checked in a real browser. */
-test('only the face you are looking at takes the pointer', () => {
+test('only the face you are looking at takes the pointer', async () => {
     assert.match(declarationsFor('.chart-flip-back'), /pointer-events:\s*none/,
         'unflipped, the back face lies over the front and would swallow its hovers');
     assert.match(declarationsFor('.chart-flip-card.flipped .chart-flip-front'), /pointer-events:\s*none/,
@@ -68,7 +68,7 @@ test('only the face you are looking at takes the pointer', () => {
         'the face actually on show has to be reachable again');
 });
 
-test('each face names its two line series in a legend', () => {
+test('each face names its two line series in a legend', async () => {
     const card = markup.getElementById('homeWeeklyTrendCard');
 
     for (const [face, legendId] of [['.chart-flip-front', 'trendLegend'], ['.chart-flip-back', 'monthlyTrendLegend']]) {
@@ -83,7 +83,7 @@ test('each face names its two line series in a legend', () => {
     }
 });
 
-test('a weekly bucket splits one day into correct, wrong and unanswered', () => {
+test('a weekly bucket splits one day into correct, wrong and unanswered', async () => {
     const today = getLocalDateStr();
     const buckets = buildWeeklyTrendBuckets({
         [today]: { studied: true, questionCount: 10, correctCount: 6, wrongCount: 3, unansweredCount: 1 }
@@ -97,7 +97,7 @@ test('a weekly bucket splits one day into correct, wrong and unanswered', () => 
     );
 });
 
-test('a bucket carries the focus track alongside the day total', () => {
+test('a bucket carries the focus track alongside the day total', async () => {
     const today = getLocalDateStr();
     const buckets = buildWeeklyTrendBuckets({
         [today]: { studied: true, questionCount: 20, correctCount: 12, wrongCount: 5, unansweredCount: 3, focusQuestionCount: 8 }
@@ -108,7 +108,7 @@ test('a bucket carries the focus track alongside the day total', () => {
     assert.equal(last.volumeFocus, 8, 'the focus line reads the focus track only');
 });
 
-test('a focus count larger than the day total is clamped to the bar', () => {
+test('a focus count larger than the day total is clamped to the bar', async () => {
     const today = getLocalDateStr();
     const buckets = buildWeeklyTrendBuckets({
         [today]: { studied: true, questionCount: 10, correctCount: 10, wrongCount: 0, unansweredCount: 0, focusQuestionCount: 40 }
@@ -118,7 +118,7 @@ test('a focus count larger than the day total is clamped to the bar', () => {
     assert.equal(last.volumeFocus, 10, 'the focus line must never float above its bar');
 });
 
-test('days without a focus track leave the focus line at zero', () => {
+test('days without a focus track leave the focus line at zero', async () => {
     const buckets = buildWeeklyTrendBuckets({
         [getLocalDateStr()]: { studied: true, questionCount: 12, correctCount: 12, wrongCount: 0, unansweredCount: 0 }
     });
@@ -126,7 +126,7 @@ test('days without a focus track leave the focus line at zero', () => {
     assert.equal(buckets.reduce((sum, b) => sum + b.volumeFocus, 0), 0);
 });
 
-test('legacy records without a breakdown still show their volume', () => {
+test('legacy records without a breakdown still show their volume', async () => {
     const today = getLocalDateStr();
     const buckets = buildWeeklyTrendBuckets({ [today]: { studied: true, questionCount: 8 } });
     const last = buckets[buckets.length - 1];
@@ -135,7 +135,7 @@ test('legacy records without a breakdown still show their volume', () => {
     assert.equal(last.empty, 8, 'a bar with no breakdown must not render as a gap');
 });
 
-test('the monthly face sums every day of a month into one bar', () => {
+test('the monthly face sums every day of a month into one bar', async () => {
     /* Keys built on the app day, not by running a device Date through
        getLocalDateStr(): east of the day zone a device midnight formats as the
        *previous* app day, so under TZ=Pacific/Auckland "the 1st" came out as
@@ -162,7 +162,7 @@ test('the monthly face sums every day of a month into one bar', () => {
    left to whenever the suite runs - otherwise taking the month off a plain
    `new Date()` passes all year and puts the bars a month out on exactly the
    nights the app is already careful about elsewhere. */
-test('the six months are counted back from the app day, across a year boundary', () => {
+test('the six months are counted back from the app day, across a year boundary', async () => {
     const buckets = buildMonthlyTrendBuckets(
         {
             '2025-08-31': { studied: true, questionCount: 3, correctCount: 3, wrongCount: 0, unansweredCount: 0 },
@@ -178,7 +178,7 @@ test('the six months are counted back from the app day, across a year boundary',
     assert.equal(buckets.reduce((s, b) => s + b.total, 0), 8, 'July 2025 is off the window, not folded into it');
 });
 
-test('activity outside the six-month window is left out', () => {
+test('activity outside the six-month window is left out', async () => {
     const old = new Date();
     old.setFullYear(old.getFullYear() - 1);
 
@@ -189,7 +189,7 @@ test('activity outside the six-month window is left out', () => {
     assert.equal(buckets.reduce((sum, b) => sum + b.total, 0), 0);
 });
 
-test('the monthly window keeps its months distinct across a year boundary', () => {
+test('the monthly window keeps its months distinct across a year boundary', async () => {
     const buckets = buildMonthlyTrendBuckets({});
     const labels = buckets.map(b => b.label);
 
@@ -207,7 +207,7 @@ const bucketWithLog = (log, counts = {}) => ({
     questionCount: 0, correctCount: 0, wrongCount: 0, unansweredCount: 0, ...counts, questionLog: log
 });
 
-test('a question answered twice in a day counts once', () => {
+test('a question answered twice in a day counts once', async () => {
     const today = getLocalDateStr();
     const buckets = buildWeeklyTrendBuckets({
         [today]: {
@@ -225,7 +225,7 @@ test('a question answered twice in a day counts once', () => {
     assert.equal(last.volumeTotal, 3, 'the volume line still reads every answer');
 });
 
-test('a day worked on two devices counts both, logged or not', () => {
+test('a day worked on two devices counts both, logged or not', async () => {
     const today = getLocalDateStr();
     const buckets = buildWeeklyTrendBuckets({
         [today]: {
@@ -248,7 +248,7 @@ test('a day worked on two devices counts both, logged or not', () => {
     assert.equal(last.wrong, 2, 'and so must its breakdown');
 });
 
-test('the same question answered on both devices is still one question', () => {
+test('the same question answered on both devices is still one question', async () => {
     const today = getLocalDateStr();
     const buckets = buildWeeklyTrendBuckets({
         [today]: {
@@ -265,7 +265,7 @@ test('the same question answered on both devices is still one question', () => {
     assert.equal(buckets[buckets.length - 1].total, 1);
 });
 
-test('two sources numbering their first question 1 are two questions', () => {
+test('two sources numbering their first question 1 are two questions', async () => {
     const today = getLocalDateStr();
     const buckets = buildWeeklyTrendBuckets({
         [today]: {

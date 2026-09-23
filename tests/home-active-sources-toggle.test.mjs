@@ -20,7 +20,7 @@ before(async () => {
     renderHomeActiveSources = sourcesUiMod.renderHomeActiveSources;
 });
 
-test('homeActiveSourcesHeader exists in DOM with toggle attributes', () => {
+test('homeActiveSourcesHeader exists in DOM with toggle attributes', async () => {
     const header = global.document.getElementById('homeActiveSourcesHeader');
     const countSpan = global.document.getElementById('homeActiveSourcesCount');
     const chevron = global.document.getElementById('homeActiveSourcesChevron');
@@ -32,7 +32,7 @@ test('homeActiveSourcesHeader exists in DOM with toggle attributes', () => {
     assert.ok(list, 'homeActiveSourcesList should exist');
 });
 
-test('renderHomeActiveSources displays active source count and defaults to closed', () => {
+test('renderHomeActiveSources displays active source count and defaults to closed', async () => {
     AppState.sources = [
         { id: 's1', name: 'Source 1', active: true, questions: [1, 2] },
         { id: 's2', name: 'Source 2', active: true, questions: [1] },
@@ -53,7 +53,7 @@ test('renderHomeActiveSources displays active source count and defaults to close
 /* The home readiness tile is the mean of these rows. A row that renders its
    own mastery is what lets the user check that mean against its terms, so the
    number has to be the same calculation - not an approximation of it. */
-test('each active source row shows its own topic mastery', () => {
+test('each active source row shows its own topic mastery', async () => {
     AppState.sources = [
         { id: 's1', name: 'Studied', active: true, questions: [{ id: 1 }, { id: 2 }] },
         { id: 's2', name: 'Untouched', active: true, questions: [{ id: 1 }] }
@@ -93,7 +93,7 @@ test('the home active-sources consumer redraws on stats changes', async () => {
     assert.match(slices, /Slice\.STATS/, 'home:activeSources must follow the stats slice');
 });
 
-test('clicking homeActiveSourcesHeader toggles list open and closed', () => {
+test('clicking homeActiveSourcesHeader toggles list open and closed', async () => {
     AppState.sources = [
         { id: 's1', name: 'Source 1', active: true, questions: [1] }
     ];

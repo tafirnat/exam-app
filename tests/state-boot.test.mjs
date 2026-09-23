@@ -26,7 +26,7 @@ const atImportTime = {
     initialized: state.isStateInitialized()
 };
 
-test('importing state.js needs no storage, no DOM and no window', () => {
+test('importing state.js needs no storage, no DOM and no window', async () => {
     assert.equal(atImportTime.hadStorage, false,
         'this case is only meaningful while there is genuinely no storage');
     assert.equal(atImportTime.hadDocument, false);
@@ -38,7 +38,7 @@ test('importing state.js needs no storage, no DOM and no window', () => {
     assert.equal(atImportTime.initialized, false);
 });
 
-test('the defaults are a fresh install, not undefined holes', () => {
+test('the defaults are a fresh install, not undefined holes', async () => {
     // Anything that reads AppState before boot has to see an empty app; the
     // renderers are built to survive that, but not to survive undefined.
     assert.equal(state.AppState.language, 'en');
@@ -59,19 +59,19 @@ before(() => {
     Object.defineProperty(global, 'navigator', { value: dom.window.navigator, configurable: true });
 });
 
-test('importing state.js writes nothing; the folder repair waits for initState()', () => {
+test('importing state.js writes nothing; the folder repair waits for await initState()', async () => {
     // The repair used to land on disk as a side effect of the import, which is
     // how a module evaluation ended up touching the user's data.
     assert.equal(localStorage.length, 0);
 
-    state.initState();
+    await state.initState();
 
     const folders = JSON.parse(localStorage.getItem('focus_app_folders'));
     assert.equal(folders.length, 1);
     assert.equal(folders[0].id, 'uncategorized-folder');
 });
 
-test('initState() loads what is stored', () => {
+test('await initState() loads what is stored', async () => {
     localStorage.setItem('focus_app_sources', JSON.stringify([
         { id: 's1', name: 'Kaynak', questions: [{ id: 'q1', text: 'soru' }] }
     ]));
@@ -80,7 +80,7 @@ test('initState() loads what is stored', () => {
     localStorage.setItem('focus_app_tts_speed', '1.25');
     localStorage.setItem('focus_app_last_progress_reset', '4242');
 
-    state.initState({ force: true });
+    await state.initState({ force: true });
 
     assert.equal(state.AppState.sources.length, 1);
     assert.equal(state.AppState.stats.s1_q1.correct, 2);
@@ -90,47 +90,47 @@ test('initState() loads what is stored', () => {
     assert.equal(state.isStateInitialized(), true);
 });
 
-test('a second initState() is ignored, so a re-import cannot wipe live state', () => {
-    state.initState({ force: true });
+test('a second await initState() is ignored, so a re-import cannot wipe live state', async () => {
+    await state.initState({ force: true });
     state.AppState.sources[0].name = 'edited in memory';
 
-    state.initState();       // no force
+    await state.initState();       // no force
 
     assert.equal(state.AppState.sources[0].name, 'edited in memory');
 });
 
-test('force re-reads, which is what a test that changed storage wants', () => {
+test('force re-reads, which is what a test that changed storage wants', async () => {
     localStorage.setItem('focus_app_lang', 'de');
-    state.initState({ force: true });
+    await state.initState({ force: true });
     assert.equal(state.AppState.language, 'de');
 });
 
-test('AppState is mutated, never replaced', () => {
+test('AppState is mutated, never replaced', async () => {
     // Every module holds its own reference to this object from import time, so
     // reassigning it would leave half the app writing to an orphan.
     const before = state.AppState;
-    state.initState({ force: true });
+    await state.initState({ force: true });
     assert.equal(state.AppState, before);
 });
 
-test('a source without a questions array is dropped on load', () => {
+test('a source without a questions array is dropped on load', async () => {
     localStorage.setItem('focus_app_sources', JSON.stringify([
         { id: 'ok', questions: [] },
         { id: 'broken' },
         null
     ]));
 
-    state.initState({ force: true });
+    await state.initState({ force: true });
 
     assert.deepEqual(state.AppState.sources.map(s => s.id), ['ok']);
 });
 
-test('the pre-rename default-folder is repaired into the system folder', () => {
+test('the pre-rename default-folder is repaired into the system folder', async () => {
     localStorage.setItem('focus_app_folders', JSON.stringify([
         { id: 'default-folder', name: 'eski ad', color: '#ff0000' }
     ]));
 
-    state.initState({ force: true });
+    await state.initState({ force: true });
 
     const ids = state.AppState.folders.map(f => f.id);
     assert.deepEqual(ids, ['uncategorized-folder']);
@@ -138,15 +138,15 @@ test('the pre-rename default-folder is repaired into the system folder', () => {
     assert.equal(state.AppState.folders[0].isSystem, true);
 });
 
-test('a folder list that needs no repair is not rewritten', () => {
-    state.initState({ force: true });
+test('a folder list that needs no repair is not rewritten', async () => {
+    await state.initState({ force: true });
     const stored = localStorage.getItem('focus_app_folders');
 
     let writes = 0;
     const realSet = localStorage.setItem.bind(localStorage);
     localStorage.setItem = (...args) => { writes++; return realSet(...args); };
     try {
-        state.initState({ force: true });
+        await state.initState({ force: true });
     } finally {
         localStorage.setItem = realSet;
     }
@@ -155,11 +155,11 @@ test('a folder list that needs no repair is not rewritten', () => {
     assert.equal(localStorage.getItem('focus_app_folders'), stored);
 });
 
-test('corrupt stored JSON falls back instead of breaking boot', () => {
+test('corrupt stored JSON falls back instead of breaking boot', async () => {
     localStorage.setItem('focus_app_stats_local', '{not json');
     localStorage.setItem('focus_app_study_activity', '');
 
-    state.initState({ force: true });
+    await state.initState({ force: true });
 
     assert.deepEqual(state.AppState.stats, {});
     assert.deepEqual(state.AppState.studyActivity, {});

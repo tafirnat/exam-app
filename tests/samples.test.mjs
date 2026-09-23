@@ -17,32 +17,32 @@ const dir = join(root, 'public/examples');
 const LANGUAGES = ['tr', 'en', 'de'];
 const load = (lang) => JSON.parse(readFileSync(join(dir, `sample-${lang}.json`), 'utf8'));
 
-test('there is exactly one sample per supported language, and nothing else', () => {
+test('there is exactly one sample per supported language, and nothing else', async () => {
     const samples = readdirSync(dir).filter(n => n.endsWith('.json')).sort();
     assert.deepEqual(samples, LANGUAGES.map(l => `sample-${l}.json`).sort(),
         'the retired templates should be gone');
 });
 
 for (const lang of LANGUAGES) {
-    test(`sample-${lang} is free of content gaps`, () => {
+    test(`sample-${lang} is free of content gaps`, async () => {
         const gaps = findContentGaps(load(lang).questions);
         assert.deepEqual(gaps.map(g => `${g.id}: ${g.issues.map(i => i.code).join(',')}`), []);
     });
 
-    test(`sample-${lang} covers every question type exactly once`, () => {
+    test(`sample-${lang} covers every question type exactly once`, async () => {
         const types = load(lang).questions.map(q => q.type);
         assert.deepEqual([...types].sort(), [...KNOWN_TYPES].sort(),
             'one question per type, no duplicates and none missing');
     });
 
-    test(`sample-${lang} uses only canonical type names`, () => {
+    test(`sample-${lang} uses only canonical type names`, async () => {
         for (const q of load(lang).questions) {
             assert.equal(q.type, canonicalType(q.type),
                 `${q.id} should not use a retired spelling`);
         }
     });
 
-    test(`sample-${lang} has the metadata the importer titles it from`, () => {
+    test(`sample-${lang} has the metadata the importer titles it from`, async () => {
         const { exam_metadata: meta } = load(lang);
         assert.ok(meta?.title, 'a title, or the source is named after the file');
         assert.ok(meta.description);
@@ -57,7 +57,7 @@ for (const lang of LANGUAGES) {
     });
 }
 
-test('the three samples describe the same questions in three languages', () => {
+test('the three samples describe the same questions in three languages', async () => {
     const [tr, en, de] = LANGUAGES.map(l => load(l).questions);
     assert.deepEqual(en.map(q => q.id), tr.map(q => q.id), 'same ids, same order');
     assert.deepEqual(en.map(q => q.id), de.map(q => q.id));
@@ -70,7 +70,7 @@ test('the three samples describe the same questions in three languages', () => {
     assert.deepEqual(keys(en), keys(de));
 });
 
-test('optional fields are demonstrated but deliberately not all filled', () => {
+test('optional fields are demonstrated but deliberately not all filled', async () => {
     const questions = load('en').questions;
     const present = (field) => questions.filter(q => q[field] !== undefined).length;
 
@@ -86,7 +86,7 @@ test('optional fields are demonstrated but deliberately not all filled', () => {
     assert.ok(['above', 'below'].includes(withMedia[0].content.media[0].position));
 });
 
-test('the cloze sample actually contains markers', () => {
+test('the cloze sample actually contains markers', async () => {
     for (const lang of LANGUAGES) {
         const cloze = load(lang).questions.find(q => q.type === 'fill_in_the_blank');
         const text = cloze.content.text;
@@ -95,7 +95,7 @@ test('the cloze sample actually contains markers', () => {
     }
 });
 
-test('every shipped JSON file is free of raw HTML tags', () => {
+test('every shipped JSON file is free of raw HTML tags', async () => {
     // public/examples is now the only place shipped content lives: it is the
     // only content directory Vite copies into dist, so anything outside it was
     // unreachable from the app. The guard walks the directory rather than a
@@ -119,7 +119,7 @@ test('every shipped JSON file is free of raw HTML tags', () => {
    to demonstrate it, not merely comply with it. These assert against the
    rendered output rather than the source, which is what catches a construct
    that is written but silently not rendered. */
-test('every sample renders every construct the format supports', () => {
+test('every sample renders every construct the format supports', async () => {
     const required = {
         'h2 heading': /<h2>/,
         'h3 heading': /<h3>/,
@@ -162,7 +162,7 @@ test('every sample renders every construct the format supports', () => {
     }
 });
 
-test('sample option text is rendered as Markdown, not shown raw', () => {
+test('sample option text is rendered as Markdown, not shown raw', async () => {
     for (const lang of LANGUAGES) {
         const mc = load(lang).questions.find(q => q.type === 'multiple_choice');
         const formatted = mc.options.filter(o => /[*`=~]/.test(o.text));
@@ -176,7 +176,7 @@ test('sample option text is rendered as Markdown, not shown raw', () => {
     }
 });
 
-test('the samples never emit an escaped tag or leak a parser placeholder', () => {
+test('the samples never emit an escaped tag or leak a parser placeholder', async () => {
     for (const lang of LANGUAGES) {
         for (const q of load(lang).questions) {
             const strings = [q.content?.text, q.answer?.explanation, q.answer?.back,
@@ -191,7 +191,7 @@ test('the samples never emit an escaped tag or leak a parser placeholder', () =>
     }
 });
 
-test('a cloze example shown inside a code fence creates no blanks', () => {
+test('a cloze example shown inside a code fence creates no blanks', async () => {
     // The fill_in_the_blank explanation prints the marker syntax. If that counted
     // as blanks, the explanation would silently change the question's answer key.
     for (const lang of LANGUAGES) {

@@ -43,12 +43,12 @@ before(async () => {
 
 beforeEach(() => {
     localStorage.clear();
-    initState({ force: true });
+    await initState({ force: true });
     AppState.sources = [];
     AppState.folders = [createUncategorizedFolderRecord()];
 });
 
-test('index.html has input[type=file] with multiple and #fileDropZone', () => {
+test('index.html has input[type=file] with multiple and #fileDropZone', async () => {
     const htmlPath = path.resolve('index.html');
     const html = fs.readFileSync(htmlPath, 'utf8');
 

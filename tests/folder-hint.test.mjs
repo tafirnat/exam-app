@@ -31,7 +31,7 @@ before(async () => {
 /** A fresh, empty library on "a device". */
 function freshDevice() {
     localStorage.clear();
-    initState({ force: true });
+    await initState({ force: true });
     AppState.sources.length = 0;
     AppState.folders = [createUncategorizedFolderRecord()];
     AppState.deletedSourceIds = [];
@@ -73,7 +73,7 @@ function payload({ sources, folders }, extra = {}) {
 
 // ── Placement ───────────────────────────────────────────────────────────────
 
-test('a hint with no matching folder creates one and places the set in it', () => {
+test('a hint with no matching folder creates one and places the set in it', async () => {
     const source = importSet({ folder: 'ITIL 4 Foundation' });
 
     const folders = userFolders();
@@ -85,7 +85,7 @@ test('a hint with no matching folder creates one and places the set in it', () =
     assert.equal(source.folderId, folders[0].id);
 });
 
-test('an existing folder with a similar name is reused, not duplicated', () => {
+test('an existing folder with a similar name is reused, not duplicated', async () => {
     AppState.folders.push({ id: 'folder_123', name: 'İTİL 4 – Foundation', color: '#0667ff', order: 1 });
 
     const source = importSet({ folder: '  itil 4 foundation ' });
@@ -94,7 +94,7 @@ test('an existing folder with a similar name is reused, not duplicated', () => {
     assert.equal(source.folderId, 'folder_123');
 });
 
-test('a set without a hint behaves exactly as before', () => {
+test('a set without a hint behaves exactly as before', async () => {
     const before = JSON.stringify(AppState.folders);
     const source = importSet({});
     assert.equal(JSON.stringify(AppState.folders), before, 'folders untouched');
@@ -107,7 +107,7 @@ test('there is no switch: a hint is followed on every import', async () => {
     assert.equal('folderHintsEnabled' in AppState, false);
     assert.ok(!SYNCED_SETTINGS.includes('folderHintsEnabled'));
     localStorage.setItem('focus_app_folder_hints_enabled', 'false');
-    initState({ force: true });
+    await initState({ force: true });
     const source = importSet({ folder: 'Networks' });
     assert.equal(AppState.folders.find(f => f.id === source.folderId)?.name, 'Networks');
 });
@@ -118,14 +118,14 @@ test('the add-source panel carries no folder-hint switch', async () => {
     assert.equal(html.includes('folderHintsToggle'), false);
 });
 
-test('an explicit folderId that resolves wins over the hint', () => {
+test('an explicit folderId that resolves wins over the hint', async () => {
     AppState.folders.push({ id: 'folder_mine', name: 'Mine', color: '#0667ff', order: 1 });
     const source = importSet({ folder: 'Something else', folderId: 'folder_mine' });
     assert.equal(source.folderId, 'folder_mine');
     assert.equal(userFolders().length, 1, 'the hint did not create a folder');
 });
 
-test('an archived folder of that name is not reused', () => {
+test('an archived folder of that name is not reused', async () => {
     AppState.folders.push({ id: 'folder_old', name: 'ITIL 4 Foundation', color: '#0667ff', order: 1, archived: true });
     const source = importSet({ folder: 'ITIL 4 Foundation' });
     assert.notEqual(source.folderId, 'folder_old');
@@ -133,14 +133,14 @@ test('an archived folder of that name is not reused', () => {
     assert.equal(AppState.folders.find(f => f.id === source.folderId).archived, undefined);
 });
 
-test('the hint is spent at import: it is not kept on the source', () => {
+test('the hint is spent at import: it is not kept on the source', async () => {
     const source = importSet({ folder: 'ITIL 4 Foundation' });
     assert.equal('folder' in source.metadata, false);
 });
 
 // ── Colour ──────────────────────────────────────────────────────────────────
 
-test('the new folder takes the least-used palette colour, never the default', () => {
+test('the new folder takes the least-used palette colour, never the default', async () => {
     // Every colour used once except one.
     const free = hint.FOLDER_COLORS[7];
     hint.FOLDER_COLORS.filter(c => c !== free).forEach((color, i) => {
@@ -151,7 +151,7 @@ test('the new folder takes the least-used palette colour, never the default', ()
     assert.equal(created.color, free);
 });
 
-test('colour ties break by name, so two devices pick the same one', () => {
+test('colour ties break by name, so two devices pick the same one', async () => {
     const a = hint.pickFolderColor('ITIL 4 Foundation', []);
     const b = hint.pickFolderColor('itil 4 foundation', []);
     assert.equal(a, b);
@@ -161,7 +161,7 @@ test('colour ties break by name, so two devices pick the same one', () => {
 
 // ── Sync ────────────────────────────────────────────────────────────────────
 
-test('two devices importing the same hint before syncing end up with one folder', () => {
+test('two devices importing the same hint before syncing end up with one folder', async () => {
     importSet({ title: 'Set A', folder: 'ITIL 4 Foundation' });
     const deviceA = snapshot();
 
@@ -199,7 +199,7 @@ test('a set the user moved is not pulled back by later syncs', async () => {
     assert.equal(after.folderId, 'folder_elsewhere');
 });
 
-test('a deleted hint folder is not resurrected under its old id', () => {
+test('a deleted hint folder is not resurrected under its old id', async () => {
     const base = hint.hintFolderBaseId('ITIL 4 Foundation');
     AppState.deletedFolderIds = [base];
     const source = importSet({ folder: 'ITIL 4 Foundation' });
@@ -224,7 +224,7 @@ test('a share carries no folder name unless asked, and then the current one', as
         'the default folder is not a folder name');
 });
 
-test('a shared set with its folder lands in a same-named folder on the other side', () => {
+test('a shared set with its folder lands in a same-named folder on the other side', async () => {
     const source = importSet({ folder: 'ITIL 4 Foundation' });
     const file = JSON.parse(JSON.stringify(getCleanSourceData(source, { includeFolder: true })));
     delete file.exam_metadata.id;
@@ -266,7 +266,7 @@ test('a set without a hint gets no folder line', async () => {
     assert.equal(msg, t('import_success_msg', { name: `Set ${seq}`, count: 1 }));
 });
 
-test('the folder name from the file is escaped in the message', () => {
+test('the folder name from the file is escaped in the message', async () => {
     const msg = importLoud({ folder: '<img src=x onerror=alert(1)>' });
     assert.ok(!msg.includes('<img'), msg);
     assert.ok(msg.includes('&lt;img'), msg);

@@ -46,7 +46,7 @@ beforeEach(() => {
 
 const resumeShown = () => document.getElementById('resumeBtn').style.display !== 'none';
 
-test('an open session on the record offers a resume', () => {
+test('an open session on the record offers a resume', async () => {
     storage.persist('focus_app_active_test', {
         currentTest: ['src-a_1', 'src-a_2'], currentIndex: 1, deviceId: 'dev-b', updatedAt: Date.now()
     });
@@ -57,7 +57,7 @@ test('an open session on the record offers a resume', () => {
     assert.equal(document.getElementById('startBtn').getAttribute('data-i18n'), 'new_test');
 });
 
-test('a test finished on another device takes the button away', () => {
+test('a test finished on another device takes the button away', async () => {
     storage.persist('focus_app_active_test', {
         currentTest: ['src-a_1'], currentIndex: 0, deviceId: 'dev-b', updatedAt: Date.now()
     });
@@ -73,12 +73,12 @@ test('a test finished on another device takes the button away', () => {
     assert.equal(document.getElementById('startBtn').getAttribute('data-i18n'), 'start_test');
 });
 
-test('no record at all offers no resume', () => {
+test('no record at all offers no resume', async () => {
     renderResumeButton();
     assert.equal(resumeShown(), false);
 });
 
-test('a corrupted record costs the button, not the home screen', () => {
+test('a corrupted record costs the button, not the home screen', async () => {
     // This runs on every return to home. A bare JSON.parse here once broke that
     // path outright; the worst it may do is offer nothing to resume.
     localStorage.setItem('focus_app_active_test', '{not json');
@@ -87,7 +87,7 @@ test('a corrupted record costs the button, not the home screen', () => {
     assert.equal(resumeShown(), false);
 });
 
-test('drawing the button never writes', () => {
+test('drawing the button never writes', async () => {
     /* The load-bearing property. A renderer that wrote would re-stamp the
        record on every redraw, and the store redraws whenever the record
        changes - including when it changed because another device pushed it. */
@@ -102,7 +102,7 @@ test('drawing the button never writes', () => {
     assert.equal(localStorage.getItem('focus_app_active_test'), before);
 });
 
-test('redrawing is idempotent', () => {
+test('redrawing is idempotent', async () => {
     storage.persist('focus_app_active_test', { currentTest: ['q1'], updatedAt: 1 });
     renderResumeButton();
     const first = document.getElementById('startBtnContainer').outerHTML;
@@ -116,7 +116,7 @@ test('redrawing is idempotent', () => {
 
 const SRC = fileURLToPath(new URL('../src/', import.meta.url));
 
-test('the button is wired to the slice, not left to navigation', () => {
+test('the button is wired to the slice, not left to navigation', async () => {
     const bindings = readFileSync(SRC + 'core/ui-bindings.js', 'utf8');
 
     // One row in the table is the whole fix - see CLAUDE.md rule 2. Without it
@@ -127,7 +127,7 @@ test('the button is wired to the slice, not left to navigation', () => {
     assert.match(row, /Slice\.ACTIVE_TEST/, 'the row does not listen to Slice.ACTIVE_TEST');
 });
 
-test('the promote-and-stamp half stayed off the render path', () => {
+test('the promote-and-stamp half stayed off the render path', async () => {
     const mainSrc = readFileSync(SRC + 'main.js', 'utf8');
     const testUi = readFileSync(SRC + 'features/test/test-ui.js', 'utf8');
 

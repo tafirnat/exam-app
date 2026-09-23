@@ -18,7 +18,7 @@ function filterQuestionsBySourceScope(questions, searchKeyword) {
     });
 }
 
-test('$ source search keeps only the questions of the named source', () => {
+test('$ source search keeps only the questions of the named source', async () => {
     const questions = [
         { id: 1, sourceId: 'src-a', sourceName: 'Matematik Deneme' },
         { id: 2, sourceId: 'src-b', sourceName: 'Tarih Deneme' },
@@ -45,7 +45,7 @@ test('$ source search keeps only the questions of the named source', () => {
     );
 });
 
-test('stats-module handles the $ prefix before the # prefix and pools only live sources', () => {
+test('stats-module handles the $ prefix before the # prefix and pools only live sources', async () => {
     const src = readFileSync(join(root, 'src/features/stats/stats-module.js'), 'utf8');
     assert.ok(src.includes("if (rawKw.startsWith('$'))"));
     assert.ok(src.includes("} else if (rawKw.startsWith('#'))"));
@@ -62,7 +62,7 @@ test('stats-module handles the $ prefix before the # prefix and pools only live 
    library. Pinned by behaviour rather than by the variable name it is called
    with - the name has already drifted once while this test stayed green-looking
    and red. */
-test('inspect buttons route through inspectSourceQuestions', () => {
+test('inspect buttons route through inspectSourceQuestions', async () => {
     const continuity = readFileSync(join(root, 'src/features/stats/continuity-ui.js'), 'utf8');
     const sourcesUi = readFileSync(join(root, 'src/features/sources/sources-ui.js'), 'utf8');
 
@@ -79,7 +79,7 @@ test('inspect buttons route through inspectSourceQuestions', () => {
     assert.ok(sourcesUi.includes('inspectSourceQuestions(source.id)'));
 });
 
-test('inspect buttons no longer use the eye icon', () => {
+test('inspect buttons no longer use the eye icon', async () => {
     const html = readFileSync(join(root, 'index.html'), 'utf8');
     const eyePath = 'M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z';
     const inspectBtn = html.slice(
@@ -94,7 +94,7 @@ test('inspect buttons no longer use the eye icon', () => {
     assert.ok(!modalBtn.includes(eyePath));
 });
 
-test('search placeholder still advertises only the # tag format', () => {
+test('search placeholder still advertises only the # tag format', async () => {
     const i18nSource = readFileSync(join(root, 'src/core/i18n.js'), 'utf8');
     assert.ok(i18nSource.includes('search_label: "Ara... (#etiket)"'));
     assert.ok(!i18nSource.includes('$kaynak'));

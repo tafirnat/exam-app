@@ -35,13 +35,13 @@ function overlays() {
     return found;
 }
 
-test('every modal overlay was found', () => {
+test('every modal overlay was found', async () => {
     const all = overlays();
     assert.ok(all.length >= 8, `expected the overlay set, found ${all.length}`);
     assert.ok(all.some(o => o.id === 'customModalOverlay'));
 });
 
-test('the shared confirm dialog outranks every other overlay', () => {
+test('the shared confirm dialog outranks every other overlay', async () => {
     const all = overlays();
     const confirm = all.find(o => o.id === 'customModalOverlay');
     const beaten = all.filter(o => o.id !== 'customModalOverlay' && o.z >= confirm.z);
@@ -50,7 +50,7 @@ test('the shared confirm dialog outranks every other overlay', () => {
         `these overlays would cover the confirm dialog (z ${confirm.z}), so a confirm opened from them is invisible`);
 });
 
-test('the storage notice stays below the confirm it opens', () => {
+test('the storage notice stays below the confirm it opens', async () => {
     const all = overlays();
     const notice = all.find(o => o.id === 'storageNoticeOverlay');
     const confirm = all.find(o => o.id === 'customModalOverlay');

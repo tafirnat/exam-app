@@ -23,7 +23,7 @@ before(async () => {
 const html = readFileSync(new URL('../index.html', import.meta.url), 'utf8');
 const markup = new JSDOM(html).window.document;
 
-test('homeDifficultyStatsCard carries title button, badge and control buttons in header', () => {
+test('homeDifficultyStatsCard carries title button, badge and control buttons in header', async () => {
     const card = markup.getElementById('homeDifficultyStatsCard');
     assert.ok(card, 'homeDifficultyStatsCard should exist');
     assert.ok(markup.getElementById('diffCardTitle'), 'diffCardTitle should exist');
@@ -33,7 +33,7 @@ test('homeDifficultyStatsCard carries title button, badge and control buttons in
     assert.ok(markup.getElementById('diffCardNextBtn'), 'diffCardNextBtn should exist');
 });
 
-test('getDifficultyNavItems orders items: All Active Sources -> Starred (folder order) -> Unstarred (folder order)', () => {
+test('getDifficultyNavItems orders items: All Active Sources -> Starred (folder order) -> Unstarred (folder order)', async () => {
     AppState.folders = [
         { id: 'f1', name: 'Matematik', order: 0 },
         { id: 'f2', name: 'Fizik', order: 1 }
@@ -63,7 +63,7 @@ test('getDifficultyNavItems orders items: All Active Sources -> Starred (folder 
     assert.equal(navItems[4].isStarred, false);
 });
 
-test('getDifficultyNavItems excludes archived sources automatically', () => {
+test('getDifficultyNavItems excludes archived sources automatically', async () => {
     AppState.folders = [{ id: 'f1', name: 'Kimya', order: 0 }];
     AppState.sources = [
         { id: 's1', name: 'Active Source', folderId: 'f1', order: 0, active: true, starred: true },

@@ -97,7 +97,7 @@ beforeEach(() => {
 
 // ── Markup ──────────────────────────────────────────────────────────────────
 
-test('the panel carries the work/load chart and names all five bar kinds', () => {
+test('the panel carries the work/load chart and names all five bar kinds', async () => {
     const section = markup.getElementById('modalWorkloadSection');
     assert.ok(section, '#modalWorkloadSection is missing from index.html');
 
@@ -176,7 +176,7 @@ test('the new bar kinds and the renamed ones are translated everywhere', async (
     }
 });
 
-test('the inspect button sits with the source it names', () => {
+test('the inspect button sits with the source it names', async () => {
     const inspect = markup.getElementById('modalDiffCardInspectBtn');
     const info = markup.getElementById('modalOverviewInfoBtn');
     assert.ok(inspect && info);
@@ -185,7 +185,7 @@ test('the inspect button sits with the source it names', () => {
         'the row reads left to right, under the source name rather than off to the right');
 });
 
-test('the panel no longer carries a second copy of the home trend card', () => {
+test('the panel no longer carries a second copy of the home trend card', async () => {
     assert.equal(markup.getElementById('modalWeeklyTrendCard'), null);
     assert.equal(markup.getElementById('modalMonthlyTrendBars'), null);
 });
@@ -196,7 +196,7 @@ test('the panel no longer carries a second copy of the home trend card', () => {
    chart it belongs to. The home screen's charts carry the same class and are
    laid out by their own grid, so the rule has to stay scoped to the panel or
    restyling this silently restyles the card the panel was opened from. */
-test('the panel dresses its own sections, not the home screen ones with the same class', () => {
+test('the panel dresses its own sections, not the home screen ones with the same class', async () => {
     const bare = [...css.matchAll(/([^{}]+)\{([^{}]*)\}/g)]
         .filter(m => m[1].split(',').some(s => s.trim() === '.chart-section'))
         .filter(m => /(^|;)\s*(background|border|padding)\s*:/.test(m[2]));
@@ -212,7 +212,7 @@ test('the panel dresses its own sections, not the home screen ones with the same
    by - the answers you gave, and the review date that lapsed without you - and
    an outline is work still ahead. jsdom has no layout, so this is read off the
    stylesheet rather than off a rendered bar. */
-test('fill marks time: what is behind you is solid, what is still ahead is an outline', () => {
+test('fill marks time: what is behind you is solid, what is still ahead is an outline', async () => {
     for (const kind of ['is-done', 'is-overdue']) {
         const decls = declarationsFor(`.workload-bar.${kind} .workload-bar-fill`);
         assert.match(decls, /background:\s*(?!transparent)\S/,
@@ -234,7 +234,7 @@ test('fill marks time: what is behind you is solid, what is still ahead is an ou
    width they come out half as wide as the days around them, and since the
    x-axis is its own flex row, widening the slot alone slides every label out
    from under the column it names. */
-test("today's pair is as wide as any other day, and the axis tracks it", () => {
+test("today's pair is as wide as any other day, and the axis tracks it", async () => {
     const flexOf = (sel) => (declarationsFor(sel).match(/(?:^|[;\s])flex:\s*([\d.]+)/) || [])[1];
     const data = buildWorkloadBuckets('all', Date.now());
 
@@ -248,16 +248,16 @@ test("today's pair is as wide as any other day, and the axis tracks it", () => {
 
 // ── Scope ───────────────────────────────────────────────────────────────────
 
-test('"all" means the sources a test draws from, not the whole library', () => {
+test('"all" means the sources a test draws from, not the whole library', async () => {
     const ids = workloadSources('all').map(s => s.id);
     assert.deepEqual(ids, [A, B], 'a source that is switched off is not in the test');
 });
 
-test('a named source narrows to that source alone', () => {
+test('a named source narrows to that source alone', async () => {
     assert.deepEqual(workloadSources(B).map(s => s.id), [B]);
 });
 
-test('the modal donut counts the test\'s sources, the home donut the library', () => {
+test('the modal donut counts the test\'s sources, the home donut the library', async () => {
     updateDifficultyUI(false);
     updateDifficultyUI(true);
 
@@ -269,12 +269,12 @@ test('the modal donut counts the test\'s sources, the home donut the library', (
 
 // ── When a question comes due ───────────────────────────────────────────────
 
-test('a question is due exactly its stability after the last review', () => {
+test('a question is due exactly its stability after the last review', async () => {
     const now = Date.UTC(2026, 6, 1);
     assert.equal(dueTimestamp({ stability: 4, lastReview: now }), now + 4 * DAY_MS);
 });
 
-test('a question that was never reviewed has no due date', () => {
+test('a question that was never reviewed has no due date', async () => {
     assert.equal(dueTimestamp({ stability: 4 }), null);
     assert.equal(dueTimestamp({ lastReview: Date.now() }), null);
     assert.equal(dueTimestamp(undefined), null);
@@ -284,7 +284,7 @@ test('a question that was never reviewed has no due date', () => {
 
 const sum = (bars) => bars.reduce((n, b) => n + b.value, 0);
 
-test('a question whose moment has passed is overdue, not scheduled', () => {
+test('a question whose moment has passed is overdue, not scheduled', async () => {
     const now = Date.now();
     AppState.stats[`${A}_1`] = dueIn(-3, now);
 
@@ -293,7 +293,7 @@ test('a question whose moment has passed is overdue, not scheduled', () => {
     assert.equal(sum(w.future), 0, 'and nowhere in the forecast');
 });
 
-test('a question nobody has touched is counted apart from the backlog', () => {
+test('a question nobody has touched is counted apart from the backlog', async () => {
     const now = Date.now();
     AppState.stats[`${A}_1`] = dueIn(-3, now);
     // The other 19 have no stats record at all.
@@ -304,7 +304,7 @@ test('a question nobody has touched is counted apart from the backlog', () => {
         'a fresh source must not bury the real backlog in the same column');
 });
 
-test('a question due in three days lands on the third column ahead', () => {
+test('a question due in three days lands on the third column ahead', async () => {
     const now = Date.now();
     AppState.stats[`${A}_1`] = dueIn(3, now);
 
@@ -321,7 +321,7 @@ test('a question due in three days lands on the third column ahead', () => {
     assert.notEqual(Kind.PLANNED, Kind.DUE_TODAY);
 });
 
-test('a question still due later today is today\'s remainder, not backlog', () => {
+test('a question still due later today is today\'s remainder, not backlog', async () => {
     // Noon in the app's day zone, with the question due an hour later, so the
     // day cannot roll over between the two reads.
     const now = new Date(`${getLocalDateStr()}T12:00:00Z`).getTime();
@@ -332,7 +332,7 @@ test('a question still due later today is today\'s remainder, not backlog', () =
     assert.equal(w.backlog[0].value, 0, 'not overdue - the moment has not passed');
 });
 
-test('load beyond the horizon is simply not drawn', () => {
+test('load beyond the horizon is simply not drawn', async () => {
     const now = Date.now();
     AppState.stats[`${A}_1`] = dueIn(FUTURE_DAYS + 5, now);
 
@@ -341,7 +341,7 @@ test('load beyond the horizon is simply not drawn', () => {
         'only the 19 unseeded questions of the two active sources remain');
 });
 
-test('a source outside the test contributes nothing, however overdue', () => {
+test('a source outside the test contributes nothing, however overdue', async () => {
     const now = Date.now();
     for (let i = 1; i <= 10; i++) AppState.stats[`${C}_${i}`] = dueIn(-5, now);
 
@@ -354,7 +354,7 @@ test('a source outside the test contributes nothing, however overdue', () => {
 
 const dayWithLog = (log, counts) => ({ ...counts, byDevice: { phone: { ...counts, questionLog: log } } });
 
-test('the past half counts only the test\'s sources', () => {
+test('the past half counts only the test\'s sources', async () => {
     const yesterday = shiftDateStr(getLocalDateStr(), -1);
     AppState.studyActivity = {
         [yesterday]: dayWithLog({
@@ -369,7 +369,7 @@ test('the past half counts only the test\'s sources', () => {
     assert.equal(w.past[w.past.length - 1].value, 2, "the switched-off source's answer is out");
 });
 
-test('a day whose breakdown was never kept says so instead of reading as zero', () => {
+test('a day whose breakdown was never kept says so instead of reading as zero', async () => {
     const yesterday = shiftDateStr(getLocalDateStr(), -1);
     // Written before the per-question log existed: a real total, no breakdown.
     AppState.studyActivity = { [yesterday]: { questionCount: 12, correctCount: 12 } };
@@ -382,7 +382,7 @@ test('a day whose breakdown was never kept says so instead of reading as zero', 
 // ── The panel on screen ─────────────────────────────────────────────────────
 
 
-test('the first paint already agrees with the second', () => {
+test('the first paint already agrees with the second', async () => {
     // A single active source: the nav offers no "all" item, so opening the panel
     // used to draw two charts for "all" and only then rewrite the selection to
     // the source - the panel opened under one source's name showing another
@@ -476,7 +476,7 @@ test('a pinned source that leaves the test does not linger in half the panel', a
     assert.equal(legendTotal, 10, 'and every chart follows the same fallback');
 });
 
-test('an open panel picks up a change without being reopened', () => {
+test('an open panel picks up a change without being reopened', async () => {
     openPanel();
     showProgressCharts();
     const before = bars();
@@ -487,14 +487,14 @@ test('an open panel picks up a change without being reopened', () => {
     assert.notDeepEqual(bars(), before);
 });
 
-test('a closed panel is not redrawn', () => {
+test('a closed panel is not redrawn', async () => {
     document.getElementById('progressChartOverlay').style.display = 'none';
     refreshProgressChartOverlay();
 
     assert.equal(bars().length, 0, 'drawing a hidden panel is pure waste');
 });
 
-test('the completion bar failing does not take the other charts down with it', () => {
+test('the completion bar failing does not take the other charts down with it', async () => {
     // getContext is stubbed to null for the whole file, so this pass has already
     // lost the canvas chart. The DOM charts must still land.
     openPanel();
@@ -504,7 +504,7 @@ test('the completion bar failing does not take the other charts down with it', (
     assert.equal(document.getElementById('modalDonutTotalCount').textContent, '20');
 });
 
-test('the panel is registered with the store on activity, stats and sources', () => {
+test('the panel is registered with the store on activity, stats and sources', async () => {
     const src = readFileSync(new URL('../src/core/ui-bindings.js', import.meta.url), 'utf8');
     const row = src.slice(src.indexOf("name: 'home:progressChartPanel'"));
 
@@ -627,7 +627,7 @@ test('clicking an info button shows rendered Markdown, never raw asterisks', asy
 /* renderMarkdown() emits `<div class="md-content">` wrapping <p> and <ul>.
    The shared modal body used to be a <p>, which makes that nesting invalid -
    jsdom keeps it, a browser is under no obligation to. */
-test('the shared modal body can hold block content', () => {
+test('the shared modal body can hold block content', async () => {
     const body = markup.getElementById('modalMessage');
     assert.ok(body, '#modalMessage is missing from index.html');
     assert.equal(body.tagName, 'DIV',
@@ -639,7 +639,7 @@ test('the shared modal body can hold block content', () => {
    `.md-content` (1rem, --text-primary), so the bullets read a step louder than
    the prose they belong to. jsdom has no cascade worth asking, so the rule is
    read out of the stylesheet. */
-test('markdown in the modal card keeps the card type scale', () => {
+test('markdown in the modal card keeps the card type scale', async () => {
     for (const selector of ['.modal-body .md-content p', '.modal-body .md-content li']) {
         const decls = declarationsFor(selector);
         assert.ok(decls, `${selector} needs a rule, or the list outshouts the prose`);

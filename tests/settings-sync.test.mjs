@@ -58,8 +58,8 @@ function stamped(values, stamps = {}) {
 
 // ── Stamping ────────────────────────────────────────────────────────────────
 
-test('only the setting that actually changed gets a stamp', () => {
-    initState({ force: true });
+test('only the setting that actually changed gets a stamp', async () => {
+    await initState({ force: true });
     AppState.deviceId = 'dev-a';
 
     AppState.ttsSpeed = 1.5;
@@ -74,14 +74,14 @@ test('only the setting that actually changed gets a stamp', () => {
     assert.equal(revisions.timerCountdownLimit, undefined);
 });
 
-test('the settings as loaded are a baseline, not eleven edits', () => {
+test('the settings as loaded are a baseline, not eleven edits', async () => {
     // A device upgrading has all eleven on disk and no stamps anywhere. If
     // loading counted as editing, the first device to save after the upgrade
     // would claim every key and decide the other two devices' settings.
     localStorage.setItem('focus_app_lang', 'de');
     localStorage.setItem('focus_app_tts_speed', '1.25');
 
-    initState({ force: true });
+    await initState({ force: true });
     AppState.deviceId = 'dev-a';
     AppState.timerCountdownLimit = 30;
     saveSyncedSettings();
@@ -92,8 +92,8 @@ test('the settings as loaded are a baseline, not eleven edits', () => {
     assert.equal(revisions.ttsSpeed, undefined, 'loaded, not edited');
 });
 
-test('the snapshot carries every synced setting', () => {
-    initState({ force: true });
+test('the snapshot carries every synced setting', async () => {
+    await initState({ force: true });
     const snapshot = getSettingsSnapshot();
     SYNCED_SETTINGS.forEach(key => {
         assert.ok(key in snapshot, `${key} is missing from the payload`);
@@ -105,7 +105,7 @@ test('the snapshot carries every synced setting', () => {
 
 // ── Merging ─────────────────────────────────────────────────────────────────
 
-test('the newer stamp wins, whichever device runs the merge', () => {
+test('the newer stamp wins, whichever device runs the merge', async () => {
     const newer = stamped({ language: 'tr' }, { language: [900, 'dev-a'] });
     const older = stamped({ language: 'de' }, { language: [500, 'dev-b'] });
 
@@ -115,7 +115,7 @@ test('the newer stamp wins, whichever device runs the merge', () => {
     assert.equal(mergeSyncData(payload(older), payload(newer)).settings.language, 'tr');
 });
 
-test('a change gets off the device that made it', () => {
+test('a change gets off the device that made it', async () => {
     // The half a stampless merge could never do: local holding the newer value
     // has to be reported as something to push, or it stays here for ever.
     const local = stamped({ ttsSpeed: 1.5 }, { ttsSpeed: [900, 'dev-a'] });
@@ -127,7 +127,7 @@ test('a change gets off the device that made it', () => {
     assert.equal(merged.hasLocalChanges, true);
 });
 
-test('switching a toggle off travels like any other change', () => {
+test('switching a toggle off travels like any other change', async () => {
     /* `false`, `0` and `''` are values somebody chose, not absent ones. A merge
        that reads them as empty would make every setting a one-way switch. */
     const local = stamped({ ttsEnabled: false }, { ttsEnabled: [900, 'dev-a'] });
@@ -143,8 +143,8 @@ test('switching a toggle off travels like any other change', () => {
 
 // ── Applying ────────────────────────────────────────────────────────────────
 
-test('an applied setting reaches the key its own reader uses', () => {
-    initState({ force: true });
+test('an applied setting reaches the key its own reader uses', async () => {
+    await initState({ force: true });
 
     applySyncedSettings(
         { language: 'de', ttsSpeed: 1.25, timerCountdownLimit: 30 },
@@ -161,18 +161,18 @@ test('an applied setting reaches the key its own reader uses', () => {
     assert.equal(localStorage.getItem('focus_app_tts_speed'), '1.25');
     assert.equal(localStorage.getItem('focus_app_timer_limit'), '30');
 
-    initState({ force: true });
+    await initState({ force: true });
     assert.equal(AppState.language, 'de');
     assert.equal(AppState.ttsSpeed, 1.25);
     assert.equal(AppState.timerCountdownLimit, 30);
 });
 
-test('a setting nobody has ever set is left alone', () => {
+test('a setting nobody has ever set is left alone', async () => {
     /* Every device carries all eleven whether their values mean anything or not.
        Applying unstamped ones would let the first device to push after the
        upgrade decide the language and the timer for the other two - a setting
        changing by itself is the one behaviour this must not have. */
-    initState({ force: true });
+    await initState({ force: true });
     AppState.language = 'tr';
 
     const changed = applySyncedSettings({ language: 'de', ttsSpeed: 2 }, {});
@@ -182,10 +182,10 @@ test('a setting nobody has ever set is left alone', () => {
     assert.equal(localStorage.getItem('focus_app_lang'), null);
 });
 
-test('an applied setting is not treated as a local edit afterwards', () => {
+test('an applied setting is not treated as a local edit afterwards', async () => {
     // Re-stamping on the way in would date the pulled value to now, so this
     // device would out-rank the one it came from and push it straight back.
-    initState({ force: true });
+    await initState({ force: true });
     AppState.deviceId = 'dev-a';
 
     applySyncedSettings({ language: 'de' }, { language: { at: 500, by: 'dev-b' } });
@@ -199,7 +199,7 @@ test('an applied setting is not treated as a local edit afterwards', () => {
     assert.equal(AppState.settingsRevisions.ttsSpeed.by, 'dev-a');
 });
 
-test('a progress reset does not touch the settings', () => {
+test('a progress reset does not touch the settings', async () => {
     // A reset is about progress. The language, the timer and the AI prompt are
     // not progress, and clearProgressData() leaves them alone locally too.
     const local = stamped({ language: 'tr' }, { language: [900, 'dev-a'] });

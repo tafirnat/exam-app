@@ -64,19 +64,19 @@ beforeEach(() => {
 
 // ── Unsaved-changes gate ────────────────────────────────────────────────────
 
-test('an untouched question is not dirty', () => {
+test('an untouched question is not dirty', async () => {
     openReading();
     assert.equal(editor.isEditorDirty(), false);
 });
 
-test('typing into a field makes it dirty', () => {
+test('typing into a field makes it dirty', async () => {
     openReading();
     document.querySelector('[data-group="content"]').click();
     document.getElementById('edit-text').value = 'prose, revised';
     assert.equal(editor.isEditorDirty(), true);
 });
 
-test('the dirty check reads the inputs, not just the last synced copy', () => {
+test('the dirty check reads the inputs, not just the last synced copy', async () => {
     /* Without the sync, half-typed text is invisible to the check: the editor
        would call the question clean and throw the edit away without asking. */
     openReading();
@@ -87,7 +87,7 @@ test('the dirty check reads the inputs, not just the last synced copy', () => {
     assert.equal(editor.isEditorDirty(), true);
 });
 
-test('the same question handed over with its keys in another order opens clean', () => {
+test('the same question handed over with its keys in another order opens clean', async () => {
     /* Callers build the question object differently - resolvePreviewQuestion()
        assembles it from spreads, the source list passes the stored object
        through - so the same question arrives with its keys in different orders. */
@@ -105,7 +105,7 @@ test('the same question handed over with its keys in another order opens clean',
     assert.equal(editor.isEditorDirty(), false);
 });
 
-test('the comparison itself is blind to key order', () => {
+test('the comparison itself is blind to key order', async () => {
     /* Locked on the helper rather than through the editor, honestly: on today's
        code path both the baseline and every later comparison run through the
        same syncDataFromInputs(), so plain JSON.stringify would agree with this
@@ -123,7 +123,7 @@ test('the comparison itself is blind to key order', () => {
     assert.notEqual(stableStringify([1, 2]), stableStringify([2, 1]));
 });
 
-test('a closed editor is neither open nor dirty', () => {
+test('a closed editor is neither open nor dirty', async () => {
     openReading();
     assert.equal(editor.isQuestionEditorOpen(), true);
     editor.closeQuestionEditor();
@@ -208,7 +208,7 @@ test('the three choices stack instead of being clipped by the card', async () =>
     assert.equal(footer.classList.contains('is-decision'), false, 'and the row comes back');
 });
 
-test('the stacked layout puts the primary first and never sets a fixed width', () => {
+test('the stacked layout puts the primary first and never sets a fixed width', async () => {
     const css = readFileSync(new URL('../src/style.css', import.meta.url), 'utf8')
         .replace(/\/\*[\s\S]*?\*\//g, '');   // the rules are explained at length beside them
 
@@ -268,7 +268,7 @@ test('the dialog restores the labels it borrowed', async () => {
     assert.notEqual(cancelBtn.innerText, t('discard_changes'));
 });
 
-test('a saved question is clean again', () => {
+test('a saved question is clean again', async () => {
     // Otherwise saving and then moving on would ask about changes already written.
     openReading();
     document.querySelector('[data-group="content"]').click();
@@ -279,7 +279,7 @@ test('a saved question is clean again', () => {
     assert.equal(AppState.sources[0].questions[0].content.text, 'prose, revised');
 });
 
-test('a saved question is stored as a copy, not aliased to the editor', () => {
+test('a saved question is stored as a copy, not aliased to the editor', async () => {
     /* Storing the working object would alias the library to the editor's scratch
        space: the next keystroke synced from an input lands in the source with
        nothing to persist it, and the library disagrees with the disk. */
@@ -294,7 +294,7 @@ test('a saved question is stored as a copy, not aliased to the editor', () => {
     assert.equal(AppState.sources[0].questions[0].content.text, 'saved text');
 });
 
-test('one review does not get stored on the question itself', () => {
+test('one review does not get stored on the question itself', async () => {
     /* The Edit button hands over whatever the preview is showing, and from the
        results screen that object carries the answer the user gave. Measured
        before the fix: saving stored `userAnswer: ["B"]`, `isCorrect: false` and
@@ -317,7 +317,7 @@ test('one review does not get stored on the question itself', () => {
     }
 });
 
-test('a refused save reports failure instead of writing', () => {
+test('a refused save reports failure instead of writing', async () => {
     editor.openQuestionEditor({
         id: 'read_002', sourceId: 's1', type: 'reading',
         content: { text: 'prose' }, answer: { explanation: 'e' }
@@ -332,7 +332,7 @@ test('a refused save reports failure instead of writing', () => {
 
 // ── Question navigation ─────────────────────────────────────────────────────
 
-test('the footer carries the same arrow component as the preview bar', () => {
+test('the footer carries the same arrow component as the preview bar', async () => {
     openReading();
     const prev = document.getElementById('editor-nav-prev');
     const next = document.getElementById('editor-nav-next');
@@ -342,7 +342,7 @@ test('the footer carries the same arrow component as the preview bar', () => {
     assert.ok(prev.closest('.editor-footer'), 'the arrows belong to the footer');
 });
 
-test('the arrows are re-wired and re-enabled on every render, not only the first', () => {
+test('the arrows are re-wired and re-enabled on every render, not only the first', async () => {
     /* renderEditorModal() rebuilds the footer from scratch, so handlers attached
        once at open are dead after the first tab switch - and a tab switch is the
        most ordinary thing to do in this modal. The buttons also ship `disabled`,
@@ -376,7 +376,7 @@ test('the arrows are re-wired and re-enabled on every render, not only the first
 
 // ── Focus mode ──────────────────────────────────────────────────────────────
 
-test('focusing a textarea marks its block and puts the card in focus mode', () => {
+test('focusing a textarea marks its block and puts the card in focus mode', async () => {
     openReading();
     document.querySelector('[data-group="content"]').click();
 
@@ -393,7 +393,7 @@ test('focusing a textarea marks its block and puts the card in focus mode', () =
     assert.ok(unit.querySelector('.editor-live-preview-box'), 'so does the live preview');
 });
 
-test('the field\'s own Markdown toolbar does not break the mode', () => {
+test('the field\'s own Markdown toolbar does not break the mode', async () => {
     /* Exempt for a mechanical reason, not a conceptual one: exiting on the
        toolbar's pointerdown re-expands the layout and moves the button out from
        under the pointer, so the press would land somewhere else and the wrap
@@ -409,7 +409,7 @@ test('the field\'s own Markdown toolbar does not break the mode', () => {
     assert.ok(card().classList.contains('is-focus-mode'));
 });
 
-test('clicking the live preview leaves the mode, even though it is in the same block', () => {
+test('clicking the live preview leaves the mode, even though it is in the same block', async () => {
     /* The mode belongs to the textarea, not to the block around it. The block
        keeps the screen so the preview stays readable while typing, but the
        preview is a read-only display — touching it means the user is done with
@@ -427,7 +427,7 @@ test('clicking the live preview leaves the mode, even though it is in the same b
     assert.equal(card().classList.contains('is-focus-mode'), false);
 });
 
-test('the label above the field leaves the mode too', () => {
+test('the label above the field leaves the mode too', async () => {
     // Same rule, second surface: only the field and its own controls hold it.
     openReading();
     document.querySelector('[data-group="content"]').click();
@@ -437,7 +437,7 @@ test('the label above the field leaves the mode too', () => {
     assert.equal(card().classList.contains('is-focus-mode'), false);
 });
 
-test('clicking outside the focused block leaves focus mode', () => {
+test('clicking outside the focused block leaves focus mode', async () => {
     openReading();
     document.querySelector('[data-group="content"]').click();
     focusIn(document.getElementById('edit-text'));
@@ -451,7 +451,7 @@ test('clicking outside the focused block leaves focus mode', () => {
     assert.equal(document.querySelectorAll('.editor-focus-unit').length, 0);
 });
 
-test('moving focus to another field moves the mode with it', () => {
+test('moving focus to another field moves the mode with it', async () => {
     openChoice();
     document.querySelector('[data-group="options"]').click();
 
@@ -465,7 +465,7 @@ test('moving focus to another field moves the mode with it', () => {
     assert.notEqual(document.querySelector('.editor-focus-unit'), first);
 });
 
-test('the footer is exempt: pressing Save must not collapse the layout under it', () => {
+test('the footer is exempt: pressing Save must not collapse the layout under it', async () => {
     openReading();
     document.querySelector('[data-group="content"]').click();
     focusIn(document.getElementById('edit-text'));
@@ -474,7 +474,7 @@ test('the footer is exempt: pressing Save must not collapse the layout under it'
     assert.ok(card().classList.contains('is-focus-mode'));
 });
 
-test('the focused block keeps its ancestors, so it is not hidden with them', () => {
+test('the focused block keeps its ancestors, so it is not hidden with them', async () => {
     openChoice();
     document.querySelector('[data-group="options"]').click();
     focusIn(document.querySelector('.opt-text-field'));
@@ -490,7 +490,7 @@ test('the focused block keeps its ancestors, so it is not hidden with them', () 
     }
 });
 
-test('a render clears focus mode, so the header can always show a refused save', () => {
+test('a render clears focus mode, so the header can always show a refused save', async () => {
     openReading();
     document.querySelector('[data-group="content"]').click();
     focusIn(document.getElementById('edit-text'));
@@ -500,7 +500,7 @@ test('a render clears focus mode, so the header can always show a refused save',
     assert.equal(card().classList.contains('is-focus-mode'), false);
 });
 
-test('the escape hatch exists and is bound', () => {
+test('the escape hatch exists and is bound', async () => {
     // On a phone, focus mode leaves very little "outside" left to tap.
     openReading();
     document.querySelector('[data-group="content"]').click();
@@ -512,7 +512,7 @@ test('the escape hatch exists and is bound', () => {
     assert.equal(card().classList.contains('is-focus-mode'), false);
 });
 
-test('the field height comes from a class, so focus mode can override it', () => {
+test('the field height comes from a class, so focus mode can override it', async () => {
     /* An inline `style="min-height: …"` beats any class rule short of
        !important, which is why these moved out of the markup. */
     openReading();
@@ -522,7 +522,7 @@ test('the field height comes from a class, so focus mode can override it', () =>
     assert.ok(textarea.classList.contains('ta-lg'));
 });
 
-test('nothing in the editor sets display or min-height inline', () => {
+test('nothing in the editor sets display or min-height inline', async () => {
     /* Focus mode hides siblings and grows the active field from classes, and an
        inline declaration silently outranks both.
 
@@ -546,7 +546,7 @@ test('nothing in the editor sets display or min-height inline', () => {
     }
 });
 
-test('the stylesheet hides siblings off the focus classes, and spares the footer', () => {
+test('the stylesheet hides siblings off the focus classes, and spares the footer', async () => {
     // Comments in this file explain the rules at length; strip them or the
     // scan matches its own documentation. See CLAUDE.md, "Statik tarama testi".
     const css = readFileSync(new URL('../src/features/stats/question-editor.css', import.meta.url), 'utf8')

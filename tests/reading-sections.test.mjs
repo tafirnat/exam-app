@@ -82,7 +82,7 @@ const redraw = () => render();
 const speakButtons = () => [...host.querySelectorAll('.heading-tts-btn')];
 const click = (el) => el.dispatchEvent(new dom.window.MouseEvent('click', { bubbles: true }));
 
-test('every heading gets a speak and a translate control, and nothing else does', () => {
+test('every heading gets a speak and a translate control, and nothing else does', async () => {
     draw();
     const headings = [...host.querySelectorAll('h1, h2, h3, h4, h5, h6')];
     assert.equal(headings.length, 3);
@@ -96,43 +96,43 @@ test('every heading gets a speak and a translate control, and nothing else does'
     assert.equal(headings[0].textContent, 'Gesundheit');
 });
 
-test('a passage without headings gets no controls at all', () => {
+test('a passage without headings gets no controls at all', async () => {
     draw('Nur ein Absatz ohne Titel.');
     assert.equal(host.querySelectorAll('.heading-tools').length, 0);
 });
 
-test('a passage with only a single heading gets no section controls as card-level controls suffice', () => {
+test('a passage with only a single heading gets no section controls as card-level controls suffice', async () => {
     draw('## Nur ein Titel\n\nEin Absatz darunter.');
     assert.equal(host.querySelectorAll('.heading-tools').length, 0);
 });
 
-test('decorating the same body twice does not double the controls', () => {
+test('decorating the same body twice does not double the controls', async () => {
     draw();
     decorateReadingSections(host, { scope: 'test', cacheKey: drawn.cacheKey });
     assert.equal(host.querySelectorAll('.heading-tools').length, 3);
     assert.equal(host.querySelectorAll('.heading-tool-btn').length, 6);
 });
 
-test('a section starts at its own heading and stops at the next one', () => {
+test('a section starts at its own heading and stops at the next one', async () => {
     draw();
     click(speakButtons()[0]);
     assert.equal(spoken.at(-1), 'Gesundheit Der Arzt sagt etwas. Noch ein Absatz.');
 });
 
-test('a section stops at the next heading of any level, not just its own', () => {
+test('a section stops at the next heading of any level, not just its own', async () => {
     // h3 Termin is followed by a deeper h4, which still ends the section.
     draw();
     click(speakButtons()[1]);
     assert.ok(!spoken.at(-1).includes('Absage'), `leaked into the next section: ${spoken.at(-1)}`);
 });
 
-test('the last section runs to the end of the passage', () => {
+test('the last section runs to the end of the passage', async () => {
     draw();
     click(speakButtons().at(-1));
     assert.equal(spoken.at(-1), 'Absage Leider muss ich absagen.');
 });
 
-test('blocks are kept apart and inline markup is not', () => {
+test('blocks are kept apart and inline markup is not', async () => {
     draw(`## Titel
 
 Ein **fetter** Satz mit *kursiv* und \`code\` darin.
@@ -152,7 +152,7 @@ Weiterer Absatz.`);
     assert.ok(text.includes('eins verschachtelt zwei'), `list items were glued together: ${text}`);
 });
 
-test('only one control at a time looks like it is playing', () => {
+test('only one control at a time looks like it is playing', async () => {
     draw();
     click(speakButtons()[1]);
     // Playback re-renders the body, so this is what the next render must restore.
@@ -162,7 +162,7 @@ test('only one control at a time looks like it is playing', () => {
     assert.equal(playing[0], speakButtons()[1]);
 });
 
-test('the card-level button does not claim a section playback', () => {
+test('the card-level button does not claim a section playback', async () => {
     // It still offers to read the whole text, so it must not show as playing.
     draw();
     click(speakButtons()[0]);
@@ -171,7 +171,7 @@ test('the card-level button does not claim a section playback', () => {
     assert.equal(getIsAudioPlaying(), false);
 });
 
-test('clicking the speaking section again stops it', () => {
+test('clicking the speaking section again stops it', async () => {
     draw();
     click(speakButtons()[0]);
     const played = spoken.length;
@@ -182,7 +182,7 @@ test('clicking the speaking section again stops it', () => {
     assert.equal(speakButtons().filter(b => b.classList.contains('playing')).length, 0);
 });
 
-test('the speak control follows the Text-to-Speech setting', () => {
+test('the speak control follows the Text-to-Speech setting', async () => {
     draw();
     AppState.ttsEnabled = false;
     redraw();

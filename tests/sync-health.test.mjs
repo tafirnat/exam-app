@@ -118,7 +118,7 @@ test('the streak survives a reload - the failure it reports outlives the session
     // Wipe the in-memory copy the way a fresh page load would.
     AppState.syncFailureCount = 0;
     AppState.syncFailureKind = null;
-    initState({ force: true });
+    await initState({ force: true });
 
     const health = sync.getSyncHealth();
     assert.equal(health.failureCount, 2);
@@ -267,7 +267,7 @@ test('the health line disappears while sync is working', async () => {
     assert.equal(healthEl.innerText, '');
 });
 
-test('a sync that never happened does not get a clock time', () => {
+test('a sync that never happened does not get a clock time', async () => {
     AppState.lastSyncTime = 0;
     sync.updateSyncUI();
 
@@ -276,7 +276,7 @@ test('a sync that never happened does not get a clock time', () => {
         'an empty backup must not read like it happened at some hour today');
 });
 
-test('a sync from an earlier day is dated, not just clocked', () => {
+test('a sync from an earlier day is dated, not just clocked', async () => {
     // A bare "14:32" is what made a five-week-old backup look like this
     // afternoon.
     AppState.lastSyncTime = Date.now() - 35 * 24 * 60 * 60 * 1000;
