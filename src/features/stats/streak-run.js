@@ -1,4 +1,4 @@
-import { AppState, UNCATEGORIZED_FOLDER_ID, clearActiveTest } from '../../core/state.js';
+import { AppState, UNCATEGORIZED_FOLDER_ID, clearActiveTest, snapshotCurrentSession } from '../../core/state.js';
 import { shuffleArraySeeded } from '../../core/utils.js';
 import { buildQuestionPool, calculateRetrievability, prepareFromCompositeIds } from '../test/test-engine.js';
 import { getLocalDateStr, getLiveFocusSources, getDailyOverdueSnapshot } from './continuity-engine.js';
@@ -265,11 +265,12 @@ export function prepareStreakRun(options = {}) {
     });
     if (compositeIds.length === 0) return null;
 
+    snapshotCurrentSession();
     clearActiveTest();
 
     // Today's target has to be pinned before the run reduces the backlog,
     // otherwise finishing it would move the bar the user is running at.
     getDailyOverdueSnapshot(AppState.rawQuestions);
 
-    return prepareFromCompositeIds(compositeIds, { shuffle: false, mode: 'streak' });
+    return prepareFromCompositeIds(compositeIds, { shuffle: false, mode: 'streak', scope });
 }

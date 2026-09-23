@@ -371,7 +371,7 @@ export function ensureTestTracking() {
  * knows to keep a streak run out of the preset sessions.
  */
 export function prepareFromCompositeIds(compositeIds, options = {}) {
-    const { shuffle = true, mode = null, retakeOfId = null, recoveringKeys = null, sourceNames, sourceTitle } = options;
+    const { shuffle = true, mode = null, scope = null, retakeOfId = null, recoveringKeys = null, sourceNames, sourceTitle } = options;
 
     const known = (compositeIds || []).filter(cid => AppState.questionMap[cid]);
     if (known.length === 0) return null;
@@ -427,6 +427,7 @@ export function prepareFromCompositeIds(compositeIds, options = {}) {
         results: []
     };
     if (mode) AppState.testTracking.mode = mode;
+    if (scope) AppState.testTracking.scope = scope;
     if (retakeOfId) AppState.testTracking.retakeOfId = retakeOfId;
     /* The questions this session is a second look at: missed in the session
        being retaken. It is a real session in every other respect - the day

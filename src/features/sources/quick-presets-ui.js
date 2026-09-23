@@ -1,4 +1,4 @@
-import { AppState, saveSources, saveQuickPresets, trackDeletedQuickPreset, savePresetSessionData, clearPresetSessionData, findMatchingPresetId, clearActiveTest } from '../../core/state.js';
+import { AppState, saveSources, saveQuickPresets, trackDeletedQuickPreset, savePresetSessionData, clearPresetSessionData, findMatchingPresetId, clearActiveTest, getActiveContextKey, getContextSession, saveContextSession, snapshotCurrentSession } from '../../core/state.js';
 import { t } from '../../core/i18n.js';
 import { showConfirm, showToast } from '../../core/utils.js';
 import { applySwatch, applyPresetBar, addCurrentAsPreset, generateAutoName } from './quick-presets.js';
@@ -48,18 +48,8 @@ export function updateQuickSourcesDot() {
 export function applyPreset(preset) {
     if (!preset || !preset.sourceIds) return;
 
-    // 1. Freeze & save current workspace environment if active sources match a preset
-    const currentPresetId = findMatchingPresetId();
-    if (currentPresetId && AppState.currentTest && AppState.currentTest.length > 0) {
-        savePresetSessionData(currentPresetId, {
-            currentTest: AppState.currentTest,
-            currentIndex: AppState.currentIndex,
-            userAnswers: AppState.userAnswers,
-            isAnswerChecked: AppState.isAnswerChecked,
-            shuffledOptionsMap: AppState.shuffledOptionsMap,
-            testTracking: AppState.testTracking
-        });
-    }
+    // 1. Freeze & save current workspace environment for active context
+    snapshotCurrentSession();
 
     // 2. Set new active sources
     const targetSet = new Set(preset.sourceIds);
@@ -76,7 +66,8 @@ export function applyPreset(preset) {
     saveSources();
 
     // 3. Restore or Reset session and land on Home view (#homeStatsCard)
-    const savedSession = AppState.presetSessions ? AppState.presetSessions[preset.id] : null;
+    const presetKey = `preset:${preset.id}`;
+    const savedSession = getContextSession(presetKey);
     if (savedSession && savedSession.currentTest && savedSession.currentTest.length > 0) {
         AppState.currentTest = savedSession.currentTest;
         AppState.currentIndex = savedSession.currentIndex || 0;
@@ -94,7 +85,7 @@ export function applyPreset(preset) {
         AppState.isAnswerChecked = {};
         AppState.shuffledOptionsMap = {};
         AppState.testTracking = null;
-        clearActiveTest();
+        clearActiveTest(null, { clearSavedSession: false });
     }
 
     if (typeof window.switchView === 'function') window.switchView('home');

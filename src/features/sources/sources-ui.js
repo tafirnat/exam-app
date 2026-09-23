@@ -1,4 +1,4 @@
-import { AppState, saveSources, saveStats, saveFolders, liveSources, liveFolders, touch, trackDeletedFolder, UNCATEGORIZED_FOLDER_ID } from '../../core/state.js';
+import { AppState, saveSources, saveStats, saveFolders, liveSources, liveFolders, touch, trackDeletedFolder, UNCATEGORIZED_FOLDER_ID, snapshotCurrentSession } from '../../core/state.js';
 import { t } from '../../core/i18n.js';
 import { showConfirm, showAlert, showToast, escapeHTML } from '../../core/utils.js';
 import { syncQuickPresetsWithLiveSources } from './quick-presets.js';
@@ -7,6 +7,7 @@ import { calculateTopicMastery } from '../stats/continuity-engine.js';
 import { FOLDER_COLORS } from './folder-hint.js';
 
 export function toggleSource(id) {
+    snapshotCurrentSession();
     let activeCount = 0;
     AppState.sources.forEach(s => {
         if (s.id === id) {

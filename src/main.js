@@ -1,4 +1,4 @@
-import { AppState, initState, saveStats, saveSources, saveCurrentSource, saveCustomAIPrompt, saveAiProviders, saveLanguageSettings, saveAiPrompts, trackDeletedAiPrompt, saveActivePromptId, saveAdhocPrompt, DEFAULT_AI_PROVIDERS, saveActiveTest, clearActiveTest, clearLocalStudyData, clearProgressData, clearSourcesData, SAMPLE_LOADED_KEY, findMatchingPresetId } from './core/state.js';
+import { AppState, initState, saveStats, saveSources, saveCurrentSource, saveCustomAIPrompt, saveAiProviders, saveLanguageSettings, saveAiPrompts, trackDeletedAiPrompt, saveActivePromptId, saveAdhocPrompt, DEFAULT_AI_PROVIDERS, saveActiveTest, clearActiveTest, clearLocalStudyData, clearProgressData, clearSourcesData, SAMPLE_LOADED_KEY, findMatchingPresetId, getActiveContextKey, getContextSession, saveContextSession, snapshotCurrentSession } from './core/state.js';
 import { DEFAULT_PROMPT_ID, ADHOC_PROMPT_ID, PROMPT_VARIABLES, listPrompts, resolveActivePrompt, defaultPromptBody, builtinPromptBody, buildPromptVars, buildQuestionAnswerText, fillTemplate, insertVariableAt } from './core/ai-prompts.js';
 import { initTheme, toggleTheme, getActiveTheme } from './core/theme.js';
 import { updateStaticTranslations, updateDocumentTitle, t, targetLanguages, translations } from './core/i18n.js';
@@ -2488,14 +2488,46 @@ async function startTest() {
  * answering "which preset is selected", not "what changed".
  */
 function checkActiveTest() {
-    const matchedPresetId = findMatchingPresetId();
-    if (matchedPresetId && AppState.presetSessions && AppState.presetSessions[matchedPresetId]) {
+    const contextKey = getActiveContextKey();
+    const savedSession = contextKey ? getContextSession(contextKey) : null;
+
+    if (savedSession && Array.isArray(savedSession.currentTest) && savedSession.currentTest.length > 0) {
+        AppState.currentTest = savedSession.currentTest;
+        AppState.currentIndex = savedSession.currentIndex || 0;
+        AppState.userAnswers = savedSession.userAnswers || {};
+        AppState.isAnswerChecked = savedSession.isAnswerChecked || {};
+        AppState.shuffledOptionsMap = savedSession.shuffledOptionsMap || {};
+        AppState.testTracking = savedSession.testTracking || null;
+
         persist('focus_app_active_test', {
-            ...AppState.presetSessions[matchedPresetId],
+            ...savedSession,
             deviceId: AppState.deviceId || null,
             updatedAt: Date.now()
         });
         emit(Slice.ACTIVE_TEST);
+    } else {
+        // No saved session for the active context.
+        // If an active test exists in memory from a different context, demote it without wiping its saved contextSession!
+        if (AppState.currentTest && AppState.currentTest.length > 0) {
+            const currentMemKey = getActiveContextKey(AppState.testTracking);
+            if (currentMemKey !== contextKey) {
+                AppState.currentTest = [];
+                AppState.currentIndex = 0;
+                AppState.userAnswers = {};
+                AppState.isAnswerChecked = {};
+                AppState.shuffledOptionsMap = {};
+                AppState.testTracking = null;
+                clearActiveTest(null, { clearSavedSession: false });
+            }
+        }
+        // If an active test exists on disk that belongs to a different context, demote it without wiping its saved contextSession!
+        const activeData = readJSON('focus_app_active_test', null);
+        if (activeData && Array.isArray(activeData.currentTest) && activeData.currentTest.length > 0) {
+            const activeDataKey = getActiveContextKey(activeData.testTracking);
+            if (activeDataKey !== contextKey) {
+                clearActiveTest(null, { clearSavedSession: false });
+            }
+        }
     }
 
     /* Drawn straight away rather than left to the emit above, because the
@@ -2517,12 +2549,8 @@ function resumeActiveTest() {
     AppState.shuffledOptionsMap = activeData.shuffledOptionsMap;
     AppState.testTracking = activeData.testTracking;
 
-    // A streak run is drawn from the whole library, so its ids may point at
-    // sources that are not currently active. buildQuestionPool always maps every
-    // live source, which is what makes those ids resolvable on the way back in.
-    if (AppState.rawQuestions.length === 0 || activeData.testTracking?.mode === 'streak') {
-        buildQuestionPool({ scope: activeData.testTracking?.mode === 'streak' ? 'all' : 'active' });
-    }
+    // Ensure the question pool and map are ready for the resumed session
+    buildQuestionPool({ scope: activeData.testTracking?.mode === 'streak' ? 'all' : 'active' });
 
     switchView('test');
     renderQuestion();

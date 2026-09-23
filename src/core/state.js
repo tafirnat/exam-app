@@ -207,6 +207,7 @@ export const AppState = {
     // and continuity data from a remote Gist overwriting a deliberate clear.
     lastProgressResetTimestamp: 0,
     presetSessions: {},
+    contextSessions: {},
     continuityConfig: createDefaultContinuityConfig(),
     studyActivity: {}
 };
@@ -243,6 +244,22 @@ async function loadFoldersAsync() {
 
     await persistIfChangedAsync('focus_app_folders', folders);
     return folders;
+}
+
+async function loadContextSessionsAsync() {
+    let sessions = await readJSONAsync('focus_app_context_sessions', null);
+    if (!sessions || typeof sessions !== 'object') {
+        sessions = {};
+        const legacyPresets = await readJSONAsync('focus_app_preset_sessions', {});
+        if (legacyPresets && typeof legacyPresets === 'object') {
+            Object.entries(legacyPresets).forEach(([pId, data]) => {
+                if (data && Array.isArray(data.currentTest) && data.currentTest.length > 0) {
+                    sessions[`preset:${pId}`] = data;
+                }
+            });
+        }
+    }
+    return sessions;
 }
 
 let stateInitialized = false;
@@ -314,6 +331,7 @@ export async function initState({ force = false } = {}) {
         lastResetTimestamp: await readIntAsync('focus_app_last_reset', 0),
         lastProgressResetTimestamp: await readIntAsync('focus_app_last_progress_reset', 0),
         presetSessions: await readJSONAsync('focus_app_preset_sessions', {}),
+        contextSessions: await loadContextSessionsAsync(),
         continuityConfig: await readJSONAsync('focus_app_continuity_config', createDefaultContinuityConfig()),
         studyActivity: await readJSONAsync('focus_app_study_activity', {}),
         settingsRevisions: await readJSONAsync('focus_app_settings_revisions', {}),
@@ -438,6 +456,7 @@ export function clearLocalStudyData() {
     AppState.deletedQuickPresetIds = allDeletedPresetIds;
     AppState.currentSourceKey = null;
     AppState.presetSessions = {};
+    AppState.contextSessions = {};
     /* `aiPrompts` is deliberately NOT cleared here or in the other two resets.
        It has quickPresets' shape and sits next to it in the payload, so it is
        the obvious thing to sweep in alongside - but a prompt is a tool the user
@@ -463,6 +482,7 @@ export function clearLocalStudyData() {
     AppState.lastProgressResetTimestamp = AppState.lastResetTimestamp;
 
     persistRemoveAsync('focus_app_preset_sessions');
+    persistRemoveAsync('focus_app_context_sessions');
     persistAsync('focus_app_folders', AppState.folders);
     persistAsync('focus_app_sources', AppState.sources);
     persistRemoveAsync('focus_app_stats_local');
@@ -507,6 +527,7 @@ export function clearProgressData() {
     AppState.stats = {};
     AppState.recentTests = [];
     AppState.presetSessions = {};
+    AppState.contextSessions = {};
     AppState.studyActivity = {};
     /* A progress reset clears the streak, not the setup: the chosen focus
        sources and the notification preferences are configuration the user made
@@ -533,6 +554,7 @@ export function clearProgressData() {
     persistRemoveAsync('focus_app_stats_global');
     persistRemoveAsync('focus_app_recent_tests');
     persistRemoveAsync('focus_app_preset_sessions');
+    persistRemoveAsync('focus_app_context_sessions');
     persistRemoveAsync('focus_app_study_activity');
     /* Stamped like any other edit, because that is what it is. The
        lastProgressResetTimestamp guard in the sync merge only holds until this
@@ -589,9 +611,11 @@ export function clearSourcesData() {
     AppState.deletedQuickPresetIds = allDeletedPresetIds;
     AppState.currentSourceKey = null;
     AppState.presetSessions = {};
+    AppState.contextSessions = {};
     AppState.lastResetTimestamp = Date.now();
 
     persistRemoveAsync('focus_app_preset_sessions');
+    persistRemoveAsync('focus_app_context_sessions');
     persistAsync('focus_app_folders', AppState.folders);
     persistAsync('focus_app_sources', AppState.sources);
     persistAsync('focus_app_quick_presets', []);
@@ -616,17 +640,116 @@ export function savePresetSessions() {
     return true;
 }
 
+export function saveContextSessions() {
+    persistAsync('focus_app_context_sessions', AppState.contextSessions || {});
+    emit(Slice.PRESETS);
+    return true;
+}
+
+export function saveContextSession(contextKey, sessionData) {
+    if (!contextKey || !sessionData) return;
+    if (!AppState.contextSessions) AppState.contextSessions = {};
+    AppState.contextSessions[contextKey] = {
+        ...sessionData,
+        contextKey,
+        updatedAt: Date.now()
+    };
+    if (contextKey.startsWith('preset:')) {
+        const pId = contextKey.slice('preset:'.length);
+        if (!AppState.presetSessions) AppState.presetSessions = {};
+        AppState.presetSessions[pId] = sessionData;
+        persistAsync('focus_app_preset_sessions', AppState.presetSessions);
+    }
+    saveContextSessions();
+}
+
+export function getContextSession(contextKey) {
+    if (!contextKey || !AppState.contextSessions) return null;
+    const session = AppState.contextSessions[contextKey];
+    if (session && Array.isArray(session.currentTest) && session.currentTest.length > 0) {
+        return session;
+    }
+    if (contextKey.startsWith('preset:')) {
+        const pId = contextKey.slice('preset:'.length);
+        const legacy = AppState.presetSessions ? AppState.presetSessions[pId] : null;
+        if (legacy && Array.isArray(legacy.currentTest) && legacy.currentTest.length > 0) {
+            return legacy;
+        }
+    }
+    return null;
+}
+
+export function clearContextSession(contextKey) {
+    if (!contextKey || !AppState.contextSessions) return;
+    delete AppState.contextSessions[contextKey];
+    if (contextKey.startsWith('preset:')) {
+        const pId = contextKey.slice('preset:'.length);
+        if (AppState.presetSessions) {
+            delete AppState.presetSessions[pId];
+            persistAsync('focus_app_preset_sessions', AppState.presetSessions);
+        }
+    }
+    saveContextSessions();
+}
+
 export function savePresetSessionData(presetId, sessionData) {
     if (!presetId) return;
     if (!AppState.presetSessions) AppState.presetSessions = {};
     AppState.presetSessions[presetId] = sessionData;
-    savePresetSessions();
+    saveContextSession(`preset:${presetId}`, sessionData);
 }
 
 export function clearPresetSessionData(presetId) {
-    if (!presetId || !AppState.presetSessions) return;
-    delete AppState.presetSessions[presetId];
-    savePresetSessions();
+    if (!presetId) return;
+    if (AppState.presetSessions) delete AppState.presetSessions[presetId];
+    clearContextSession(`preset:${presetId}`);
+}
+
+/**
+ * Resolves the deterministic context key for the current or given test session.
+ * 
+ * Hierarchy:
+ * 1. Streak mode: 'streak:focus' or 'streak:global'
+ * 2. Matched Quick Preset: 'preset:<presetId>'
+ * 3. Single active source: 'source:<sourceId>'
+ * 4. Custom active sources combo: 'combo:<sId1>+<sId2>+...'
+ * 5. Fallback / none: null
+ */
+export function getActiveContextKey(tracking = null) {
+    const effectiveTracking = tracking || (AppState.currentTest?.length > 0 ? AppState.testTracking : null);
+    if (effectiveTracking?.mode === 'streak') {
+        const scope = effectiveTracking.scope === 'focus' ? 'focus' : 'global';
+        return `streak:${scope}`;
+    }
+
+    const matchedPresetId = findMatchingPresetId();
+    if (matchedPresetId) {
+        return `preset:${matchedPresetId}`;
+    }
+
+    const activeSources = (AppState.sources || []).filter(s => s.active && !s.archived);
+    const activeIds = activeSources.map(s => s.id).sort();
+    if (activeIds.length === 0) return null;
+    if (activeIds.length === 1) return `source:${activeIds[0]}`;
+    return `combo:${activeIds.join('+')}`;
+}
+
+export function snapshotCurrentSession() {
+    if (AppState.currentTest && AppState.currentTest.length > 0) {
+        const currentContextKey = getActiveContextKey(AppState.testTracking);
+        if (currentContextKey) {
+            saveContextSession(currentContextKey, {
+                currentTest: AppState.currentTest,
+                currentIndex: AppState.currentIndex,
+                userAnswers: AppState.userAnswers,
+                isAnswerChecked: AppState.isAnswerChecked,
+                shuffledOptionsMap: AppState.shuffledOptionsMap,
+                testTracking: AppState.testTracking || null,
+                deviceId: AppState.deviceId || null,
+                updatedAt: Date.now()
+            });
+        }
+    }
 }
 
 export function findMatchingPresetId() {
@@ -1080,16 +1203,9 @@ export function saveActiveTest() {
         emit(Slice.ACTIVE_TEST);
         import('./github-sync.js').then(m => m.scheduleSync(3000, m.SyncScope.PROGRESS)).catch(() => {});
 
-        // A streak run is drawn from the whole library, so it belongs to no
-        // preset. Filing it under whichever preset happens to match the active
-        // sources would overwrite that preset's own saved session.
-        if (activeData.testTracking?.mode === 'streak') return;
-
-        const matchedPresetId = findMatchingPresetId();
-        if (matchedPresetId) {
-            if (activeData.currentTest && activeData.currentTest.length > 0) {
-                savePresetSessionData(matchedPresetId, activeData);
-            }
+        const contextKey = getActiveContextKey(activeData.testTracking);
+        if (contextKey && activeData.currentTest && activeData.currentTest.length > 0) {
+            saveContextSession(contextKey, activeData);
         }
     }, 300);
 }
@@ -1107,16 +1223,7 @@ export function saveActiveTest() {
  * Readers already treat it correctly: both checkActiveTest() and
  * resumeActiveTest() key off currentTest having entries, and this has none.
  */
-export function clearActiveTest() {
-    /* The debounced write above is the one thing that can outlive the test it
-       belongs to. saveActiveTest() fires on every answer and every navigation,
-       so a finish that lands inside that 300ms window used to be followed by a
-       write that put the just-filed session back on disk as a resumable one -
-       overwriting this tombstone, with testTracking already nulled by
-       finishTest()'s finally. Measured: tombstone written, 300ms later a record
-       with ten question ids and no tracking record. What the user sees is a
-       finished test offering to resume, and a session that cannot be finished
-       again because finishTest() returns early without a tracking record. */
+export function clearActiveTest(contextKeyToClear = null, { clearSavedSession = true } = {}) {
     clearTimeout(_saveActiveTestTimer);
     _saveActiveTestTimer = null;
 
@@ -1127,4 +1234,11 @@ export function clearActiveTest() {
     });
     emit(Slice.ACTIVE_TEST);
     import('./github-sync.js').then(m => m.scheduleSync(300, m.SyncScope.PROGRESS)).catch(() => {});
+
+    if (clearSavedSession) {
+        const key = contextKeyToClear || getActiveContextKey(AppState.testTracking);
+        if (key) {
+            clearContextSession(key);
+        }
+    }
 }
