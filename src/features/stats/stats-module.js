@@ -168,14 +168,34 @@ export function renderStatsList(filter = 'all', searchKeyword = '') {
         const rawKw = searchKeyword.trim();
         if (rawKw.startsWith('$')) {
             // Source scope search: "$Kaynak Adı" limits results to that source only.
+            // Multiple sources can be separated by '|' or '&' (e.g. "$A | $B", "$A & $B")
             // Archived sources never enter the pool (filterSources comes from liveSources()).
-            const srcKw = rawKw.slice(1).trim().toLowerCase();
-            if (srcKw !== '') {
-                const srcParts = srcKw.split('&').map(s => s.trim()).filter(s => s);
+            const cleanKw = rawKw.replace(/^\$/, '').trim();
+            const live = liveSources();
+            const exactMatch = live.find(s => s.name.toLowerCase() === cleanKw.toLowerCase() || String(s.id).toLowerCase() === cleanKw.toLowerCase());
+            let srcParts = [];
+
+            if (exactMatch) {
+                srcParts = [exactMatch.name.toLowerCase(), String(exactMatch.id).toLowerCase()];
+            } else if (rawKw.includes('|')) {
+                srcParts = rawKw
+                    .split('|')
+                    .map(s => s.trim().replace(/^\$/, '').trim().toLowerCase())
+                    .filter(Boolean);
+            } else if (rawKw.includes('&')) {
+                srcParts = rawKw
+                    .split('&')
+                    .map(s => s.trim().replace(/^\$/, '').trim().toLowerCase())
+                    .filter(Boolean);
+            } else if (cleanKw !== '') {
+                srcParts = [cleanKw.toLowerCase()];
+            }
+
+            if (srcParts.length > 0) {
                 filteredQuestions = filteredQuestions.filter(q => {
                     const qId = String(q.sourceId).toLowerCase();
                     const qName = String(q.sourceName || '').toLowerCase();
-                    return srcParts.some(part => qId === part || qName.includes(part));
+                    return srcParts.some(part => qId === part || qName === part || qName.includes(part));
                 });
             }
         } else if (rawKw.startsWith('#')) {
@@ -433,8 +453,27 @@ function updateStatsFooter(filter, keyword, count, questions = []) {
     const rawKw = (keyword || '').trim();
 
     if (rawKw.startsWith('$')) {
-        // Source scope: strip $ prefix and split by &
-        const sources = rawKw.slice(1).split('&').map(s => s.trim()).filter(s => s);
+        // Source scope: strip $ prefix and split by | or &
+        const cleanKw = rawKw.replace(/^\$/, '').trim();
+        const live = liveSources();
+        const exactMatch = live.find(s => s.name.toLowerCase() === cleanKw.toLowerCase() || String(s.id).toLowerCase() === cleanKw.toLowerCase());
+        let sources = [];
+
+        if (exactMatch) {
+            sources = [exactMatch.name];
+        } else if (rawKw.includes('|')) {
+            sources = rawKw
+                .split('|')
+                .map(s => s.trim().replace(/^\$/, '').trim())
+                .filter(Boolean);
+        } else if (rawKw.includes('&')) {
+            sources = rawKw
+                .split('&')
+                .map(s => s.trim().replace(/^\$/, '').trim())
+                .filter(Boolean);
+        } else if (cleanKw !== '') {
+            sources = [cleanKw];
+        }
         scopeName = sources.length > 0 ? sources.join(', ') : t('stats_scope_all_label');
     } else if (rawKw.startsWith('#')) {
         // Tag scope: strip # prefix to get clean tag name

@@ -90,6 +90,13 @@ test('inspectSourceQuestions leaves the header toggle alone', async () => {
     assert.deepEqual(rowTexts().sort(), ['c1', 'c2']);
 });
 
+test('inspectSourceQuestions with multiple sources displays questions from all selected sources', async () => {
+    global.window.switchView = () => {};
+    inspectSourceQuestions(['exam_beta_2_b', 'exam_gamma_3_c']);
+    assert.equal(document.getElementById('statsSearchInput').value, '$Beta | $Gamma');
+    assert.deepEqual(rowTexts().sort(), ['b1', 'c1', 'c2']);
+});
+
 /* --- what a filter click keeps ------------------------------------------- */
 
 test('a filter button keeps a source scope and drops everything else', async () => {
