@@ -344,10 +344,23 @@ export function showSourceActions(source) {
     const editBtn = document.getElementById('modalEditMetadataBtn');
     const closeBtn = document.getElementById('sourceActionsCloseBtn');
 
+    const isBulk = selectionModeFolderId && selectedSourceIds.size > 0 && selectedSourceIds.has(source.id);
+    const targetIds = isBulk ? Array.from(selectedSourceIds) : [source.id];
+
     if (!overlay || !nameEl || !resetBtn || !downloadBtn || !shareBtn || !editBtn || !closeBtn) return;
 
-    nameEl.textContent = source.name;
+    nameEl.textContent = isBulk ? t('bulk_selected', { count: targetIds.length }) || `${targetIds.length} Kaynak Seçildi` : source.name;
     overlay.classList.add('active');
+    
+    // Hide single-source actions in bulk mode
+    resetBtn.style.display = isBulk ? 'none' : '';
+    downloadBtn.style.display = isBulk ? 'none' : '';
+    shareBtn.style.display = isBulk ? 'none' : '';
+    editBtn.style.display = isBulk ? 'none' : '';
+    
+    const inspectBtn = document.getElementById('modalInspectQuestionsBtn');
+    if (inspectBtn) inspectBtn.style.display = isBulk ? 'none' : '';
+
 
     // Add Move to Folder logic dynamically
     let moveContainer = document.getElementById('moveToFolderContainer');
@@ -393,15 +406,30 @@ export function showSourceActions(source) {
                closed the dialog without moving anything. */
             if (!val) return;
             if (val === 'root') {
-                source.folderId = null;
+                targetIds.forEach(id => {
+                    const s = AppState.sources.find(src => src.id === id);
+                    if (s) s.folderId = null;
+                });
             } else if (val) {
-                source.folderId = val;
+                targetIds.forEach(id => {
+                    const s = AppState.sources.find(src => src.id === id);
+                    if (s) s.folderId = val;
+                });
             }
-            source.order = liveSources().filter(s => s.folderId === source.folderId).length;
-            touch(source);
+            // Fix orders in destination folder
+            const destId = val === 'root' ? null : val;
+            const destSources = liveSources().filter(s => s.folderId === destId);
+            destSources.forEach((s, idx) => s.order = idx);
+            
+            targetIds.forEach(id => {
+                const s = AppState.sources.find(src => src.id === id);
+                if (s) touch(s);
+            });
+            
             saveSources();
             renderSourcesList();
             overlay.classList.remove('active');
+            if (isBulk) exitSelectionMode();
         };
     } else {
         moveContainer.style.display = 'none';
@@ -435,6 +463,7 @@ export function showSourceActions(source) {
     const inspectQuestionsBtn = document.getElementById('modalInspectQuestionsBtn');
     if (inspectQuestionsBtn) {
         inspectQuestionsBtn.onclick = async () => {
+            if (isBulk) return;
             closeActions();
             const { inspectSourceQuestions } = await import('../stats/stats-module.js');
             inspectSourceQuestions(source.id);
@@ -442,6 +471,7 @@ export function showSourceActions(source) {
     }
 
     const toggleOrderBtn = document.getElementById('modalToggleOrderBtn');
+    if (toggleOrderBtn) toggleOrderBtn.style.display = isBulk ? 'none' : '';
     const toggleOrderLabel = document.getElementById('modalToggleOrderLabel');
     const toggleOrderIconContainer = document.getElementById('modalToggleOrderIconContainer');
 
@@ -474,7 +504,9 @@ export function showSourceActions(source) {
     }
 
     if (toggleQaBtn) {
+        toggleQaBtn.style.display = isBulk ? 'none' : '';
         toggleQaBtn.onclick = async () => {
+            if (isBulk) return;
             closeActions();
             const { showSourceQuickPresetsModal } = await import('./quick-presets-ui.js');
             showSourceQuickPresetsModal(source);
@@ -483,7 +515,9 @@ export function showSourceActions(source) {
 
     const focusPoolBtn = document.getElementById('modalFocusPoolBtn');
     if (focusPoolBtn) {
+        focusPoolBtn.style.display = isBulk ? 'none' : '';
         focusPoolBtn.onclick = async () => {
+            if (isBulk) return;
             closeActions();
             const { showFocusPoolModal } = await import('./focus-pools-ui.js');
             showFocusPoolModal({ id: source.id, name: source.name, type: 'source' });
@@ -499,15 +533,30 @@ export function showSourceActions(source) {
         archiveBtn.onclick = async () => {
             closeActions();
             const { archiveSource } = await import('./archive.js');
-            await archiveSource(source.id);
+            for (const id of targetIds) {
+                await archiveSource(id);
+            }
+            if (isBulk) exitSelectionMode();
         };
     }
 
     const deleteBtn = document.getElementById('modalDeleteBtn');
     if (deleteBtn) {
-        deleteBtn.onclick = () => {
+        deleteBtn.onclick = async () => {
             closeActions();
-            removeSource(source.id);
+            if (isBulk) {
+                const confMsg = t('bulk_delete_confirm', { count: targetIds.length }) || `Seçili ${targetIds.length} kaynağı silmek istediğinize emin misiniz?`;
+                if (!await showConfirm(confMsg)) return;
+                targetIds.forEach(id => purgeSource(id));
+                const { saveRecentTests } = await import('../../core/state.js');
+                saveRecentTests();
+                saveSources();
+                renderSourcesList();
+                showAlert(t('bulk_deleted_msg', { count: targetIds.length }) || `${targetIds.length} kaynak silindi.`, t('info_title'));
+                exitSelectionMode();
+            } else {
+                removeSource(source.id);
+            }
         };
     }
 
@@ -976,7 +1025,20 @@ function moveSourceToFolder(draggedId, folderId) {
 }
 
 const folderSortStates = new Map();
+let selectionModeFolderId = null;
+const selectedSourceIds = new Set();
 
+export function exitSelectionMode() {
+    selectionModeFolderId = null;
+    selectedSourceIds.clear();
+    renderSourcesList();
+}
+
+function enterSelectionMode(folderId) {
+    selectionModeFolderId = folderId;
+    selectedSourceIds.clear();
+    renderSourcesList();
+}
 export function renderSourcesList() {
     const container = document.getElementById('sourcesList');
     if (!container) return;
@@ -1137,17 +1199,40 @@ export function renderSourcesList() {
             renderSourcesList();
         };
 
+        const isSelectionMode = selectionModeFolderId === folder.id;
+        const multiSelectBtn = document.createElement('button');
+        multiSelectBtn.className = 'icon-btn';
+        multiSelectBtn.title = isSelectionMode ? (t('cancel') || 'İptal') : (t('select_multiple') || 'Çoklu Seçim');
+        
+        if (isSelectionMode) {
+            multiSelectBtn.innerHTML = `<svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="var(--danger-color, #ef4444)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>`;
+        } else {
+            multiSelectBtn.innerHTML = `<svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="opacity: ${folderHasActive ? '0.7' : '0.4'};"><polyline points="9 11 12 14 22 4"></polyline><path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"></path></svg>`;
+        }
+
+        multiSelectBtn.onclick = (e) => {
+            e.stopPropagation();
+            if (isSelectionMode) {
+                exitSelectionMode();
+            } else {
+                enterSelectionMode(folder.id);
+            }
+        };
+
         const actionsDiv = document.createElement('div');
         actionsDiv.style.display = 'flex';
         actionsDiv.style.alignItems = 'center';
         actionsDiv.style.gap = '0.25rem';
         actionsDiv.appendChild(countDiv);
+        
         if (folderSourcesCount >= 2) {
+            actionsDiv.appendChild(multiSelectBtn);
             actionsDiv.appendChild(sortBtn);
         } else {
-            // Adjust countDiv right position if sortBtn is not shown
+            // Adjust countDiv right position if extra buttons are not shown
             countDiv.style.right = '50px';
         }
+        
         actionsDiv.appendChild(editBtn);
         
         header.appendChild(titleDiv);
@@ -1205,20 +1290,66 @@ function createSourceItemDOM(s, folderId) {
     item.style.webkitUserSelect = 'none';
     item.style.webkitTouchCallout = 'none';
     
-    // Drag handlers (drag is only armed from the grip, see createDragHandle)
-    item.addEventListener('mousedown', (e) => {
-        if (!e.target.closest('.drag-handle')) disarmRow();
-    });
-    item.ondragstart = (e) => handleDragStart(e, s, 'source', folderId, item);
-    item.ondragend = handleDragEnd;
+    const isSelectionMode = selectionModeFolderId === folderId;
+    const isSelected = selectedSourceIds.has(s.id);
+    
+    // Selection mode styling
+    if (isSelectionMode) {
+        item.style.borderColor = isSelected ? 'var(--primary-color)' : 'var(--border-color)';
+        if (isSelected) {
+            item.style.backgroundColor = 'rgba(var(--primary-rgb, 59, 130, 246), 0.1)';
+        }
+    }
 
-    const grip = createDragHandle(item);
+    // Drag handlers (drag is only armed from the grip, see createDragHandle)
+    if (!isSelectionMode) {
+        item.addEventListener('mousedown', (e) => {
+            if (!e.target.closest('.drag-handle')) disarmRow();
+        });
+        item.ondragstart = (e) => handleDragStart(e, s, 'source', folderId, item);
+        item.ondragend = handleDragEnd;
+    }
+
+    let grip;
+    if (isSelectionMode) {
+        grip = document.createElement('div');
+        grip.style.flexShrink = '0';
+        grip.style.width = '24px';
+        grip.style.height = '24px';
+        grip.style.borderRadius = '4px';
+        grip.style.display = 'flex';
+        grip.style.alignItems = 'center';
+        grip.style.justifyContent = 'center';
+        grip.style.border = `2px solid ${isSelected ? 'var(--primary-color)' : 'var(--border-color)'}`;
+        grip.style.backgroundColor = isSelected ? 'var(--primary-color)' : 'transparent';
+        grip.style.cursor = 'pointer';
+        grip.innerHTML = isSelected 
+            ? '<svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="#fff" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"></polyline></svg>'
+            : '';
+        grip.onclick = (e) => {
+            e.stopPropagation();
+            if (isSelected) selectedSourceIds.delete(s.id);
+            else selectedSourceIds.add(s.id);
+            renderSourcesList();
+        };
+    } else {
+        grip = createDragHandle(item);
+    }
 
     const info = document.createElement('div');
     info.style.flex = '1';
     info.style.cursor = 'pointer';
     info.style.minWidth = '0';
-    info.onclick = () => toggleSource(s.id);
+    
+    info.onclick = () => {
+        if (isSelectionMode) {
+            if (isSelected) selectedSourceIds.delete(s.id);
+            else selectedSourceIds.add(s.id);
+            renderSourcesList();
+        } else {
+            toggleSource(s.id);
+        }
+    };
 
     const isUrl = s.origin?.type === 'url';
     const displayPath = s.origin?.display || 'local';
