@@ -352,10 +352,8 @@ export function showSourceActions(source) {
     nameEl.textContent = isBulk ? t('bulk_selected', { count: targetIds.length }) || `${targetIds.length} Kaynak Seçildi` : source.name;
     overlay.classList.add('active');
     
-    // Hide single-source actions in bulk mode
-    resetBtn.style.display = isBulk ? 'none' : '';
-    downloadBtn.style.display = isBulk ? 'none' : '';
-    shareBtn.style.display = isBulk ? 'none' : '';
+    // Ensure edit button is properly hidden in bulk mode
+    // (Previous logic removed the 'none' display for bulk, which we don't want for editBtn)
     editBtn.style.display = isBulk ? 'none' : '';
     
     const inspectBtn = document.getElementById('modalInspectQuestionsBtn');
@@ -385,10 +383,19 @@ export function showSourceActions(source) {
        bucket of its own. Same filter the reset paths use. */
     const selectableFolders = liveFolders().filter(f => !f.isSystem && f.id !== UNCATEGORIZED_FOLDER_ID);
     if (selectableFolders.length > 0) {
+        let commonFolderId = undefined;
+        if (isBulk && targetIds.length > 0) {
+            const folders = targetIds.map(id => AppState.sources.find(s => s.id === id)?.folderId);
+            const allSame = folders.every(f => f === folders[0]);
+            if (allSame) commonFolderId = folders[0];
+        } else {
+            commonFolderId = source.folderId;
+        }
+
         let optionsHtml = `<option value="">-- ${t('move_to_folder')} --</option>`;
-        optionsHtml += `<option value="root" ${!source.folderId ? 'selected' : ''}>${t('root_folder')}</option>`;
+        optionsHtml += `<option value="root" ${!commonFolderId ? 'selected' : ''}>${t('root_folder')}</option>`;
         selectableFolders.forEach(f => {
-            optionsHtml += `<option value="${escapeHTML(f.id)}" ${source.folderId === f.id ? 'selected' : ''}>${escapeHTML(f.name)}</option>`;
+            optionsHtml += `<option value="${escapeHTML(f.id)}" ${commonFolderId === f.id ? 'selected' : ''}>${escapeHTML(f.name)}</option>`;
         });
         
         moveContainer.innerHTML = `
