@@ -36,7 +36,7 @@ before(async () => {
     tomb = await import('../src/core/source-tombstones.js');
 });
 
-function freshDevice() {
+async function freshDevice() {
     sync._resetSyncQueue();
     localStorage.clear();
     await initState({ force: true });
@@ -54,7 +54,7 @@ function freshDevice() {
     AppState.lastProgressResetTimestamp = 0;
 }
 
-beforeEach(() => freshDevice());
+beforeEach(async () => await freshDevice());
 
 const userFolders = () => AppState.folders.filter(f => f.id !== UNCATEGORIZED_FOLDER_ID);
 const question = { id: 'q1', type: 'single_choice', content: { text: 'Q?' },

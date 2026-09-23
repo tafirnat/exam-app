@@ -1,4 +1,4 @@
-import { AppState, saveStats, saveRecentTests, saveActiveTest, clearActiveTest, saveSources, clearPresetSessionData, findMatchingPresetId, touch } from '../../core/state.js';
+import { AppState, saveStats, saveRecentTests, saveActiveTest, clearActiveTest, saveSources, clearPresetSessionData, findMatchingPresetId, getActiveContextKey, touch } from '../../core/state.js';
 import { shuffleArray, getCorrectAnswers } from '../../core/utils.js';
 import { getQuestionCategory } from '../../core/question-rules.js';
 import { isSuspended } from '../../core/leech.js';
@@ -278,6 +278,11 @@ export function prepareTest(count, options = {}) {
        in as Infinity, and a focus pool can push the selection past `count`;
        either way the record has to describe the session that exists. */
     startTestTracking(AppState.currentTest.length);
+    const currentContextKey = getActiveContextKey();
+    if (AppState.testTracking) {
+        AppState.testTracking.contextKey = currentContextKey;
+    }
+    AppState.contextKey = currentContextKey;
 
     return AppState.currentTest;
 }
@@ -429,6 +434,12 @@ export function prepareFromCompositeIds(compositeIds, options = {}) {
     if (mode) AppState.testTracking.mode = mode;
     if (scope) AppState.testTracking.scope = scope;
     if (retakeOfId) AppState.testTracking.retakeOfId = retakeOfId;
+
+    const currentContextKey = mode === 'streak' ? `streak:${scope || 'global'}` : getActiveContextKey();
+    if (AppState.testTracking) {
+        AppState.testTracking.contextKey = currentContextKey;
+    }
+    AppState.contextKey = currentContextKey;
     /* The questions this session is a second look at: missed in the session
        being retaken. It is a real session in every other respect - the day
        counts it, it files its own history entry - but a right answer to one of

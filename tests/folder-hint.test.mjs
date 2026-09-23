@@ -29,7 +29,7 @@ before(async () => {
 });
 
 /** A fresh, empty library on "a device". */
-function freshDevice() {
+async function freshDevice() {
     localStorage.clear();
     await initState({ force: true });
     AppState.sources.length = 0;
@@ -39,7 +39,7 @@ function freshDevice() {
     AppState.deletedQuickPresetIds = [];
 }
 
-beforeEach(() => freshDevice());
+beforeEach(async () => await freshDevice());
 
 let seq = 0;
 function dataSet({ title = `Set ${++seq}`, folder, folderId, id } = {}) {

@@ -69,7 +69,7 @@ const BINDINGS = [
            had already been finished elsewhere - and a page refresh was the only
            way to find out. */
         name: 'home:resume',
-        slices: [Slice.ACTIVE_TEST],
+        slices: [Slice.ACTIVE_TEST, Slice.SOURCES, Slice.PRESETS],
         run: renderResumeButton,
         views: [View.HOME]
     },

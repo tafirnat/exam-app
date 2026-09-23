@@ -1,5 +1,5 @@
 
-import { AppState, saveStats, saveSources } from '../../core/state.js';
+import { AppState, saveStats, saveSources, getActiveContextKey, getSessionContextKey } from '../../core/state.js';
 import { readJSON } from '../../core/storage.js';
 import { translateText, showToast, showConfirm, getCorrectAnswers, escapeHTML } from '../../core/utils.js';
 import { t, targetLanguages, updateDocumentTitle } from '../../core/i18n.js';
@@ -1684,7 +1684,15 @@ export function updateFooterTags(tags, containerId) {
  */
 export function renderResumeButton() {
     const activeData = readJSON('focus_app_active_test', null);
-    const resumable = !!(activeData && Array.isArray(activeData.currentTest) && activeData.currentTest.length > 0);
+    let resumable = !!(activeData && Array.isArray(activeData.currentTest) && activeData.currentTest.length > 0 && !activeData.cleared);
+
+    if (resumable) {
+        const activeContextKey = getActiveContextKey();
+        const sessionContextKey = getSessionContextKey(activeData);
+        if (activeContextKey && sessionContextKey && activeContextKey !== sessionContextKey) {
+            resumable = false;
+        }
+    }
 
     const resumeBtn = document.getElementById('resumeBtn');
     const startBtn = document.getElementById('startBtn');

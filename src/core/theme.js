@@ -26,9 +26,17 @@ export function initTheme() {
 export function toggleTheme() {
     const current = document.documentElement.getAttribute('data-theme');
     const next = current === 'dark' ? 'light' : 'dark';
+    if (document.body) {
+        document.body.classList.add('theme-transitioning');
+    }
     document.documentElement.setAttribute('data-theme', next);
     persist(THEME_KEY, next);
     updateThemeUI(next);
+    setTimeout(() => {
+        if (document.body) {
+            document.body.classList.remove('theme-transitioning');
+        }
+    }, 350);
 }
 
 export function updateThemeUI(theme) {

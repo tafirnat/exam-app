@@ -208,6 +208,7 @@ export const AppState = {
     lastProgressResetTimestamp: 0,
     presetSessions: {},
     contextSessions: {},
+    contextKey: null,
     continuityConfig: createDefaultContinuityConfig(),
     studyActivity: {}
 };
@@ -716,9 +717,13 @@ export function clearPresetSessionData(presetId) {
  * 5. Fallback / none: null
  */
 export function getActiveContextKey(tracking = null) {
-    const effectiveTracking = tracking || (AppState.currentTest?.length > 0 ? AppState.testTracking : null);
-    if (effectiveTracking?.mode === 'streak') {
-        const scope = effectiveTracking.scope === 'focus' ? 'focus' : 'global';
+    if (tracking) {
+        const fromTracking = getSessionContextKey({ testTracking: tracking });
+        if (fromTracking) return fromTracking;
+    }
+
+    if (AppState.testTracking?.mode === 'streak') {
+        const scope = AppState.testTracking.scope === 'focus' ? 'focus' : 'global';
         return `streak:${scope}`;
     }
 
@@ -734,17 +739,82 @@ export function getActiveContextKey(tracking = null) {
     return `combo:${activeIds.join('+')}`;
 }
 
+/**
+ * Accurately determines which context a specific test session belongs to.
+ * Checks session.contextKey, tracking mode/scope, and introspects question composite IDs
+ * to extract the actual source IDs the test was generated from.
+ */
+export function getSessionContextKey(session) {
+    if (!session) return null;
+    if (session.contextKey) return session.contextKey;
+    if (session.testTracking?.contextKey) return session.testTracking.contextKey;
+
+    const tracking = session.testTracking;
+    if (tracking?.mode === 'streak') {
+        const scope = tracking.scope === 'focus' ? 'focus' : 'global';
+        return `streak:${scope}`;
+    }
+
+    if (Array.isArray(session.currentTest) && session.currentTest.length > 0) {
+        const sourceIdsSet = new Set();
+        const sources = AppState.sources || [];
+        session.currentTest.forEach(cid => {
+            if (typeof cid !== 'string') return;
+            const q = AppState.questionMap ? AppState.questionMap[cid] : null;
+            if (q && q.sourceId) {
+                sourceIdsSet.add(q.sourceId);
+                return;
+            }
+            const match = sources.find(s => cid === s.id || cid.startsWith(s.id + '_'));
+            if (match) {
+                sourceIdsSet.add(match.id);
+            }
+        });
+
+        if (sourceIdsSet.size === 0 && Array.isArray(tracking?.sourceNames) && tracking.sourceNames.length > 0) {
+            tracking.sourceNames.forEach(name => {
+                const match = sources.find(s => s.name === name);
+                if (match) sourceIdsSet.add(match.id);
+            });
+        }
+
+        const sourceIds = Array.from(sourceIdsSet).sort();
+        if (sourceIds.length === 1) {
+            return `source:${sourceIds[0]}`;
+        }
+        if (sourceIds.length > 1) {
+            const matchingPreset = (AppState.quickPresets || []).find(p => {
+                if (!p.sourceIds || p.sourceIds.length !== sourceIds.length) return false;
+                const sortedP = [...p.sourceIds].sort();
+                return sortedP.every((id, idx) => id === sourceIds[idx]);
+            });
+            if (matchingPreset) {
+                return `preset:${matchingPreset.id}`;
+            }
+            return `combo:${sourceIds.join('+')}`;
+        }
+    }
+
+    return null;
+}
+
 export function snapshotCurrentSession() {
     if (AppState.currentTest && AppState.currentTest.length > 0) {
-        const currentContextKey = getActiveContextKey(AppState.testTracking);
-        if (currentContextKey) {
-            saveContextSession(currentContextKey, {
+        const sessionKey = getSessionContextKey({
+            currentTest: AppState.currentTest,
+            testTracking: AppState.testTracking,
+            contextKey: AppState.contextKey
+        }) || getActiveContextKey();
+
+        if (sessionKey) {
+            saveContextSession(sessionKey, {
                 currentTest: AppState.currentTest,
                 currentIndex: AppState.currentIndex,
                 userAnswers: AppState.userAnswers,
                 isAnswerChecked: AppState.isAnswerChecked,
                 shuffledOptionsMap: AppState.shuffledOptionsMap,
                 testTracking: AppState.testTracking || null,
+                contextKey: sessionKey,
                 deviceId: AppState.deviceId || null,
                 updatedAt: Date.now()
             });
@@ -1187,6 +1257,11 @@ let _saveActiveTestTimer = null;
 export function saveActiveTest() {
     clearTimeout(_saveActiveTestTimer);
     _saveActiveTestTimer = setTimeout(() => {
+        const contextKey = AppState.contextKey || getSessionContextKey({
+            currentTest: AppState.currentTest,
+            testTracking: AppState.testTracking
+        }) || getActiveContextKey();
+
         const activeData = {
             currentTest: AppState.currentTest,
             currentIndex: AppState.currentIndex,
@@ -1194,6 +1269,7 @@ export function saveActiveTest() {
             isAnswerChecked: AppState.isAnswerChecked,
             shuffledOptionsMap: AppState.shuffledOptionsMap,
             testTracking: AppState.testTracking,
+            contextKey,
             /* Who wrote this and when. The sync merge needs both to decide
                between two devices' unfinished tests - see pickActiveSession(). */
             deviceId: AppState.deviceId || null,
@@ -1203,7 +1279,6 @@ export function saveActiveTest() {
         emit(Slice.ACTIVE_TEST);
         import('./github-sync.js').then(m => m.scheduleSync(3000, m.SyncScope.PROGRESS)).catch(() => {});
 
-        const contextKey = getActiveContextKey(activeData.testTracking);
         if (contextKey && activeData.currentTest && activeData.currentTest.length > 0) {
             saveContextSession(contextKey, activeData);
         }
@@ -1236,7 +1311,7 @@ export function clearActiveTest(contextKeyToClear = null, { clearSavedSession = 
     import('./github-sync.js').then(m => m.scheduleSync(300, m.SyncScope.PROGRESS)).catch(() => {});
 
     if (clearSavedSession) {
-        const key = contextKeyToClear || getActiveContextKey(AppState.testTracking);
+        const key = contextKeyToClear || AppState.contextKey || getActiveContextKey();
         if (key) {
             clearContextSession(key);
         }

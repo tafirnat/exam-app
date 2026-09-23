@@ -3,7 +3,7 @@ import assert from 'node:assert/strict';
 import { JSDOM } from 'jsdom';
 
 let AppState, storage;
-let getActiveContextKey, saveContextSession, getContextSession, clearContextSession, snapshotCurrentSession;
+let getActiveContextKey, getSessionContextKey, saveContextSession, getContextSession, clearContextSession, snapshotCurrentSession;
 let clearActiveTest, renderResumeButton;
 
 const HTML_FIXTURE = `<!doctype html><html><body>
@@ -24,6 +24,7 @@ before(async () => {
     const stateModule = await import('../src/core/state.js');
     AppState = stateModule.AppState;
     getActiveContextKey = stateModule.getActiveContextKey;
+    getSessionContextKey = stateModule.getSessionContextKey;
     saveContextSession = stateModule.saveContextSession;
     getContextSession = stateModule.getContextSession;
     clearContextSession = stateModule.clearContextSession;
@@ -176,3 +177,49 @@ test('clearActiveTest with clearSavedSession: true clears contextSession', () =>
     clearActiveTest('source:src_1', { clearSavedSession: true });
     assert.equal(getContextSession('source:src_1'), null);
 });
+
+test('getSessionContextKey accurately identifies origin context from session and composite question IDs', () => {
+    // 1. Direct contextKey
+    assert.equal(getSessionContextKey({ contextKey: 'source:src_1' }), 'source:src_1');
+
+    // 2. Direct testTracking.contextKey
+    assert.equal(getSessionContextKey({ testTracking: { contextKey: 'streak:focus' } }), 'streak:focus');
+
+    // 3. Streak mode without contextKey
+    assert.equal(getSessionContextKey({ testTracking: { mode: 'streak', scope: 'global' } }), 'streak:global');
+
+    // 4. Introspecting question IDs when contextKey is missing
+    const singleSourceSession = {
+        currentTest: ['src_1_q1', 'src_1_q2']
+    };
+    assert.equal(getSessionContextKey(singleSourceSession), 'source:src_1');
+
+    // 5. Introspecting preset questions
+    const comboSession = {
+        currentTest: ['src_1_q1', 'src_2_q2']
+    };
+    assert.equal(getSessionContextKey(comboSession), 'preset:qp_combo');
+});
+
+test('renderResumeButton rejects activeData when active source does not match session context', () => {
+    // Active source is Source 2
+    AppState.sources[0].active = false;
+    AppState.sources[1].active = true; // activeContextKey = 'source:src_2'
+
+    // But focus_app_active_test has data from Source 1
+    storage.persist('focus_app_active_test', {
+        contextKey: 'source:src_1',
+        currentTest: ['src_1_q1'],
+        currentIndex: 0,
+        userAnswers: {},
+        isAnswerChecked: {},
+        testTracking: { mode: 'normal', sourceNames: ['Source 1'] }
+    });
+
+    renderResumeButton();
+
+    // Devam Et must be hidden and Başla must be shown
+    assert.equal(isResumeVisible(), false, 'Devam Et should be rejected for mismatched source');
+    assert.equal(document.getElementById('startBtn').getAttribute('data-i18n'), 'start_test');
+});
+

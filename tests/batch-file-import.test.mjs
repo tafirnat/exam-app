@@ -41,7 +41,7 @@ before(async () => {
     ({ loadFromFile, loadFromFiles, processJSON } = await import('../src/features/sources/sources-service.js'));
 });
 
-beforeEach(() => {
+beforeEach(async () => {
     localStorage.clear();
     await initState({ force: true });
     AppState.sources = [];

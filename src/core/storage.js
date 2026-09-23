@@ -265,14 +265,32 @@ export function readString(key, fallback = null) {
     }
 }
 
+const BYTES_PER_CHAR = 2;
+export const ASSUMED_QUOTA_BYTES = 5 * 1024 * 1024;
+
 export function measureStorageUsage() {
-    // IndexedDB doesn't have a synchronous measure. 
-    // We return dummy values to satisfy callers, as quota is practically unlimited now.
+    let usedBytes = 0;
+    let largestValueBytes = 0;
+
+    try {
+        for (let i = 0; i < localStorage.length; i++) {
+            const key = localStorage.key(i);
+            if (key === null) continue;
+            const value = localStorage.getItem(key) || '';
+            usedBytes += (key.length + value.length) * BYTES_PER_CHAR;
+            const valueBytes = value.length * BYTES_PER_CHAR;
+            if (valueBytes > largestValueBytes) largestValueBytes = valueBytes;
+        }
+    } catch (err) {
+        console.warn('[storage] Could not measure usage:', err);
+        return { usedBytes: 0, quotaBytes: ASSUMED_QUOTA_BYTES, ratio: 0, largestValueBytes: 0 };
+    }
+
     return {
-        usedBytes: 0,
-        quotaBytes: 500 * 1024 * 1024, // 500MB assumed
-        ratio: 0,
-        largestValueBytes: 0
+        usedBytes,
+        quotaBytes: ASSUMED_QUOTA_BYTES,
+        ratio: usedBytes / ASSUMED_QUOTA_BYTES,
+        largestValueBytes
     };
 }
 

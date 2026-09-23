@@ -1,4 +1,4 @@
-import { AppState, initState, saveStats, saveSources, saveCurrentSource, saveCustomAIPrompt, saveAiProviders, saveLanguageSettings, saveAiPrompts, trackDeletedAiPrompt, saveActivePromptId, saveAdhocPrompt, DEFAULT_AI_PROVIDERS, saveActiveTest, clearActiveTest, clearLocalStudyData, clearProgressData, clearSourcesData, SAMPLE_LOADED_KEY, findMatchingPresetId, getActiveContextKey, getContextSession, saveContextSession, snapshotCurrentSession } from './core/state.js';
+import { AppState, initState, saveStats, saveSources, saveCurrentSource, saveCustomAIPrompt, saveAiProviders, saveLanguageSettings, saveAiPrompts, trackDeletedAiPrompt, saveActivePromptId, saveAdhocPrompt, DEFAULT_AI_PROVIDERS, saveActiveTest, clearActiveTest, clearLocalStudyData, clearProgressData, clearSourcesData, SAMPLE_LOADED_KEY, findMatchingPresetId, getActiveContextKey, getSessionContextKey, getContextSession, saveContextSession, snapshotCurrentSession } from './core/state.js';
 import { DEFAULT_PROMPT_ID, ADHOC_PROMPT_ID, PROMPT_VARIABLES, listPrompts, resolveActivePrompt, defaultPromptBody, builtinPromptBody, buildPromptVars, buildQuestionAnswerText, fillTemplate, insertVariableAt } from './core/ai-prompts.js';
 import { initTheme, toggleTheme, getActiveTheme } from './core/theme.js';
 import { updateStaticTranslations, updateDocumentTitle, t, targetLanguages, translations } from './core/i18n.js';
@@ -2498,35 +2498,61 @@ function checkActiveTest() {
         AppState.isAnswerChecked = savedSession.isAnswerChecked || {};
         AppState.shuffledOptionsMap = savedSession.shuffledOptionsMap || {};
         AppState.testTracking = savedSession.testTracking || null;
+        AppState.contextKey = contextKey;
 
         persist('focus_app_active_test', {
             ...savedSession,
+            contextKey,
             deviceId: AppState.deviceId || null,
             updatedAt: Date.now()
         });
         emit(Slice.ACTIVE_TEST);
     } else {
         // No saved session for the active context.
-        // If an active test exists in memory from a different context, demote it without wiping its saved contextSession!
+        let shouldClear = false;
+
         if (AppState.currentTest && AppState.currentTest.length > 0) {
-            const currentMemKey = getActiveContextKey(AppState.testTracking);
-            if (currentMemKey !== contextKey) {
+            const currentMemKey = getSessionContextKey({
+                currentTest: AppState.currentTest,
+                testTracking: AppState.testTracking,
+                contextKey: AppState.contextKey
+            });
+            if (currentMemKey && currentMemKey !== contextKey) {
+                saveContextSession(currentMemKey, {
+                    currentTest: AppState.currentTest,
+                    currentIndex: AppState.currentIndex,
+                    userAnswers: AppState.userAnswers,
+                    isAnswerChecked: AppState.isAnswerChecked,
+                    shuffledOptionsMap: AppState.shuffledOptionsMap,
+                    testTracking: AppState.testTracking,
+                    contextKey: currentMemKey,
+                    deviceId: AppState.deviceId || null,
+                    updatedAt: Date.now()
+                });
                 AppState.currentTest = [];
                 AppState.currentIndex = 0;
                 AppState.userAnswers = {};
                 AppState.isAnswerChecked = {};
                 AppState.shuffledOptionsMap = {};
                 AppState.testTracking = null;
-                clearActiveTest(null, { clearSavedSession: false });
+                AppState.contextKey = null;
+                shouldClear = true;
             }
         }
-        // If an active test exists on disk that belongs to a different context, demote it without wiping its saved contextSession!
+
         const activeData = readJSON('focus_app_active_test', null);
-        if (activeData && Array.isArray(activeData.currentTest) && activeData.currentTest.length > 0) {
-            const activeDataKey = getActiveContextKey(activeData.testTracking);
-            if (activeDataKey !== contextKey) {
-                clearActiveTest(null, { clearSavedSession: false });
+        if (activeData && Array.isArray(activeData.currentTest) && activeData.currentTest.length > 0 && !activeData.cleared) {
+            const diskKey = getSessionContextKey(activeData);
+            if (diskKey && diskKey !== contextKey) {
+                if (!getContextSession(diskKey)) {
+                    saveContextSession(diskKey, activeData);
+                }
+                shouldClear = true;
             }
+        }
+
+        if (shouldClear) {
+            clearActiveTest(null, { clearSavedSession: false });
         }
     }
 
@@ -2539,15 +2565,24 @@ function checkActiveTest() {
 function resumeActiveTest() {
     const activeData = readJSON('focus_app_active_test', null);
     // A cleared record is a finished test, not a session - see clearActiveTest().
-    if (!activeData || !Array.isArray(activeData.currentTest) || activeData.currentTest.length === 0) return;
+    if (!activeData || !Array.isArray(activeData.currentTest) || activeData.currentTest.length === 0 || activeData.cleared) return;
+
+    // Verify context match
+    const activeContextKey = getActiveContextKey();
+    const sessionContextKey = getSessionContextKey(activeData);
+    if (activeContextKey && sessionContextKey && activeContextKey !== sessionContextKey) {
+        console.warn(`resumeActiveTest: context mismatch (${sessionContextKey} vs ${activeContextKey})`);
+        return;
+    }
 
     // Restore AppState
     AppState.currentTest = activeData.currentTest;
-    AppState.currentIndex = activeData.currentIndex;
-    AppState.userAnswers = activeData.userAnswers;
-    AppState.isAnswerChecked = activeData.isAnswerChecked;
-    AppState.shuffledOptionsMap = activeData.shuffledOptionsMap;
-    AppState.testTracking = activeData.testTracking;
+    AppState.currentIndex = activeData.currentIndex || 0;
+    AppState.userAnswers = activeData.userAnswers || {};
+    AppState.isAnswerChecked = activeData.isAnswerChecked || {};
+    AppState.shuffledOptionsMap = activeData.shuffledOptionsMap || {};
+    AppState.testTracking = activeData.testTracking || null;
+    AppState.contextKey = sessionContextKey || activeContextKey;
 
     // Ensure the question pool and map are ready for the resumed session
     buildQuestionPool({ scope: activeData.testTracking?.mode === 'streak' ? 'all' : 'active' });
