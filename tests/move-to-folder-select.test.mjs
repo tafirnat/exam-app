@@ -10,7 +10,7 @@ import { JSDOM } from 'jsdom';
    say "nowhere" - the synthetic `root` option - and the system folder must not
    appear beside it under the same name. */
 
-let AppState, UNCATEGORIZED_FOLDER_ID, showSourceActions;
+let AppState, UNCATEGORIZED_FOLDER_ID, showSourceActions, enterSelectionMode, exitSelectionMode, getSelectionModeFolderId, selectedSourceIds, renderSourcesList;
 
 before(async () => {
     const html = readFileSync(new URL('../index.html', import.meta.url), 'utf8');
@@ -26,6 +26,11 @@ before(async () => {
 
     const uiMod = await import('../src/features/sources/sources-ui.js');
     showSourceActions = uiMod.showSourceActions;
+    enterSelectionMode = uiMod.enterSelectionMode;
+    exitSelectionMode = uiMod.exitSelectionMode;
+    getSelectionModeFolderId = uiMod.getSelectionModeFolderId;
+    selectedSourceIds = uiMod.selectedSourceIds;
+    renderSourcesList = uiMod.renderSourcesList;
 });
 
 const systemFolder = () => ({ id: UNCATEGORIZED_FOLDER_ID, name: 'Uncategorized', isSystem: true, order: 0 });
@@ -146,4 +151,84 @@ test('bulk sources select their common folder in moveToFolderSelect', async () =
     showSourceActions({ id: 'bulk', isBulk: true, targetIds: ['u1', 'u2'], folderId: UNCATEGORIZED_FOLDER_ID });
     assert.equal(optionsOf().find(o => o.selected).value, 'root', 'bulk uncategorized should have root selected');
 });
+
+test('modalInspectQuestionsBtn for bulk sources does not exit selection mode', async () => {
+    AppState.folders = [systemFolder(), { id: 'f1', name: 'Matematik', order: 1 }];
+    const s1 = { id: 's1', name: 'A', folderId: 'f1' };
+    const s2 = { id: 's2', name: 'B', folderId: 'f1' };
+    AppState.sources = [s1, s2];
+
+    enterSelectionMode('f1');
+    selectedSourceIds.add('s1');
+    selectedSourceIds.add('s2');
+
+    showSourceActions({ id: 'bulk', isBulk: true, targetIds: ['s1', 's2'], folderId: 'f1' });
+
+    const inspectBtn = global.document.getElementById('modalInspectQuestionsBtn');
+    assert.ok(inspectBtn, 'inspect button exists');
+    await inspectBtn.onclick();
+
+    assert.equal(getSelectionModeFolderId(), 'f1', 'selection mode folder id is preserved');
+    assert.equal(selectedSourceIds.size, 2, 'selected sources are preserved');
+    assert.ok(selectedSourceIds.has('s1'));
+    assert.ok(selectedSourceIds.has('s2'));
+    exitSelectionMode();
+});
+
+test('folder select trigger is framed in a square checkbox and toggles selection mode', async () => {
+    AppState.folders = [systemFolder(), { id: 'f1', name: 'Matematik', order: 1, color: '#a855f7' }];
+    const s1 = { id: 's1', name: 'A', folderId: 'f1' };
+    AppState.sources = [s1];
+
+    exitSelectionMode();
+    renderSourcesList();
+
+    const trigger = global.document.querySelector('[data-folder-id="f1"] .folder-select-trigger');
+    assert.ok(trigger, 'folder select trigger exists');
+    assert.ok(!trigger.classList.contains('active'), 'initially not active');
+    assert.ok(trigger.querySelector('svg path'), 'contains folder path SVG inside square');
+
+    // Click trigger to enter selection mode
+    trigger.click();
+    assert.equal(getSelectionModeFolderId(), 'f1', 'entered selection mode for folder');
+    const activeTrigger = global.document.querySelector('[data-folder-id="f1"] .folder-select-trigger');
+    assert.ok(activeTrigger.classList.contains('active'), 'trigger is now active (checked)');
+    assert.ok(activeTrigger.querySelector('svg polyline'), 'contains checkmark polyline SVG inside square');
+
+    // Click trigger again to exit selection mode
+    activeTrigger.click();
+    assert.equal(getSelectionModeFolderId(), null, 'exited selection mode');
+    const resetTrigger = global.document.querySelector('[data-folder-id="f1"] .folder-select-trigger');
+    assert.ok(!resetTrigger.classList.contains('active'), 'trigger is unselected again');
+});
+
+test('source items in selection mode show high contrast checkboxes on active sources', async () => {
+    AppState.folders = [systemFolder(), { id: 'f1', name: 'Matematik', order: 1 }];
+    const s1 = { id: 's1', name: 'Active Source', folderId: 'f1', active: true };
+    const s2 = { id: 's2', name: 'Inactive Source', folderId: 'f1', active: false };
+    AppState.sources = [s1, s2];
+
+    enterSelectionMode('f1');
+    renderSourcesList();
+
+    const item1 = global.document.querySelector('[data-source-id="s1"]');
+    const item2 = global.document.querySelector('[data-source-id="s2"]');
+    assert.ok(item1 && item2, 'source items rendered');
+
+    const cb1 = item1.querySelector('.source-select-checkbox');
+    const cb2 = item2.querySelector('.source-select-checkbox');
+    assert.ok(cb1 && cb2, 'checkboxes rendered');
+
+    assert.ok(cb1.classList.contains('on-active-source'), 'active source checkbox marked for high contrast');
+    assert.ok(!cb1.classList.contains('checked'), 'initially unchecked');
+
+    // Click to select
+    cb1.click();
+    assert.ok(selectedSourceIds.has('s1'), 's1 is now selected');
+    const updatedItem1 = global.document.querySelector('[data-source-id="s1"]');
+    assert.ok(updatedItem1.classList.contains('selected'), 'selected class added to item');
+
+    exitSelectionMode();
+});
+
 

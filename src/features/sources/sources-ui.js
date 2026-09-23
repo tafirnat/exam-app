@@ -500,7 +500,6 @@ export function showSourceActions(source) {
             const { inspectSourceQuestions } = await import('../stats/stats-module.js');
             if (isBulk) {
                 inspectSourceQuestions(targetIds);
-                exitSelectionMode();
             } else {
                 inspectSourceQuestions(source.id);
             }
@@ -1113,7 +1112,11 @@ function moveSourceToFolder(draggedId, folderId) {
 
 const folderSortStates = new Map();
 let selectionModeFolderId = null;
-const selectedSourceIds = new Set();
+export const selectedSourceIds = new Set();
+
+export function getSelectionModeFolderId() {
+    return selectionModeFolderId;
+}
 
 export function exitSelectionMode() {
     selectionModeFolderId = null;
@@ -1121,7 +1124,7 @@ export function exitSelectionMode() {
     renderSourcesList();
 }
 
-function enterSelectionMode(folderId) {
+export function enterSelectionMode(folderId) {
     selectionModeFolderId = folderId;
     selectedSourceIds.clear();
     renderSourcesList();
@@ -1210,16 +1213,33 @@ export function renderSourcesList() {
         const folderDesc = (folder.id === UNCATEGORIZED_FOLDER_ID || folder.isSystem) ? t('uncategorized_folder_desc') : folder.description;
 
         const isSelectionMode = selectionModeFolderId === folder.id;
-        let folderIconSvg = '';
+        const folderBorderColor = folder.color ? `${folder.color}88` : 'var(--border-color)';
+        const folderBgColor = folder.color ? `${folder.color}15` : 'rgba(255, 255, 255, 0.04)';
+        let folderTriggerHtml = '';
         if (isSelectionMode) {
-            folderIconSvg = `<svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="var(--primary-color, #3b82f6)" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" style="margin-left: 0.2rem; cursor: pointer; color: var(--primary-color, #3b82f6);" class="folder-select-trigger"><polyline points="20 6 9 17 4 12"></polyline></svg>`;
+            folderTriggerHtml = `
+                <div class="folder-select-trigger active" 
+                     title="${escapeHTML(t('exit_selection_mode') || 'Toplu seçim modundan çık')}">
+                    <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="#ffffff" stroke-width="3" stroke-linecap="round" stroke-linejoin="round">
+                        <polyline points="20 6 9 17 4 12"></polyline>
+                    </svg>
+                </div>
+            `;
         } else {
-            folderIconSvg = `<svg viewBox="0 0 24 24" width="18" height="18" fill="${folder.color || DEFAULT_FOLDER_COLOR}" fill-opacity="${folderHasActive ? '0.4' : '0'}" stroke="${folder.color || DEFAULT_FOLDER_COLOR}" stroke-width="2" style="margin-left: 0.2rem; cursor: pointer;" class="folder-select-trigger"><path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"></path></svg>`;
+            folderTriggerHtml = `
+                <div class="folder-select-trigger" 
+                     title="${escapeHTML(t('bulk_select_sources') || 'Toplu kaynak seçimi')}"
+                     style="border-color: ${folderBorderColor}; background-color: ${folderBgColor};">
+                    <svg viewBox="0 0 24 24" width="14" height="14" fill="${folder.color || DEFAULT_FOLDER_COLOR}" fill-opacity="${folderHasActive ? '0.45' : '0.1'}" stroke="${folder.color || DEFAULT_FOLDER_COLOR}" stroke-width="2">
+                        <path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"></path>
+                    </svg>
+                </div>
+            `;
         }
 
         titleDiv.innerHTML = `
             ${toggleIcon}
-            ${folderIconSvg}
+            ${folderTriggerHtml}
             <div style="display: flex; flex-direction: column; min-width: 0;">
                 <span class="truncate" style="font-weight: 600; font-size: 0.95rem;">${escapeHTML(folderTitle)}</span>
                 ${folderDesc ? `<span class="truncate" style="font-size: 0.7rem; color: var(--text-secondary);">${escapeHTML(folderDesc)}</span>` : ''}
@@ -1396,9 +1416,16 @@ function createSourceItemDOM(s, folderId) {
     
     // Selection mode styling
     if (isSelectionMode) {
-        item.style.borderColor = isSelected ? 'var(--primary-color)' : 'var(--border-color)';
         if (isSelected) {
-            item.style.backgroundColor = 'rgba(var(--primary-rgb, 59, 130, 246), 0.1)';
+            item.classList.add('selected');
+            item.style.borderColor = 'var(--primary-color)';
+            item.style.backgroundColor = 'rgba(var(--primary-rgb, 59, 130, 246), 0.15)';
+        } else {
+            item.classList.remove('selected');
+            item.style.borderColor = 'var(--border-color)';
+            if (!s.active) {
+                item.style.backgroundColor = 'var(--surface-color)';
+            }
         }
     }
 
@@ -1414,6 +1441,7 @@ function createSourceItemDOM(s, folderId) {
     let grip;
     if (isSelectionMode) {
         grip = document.createElement('div');
+        grip.className = `source-select-checkbox ${isSelected ? 'checked' : ''} ${s.active ? 'on-active-source' : ''}`;
         grip.style.flexShrink = '0';
         grip.style.width = '24px';
         grip.style.height = '24px';
@@ -1421,12 +1449,25 @@ function createSourceItemDOM(s, folderId) {
         grip.style.display = 'flex';
         grip.style.alignItems = 'center';
         grip.style.justifyContent = 'center';
-        grip.style.border = `2px solid ${isSelected ? 'var(--primary-color)' : 'var(--border-color)'}`;
-        grip.style.backgroundColor = isSelected ? 'var(--primary-color)' : 'transparent';
         grip.style.cursor = 'pointer';
-        grip.innerHTML = isSelected 
-            ? '<svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="#fff" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"></polyline></svg>'
-            : '';
+        grip.style.transition = 'all 0.15s ease';
+
+        if (isSelected) {
+            grip.style.border = '2px solid var(--primary-color)';
+            grip.style.backgroundColor = 'var(--primary-color)';
+            grip.style.boxShadow = '0 0 8px rgba(var(--primary-rgb, 59, 130, 246), 0.35)';
+            grip.innerHTML = '<svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="#fff" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"></polyline></svg>';
+        } else {
+            if (s.active) {
+                grip.style.border = '2px solid rgba(255, 255, 255, 0.55)';
+                grip.style.backgroundColor = 'rgba(255, 255, 255, 0.12)';
+                grip.style.boxShadow = '0 1px 3px rgba(0, 0, 0, 0.25)';
+            } else {
+                grip.style.border = '2px solid rgba(255, 255, 255, 0.28)';
+                grip.style.backgroundColor = 'rgba(255, 255, 255, 0.04)';
+            }
+            grip.innerHTML = '';
+        }
         grip.onclick = (e) => {
             e.stopPropagation();
             if (isSelected) selectedSourceIds.delete(s.id);
