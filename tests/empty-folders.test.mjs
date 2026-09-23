@@ -38,7 +38,7 @@ before(async () => {
     hint = await import('../src/features/sources/folder-hint.js');
 });
 
-function freshDevice() {
+async function freshDevice() {
     localStorage.clear();
     await initState({ force: true });
     AppState.sources.length = 0;
@@ -51,7 +51,7 @@ function freshDevice() {
     document.querySelectorAll('.modal-overlay').forEach(n => n.remove());
 }
 
-beforeEach(() => freshDevice());
+beforeEach(async () => await freshDevice());
 
 const folder = (id, extra = {}) => ({ id, name: `Folder ${id}`, color: '#0667ff', order: 1, updatedAt: T0 - 60 * MIN, ...extra });
 const source = (id, extra = {}) => ({ id, name: `Source ${id}`, active: false, questions: [{ id: 'q1' }], updatedAt: T0 - 60 * MIN, ...extra });

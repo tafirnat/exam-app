@@ -186,14 +186,54 @@ export async function migrateFromLocalStorage() {
 // module evaluation (e.g. language, theme).
 // ============================================================================
 
+function isQuotaError(err) {
+    if (!err) return false;
+    return (
+        err.name === 'QuotaExceededError' ||
+        err.name === 'NS_ERROR_DOM_QUOTA_REACHED' ||
+        err.code === 22 ||
+        err.code === 1014
+    );
+}
+
+let quotaAlertShown = false;
+
+function reportQuotaFull(key) {
+    console.error(`[storage] Quota exceeded writing "${key}" - the change was not saved.`);
+    if (quotaAlertShown) return;
+    quotaAlertShown = true;
+
+    Promise.all([import('./utils.js'), import('./i18n.js')])
+        .then(([utils, i18n]) => {
+            utils.showAlert(i18n.t('storage_full_message'), i18n.t('storage_full_title'));
+        })
+        .catch(() => {
+            if (typeof alert === 'function') {
+                alert('Storage is full. Recent changes could not be saved.');
+            }
+        });
+}
+
 export function persist(key, value) {
     try {
         localStorage.setItem(key, typeof value === 'string' ? value : JSON.stringify(value));
         return true;
     } catch (err) {
-        console.error(`[storage] Failed to write "${key}":`, err);
+        if (isQuotaError(err)) {
+            reportQuotaFull(key);
+        } else {
+            console.error(`[storage] Failed to write "${key}":`, err);
+        }
         return false;
     }
+}
+
+export function persistIfChanged(key, value) {
+    const next = typeof value === 'string' ? value : JSON.stringify(value);
+    const current = readString(key, null);
+    if (current === next) return { ok: true, changed: false };
+    const ok = persist(key, next);
+    return { ok, changed: true };
 }
 
 export function persistRemove(key) {
@@ -247,6 +287,6 @@ export function readFloat(key, fallback = 0) {
 }
 
 export function _resetQuotaWarning() {
-    // Mock for tests
+    quotaAlertShown = false;
 }
 
