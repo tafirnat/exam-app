@@ -107,3 +107,43 @@ test('choosing the prompt moves nothing and leaves the dialog open', async () =>
         'the dialog is still open'
     );
 });
+
+test('modalEditMetadataBtn is visible for single source and hidden for bulk sources', async () => {
+    AppState.folders = [systemFolder(), { id: 'f1', name: 'Matematik', order: 1 }];
+    const source1 = { id: 's1', name: 'Kaynak 1', folderId: 'f1' };
+    const source2 = { id: 's2', name: 'Kaynak 2', folderId: 'f1' };
+    AppState.sources = [source1, source2];
+
+    const editBtn = global.document.getElementById('modalEditMetadataBtn');
+
+    // Single source
+    showSourceActions(source1);
+    assert.equal(editBtn.style.display, '', 'edit metadata button must be visible for single source');
+
+    // Bulk sources
+    showSourceActions({ id: 'bulk', isBulk: true, targetIds: ['s1', 's2'] });
+    assert.equal(editBtn.style.display, 'none', 'edit metadata button must be hidden for bulk sources');
+
+    // Reopen single source
+    showSourceActions(source2);
+    assert.equal(editBtn.style.display, '', 'edit metadata button must be visible again for single source');
+});
+
+test('bulk sources select their common folder in moveToFolderSelect', async () => {
+    AppState.folders = [systemFolder(), { id: 'f1', name: 'Matematik', order: 1 }, { id: 'f2', name: 'Fizik', order: 2 }];
+    const s1 = { id: 's1', name: 'A', folderId: 'f1' };
+    const s2 = { id: 's2', name: 'B', folderId: 'f1' };
+    AppState.sources = [s1, s2];
+
+    showSourceActions({ id: 'bulk', isBulk: true, targetIds: ['s1', 's2'], folderId: 'f1' });
+    assert.equal(optionsOf().find(o => o.selected).value, 'f1', 'bulk in f1 should have f1 selected');
+
+    // Bulk uncategorized
+    const u1 = { id: 'u1', name: 'U1', folderId: null };
+    const u2 = { id: 'u2', name: 'U2', folderId: null };
+    AppState.sources = [u1, u2];
+
+    showSourceActions({ id: 'bulk', isBulk: true, targetIds: ['u1', 'u2'], folderId: UNCATEGORIZED_FOLDER_ID });
+    assert.equal(optionsOf().find(o => o.selected).value, 'root', 'bulk uncategorized should have root selected');
+});
+

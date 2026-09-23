@@ -344,20 +344,21 @@ export function showSourceActions(source) {
     const editBtn = document.getElementById('modalEditMetadataBtn');
     const closeBtn = document.getElementById('sourceActionsCloseBtn');
 
-    const isBulk = selectionModeFolderId && selectedSourceIds.size > 0 && selectedSourceIds.has(source.id);
-    const targetIds = isBulk ? Array.from(selectedSourceIds) : [source.id];
+    const isBulk = source.id === 'bulk' || Boolean(source.isBulk) || Boolean(selectionModeFolderId && selectedSourceIds.size > 0 && (source.id === 'bulk' || selectedSourceIds.has(source.id)));
+    const targetIds = isBulk
+        ? (selectedSourceIds.size > 0 ? Array.from(selectedSourceIds) : (source.targetIds || []))
+        : [source.id];
 
     if (!overlay || !nameEl || !resetBtn || !downloadBtn || !shareBtn || !editBtn || !closeBtn) return;
 
-    nameEl.textContent = isBulk ? t('bulk_selected', { count: targetIds.length }) || `${targetIds.length} Kaynak Seçildi` : source.name;
+    nameEl.textContent = isBulk ? (t('bulk_selected', { count: targetIds.length }) || `${targetIds.length} Kaynak Seçildi`) : source.name;
     overlay.classList.add('active');
     
     // Ensure edit button is properly hidden in bulk mode
-    // (Previous logic removed the 'none' display for bulk, which we don't want for editBtn)
     editBtn.style.display = isBulk ? 'none' : '';
     
     const inspectBtn = document.getElementById('modalInspectQuestionsBtn');
-    if (inspectBtn) inspectBtn.style.display = isBulk ? 'none' : '';
+    if (inspectBtn) inspectBtn.style.display = '';
 
 
     // Add Move to Folder logic dynamically
@@ -383,19 +384,44 @@ export function showSourceActions(source) {
        bucket of its own. Same filter the reset paths use. */
     const selectableFolders = liveFolders().filter(f => !f.isSystem && f.id !== UNCATEGORIZED_FOLDER_ID);
     if (selectableFolders.length > 0) {
-        let commonFolderId = undefined;
-        if (isBulk && targetIds.length > 0) {
-            const folders = targetIds.map(id => AppState.sources.find(s => s.id === id)?.folderId);
-            const allSame = folders.every(f => f === folders[0]);
-            if (allSame) commonFolderId = folders[0];
+        const getCanonicalFolderId = (fid) => (!fid || fid === UNCATEGORIZED_FOLDER_ID || fid === 'root') ? null : fid;
+
+        let commonFolderId = null;
+        let hasDeterminedFolder = false;
+
+        if (isBulk) {
+            if (targetIds.length > 0) {
+                const folders = targetIds.map(id => {
+                    const s = AppState.sources.find(src => src.id === id);
+                    return s ? getCanonicalFolderId(s.folderId) : undefined;
+                });
+                const allKnown = folders.every(f => f !== undefined);
+                const allSame = allKnown && folders.every(f => f === folders[0]);
+                if (allSame) {
+                    commonFolderId = folders[0];
+                    hasDeterminedFolder = true;
+                } else if (selectionModeFolderId || source.folderId) {
+                    commonFolderId = getCanonicalFolderId(selectionModeFolderId || source.folderId);
+                    hasDeterminedFolder = true;
+                }
+            } else if (selectionModeFolderId || source.folderId) {
+                commonFolderId = getCanonicalFolderId(selectionModeFolderId || source.folderId);
+                hasDeterminedFolder = true;
+            }
         } else {
-            commonFolderId = source.folderId;
+            commonFolderId = getCanonicalFolderId(source.folderId);
+            hasDeterminedFolder = true;
         }
 
-        let optionsHtml = `<option value="">-- ${t('move_to_folder')} --</option>`;
-        optionsHtml += `<option value="root" ${!commonFolderId ? 'selected' : ''}>${t('root_folder')}</option>`;
+        if (hasDeterminedFolder && commonFolderId !== null && !selectableFolders.some(f => f.id === commonFolderId)) {
+            hasDeterminedFolder = false;
+        }
+
+        let optionsHtml = `<option value="" ${!hasDeterminedFolder ? 'selected' : ''}>-- ${t('move_to_folder')} --</option>`;
+        optionsHtml += `<option value="root" ${hasDeterminedFolder && commonFolderId === null ? 'selected' : ''}>${t('root_folder')}</option>`;
         selectableFolders.forEach(f => {
-            optionsHtml += `<option value="${escapeHTML(f.id)}" ${commonFolderId === f.id ? 'selected' : ''}>${escapeHTML(f.name)}</option>`;
+            const isSelected = hasDeterminedFolder && commonFolderId === f.id;
+            optionsHtml += `<option value="${escapeHTML(f.id)}" ${isSelected ? 'selected' : ''}>${escapeHTML(f.name)}</option>`;
         });
         
         moveContainer.innerHTML = `
@@ -1241,7 +1267,12 @@ export function renderSourcesList() {
                     showToast(t('bulk_none_selected') || 'No sources selected');
                     return;
                 }
-                const pseudoSource = { id: 'bulk', name: t('bulk_selected', { count: selectedSourceIds.size }) };
+                const pseudoSource = {
+                    id: 'bulk',
+                    name: t('bulk_selected', { count: selectedSourceIds.size }),
+                    folderId: folder.id,
+                    isBulk: true
+                };
                 showSourceActions(pseudoSource);
             };
         } else {
