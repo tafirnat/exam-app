@@ -1580,49 +1580,7 @@ export function showFolderManageModal(folder = null) {
     });
 
     const activeFolderId = folder ? folder.id : ('folder_' + Date.now());
-    const folderIdDisplay = document.getElementById('folderIdDisplay');
-    const folderIdCopyBtn = document.getElementById('folderIdCopyBtn');
 
-    if (folderIdDisplay) {
-        folderIdDisplay.textContent = activeFolderId;
-    }
-
-    if (folderIdCopyBtn) {
-        folderIdCopyBtn.onclick = async () => {
-            const currentName = nameInput ? nameInput.value.trim() : '';
-            const promptText = `Lütfen hazırlayacağın soru kaynağı JSON verisine "folderId": "${activeFolderId}"${currentName ? ` (Klasör Adı: "${currentName}")` : ''} alanını ekle. Böylece kaynak bu klasör altına aktarılacaktır.`;
-            try {
-                if (navigator.clipboard && navigator.clipboard.writeText) {
-                    await navigator.clipboard.writeText(promptText);
-                } else {
-                    const ta = document.createElement('textarea');
-                    ta.value = promptText;
-                    document.body.appendChild(ta);
-                    ta.select();
-                    document.execCommand('copy');
-                    document.body.removeChild(ta);
-                }
-                showToast(t('copy_success') || 'Copied');
-
-                // Visual feedback (temporary color & border highlight)
-                const origBorder = folderIdCopyBtn.style.borderColor;
-                const origColor = folderIdCopyBtn.style.color;
-                const origBg = folderIdCopyBtn.style.background;
-                folderIdCopyBtn.style.borderColor = 'var(--accent-color, #10b981)';
-                folderIdCopyBtn.style.color = 'var(--accent-color, #10b981)';
-                folderIdCopyBtn.style.background = 'rgba(16, 185, 129, 0.15)';
-
-                setTimeout(() => {
-                    folderIdCopyBtn.style.borderColor = origBorder;
-                    folderIdCopyBtn.style.color = origColor;
-                    folderIdCopyBtn.style.background = origBg;
-                }, 800);
-            } catch (err) {
-                console.error('Clipboard error:', err);
-                showToast(t('clipboard_error') || 'Clipboard error');
-            }
-        };
-    }
 
     title.textContent = folder ? t('edit_folder') : t('add_folder');
     nameInput.value = folder ? folder.name : '';
