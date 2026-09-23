@@ -3,7 +3,7 @@ import assert from 'node:assert/strict';
 import { readFileSync } from 'node:fs';
 import { JSDOM } from 'jsdom';
 
-let AppState, initState, openPresetEditModal, translations, UNCATEGORIZED_FOLDER_ID;
+let AppState, initState, openPresetEditModal, translations, UNCATEGORIZED_FOLDER_ID, showQuickPresetsManageModal;
 
 const read = (rel) => readFileSync(new URL(rel, import.meta.url), 'utf8');
 const html = () => read('../index.html');
@@ -21,7 +21,7 @@ before(async () => {
     UNCATEGORIZED_FOLDER_ID = stateMod.UNCATEGORIZED_FOLDER_ID;
     await initState();
 
-    ({ openPresetEditModal } = await import('../src/features/sources/quick-presets-ui.js'));
+    ({ openPresetEditModal, showQuickPresetsManageModal } = await import('../src/features/sources/quick-presets-ui.js'));
     ({ translations } = await import('../src/core/i18n.js'));
 });
 
@@ -334,3 +334,28 @@ test('the new strings are in all three languages', async () => {
         ['tr', 'en', 'de'].forEach(lang => assert.ok(translations[lang][key], `${lang}.${key} is missing`));
     });
 });
+
+test('clicking qpm-main-content in manage modal applies the preset and closes the modal', async () => {
+    AppState.sources = [sourceWith('s1', 'Alpha', 5), sourceWith('s2', 'Beta', 10)];
+    AppState.quickPresets = [{ id: 'qp1', name: 'Kombi-1', sourceIds: ['s1', 's2'], order: 0 }];
+
+    showQuickPresetsManageModal();
+    const overlay = document.getElementById('quickPresetsManageOverlay');
+    assert.ok(overlay.classList.contains('active'), 'manage modal opens');
+
+    const row = document.querySelector('#qpmPresetsList .qpm-row');
+    assert.ok(row, 'preset row rendered');
+
+    const mainContent = row.querySelector('.qpm-main-content');
+    assert.ok(mainContent, 'qpm-main-content exists');
+
+    // Clicking qpm-main-content applies preset and closes modal
+    mainContent.click();
+
+    assert.ok(!overlay.classList.contains('active'), 'modal closes after applying preset');
+    const s1 = AppState.sources.find(s => s.id === 's1');
+    const s2 = AppState.sources.find(s => s.id === 's2');
+    assert.equal(s1.active, true, 'source 1 activated');
+    assert.equal(s2.active, true, 'source 2 activated');
+});
+

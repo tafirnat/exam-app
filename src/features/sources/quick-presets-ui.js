@@ -248,6 +248,16 @@ function renderManageList() {
             }
         };
 
+        mainContent.setAttribute('title', t('qs_name_hint'));
+
+        mainContent.addEventListener('click', (e) => {
+            if (nameSpan.classList.contains('editing')) {
+                return;
+            }
+            applyPreset(preset);
+            closeQuickPresetsManageModal();
+        });
+
         nameSpan.addEventListener('dblclick', (e) => {
             e.stopPropagation();
             startInlineEdit();
@@ -256,10 +266,7 @@ function renderManageList() {
         nameSpan.addEventListener('click', (e) => {
             if (nameSpan.classList.contains('editing')) {
                 e.stopPropagation();
-                return;
             }
-            applyPreset(preset);
-            closeQuickPresetsManageModal();
         });
 
         nameSpan.addEventListener('keydown', (e) => {

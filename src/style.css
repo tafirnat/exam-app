@@ -5964,6 +5964,18 @@ body.dnd-active {
     display: flex;
     flex-direction: column;
     gap: 3px;
+    cursor: pointer;
+    border-radius: 4px;
+    padding: 2px 4px;
+    transition: background-color 0.15s ease;
+}
+
+.qpm-main-content:hover {
+    background-color: var(--bg-hover, rgba(255, 255, 255, 0.04));
+}
+
+.qpm-main-content:hover .qpm-name-text:not(.editing) {
+    color: var(--primary-color);
 }
 
 .qpm-name-wrapper {
