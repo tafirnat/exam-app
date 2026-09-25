@@ -5,7 +5,19 @@
 #actionMenu[data-mode="ereader"] .menu-mode-group[data-menu-mode="test"] { display: none; }
 
 .ereader-header-tools { align-items: center; gap: 0.25rem; }
-.ereader-menu-reset { margin-top: auto; }
+
+.ereader-menu-reset {
+    color: var(--error-color);
+    margin-top: auto;
+}
+
+.ereader-menu-reset svg {
+    color: var(--error-color);
+}
+
+.ereader-menu-reset:hover {
+    background-color: color-mix(in srgb, var(--error-color) 12%, transparent);
+}
 
 .ereader-font-row {
     display: flex;

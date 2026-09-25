@@ -259,3 +259,15 @@ test('13. (D1) src/main.js calls applyEreaderChrome("home") before function swit
     );
 });
 
+test('14. (D2) ereader.css .ereader-menu-reset rule contains var(--error-color)', () => {
+    const cssContent = readFileSync(new URL('../src/features/ereader/ereader.css', import.meta.url), 'utf8');
+    const noComments = cssContent.replace(/\/\*[\s\S]*?\*\//g, '');
+    const resetRuleMatch = noComments.match(/\.ereader-menu-reset\s*\{[^}]*\}/);
+    assert.ok(resetRuleMatch, '.ereader-menu-reset rule must exist in ereader.css');
+    assert.ok(
+        resetRuleMatch[0].includes('var(--error-color)'),
+        '.ereader-menu-reset rule must contain var(--error-color)'
+    );
+});
+
+
