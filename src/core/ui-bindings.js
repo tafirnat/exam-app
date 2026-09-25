@@ -32,7 +32,9 @@ export const View = Object.freeze({
     STATS: 'stats',
     TEST: 'test',
     RESULTS: 'results',
-    STATS_PREVIEW: 'statsPreview'
+    STATS_PREVIEW: 'statsPreview',
+    EREADER_LIBRARY: 'ereaderLibrary',
+    EREADER_BOOK: 'ereaderBook'
 });
 
 /**
