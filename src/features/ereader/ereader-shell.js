@@ -1,4 +1,26 @@
 import { t } from '../../core/i18n.js';
+import { emit, Slice } from '../../core/store.js';
+import { loadEreader, isEreaderLoaded } from './ereader-store.js';
+import { bindEreaderLibrary } from './ereader-library-ui.js';
+
+let loadRequested = false;
+
+/**
+ * The e-Reader's storage is read on first entry, not at boot: the test centre
+ * never pays for it. Not awaited - switchView stays synchronous, and the
+ * library's painter shows nothing (not "no books") until the load announces
+ * itself here.
+ */
+function ensureEreaderLoaded() {
+    if (loadRequested || isEreaderLoaded()) return;
+    loadRequested = true;
+    loadEreader()
+        .then(() => emit(Slice.EREADER_LIBRARY))
+        .catch((err) => {
+            loadRequested = false;
+            console.error('[ereader] load failed:', err);
+        });
+}
 
 export const EREADER_VIEWS = Object.freeze(['ereaderLibrary', 'ereaderBook']);
 
@@ -120,6 +142,8 @@ export function applyEreaderChrome(view, { goHome } = {}) {
     if (readingSection) {
         readingSection.style.display = view === 'ereaderBook' ? 'block' : 'none';
     }
+
+    if (isEreaderView(view)) ensureEreaderLoaded();
 }
 
 /**
@@ -142,4 +166,6 @@ export function bindEreaderShell({ switchView, closeMenu } = {}) {
             }
         };
     }
+
+    bindEreaderLibrary({ switchView, closeMenu });
 }

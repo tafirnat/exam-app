@@ -40,6 +40,7 @@ import { setupQuickPresets, updateQuickSourcesDot } from './features/sources/qui
 import { syncQuickPresetsWithLiveSources } from './features/sources/quick-presets.js';
 import { startOnboarding, stopOnboarding } from './features/onboarding/onboarding.js';
 import { applyEreaderChrome, bindEreaderShell, isEreaderView } from './features/ereader/ereader-shell.js';
+import { closeEreaderModals } from './features/ereader/ereader-library-ui.js';
 import {
     registerServiceWorker,
     scheduleNotifications,
@@ -3389,6 +3390,7 @@ function deleteAiProvider(id) {
 
 function closeAllModals() {
     let closedAny = false;
+    if (closeEreaderModals()) closedAny = true;
 
     // 0. AI Copy Dropdowns
     closeAllAiCopyDropdowns();

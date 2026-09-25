@@ -24,6 +24,7 @@ import { renderQuestionRangePicker } from '../features/test/test-range.js';
 import { updateQuickSourcesDot } from '../features/sources/quick-presets-ui.js';
 import { syncQuickPresetsWithLiveSources } from '../features/sources/quick-presets.js';
 import { updateSyncUI } from './github-sync.js';
+import { renderEreaderLibrary } from '../features/ereader/ereader-library-ui.js';
 
 /** Views as switchView() names them. */
 export const View = Object.freeze({
@@ -171,6 +172,15 @@ const BINDINGS = [
             }
         },
         views: [View.TEST]
+    },
+
+    // ── e-Reader ────────────────────────────────────────────────────────────
+    {
+        /* LANGUAGE: the count and the badges are written through t(). */
+        name: 'ereader:library',
+        slices: [Slice.EREADER_LIBRARY, Slice.EREADER_PROGRESS, Slice.LANGUAGE],
+        run: renderEreaderLibrary,
+        views: [View.EREADER_LIBRARY]
     },
 
     // ── Chrome (always current) ─────────────────────────────────────────────
