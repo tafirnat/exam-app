@@ -140,7 +140,7 @@ test('4. Gap detection identifies missing ranges between parts', () => {
     assert.equal(getNextFrom(book), 11);
 });
 
-test('5. Deduplicates colliding sections by page_start + normalized title', () => {
+test('5. Deduplicates colliding sections by page_start + normalized title + content', () => {
     const part1Book = {
         bookKey: 'history-book',
         title: 'World History',
@@ -148,7 +148,7 @@ test('5. Deduplicates colliding sections by page_start + normalized title', () =
         parts: [{ unit: 'page', from: 1, to: 15, total: 30 }],
         sections: [
             { id: 's-1', title: 'Ancient Greece', pageStart: 1, text: 'Greece text' },
-            { id: 's-2', title: 'Roman Empire', pageStart: 10, text: 'Rome text part 1' }
+            { id: 's-2', title: 'Roman Empire', pageStart: 10, text: 'Rome text' }
         ]
     };
 
@@ -158,8 +158,8 @@ test('5. Deduplicates colliding sections by page_start + normalized title', () =
         language: 'en',
         parts: [{ unit: 'page', from: 10, to: 25, total: 30 }],
         sections: [
-            // Duplicate section overlapping at page 10 with same title
-            { id: 's-2-incoming', title: '  roman empire  ', pageStart: 10, text: 'Rome text part 2' },
+            // Duplicate section overlapping at page 10 with same title and same content
+            { id: 's-2-incoming', title: '  roman empire  ', pageStart: 10, text: 'Rome text' },
             { id: 's-3', title: 'Middle Ages', pageStart: 16, text: 'Middle ages text' }
         ]
     };
@@ -370,5 +370,107 @@ test('12. Missing initial range is detected when book has only 2/2 and returns n
     const prompt = generateNextPartPrompt(bookOnlyPart2);
     assert.ok(prompt.includes('"from": 1'), 'Prompt must specify from: 1 for missing initial part');
 });
+
+test('13. mergeBookParts renumbers placeholder:img-<n> in merged parts to prevent collisions (Fix 2)', () => {
+    const part1 = {
+        bookKey: 'img-book',
+        title: 'Image Book',
+        language: 'en',
+        parts: [{ unit: 'page', from: 1, to: 10, total: 20 }],
+        sections: [
+            { id: 's1', title: 'Part 1 Sec 1', pageStart: 1, text: 'First img: ![A](placeholder:img-1) and second ![B](placeholder:img-2)' }
+        ]
+    };
+
+    const part2 = {
+        bookKey: 'img-book',
+        title: 'Image Book',
+        language: 'en',
+        parts: [{ unit: 'page', from: 11, to: 20, total: 20 }],
+        sections: [
+            { id: 's2', title: 'Part 2 Sec 1', pageStart: 11, text: 'Incoming img: ![C](placeholder:img-1) and ![D](placeholder:img-2)' }
+        ]
+    };
+
+    const merged = mergeBookParts(part1, part2);
+    assert.equal(merged.sections.length, 2);
+    assert.ok(merged.sections[0].text.includes('placeholder:img-1'));
+    assert.ok(merged.sections[0].text.includes('placeholder:img-2'));
+    assert.ok(merged.sections[1].text.includes('placeholder:img-3'), 'Incoming placeholder:img-1 must be renumbered to img-3');
+    assert.ok(merged.sections[1].text.includes('placeholder:img-4'), 'Incoming placeholder:img-2 must be renumbered to img-4');
+});
+
+test('14. detectGaps tracks maximum to-value so far and avoids false gaps from earlier parts covering the range (Fix 7)', () => {
+    const parts = [
+        { from: 1, to: 20, unit: 'page' },
+        { from: 5, to: 10, unit: 'page' },
+        { from: 12, to: 25, unit: 'page' }
+    ];
+
+    const gaps = detectGaps(parts);
+    assert.deepEqual(gaps, [], 'No gaps should be detected when maxTo covers the range');
+
+    const partsWithGap = [
+        { from: 1, to: 10, unit: 'page' },
+        { from: 3, to: 8, unit: 'page' },
+        { from: 15, to: 20, unit: 'page' }
+    ];
+    const detected = detectGaps(partsWithGap);
+    assert.equal(detected.length, 1);
+    assert.deepEqual(detected[0], { from: 11, to: 14, unit: 'page' });
+});
+
+test('15. mergeBookParts preserves distinct sections on the same page with same title or no title by comparing content (Fix 8)', () => {
+    const part1 = {
+        bookKey: 'sec-book',
+        title: 'Sections Book',
+        language: 'en',
+        parts: [{ unit: 'page', from: 1, to: 10, total: 10 }],
+        sections: [
+            { id: 'u1', title: '', pageStart: 5, text: 'First untitled section' },
+            { id: 'u2', title: '', pageStart: 5, text: 'Second untitled section' },
+            { id: 'e1', title: 'Exercise', pageStart: 8, text: 'Question 1' },
+            { id: 'e2', title: 'Exercise', pageStart: 8, text: 'Question 2' },
+            { id: 'dup', title: 'Exercise', pageStart: 8, text: 'Question 1' }
+        ]
+    };
+
+    const emptyTarget = {
+        bookKey: 'sec-book',
+        title: 'Sections Book',
+        language: 'en',
+        parts: [{ unit: 'page', from: 1, to: 0, total: 10 }],
+        sections: []
+    };
+
+    const merged = mergeBookParts(emptyTarget, part1);
+    assert.equal(merged.sections.length, 4, 'Must keep 4 distinct sections and drop only the identical duplicate');
+    assert.deepEqual(merged.sections.map(s => s.text), [
+        'First untitled section',
+        'Second untitled section',
+        'Question 1',
+        'Question 2'
+    ]);
+});
+
+test('16. generateNextPartPrompt safely handles quotes and $& in title/author without corrupting JSON or text (Fix 9)', () => {
+    const book = {
+        bookKey: 'special-key',
+        title: 'Cost is $100 & "Special" Title $& with $1',
+        author: 'Author "The Great" & Co $&',
+        language: 'en',
+        parts: [{ unit: 'page', from: 1, to: 10, total: 50 }]
+    };
+
+    const prompt = generateNextPartPrompt(book);
+    assert.ok(prompt.includes(JSON.stringify(book.title)));
+    assert.ok(prompt.includes(JSON.stringify(book.author)));
+    const jsonMatch = prompt.match(/```json\s*(\{[\s\S]*?\})\s*```/);
+    assert.ok(jsonMatch, 'Prompt must contain a fenced JSON block with an object');
+    const parsed = JSON.parse(jsonMatch[1]);
+    assert.equal(parsed.ereader.title, 'Cost is $100 & "Special" Title $& with $1');
+    assert.equal(parsed.ereader.author, 'Author "The Great" & Co $&');
+});
+
 
 

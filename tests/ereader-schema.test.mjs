@@ -1,6 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { validateEreaderFile, slugify } from '../src/features/ereader/ereader-schema.js';
+import { validateEreaderFile, validateSyncedBook, slugify } from '../src/features/ereader/ereader-schema.js';
 
 test('1. slugify converts umlauts and replaces non-alphanumerics with underscores', () => {
     assert.equal(slugify('ITIL® 4 Foundation de'), 'itil_4_foundation_de');
@@ -277,4 +277,24 @@ test('17. part.unit allows only "page" and "section"; other values warn and defa
     assert.equal(resChapter.book.parts[0].unit, 'section');
     assert.ok(resChapter.warnings.includes('ereader_warn_invalid_part_unit'));
 });
+
+test('18. validateSyncedBook validates stored book format and rejects invalid structures', () => {
+    const valid = {
+        title: 'Stored Book',
+        author: 'Author',
+        language: 'en',
+        sections: [{ id: 's-1', text: 'Some text' }]
+    };
+    const resValid = validateSyncedBook(valid);
+    assert.equal(resValid.ok, true);
+    assert.equal(resValid.book, valid);
+
+    assert.equal(validateSyncedBook(null).ok, false);
+    assert.equal(validateSyncedBook([]).ok, false);
+    assert.equal(validateSyncedBook({ title: '', sections: [{ id: 's1', text: 't' }] }).ok, false);
+    assert.equal(validateSyncedBook({ title: 'Book', sections: [] }).ok, false);
+    assert.equal(validateSyncedBook({ title: 'Book', sections: 'not-array' }).ok, false);
+    assert.equal(validateSyncedBook({ title: 'Book', sections: [{ id: 's1', text: 123 }] }).ok, false);
+});
+
 

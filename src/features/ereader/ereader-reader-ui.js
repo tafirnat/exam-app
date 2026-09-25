@@ -297,7 +297,7 @@ export async function changeFontScale(direction) {
 
     const anchorId = open && bookViewActive ? currentSectionId() : null;
     const anchorEl = anchorId ? sectionEls().find(s => s.dataset.sectionId === anchorId) : null;
-    const anchorDelta = anchorEl ? -anchorEl.getBoundingClientRect().top : undefined;
+    const anchorDelta = anchorEl ? anchorEl.getBoundingClientRect().top : undefined;
 
     await setPrefs({ fontScale: FONT_STEPS[nextIdx] });
     if (open && bookViewActive) renderChapter({ anchorSectionId: anchorId, anchorDelta });
@@ -667,17 +667,23 @@ export function bindEreaderReader({ switchView, closeMenu } = {}) {
                 return;
             }
             const placeholderId = activePlaceholderId;
+            const anchorId = bookViewActive ? currentSectionId() : null;
+            const anchorEl = anchorId ? sectionEls().find(s => s.dataset.sectionId === anchorId) : null;
+            const anchorDelta = anchorEl ? anchorEl.getBoundingClientRect().top : undefined;
+
             closeImageUrlModal();
             if (!open || !placeholderId) return;
 
             await updateBook(open.book.id, (book) => {
+                const escId = placeholderId.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+                const mdImageRe = new RegExp(`(!\\[[^\\]]*\\])\\(${escId}\\)`, 'g');
                 for (const s of book.sections) {
                     if (typeof s.text === 'string') {
                         if (placeholderId.startsWith('placeholder:')) {
-                            s.text = s.text.replaceAll(`(${placeholderId})`, `(${url})`);
+                            s.text = s.text.replace(mdImageRe, `$1(${url})`);
                         } else {
                             s.text = s.text.replaceAll(`![[${placeholderId}]]`, `![${placeholderId}](${url})`);
-                            s.text = s.text.replaceAll(`(${placeholderId})`, `(${url})`);
+                            s.text = s.text.replace(mdImageRe, `$1(${url})`);
                         }
                     }
                 }
@@ -687,7 +693,7 @@ export function bindEreaderReader({ switchView, closeMenu } = {}) {
             if (updated) {
                 open.book = updated;
                 memo.clear();
-                renderChapter();
+                renderChapter({ anchorSectionId: anchorId, anchorDelta });
             }
         };
     }

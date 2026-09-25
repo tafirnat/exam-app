@@ -246,3 +246,81 @@ test('a deleted open book sends the reader back to the library', async () => {
     assert.deepEqual(views.at(-1), ['ereaderLibrary', true]);
     assert.equal(reader.getOpenBook(), null);
 });
+
+// ── fixes 1, 3, 4 ─────────────────────────────────────────────────────────
+
+test('1. changeFontScale calculates anchorDelta = anchorEl.getBoundingClientRect().top without negation', async () => {
+    await addAndOpen();
+    const sectionEls = document.querySelectorAll('#ereaderContent .ereader-section');
+    sectionEls[0].getBoundingClientRect = () => ({ top: 120, bottom: 220, height: 100 });
+
+    const scrollCalls = [];
+    global.window.scrollTo = (opts) => { scrollCalls.push(opts); };
+
+    await reader.changeFontScale(1);
+
+    assert.ok(scrollCalls.length > 0);
+    const lastScroll = scrollCalls[scrollCalls.length - 1];
+    assert.equal(lastScroll.top, 0, 'anchor delta must correctly preserve the top offset without negative inversion');
+});
+
+test('3. saving image URL for wiki-embed targets only image syntax, preserving matching normal text', async () => {
+    const customBook = {
+        ereader: { schema: 1, book_key: 'img-test', title: 'Image Test', author: 'A', language: 'en', source_type: 'obsidian' },
+        sections: [
+            {
+                id: 's1',
+                title: 'Chapter 1',
+                level: 1,
+                text: 'See the diagram below:\n\n![[my-diagram]]\n\nNote: (my-diagram) is essential for understanding.'
+            }
+        ]
+    };
+    const book = await addAndOpen(customBook);
+
+    reader.openImageUrlModal('my-diagram');
+
+    const input = document.getElementById('ereaderImageUrlInput');
+    const saveBtn = document.getElementById('ereaderImageUrlSaveBtn');
+    input.value = 'https://example.com/images/diag.png';
+    await saveBtn.onclick();
+
+    const updated = await ereaderStore.getBook(book.id);
+    const text = updated.sections[0].text;
+    assert.ok(text.includes('![my-diagram](https://example.com/images/diag.png)'), 'Image markdown should be updated with new URL');
+    assert.ok(text.includes('Note: (my-diagram) is essential for understanding.'), 'Normal text with parentheses should remain unchanged');
+});
+
+test('4. saving image URL preserves reader anchor and does not jump reader to chapter start', async () => {
+    const customBook = {
+        ereader: { schema: 1, book_key: 'anchor-test', title: 'Anchor Test', author: 'A', language: 'en', source_type: 'obsidian' },
+        sections: [
+            { id: 's1', title: 'Chapter 1', level: 1, text: 'Top text.' },
+            { id: 's2', title: 'Section 2', level: 2, text: '![[diagram-anchor]]\n\nSecond section text.' }
+        ]
+    };
+    const book = await addAndOpen(customBook);
+
+    const s2El = document.querySelector('[data-section-id="s2"]');
+    const s1El = document.querySelector('[data-section-id="s1"]');
+    s1El.getBoundingClientRect = () => ({ top: -200, bottom: -100, height: 100 });
+    s2El.getBoundingClientRect = () => ({ top: 50, bottom: 250, height: 200 });
+
+    const scrollCalls = [];
+    global.window.scrollTo = (opts) => { scrollCalls.push(opts); };
+
+    reader.openImageUrlModal('diagram-anchor');
+    const input = document.getElementById('ereaderImageUrlInput');
+    const saveBtn = document.getElementById('ereaderImageUrlSaveBtn');
+    input.value = 'https://example.com/img.png';
+    await saveBtn.onclick();
+
+    const updated = await ereaderStore.getBook(book.id);
+    assert.ok(updated.sections[1].text.includes('https://example.com/img.png'));
+    assert.ok(scrollCalls.length > 0);
+    assert.equal(reader.getOpenBook().id, book.id);
+    await reader.flushPosition();
+    const currentProgress = ereaderStore.getProgress(book.id);
+    assert.equal(currentProgress?.sectionId, 's2', 'Preserved sectionId should be s2');
+});
+

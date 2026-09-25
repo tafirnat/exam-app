@@ -420,4 +420,46 @@ test('importing a low density part prompts for density confirmation; rejection p
     assert.equal(updated.parts.length, 2);
 });
 
+test('manual merge blocks when selected parts overlap (Fix 7)', async () => {
+    await ereaderStore.loadEreader();
+
+    // Import part 1 (pages 1-10)
+    const { book: b1 } = await imp.importEreaderJson(bookJson({
+        title: 'Overlap Book', key: 'overlap-key', from: 1, to: 10
+    }));
+
+    // Import part 2 with overlapping range (pages 8-15) as a separate book (decline auto-merge)
+    const { book: b2 } = await imp.importEreaderJson(bookJson({
+        title: 'Overlap Book', key: 'overlap-key', from: 8, to: 15
+    }), {
+        confirmMerge: async () => false
+    });
+
+    assert.equal(ereaderStore.listBooks().length, 2);
+
+    lib.openMergeOverlay();
+
+    const overlay = document.getElementById('ereaderMergeOverlay');
+    assert.ok(overlay.classList.contains('active'), 'Merge modal should open');
+
+    const checkboxes = overlay.querySelectorAll('input[type="checkbox"]');
+    assert.equal(checkboxes.length, 2);
+
+    // Select both overlapping books
+    checkboxes[0].checked = true;
+    checkboxes[0].onchange();
+    checkboxes[1].checked = true;
+    checkboxes[1].onchange();
+
+    const confirmBtn = document.getElementById('ereaderMergeConfirmBtn');
+    assert.equal(confirmBtn.disabled, false);
+
+    await confirmBtn.onclick();
+
+    // The two books must remain separate, not merged
+    assert.equal(ereaderStore.listBooks().length, 2, 'Books must not be merged when ranges overlap');
+    lib.closeMergeOverlay();
+});
+
+
 

@@ -193,3 +193,30 @@ export function validateEreaderFile(json) {
 
     return { ok: true, errors: [], warnings, book };
 }
+
+/**
+ * Validates a synced/stored e-Reader book object (the format stored in IndexedDB and pushed to Gist).
+ *
+ * @param {unknown} book
+ * @returns {{ ok: boolean, error?: string, book?: object }}
+ */
+export function validateSyncedBook(book) {
+    if (!book || typeof book !== 'object' || Array.isArray(book)) {
+        return { ok: false, error: 'invalid_json' };
+    }
+    const title = typeof book.title === 'string' ? book.title.trim() : '';
+    if (!title) {
+        return { ok: false, error: 'missing_title' };
+    }
+    if (!Array.isArray(book.sections) || book.sections.length === 0) {
+        return { ok: false, error: 'no_sections' };
+    }
+    for (let i = 0; i < book.sections.length; i++) {
+        const s = book.sections[i];
+        if (!s || typeof s !== 'object' || Array.isArray(s) || typeof s.text !== 'string') {
+            return { ok: false, error: 'invalid_section' };
+        }
+    }
+    return { ok: true, book };
+}
+

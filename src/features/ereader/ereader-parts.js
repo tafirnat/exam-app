@@ -70,15 +70,18 @@ export function detectGaps(parts) {
             unit: sorted[0].unit || 'page'
         });
     }
-    for (let i = 0; i < sorted.length - 1; i++) {
-        const cur = sorted[i];
-        const next = sorted[i + 1];
-        if (next.from > cur.to + 1) {
+    let maxTo = sorted[0].to;
+    for (let i = 1; i < sorted.length; i++) {
+        const next = sorted[i];
+        if (next.from > maxTo + 1) {
             gaps.push({
-                from: cur.to + 1,
+                from: maxTo + 1,
                 to: next.from - 1,
-                unit: cur.unit || 'page'
+                unit: next.unit || sorted[0].unit || 'page'
             });
+        }
+        if (next.to > maxTo) {
+            maxTo = next.to;
         }
     }
     return gaps;
@@ -166,15 +169,17 @@ export function mergeBookParts(targetBook, newPartBook) {
         throw new Error(check.reason || 'ereader_warn_diff_lang_or_unit');
     }
 
-    // Ensure all sections are tagged with partFrom
+    // Ensure all sections are tagged with partFrom and distinguish incoming sections
     const targetSections = (targetBook.sections || []).map(s => ({
         ...s,
-        partFrom: s.partFrom !== undefined ? s.partFrom : (targetBook.parts?.[0]?.from ?? 1)
+        partFrom: s.partFrom !== undefined ? s.partFrom : (targetBook.parts?.[0]?.from ?? 1),
+        _isIncoming: false
     }));
 
     const newSections = (newPartBook.sections || []).map(s => ({
         ...s,
-        partFrom: s.partFrom !== undefined ? s.partFrom : (newPartBook.parts?.[0]?.from ?? 1)
+        partFrom: s.partFrom !== undefined ? s.partFrom : (newPartBook.parts?.[0]?.from ?? 1),
+        _isIncoming: true
     }));
 
     // Combine parts
@@ -185,28 +190,57 @@ export function mergeBookParts(targetBook, newPartBook) {
     const allSections = [...targetSections, ...newSections];
     allSections.sort((a, b) => (a.partFrom || 0) - (b.partFrom || 0));
 
-    // Deduplicate colliding sections: page_start + normalized title
+    // Deduplicate colliding sections: page_start + normalized title + content
     const seenSectionKeys = new Set();
     const deduplicatedSections = [];
 
     for (const section of allSections) {
         const normTitle = normalizeTitle(section.title);
+        const normText = (section.text || '').trim();
         let key = null;
         if (section.pageStart !== undefined && section.pageStart !== null) {
-            key = `${section.pageStart}:${normTitle}`;
-        } else if (normTitle && section.text) {
-            // Without pageStart, only deduplicate if both title and text are genuinely identical
-            // (proving they are the exact same section content, preserving distinct sections with the same title)
-            key = `content:${normTitle}:${section.text.trim()}`;
+            key = `${section.pageStart}:${normTitle}:${normText}`;
+        } else {
+            key = `content:${normTitle}:${normText}`;
         }
 
-        if (key) {
-            if (seenSectionKeys.has(key)) {
-                continue; // duplicate section; drop
-            }
-            seenSectionKeys.add(key);
+        if (seenSectionKeys.has(key)) {
+            continue; // duplicate section; drop
         }
+        seenSectionKeys.add(key);
         deduplicatedSections.push({ ...section });
+    }
+
+    // Renumber placeholder:img-<n> in new/incoming sections to prevent collision with targetBook
+    let maxImg = 0;
+    const imgRe = /placeholder:img-(\d+)/g;
+    for (const s of targetSections) {
+        if (typeof s.text === 'string') {
+            for (const m of s.text.matchAll(imgRe)) {
+                const n = parseInt(m[1], 10);
+                if (n > maxImg) maxImg = n;
+            }
+        }
+    }
+
+    if (maxImg > 0) {
+        const placeholderMap = new Map();
+        for (const s of deduplicatedSections) {
+            if (s._isIncoming && typeof s.text === 'string') {
+                s.text = s.text.replace(/placeholder:img-(\d+)/g, (fullMatch) => {
+                    if (!placeholderMap.has(fullMatch)) {
+                        maxImg++;
+                        placeholderMap.set(fullMatch, `placeholder:img-${maxImg}`);
+                    }
+                    return placeholderMap.get(fullMatch);
+                });
+            }
+            delete s._isIncoming;
+        }
+    } else {
+        for (const s of deduplicatedSections) {
+            delete s._isIncoming;
+        }
     }
 
     // Rewrite colliding section IDs
@@ -289,16 +323,16 @@ export function generateNextPartPrompt(book) {
     let prompt = EREADER_AI_PROMPT;
 
     // Substitute schema sample values
-    prompt = prompt.replace(/"book_key":\s*"[^"]*"/, `"book_key": "${book.bookKey || ''}"`);
-    prompt = prompt.replace(/"title":\s*"[^"]*"/, `"title": "${book.title || ''}"`);
+    prompt = prompt.replace(/"book_key":\s*"[^"]*"/, () => `"book_key": ${JSON.stringify(book.bookKey || '')}`);
+    prompt = prompt.replace(/"title":\s*"[^"]*"/, () => `"title": ${JSON.stringify(book.title || '')}`);
     if (book.author) {
-        prompt = prompt.replace(/"author":\s*"[^"]*"/, `"author": "${book.author}"`);
+        prompt = prompt.replace(/"author":\s*"[^"]*"/, () => `"author": ${JSON.stringify(book.author)}`);
     }
-    prompt = prompt.replace(/"language":\s*"[^"]*"/, `"language": "${book.language || 'und'}"`);
-    prompt = prompt.replace(/"unit":\s*"[^"]*"/, `"unit": "${unit}"`);
-    prompt = prompt.replace(/"from":\s*\d+/, `"from": ${nextFrom}`);
+    prompt = prompt.replace(/"language":\s*"[^"]*"/, () => `"language": ${JSON.stringify(book.language || 'und')}`);
+    prompt = prompt.replace(/"unit":\s*"[^"]*"/, () => `"unit": ${JSON.stringify(unit)}`);
+    prompt = prompt.replace(/"from":\s*\d+/, () => `"from": ${nextFrom}`);
     if (total > 0) {
-        prompt = prompt.replace(/"total":\s*\d+/, `"total": ${total}`);
+        prompt = prompt.replace(/"total":\s*\d+/, () => `"total": ${total}`);
     }
 
     const header = [

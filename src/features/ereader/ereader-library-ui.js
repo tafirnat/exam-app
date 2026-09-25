@@ -20,7 +20,7 @@ import { importFromFiles, importFromText, importFromUrl } from './ereader-import
 import { EREADER_AI_PROMPT } from './ereader-prompt.js';
 import { openBook } from './ereader-reader-ui.js';
 import {
-    canMergeParts, checkDensity, mergeBookParts,
+    canMergeParts, doPartsOverlap, checkDensity, mergeBookParts,
     hasMissingRanges, generateNextPartPrompt
 } from './ereader-parts.js';
 
@@ -351,6 +351,16 @@ export function openMergeOverlay() {
             if (!check.ok) {
                 showAlert(t(check.reason || 'ereader_warn_diff_lang_or_unit'), t('warning_title'));
                 return;
+            }
+        }
+
+        // Check for overlapping parts between any selected books
+        for (let i = 0; i < selectedBooks.length; i++) {
+            for (let j = i + 1; j < selectedBooks.length; j++) {
+                if (doPartsOverlap(selectedBooks[i].parts || [], selectedBooks[j].parts || [])) {
+                    showAlert(t('ereader_warn_parts_overlap') || t('ereader_warn_diff_lang_or_unit'), t('warning_title'));
+                    return;
+                }
             }
         }
 

@@ -13,7 +13,7 @@ import {
     loadEreader, listBooks, getBook, replaceBook, deleteBook,
     getProgress, setProgress, getTombstones, setEreaderChangeListener
 } from './ereader-store.js';
-import { validateEreaderFile } from './ereader-schema.js';
+import { validateEreaderFile, validateSyncedBook } from './ereader-schema.js';
 import { isEreaderView } from './ereader-shell.js';
 
 async function getSyncApi() {
@@ -40,6 +40,33 @@ let lastPullTime = 0;
 let pushTimer = null;
 let initialized = false;
 let currentViewGetter = () => null;
+let lastPushedBookSignature = null;
+let cachedRemoteIndex = null;
+let cachedRemoteIndexTime = 0;
+let cachedGistFiles = null;
+const CACHED_INDEX_TTL_MS = 60000;
+
+function computeBookSignature(localBooks, localTombstones) {
+    const booksPart = (localBooks || []).map(b => `${b.id}:${b.updatedAt}`).sort().join('|');
+    const tombsPart = Object.entries(localTombstones || {}).map(([id, at]) => `${id}:${at}`).sort().join('|');
+    return `${booksPart}#${tombsPart}`;
+}
+
+function bookContainsDataImage(book) {
+    if (!book || !Array.isArray(book.sections)) return false;
+    const mdImgRe = /!\[[^\]]*\]\(([^)\s]+)\)/g;
+    const htmlImgRe = /<img\b[^>]*?\bsrc=["']?([^"'\s>]+)/gi;
+    for (const s of book.sections) {
+        if (typeof s.text !== 'string') continue;
+        for (const m of s.text.matchAll(mdImgRe)) {
+            if (/^data:image/i.test(m[1].trim())) return true;
+        }
+        for (const m of s.text.matchAll(htmlImgRe)) {
+            if (/^data:image/i.test(m[1].trim())) return true;
+        }
+    }
+    return false;
+}
 
 /**
  * Pure function to merge local and remote e-Reader indices.
@@ -159,10 +186,28 @@ export async function pullEreader({ force = false } = {}) {
                 const fname = bookFilename(summary.id);
                 const remoteBookJson = await readGistJSON(gist, fname);
                 if (remoteBookJson && typeof remoteBookJson === 'object') {
-                    const validation = validateEreaderFile(remoteBookJson);
-                    const bookToStore = validation.ok && validation.book
-                        ? { ...validation.book, id: summary.id, updatedAt: summary.updatedAt }
-                        : { ...remoteBookJson, id: summary.id, updatedAt: summary.updatedAt };
+                    let valid = false;
+                    let bookData = null;
+                    if (remoteBookJson.ereader) {
+                        const validation = validateEreaderFile(remoteBookJson);
+                        if (validation.ok && validation.book) {
+                            valid = true;
+                            bookData = validation.book;
+                        }
+                    } else {
+                        const validation = validateSyncedBook(remoteBookJson);
+                        if (validation.ok && validation.book) {
+                            valid = true;
+                            bookData = validation.book;
+                        }
+                    }
+
+                    if (!valid || !bookData) {
+                        console.warn('Skipping invalid synced book:', summary.id);
+                        continue;
+                    }
+
+                    const bookToStore = { ...bookData, id: summary.id, updatedAt: summary.updatedAt };
                     await replaceBook(bookToStore, { fromSync: true });
                 }
             }
@@ -197,13 +242,29 @@ export async function pushEreader() {
     if (!canUseRemoteArchive()) return false;
 
     try {
-        const gist = await fetchGist();
-        const remoteIndex = await readGistJSON(gist, INDEX_FILENAME);
-
         await loadEreader();
         const localBooks = listBooks();
         const localProgress = getProgress() || {};
         const localTombstones = getTombstones() || {};
+
+        const currentSig = computeBookSignature(localBooks, localTombstones);
+        const onlyProgressChanged = (lastPushedBookSignature !== null) &&
+            (currentSig === lastPushedBookSignature) &&
+            cachedRemoteIndex &&
+            (Date.now() - cachedRemoteIndexTime < CACHED_INDEX_TTL_MS);
+
+        let remoteIndex = null;
+        let gist = null;
+
+        if (onlyProgressChanged) {
+            remoteIndex = cachedRemoteIndex;
+        } else {
+            gist = await fetchGist();
+            remoteIndex = await readGistJSON(gist, INDEX_FILENAME);
+            cachedRemoteIndex = remoteIndex;
+            cachedRemoteIndexTime = Date.now();
+            cachedGistFiles = gist?.files || null;
+        }
 
         const localIndex = {
             schema: 1,
@@ -215,36 +276,57 @@ export async function pushEreader() {
         const merged = mergeEreaderIndex(localIndex, remoteIndex);
 
         const filesToPatch = {};
-        filesToPatch[INDEX_FILENAME] = { content: JSON.stringify(merged) };
 
+        const skippedBookIds = new Set();
         // Books to push: local updatedAt > remote summary updatedAt (or absent remotely)
         for (const book of localBooks) {
             const remoteSummary = remoteIndex?.books?.find(b => b.id === book.id);
             if (!remoteSummary || (book.updatedAt || 0) > (remoteSummary.updatedAt || 0)) {
                 const fullBook = await getBook(book.id);
                 if (fullBook) {
-                    const serialized = JSON.stringify(fullBook);
-                    // K4 Guard: no data:image allowed
-                    if (serialized.includes('data:image')) {
+                    // K4 Guard: check actual image URLs for data:image
+                    if (bookContainsDataImage(fullBook)) {
                         console.error('K4 guard: e-Reader book contains data:image, skipping push:', book.id);
+                        skippedBookIds.add(book.id);
                         continue;
                     }
-                    filesToPatch[bookFilename(book.id)] = { content: serialized };
+                    filesToPatch[bookFilename(book.id)] = { content: JSON.stringify(fullBook) };
                 }
             }
         }
 
+        // Leave skipped book's index entry in its remote state
+        for (const skippedId of skippedBookIds) {
+            const remoteSummary = remoteIndex?.books?.find(b => b.id === skippedId);
+            const idx = merged.books.findIndex(b => b.id === skippedId);
+            if (remoteSummary) {
+                if (idx !== -1) {
+                    merged.books[idx] = { ...remoteSummary };
+                } else {
+                    merged.books.push({ ...remoteSummary });
+                }
+            } else if (idx !== -1) {
+                merged.books.splice(idx, 1);
+            }
+        }
+
+        filesToPatch[INDEX_FILENAME] = { content: JSON.stringify(merged) };
+
         // Tombstones: delete remote file if still in gist
-        if (gist.files) {
+        const tombFiles = gist?.files || cachedGistFiles;
+        if (tombFiles) {
             for (const tombId of Object.keys(merged.tombstones)) {
                 const fname = bookFilename(tombId);
-                if (gist.files[fname]) {
+                if (tombFiles[fname]) {
                     filesToPatch[fname] = null;
                 }
             }
         }
 
         await patchGistFiles(filesToPatch);
+        lastPushedBookSignature = currentSig;
+        cachedRemoteIndex = merged;
+        cachedRemoteIndexTime = Date.now();
         return true;
     } catch (err) {
         console.warn('e-Reader push failed:', err);
@@ -299,4 +381,8 @@ export function _resetEreaderSyncForTests() {
     pushTimer = null;
     initialized = false;
     currentViewGetter = () => null;
+    lastPushedBookSignature = null;
+    cachedRemoteIndex = null;
+    cachedRemoteIndexTime = 0;
+    cachedGistFiles = null;
 }

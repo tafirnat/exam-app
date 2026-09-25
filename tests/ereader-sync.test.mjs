@@ -374,3 +374,179 @@ test('10. Re-importing a deleted book gets a new ID and is not blocked by tombst
     assert.notEqual(revivedBook.id, firstId, 'New book must receive a new distinct ID');
     assert.ok(ereaderStore.listBooks().some(b => b.id === revivedBook.id), 'Revived book must be in library');
 });
+
+test('11. K4 guard leaves skipped book index entry in remote state and does not trigger on plain text data:image (Fix 5)', async () => {
+    let patchedFiles = null;
+    const remoteIndexData = {
+        schema: 1,
+        books: [{ id: 'b-remote', title: 'Remote Book', updatedAt: 100 }],
+        progress: {},
+        tombstones: {}
+    };
+
+    global.fetch = async (url, init = {}) => {
+        const method = (init.method || 'GET').toUpperCase();
+        if (method === 'GET') {
+            return {
+                ok: true,
+                status: 200,
+                json: async () => ({
+                    files: {
+                        [INDEX_FILENAME]: { content: JSON.stringify(remoteIndexData) }
+                    }
+                })
+            };
+        }
+        if (method === 'PATCH') {
+            patchedFiles = JSON.parse(init.body || '{}').files;
+            return { ok: true, status: 200, json: async () => ({}) };
+        }
+    };
+
+    // Book 1: updated locally to have an inline data:image image, updatedAt: 200
+    const hostileBook = sampleBook('b-remote', 'Remote Book Modified', 200);
+    hostileBook.sections[0].text = 'Inline image: ![pic](data:image/jpeg;base64,12345)';
+    await ereaderStore.replaceBook(hostileBook);
+
+    // Book 2: normal book that merely mentions "data:image" in plain text
+    const textBook = sampleBook('b-text', 'Text Book', 200);
+    textBook.sections[0].text = 'The data:image URI scheme is used in web development.';
+    await ereaderStore.replaceBook(textBook);
+
+    await pushEreader();
+
+    assert.ok(patchedFiles);
+    // b-remote must NOT be pushed
+    assert.equal(patchedFiles[bookFilename('b-remote')], undefined, 'Hostile book must not be pushed');
+    // b-text MUST be pushed (not blocked by plain text)
+    assert.ok(patchedFiles[bookFilename('b-text')], 'Text book mentioning data:image in text must be pushed');
+
+    // In the pushed index, b-remote must retain its remote updatedAt (100), not local (200)
+    const pushedIndex = JSON.parse(patchedFiles[INDEX_FILENAME].content);
+    const remoteBookEntry = pushedIndex.books.find(b => b.id === 'b-remote');
+    assert.ok(remoteBookEntry);
+    assert.equal(remoteBookEntry.updatedAt, 100, 'Skipped book must retain remote updatedAt so other devices are not corrupted');
+});
+
+test('12. pullEreader validates pushed book format without ereader wrapper and drops invalid books (Fix 6)', async () => {
+    // Valid pushed book (no 'ereader' wrapper)
+    const validPushedBook = {
+        id: 'b-valid',
+        title: 'Valid Synced Book',
+        author: 'Sync Author',
+        language: 'en',
+        sourceType: 'other',
+        bookKey: 'valid-synced',
+        parts: [{ unit: 'section', from: 1, to: 1, total: 1 }],
+        updatedAt: 500,
+        sections: [
+            { id: 's1', title: 'Chapter 1', level: 1, text: 'Valid content.' }
+        ]
+    };
+
+    // Invalid book (missing sections or corrupt structure)
+    const invalidBook = {
+        id: 'b-invalid',
+        title: 'Corrupt Book',
+        sections: "not an array"
+    };
+
+    const gistFiles = {
+        [INDEX_FILENAME]: {
+            content: JSON.stringify({
+                schema: 1,
+                books: [
+                    { id: 'b-valid', title: 'Valid Synced Book', updatedAt: 500 },
+                    { id: 'b-invalid', title: 'Corrupt Book', updatedAt: 500 }
+                ],
+                progress: {},
+                tombstones: {}
+            })
+        },
+        [bookFilename('b-valid')]: { content: JSON.stringify(validPushedBook) },
+        [bookFilename('b-invalid')]: { content: JSON.stringify(invalidBook) }
+    };
+
+    global.fetch = async (url, init = {}) => {
+        const method = (init.method || 'GET').toUpperCase();
+        if (method === 'GET') {
+            return {
+                ok: true,
+                status: 200,
+                json: async () => ({ files: { ...gistFiles } })
+            };
+        }
+    };
+
+    await pullEreader({ force: true });
+
+    // Valid book must be stored
+    const storedValid = await ereaderStore.getBook('b-valid');
+    assert.ok(storedValid, 'Valid book in pushed format must be saved');
+    assert.equal(storedValid.title, 'Valid Synced Book');
+
+    // Invalid book must be dropped
+    const storedInvalid = await ereaderStore.getBook('b-invalid');
+    assert.equal(storedInvalid, null, 'Invalid book must be dropped and not saved');
+});
+
+test('13. pushEreader uses cached index and avoids downloading full gist on subsequent progress-only pushes (Fix 10)', async () => {
+    let getGistCalls = 0;
+    let patchCalls = 0;
+
+    const book = sampleBook('b-prog', 'Progress Book', 1000);
+    await ereaderStore.replaceBook(book);
+
+    const gistFiles = {
+        [INDEX_FILENAME]: {
+            content: JSON.stringify({
+                schema: 1,
+                books: [{ id: 'b-prog', title: 'Progress Book', updatedAt: 1000 }],
+                progress: {},
+                tombstones: {}
+            })
+        },
+        [bookFilename('b-prog')]: { content: JSON.stringify(book) }
+    };
+
+    global.fetch = async (url, init = {}) => {
+        const method = (init.method || 'GET').toUpperCase();
+        if (method === 'GET') {
+            getGistCalls++;
+            return {
+                ok: true,
+                status: 200,
+                json: async () => ({ files: { ...gistFiles } })
+            };
+        }
+        if (method === 'PATCH') {
+            patchCalls++;
+            const body = JSON.parse(init.body || '{}');
+            for (const [name, val] of Object.entries(body.files || {})) {
+                if (val === null) delete gistFiles[name];
+                else gistFiles[name] = { content: val.content };
+            }
+            return { ok: true, status: 200, json: async () => ({ files: { ...gistFiles } }) };
+        }
+    };
+
+    // First push (books need checking) -> must fetch Gist once
+    await pushEreader();
+    assert.equal(getGistCalls, 1, 'First push must fetch Gist');
+    assert.equal(patchCalls, 1, 'First push must patch Gist');
+
+    // Now update ONLY progress (e.g. while reading)
+    await ereaderStore.setProgress('b-prog', { sectionId: 's1', offset: 0.25, percent: 25, at: 2000 });
+    await pushEreader();
+
+    // The second push must NOT call fetchGist again because only progress changed!
+    assert.equal(getGistCalls, 1, 'Subsequent progress push must not re-fetch the entire gist');
+    assert.equal(patchCalls, 2, 'Second push must patch the updated progress index');
+
+    // Another progress update
+    await ereaderStore.setProgress('b-prog', { sectionId: 's1', offset: 0.5, percent: 50, at: 3000 });
+    await pushEreader();
+    assert.equal(getGistCalls, 1, 'Third progress push must also not re-fetch the entire gist');
+    assert.equal(patchCalls, 3, 'Third push must patch updated progress');
+});
+
