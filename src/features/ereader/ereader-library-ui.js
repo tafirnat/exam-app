@@ -13,12 +13,16 @@
 import { t } from '../../core/i18n.js';
 import { showToast, showAlert, showConfirm, showDecision } from '../../core/utils.js';
 import {
-    isEreaderLoaded, listBooks, getProgress, getPrefs,
-    deleteBook, resetAllProgress, deleteAllBooks
+    isEreaderLoaded, listBooks, getBook, getProgress, getPrefs,
+    deleteBook, replaceBook, resetAllProgress, deleteAllBooks
 } from './ereader-store.js';
 import { importFromFiles, importFromText, importFromUrl } from './ereader-import.js';
 import { EREADER_AI_PROMPT } from './ereader-prompt.js';
 import { openBook } from './ereader-reader-ui.js';
+import {
+    canMergeParts, checkDensity, mergeBookParts,
+    hasMissingRanges, generateNextPartPrompt
+} from './ereader-parts.js';
 
 const ACTIONS_ICON = `
         <svg viewBox="0 0 24 24" width="20" height="20" class="source-actions-icon">
@@ -99,6 +103,7 @@ export function renderEreaderLibrary() {
     const list = document.getElementById('ereaderBookList');
     const count = document.getElementById('ereaderLibraryCount');
     const empty = document.getElementById('ereaderLibraryEmpty');
+    const mergeBtn = document.getElementById('ereaderMergePartsBtn');
     if (!list || !count || !empty) return;
 
     /* Before the index has been read there is no answer yet, and "no books"
@@ -107,6 +112,7 @@ export function renderEreaderLibrary() {
         empty.style.display = 'none';
         list.replaceChildren();
         count.textContent = '';
+        if (mergeBtn) mergeBtn.style.display = 'none';
         return;
     }
 
@@ -114,6 +120,16 @@ export function renderEreaderLibrary() {
     count.textContent = books.length === 1
         ? t('ereader_book_count_one')
         : t('ereader_book_count', { count: books.length });
+
+    // Show merge button only when there are 2+ books sharing the same bookKey
+    if (mergeBtn) {
+        const keyCounts = new Map();
+        for (const b of books) {
+            if (b.bookKey) keyCounts.set(b.bookKey, (keyCounts.get(b.bookKey) || 0) + 1);
+        }
+        const hasCandidates = [...keyCounts.values()].some(c => c >= 2);
+        mergeBtn.style.display = hasCandidates ? 'flex' : 'none';
+    }
 
     if (books.length === 0) {
         empty.style.display = 'block';
@@ -156,18 +172,20 @@ function describeKeys(keys) {
  */
 export function reportImportResults(results) {
     const added = results.filter(r => r.status === 'added');
+    const merged = results.filter(r => r.status === 'merged');
     const duplicates = results.filter(r => r.status === 'duplicate');
     const failed = results.filter(r => r.status === 'invalid');
 
     if (added.length === 1) showToast(t('ereader_book_added', { title: added[0].book.title }));
     else if (added.length > 1) showToast(t('ereader_books_added', { count: added.length }));
+    for (const m of merged) showToast(t('ereader_part_merged', { title: m.book.title }));
     if (duplicates.length > 0) showToast(t('ereader_already_added'));
 
     const blocks = [];
     for (const r of failed) {
         blocks.push((r.name ? `${r.name}\n` : '') + describeKeys(r.errors));
     }
-    for (const r of added) {
+    for (const r of added.concat(merged)) {
         if (r.warnings.length > 0) blocks.push(`${r.book.title}\n${describeKeys(r.warnings)}`);
     }
     if (blocks.length > 0) {
@@ -175,8 +193,10 @@ export function reportImportResults(results) {
         showAlert(blocks.join('\n\n'), title);
     }
 
-    if (added.length > 0) setPanelOpen(false);
-    return { added: added.length, duplicates: duplicates.length, failed: failed.length };
+    if (added.length > 0 || merged.length > 0) setPanelOpen(false);
+    const out = { added: added.length, duplicates: duplicates.length, failed: failed.length };
+    if (merged.length > 0) out.merged = merged.length;
+    return out;
 }
 
 /**
@@ -215,6 +235,24 @@ function openBookActions(book) {
     actionsBookId = book.id;
     const name = document.getElementById('ereaderBookActionsName');
     if (name) name.textContent = book.title || '';
+
+    // Check if next part prompt button should be visible
+    const nextPromptBtn = document.getElementById('ereaderCopyNextPromptBtn');
+    if (nextPromptBtn) {
+        const canCopyNext = hasMissingRanges(book);
+        nextPromptBtn.style.display = canCopyNext ? 'flex' : 'none';
+        nextPromptBtn.onclick = async () => {
+            const promptText = generateNextPartPrompt(book);
+            try {
+                await navigator.clipboard.writeText(promptText);
+                showToast(t('ereader_prompt_copied'));
+            } catch {
+                showToast(t('ereader_prompt_copy_failed'));
+            }
+            closeBookActions();
+        };
+    }
+
     overlay.classList.add('active');
 }
 
@@ -224,14 +262,146 @@ function closeBookActions() {
     actionsBookId = null;
 }
 
+export function openMergeOverlay() {
+    const overlay = document.getElementById('ereaderMergeOverlay');
+    const list = document.getElementById('ereaderMergeList');
+    const confirmBtn = document.getElementById('ereaderMergeConfirmBtn');
+    const cancelBtn = document.getElementById('ereaderMergeCancelBtn');
+    if (!overlay || !list || !confirmBtn || !cancelBtn) return;
+
+    list.replaceChildren();
+    const selectedIds = new Set();
+
+    const books = listBooks();
+    const keyCounts = new Map();
+    for (const b of books) {
+        if (b.bookKey) keyCounts.set(b.bookKey, (keyCounts.get(b.bookKey) || 0) + 1);
+    }
+    const candidates = books.filter(b => b.bookKey && (keyCounts.get(b.bookKey) || 0) >= 2);
+
+    candidates.forEach(b => {
+        const item = document.createElement('label');
+        item.className = 'ereader-merge-item';
+        item.style.display = 'flex';
+        item.style.alignItems = 'center';
+        item.style.gap = '0.75rem';
+        item.style.padding = '0.75rem';
+        item.style.border = '1px solid var(--border-color)';
+        item.style.borderRadius = 'var(--radius-md)';
+        item.style.cursor = 'pointer';
+        item.style.transition = 'all 0.2s ease';
+
+        const p = b.parts?.[0];
+        const rangeText = p ? `${p.unit || 'part'} ${p.from}–${p.to} / ${p.total}` : '';
+
+        item.innerHTML = `
+            <input type="checkbox" value="${b.id}" style="width: 18px; height: 18px; cursor: pointer;">
+            <div style="flex: 1;">
+                <div style="font-weight: 600; font-size: 0.9rem;">${b.title || ''}</div>
+                <div style="font-size: 0.75rem; color: var(--text-secondary);">${rangeText} · ${b.bookKey}</div>
+            </div>
+        `;
+
+        const cb = item.querySelector('input');
+        cb.onchange = () => {
+            if (cb.checked) {
+                selectedIds.add(b.id);
+                item.style.backgroundColor = 'var(--surface-hover)';
+                item.style.borderColor = 'var(--primary-color)';
+            } else {
+                selectedIds.delete(b.id);
+                item.style.backgroundColor = 'transparent';
+                item.style.borderColor = 'var(--border-color)';
+            }
+            confirmBtn.disabled = selectedIds.size < 2;
+        };
+
+        list.appendChild(item);
+    });
+
+    overlay.classList.add('active');
+    confirmBtn.disabled = true;
+
+    confirmBtn.onclick = async () => {
+        const ids = Array.from(selectedIds);
+        if (ids.length < 2) return;
+        const selectedBooks = [];
+        for (const id of ids) {
+            const full = await getBook(id);
+            if (full) selectedBooks.push(full);
+        }
+        if (selectedBooks.length < 2) return;
+
+        // Verify compatibility
+        const first = selectedBooks[0];
+        for (let i = 1; i < selectedBooks.length; i++) {
+            const check = canMergeParts(first, selectedBooks[i]);
+            if (!check.ok) {
+                showAlert(t(check.reason || 'ereader_warn_diff_lang_or_unit'), t('warning_title'));
+                return;
+            }
+        }
+
+        // Sort by part.from ascending
+        selectedBooks.sort((a, b) => {
+            const fromA = a.parts?.[0]?.from ?? 0;
+            const fromB = b.parts?.[0]?.from ?? 0;
+            return fromA - fromB;
+        });
+
+        // Check density across parts
+        for (let i = 1; i < selectedBooks.length; i++) {
+            const density = checkDensity(selectedBooks[i], selectedBooks[0]);
+            if (density.lowDensity) {
+                const proceed = await showConfirm(t('ereader_warn_low_density'), t('warning_title'));
+                if (!proceed) return;
+                break;
+            }
+        }
+
+        // Merge all into target
+        let target = selectedBooks[0];
+        for (let i = 1; i < selectedBooks.length; i++) {
+            target = mergeBookParts(target, selectedBooks[i]);
+        }
+
+        await replaceBook(target);
+
+        // Delete the non-target books (creating tombstones)
+        for (let i = 1; i < selectedBooks.length; i++) {
+            await deleteBook(selectedBooks[i].id);
+        }
+
+        closeMergeOverlay();
+        showToast(t('ereader_merged_success'));
+        renderEreaderLibrary();
+    };
+
+    cancelBtn.onclick = closeMergeOverlay;
+    overlay.onclick = (e) => {
+        if (e.target === overlay) closeMergeOverlay();
+    };
+}
+
+export function closeMergeOverlay() {
+    const overlay = document.getElementById('ereaderMergeOverlay');
+    if (overlay) overlay.classList.remove('active');
+}
+
 /** For main.js closeAllModals(): closes what is open, says whether it did. */
 export function closeEreaderModals() {
-    const overlay = document.getElementById('ereaderBookActionsOverlay');
-    if (overlay && overlay.classList.contains('active')) {
+    let closed = false;
+    const actionsOverlay = document.getElementById('ereaderBookActionsOverlay');
+    if (actionsOverlay && actionsOverlay.classList.contains('active')) {
         closeBookActions();
-        return true;
+        closed = true;
     }
-    return false;
+    const mergeOverlay = document.getElementById('ereaderMergeOverlay');
+    if (mergeOverlay && mergeOverlay.classList.contains('active')) {
+        closeMergeOverlay();
+        closed = true;
+    }
+    return closed;
 }
 
 export async function deleteBookWithConfirm(id) {
@@ -294,10 +464,15 @@ export function bindEreaderLibrary({ switchView, closeMenu } = {}) {
     const toggleBtn = document.getElementById('ereaderToggleAddBtn');
     if (toggleBtn) toggleBtn.onclick = toggleAddPanel;
 
+    const mergePartsBtn = document.getElementById('ereaderMergePartsBtn');
+    if (mergePartsBtn) mergePartsBtn.onclick = openMergeOverlay;
+
+    const confirmMerge = async (title) => await showConfirm(t('ereader_part_match', { title }));
+
     bindDropZone(
         document.getElementById('ereaderFileDropZone'),
         document.getElementById('ereaderFileInput'),
-        async (files) => reportImportResults(await importFromFiles(files))
+        async (files) => reportImportResults(await importFromFiles(files, { confirmMerge }))
     );
 
     const urlInput = document.getElementById('ereaderUrlInput');
@@ -310,12 +485,12 @@ export function bindEreaderLibrary({ switchView, closeMenu } = {}) {
             timer = setTimeout(async () => {
                 let result;
                 if (value.startsWith('{')) {
-                    result = await importFromText(value);
+                    result = await importFromText(value, { confirmMerge });
                 } else if (!/^https?:\/\//i.test(value)) {
                     showAlert(t('ereader_invalid_url'), t('warning_title'));
                     return;
                 } else {
-                    result = await importFromUrl(value);
+                    result = await importFromUrl(value, { confirmMerge });
                 }
                 if (result.status !== 'invalid') urlInput.value = '';
                 reportImportResults([result]);
@@ -337,7 +512,7 @@ export function bindEreaderLibrary({ switchView, closeMenu } = {}) {
                 showToast(t('clipboard_empty'));
                 return;
             }
-            reportImportResults([await importFromText(text)]);
+            reportImportResults([await importFromText(text, { confirmMerge })]);
         };
     }
 
@@ -375,4 +550,6 @@ export function _resetEreaderLibraryUIForTests() {
     bound = false;
     actionsBookId = null;
     openBookHandler = () => {};
+    closeBookActions();
+    closeMergeOverlay();
 }

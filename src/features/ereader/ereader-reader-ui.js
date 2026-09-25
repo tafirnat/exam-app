@@ -20,6 +20,7 @@ import { getBook, getProgress, setProgress, getPrefs, setPrefs, listBooks } from
 import { buildChapters, chapterOfSection, weightedPercent } from './ereader-chapters.js';
 import { searchBook } from './ereader-search.js';
 import { applyEreaderChrome } from './ereader-shell.js';
+import { detectGaps } from './ereader-parts.js';
 
 export const FONT_STEPS = Object.freeze([0.875, 1, 1.125, 1.25, 1.375, 1.5]);
 const SAVE_DELAY_MS = 5000;
@@ -274,6 +275,18 @@ function markTocActive(sectionId) {
     }
 }
 
+function createGapItem(gap) {
+    const item = document.createElement('div');
+    item.className = 'menu-sub-item ereader-toc-gap';
+    item.dataset.gapFrom = String(gap.from);
+    item.dataset.gapTo = String(gap.to);
+    item.style.opacity = '0.6';
+    item.style.fontStyle = 'italic';
+    item.style.cursor = 'default';
+    item.textContent = t('ereader_gap_missing', { from: gap.from, to: gap.to });
+    return item;
+}
+
 /** Paints #ereaderTocList for the open book. */
 export function renderEreaderToc() {
     const list = document.getElementById('ereaderTocList');
@@ -286,7 +299,23 @@ export function renderEreaderToc() {
     const minLevel = Math.min(...sections.map(s => s.level || 1));
     const activeId = (lastPos && lastPos.bookId === open.book.id && lastPos.sectionId)
         || open.chapters[open.chapterIndex]?.sectionIds[0];
-    const items = sections.map(s => {
+
+    const gaps = detectGaps(open.book.parts || []);
+    const pendingGaps = [...gaps];
+    const items = [];
+
+    for (const s of sections) {
+        while (pendingGaps.length > 0) {
+            const gap = pendingGaps[0];
+            const sFrom = s.partFrom ?? s.pageStart;
+            if (sFrom !== undefined && sFrom > gap.to) {
+                items.push(createGapItem(gap));
+                pendingGaps.shift();
+            } else {
+                break;
+            }
+        }
+
         const item = document.createElement('button');
         item.type = 'button';
         item.className = 'menu-sub-item ereader-toc-item' + (s.id === activeId ? ' active' : '');
@@ -294,8 +323,13 @@ export function renderEreaderToc() {
         item.style.setProperty('--toc-depth', String((s.level || 1) - minLevel));
         item.textContent = (s.title || '').trim() || t('ereader_untitled_section');
         item.onclick = () => goToSection(s.id);
-        return item;
-    });
+        items.push(item);
+    }
+
+    while (pendingGaps.length > 0) {
+        items.push(createGapItem(pendingGaps.shift()));
+    }
+
     list.replaceChildren(...items);
 }
 
