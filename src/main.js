@@ -39,6 +39,7 @@ import { initLightbox } from './core/lightbox.js';
 import { setupQuickPresets, updateQuickSourcesDot } from './features/sources/quick-presets-ui.js';
 import { syncQuickPresetsWithLiveSources } from './features/sources/quick-presets.js';
 import { startOnboarding, stopOnboarding } from './features/onboarding/onboarding.js';
+import { applyEreaderChrome, bindEreaderShell, isEreaderView } from './features/ereader/ereader-shell.js';
 import {
     registerServiceWorker,
     scheduleNotifications,
@@ -1126,6 +1127,7 @@ function setupEventListeners() {
         startOnboarding(true);
     });
     setClick('menuResetApp', openResetAppModal);
+    bindEreaderShell({ switchView, closeMenu: () => { if (menuActive) toggleMenu(); } });
     setClick('resetAppCloseBtn', closeResetAppModal);
     setClick('resetAppCancelBtn', closeResetAppModal);
     setClick('resetAppNextBtn', () => showResetStep(2));
@@ -2350,6 +2352,8 @@ function switchView(view, isBack = false) {
     }
 
     document.getElementById('resultsView').style.display = view === 'results' ? 'flex' : 'none';
+    document.getElementById('ereaderLibraryView').style.display = view === 'ereaderLibrary' ? 'block' : 'none';
+    document.getElementById('ereaderBookView').style.display = view === 'ereaderBook' ? 'block' : 'none';
 
     const bottomNav = document.getElementById('bottomNav');
     if (bottomNav) {
@@ -2401,6 +2405,8 @@ function switchView(view, isBack = false) {
         headerTitle.setAttribute('data-i18n', 'show_stats');
         headerTitle.innerText = titleText;
     }
+
+    applyEreaderChrome(view, { goHome: () => switchView('home') });
 
     if (typeof updateDocumentTitle === 'function') {
         updateDocumentTitle(view);
