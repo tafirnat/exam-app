@@ -60,9 +60,16 @@ export function doPartsOverlap(partsA, partsB) {
  * @returns {Array<{from: number, to: number, unit: string}>}
  */
 export function detectGaps(parts) {
-    if (!Array.isArray(parts) || parts.length < 2) return [];
+    if (!Array.isArray(parts) || parts.length === 0) return [];
     const sorted = [...parts].sort((a, b) => a.from - b.from);
     const gaps = [];
+    if (sorted[0].from > 1) {
+        gaps.push({
+            from: 1,
+            to: sorted[0].from - 1,
+            unit: sorted[0].unit || 'page'
+        });
+    }
     for (let i = 0; i < sorted.length - 1; i++) {
         const cur = sorted[i];
         const next = sorted[i + 1];
@@ -242,6 +249,8 @@ export function mergeBookParts(targetBook, newPartBook) {
 export function hasMissingRanges(book) {
     if (!book || !Array.isArray(book.parts) || book.parts.length === 0) return false;
     if (detectGaps(book.parts).length > 0) return true;
+    const minFrom = Math.min(...book.parts.map(p => p.from || 1));
+    if (minFrom > 1) return true;
     const maxTo = Math.max(...book.parts.map(p => p.to || 0));
     const total = Math.max(...book.parts.map(p => p.total || p.to || 0));
     return maxTo < total;
@@ -259,6 +268,8 @@ export function getNextFrom(book) {
     if (gaps.length > 0) {
         return gaps[0].from;
     }
+    const minFrom = Math.min(...book.parts.map(p => p.from || 1));
+    if (minFrom > 1) return 1;
     const maxTo = Math.max(...book.parts.map(p => p.to || 0));
     return maxTo + 1;
 }

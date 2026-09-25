@@ -352,3 +352,23 @@ test('11. Preserves distinct sections with same title from different parts when 
     assert.equal(mergedDup.sections.length, 3, 'Genuinely identical section content must be deduplicated');
 });
 
+test('12. Missing initial range is detected when book has only 2/2 and returns nextFrom = 1', () => {
+    const bookOnlyPart2 = {
+        bookKey: 'two-part-book',
+        title: 'Two Part Book',
+        language: 'en',
+        parts: [{ unit: 'section', from: 2, to: 2, total: 2 }]
+    };
+
+    assert.equal(hasMissingRanges(bookOnlyPart2), true, 'Book with only part 2/2 must report missing ranges');
+    assert.equal(getNextFrom(bookOnlyPart2), 1, 'Next from must be 1 for missing initial part');
+
+    const gaps = detectGaps(bookOnlyPart2.parts);
+    assert.equal(gaps.length, 1);
+    assert.deepEqual(gaps[0], { from: 1, to: 1, unit: 'section' });
+
+    const prompt = generateNextPartPrompt(bookOnlyPart2);
+    assert.ok(prompt.includes('"from": 1'), 'Prompt must specify from: 1 for missing initial part');
+});
+
+
