@@ -217,3 +217,47 @@ test('8. deleteAllBooks deletes all books and writes tombstones for each', async
     assert.ok(tombstones[b1.id]);
     assert.ok(tombstones[b2.id]);
 });
+
+test('9. addBook and replaceBook reject tombstoned IDs without writing or reviving', async () => {
+    // 1. Test replaceBook with tombstoned ID
+    const b1 = await ereaderStore.addBook({ title: 'Book to Delete', language: 'en', sections: [{ id: 's-1', text: '1' }] });
+    const b1Id = b1.id;
+    await ereaderStore.deleteBook(b1Id);
+
+    const replaceRes = await ereaderStore.replaceBook(
+        { id: b1Id, title: 'Revived Book', language: 'en', sections: [{ id: 's-1', text: '1' }] },
+        { fromSync: true }
+    );
+    assert.equal(replaceRes, null, 'replaceBook on tombstoned ID must return null');
+    assert.equal(ereaderStore.listBooks().length, 0, 'listBooks must remain empty');
+    assert.equal(await ereaderStore.getBook(b1Id), null, 'getBook must return null');
+
+    // After reset and reload from storage, index must not contain the id
+    ereaderStore._resetEreaderStoreForTests();
+    await ereaderStore.loadEreader();
+    assert.equal(ereaderStore.listBooks().length, 0);
+    assert.equal(await ereaderStore.getBook(b1Id), null);
+    const storedIndex1 = await storage.readJSONAsync('focus_app_ereader_index', []);
+    assert.equal(storedIndex1.some(b => b.id === b1Id), false, 'stored index must not contain tombstoned book');
+
+    // 2. Test addBook with tombstoned ID
+    const b2 = await ereaderStore.addBook({ title: 'Book 2 to Delete', language: 'en', sections: [{ id: 's-1', text: '1' }] });
+    const b2Id = b2.id;
+    await ereaderStore.deleteBook(b2Id);
+
+    const addRes = await ereaderStore.addBook(
+        { id: b2Id, title: 'Revived Book 2', language: 'en', sections: [{ id: 's-1', text: '1' }] },
+        { fromSync: true }
+    );
+    assert.equal(addRes, null, 'addBook on tombstoned ID must return null');
+    assert.equal(ereaderStore.listBooks().length, 0);
+    assert.equal(await ereaderStore.getBook(b2Id), null);
+
+    ereaderStore._resetEreaderStoreForTests();
+    await ereaderStore.loadEreader();
+    assert.equal(ereaderStore.listBooks().length, 0);
+    assert.equal(await ereaderStore.getBook(b2Id), null);
+    const storedIndex2 = await storage.readJSONAsync('focus_app_ereader_index', []);
+    assert.equal(storedIndex2.some(b => b.id === b2Id), false, 'stored index must not contain tombstoned book');
+});
+

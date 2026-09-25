@@ -131,7 +131,7 @@ export async function getBook(id) {
  *
  * @param {object} book
  * @param {{fromSync?: boolean}} [options]
- * @returns {Promise<object>}
+ * @returns {Promise<object|null>}
  */
 export async function addBook(book, { fromSync = false } = {}) {
     if (!book || typeof book !== 'object') throw new Error('addBook: invalid book object');
@@ -143,11 +143,14 @@ export async function addBook(book, { fromSync = false } = {}) {
             : 'book_' + Date.now() + '_' + Math.random().toString(36).slice(2, 9);
     }
 
+    if (tombstonesMap[book.id]) {
+        return null;
+    }
+
     const now = Date.now();
     book.createdAt = book.createdAt || now;
     book.updatedAt = now;
 
-    delete tombstonesMap[book.id];
     bookCache.set(book.id, book);
 
     const summary = createSummary(book);
@@ -171,13 +174,16 @@ export async function addBook(book, { fromSync = false } = {}) {
  *
  * @param {object} book
  * @param {{fromSync?: boolean}} [options]
- * @returns {Promise<object>}
+ * @returns {Promise<object|null>}
  */
 export async function replaceBook(book, { fromSync = false } = {}) {
     if (!book || !book.id) throw new Error('replaceBook: book must have an id');
     if (!loaded) await loadEreader();
 
-    delete tombstonesMap[book.id];
+    if (tombstonesMap[book.id]) {
+        return null;
+    }
+
     bookCache.set(book.id, book);
 
     const summary = createSummary(book);
