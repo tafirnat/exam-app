@@ -2030,7 +2030,49 @@
                     </div>
                 </div>
                 <div id="ereaderAddPanel" class="ereader-add-panel" style="display: none;">
-                    <!-- C.4 -->
+                    <!-- Primary Option: File Drop Zone -->
+                    <div class="input-group file-drop-zone" id="ereaderFileDropZone" style="margin-bottom: 1.5rem; position: relative; overflow: hidden;">
+                        <div class="file-drop-zone-content" style="text-align: center; padding: 2rem 1rem; pointer-events: none; color: var(--text-secondary);">
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="width: 32px; height: 32px; margin-bottom: 0.75rem; opacity: 0.7;">
+                                <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
+                                <polyline points="17 8 12 3 7 8"></polyline>
+                                <line x1="12" y1="3" x2="12" y2="15"></line>
+                            </svg>
+                            <div class="drop-zone-text-desktop" data-i18n-html="drop_zone_desktop">JSON dosyalarını buraya sürükleyin veya <strong>Dosya Seçin</strong></div>
+                            <div class="drop-zone-text-mobile" data-i18n="drop_zone_mobile" style="display: none;">Dosya Seç (.json)</div>
+                        </div>
+                        <input type="file" id="ereaderFileInput" accept=".json" multiple style="position: absolute; top: 0; left: 0; width: 100%; height: 100%; opacity: 0; cursor: pointer;">
+                    </div>
+
+                    <!-- Divider -->
+                    <div class="secondary-import-divider" style="text-align: center; margin: 1rem 0 1.25rem; color: var(--text-secondary); font-size: 0.85rem; position: relative;">
+                        <span style="background: var(--surface-color); padding: 0 0.5rem; position: relative; z-index: 1;" data-i18n="or_other_methods">— veya diğer yöntemler —</span>
+                        <div style="position: absolute; top: 50%; left: 0; right: 0; border-top: 1px solid var(--border-color); z-index: 0;"></div>
+                    </div>
+
+                    <!-- Secondary Options Container -->
+                    <div class="secondary-import-options">
+                        <div class="input-group" style="margin-bottom: 0;">
+                            <input type="text" id="ereaderUrlInput" data-i18n-placeholder="ph_url"
+                                placeholder="https://.../questions.json" style="height: 100%; min-height: 42px;">
+                        </div>
+                        <div class="input-group" style="margin-bottom: 0;">
+                            <button class="btn btn-secondary btn-block" id="ereaderLoadClipboardBtn" style="height: 100%; min-height: 42px;">
+                                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"
+                                    stroke-linecap="round" stroke-linejoin="round">
+                                    <path d="M16 4h2a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h2">
+                                    </path>
+                                    <rect x="8" y="2" width="8" height="4" rx="1" ry="1"></rect>
+                                </svg>
+                                <span data-i18n="load_clipboard">Panodan Al</span>
+                            </button>
+                        </div>
+                        <div class="input-group" style="margin-bottom: 0;">
+                            <button class="btn btn-secondary btn-block" id="ereaderCopyPromptBtn" style="height: 100%; min-height: 42px;">
+                                <span data-i18n="ereader_copy_prompt">AI promptunu kopyala</span>
+                            </button>
+                        </div>
+                    </div>
                 </div>
                 <div id="ereaderLibraryEmpty" class="ereader-library-empty" style="display: none;">
                     <p class="ereader-empty-title" data-i18n="ereader_empty_title">Henüz kitap yok</p>
@@ -3483,6 +3525,29 @@
         </button>
         <div id="imageLightboxScrollContainer" class="image-lightbox-scroll-container">
             <img id="imageLightboxImg" class="image-lightbox-img" alt="Büyütülmüş Görsel" />
+        </div>
+    </div>
+
+    <div id="ereaderBookActionsOverlay" class="modal-overlay" style="z-index: 10030;">
+        <div class="modal-card">
+            <div class="modal-header">
+                <h3 data-i18n="ereader_book_actions">Kitap İşlemleri</h3>
+                <p id="ereaderBookActionsName" class="ereader-modal-subtitle"></p>
+            </div>
+            <div class="modal-body ereader-modal-actions">
+                <button class="btn btn-warning-soft btn-block modal-action-btn" id="ereaderDeleteBookBtn">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="18" height="18">
+                        <path d="M3 6h18M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2">
+                        </path>
+                        <line x1="10" y1="11" x2="10" y2="17"></line>
+                        <line x1="14" y1="11" x2="14" y2="17"></line>
+                    </svg>
+                    <span data-i18n="ereader_delete_book">Kitabı Sil</span>
+                </button>
+            </div>
+            <div class="modal-footer">
+                <button class="btn btn-subtle btn-block" id="ereaderBookActionsCloseBtn" data-i18n="cancel">İptal</button>
+            </div>
         </div>
     </div>
 

@@ -302,7 +302,10 @@ export function getPrefs() {
 }
 
 /**
- * Updates user e-Reader preferences.
+ * Updates user e-Reader preferences and emits EREADER_LIBRARY: the library
+ * marks the last opened book and the reader draws at the chosen font scale,
+ * so a preference change is a change to what those screens show. Device-only,
+ * so the sync listener is not told.
  *
  * @param {object} patch
  * @returns {Promise<object>}
@@ -312,6 +315,7 @@ export async function setPrefs(patch) {
 
     prefsData = { ...prefsData, ...patch };
     await persistAsync(PREFS_KEY, prefsData);
+    emit(Slice.EREADER_LIBRARY);
     return { ...prefsData };
 }
 

@@ -56,3 +56,123 @@
     gap: 0.25rem;
     margin-left: auto;
 }
+
+/* ── Library (F3) ── */
+
+.ereader-add-panel {
+    margin-bottom: 1rem;
+    padding-bottom: 1rem;
+    border-bottom: 1px solid var(--border-color);
+}
+
+.ereader-library-empty {
+    text-align: center;
+    padding: 0.5rem 0.5rem 1rem;
+}
+
+.ereader-empty-title {
+    font-weight: 600;
+    font-size: 0.95rem;
+    margin: 0 0 0.25rem;
+}
+
+.ereader-empty-desc {
+    font-size: 0.85rem;
+    color: var(--text-secondary);
+    margin: 0;
+}
+
+/* The source row's values (createSourceItemDOM), as a class instead of inline. */
+.ereader-book-row {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    padding: 0.75rem;
+    border: 1px solid var(--border-color);
+    border-radius: var(--radius-md);
+    margin-bottom: 0.5rem;
+    background: var(--surface-color);
+    cursor: pointer;
+}
+
+.ereader-book-row.is-last {
+    background: var(--surface-hover);
+}
+
+.ereader-book-info {
+    flex: 1;
+    min-width: 0;
+}
+
+.ereader-book-title {
+    font-weight: 600;
+    font-size: 0.9rem;
+    margin-bottom: 2px;
+}
+
+.ereader-book-meta {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    min-width: 0;
+    font-size: 0.75rem;
+    color: var(--text-secondary);
+}
+
+/* The source row's rateChip. */
+.ereader-chip {
+    flex-shrink: 0;
+    font-size: 0.68rem;
+    padding: 1px 6px;
+    border-radius: 999px;
+    background: var(--surface-hover);
+    color: var(--text-secondary);
+    border: 1px solid var(--border-color);
+}
+
+.ereader-progress-row {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    margin-top: 6px;
+}
+
+/* The source row's masteryBar. */
+.ereader-progress-track {
+    flex: 1;
+    height: 4px;
+    background: var(--border-color);
+    border-radius: 2px;
+    overflow: hidden;
+}
+
+.ereader-progress-fill {
+    height: 100%;
+    background: var(--primary-color);
+}
+
+.ereader-progress-value {
+    flex-shrink: 0;
+    font-size: 0.7rem;
+    color: var(--text-secondary);
+    font-variant-numeric: tabular-nums;
+}
+
+.ereader-book-actions-btn {
+    flex-shrink: 0;
+}
+
+/* #sourceActionsName and #sourceActionsOverlay .modal-body values. */
+.ereader-modal-subtitle {
+    font-size: 0.85rem;
+    color: var(--text-secondary);
+    margin-top: 4px;
+    font-weight: 500;
+}
+
+.ereader-modal-actions {
+    display: flex;
+    flex-direction: column;
+    gap: 0.5rem;
+    margin: 1rem 0;
+}
