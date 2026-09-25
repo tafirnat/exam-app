@@ -2000,6 +2000,66 @@
 
 
 
+        <div id="ereaderLibraryView" style="display: none;">
+            <div class="card" id="ereaderLibraryCard">
+                <div class="stats-card-header">
+                    <div class="stats-header-icon">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+                            <path d="M2 3h6a4 4 0 0 1 4 4v14a3 3 0 0 0-3-3H2z"></path>
+                            <path d="M22 3h-6a4 4 0 0 0-4 4v14a3 3 0 0 1 3-3h7z"></path>
+                        </svg>
+                    </div>
+                    <div class="ereader-library-heading">
+                        <h2 data-i18n="ereader_library_title">Kitaplarım</h2>
+                        <span class="ereader-library-count" id="ereaderLibraryCount"></span>
+                    </div>
+                    <div class="ereader-library-actions">
+                        <button class="icon-btn" id="ereaderMergePartsBtn" style="display: none;" data-i18n-title="ereader_merge_parts" data-i18n-aria-label="ereader_merge_parts">
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+                                <path d="M3 6h4c2 0 4 6 8 6h5"></path>
+                                <path d="M3 18h4c2 0 4-6 8-6"></path>
+                                <polyline points="17 9 20 12 17 15"></polyline>
+                            </svg>
+                        </button>
+                        <button class="icon-btn" id="ereaderToggleAddBtn" data-i18n-title="ereader_add_book" data-i18n-aria-label="ereader_add_book">
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-width="2.5">
+                                <line x1="12" y1="5" x2="12" y2="19"></line>
+                                <line x1="5" y1="12" x2="19" y2="12"></line>
+                            </svg>
+                        </button>
+                    </div>
+                </div>
+                <div id="ereaderAddPanel" class="ereader-add-panel" style="display: none;">
+                    <!-- C.4 -->
+                </div>
+                <div id="ereaderLibraryEmpty" class="ereader-library-empty" style="display: none;">
+                    <p class="ereader-empty-title" data-i18n="ereader_empty_title">Henüz kitap yok</p>
+                    <p class="ereader-empty-desc" data-i18n="ereader_empty_desc"></p>
+                </div>
+                <div id="ereaderBookList"></div>
+            </div>
+        </div>
+
+        <div id="ereaderBookView" class="ereader-book-view" style="display: none;">
+            <div class="ereader-search-bar" id="ereaderSearchBar" style="display: none;">
+                <div class="search-input-wrapper">
+                    <input type="search" id="ereaderSearchInput" data-i18n-placeholder="ereader_search" autocomplete="off">
+                </div>
+                <div class="ereader-search-results" id="ereaderSearchResults"></div>
+            </div>
+            <article class="ereader-content" id="ereaderContent"></article>
+            <nav class="ereader-chapter-nav" id="ereaderChapterNav">
+                <button class="btn btn-secondary" id="ereaderPrevBtn" data-i18n-title="ereader_prev_chapter" data-i18n-aria-label="ereader_prev_chapter">‹</button>
+                <span class="ereader-chapter-pos" id="ereaderChapterPos"></span>
+                <button class="btn btn-secondary" id="ereaderNextBtn" data-i18n-title="ereader_next_chapter" data-i18n-aria-label="ereader_next_chapter">›</button>
+            </nav>
+            <button class="icon-btn ereader-zen-exit" id="ereaderZenExitBtn" style="display: none;" data-i18n-title="ereader_fullscreen_exit" data-i18n-aria-label="ereader_fullscreen_exit">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5">
+                    <path d="M8 3v3a2 2 0 0 1-2 2H3m18 0h-3a2 2 0 0 1-2-2V3m0 18v-3a2 2 0 0 1 2-2h3M3 16h3a2 2 0 0 1 2 2v3"></path>
+                </svg>
+            </button>
+        </div>
+
         <div id="statsPreviewView">
             <div class="indicators-bar" id="previewIndicatorsBar">
                 <span class="preview-title" data-i18n="stats_preview">Soru Önizleme</span>
@@ -3436,6 +3496,7 @@
             }).catch(() => { });
         }
     </script>
+    <div id="ereaderPrintHost" class="ereader-print-host" style="display: none;"></div>
 </body>
 
 </html>
