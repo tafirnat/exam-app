@@ -2,8 +2,10 @@ import { t } from '../../core/i18n.js';
 import { emit, Slice } from '../../core/store.js';
 import { loadEreader, isEreaderLoaded } from './ereader-store.js';
 import { bindEreaderLibrary } from './ereader-library-ui.js';
+import { bindEreaderReader, enterBookView, leaveBookView } from './ereader-reader-ui.js';
 
 let loadRequested = false;
+let switchViewRef = null;
 
 /**
  * The e-Reader's storage is read on first entry, not at boot: the test centre
@@ -144,6 +146,17 @@ export function applyEreaderChrome(view, { goHome } = {}) {
     }
 
     if (isEreaderView(view)) ensureEreaderLoaded();
+
+    /* The book view shows the open book; with none open (Back into the view)
+       there is nothing to show, so the library takes its place. Deferred:
+       this runs at the end of switchView() itself. */
+    if (view === 'ereaderBook') {
+        if (!enterBookView() && typeof switchViewRef === 'function') {
+            queueMicrotask(() => switchViewRef('ereaderLibrary', true));
+        }
+    } else {
+        leaveBookView();
+    }
 }
 
 /**
@@ -167,5 +180,7 @@ export function bindEreaderShell({ switchView, closeMenu } = {}) {
         };
     }
 
+    switchViewRef = switchView;
+    bindEreaderReader({ switchView, closeMenu });
     bindEreaderLibrary({ switchView, closeMenu });
 }

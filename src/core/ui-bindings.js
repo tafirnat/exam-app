@@ -25,6 +25,7 @@ import { updateQuickSourcesDot } from '../features/sources/quick-presets-ui.js';
 import { syncQuickPresetsWithLiveSources } from '../features/sources/quick-presets.js';
 import { updateSyncUI } from './github-sync.js';
 import { renderEreaderLibrary } from '../features/ereader/ereader-library-ui.js';
+import { refreshOpenBook, renderEreaderToc } from '../features/ereader/ereader-reader-ui.js';
 
 /** Views as switchView() names them. */
 export const View = Object.freeze({
@@ -181,6 +182,19 @@ const BINDINGS = [
         slices: [Slice.EREADER_LIBRARY, Slice.EREADER_PROGRESS, Slice.LANGUAGE],
         run: renderEreaderLibrary,
         views: [View.EREADER_LIBRARY]
+    },
+    {
+        /* A synced edit redraws the open book at the same section. */
+        name: 'ereader:book',
+        slices: [Slice.EREADER_LIBRARY],
+        run: refreshOpenBook,
+        views: [View.EREADER_BOOK]
+    },
+    {
+        name: 'ereader:toc',
+        slices: [Slice.EREADER_LIBRARY, Slice.EREADER_PROGRESS, Slice.LANGUAGE],
+        run: renderEreaderToc,
+        views: [View.EREADER_BOOK]
     },
 
     // ── Chrome (always current) ─────────────────────────────────────────────

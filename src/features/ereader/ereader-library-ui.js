@@ -13,11 +13,12 @@
 import { t } from '../../core/i18n.js';
 import { showToast, showAlert, showConfirm, showDecision } from '../../core/utils.js';
 import {
-    isEreaderLoaded, listBooks, getProgress, getPrefs, setPrefs,
+    isEreaderLoaded, listBooks, getProgress, getPrefs,
     deleteBook, resetAllProgress, deleteAllBooks
 } from './ereader-store.js';
 import { importFromFiles, importFromText, importFromUrl } from './ereader-import.js';
 import { EREADER_AI_PROMPT } from './ereader-prompt.js';
+import { openBook } from './ereader-reader-ui.js';
 
 const ACTIONS_ICON = `
         <svg viewBox="0 0 24 24" width="20" height="20" class="source-actions-icon">
@@ -288,10 +289,7 @@ export function bindEreaderLibrary({ switchView, closeMenu } = {}) {
     if (bound) return;
     bound = true;
 
-    openBookHandler = async (id) => {
-        await setPrefs({ lastBookId: id });
-        if (typeof switchView === 'function') switchView('ereaderBook');
-    };
+    openBookHandler = (id) => openBook(id, { switchView });
 
     const toggleBtn = document.getElementById('ereaderToggleAddBtn');
     if (toggleBtn) toggleBtn.onclick = toggleAddPanel;

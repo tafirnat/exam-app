@@ -888,6 +888,8 @@ export const translations = {
         ereader_reset_all_confirm: "Bütün kitaplar ve okuma konumları silinecek. Bu geri alınamaz.",
         ereader_reset_progress_done: "Okuma konumları sıfırlandı.",
         ereader_reset_all_done: "Bütün kitaplar silindi.",
+        ereader_book_missing: "Kitap bulunamadı.",
+        ereader_untitled_section: "Başlıksız bölüm",
     },
     en: {
         nugget_edit_title: "Add Nugget",
@@ -1759,6 +1761,8 @@ export const translations = {
         ereader_reset_all_confirm: "All books and reading positions will be deleted. This cannot be undone.",
         ereader_reset_progress_done: "Reading positions reset.",
         ereader_reset_all_done: "All books deleted.",
+        ereader_book_missing: "Book not found.",
+        ereader_untitled_section: "Untitled section",
     },
     de: {
         nugget_edit_title: "Wissenshappen hinzufügen",
@@ -2634,6 +2638,8 @@ export const translations = {
         ereader_reset_all_confirm: "Alle Bücher und Lesepositionen werden gelöscht. Das kann nicht rückgängig gemacht werden.",
         ereader_reset_progress_done: "Lesepositionen zurückgesetzt.",
         ereader_reset_all_done: "Alle Bücher gelöscht.",
+        ereader_book_missing: "Buch nicht gefunden.",
+        ereader_untitled_section: "Unbenannter Abschnitt",
     },
 };
 

@@ -1,0 +1,394 @@
+/**
+ * e-Reader reading screen: one chapter at a time, previous / next, the reading
+ * position, the table of contents and the font size.
+ *
+ * Only the open chapter is in the DOM. A book is a few hundred pages of
+ * Markdown; parsing all of it on every open, font change or sync would be the
+ * slow part of the app, and the reader only ever shows one chapter.
+ *
+ * The position is tracked on every scroll event (in memory) and written a few
+ * seconds after scrolling stops, on chapter change, when the view is left and
+ * when the tab is hidden. It is read from memory at those moments, never from
+ * window.scrollY: by the time switchView() tells us the view changed, the page
+ * has already been scrolled for the next one.
+ */
+
+import { t } from '../../core/i18n.js';
+import { renderMarkdown } from '../../core/markdown.js';
+import { escapeHTML, showToast } from '../../core/utils.js';
+import { getBook, getProgress, setProgress, getPrefs, setPrefs, listBooks } from './ereader-store.js';
+import { buildChapters, chapterOfSection, weightedPercent } from './ereader-chapters.js';
+
+export const FONT_STEPS = Object.freeze([0.875, 1, 1.125, 1.25, 1.375, 1.5]);
+const SAVE_DELAY_MS = 5000;
+const MOBILE_QUERY = '(max-width: 600px)';
+/** A section counts as "being read" once its top has passed this line. */
+const READING_LINE_PX = 96;
+const MEMO_LIMIT = 24;
+
+/** { book, chapters, chapterIndex, renderedAt, pendingRestore } */
+let open = null;
+let bookViewActive = false;
+let lastPos = null;
+let saveTimer = null;
+const memo = new Map();
+let deps = { switchView: null, closeMenu: null };
+let bound = false;
+
+export function getOpenBook() {
+    return open ? open.book : null;
+}
+
+function sectionSource(section) {
+    const title = (section.title || '').trim();
+    if (!title) return section.text || '';
+    return `${'#'.repeat(Math.min(6, (section.level || 1) + 1))} ${title}\n\n${section.text || ''}`;
+}
+
+function chapterHtml(book, chapter, fontScale, searchTerm = '') {
+    const key = `${book.id}:${chapter.index}:${book.updatedAt}:${fontScale}:${searchTerm}`;
+    if (memo.has(key)) return memo.get(key);
+    const byId = new Map(book.sections.map(s => [s.id, s]));
+    const html = chapter.sectionIds
+        .map(id => byId.get(id))
+        .filter(Boolean)
+        .map(s => `<section class="ereader-section md-content" data-section-id="${escapeHTML(s.id)}">${renderMarkdown(sectionSource(s))}</section>`)
+        .join('');
+    memo.set(key, html);
+    if (memo.size > MEMO_LIMIT) memo.delete(memo.keys().next().value);
+    return html;
+}
+
+function setOpen(book, chapterIndex, pendingRestore = null) {
+    const chapters = buildChapters(book.sections);
+    open = {
+        book,
+        chapters,
+        chapterIndex: Math.max(0, Math.min(chapterIndex, chapters.length - 1)),
+        renderedAt: book.updatedAt,
+        pendingRestore
+    };
+}
+
+/**
+ * Opens a book: the saved section's chapter, scrolled to the saved offset once
+ * the view is shown. Returns false (and stays put) when the book is gone.
+ */
+export async function openBook(id, { switchView = deps.switchView } = {}) {
+    const book = await getBook(id);
+    if (!book) {
+        showToast(t('ereader_book_missing'));
+        return false;
+    }
+    const saved = getProgress(id);
+    const chapters = buildChapters(book.sections);
+    const chapter = saved && saved.sectionId ? chapterOfSection(chapters, saved.sectionId) : null;
+    setOpen(book, chapter ? chapter.index : 0, chapter ? { offset: saved.offset || 0 } : null);
+    lastPos = null;
+    await setPrefs({ lastBookId: id });
+    if (typeof switchView === 'function') switchView('ereaderBook');
+    return true;
+}
+
+function contentEl() {
+    return document.getElementById('ereaderContent');
+}
+
+function sectionEls() {
+    const content = contentEl();
+    return content ? [...content.querySelectorAll('.ereader-section')] : [];
+}
+
+/** The chapter's scroll span on the page, for converting to and from offset. */
+function chapterSpan() {
+    const content = contentEl();
+    const rect = content.getBoundingClientRect();
+    const top = rect.top + window.scrollY - READING_LINE_PX;
+    const span = Math.max(0, content.offsetHeight - window.innerHeight + READING_LINE_PX);
+    return { top, span };
+}
+
+function currentSectionId() {
+    const els = sectionEls();
+    let current = els[0];
+    for (const el of els) {
+        if (el.getBoundingClientRect().top <= READING_LINE_PX) current = el;
+        else break;
+    }
+    return current ? current.dataset.sectionId : null;
+}
+
+/**
+ * knownSectionId: where a jump just landed (chapter start, a contents entry).
+ * Only a scroll by the user is read back from the page geometry.
+ */
+function capturePosition(knownSectionId = null) {
+    if (!open) return;
+    const { top, span } = chapterSpan();
+    const offset = span > 0 ? Math.max(0, Math.min(1, (window.scrollY - top) / span)) : 0;
+    const sectionId = knownSectionId || currentSectionId() || open.chapters[open.chapterIndex]?.sectionIds[0] || null;
+    const prevSection = lastPos && lastPos.sectionId;
+    lastPos = {
+        bookId: open.book.id,
+        sectionId,
+        offset: Math.round(offset * 1000) / 1000,
+        percent: weightedPercent(open.chapters, open.chapterIndex, offset)
+    };
+    if (sectionId !== prevSection) markTocActive(sectionId);
+}
+
+/** Writes the position unless it is the one already stored. */
+export async function flushPosition() {
+    clearTimeout(saveTimer);
+    saveTimer = null;
+    if (!lastPos) return;
+    const { bookId, sectionId, offset, percent } = lastPos;
+    const stored = getProgress(bookId);
+    if (stored && stored.sectionId === sectionId && stored.offset === offset && stored.percent === percent) return;
+    await setProgress(bookId, { sectionId, offset, percent });
+}
+
+function scrollToOffset(offset) {
+    const { top, span } = chapterSpan();
+    window.scrollTo({ top: Math.max(0, top + offset * span), behavior: 'instant' });
+}
+
+function scrollToSection(sectionId, delta = READING_LINE_PX - 8) {
+    const el = sectionEls().find(s => s.dataset.sectionId === sectionId);
+    if (!el) return;
+    const y = el.getBoundingClientRect().top + window.scrollY - delta;
+    window.scrollTo({ top: Math.max(0, y), behavior: 'instant' });
+}
+
+function renderNav() {
+    const pos = document.getElementById('ereaderChapterPos');
+    const prev = document.getElementById('ereaderPrevBtn');
+    const next = document.getElementById('ereaderNextBtn');
+    const n = open ? open.chapters.length : 0;
+    const i = open ? open.chapterIndex : 0;
+    if (pos) pos.textContent = n > 0 ? `${i + 1} / ${n}` : '';
+    if (prev) prev.disabled = !open || i <= 0;
+    if (next) next.disabled = !open || i >= n - 1;
+}
+
+/**
+ * Draws the open chapter. Where it lands: a saved offset (opening), a section
+ * kept at the same height on screen (font change, sync), a section at the top
+ * (contents), or the chapter start.
+ */
+function renderChapter({ restoreOffset = null, anchorSectionId = null, anchorDelta } = {}) {
+    const content = contentEl();
+    if (!content || !open) return;
+    const fontScale = getPrefs().fontScale || 1;
+    content.style.setProperty('--ereader-font-scale', String(fontScale));
+    const chapter = open.chapters[open.chapterIndex];
+    content.innerHTML = chapter ? chapterHtml(open.book, chapter, fontScale) : '';
+    open.renderedAt = open.book.updatedAt;
+    renderNav();
+    updateFontUI();
+
+    if (restoreOffset !== null) {
+        scrollToOffset(restoreOffset);
+        capturePosition();
+    } else if (anchorSectionId) {
+        scrollToSection(anchorSectionId, anchorDelta);
+        capturePosition(anchorSectionId);
+    } else {
+        window.scrollTo({ top: 0, behavior: 'instant' });
+        capturePosition(chapter ? chapter.sectionIds[0] : null);
+    }
+}
+
+export async function goToChapter(index) {
+    if (!open || index < 0 || index >= open.chapters.length || index === open.chapterIndex) return;
+    open.chapterIndex = index;
+    renderChapter();
+    renderEreaderToc();
+    await flushPosition();
+}
+
+export async function goToSection(sectionId) {
+    if (!open) return;
+    const chapter = chapterOfSection(open.chapters, sectionId);
+    if (!chapter) return;
+    if (chapter.index !== open.chapterIndex) {
+        open.chapterIndex = chapter.index;
+        renderChapter({ anchorSectionId: sectionId });
+    } else {
+        scrollToSection(sectionId);
+        capturePosition(sectionId);
+    }
+    renderEreaderToc();
+    if (typeof window.matchMedia === 'function' && window.matchMedia(MOBILE_QUERY).matches
+        && typeof deps.closeMenu === 'function') {
+        deps.closeMenu();
+    }
+    await flushPosition();
+}
+
+function updateFontUI() {
+    const scale = getPrefs().fontScale || 1;
+    const value = document.getElementById('ereaderFontValue');
+    const dec = document.getElementById('ereaderFontDecBtn');
+    const inc = document.getElementById('ereaderFontIncBtn');
+    if (value) value.textContent = `${Math.round(scale * 100)}%`;
+    if (dec) dec.disabled = scale <= FONT_STEPS[0];
+    if (inc) inc.disabled = scale >= FONT_STEPS[FONT_STEPS.length - 1];
+}
+
+/** One step smaller (-1) or larger (+1); the section being read stays put. */
+export async function changeFontScale(direction) {
+    const current = getPrefs().fontScale || 1;
+    let idx = FONT_STEPS.indexOf(current);
+    if (idx < 0) idx = FONT_STEPS.findIndex(s => s >= current);
+    if (idx < 0) idx = FONT_STEPS.length - 1;
+    const nextIdx = Math.max(0, Math.min(FONT_STEPS.length - 1, idx + direction));
+    if (FONT_STEPS[nextIdx] === current) return current;
+
+    const anchorId = open && bookViewActive ? currentSectionId() : null;
+    const anchorEl = anchorId ? sectionEls().find(s => s.dataset.sectionId === anchorId) : null;
+    const anchorDelta = anchorEl ? -anchorEl.getBoundingClientRect().top : undefined;
+
+    await setPrefs({ fontScale: FONT_STEPS[nextIdx] });
+    if (open && bookViewActive) renderChapter({ anchorSectionId: anchorId, anchorDelta });
+    else updateFontUI();
+    return FONT_STEPS[nextIdx];
+}
+
+function markTocActive(sectionId) {
+    const list = document.getElementById('ereaderTocList');
+    if (!list) return;
+    for (const item of list.querySelectorAll('.ereader-toc-item')) {
+        item.classList.toggle('active', item.dataset.sectionId === sectionId);
+    }
+}
+
+/** Paints #ereaderTocList for the open book. */
+export function renderEreaderToc() {
+    const list = document.getElementById('ereaderTocList');
+    if (!list) return;
+    if (!open) {
+        list.replaceChildren();
+        return;
+    }
+    const sections = open.book.sections;
+    const minLevel = Math.min(...sections.map(s => s.level || 1));
+    const activeId = (lastPos && lastPos.bookId === open.book.id && lastPos.sectionId)
+        || open.chapters[open.chapterIndex]?.sectionIds[0];
+    const items = sections.map(s => {
+        const item = document.createElement('button');
+        item.type = 'button';
+        item.className = 'menu-sub-item ereader-toc-item' + (s.id === activeId ? ' active' : '');
+        item.dataset.sectionId = s.id;
+        item.style.setProperty('--toc-depth', String((s.level || 1) - minLevel));
+        item.textContent = (s.title || '').trim() || t('ereader_untitled_section');
+        item.onclick = () => goToSection(s.id);
+        return item;
+    });
+    list.replaceChildren(...items);
+}
+
+/**
+ * Binding for EREADER_LIBRARY: a synced edit of the open book redraws it at
+ * the same section; a deleted book sends the reader back to the library.
+ */
+export async function refreshOpenBook() {
+    if (!open) return;
+    const id = open.book.id;
+    const summary = listBooks().find(b => b.id === id);
+    if (!summary) {
+        open = null;
+        lastPos = null;
+        if (typeof deps.switchView === 'function') deps.switchView('ereaderLibrary', true);
+        return;
+    }
+    if (summary.updatedAt === open.renderedAt) return;
+    const book = await getBook(id);
+    if (!book) return;
+    const anchorId = bookViewActive ? currentSectionId() : null;
+    const chapter = anchorId ? chapterOfSection(buildChapters(book.sections), anchorId) : null;
+    setOpen(book, chapter ? chapter.index : open.chapterIndex);
+    if (bookViewActive) renderChapter({ anchorSectionId: anchorId });
+    renderEreaderToc();
+}
+
+function setHeaderTitle(title) {
+    const header = document.getElementById('headerTitle');
+    if (!header) return;
+    header.removeAttribute('data-i18n');
+    header.textContent = title;
+}
+
+/** The contents open by themselves when a book is opened. */
+function openTocSection() {
+    const header = document.querySelector('#ereaderTocMenuSection .menu-section-header');
+    if (!header) return;
+    document.querySelectorAll('#actionMenu .menu-section-header.active')
+        .forEach(h => { if (h !== header) h.classList.remove('active'); });
+    header.classList.add('active');
+}
+
+/**
+ * Called by applyEreaderChrome() when the book view is shown. False means
+ * there is no open book (a Back into the view), and the caller goes to the
+ * library.
+ */
+export function enterBookView() {
+    if (!open) return false;
+    bookViewActive = true;
+    setHeaderTitle(open.book.title);
+    const restore = open.pendingRestore;
+    open.pendingRestore = null;
+    renderChapter(restore ? { restoreOffset: restore.offset } : {});
+    renderEreaderToc();
+    openTocSection();
+    return true;
+}
+
+/** Called by applyEreaderChrome() for every other view. */
+export function leaveBookView() {
+    if (!bookViewActive) return;
+    bookViewActive = false;
+    flushPosition();
+}
+
+function onScroll() {
+    if (!bookViewActive || !open) return;
+    capturePosition();
+    clearTimeout(saveTimer);
+    saveTimer = setTimeout(flushPosition, SAVE_DELAY_MS);
+}
+
+/** One-time wiring of the static controls and page-level listeners. */
+export function bindEreaderReader({ switchView, closeMenu } = {}) {
+    deps = { switchView, closeMenu };
+    if (bound) return;
+    bound = true;
+
+    const prev = document.getElementById('ereaderPrevBtn');
+    const next = document.getElementById('ereaderNextBtn');
+    if (prev) prev.onclick = () => open && goToChapter(open.chapterIndex - 1);
+    if (next) next.onclick = () => open && goToChapter(open.chapterIndex + 1);
+
+    const dec = document.getElementById('ereaderFontDecBtn');
+    const inc = document.getElementById('ereaderFontIncBtn');
+    if (dec) dec.onclick = () => changeFontScale(-1);
+    if (inc) inc.onclick = () => changeFontScale(1);
+    updateFontUI();
+
+    if (typeof window !== 'undefined') window.addEventListener('scroll', onScroll, { passive: true });
+    document.addEventListener('visibilitychange', () => {
+        if (document.visibilityState === 'hidden') flushPosition();
+    });
+}
+
+/** Test seam. */
+export function _resetEreaderReaderForTests() {
+    open = null;
+    bookViewActive = false;
+    lastPos = null;
+    clearTimeout(saveTimer);
+    saveTimer = null;
+    memo.clear();
+    deps = { switchView: null, closeMenu: null };
+}
