@@ -164,7 +164,15 @@ export function validateEreaderFile(json) {
         parts = [{ unit: 'section', from: 1, to: N, total: N, importedAt: now }];
     } else {
         const rawPart = ereader.part;
-        const unit = typeof rawPart.unit === 'string' && rawPart.unit.trim() ? rawPart.unit.trim() : 'section';
+        let unit;
+        if (rawPart.unit === 'page') {
+            unit = 'page';
+        } else if (rawPart.unit === 'section') {
+            unit = 'section';
+        } else {
+            warnings.push('ereader_warn_invalid_part_unit');
+            unit = 'section';
+        }
         const from = Number.isInteger(rawPart.from) ? rawPart.from : 1;
         const to = Number.isInteger(rawPart.to) ? rawPart.to : N;
         const total = Number.isInteger(rawPart.total) ? rawPart.total : Math.max(to, N);

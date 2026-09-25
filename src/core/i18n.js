@@ -862,6 +862,7 @@ export const translations = {
         ereader_warn_duplicate_section_id: "Tekrarlanan bölüm kimliği düzeltildi.",
         ereader_warn_invalid_section_level: "Geçersiz bölüm seviyesi 1 olarak ayarlandı.",
         ereader_warn_image_placeholder: "Desteklenmeyen görsel bağlantısı yer tutucuya dönüştürüldü.",
+        ereader_warn_invalid_part_unit: "Geçersiz parça birimi, 'section' olarak ayarlandı.",
     },
     en: {
         nugget_edit_title: "Add Nugget",
@@ -1707,6 +1708,7 @@ export const translations = {
         ereader_warn_duplicate_section_id: "Duplicate section ID corrected.",
         ereader_warn_invalid_section_level: "Invalid section level set to 1.",
         ereader_warn_image_placeholder: "Unsupported image URL replaced with placeholder.",
+        ereader_warn_invalid_part_unit: "Invalid part unit, set to 'section'.",
     },
     de: {
         nugget_edit_title: "Wissenshappen hinzufügen",
@@ -2556,6 +2558,7 @@ export const translations = {
         ereader_warn_duplicate_section_id: "Doppelte Abschnitts-ID korrigiert.",
         ereader_warn_invalid_section_level: "Ungültige Abschnittsebene auf 1 gesetzt.",
         ereader_warn_image_placeholder: "Nicht unterstützter Bildlink durch Platzhalter ersetzt.",
+        ereader_warn_invalid_part_unit: "Ungültige Teileinheit, auf 'section' gesetzt.",
     },
 };
 

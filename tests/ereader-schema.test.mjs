@@ -239,3 +239,42 @@ test('16. converts data: and http: image URLs to placeholder:img-<n> and warns; 
     );
     assert.ok(res.warnings.includes('ereader_warn_image_placeholder'));
 });
+
+test('17. part.unit allows only "page" and "section"; other values warn and default to "section"', () => {
+    // 1. "page" preserved without warning
+    const resPage = validateEreaderFile({
+        ereader: { title: 'Book 1', language: 'en', part: { unit: 'page', from: 1, to: 10, total: 100 } },
+        sections: [{ id: 's-1', text: 'Text' }]
+    });
+    assert.equal(resPage.ok, true);
+    assert.equal(resPage.book.parts[0].unit, 'page');
+    assert.equal(resPage.warnings.includes('ereader_warn_invalid_part_unit'), false);
+
+    // 2. "section" preserved without warning
+    const resSection = validateEreaderFile({
+        ereader: { title: 'Book 2', language: 'en', part: { unit: 'section', from: 1, to: 5, total: 5 } },
+        sections: [{ id: 's-1', text: 'Text' }]
+    });
+    assert.equal(resSection.ok, true);
+    assert.equal(resSection.book.parts[0].unit, 'section');
+    assert.equal(resSection.warnings.includes('ereader_warn_invalid_part_unit'), false);
+
+    // 3. "pages" warns and becomes "section"
+    const resPages = validateEreaderFile({
+        ereader: { title: 'Book 3', language: 'en', part: { unit: 'pages', from: 1, to: 10, total: 100 } },
+        sections: [{ id: 's-1', text: 'Text' }]
+    });
+    assert.equal(resPages.ok, true);
+    assert.equal(resPages.book.parts[0].unit, 'section');
+    assert.ok(resPages.warnings.includes('ereader_warn_invalid_part_unit'));
+
+    // 4. "chapter" warns and becomes "section"
+    const resChapter = validateEreaderFile({
+        ereader: { title: 'Book 4', language: 'en', part: { unit: 'chapter', from: 1, to: 2, total: 10 } },
+        sections: [{ id: 's-1', text: 'Text' }]
+    });
+    assert.equal(resChapter.ok, true);
+    assert.equal(resChapter.book.parts[0].unit, 'section');
+    assert.ok(resChapter.warnings.includes('ereader_warn_invalid_part_unit'));
+});
+
