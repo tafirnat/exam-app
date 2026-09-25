@@ -1,0 +1,46 @@
+/* Menu groups: the wrapper must not create a box, so the items stay flex
+   children of .menu-items (the reset button's margin-top:auto relies on it). */
+.menu-mode-group { display: contents; }
+#actionMenu[data-mode="test"] .menu-mode-group[data-menu-mode="ereader"],
+#actionMenu[data-mode="ereader"] .menu-mode-group[data-menu-mode="test"] { display: none; }
+
+.ereader-header-tools { align-items: center; gap: 0.25rem; }
+.ereader-menu-reset { margin-top: auto; }
+
+.ereader-font-row {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 0.5rem;
+    margin-bottom: 0.5rem;
+}
+
+.ereader-font-btn {
+    flex: 0 0 auto;
+    min-width: 44px;
+    justify-content: center;
+}
+
+.ereader-font-value {
+    font-variant-numeric: tabular-nums;
+    color: var(--text-secondary);
+}
+
+.ereader-library-heading h2 {
+    font-size: 1.1rem;
+    margin: 0;
+}
+
+.ereader-library-count {
+    display: block;
+    font-size: 0.72rem;
+    color: var(--text-secondary);
+    opacity: 0.7;
+    margin-top: 2px;
+}
+
+.ereader-library-actions {
+    display: flex;
+    gap: 0.25rem;
+    margin-left: auto;
+}
