@@ -43,8 +43,6 @@ const SUGGEST_RATIO = 0.60;
 const CRITICAL_RATIO = 0.85;
 
 const NOTICE_DATE_KEY = 'focus_app_quota_notice_date';
-const SOURCES_KEY = 'focus_app_sources';
-const STATS_KEY = 'focus_app_stats_local';
 
 /** How many sources the dialog offers. Three is a choice; ten is a chore. */
 const CANDIDATE_COUNT = 3;
@@ -80,8 +78,11 @@ function averageQuestionBytes() {
     });
     if (questions === 0) return FALLBACK_QUESTION_BYTES;
 
-    const libraryBytes = readString(SOURCES_KEY, '').length * 2;
-    const statsBytes = readString(STATS_KEY, '').length * 2;
+    /* Measured from memory, not from storage: the library and the stats live in
+       IndexedDB, and what localStorage still holds under those names is the
+       copy frozen at the move - see LOCAL_KEYS in storage.js. */
+    const libraryBytes = JSON.stringify(AppState.sources || []).length * 2;
+    const statsBytes = JSON.stringify(AppState.stats || {}).length * 2;
     const average = (libraryBytes + statsBytes) / questions;
     return average > 0 ? average : FALLBACK_QUESTION_BYTES;
 }

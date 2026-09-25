@@ -1,5 +1,5 @@
 import { detectLanguage, detectTranslationTarget } from './i18n.js';
-import { persistAsync, persistIfChangedAsync, persistRemoveAsync, readJSONAsync, readStringAsync, readIntAsync, readFloatAsync, migrateFromLocalStorage } from './storage.js';
+import { persistAsync, persistIfChangedAsync, persistRemoveAsync, readJSONAsync, readStringAsync, readIntAsync, readFloatAsync, migrateFromLocalStorage, settleKeyHomes } from './storage.js';
 import { emit, Slice } from './store.js';
 import { mergeFolderDeletions, sanitizeFolderDeletions } from './folder-tombstones.js';
 import { mergeDatedIds } from './source-tombstones.js';
@@ -287,6 +287,7 @@ export async function initState({ force = false } = {}) {
     if (stateInitialized && !force) return AppState;
 
     await migrateFromLocalStorage();
+    await settleKeyHomes();
 
     const sources = await readJSONAsync('focus_app_sources', null);
 
