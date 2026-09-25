@@ -21,8 +21,9 @@ Jeder Teil der App: wofür er da ist und wie man ihn benutzt. Tippen Sie auf die
 13. [Synchronisierung und Sicherung](#synchronisierung-und-sicherung)
 14. [Arbeiten mit einer KI](#arbeiten-mit-einer-ki)
 15. [Menü und Einstellungen](#menü-und-einstellungen)
-16. [Häufige Situationen](#häufige-situationen)
-17. [Version und Kontakt](#version-und-kontakt)
+16. [e-Reader und Bücher](#e-reader-und-bücher)
+17. [Häufige Situationen](#häufige-situationen)
+18. [Version und Kontakt](#version-und-kontakt)
 
 ---
 
@@ -389,6 +390,24 @@ Das Menü (die Schaltfläche oben rechts) öffnet sich Abschnitt für Abschnitt.
 **Quellen löschen** steht ganz unten im Menü und ist nicht rückgängig zu machen. Es hat zwei Stufen: nur den Fortschritt zurücksetzen (Quellen bleiben) und alles löschen. Beide behalten Ihre Prompts und Ihre Schnelltest-Gruppen - das ist keine Aufzeichnung von Gelerntem, sondern Werkzeug, das Sie geschrieben haben.
 
 **Welche Einstellungen werden synchronisiert?** Sprache, Übersetzungsziel, Vorlese-Einstellungen, Timer-Einstellungen und Ihre Prompt-Auswahl reisen zwischen den Geräten. Die **KI-Anbieterliste** und das **Design** sind gerätespezifisch.
+
+---
+
+## e-Reader und Bücher
+
+Der e-Reader ermöglicht das ablenkungsfreie, kapitelweise Lesen umfangreicher Lernmaterialien, PDFs, EPUB-Bücher und Dokumentationen.
+
+**Bücher hinzufügen und der KI-Prompt.** Um ein Dokument in das e-Reader-Format umzuwandeln, übergeben Sie die Anweisungen aus `EREADER_AI_PROMPT.md` an eine externe KI (ChatGPT, Claude, Gemini usw.). Die standardisierte JSON-Ausgabe kann über die Zwischenablage oder als Datei importiert werden. Bücher werden direkt im IndexedDB-Speicher des Browsers abgelegt.
+
+**Mehrteilige Erstellung und Zusammenführung.** Umfangreiche Werke können in mehreren Abschnitten generiert werden, ohne das Kontextfenster der KI zu überlasten (`part: { from: 1, to: 20, ... }`). Teile mit identischem `book_key` werden erkannt und können über die Schaltfläche **Teile zusammenführen** in der Bibliotheksleiste vereint werden. Fehlende Bereiche werden im Inhaltsverzeichnis als Lücken markiert, und der Prompt für den nächsten Teil lässt sich direkt kopieren.
+
+**Bilder und Platzhalter-URLs.** Markdown-Bilder mit sicheren `https://`-URLs werden direkt dargestellt. Lokale Verweise oder `placeholder:id` erscheinen als Platzhalter-Karten; durch Antippen kann eine `https://`-Bild-URL hinterlegt werden. Aus Speicher- und Datenschutzgründen werden keine Bild-Binärdaten gespeichert oder synchronisiert.
+
+**Lesewerkzeuge.** Der Lesemodus bietet kapitelweise Navigation, anpassbare Schriftgröße, ein Inhaltsverzeichnis im Seitenmenü, Buchsuche, Vollbildmodus sowie Druck-/PDF-Ausgabe. Jede Überschrift verfügt zudem über Vorlese- (TTS) und Übersetzungssteuerungen.
+
+**Synchronisierung.** Bei aktivierter GitHub-Gist-Synchronisierung werden Bücher und Lesestände im Hintergrund automatisch zwischen Geräten abgeglichen.
+
+**e-Reader zurücksetzen.** Über "e-Reader zurücksetzen" im e-Reader-Menü können Sie Lesestände leeren oder alle Bücher löschen. Dies berührt Ihre Testdaten, FSRS-Statistiken oder Lernquellen in keiner Weise.
 
 ---
 

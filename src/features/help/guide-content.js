@@ -1004,6 +1004,51 @@ de: `Das Menü (die Schaltfläche oben rechts) öffnet sich Abschnitt für Absch
     }
 },
 {
+    id: 'ereader',
+    title: { tr: 'e-Reader ve Kitaplar', en: 'e-Reader and Books', de: 'e-Reader und Bücher' },
+    body: {
+tr: `e-Reader, uzun çalışma metinlerini, PDF'leri, EPUB kitapları ve dokümantasyonları dikkat dağıtıcı unsurlardan arınmış biçimde bölüm bölüm okumanızı sağlar.
+
+**Kitap ekleme ve AI promptu.** Bir kaynağı e-Reader'a dönüştürmek için harici AI modellerine (ChatGPT, Claude, Gemini vb.) \`EREADER_AI_PROMPT.md\` yönergesi verilir. Elde edilen standart JSON verisi panodan yapıştırılarak veya dosya seçilerek kütüphaneye eklenir. Kitap eklendikten sonra doğrudan tarayıcının IndexedDB alanında saklanır.
+
+**Parçalı üretim ve birleştirme.** Büyük kitaplar AI bağlam sınırlarına takılmadan parça parça üretilebilir (\`part: { from: 1, to: 20, ... }\`). Aynı kitap anahtarına (\`book_key\`) sahip parçalar otomatik olarak tespit edilir veya kütüphane başlığındaki **Parçaları birleştir** düğmesiyle tek bir kitapta birleştirilebilir. Parçalar arasında eksik sayfa/bölüm varsa içindekiler tablosunda boşluk uyarısı gösterilir ve kitap menüsünden sonraki parçanın promptu tek tıkla panoya kopyalanabilir.
+
+**Görsel desteği ve bağlantı ekleme.** Kitap metinlerinde güvenli \`https://\` bağlantılı Markdown görselleri görüntülenir. \`placeholder:id\` veya dosya ekleri yer tutucu kartı olarak çizilir; yer tutucuya dokunarak gerçek bir \`https://\` görsel bağlantısı tanımlayabilirsiniz. Güvenlik ve veri tasarrufu nedeniyle ham görsel verisi cihazda depolanmaz veya senkronlanmaz.
+
+**Okuma araçları.** Okuyucu ekranında bölüm bölüm gezinme, ayarlanabilir yazı boyutu, sol menüde içindekiler listesi, kitap içi hızlı arama, odaklanma için tam ekran modu ve yazdırma/PDF çıktısı bulunur. Ayrıca her başlıkta metni sesli dinleme (TTS) ve hedef dile çevirme kontrolleri yer alır.
+
+**Senkronizasyon.** GitHub Gist senkronizasyonunuz etkinse, kitaplarınız ve okuma konumunuz cihazlarınız arasında arka planda otomatik senkronize edilir.
+
+**e-Reader'ı sıfırlama.** Yan menüdeki "e-Reader'ı Sıfırla" seçeneğiyle okuma ilerlemenizi sıfırlayabilir veya tüm kitapları silebilirsiniz. Bu işlem sınav/test verilerinize, FSRS istatistiklerinize veya kaynaklarınıza kesinlikle dokunmaz.`,
+en: `The e-Reader allows you to read long-form study materials, PDFs, EPUB books, and documentation section by section in a clean, distraction-free environment.
+
+**Adding books and the AI prompt.** To convert any material into e-Reader format, provide the \`EREADER_AI_PROMPT.md\` instructions to an external AI (ChatGPT, Claude, Gemini, etc.). The resulting standard JSON can be imported from clipboard or file. Books are stored directly in your browser's IndexedDB.
+
+**Multi-part generation and merging.** Large books can be produced in parts without running into AI context limits (\`part: { from: 1, to: 20, ... }\`). Parts sharing the same \`book_key\` are detected automatically or can be combined into a single book via the **Merge parts** button in the library header. If any range is missing between parts, a gap warning appears in the contents list, and you can copy the prompt for the next part from the book actions menu.
+
+**Image support and URL placeholders.** Markdown images with secure \`https://\` URLs are rendered inline. Images specified with \`placeholder:id\` or file links appear as interactive placeholder cards; tap a placeholder to assign an \`https://\` image URL directly. For data economy and privacy, raw image binaries are never stored or synced.
+
+**Reading tools.** The reading screen provides chapter-by-chapter navigation, adjustable text size, table of contents in the side menu, fast in-book search, fullscreen zen mode, and print/PDF export. Additionally, each heading features read-aloud (TTS) and section translation controls.
+
+**Synchronization.** When GitHub Gist sync is configured, your books and current reading positions sync automatically between your devices in the background.
+
+**Resetting e-Reader.** Use "Reset e-Reader" in the e-Reader side menu to reset reading positions or delete all books. This operation never affects your exam/test progress, FSRS history, or regular study sources.`,
+de: `Der e-Reader ermöglicht das ablenkungsfreie, kapitelweise Lesen umfangreicher Lernmaterialien, PDFs, EPUB-Bücher und Dokumentationen.
+
+**Bücher hinzufügen und der KI-Prompt.** Um ein Dokument in das e-Reader-Format umzuwandeln, übergeben Sie die Anweisungen aus \`EREADER_AI_PROMPT.md\` an eine externe KI (ChatGPT, Claude, Gemini usw.). Die standardisierte JSON-Ausgabe kann über die Zwischenablage oder als Datei importiert werden. Bücher werden direkt im IndexedDB-Speicher des Browsers abgelegt.
+
+**Mehrteilige Erstellung und Zusammenführung.** Umfangreiche Werke können in mehreren Abschnitten generiert werden, ohne das Kontextfenster der KI zu überlasten (\`part: { from: 1, to: 20, ... }\`). Teile mit identischem \`book_key\` werden erkannt und können über die Schaltfläche **Teile zusammenführen** in der Bibliotheksleiste vereint werden. Fehlende Bereiche werden im Inhaltsverzeichnis als Lücken markiert, und der Prompt für den nächsten Teil lässt sich direkt kopieren.
+
+**Bilder und Platzhalter-URLs.** Markdown-Bilder mit sicheren \`https://\`-URLs werden direkt dargestellt. Lokale Verweise oder \`placeholder:id\` erscheinen als Platzhalter-Karten; durch Antippen kann eine \`https://\`-Bild-URL hinterlegt werden. Aus Speicher- und Datenschutzgründen werden keine Bild-Binärdaten gespeichert oder synchronisiert.
+
+**Lesewerkzeuge.** Der Lesemodus bietet kapitelweise Navigation, anpassbare Schriftgröße, ein Inhaltsverzeichnis im Seitenmenü, Buchsuche, Vollbildmodus sowie Druck-/PDF-Ausgabe. Jede Überschrift verfügt zudem über Vorlese- (TTS) und Übersetzungssteuerungen.
+
+**Synchronisierung.** Bei aktivierter GitHub-Gist-Synchronisierung werden Bücher und Lesestände im Hintergrund automatisch zwischen Geräten abgeglichen.
+
+**e-Reader zurücksetzen.** Über "e-Reader zurücksetzen" im e-Reader-Menü können Sie Lesestände leeren oder alle Bücher löschen. Dies berührt Ihre Testdaten, FSRS-Statistiken oder Lernquellen in keiner Weise.`
+    }
+},
+{
     id: 'troubleshooting',
     title: { tr: 'Sık karşılaşılan durumlar', en: 'Common situations', de: 'Häufige Situationen' },
     body: {

@@ -46,9 +46,7 @@ This is a **critical** key for the application's learning algorithm.
 
 ## 3. Question Types
 
-Seven types, in five families. The type decides which fields the question must
-carry — the app refuses to save, and reports on import, anything that
-contradicts its own type.
+Six types, in four families (for long-form reading texts and books, use the dedicated e-Reader format: [EREADER_AI_PROMPT.md](../../EREADER_AI_PROMPT.md)). The type decides which fields the question must carry — the app refuses to save, and reports on import, anything that contradicts its own type.
 
 ### Choice — `single_choice`, `multiple_choice`, `true_false`
 - `options`: array of objects with a numeric `id` and `text`. At least two.
@@ -91,10 +89,7 @@ The answers live inside the sentence, in double braces. There is no
 - `answer.back`: the back.
 - Nothing is graded. The reader self-rates, and that rating drives scheduling.
 
-### Reading — `reading`
-Prose cards with no answer and no options. `content.text` is rendered as Obsidian Markdown,
-so headings (`#`), lists (`-`), `code`, ```pre```, tables, callouts, and wikilinks work. Use `explanation` for
-a note shown alongside. (The legacy spelling `topic_review` is converted to `reading` on import).
+> **Note on Long Reading (e-Reader)**: For long reading materials, books, and study guides, use the dedicated e-Reader JSON format instead of a question card ([`EREADER_AI_PROMPT.md`](../../EREADER_AI_PROMPT.md)). Legacy `reading` (and `topic_review`) cards continue to be supported on import for backward compatibility.
 
 ---
 

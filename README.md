@@ -35,7 +35,7 @@ Exam App is built for anyone who learns from their own material:
 
 ## Features
 
-### 7 Question Types — All in One App
+### 6 Question Types + e-Reader — All in One App
 
 - **Single Choice** — standard multiple-choice with one correct option
 - **Multiple Choice** — two or more correct selections required
@@ -43,7 +43,7 @@ Exam App is built for anyone who learns from their own material:
 - **Short Answer** — type the exact answer; supports multiple accepted variants and optional case-sensitivity
 - **Fill in the Blank** — keywords embedded inline via `{{blank}}` or `{{canonical|alternative}}`
 - **Flashcard** — classic flip card with self-rated retention
-- **Reading Material** — rich Markdown study notes, no grading pressure *(alias: `topic_review`)*
+*(For long texts, documentation, and books, see e-Reader / [`EREADER_AI_PROMPT.md`](./EREADER_AI_PROMPT.md))*
 
 ### Intelligent Spaced Repetition (FSRS v5)
 

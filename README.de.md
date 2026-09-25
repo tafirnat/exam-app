@@ -35,7 +35,7 @@ Exam App wurde für alle entwickelt, die aus eigenem Material lernen:
 
 ## Funktionen
 
-### 7 Fragetypen — Alles in einer App
+### 6 Fragetypen + e-Reader — Alles in einer App
 
 - **Einzelauswahl** — Standard-Multiple-Choice mit einer richtigen Antwort
 - **Mehrfachauswahl** — zwei oder mehr richtige Antworten erforderlich
@@ -43,7 +43,7 @@ Exam App wurde für alle entwickelt, die aus eigenem Material lernen:
 - **Kurzantwort** — exakte Antwort eintippen; unterstützt mehrere akzeptierte Varianten und optionale Groß-/Kleinschreibung
 - **Lückentext** — Schlüsselwörter inline eingebettet via `{{Lücke}}` oder `{{Kanonisch|Alternativ}}`
 - **Karteikarte (Flashcard)** — klassisches Flip-Karten-Format mit Selbstbewertung
-- **Lesematerial** — reichhaltige Markdown-Lernnotizen ohne Bewertungsdruck *(ehem. `topic_review`)*
+*(Für lange Lesetexte, Dokumentationen und Bücher: e-Reader / [`EREADER_AI_PROMPT.md`](./EREADER_AI_PROMPT.md))*
 
 ### Intelligentes Spaced Repetition (FSRS v5)
 

@@ -21,8 +21,9 @@ Uygulamanın her bölümü: ne işe yaradığı ve nasıl kullanıldığı. Arad
 13. [Senkronizasyon ve yedekleme](#senkronizasyon-ve-yedekleme)
 14. [Yapay zekâ ile kullanım](#yapay-zekâ-ile-kullanım)
 15. [Menü ve ayarlar](#menü-ve-ayarlar)
-16. [Sık karşılaşılan durumlar](#sık-karşılaşılan-durumlar)
-17. [Sürüm ve iletişim](#sürüm-ve-iletişim)
+16. [e-Reader ve Kitaplar](#e-reader-ve-kitaplar)
+17. [Sık karşılaşılan durumlar](#sık-karşılaşılan-durumlar)
+18. [Sürüm ve iletişim](#sürüm-ve-iletişim)
 
 ---
 
@@ -389,6 +390,24 @@ Menü (sağ üstteki düğme) bölüm bölüm açılır.
 **Kaynakları Sil** menünün en altındadır ve geri alınamaz. İki kademesi vardır: yalnızca ilerlemeyi sıfırlamak (kaynaklar kalır) ve her şeyi silmek. İkisinde de promptlarınız ve hızlı test gruplarınız korunur — onlar çalıştığınız bir şeyin kaydı değil, sizin yazdığınız aletlerdir.
 
 **Hangi ayarlar senkronize olur?** Dil, çeviri hedefi, sesli okuma ayarları, sayaç ayarları ve prompt seçiminiz cihazlar arasında taşınır. **Yapay zekâ sağlayıcı listesi** ve **tema** cihaza özeldir.
+
+---
+
+## e-Reader ve Kitaplar
+
+e-Reader, uzun çalışma metinlerini, PDF'leri, EPUB kitapları ve dokümantasyonları dikkat dağıtıcı unsurlardan arınmış biçimde bölüm bölüm okumanızı sağlar.
+
+**Kitap ekleme ve AI promptu.** Bir kaynağı e-Reader'a dönüştürmek için harici AI modellerine (ChatGPT, Claude, Gemini vb.) `EREADER_AI_PROMPT.md` yönergesi verilir. Elde edilen standart JSON verisi panodan yapıştırılarak veya dosya seçilerek kütüphaneye eklenir. Kitap eklendikten sonra doğrudan tarayıcının IndexedDB alanında saklanır.
+
+**Parçalı üretim ve birleştirme.** Büyük kitaplar AI bağlam sınırlarına takılmadan parça parça üretilebilir (`part: { from: 1, to: 20, ... }`). Aynı kitap anahtarına (`book_key`) sahip parçalar otomatik olarak tespit edilir veya kütüphane başlığındaki **Parçaları birleştir** düğmesiyle tek bir kitapta birleştirilebilir. Parçalar arasında eksik sayfa/bölüm varsa içindekiler tablosunda boşluk uyarısı gösterilir ve kitap menüsünden sonraki parçanın promptu tek tıkla panoya kopyalanabilir.
+
+**Görsel desteği ve bağlantı ekleme.** Kitap metinlerinde güvenli `https://` bağlantılı Markdown görselleri görüntülenir. `placeholder:id` veya dosya ekleri yer tutucu kartı olarak çizilir; yer tutucuya dokunarak gerçek bir `https://` görsel bağlantısı tanımlayabilirsiniz. Güvenlik ve veri tasarrufu nedeniyle ham görsel verisi cihazda depolanmaz veya senkronlanmaz.
+
+**Okuma araçları.** Okuyucu ekranında bölüm bölüm gezinme, ayarlanabilir yazı boyutu, sol menüde içindekiler listesi, kitap içi hızlı arama, odaklanma için tam ekran modu ve yazdırma/PDF çıktısı bulunur. Ayrıca her başlıkta metni sesli dinleme (TTS) ve hedef dile çevirme kontrolleri yer alır.
+
+**Senkronizasyon.** GitHub Gist senkronizasyonunuz etkinse, kitaplarınız ve okuma konumunuz cihazlarınız arasında arka planda otomatik senkronize edilir.
+
+**e-Reader'ı sıfırlama.** Yan menüdeki "e-Reader'ı Sıfırla" seçeneğiyle okuma ilerlemenizi sıfırlayabilir veya tüm kitapları silebilirsiniz. Bu işlem sınav/test verilerinize, FSRS istatistiklerinize veya kaynaklarınıza kesinlikle dokunmaz.
 
 ---
 

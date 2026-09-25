@@ -19,6 +19,7 @@ let editorError = null;
 /* The question exactly as it was opened, serialized. Everything the user does
    is compared against this to decide whether leaving needs to ask a question. */
 let pristineSnapshot = null;
+let initialQuestionType = null;
 
 // Tab order is fixed; only membership varies by category, so a tab never moves
 // position between question types.
@@ -172,6 +173,7 @@ export function closeQuestionEditor() {
         overlay.style.display = 'none';
     }
     currentEditingQuestion = null;
+    initialQuestionType = null;
     pristineSnapshot = null;
 }
 
@@ -222,6 +224,7 @@ export async function requestEditorExit() {
 
 export function openQuestionEditor(question) {
     currentEditingQuestion = JSON.parse(JSON.stringify(question)); // Deep copy for editing
+    initialQuestionType = question?.type || '';
 
     // Sync difficulty from stats if available
     const statKey = `${question.sourceId}_${question.id}`;
@@ -475,11 +478,13 @@ function renderEditorModal() {
     setupEditorListeners();
 }
 
-function renderTypeOptions() {
-    const current = currentEditingQuestion.type || '';
-    const types = KNOWN_TYPES.includes(current) || !current
-        ? KNOWN_TYPES
-        : [...KNOWN_TYPES, current];
+export function renderTypeOptions(currentType = currentEditingQuestion?.type || '') {
+    const current = currentType || '';
+    const allowReading = current === 'reading' || initialQuestionType === 'reading';
+    const baseTypes = KNOWN_TYPES.filter(t => t !== 'reading' || allowReading);
+    const types = baseTypes.includes(current) || !current
+        ? baseTypes
+        : [...baseTypes, current];
 
     return types.map(type =>
         `<option value="${type}" ${current === type ? 'selected' : ''}>${type}</option>`

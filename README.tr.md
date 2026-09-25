@@ -35,7 +35,7 @@ Exam App, kendi materyallerinden öğrenen herkes için tasarlanmıştır:
 
 ## Özellikler
 
-### 7 Soru Tipi — Tek Uygulamada
+### 6 Soru Tipi + e-Reader — Tek Uygulamada
 
 - **Tekli Seçim** — tek doğru seçenekli standart çoktan seçmeli format
 - **Çoklu Seçim** — iki veya daha fazla doğru seçim gerektiren sorular
@@ -43,7 +43,7 @@ Exam App, kendi materyallerinden öğrenen herkes için tasarlanmıştır:
 - **Kısa Yanıt** — tam cevabı yazın; birden fazla kabul edilen varyant ve isteğe bağlı büyük/küçük harf duyarlılığı desteklenir
 - **Boşluk Doldurma** — `{{boşluk}}` veya `{{temel|alternatif}}` ile satır içi gömülü anahtar kelimeler
 - **Bilgi Kartı (Flashcard)** — kendi hatırlama seviyenizi değerlendirdiğiniz klasik çevir-kart formatı
-- **Okuma Materyali** — not baskısı olmadan zengin Markdown çalışma notları *(eski adı: `topic_review`)*
+*(Uzun okuma metinleri, kitaplar ve dokümantasyonlar için: e-Reader / [`EREADER_AI_PROMPT.md`](./EREADER_AI_PROMPT.md))*
 
 ### Akıllı Aralıklı Tekrar (FSRS v5)
 

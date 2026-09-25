@@ -138,7 +138,7 @@ The app can put a new set straight into a folder, and create that folder if it d
 | Key | Type | Required | Description |
 | :--- | :--- | :--- | :--- |
 | `id` | String / Number | **Yes** | Unique question identifier (e.g., `q1`, `q102`). |
-| `type` | String | **Yes** | One of the 7 canonical supported question types (see below). |
+| `type` | String | **Yes** | One of the 6 canonical supported question types (see below). For long reading texts and books, use e-Reader format (see `EREADER_AI_PROMPT.md`). |
 | `difficulty` | Float / Int | **Yes** | Baseline difficulty from `1.0` (Very Easy) to `5.0` (Expert). |
 | `tags` | Array of Strings | No | Descriptive keywords (e.g., `["networking", "dns"]`). |
 | `content` | Object | **Yes** | Contains `text` string, and optional `media` array. |
@@ -155,7 +155,7 @@ The app can put a new set straight into a folder, and create that folder if it d
 
 ## 🧩 Supported Question Types & Rules
 
-The Exam App supports **7 canonical question types** (plus legacy aliases) categorized into **4 families**:
+The Exam App supports **6 canonical question types** (plus legacy aliases) categorized into **4 families** (for long-form reading materials, see e-Reader note below):
 
 ### Family A: Choice Questions (`single_choice`, `multiple_choice`, `true_false`)
 
@@ -284,9 +284,9 @@ Answers are embedded directly inside `content.text` using double braces `{{ ... 
 
 ---
 
-### Family D: Flashcard (`flashcard`) & Reading (`reading`)
+### Family D: Flashcard (`flashcard`)
 
-Self-rated or prose items for review.
+Self-rated items for review and memorization.
 
 #### 1. `flashcard`
 - `content.text`: Question or term on the front of the card.
@@ -307,24 +307,8 @@ Self-rated or prose items for review.
 }
 ```
 
-#### 2. `reading`
-- Educational text or summary note without graded questions (the legacy spelling `topic_review` is also accepted on import and converted to `reading`).
-- `content.text`: Formatted Markdown prose block.
-
-```json
-{
-  "id": "q_read_1",
-  "type": "reading",
-  "difficulty": 1.0,
-  "tags": ["summary"],
-  "content": {
-    "text": "# Summary of OSI Layers\n\nThe OSI model consists of 7 layers: Application, Presentation, Session, Transport, Network, Data Link, and Physical."
-  },
-  "answer": {
-    "explanation": "Review this summary before proceeding to the quiz section."
-  }
-}
-```
+> [!NOTE]
+> **Uzun Okuma / Kitaplar (e-Reader)**: Uzun okuma parçaları, kitaplar ve konu özetleri için soru tipi (`reading`) yerine doğrudan e-Reader formatı kullanılmalıdır. Detaylı talimat ve hazır prompt şablonu için [`EREADER_AI_PROMPT.md`](EREADER_AI_PROMPT.md) belgesine bakın. (Mevcut `reading` / `topic_review` soru kartları geriye dönük uyumluluk kapsamında içe aktarılmaya devam eder.)
 
 ---
 

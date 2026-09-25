@@ -21,8 +21,9 @@ Every part of the app: what it is for and how to use it. Tap the heading you nee
 13. [Syncing and backups](#syncing-and-backups)
 14. [Working with an AI](#working-with-an-ai)
 15. [The menu and settings](#the-menu-and-settings)
-16. [Common situations](#common-situations)
-17. [Version and contact](#version-and-contact)
+16. [e-Reader and Books](#e-reader-and-books)
+17. [Common situations](#common-situations)
+18. [Version and contact](#version-and-contact)
 
 ---
 
@@ -389,6 +390,24 @@ The menu (the button at the top right) opens section by section.
 **Delete sources** is at the bottom of the menu and cannot be undone. It has two levels: reset progress only (sources stay) and delete everything. Both keep your prompts and your quick test groups - those are not a record of something you studied but tools you wrote.
 
 **Which settings sync?** Language, translation target, text-to-speech settings, timer settings and your prompt selection travel between devices. The **AI provider list** and the **theme** are per device.
+
+---
+
+## e-Reader and Books
+
+The e-Reader allows you to read long-form study materials, PDFs, EPUB books, and documentation section by section in a clean, distraction-free environment.
+
+**Adding books and the AI prompt.** To convert any material into e-Reader format, provide the `EREADER_AI_PROMPT.md` instructions to an external AI (ChatGPT, Claude, Gemini, etc.). The resulting standard JSON can be imported from clipboard or file. Books are stored directly in your browser's IndexedDB.
+
+**Multi-part generation and merging.** Large books can be produced in parts without running into AI context limits (`part: { from: 1, to: 20, ... }`). Parts sharing the same `book_key` are detected automatically or can be combined into a single book via the **Merge parts** button in the library header. If any range is missing between parts, a gap warning appears in the contents list, and you can copy the prompt for the next part from the book actions menu.
+
+**Image support and URL placeholders.** Markdown images with secure `https://` URLs are rendered inline. Images specified with `placeholder:id` or file links appear as interactive placeholder cards; tap a placeholder to assign an `https://` image URL directly. For data economy and privacy, raw image binaries are never stored or synced.
+
+**Reading tools.** The reading screen provides chapter-by-chapter navigation, adjustable text size, table of contents in the side menu, fast in-book search, fullscreen zen mode, and print/PDF export. Additionally, each heading features read-aloud (TTS) and section translation controls.
+
+**Synchronization.** When GitHub Gist sync is configured, your books and current reading positions sync automatically between your devices in the background.
+
+**Resetting e-Reader.** Use "Reset e-Reader" in the e-Reader side menu to reset reading positions or delete all books. This operation never affects your exam/test progress, FSRS history, or regular study sources.
 
 ---
 
