@@ -890,6 +890,7 @@ export const translations = {
         ereader_reset_all_done: "Bütün kitaplar silindi.",
         ereader_book_missing: "Kitap bulunamadı.",
         ereader_untitled_section: "Başlıksız bölüm",
+        ereader_search_no_results: "Sonuç bulunamadı.",
     },
     en: {
         nugget_edit_title: "Add Nugget",
@@ -1763,6 +1764,7 @@ export const translations = {
         ereader_reset_all_done: "All books deleted.",
         ereader_book_missing: "Book not found.",
         ereader_untitled_section: "Untitled section",
+        ereader_search_no_results: "No results found.",
     },
     de: {
         nugget_edit_title: "Wissenshappen hinzufügen",
@@ -2640,6 +2642,7 @@ export const translations = {
         ereader_reset_all_done: "Alle Bücher gelöscht.",
         ereader_book_missing: "Buch nicht gefunden.",
         ereader_untitled_section: "Unbenannter Abschnitt",
+        ereader_search_no_results: "Keine Ergebnisse gefunden.",
     },
 };
 

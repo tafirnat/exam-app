@@ -14,10 +14,12 @@
  */
 
 import { t } from '../../core/i18n.js';
-import { renderMarkdown } from '../../core/markdown.js';
+import { renderMarkdown, applySearchHighlight } from '../../core/markdown.js';
 import { escapeHTML, showToast } from '../../core/utils.js';
 import { getBook, getProgress, setProgress, getPrefs, setPrefs, listBooks } from './ereader-store.js';
 import { buildChapters, chapterOfSection, weightedPercent } from './ereader-chapters.js';
+import { searchBook } from './ereader-search.js';
+import { applyEreaderChrome } from './ereader-shell.js';
 
 export const FONT_STEPS = Object.freeze([0.875, 1, 1.125, 1.25, 1.375, 1.5]);
 const SAVE_DELAY_MS = 5000;
@@ -34,6 +36,8 @@ let saveTimer = null;
 const memo = new Map();
 let deps = { switchView: null, closeMenu: null };
 let bound = false;
+let activeSearchTerm = '';
+let isFullscreen = false;
 
 export function getOpenBook() {
     return open ? open.book : null;
@@ -52,7 +56,13 @@ function chapterHtml(book, chapter, fontScale, searchTerm = '') {
     const html = chapter.sectionIds
         .map(id => byId.get(id))
         .filter(Boolean)
-        .map(s => `<section class="ereader-section md-content" data-section-id="${escapeHTML(s.id)}">${renderMarkdown(sectionSource(s))}</section>`)
+        .map(s => {
+            let body = renderMarkdown(sectionSource(s));
+            if (searchTerm) {
+                body = applySearchHighlight(body, searchTerm);
+            }
+            return `<section class="ereader-section md-content" data-section-id="${escapeHTML(s.id)}">${body}</section>`;
+        })
         .join('');
     memo.set(key, html);
     if (memo.size > MEMO_LIMIT) memo.delete(memo.keys().next().value);
@@ -102,6 +112,7 @@ function sectionEls() {
 /** The chapter's scroll span on the page, for converting to and from offset. */
 function chapterSpan() {
     const content = contentEl();
+    if (!content) return { top: 0, span: 0 };
     const rect = content.getBoundingClientRect();
     const top = rect.top + window.scrollY - READING_LINE_PX;
     const span = Math.max(0, content.offsetHeight - window.innerHeight + READING_LINE_PX);
@@ -182,7 +193,7 @@ function renderChapter({ restoreOffset = null, anchorSectionId = null, anchorDel
     const fontScale = getPrefs().fontScale || 1;
     content.style.setProperty('--ereader-font-scale', String(fontScale));
     const chapter = open.chapters[open.chapterIndex];
-    content.innerHTML = chapter ? chapterHtml(open.book, chapter, fontScale) : '';
+    content.innerHTML = chapter ? chapterHtml(open.book, chapter, fontScale, activeSearchTerm) : '';
     open.renderedAt = open.book.updatedAt;
     renderNav();
     updateFontUI();
@@ -329,6 +340,143 @@ function openTocSection() {
 }
 
 /**
+ * Search Bar (F5)
+ */
+export function openSearchBar() {
+    const bar = document.getElementById('ereaderSearchBar');
+    const input = document.getElementById('ereaderSearchInput');
+    if (!bar || !input) return;
+    bar.style.display = 'block';
+    input.focus();
+}
+
+export function closeSearchBar() {
+    const bar = document.getElementById('ereaderSearchBar');
+    const input = document.getElementById('ereaderSearchInput');
+    const results = document.getElementById('ereaderSearchResults');
+    if (bar) bar.style.display = 'none';
+    if (input) input.value = '';
+    if (results) results.replaceChildren();
+    if (activeSearchTerm) {
+        activeSearchTerm = '';
+        if (open && bookViewActive) renderChapter();
+    }
+}
+
+export function isSearchBarOpen() {
+    const bar = document.getElementById('ereaderSearchBar');
+    return !!(bar && bar.style.display !== 'none');
+}
+
+function onSearchInput() {
+    const input = document.getElementById('ereaderSearchInput');
+    const resultsEl = document.getElementById('ereaderSearchResults');
+    if (!input || !resultsEl) return;
+    const term = input.value.trim();
+    if (term.length < 2) {
+        resultsEl.replaceChildren();
+        if (activeSearchTerm) {
+            activeSearchTerm = '';
+            if (open && bookViewActive) renderChapter();
+        }
+        return;
+    }
+    const book = getOpenBook();
+    if (!book) return;
+    const matches = searchBook(book, term);
+    if (matches.length === 0) {
+        const noRes = document.createElement('div');
+        noRes.className = 'ereader-search-no-results';
+        noRes.textContent = t('ereader_search_no_results');
+        resultsEl.replaceChildren(noRes);
+        return;
+    }
+
+    const items = matches.map(m => {
+        const item = document.createElement('button');
+        item.type = 'button';
+        item.className = 'ereader-search-item';
+        const titleHtml = escapeHTML(m.title || t('ereader_untitled_section'));
+        const snippetHtml = applySearchHighlight(escapeHTML(m.snippet), term);
+        item.innerHTML = `<div class="ereader-search-title">${titleHtml}</div><div class="ereader-search-snippet">${snippetHtml}</div>`;
+        item.onclick = async () => {
+            activeSearchTerm = term;
+            open.chapterIndex = m.chapterIndex;
+            renderChapter({ anchorSectionId: m.sectionId });
+            renderEreaderToc();
+            const sec = sectionEls().find(s => s.dataset.sectionId === m.sectionId);
+            if (sec) {
+                const highlight = sec.querySelector('.search-highlight') || sec;
+                const y = highlight.getBoundingClientRect().top + window.scrollY - (READING_LINE_PX - 8);
+                window.scrollTo({ top: Math.max(0, y), behavior: 'instant' });
+            }
+            await flushPosition();
+        };
+        return item;
+    });
+    resultsEl.replaceChildren(...items);
+}
+
+/**
+ * Fullscreen / Zen Mode (F5)
+ */
+export function enterFullscreen() {
+    const header = document.querySelector('header');
+    if (header) header.style.display = 'none';
+    const exitBtn = document.getElementById('ereaderZenExitBtn');
+    if (exitBtn) exitBtn.style.display = 'flex';
+    isFullscreen = true;
+    if (typeof document !== 'undefined' && document.documentElement && typeof document.documentElement.requestFullscreen === 'function') {
+        document.documentElement.requestFullscreen().catch(() => {});
+    }
+}
+
+export function exitFullscreen(view = 'ereaderBook') {
+    if (!isFullscreen) return;
+    isFullscreen = false;
+    const exitBtn = document.getElementById('ereaderZenExitBtn');
+    if (exitBtn) exitBtn.style.display = 'none';
+    if (typeof document !== 'undefined' && document.fullscreenElement && typeof document.exitFullscreen === 'function') {
+        document.exitFullscreen().catch(() => {});
+    }
+    applyEreaderChrome(view, { goHome: () => deps.switchView && deps.switchView('home') });
+}
+
+export function isZenFullscreen() {
+    return isFullscreen;
+}
+
+/**
+ * Print / PDF (F5)
+ */
+export function printOpenBook() {
+    const book = getOpenBook();
+    if (!book) return;
+    if (typeof deps.closeMenu === 'function') deps.closeMenu();
+    const host = document.getElementById('ereaderPrintHost');
+    if (!host) return;
+
+    const sectionsHtml = book.sections
+        .map(s => `<section class="ereader-section md-content" data-section-id="${escapeHTML(s.id)}">${renderMarkdown(sectionSource(s))}</section>`)
+        .join('');
+
+    host.innerHTML = `<div class="ereader-print-book"><h1>${escapeHTML(book.title)}</h1>${book.author ? `<p class="ereader-print-author">${escapeHTML(book.author)}</p>` : ''}${sectionsHtml}</div>`;
+    host.style.display = 'block';
+
+    const cleanup = () => {
+        host.innerHTML = '';
+        host.style.display = 'none';
+        if (typeof window !== 'undefined') window.removeEventListener('afterprint', cleanup);
+    };
+    if (typeof window !== 'undefined') {
+        window.addEventListener('afterprint', cleanup);
+        if (typeof window.print === 'function') {
+            window.print();
+        }
+    }
+}
+
+/**
  * Called by applyEreaderChrome() when the book view is shown. False means
  * there is no open book (a Back into the view), and the caller goes to the
  * library.
@@ -349,6 +497,10 @@ export function enterBookView() {
 export function leaveBookView() {
     if (!bookViewActive) return;
     bookViewActive = false;
+    if (isFullscreen) {
+        exitFullscreen('ereaderLibrary');
+    }
+    closeSearchBar();
     flushPosition();
 }
 
@@ -376,7 +528,52 @@ export function bindEreaderReader({ switchView, closeMenu } = {}) {
     if (inc) inc.onclick = () => changeFontScale(1);
     updateFontUI();
 
-    if (typeof window !== 'undefined') window.addEventListener('scroll', onScroll, { passive: true });
+    const searchBtn = document.getElementById('ereaderSearchBtn');
+    if (searchBtn) {
+        searchBtn.onclick = () => {
+            if (isSearchBarOpen()) closeSearchBar();
+            else openSearchBar();
+        };
+    }
+
+    const searchInput = document.getElementById('ereaderSearchInput');
+    if (searchInput) {
+        searchInput.addEventListener('input', onSearchInput);
+    }
+
+    const fsBtn = document.getElementById('ereaderFullscreenBtn');
+    if (fsBtn) {
+        fsBtn.onclick = () => enterFullscreen();
+    }
+
+    const exitBtn = document.getElementById('ereaderZenExitBtn');
+    if (exitBtn) {
+        exitBtn.onclick = () => exitFullscreen();
+    }
+
+    const printBtn = document.getElementById('ereaderPrintBtn');
+    if (printBtn) {
+        printBtn.onclick = () => printOpenBook();
+    }
+
+    if (typeof window !== 'undefined') {
+        window.addEventListener('scroll', onScroll, { passive: true });
+        window.addEventListener('keydown', (e) => {
+            if (e.key === 'Escape') {
+                if (isSearchBarOpen()) {
+                    closeSearchBar();
+                } else if (isFullscreen) {
+                    exitFullscreen();
+                }
+            }
+        });
+        document.addEventListener('fullscreenchange', () => {
+            if (!document.fullscreenElement && isFullscreen) {
+                exitFullscreen();
+            }
+        });
+    }
+
     document.addEventListener('visibilitychange', () => {
         if (document.visibilityState === 'hidden') flushPosition();
     });
@@ -391,4 +588,6 @@ export function _resetEreaderReaderForTests() {
     saveTimer = null;
     memo.clear();
     deps = { switchView: null, closeMenu: null };
+    activeSearchTerm = '';
+    isFullscreen = false;
 }
