@@ -485,11 +485,12 @@ export function bindEreaderLibrary({ switchView, closeMenu } = {}) {
     if (mergePartsBtn) mergePartsBtn.onclick = openMergeOverlay;
 
     const confirmMerge = async (title) => await showConfirm(t('ereader_part_match', { title }));
+    const confirmDensity = async (warningKey) => await showConfirm(t(warningKey || 'ereader_warn_low_density'), t('warning_title'));
 
     bindDropZone(
         document.getElementById('ereaderFileDropZone'),
         document.getElementById('ereaderFileInput'),
-        async (files) => reportImportResults(await importFromFiles(files, { confirmMerge }))
+        async (files) => reportImportResults(await importFromFiles(files, { confirmMerge, confirmDensity }))
     );
 
     const urlInput = document.getElementById('ereaderUrlInput');
@@ -502,12 +503,12 @@ export function bindEreaderLibrary({ switchView, closeMenu } = {}) {
             timer = setTimeout(async () => {
                 let result;
                 if (value.startsWith('{')) {
-                    result = await importFromText(value, { confirmMerge });
+                    result = await importFromText(value, { confirmMerge, confirmDensity });
                 } else if (!/^https?:\/\//i.test(value)) {
                     showAlert(t('ereader_invalid_url'), t('warning_title'));
                     return;
                 } else {
-                    result = await importFromUrl(value, { confirmMerge });
+                    result = await importFromUrl(value, { confirmMerge, confirmDensity });
                 }
                 if (result.status !== 'invalid') urlInput.value = '';
                 reportImportResults([result]);
@@ -529,7 +530,7 @@ export function bindEreaderLibrary({ switchView, closeMenu } = {}) {
                 showToast(t('clipboard_empty'));
                 return;
             }
-            reportImportResults([await importFromText(text, { confirmMerge })]);
+            reportImportResults([await importFromText(text, { confirmMerge, confirmDensity })]);
         };
     }
 

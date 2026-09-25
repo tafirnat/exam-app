@@ -359,3 +359,65 @@ test('merge candidates modal renders malicious title and bookKey as plain text w
     lib.closeMergeOverlay();
 });
 
+test('importing a low density part prompts for density confirmation; rejection preserves existing book unchanged', async () => {
+    await ereaderStore.loadEreader();
+
+    // Base book: 10 pages, 5000 characters -> 500 chars/page
+    const baseJson = {
+        ereader: {
+            schema: 1,
+            book_key: 'density-key',
+            title: 'Base Book',
+            language: 'de',
+            part: { unit: 'page', from: 1, to: 10, total: 20 }
+        },
+        sections: [{ id: 's-1', title: 'Part 1', level: 1, text: 'a'.repeat(5000) }]
+    };
+    const { book: initialBook } = await imp.importEreaderJson(baseJson);
+    assert.ok(initialBook);
+
+    // Incoming part: 10 pages, 1000 characters -> 100 chars/page (< 50% of 500)
+    const lowDensityJson = {
+        ereader: {
+            schema: 1,
+            book_key: 'density-key',
+            title: 'Base Book',
+            language: 'de',
+            part: { unit: 'page', from: 11, to: 20, total: 20 }
+        },
+        sections: [{ id: 's-2', title: 'Part 2', level: 1, text: 'b'.repeat(1000) }]
+    };
+
+    let densityPrompted = false;
+    const resRejected = await imp.importEreaderJson(lowDensityJson, {
+        confirmMerge: async () => true,
+        confirmDensity: async () => {
+            densityPrompted = true;
+            return false; // User rejects merging low density part
+        }
+    });
+
+    assert.equal(densityPrompted, true, 'confirmDensity must be called before merge');
+    assert.equal(resRejected.status, 'added', 'When density is rejected, part is added as separate book rather than merged');
+
+    // Existing book must be unchanged!
+    const untouched = await ereaderStore.getBook(initialBook.id);
+    assert.equal(untouched.parts.length, 1, 'Existing book must retain only its original part');
+    assert.equal(untouched.sections.length, 1, 'Existing book must retain only its original sections');
+    assert.equal(untouched.sections[0].id, 's-1');
+
+    // When density is accepted:
+    const resAccepted = await imp.importEreaderJson({
+        ...lowDensityJson,
+        ereader: { ...lowDensityJson.ereader, part: { unit: 'page', from: 21, to: 30, total: 30 } }
+    }, {
+        confirmMerge: async () => true,
+        confirmDensity: async () => true
+    });
+
+    assert.equal(resAccepted.status, 'merged');
+    const updated = await ereaderStore.getBook(initialBook.id);
+    assert.equal(updated.parts.length, 2);
+});
+
+

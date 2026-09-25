@@ -35,7 +35,7 @@ export function findDuplicate(book, books = listBooks()) {
  * @param {{ confirmMerge?: (title: string) => Promise<boolean> }} options
  * @returns {Promise<{status: string, book: object|null, errors: string[], warnings: string[]}>}
  */
-export async function importEreaderJson(json, { confirmMerge } = {}) {
+export async function importEreaderJson(json, { confirmMerge, confirmDensity } = {}) {
     const result = validateEreaderFile(json);
     if (!result.ok) {
         return { status: 'invalid', book: null, errors: result.errors, warnings: result.warnings };
@@ -59,13 +59,23 @@ export async function importEreaderJson(json, { confirmMerge } = {}) {
                 const fullTarget = await getBook(matching.id);
                 if (fullTarget) {
                     const density = checkDensity(result.book, fullTarget);
-                    const warnings = [...result.warnings];
-                    if (density.lowDensity && density.warning) {
-                        warnings.push(density.warning);
+                    let proceedDensity = true;
+                    if (density.lowDensity) {
+                        if (typeof confirmDensity === 'function') {
+                            proceedDensity = await confirmDensity(density.warning || 'ereader_warn_low_density');
+                        } else {
+                            proceedDensity = false;
+                        }
                     }
-                    const merged = mergeBookParts(fullTarget, result.book);
-                    await replaceBook(merged);
-                    return { status: 'merged', book: merged, errors: [], warnings };
+                    if (proceedDensity) {
+                        const warnings = [...result.warnings];
+                        if (density.lowDensity && density.warning) {
+                            warnings.push(density.warning);
+                        }
+                        const merged = mergeBookParts(fullTarget, result.book);
+                        await replaceBook(merged);
+                        return { status: 'merged', book: merged, errors: [], warnings };
+                    }
                 }
             }
         }
