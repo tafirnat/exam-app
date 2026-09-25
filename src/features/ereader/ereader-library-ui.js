@@ -401,6 +401,11 @@ export function closeEreaderModals() {
         closeMergeOverlay();
         closed = true;
     }
+    const imgOverlay = document.getElementById('ereaderImageUrlOverlay');
+    if (imgOverlay && imgOverlay.classList.contains('active')) {
+        imgOverlay.classList.remove('active');
+        closed = true;
+    }
     return closed;
 }
 

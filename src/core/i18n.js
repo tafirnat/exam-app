@@ -901,6 +901,9 @@ export const translations = {
         ereader_merged_success: "Parçalar başarıyla birleştirildi.",
         ereader_warn_diff_lang_or_unit: "Parçaların dili veya birimi uyuşmuyor.",
         ereader_warn_low_density: "Bu parça diğerlerinden çok daha kısa; özetlenmiş olabilir.",
+        ereader_image_url_title: "Görsel Bağlantısı",
+        ereader_image_url_desc: "Görselin https:// adresini girin.",
+        ereader_invalid_image_url: "Yalnızca https:// ile başlayan geçerli bir bağlantı girebilirsiniz.",
     },
     en: {
         nugget_edit_title: "Add Nugget",
@@ -1785,6 +1788,9 @@ export const translations = {
         ereader_merged_success: "Parts merged successfully.",
         ereader_warn_diff_lang_or_unit: "Parts language or unit do not match.",
         ereader_warn_low_density: "This part is much shorter than others; it might be summarized.",
+        ereader_image_url_title: "Image URL",
+        ereader_image_url_desc: "Enter the https:// address of the image.",
+        ereader_invalid_image_url: "You must enter a valid URL starting with https://.",
     },
     de: {
         nugget_edit_title: "Wissenshappen hinzufügen",
@@ -2673,6 +2679,9 @@ export const translations = {
         ereader_merged_success: "Teile erfolgreich zusammengeführt.",
         ereader_warn_diff_lang_or_unit: "Sprache oder Einheit der Teile stimmen nicht überein.",
         ereader_warn_low_density: "Dieser Teil ist viel kürzer als andere; er könnte zusammengefasst worden sein.",
+        ereader_image_url_title: "Bild-URL",
+        ereader_image_url_desc: "Geben Sie die https://-Adresse des Bildes ein.",
+        ereader_invalid_image_url: "Sie müssen eine gültige URL eingeben, die mit https:// beginnt.",
     },
 };
 

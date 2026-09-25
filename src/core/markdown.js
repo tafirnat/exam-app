@@ -281,8 +281,13 @@ function isTableDelimiterRow(line) {
  * @param {string|undefined} nextLine Needed to recognise a table header
  * @returns {boolean}
  */
-function startsBlock(line, nextLine) {
+function startsBlock(line, nextLine, options = {}) {
     const trimmed = line.trim();
+    if (options.images === true) {
+        if (/^!\[([^\]]*)\]\((?:https:\/\/|placeholder:)[^\s)]+\)$/.test(trimmed) || /^!\[\[[^\]]+\]\]$/.test(trimmed)) {
+            return true;
+        }
+    }
     return trimmed.startsWith('```')
         || line.startsWith('>')
         || /^(#{1,6})\s+/.test(line)
@@ -331,11 +336,12 @@ export function renderInlineMarkdown(rawText) {
 /**
  * Parses block structures and emits full block-level HTML inside .md-content wrapper.
  * @param {string} rawText
+ * @param {object} [options]
  * @returns {string}
  */
-export function renderMarkdown(rawText) {
+export function renderMarkdown(rawText, options = {}) {
     if (!rawText || typeof rawText !== 'string') return '';
-    return renderNormalized(normalizeInput(rawText));
+    return renderNormalized(normalizeInput(rawText), options);
 }
 
 /**
@@ -349,19 +355,21 @@ export function renderMarkdown(rawText) {
  * the way in, so only an internal caller that injected placeholders after that
  * point can have them.
  * @param {string} text Already-normalized Markdown
+ * @param {object} [options]
  * @returns {string}
  */
-export function renderNormalizedMarkdown(text) {
+export function renderNormalizedMarkdown(text, options = {}) {
     if (!text || typeof text !== 'string') return '';
-    return renderNormalized(text);
+    return renderNormalized(text, options);
 }
 
 /**
  * The block parser proper. Assumes normalized input.
  * @param {string} rawText
+ * @param {object} [options]
  * @returns {string}
  */
-function renderNormalized(rawText) {
+function renderNormalized(rawText, options = {}) {
     let text = stripFrontmatter(rawText);
     text = stripComments(text);
     if (!text.trim()) return '';
@@ -372,6 +380,43 @@ function renderNormalized(rawText) {
     let i = 0;
     while (i < lines.length) {
         const line = lines[i];
+
+        // 0. Image blocks (when options.images === true) on their own line
+        if (options.images === true) {
+            const trimmedLine = line.trim();
+            const httpsMatch = trimmedLine.match(/^!\[([^\]]*)\]\((https:\/\/[^\s)]+)\)$/);
+            if (httpsMatch) {
+                blocks.push({
+                    type: 'image_https',
+                    alt: httpsMatch[1],
+                    src: httpsMatch[2]
+                });
+                i++;
+                continue;
+            }
+
+            const placeholderMatch = trimmedLine.match(/^!\[([^\]]*)\]\((placeholder:[^\s)]+)\)$/);
+            if (placeholderMatch) {
+                blocks.push({
+                    type: 'image_placeholder',
+                    alt: placeholderMatch[1],
+                    id: placeholderMatch[2]
+                });
+                i++;
+                continue;
+            }
+
+            const wikiMatch = trimmedLine.match(/^!\[\[([^\]]+)\]\]$/);
+            if (wikiMatch) {
+                blocks.push({
+                    type: 'image_placeholder',
+                    alt: wikiMatch[1].trim(),
+                    id: wikiMatch[1].trim()
+                });
+                i++;
+                continue;
+            }
+        }
 
         // 1. Fenced Code Block: ```lang
         if (line.trim().startsWith('```')) {
@@ -516,7 +561,7 @@ function renderNormalized(rawText) {
         while (i < lines.length) {
             const l = lines[i];
             if (!l.trim()) break;
-            if (paraLines.length > 0 && startsBlock(l, lines[i + 1])) break;
+            if (paraLines.length > 0 && startsBlock(l, lines[i + 1], options)) break;
             paraLines.push(l);
             i++;
         }
@@ -536,6 +581,41 @@ function renderNormalized(rawText) {
 
     for (const block of blocks) {
         switch (block.type) {
+            case 'image_https': {
+                const escapedSrc = escapeHTML(block.src);
+                const escapedAlt = escapeHTML(block.alt || '');
+                const figcaption = escapedAlt ? `<figcaption>${escapedAlt}</figcaption>` : '';
+                const fallbackId = escapeHTML(block.src);
+                const fallbackText = escapedAlt || fallbackId;
+                htmlParts.push(
+                    `<figure class="md-figure">` +
+                    `<img loading="lazy" src="${escapedSrc}" alt="${escapedAlt}" onerror="this.style.display='none'; if (this.nextElementSibling) this.nextElementSibling.style.display='flex';">` +
+                    `<div class="md-image-placeholder md-fallback" style="display: none;" data-placeholder-id="${fallbackId}">` +
+                    `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="md-placeholder-icon">` +
+                    `<rect x="3" y="3" width="18" height="18" rx="2"></rect><circle cx="8.5" cy="8.5" r="1.5"></circle><polyline points="21 15 16 10 5 21"></polyline>` +
+                    `</svg>` +
+                    `<span class="md-placeholder-text">${fallbackText}</span>` +
+                    `</div>` +
+                    figcaption +
+                    `</figure>`
+                );
+                break;
+            }
+
+            case 'image_placeholder': {
+                const escapedId = escapeHTML(block.id);
+                const escapedText = escapeHTML(block.alt || block.id);
+                htmlParts.push(
+                    `<div class="md-image-placeholder" data-placeholder-id="${escapedId}">` +
+                    `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="md-placeholder-icon">` +
+                    `<rect x="3" y="3" width="18" height="18" rx="2"></rect><circle cx="8.5" cy="8.5" r="1.5"></circle><polyline points="21 15 16 10 5 21"></polyline>` +
+                    `</svg>` +
+                    `<span class="md-placeholder-text">${escapedText}</span>` +
+                    `</div>`
+                );
+                break;
+            }
+
             case 'code_block': {
                 const escapedCode = escapeHTML(block.code);
                 const classAttr = block.lang ? ` class="language-${escapeHTML(block.lang)}"` : '';
@@ -551,7 +631,7 @@ function renderNormalized(rawText) {
             case 'callout': {
                 const typeClass = `md-callout-${block.calloutType}`;
                 const titleHtml = parseInlineMarkup(escapeHTML(block.title));
-                const bodyHtml = block.body ? renderMarkdownBody(block.body) : '';
+                const bodyHtml = block.body ? renderMarkdownBody(block.body, options) : '';
                 htmlParts.push(
                     `<div class="md-callout ${typeClass}">` +
                     `<div class="md-callout-title">${titleHtml}</div>` +
@@ -562,7 +642,7 @@ function renderNormalized(rawText) {
             }
 
             case 'blockquote': {
-                const bodyHtml = renderMarkdownBody(block.body);
+                const bodyHtml = renderMarkdownBody(block.body, options);
                 htmlParts.push(`<blockquote>${bodyHtml}</blockquote>`);
                 break;
             }
@@ -608,13 +688,14 @@ function renderNormalized(rawText) {
 /**
  * Inner helper to render body content of callouts and blockquotes (without root wrapper).
  * @param {string} bodyText
+ * @param {object} [options]
  * @returns {string}
  */
-function renderMarkdownBody(bodyText) {
+function renderMarkdownBody(bodyText, options = {}) {
     // renderNormalized, not renderMarkdown: the outer call already normalized,
     // and re-normalizing here would strip placeholders a caller like cloze.js
     // legitimately placed inside a callout or blockquote body.
-    const full = renderNormalized(bodyText);
+    const full = renderNormalized(bodyText, options);
     // Strip leading <div class="md-content"> and trailing </div>
     return full.replace(/^<div class="md-content">/, '').replace(/<\/div>$/, '');
 }

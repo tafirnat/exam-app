@@ -44,6 +44,7 @@ Exam App parses **100% native Obsidian Markdown syntax**. Obsidian is the source
 | **Table** | Pipe table with a required `---` delimiter row & optional `:---:` align | `<table><thead>...<tbody>` |
 | **Thematic Break** | `---` or `***` on a single line | `<hr>` |
 | **Paragraph** | Text blocks separated by blank lines | `<p>` |
+| **Images** (e-Reader, `options.images: true`) | `![alt](https://...)`, `![alt](placeholder:id)`, `![[file]]` | `<figure class="md-figure">` / `<div class="md-image-placeholder">` |
 
 ---
 

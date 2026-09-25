@@ -3580,6 +3580,25 @@
         </div>
     </div>
 
+    <!-- e-Reader Image URL Modal -->
+    <div id="ereaderImageUrlOverlay" class="modal-overlay" style="z-index: 10030;">
+        <div class="modal-card">
+            <div class="modal-header">
+                <h3 data-i18n="ereader_image_url_title">Görsel Bağlantısı</h3>
+                <p data-i18n="ereader_image_url_desc" class="ereader-modal-subtitle">Görselin https:// adresini girin.</p>
+            </div>
+            <div class="modal-body" style="margin: 1.5rem 0;">
+                <div class="input-group">
+                    <input type="url" id="ereaderImageUrlInput" placeholder="https://example.com/image.png" class="form-control" style="width: 100%; padding: 0.6rem; border: 1px solid var(--border-color); border-radius: var(--radius-md); background: var(--surface-color); color: var(--text-color);">
+                </div>
+            </div>
+            <div class="modal-footer" style="display: flex; gap: 0.75rem;">
+                <button class="btn btn-secondary btn-flex" id="ereaderImageUrlCancelBtn" data-i18n="cancel">Vazgeç</button>
+                <button class="btn btn-primary btn-flex" id="ereaderImageUrlSaveBtn" data-i18n="save">Kaydet</button>
+            </div>
+        </div>
+    </div>
+
     <script type="module" src="src/main.js" data-cfasync="false"></script>
     <script>
         if ('serviceWorker' in navigator) {

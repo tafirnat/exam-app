@@ -15,8 +15,8 @@
 
 import { t } from '../../core/i18n.js';
 import { renderMarkdown, applySearchHighlight } from '../../core/markdown.js';
-import { escapeHTML, showToast } from '../../core/utils.js';
-import { getBook, getProgress, setProgress, getPrefs, setPrefs, listBooks } from './ereader-store.js';
+import { escapeHTML, showToast, showAlert } from '../../core/utils.js';
+import { getBook, getProgress, setProgress, getPrefs, setPrefs, listBooks, updateBook } from './ereader-store.js';
 import { buildChapters, chapterOfSection, weightedPercent } from './ereader-chapters.js';
 import { searchBook } from './ereader-search.js';
 import { applyEreaderChrome } from './ereader-shell.js';
@@ -39,6 +39,7 @@ let deps = { switchView: null, closeMenu: null };
 let bound = false;
 let activeSearchTerm = '';
 let isFullscreen = false;
+let activePlaceholderId = null;
 
 export function getOpenBook() {
     return open ? open.book : null;
@@ -58,7 +59,7 @@ function chapterHtml(book, chapter, fontScale, searchTerm = '') {
         .map(id => byId.get(id))
         .filter(Boolean)
         .map(s => {
-            let body = renderMarkdown(sectionSource(s));
+            let body = renderMarkdown(sectionSource(s), { images: true });
             if (searchTerm) {
                 body = applySearchHighlight(body, searchTerm);
             }
@@ -491,7 +492,7 @@ export function printOpenBook() {
     if (!host) return;
 
     const sectionsHtml = book.sections
-        .map(s => `<section class="ereader-section md-content" data-section-id="${escapeHTML(s.id)}">${renderMarkdown(sectionSource(s))}</section>`)
+        .map(s => `<section class="ereader-section md-content" data-section-id="${escapeHTML(s.id)}">${renderMarkdown(sectionSource(s), { images: true })}</section>`)
         .join('');
 
     host.innerHTML = `<div class="ereader-print-book"><h1>${escapeHTML(book.title)}</h1>${book.author ? `<p class="ereader-print-author">${escapeHTML(book.author)}</p>` : ''}${sectionsHtml}</div>`;
@@ -545,6 +546,22 @@ function onScroll() {
     saveTimer = setTimeout(flushPosition, SAVE_DELAY_MS);
 }
 
+export function openImageUrlModal(placeholderId) {
+    const overlay = document.getElementById('ereaderImageUrlOverlay');
+    const input = document.getElementById('ereaderImageUrlInput');
+    if (!overlay || !input) return;
+    activePlaceholderId = placeholderId;
+    input.value = '';
+    overlay.classList.add('active');
+    input.focus();
+}
+
+export function closeImageUrlModal() {
+    const overlay = document.getElementById('ereaderImageUrlOverlay');
+    if (overlay) overlay.classList.remove('active');
+    activePlaceholderId = null;
+}
+
 /** One-time wiring of the static controls and page-level listeners. */
 export function bindEreaderReader({ switchView, closeMenu } = {}) {
     deps = { switchView, closeMenu };
@@ -590,6 +607,61 @@ export function bindEreaderReader({ switchView, closeMenu } = {}) {
         printBtn.onclick = () => printOpenBook();
     }
 
+    const content = document.getElementById('ereaderContent');
+    if (content) {
+        content.addEventListener('click', (e) => {
+            const placeholder = e.target.closest('.md-image-placeholder');
+            if (placeholder && placeholder.dataset.placeholderId) {
+                openImageUrlModal(placeholder.dataset.placeholderId);
+            }
+        });
+    }
+
+    const imgSaveBtn = document.getElementById('ereaderImageUrlSaveBtn');
+    const imgCancelBtn = document.getElementById('ereaderImageUrlCancelBtn');
+    const imgInput = document.getElementById('ereaderImageUrlInput');
+    const imgOverlay = document.getElementById('ereaderImageUrlOverlay');
+
+    if (imgSaveBtn && imgInput) {
+        imgSaveBtn.onclick = async () => {
+            const url = imgInput.value.trim();
+            if (!/^https:\/\/[^\s]+$/i.test(url)) {
+                showAlert(t('ereader_invalid_image_url'), t('warning_title'));
+                return;
+            }
+            const placeholderId = activePlaceholderId;
+            closeImageUrlModal();
+            if (!open || !placeholderId) return;
+
+            await updateBook(open.book.id, (book) => {
+                for (const s of book.sections) {
+                    if (typeof s.text === 'string') {
+                        if (placeholderId.startsWith('placeholder:')) {
+                            s.text = s.text.replaceAll(`(${placeholderId})`, `(${url})`);
+                        } else {
+                            s.text = s.text.replaceAll(`![[${placeholderId}]]`, `![${placeholderId}](${url})`);
+                            s.text = s.text.replaceAll(`(${placeholderId})`, `(${url})`);
+                        }
+                    }
+                }
+            });
+
+            const updated = await getBook(open.book.id);
+            if (updated) {
+                open.book = updated;
+                memo.clear();
+                renderChapter();
+            }
+        };
+    }
+
+    if (imgCancelBtn) imgCancelBtn.onclick = closeImageUrlModal;
+    if (imgOverlay) {
+        imgOverlay.addEventListener('click', (e) => {
+            if (e.target === imgOverlay) closeImageUrlModal();
+        });
+    }
+
     if (typeof window !== 'undefined') {
         window.addEventListener('scroll', onScroll, { passive: true });
         window.addEventListener('keydown', (e) => {
@@ -598,6 +670,8 @@ export function bindEreaderReader({ switchView, closeMenu } = {}) {
                     closeSearchBar();
                 } else if (isFullscreen) {
                     exitFullscreen();
+                } else if (imgOverlay && imgOverlay.classList.contains('active')) {
+                    closeImageUrlModal();
                 }
             }
         });
@@ -624,4 +698,5 @@ export function _resetEreaderReaderForTests() {
     deps = { switchView: null, closeMenu: null };
     activeSearchTerm = '';
     isFullscreen = false;
+    closeImageUrlModal();
 }
