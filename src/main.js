@@ -547,6 +547,17 @@ const initApp = async () => {
                 }
             }
         }
+
+        /* Boot paints home without switchView(), so the header/menu chrome
+           has to be applied here too. The app always opens in the test
+           centre (plan A6): a reload inside the e-Reader lands on home. */
+        const bootView = history.state?.view || 'home';
+        if (isEreaderView(bootView)) {
+            history.replaceState({ view: 'home', searchQuery: '', filter: 'all' }, '', '#home');
+        }
+        if (bootView === 'home' || isEreaderView(bootView)) {
+            applyEreaderChrome('home', { goHome: () => switchView('home') });
+        }
     } catch (err) {
         console.error('CRITICAL INITIALIZATION ERROR:', err);
         // Fallback to setup at least basic listeners if possible

@@ -247,3 +247,15 @@ test('12. bindEreaderShell wires switchView and closeMenu correctly', () => {
     assert.equal(menuClosed, true);
     assert.equal(targetView, 'ereaderLibrary');
 });
+
+test('13. (D1) src/main.js calls applyEreaderChrome("home") before function switchView definition', () => {
+    const mainJs = readFileSync(new URL('../src/main.js', import.meta.url), 'utf8');
+    const switchViewIndex = mainJs.indexOf('function switchView(');
+    assert.ok(switchViewIndex > 0, 'function switchView must be defined in main.js');
+    const beforeSwitchView = mainJs.slice(0, switchViewIndex);
+    assert.ok(
+        beforeSwitchView.includes("applyEreaderChrome('home'"),
+        'main.js must call applyEreaderChrome("home" before function switchView'
+    );
+});
+
