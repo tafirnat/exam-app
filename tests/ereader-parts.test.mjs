@@ -307,3 +307,48 @@ test('10. generateNextPartPrompt generates prompt with book details and next sta
     assert.ok(prompt.includes('"unit": "page"'));
     assert.ok(prompt.includes('"language": "de"'));
 });
+
+test('11. Preserves distinct sections with same title from different parts when pageStart is missing', () => {
+    const part1 = {
+        bookKey: 'novel',
+        language: 'en',
+        parts: [{ unit: 'section', from: 1, to: 5, total: 10 }],
+        sections: [
+            { id: 'ch1', title: 'Chapter 1', text: 'Text of chapter 1' },
+            { id: 'sum1', title: 'Summary', text: 'Summary of chapter 1' }
+        ]
+    };
+
+    const part2 = {
+        bookKey: 'novel',
+        language: 'en',
+        parts: [{ unit: 'section', from: 6, to: 10, total: 10 }],
+        sections: [
+            { id: 'ch2', title: 'Chapter 2', text: 'Text of chapter 2' },
+            { id: 'sum2', title: 'Summary', text: 'Summary of chapter 2' }
+        ]
+    };
+
+    const merged = mergeBookParts(part1, part2);
+    assert.equal(merged.sections.length, 4, 'Both Summary sections must be preserved since their content differs');
+    assert.deepEqual(merged.sections.map(s => s.text), [
+        'Text of chapter 1',
+        'Summary of chapter 1',
+        'Text of chapter 2',
+        'Summary of chapter 2'
+    ]);
+
+    // If part 2 carried an exact duplicate (same title and identical text), it is deduplicated
+    const part2WithDuplicate = {
+        bookKey: 'novel',
+        language: 'en',
+        parts: [{ unit: 'section', from: 6, to: 10, total: 10 }],
+        sections: [
+            { id: 'sum-dup', title: 'Summary', text: 'Summary of chapter 1' },
+            { id: 'ch2', title: 'Chapter 2', text: 'Text of chapter 2' }
+        ]
+    };
+    const mergedDup = mergeBookParts(part1, part2WithDuplicate);
+    assert.equal(mergedDup.sections.length, 3, 'Genuinely identical section content must be deduplicated');
+});
+

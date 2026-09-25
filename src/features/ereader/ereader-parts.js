@@ -187,8 +187,10 @@ export function mergeBookParts(targetBook, newPartBook) {
         let key = null;
         if (section.pageStart !== undefined && section.pageStart !== null) {
             key = `${section.pageStart}:${normTitle}`;
-        } else if (normTitle) {
-            key = `title:${normTitle}`;
+        } else if (normTitle && section.text) {
+            // Without pageStart, only deduplicate if both title and text are genuinely identical
+            // (proving they are the exact same section content, preserving distinct sections with the same title)
+            key = `content:${normTitle}:${section.text.trim()}`;
         }
 
         if (key) {
