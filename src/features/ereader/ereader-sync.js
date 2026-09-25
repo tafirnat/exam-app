@@ -40,17 +40,6 @@ let lastPullTime = 0;
 let pushTimer = null;
 let initialized = false;
 let currentViewGetter = () => null;
-let lastPushedBookSignature = null;
-let cachedRemoteIndex = null;
-let cachedRemoteIndexTime = 0;
-let cachedGistFiles = null;
-const CACHED_INDEX_TTL_MS = 60000;
-
-function computeBookSignature(localBooks, localTombstones) {
-    const booksPart = (localBooks || []).map(b => `${b.id}:${b.updatedAt}`).sort().join('|');
-    const tombsPart = Object.entries(localTombstones || {}).map(([id, at]) => `${id}:${at}`).sort().join('|');
-    return `${booksPart}#${tombsPart}`;
-}
 
 function bookContainsDataImage(book) {
     if (!book || !Array.isArray(book.sections)) return false;
@@ -247,24 +236,8 @@ export async function pushEreader() {
         const localProgress = getProgress() || {};
         const localTombstones = getTombstones() || {};
 
-        const currentSig = computeBookSignature(localBooks, localTombstones);
-        const onlyProgressChanged = (lastPushedBookSignature !== null) &&
-            (currentSig === lastPushedBookSignature) &&
-            cachedRemoteIndex &&
-            (Date.now() - cachedRemoteIndexTime < CACHED_INDEX_TTL_MS);
-
-        let remoteIndex = null;
-        let gist = null;
-
-        if (onlyProgressChanged) {
-            remoteIndex = cachedRemoteIndex;
-        } else {
-            gist = await fetchGist();
-            remoteIndex = await readGistJSON(gist, INDEX_FILENAME);
-            cachedRemoteIndex = remoteIndex;
-            cachedRemoteIndexTime = Date.now();
-            cachedGistFiles = gist?.files || null;
-        }
+        const gist = await fetchGist();
+        const remoteIndex = await readGistJSON(gist, INDEX_FILENAME);
 
         const localIndex = {
             schema: 1,
@@ -313,20 +286,16 @@ export async function pushEreader() {
         filesToPatch[INDEX_FILENAME] = { content: JSON.stringify(merged) };
 
         // Tombstones: delete remote file if still in gist
-        const tombFiles = gist?.files || cachedGistFiles;
-        if (tombFiles) {
+        if (gist?.files) {
             for (const tombId of Object.keys(merged.tombstones)) {
                 const fname = bookFilename(tombId);
-                if (tombFiles[fname]) {
+                if (gist.files[fname]) {
                     filesToPatch[fname] = null;
                 }
             }
         }
 
         await patchGistFiles(filesToPatch);
-        lastPushedBookSignature = currentSig;
-        cachedRemoteIndex = merged;
-        cachedRemoteIndexTime = Date.now();
         return true;
     } catch (err) {
         console.warn('e-Reader push failed:', err);
@@ -381,8 +350,4 @@ export function _resetEreaderSyncForTests() {
     pushTimer = null;
     initialized = false;
     currentViewGetter = () => null;
-    lastPushedBookSignature = null;
-    cachedRemoteIndex = null;
-    cachedRemoteIndexTime = 0;
-    cachedGistFiles = null;
 }

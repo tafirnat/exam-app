@@ -324,3 +324,34 @@ test('4. saving image URL preserves reader anchor and does not jump reader to ch
     assert.equal(currentProgress?.sectionId, 's2', 'Preserved sectionId should be s2');
 });
 
+test('5. saving image URL containing dollar signs ($) does not corrupt URL', async () => {
+    const customBook = {
+        ereader: { schema: 1, book_key: 'dollar-test', title: 'Dollar Test', author: 'A', language: 'en', source_type: 'obsidian' },
+        sections: [
+            {
+                id: 's1',
+                title: 'Chapter 1',
+                level: 1,
+                text: 'See the diagram below:\n\n![Diagram](diag-dollar)\n\n![Placeholder](placeholder:diag-ph)'
+            }
+        ]
+    };
+    const book = await addAndOpen(customBook);
+
+    reader.openImageUrlModal('diag-dollar');
+    const input = document.getElementById('ereaderImageUrlInput');
+    const saveBtn = document.getElementById('ereaderImageUrlSaveBtn');
+    input.value = 'https://example.com/images/diag.png?tag=$foo&param=$1&other=$&';
+    await saveBtn.onclick();
+
+    let updated = await ereaderStore.getBook(book.id);
+    assert.ok(updated.sections[0].text.includes('![Diagram](https://example.com/images/diag.png?tag=$foo&param=$1&other=$&)'), 'Dollar signs must be preserved literally');
+
+    reader.openImageUrlModal('placeholder:diag-ph');
+    input.value = 'https://example.com/images/ph.png?price=$50&code=$2';
+    await saveBtn.onclick();
+
+    updated = await ereaderStore.getBook(book.id);
+    assert.ok(updated.sections[0].text.includes('![Placeholder](https://example.com/images/ph.png?price=$50&code=$2)'), 'Dollar signs in placeholder: must be preserved literally');
+});
+

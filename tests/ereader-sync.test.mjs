@@ -490,7 +490,7 @@ test('12. pullEreader validates pushed book format without ereader wrapper and d
     assert.equal(storedInvalid, null, 'Invalid book must be dropped and not saved');
 });
 
-test('13. pushEreader uses cached index and avoids downloading full gist on subsequent progress-only pushes (Fix 10)', async () => {
+test('13. pushEreader fetches fresh gist on every push (caching removed)', async () => {
     let getGistCalls = 0;
     let patchCalls = 0;
 
@@ -539,14 +539,14 @@ test('13. pushEreader uses cached index and avoids downloading full gist on subs
     await ereaderStore.setProgress('b-prog', { sectionId: 's1', offset: 0.25, percent: 25, at: 2000 });
     await pushEreader();
 
-    // The second push must NOT call fetchGist again because only progress changed!
-    assert.equal(getGistCalls, 1, 'Subsequent progress push must not re-fetch the entire gist');
+    // With caching removed, subsequent push fetches fresh gist index
+    assert.equal(getGistCalls, 2, 'Subsequent progress push fetches fresh gist index');
     assert.equal(patchCalls, 2, 'Second push must patch the updated progress index');
 
     // Another progress update
     await ereaderStore.setProgress('b-prog', { sectionId: 's1', offset: 0.5, percent: 50, at: 3000 });
     await pushEreader();
-    assert.equal(getGistCalls, 1, 'Third progress push must also not re-fetch the entire gist');
+    assert.equal(getGistCalls, 3, 'Third progress push also fetches fresh gist index');
     assert.equal(patchCalls, 3, 'Third push must patch updated progress');
 });
 

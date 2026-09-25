@@ -680,10 +680,10 @@ export function bindEreaderReader({ switchView, closeMenu } = {}) {
                 for (const s of book.sections) {
                     if (typeof s.text === 'string') {
                         if (placeholderId.startsWith('placeholder:')) {
-                            s.text = s.text.replace(mdImageRe, `$1(${url})`);
+                            s.text = s.text.replace(mdImageRe, (m, p1) => `${p1}(${url})`);
                         } else {
                             s.text = s.text.replaceAll(`![[${placeholderId}]]`, `![${placeholderId}](${url})`);
-                            s.text = s.text.replace(mdImageRe, `$1(${url})`);
+                            s.text = s.text.replace(mdImageRe, (m, p1) => `${p1}(${url})`);
                         }
                     }
                 }
