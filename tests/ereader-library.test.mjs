@@ -338,3 +338,24 @@ test('the book actions modal is a direct child of body and sits under the shared
     const z = Number(overlay.style.zIndex);
     assert.ok(z > 10010 && z < 10100, `z-index ${z} must clear .modal-overlay (10010) and stay under customModalOverlay (10100)`);
 });
+
+test('merge candidates modal renders malicious title and bookKey as plain text without injection', async () => {
+    await ereaderStore.loadEreader();
+    const maliciousTitle = '<img src=x onerror="window.__injected=1">';
+    const maliciousKey = '<script>window.__injected=2</script>';
+    window.__injected = undefined;
+
+    await imp.importEreaderJson(bookJson({ title: maliciousTitle, key: maliciousKey, from: 1, to: 5 }));
+    await imp.importEreaderJson(bookJson({ title: 'Part Two', key: maliciousKey, from: 6, to: 10 }));
+
+    lib.openMergeOverlay();
+
+    assert.equal(window.__injected, undefined, 'Script or onerror in title/key must not execute');
+    const mergeList = document.getElementById('ereaderMergeList');
+    assert.equal(mergeList.querySelectorAll('img').length, 0, 'No img element must be created from title HTML');
+    assert.equal(mergeList.querySelectorAll('script').length, 0, 'No script element must be created from bookKey');
+    assert.ok(mergeList.textContent.includes(maliciousTitle), 'Title text must be rendered as textContent');
+    assert.ok(mergeList.textContent.includes(maliciousKey), 'Key text must be rendered as textContent');
+    lib.closeMergeOverlay();
+});
+

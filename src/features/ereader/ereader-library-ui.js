@@ -294,15 +294,27 @@ export function openMergeOverlay() {
         const p = b.parts?.[0];
         const rangeText = p ? `${p.unit || 'part'} ${p.from}–${p.to} / ${p.total}` : '';
 
-        item.innerHTML = `
-            <input type="checkbox" value="${b.id}" style="width: 18px; height: 18px; cursor: pointer;">
-            <div style="flex: 1;">
-                <div style="font-weight: 600; font-size: 0.9rem;">${b.title || ''}</div>
-                <div style="font-size: 0.75rem; color: var(--text-secondary);">${rangeText} · ${b.bookKey}</div>
-            </div>
-        `;
+        const cb = document.createElement('input');
+        cb.type = 'checkbox';
+        cb.value = b.id;
+        cb.style.width = '18px';
+        cb.style.height = '18px';
+        cb.style.cursor = 'pointer';
 
-        const cb = item.querySelector('input');
+        const info = el('div');
+        info.style.flex = '1';
+        const titleEl = el('div', '', b.title || '');
+        titleEl.style.fontWeight = '600';
+        titleEl.style.fontSize = '0.9rem';
+        const metaEl = el('div', '', rangeText ? `${rangeText} · ${b.bookKey}` : (b.bookKey || ''));
+        metaEl.style.fontSize = '0.75rem';
+        metaEl.style.color = 'var(--text-secondary)';
+        info.appendChild(titleEl);
+        info.appendChild(metaEl);
+
+        item.appendChild(cb);
+        item.appendChild(info);
+
         cb.onchange = () => {
             if (cb.checked) {
                 selectedIds.add(b.id);
