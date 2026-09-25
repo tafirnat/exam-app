@@ -3,6 +3,7 @@ import { emit, Slice } from '../../core/store.js';
 import { loadEreader, isEreaderLoaded } from './ereader-store.js';
 import { bindEreaderLibrary } from './ereader-library-ui.js';
 import { bindEreaderReader, enterBookView, leaveBookView } from './ereader-reader-ui.js';
+import { pullEreader, initEreaderSync } from './ereader-sync.js';
 
 let loadRequested = false;
 let switchViewRef = null;
@@ -145,7 +146,10 @@ export function applyEreaderChrome(view, { goHome } = {}) {
         readingSection.style.display = view === 'ereaderBook' ? 'block' : 'none';
     }
 
-    if (isEreaderView(view)) ensureEreaderLoaded();
+    if (isEreaderView(view)) {
+        ensureEreaderLoaded();
+        pullEreader().catch(err => console.warn('[ereader] sync pull failed:', err));
+    }
 
     /* The book view shows the open book; with none open (Back into the view)
        there is nothing to show, so the library takes its place. Deferred:
@@ -183,4 +187,5 @@ export function bindEreaderShell({ switchView, closeMenu } = {}) {
     switchViewRef = switchView;
     bindEreaderReader({ switchView, closeMenu });
     bindEreaderLibrary({ switchView, closeMenu });
+    initEreaderSync({ getCurrentView: () => history.state?.view || 'home' });
 }

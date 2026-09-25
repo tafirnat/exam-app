@@ -240,12 +240,12 @@ export async function updateBook(id, mutate, { fromSync = false } = {}) {
  * @param {{fromSync?: boolean}} [options]
  * @returns {Promise<void>}
  */
-export async function deleteBook(id, { fromSync = false } = {}) {
+export async function deleteBook(id, { fromSync = false, tombstoneAt = null } = {}) {
     if (!loaded) await loadEreader();
 
     bookIndex = bookIndex.filter(b => b.id !== id);
     bookCache.delete(id);
-    tombstonesMap[id] = Date.now();
+    tombstonesMap[id] = Math.max(tombstonesMap[id] || 0, (fromSync && typeof tombstoneAt === 'number') ? tombstoneAt : Date.now());
 
     await persistRemoveAsync(BOOK_PREFIX + id);
     await persistAsync(INDEX_KEY, bookIndex);
@@ -256,12 +256,13 @@ export async function deleteBook(id, { fromSync = false } = {}) {
 }
 
 /**
- * Gets the current reading progress for a book.
+ * Gets the current reading progress for a book, or all progress records if id is omitted.
  *
- * @param {string} id
+ * @param {string} [id]
  * @returns {object|null}
  */
 export function getProgress(id) {
+    if (!id) return { ...progressMap };
     return progressMap[id] ? { ...progressMap[id] } : null;
 }
 
@@ -269,19 +270,19 @@ export function getProgress(id) {
  * Updates reading progress for a book and emits EREADER_PROGRESS.
  *
  * @param {string} id
- * @param {{sectionId?: string|null, offset?: number, percent?: number}} pos
+ * @param {{sectionId?: string|null, offset?: number, percent?: number, at?: number, by?: string}} pos
  * @param {{fromSync?: boolean}} [options]
  * @returns {Promise<object>}
  */
-export async function setProgress(id, { sectionId, offset, percent }, { fromSync = false } = {}) {
+export async function setProgress(id, { sectionId, offset, percent, at, by } = {}, { fromSync = false } = {}) {
     if (!loaded) await loadEreader();
 
     const entry = {
         sectionId: sectionId ?? null,
         offset: typeof offset === 'number' ? offset : 0,
         percent: typeof percent === 'number' ? percent : 0,
-        at: Date.now(),
-        by: AppState?.deviceId || 'unknown'
+        at: (fromSync && typeof at === 'number') ? at : Date.now(),
+        by: (fromSync && by) ? by : (AppState?.deviceId || 'unknown')
     };
 
     progressMap[id] = entry;

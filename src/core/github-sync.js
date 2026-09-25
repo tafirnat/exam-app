@@ -270,7 +270,7 @@ function serialiseFiles(scopes, payload = getSyncPayload()) {
 }
 
 /** GETs the Gist. Throws on transport failure so callers do not merge nothing. */
-async function fetchGist() {
+export async function fetchGist() {
     const res = await fetch(`${GITHUB_API_BASE}/gists/${AppState.githubGistId}`, {
         headers: {
             'Authorization': `Bearer ${AppState.githubToken}`,
@@ -305,7 +305,7 @@ async function readGistFile(gist, filename) {
 }
 
 /** Reads and parses one file. null when absent or empty. */
-async function readGistJSON(gist, filename) {
+export async function readGistJSON(gist, filename) {
     const content = await readGistFile(gist, filename);
     if (content === null || !content.trim()) return null;
     return JSON.parse(content);
@@ -2458,3 +2458,22 @@ function setupSyncDOMListeners() {
         }
     });
 }
+
+/** PATCHes only the named files; a null value deletes that file. */
+export async function patchGistFiles(files) {
+    if (!canUseRemoteArchive()) throw new Error('GitHub unavailable');
+
+    const res = await fetch(`${GITHUB_API_BASE}/gists/${AppState.githubGistId}`, {
+        method: 'PATCH',
+        headers: {
+            'Authorization': `Bearer ${AppState.githubToken}`,
+            'Content-Type': 'application/json',
+            'Accept': 'application/vnd.github+json'
+        },
+        body: JSON.stringify({ files })
+    });
+
+    if (!res.ok) throw httpError(res);
+    return true;
+}
+
