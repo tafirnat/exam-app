@@ -87,6 +87,7 @@ function setOpen(book, chapterIndex, pendingRestore = null) {
  * the view is shown. Returns false (and stays put) when the book is gone.
  */
 export async function openBook(id, { switchView = deps.switchView } = {}) {
+    await ensureDecorateReadingSections();
     const book = await getBook(id);
     if (!book) {
         showToast(t('ereader_book_missing'));
@@ -184,6 +185,41 @@ function renderNav() {
     if (next) next.disabled = !open || i >= n - 1;
 }
 
+let decorateReadingSectionsRef = null;
+
+async function ensureDecorateReadingSections() {
+    if (!decorateReadingSectionsRef && typeof window !== 'undefined') {
+        try {
+            const mod = await import('../test/test-ui.js');
+            decorateReadingSectionsRef = mod.decorateReadingSections;
+        } catch (_) {}
+    }
+    return decorateReadingSectionsRef;
+}
+
+function decorateReaderSections() {
+    if (!open) return;
+    if (!decorateReadingSectionsRef) {
+        ensureDecorateReadingSections().then(fn => {
+            if (fn && open) decorateReaderSections();
+        });
+        return;
+    }
+    const content = contentEl();
+    if (!content) return;
+    content.querySelectorAll('.ereader-section').forEach(secEl => {
+        const secId = secEl.dataset.sectionId;
+        if (secId) {
+            decorateReadingSectionsRef(secEl, {
+                scope: 'ereader:' + secId,
+                cacheKey: open.book.id,
+                minSections: 1,
+                onRefresh: decorateReaderSections
+            });
+        }
+    });
+}
+
 /**
  * Draws the open chapter. Where it lands: a saved offset (opening), a section
  * kept at the same height on screen (font change, sync), a section at the top
@@ -196,6 +232,7 @@ function renderChapter({ restoreOffset = null, anchorSectionId = null, anchorDel
     content.style.setProperty('--ereader-font-scale', String(fontScale));
     const chapter = open.chapters[open.chapterIndex];
     content.innerHTML = chapter ? chapterHtml(open.book, chapter, fontScale, activeSearchTerm) : '';
+    decorateReaderSections();
     open.renderedAt = open.book.updatedAt;
     renderNav();
     updateFontUI();

@@ -233,12 +233,15 @@ function readBlockText(node) {
     const parts = [];
     let inline = '';
 
+    const textNodeType = typeof Node !== 'undefined' ? Node.TEXT_NODE : 3;
+    const elementNodeType = typeof Node !== 'undefined' ? Node.ELEMENT_NODE : 1;
+
     for (const child of node.childNodes) {
-        if (child.nodeType === Node.TEXT_NODE) {
+        if (child.nodeType === textNodeType) {
             inline += child.textContent;
             continue;
         }
-        if (child.nodeType !== Node.ELEMENT_NODE) continue;
+        if (child.nodeType !== elementNodeType) continue;
         // Our own additions are not part of the passage.
         if (child.classList.contains('heading-tools') || child.classList.contains('md-section-translation')) continue;
 
@@ -315,14 +318,14 @@ function collectReadingSections(rootEl) {
  * @param {(() => void)|null} [options.onRefresh] Preview only: how to redraw
  *        when playback ends, since the preview is not what renderQuestion draws.
  */
-export function decorateReadingSections(hostEl, { scope, cacheKey, onRefresh = null } = {}) {
+export function decorateReadingSections(hostEl, { scope, cacheKey, onRefresh = null, minSections = 2 } = {}) {
     if (!hostEl) return;
     const rootEl = hostEl.querySelector('.md-content') || hostEl;
     /* Idempotent: callers normally hand over a body they have just rebuilt, but
        one that decorates the same DOM twice must not get two sets of icons. */
     rootEl.querySelectorAll('.heading-tools, .md-section-translation').forEach(el => el.remove());
     const sections = collectReadingSections(rootEl);
-    if (sections.length <= 1) return;
+    if (sections.length < minSections) return;
 
     const entries = sectionTranslationEntries(scope, cacheKey);
 
