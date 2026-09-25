@@ -57,7 +57,11 @@ export const Slice = Object.freeze({
     /** Light/dark theme. */
     THEME: 'theme',
     /** Stats screen filter, sort and search. View state, not persisted data. */
-    STATS_VIEW: 'statsView'
+    STATS_VIEW: 'statsView',
+    /** e-Reader library index and book records. */
+    EREADER_LIBRARY: 'ereaderLibrary',
+    /** e-Reader reading position and progress. */
+    EREADER_PROGRESS: 'ereaderProgress'
 });
 
 const KNOWN_SLICES = new Set(Object.values(Slice));
