@@ -12,6 +12,9 @@ const BOOK_PREFIX = 'focus_app_ereader_book_';
 const PROGRESS_KEY = 'focus_app_ereader_progress';
 const TOMBSTONES_KEY = 'focus_app_ereader_tombstones';
 const PREFS_KEY = 'focus_app_ereader_prefs';
+/** R2-11: the library's folders, [{ id, name, order, collapsed }]. Device-local;
+    a book carries its folder's id and name, so another device still groups it. */
+const FOLDERS_KEY = 'focus_app_ereader_folders';
 
 let loaded = false;
 let loadPromise = null;
@@ -20,6 +23,7 @@ const bookCache = new Map();
 let progressMap = {};
 let tombstonesMap = {};
 let prefsData = { fontScale: 1, lastBookId: null };
+let foldersData = [];
 let changeListener = null;
 
 function notifyChange(action, payload) {
@@ -49,7 +53,11 @@ function createSummary(book) {
         sectionCount,
         textLength,
         createdAt: book.createdAt || Date.now(),
-        updatedAt: book.updatedAt || Date.now()
+        updatedAt: book.updatedAt || Date.now(),
+        folderId: typeof book.folderId === 'string' && book.folderId ? book.folderId : null,
+        folderName: typeof book.folderName === 'string' ? book.folderName : '',
+        order: Number.isFinite(book.order) ? book.order : null,
+        archived: book.archived === true
     };
 }
 
@@ -64,12 +72,16 @@ export async function loadEreader() {
     if (loadPromise) return loadPromise;
 
     loadPromise = (async () => {
-        const [idx, prog, tombs, prefs] = await Promise.all([
+        const [idx, prog, tombs, prefs, folders] = await Promise.all([
             readJSONAsync(INDEX_KEY, []),
             readJSONAsync(PROGRESS_KEY, {}),
             readJSONAsync(TOMBSTONES_KEY, {}),
-            readJSONAsync(PREFS_KEY, { fontScale: 1, lastBookId: null })
+            readJSONAsync(PREFS_KEY, { fontScale: 1, lastBookId: null }),
+            readJSONAsync(FOLDERS_KEY, [])
         ]);
+        foldersData = Array.isArray(folders)
+            ? folders.filter(f => f && typeof f.id === 'string' && typeof f.name === 'string')
+            : [];
 
         bookIndex = Array.isArray(idx) ? idx : [];
         progressMap = prog && typeof prog === 'object' && !Array.isArray(prog) ? prog : {};
@@ -320,6 +332,32 @@ export async function setPrefs(patch) {
     return { ...prefsData };
 }
 
+/** R2-11: the library's folders, in their order. */
+export function listFolders() {
+    return [...foldersData]
+        .sort((a, b) => (a.order ?? 0) - (b.order ?? 0))
+        .map(f => ({ ...f }));
+}
+
+/** Replaces the folder list and repaints the library. */
+export async function saveFolders(folders) {
+    if (!loaded) await loadEreader();
+    foldersData = (Array.isArray(folders) ? folders : [])
+        .filter(f => f && typeof f.id === 'string' && typeof f.name === 'string')
+        .map((f, i) => ({ id: f.id, name: f.name, order: i, collapsed: !!f.collapsed }));
+    await persistAsync(FOLDERS_KEY, foldersData);
+    emit(Slice.EREADER_LIBRARY);
+    return listFolders();
+}
+
+/**
+ * Resets one book's reading position (a stamped empty record, so a sync does
+ * not bring the old one back).
+ */
+export async function resetBookProgress(id) {
+    return setProgress(id, { sectionId: null, offset: 0, percent: 0 });
+}
+
 /**
  * Resets reading progress for all books, writing stamped empty progress records
  * so remote sync does not revive stale positions. Emits EREADER_PROGRESS.
@@ -392,5 +430,6 @@ export function _resetEreaderStoreForTests() {
     progressMap = {};
     tombstonesMap = {};
     prefsData = { fontScale: 1, lastBookId: null };
+    foldersData = [];
     changeListener = null;
 }

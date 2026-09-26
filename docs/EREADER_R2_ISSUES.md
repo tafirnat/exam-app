@@ -122,7 +122,7 @@ Status: done — built from the markup given in the issue; prompts and look to b
   edit metadata, download, share, print, delete, archive, reset (progress).
 - Buttons behave like their counterparts in the test sources.
 
-Status: open
+Status: done — drag and drop uses HTML5 DnD from the grip, like the sources list (same touch limits); moving by the folder select works everywhere.
 
 ## R2-12 — "Connect AI" entry under the AI menu section
 

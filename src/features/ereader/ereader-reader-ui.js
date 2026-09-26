@@ -1011,6 +1011,12 @@ export function printOpenBook() {
     const book = getOpenBook();
     if (!book) return;
     if (typeof deps.closeMenu === 'function') deps.closeMenu();
+    printBook(book);
+}
+
+/** Prints (or saves as PDF) a whole book, open or not. */
+export function printBook(book) {
+    if (!book || !Array.isArray(book.sections)) return;
     const host = document.getElementById('ereaderPrintHost');
     if (!host) return;
 
