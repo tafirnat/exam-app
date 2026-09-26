@@ -39,9 +39,9 @@ never force-push.
 
 ## Phase B — finish and polish
 
-- [ ] B1 Mobile pass (390×780) and desktop pass (1280×800), light and dark theme, for every screen R2
+- [x] B1 Mobile pass (390×780) and desktop pass (1280×800), light and dark theme, for every screen R2
       touched; fix overlaps, clipped text, tap targets under 32px.
-- [ ] B2 Keyboard and screen reader: contents tree (arrow keys, aria-expanded), dialogs focus, the
+- [x] B2 Keyboard and screen reader: contents tree (arrow keys, aria-expanded), dialogs focus, the
       bulk bar, the Aa+ button state.
 - [ ] B3 i18n: singular/plural wording ("1 books"), every new string in TR/EN/DE, no hard-coded text.
 - [ ] B4 User guide (docs/USER_GUIDE.*.md and in-app guide): replace chapter pages, A−/A+, "My books"

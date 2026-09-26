@@ -105,6 +105,17 @@ function createBookRow(book, lastBookId, openBook, { selecting = false, selected
     };
 
     row.onclick = () => openBook(book.id);
+    /* A row is the book's button: reachable with Tab, opened with Enter/Space
+       (in selection mode the same keys select it - row.onclick is swapped). */
+    row.tabIndex = 0;
+    row.setAttribute('role', selecting ? 'checkbox' : 'button');
+    if (selecting) row.setAttribute('aria-checked', selected ? 'true' : 'false');
+    row.setAttribute('aria-label', book.title || t('untitled_source'));
+    row.addEventListener('keydown', (e) => {
+        if (e.target !== row || (e.key !== 'Enter' && e.key !== ' ')) return;
+        e.preventDefault();
+        row.click();
+    });
     row.appendChild(info);
     if (!selecting) row.appendChild(actionsBtn);
     return row;

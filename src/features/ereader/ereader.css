@@ -1227,3 +1227,11 @@ body.ereader-search-open { overflow: hidden; }
     display: flex;
     gap: 0.75rem;
 }
+
+/* B2: keyboard focus on rows that act as buttons. */
+.ereader-book-row:focus-visible,
+.ereader-folder-header:focus-visible,
+.ereader-toc-item:focus-visible {
+    outline: 2px solid var(--primary-color);
+    outline-offset: 2px;
+}

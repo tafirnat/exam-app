@@ -402,6 +402,14 @@ function createFolderHeader(folder, count) {
             if (e.target.closest('.ereader-folder-menu')) return;
             toggleCollapsed(folder.id);
         });
+        header.tabIndex = 0;
+        header.setAttribute('role', 'button');
+        header.setAttribute('aria-expanded', folder.collapsed ? 'false' : 'true');
+        header.addEventListener('keydown', (e) => {
+            if (e.target !== header || (e.key !== 'Enter' && e.key !== ' ')) return;
+            e.preventDefault();
+            toggleCollapsed(folder.id);
+        });
     }
 
     const menu = el('button', 'icon-btn ereader-folder-menu');

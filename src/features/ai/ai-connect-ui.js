@@ -89,6 +89,8 @@ export function openAiConnect() {
     setStatus(getAiConnection() ? 'ok' : '', getAiConnection() ? t('ai_connect_connected', { model: conn.model }) : '');
     selectTab('local');
     overlay.classList.add('active');
+    const first = $(conn && conn.model ? 'aiConnectTestBtn' : 'aiConnectModel');
+    if (first && typeof first.focus === 'function') first.focus();
 }
 
 export function closeAiConnect() {

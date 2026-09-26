@@ -218,3 +218,25 @@ test('A6: an empty archive says so', async () => {
     document.getElementById('ereaderArchiveViewBtn').click();
     assert.equal(document.querySelector('#ereaderBookList .ereader-folder-empty')?.textContent, 'No books in the archive.');
 });
+
+test('B2: book rows and folder headers work from the keyboard', async () => {
+    const a = await addBook('Alpha', 'a');
+    const folder = await manage.createFolder('F');
+    await manage.moveBooksToFolder([a.id], folder.id);
+    lib.renderEreaderLibrary();
+
+    const header = document.querySelector('#ereaderBookList .ereader-folder-header');
+    assert.equal(header.tabIndex, 0);
+    header.dispatchEvent(new window.KeyboardEvent('keydown', { key: 'Enter', bubbles: true }));
+    await tick(10);
+    assert.equal(ereaderStore.listFolders()[0].collapsed, true, 'Enter closes the folder');
+
+    await ereaderStore.saveFolders([{ id: folder.id, name: 'F', collapsed: false }]);
+    await manage.enterSelection(folder.id);
+    lib.renderEreaderLibrary();
+    const row = document.querySelector(`#ereaderBookList [data-book-id="${a.id}"]`);
+    assert.equal(row.tabIndex, 0);
+    assert.equal(row.getAttribute('role'), 'checkbox');
+    row.dispatchEvent(new window.KeyboardEvent('keydown', { key: ' ', bubbles: true }));
+    assert.equal(document.querySelector(`#ereaderBookList [data-book-id="${a.id}"]`).getAttribute('aria-checked'), 'true', 'Space selects it');
+});
