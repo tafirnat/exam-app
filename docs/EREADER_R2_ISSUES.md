@@ -91,7 +91,7 @@ Status: done
 - `#menuEreaderReset` (affects all books) appears only while Settings is the
   active entry — never in contents / reading mode.
 
-Status: open
+Status: done
 
 ## R2-09 — Header tools: Aa+ font cycle and a save icon
 

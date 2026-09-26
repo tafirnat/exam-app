@@ -103,7 +103,11 @@ export function applyEreaderChrome(view, { goHome } = {}) {
         if (chrome.homeBtn !== null) {
             homeBtn.style.display = chrome.homeBtn;
         }
-        if (isEreaderView(view) && typeof goHome === 'function') {
+        /* R2-08: the menu has no "My books" entry any more. From a book the
+           header button goes to the library, from the library to the app. */
+        if (view === 'ereaderBook' && typeof switchViewRef === 'function') {
+            homeBtn.onclick = () => switchViewRef('ereaderLibrary');
+        } else if (isEreaderView(view) && typeof goHome === 'function') {
             homeBtn.onclick = goHome;
         }
     }
@@ -147,9 +151,9 @@ export function applyEreaderChrome(view, { goHome } = {}) {
         tocSection.style.display = view === 'ereaderBook' ? 'block' : 'none';
     }
 
-    const readingSection = document.getElementById('ereaderReadingMenuSection');
-    if (readingSection) {
-        readingSection.style.display = view === 'ereaderBook' ? 'block' : 'none';
+    const printBtn = document.getElementById('ereaderPrintBtn');
+    if (printBtn) {
+        printBtn.style.display = view === 'ereaderBook' ? '' : 'none';
     }
 
     if (isEreaderView(view)) {
@@ -170,24 +174,12 @@ export function applyEreaderChrome(view, { goHome } = {}) {
 }
 
 /**
- * One-time wiring: #headerEreaderBtn, #menuEreaderLibrary.
+ * One-time wiring: #headerEreaderBtn.
  */
 export function bindEreaderShell({ switchView, closeMenu } = {}) {
     const headerEreaderBtn = document.getElementById('headerEreaderBtn');
     if (headerEreaderBtn && typeof switchView === 'function') {
         headerEreaderBtn.onclick = () => switchView('ereaderLibrary');
-    }
-
-    const menuEreaderLibrary = document.getElementById('menuEreaderLibrary');
-    if (menuEreaderLibrary) {
-        menuEreaderLibrary.onclick = () => {
-            if (typeof closeMenu === 'function') {
-                closeMenu();
-            }
-            if (typeof switchView === 'function') {
-                switchView('ereaderLibrary');
-            }
-        };
     }
 
     switchViewRef = switchView;

@@ -284,6 +284,17 @@ test('a contents entry scrolls to its section and marks it', async () => {
     assert.equal(ereaderStore.getProgress(book.id).sectionId, 's5');
 });
 
+test('R2-08: opening the menu over a book always opens the contents, not settings', async () => {
+    await addAndOpen();
+    const toc = document.querySelector('#ereaderTocMenuSection .menu-section-header');
+    const settings = document.querySelector('#ereaderSettingsMenuSection .menu-section-header');
+    toc.classList.remove('active');
+    settings.classList.add('active');
+    document.getElementById('menuToggleBtn').dispatchEvent(new window.MouseEvent('click', { bubbles: true }));
+    assert.ok(toc.classList.contains('active'));
+    assert.equal(settings.classList.contains('active'), false);
+});
+
 test('opening a book opens the contents section of the menu', async () => {
     document.querySelector('#ereaderTocMenuSection .menu-section-header').classList.remove('active');
     await addAndOpen();
@@ -294,19 +305,10 @@ test('opening a book opens the contents section of the menu', async () => {
 
 test('font size steps through the scale and stops at both ends', async () => {
     await addAndOpen();
-    const dec = document.getElementById('ereaderFontDecBtn');
-    const inc = document.getElementById('ereaderFontIncBtn');
-    const value = document.getElementById('ereaderFontValue');
-    assert.equal(value.textContent, '100%');
-
     assert.equal(await reader.changeFontScale(-1), 0.875);
-    assert.equal(dec.disabled, true);
     assert.equal(await reader.changeFontScale(-1), 0.875, 'no step below the smallest');
-
     for (let i = 0; i < 10; i++) await reader.changeFontScale(1);
     assert.equal(ereaderStore.getPrefs().fontScale, 1.5);
-    assert.equal(inc.disabled, true);
-    assert.equal(value.textContent, '150%');
     assert.equal(document.getElementById('ereaderContent').style.getPropertyValue('--ereader-font-scale'), '1.5');
 });
 

@@ -13,36 +13,39 @@ body.ereader-mode {
     min-height: 100%;
 }
 
-.ereader-menu-reset {
+/* R2-08: Settings holds plain rows; Reset (every book) is the last, in red. */
+.ereader-settings-list {
+    display: flex;
+    flex-direction: column;
+    gap: 0.25rem;
+}
+
+.ereader-settings-list .menu-sub-item {
+    background: none;
+    border-color: transparent;
+    margin-bottom: 0;
+}
+
+.ereader-settings-list .menu-sub-item:hover {
+    background: var(--surface-hover);
+    border-color: transparent;
+}
+
+.ereader-settings-list .ereader-menu-reset {
+    margin-top: 0.5rem;
+    padding-top: 0.75rem;
+    border-top: 1px solid var(--border-color);
+    border-radius: 0 0 10px 10px;
     color: var(--error-color);
-    margin-top: auto;
 }
 
 .ereader-menu-reset svg {
     color: var(--error-color);
 }
 
-.ereader-menu-reset:hover {
+.ereader-settings-list .ereader-menu-reset:hover {
     background-color: color-mix(in srgb, var(--error-color) 12%, transparent);
-}
-
-.ereader-font-row {
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    gap: 0.5rem;
-    margin-bottom: 0.5rem;
-}
-
-.ereader-font-btn {
-    flex: 0 0 auto;
-    min-width: 44px;
-    justify-content: center;
-}
-
-.ereader-font-value {
-    font-variant-numeric: tabular-nums;
-    color: var(--text-secondary);
+    border-top-color: var(--border-color);
 }
 
 /* R2-05: main is a flex column filling the screen; auto block margins centre

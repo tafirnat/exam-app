@@ -1083,11 +1083,14 @@ export function bindEreaderReader({ switchView, closeMenu } = {}) {
     const topBtn = document.getElementById('ereaderTopBtn');
     if (topBtn) bindTopButton(topBtn);
 
-    /* Opening the menu over a book shows where the reader is in the contents. */
+    /* Opening the menu over a book always shows the contents (R2-08: settings
+       must be chosen), with the entry being read opened and in view. */
     const menuToggle = document.getElementById('menuToggleBtn');
     if (menuToggle) {
         menuToggle.addEventListener('click', () => {
-            if (bookViewActive) setTimeout(revealActiveInToc, 0);
+            if (!bookViewActive) return;
+            openTocSection();
+            setTimeout(revealActiveInToc, 0);
         });
     }
 

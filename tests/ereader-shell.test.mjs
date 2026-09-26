@@ -44,14 +44,11 @@ test('2. test menu group contains all legacy menu IDs', () => {
 test('3. ereader menu group contains exactly the specified IDs and no others', () => {
     const ereaderGroup = document.querySelector('#actionMenu .menu-mode-group[data-menu-mode="ereader"]');
     assert.ok(ereaderGroup, 'ereader group must exist');
+    /* R2-08: Contents and Settings, nothing else; Reset lives in Settings. */
     const expectedIds = [
-        'menuEreaderLibrary',
         'ereaderTocMenuSection',
         'ereaderTocList',
-        'ereaderReadingMenuSection',
-        'ereaderFontDecBtn',
-        'ereaderFontValue',
-        'ereaderFontIncBtn',
+        'ereaderSettingsMenuSection',
         'ereaderPrintBtn',
         'menuEreaderReset'
     ];
@@ -72,19 +69,19 @@ test('4. no duplicate IDs anywhere in the document', () => {
     assert.deepEqual(duplicates, [], `Duplicate IDs found: ${duplicates.join(', ')}`);
 });
 
-test('5. ereader group has no inline style attributes except the two display:none sections', () => {
+test('5. ereader group has no inline style attributes except the hidden contents section', () => {
     const ereaderGroup = document.querySelector('#actionMenu .menu-mode-group[data-menu-mode="ereader"]');
     assert.ok(ereaderGroup, 'ereader group must exist');
     const elementsWithStyle = [...ereaderGroup.querySelectorAll('[style]')];
     if (ereaderGroup.hasAttribute('style')) {
         elementsWithStyle.unshift(ereaderGroup);
     }
-    const allowedIds = new Set(['ereaderTocMenuSection', 'ereaderReadingMenuSection']);
+    const allowedIds = new Set(['ereaderTocMenuSection']);
     for (const el of elementsWithStyle) {
         assert.ok(allowedIds.has(el.id), `Element with id "${el.id}" has unexpected inline style: ${el.getAttribute('style')}`);
         assert.equal(el.getAttribute('style').trim().replace(/\s+/g, ' '), 'display: none;');
     }
-    assert.equal(elementsWithStyle.length, 2, 'Exactly 2 elements in ereader group may have inline styles');
+    assert.equal(elementsWithStyle.length, 1, 'Only the contents section starts hidden inline');
 });
 
 test('6. header elements are placed correctly with respect to siblings', () => {
@@ -203,7 +200,7 @@ test('11. applyEreaderChrome applies chrome and wires goHome in DOM', () => {
     assert.equal(win.document.getElementById('ereaderHeaderTools').style.display, 'none');
     assert.equal(win.document.querySelector('.header-sync-container').style.display, 'none');
     assert.equal(win.document.getElementById('ereaderTocMenuSection').style.display, 'none');
-    assert.equal(win.document.getElementById('ereaderReadingMenuSection').style.display, 'none');
+    assert.equal(win.document.getElementById('ereaderPrintBtn').style.display, 'none', 'no book to print in the library');
 
     // Trigger goHome
     win.document.getElementById('headerBackBtn').click();
@@ -214,7 +211,7 @@ test('11. applyEreaderChrome applies chrome and wires goHome in DOM', () => {
     assert.equal(win.document.getElementById('actionMenu').dataset.mode, 'ereader');
     assert.equal(win.document.getElementById('ereaderHeaderTools').style.display, 'flex');
     assert.equal(win.document.getElementById('ereaderTocMenuSection').style.display, 'block');
-    assert.equal(win.document.getElementById('ereaderReadingMenuSection').style.display, 'block');
+    assert.equal(win.document.getElementById('ereaderPrintBtn').style.display, '');
 
     // Test returning to home
     applyEreaderChrome('home', { goHome: () => {} });
@@ -223,7 +220,6 @@ test('11. applyEreaderChrome applies chrome and wires goHome in DOM', () => {
     assert.equal(win.document.getElementById('ereaderHeaderTools').style.display, 'none');
     assert.equal(win.document.querySelector('.header-sync-container').style.display, '');
     assert.equal(win.document.getElementById('ereaderTocMenuSection').style.display, 'none');
-    assert.equal(win.document.getElementById('ereaderReadingMenuSection').style.display, 'none');
 });
 
 test('12. bindEreaderShell wires switchView and closeMenu correctly', () => {
@@ -242,10 +238,21 @@ test('12. bindEreaderShell wires switchView and closeMenu correctly', () => {
     win.document.getElementById('headerEreaderBtn').click();
     assert.equal(targetView, 'ereaderLibrary');
 
+    /* R2-08: no "My books" menu entry; from a book the header button goes
+       back to the library. */
+    assert.equal(win.document.getElementById('menuEreaderLibrary'), null);
     targetView = null;
-    win.document.getElementById('menuEreaderLibrary').click();
-    assert.equal(menuClosed, true);
+    applyEreaderChrome('ereaderBook', { goHome: () => { targetView = 'home'; } });
+    win.document.getElementById('headerBackBtn').click();
     assert.equal(targetView, 'ereaderLibrary');
+    assert.equal(menuClosed, false);
+});
+
+test('R2-08: Reset sits inside Settings, so it is never shown in contents / reading mode', () => {
+    const settings = document.getElementById('ereaderSettingsMenuSection');
+    assert.ok(settings.querySelector('.menu-section-content #menuEreaderReset'));
+    assert.ok(settings.querySelector('.menu-section-header [data-i18n="ereader_settings_title"]'));
+    assert.ok(settings.querySelector('.menu-section-header circle'), 'gear icon');
 });
 
 test('13. (D1) src/main.js calls applyEreaderChrome("home") before function switchView definition', () => {
