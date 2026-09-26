@@ -27,7 +27,7 @@
     </style>
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <meta http-equiv="Content-Security-Policy"
-        content="default-src 'self'; script-src 'self' 'unsafe-inline'; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src 'self' https://fonts.gstatic.com data:; img-src 'self' data: blob: https:; media-src 'self' data: blob: https:; connect-src 'self' https://api.github.com https://gist.githubusercontent.com https://*.workers.dev https://translate.googleapis.com; frame-src 'none'; object-src 'none';">
+        content="default-src 'self'; script-src 'self' 'unsafe-inline'; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src 'self' https://fonts.gstatic.com data:; img-src 'self' data: blob: https:; media-src 'self' data: blob: https:; connect-src 'self' https://api.github.com https://gist.githubusercontent.com https://*.workers.dev https://translate.googleapis.com http://localhost:* http://127.0.0.1:* https://localhost:* https://127.0.0.1:*; frame-src 'none'; object-src 'none';">
     <meta name="theme-color" content="#0f172a">
     <meta name="apple-mobile-web-app-capable" content="yes">
     <meta name="mobile-web-app-capable" content="yes">
@@ -50,6 +50,7 @@
     <link rel="stylesheet" href="/src/features/sources/import-report.css">
     <link rel="stylesheet" href="/src/features/onboarding/onboarding.css">
     <link rel="stylesheet" href="/src/features/ereader/ereader.css">
+    <link rel="stylesheet" href="/src/features/ai/ai-connect.css">
 </head>
 
 <body>
@@ -212,6 +213,17 @@
                                 </path>
                             </svg>
                             <span data-i18n="manage_ai_services">AI Servislerini Düzenle</span>
+                        </button>
+                        <!-- R2-12: a direct AI connection (local model / API), next to the web AI use above -->
+                        <button class="menu-sub-item ai-connect-menu-btn" id="menuConnectAI" style="margin-top: 0.4rem;">
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" width="14" height="14">
+                                <path d="M12 22v-5"></path>
+                                <path d="M9 8V2"></path>
+                                <path d="M15 8V2"></path>
+                                <path d="M18 8v5a4 4 0 0 1-4 4h-4a4 4 0 0 1-4-4V8Z"></path>
+                            </svg>
+                            <span data-i18n="ai_connect_title">AI Bağla</span>
+                            <span class="ai-connect-menu-state" id="menuConnectAIState"></span>
                         </button>
                         <div class="menu-hint" data-i18n="ai_integration_hint">
                             Seçili AI, prompt butonuna basıldığında otomatik açılır.
@@ -3600,6 +3612,50 @@
             </div>
             <div class="modal-footer">
                 <button class="btn btn-subtle btn-block" id="ereaderBookActionsCloseBtn" data-i18n="cancel">İptal</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- R2-12: Connect AI (local model through an OpenAI-compatible endpoint / proxy; cloud later) -->
+    <div id="aiConnectOverlay" class="modal-overlay" style="z-index: 10040;">
+        <div class="modal-card ai-connect-card">
+            <div class="modal-header">
+                <h3 data-i18n="ai_connect_title">AI Bağla</h3>
+                <p class="ereader-modal-subtitle" data-i18n="ai_connect_desc">Bir AI'yı doğrudan bağlayın: özet, kavramlar ve diğer AI işlemleri uygulama içinde yanıtlanır.</p>
+            </div>
+            <div class="modal-body">
+                <div class="ai-connect-tabs" role="tablist">
+                    <button class="ai-connect-tab active" type="button" role="tab" data-tab="local" data-i18n="ai_connect_local">Yerel AI</button>
+                    <button class="ai-connect-tab" type="button" role="tab" data-tab="cloud" data-i18n="ai_connect_cloud">Bulut AI</button>
+                </div>
+                <div class="ai-connect-pane" data-pane="local">
+                    <div class="ai-connect-presets">
+                        <button class="ai-connect-preset" type="button" data-preset="ollama">Ollama</button>
+                        <button class="ai-connect-preset" type="button" data-preset="lmstudio">LM Studio</button>
+                        <button class="ai-connect-preset" type="button" data-preset="proxy" data-i18n="ai_connect_proxy">Yerel proxy</button>
+                    </div>
+                    <label class="ereader-field"><span data-i18n="ai_connect_base_url">Adres (OpenAI uyumlu)</span><input type="url" id="aiConnectBaseUrl" placeholder="http://localhost:11434" autocomplete="off" spellcheck="false"></label>
+                    <label class="ereader-field"><span data-i18n="ai_connect_model">Model</span>
+                        <span class="ai-connect-model-row">
+                            <input type="text" id="aiConnectModel" list="aiConnectModelList" placeholder="llama3.1" autocomplete="off" spellcheck="false">
+                            <button class="btn btn-secondary" id="aiConnectModelsBtn" type="button" data-i18n="ai_connect_load_models">Modelleri getir</button>
+                        </span>
+                        <datalist id="aiConnectModelList"></datalist>
+                    </label>
+                    <label class="ereader-field"><span data-i18n="ai_connect_api_key">API anahtarı (isteğe bağlı)</span><input type="password" id="aiConnectApiKey" autocomplete="off"></label>
+                    <p class="ai-connect-hint" data-i18n="ai_connect_hint">Model bu bilgisayarda çalışmalı. Tarayıcı erişimi için sunucunun CORS izni olmalı (Ollama: OLLAMA_ORIGINS) ya da araya yerel bir proxy koyun. Bağlantı sadece bu cihazda saklanır.</p>
+                    <div class="ai-connect-status" id="aiConnectStatus" role="status"></div>
+                    <button class="btn btn-secondary btn-block" id="aiConnectTestBtn" type="button" data-i18n="ai_connect_test">Bağlantıyı test et</button>
+                </div>
+                <div class="ai-connect-pane ai-connect-soon" data-pane="cloud" style="display: none;">
+                    <div class="ai-connect-soon-badge" data-i18n="ai_connect_soon">Yakında</div>
+                    <p data-i18n="ai_connect_cloud_soon">Bulut AI servislerine (API anahtarıyla) doğrudan bağlantı yakında geliyor.</p>
+                </div>
+            </div>
+            <div class="modal-footer modal-footer-row">
+                <button class="btn btn-subtle btn-flex" id="aiConnectDisconnectBtn" type="button" data-i18n="ai_connect_remove">Bağlantıyı kaldır</button>
+                <button class="btn btn-secondary btn-flex" id="aiConnectCancelBtn" type="button" data-i18n="cancel">Vazgeç</button>
+                <button class="btn btn-primary btn-flex" id="aiConnectSaveBtn" type="button" data-i18n="save">Kaydet</button>
             </div>
         </div>
     </div>

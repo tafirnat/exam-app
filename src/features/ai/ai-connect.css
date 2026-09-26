@@ -1,0 +1,165 @@
+/* R2-12: Connect AI dialog and its menu entry. */
+.ai-connect-card {
+    max-width: 460px;
+}
+
+.ai-connect-tabs {
+    display: flex;
+    gap: 0.25rem;
+    padding: 0.25rem;
+    margin: 0.75rem 0 1rem;
+    border-radius: 12px;
+    background: var(--surface-hover);
+}
+
+.ai-connect-tab {
+    flex: 1;
+    height: 36px;
+    border: none;
+    border-radius: 9px;
+    background: none;
+    color: var(--text-secondary);
+    font: inherit;
+    font-size: 0.85rem;
+    font-weight: 700;
+    cursor: pointer;
+}
+
+.ai-connect-tab.active {
+    background: var(--surface-color);
+    color: var(--text-primary);
+    box-shadow: var(--shadow-sm);
+}
+
+.ai-connect-pane {
+    display: flex;
+    flex-direction: column;
+    gap: 0.75rem;
+}
+
+.ai-connect-presets {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.4rem;
+}
+
+.ai-connect-preset {
+    height: 30px;
+    padding: 0 0.8rem;
+    border: 1px solid var(--border-color);
+    border-radius: 999px;
+    background: var(--surface-color);
+    color: var(--text-secondary);
+    font: inherit;
+    font-size: 0.78rem;
+    font-weight: 700;
+    cursor: pointer;
+}
+
+.ai-connect-preset.active {
+    border-color: var(--primary-color);
+    color: var(--primary-color);
+    background: rgba(var(--primary-rgb), 0.1);
+}
+
+.ai-connect-model-row {
+    display: flex;
+    gap: 0.5rem;
+}
+
+.ai-connect-model-row input {
+    flex: 1;
+    min-width: 0;
+}
+
+.ai-connect-model-row .btn {
+    flex-shrink: 0;
+    min-height: 0;
+    height: auto;
+    padding: 0 0.8rem;
+    font-size: 0.8rem;
+}
+
+#aiConnectOverlay .ai-connect-hint {
+    margin: 0;
+    font-size: 0.76rem;
+    line-height: 1.45;
+    color: var(--text-secondary);
+}
+
+.ai-connect-status:empty {
+    display: none;
+}
+
+.ai-connect-status {
+    padding: 0.5rem 0.7rem;
+    border-radius: var(--radius-md);
+    font-size: 0.8rem;
+    font-weight: 600;
+    background: var(--surface-hover);
+    color: var(--text-secondary);
+}
+
+.ai-connect-status.ok {
+    background: color-mix(in srgb, var(--success-color, #10b981) 14%, transparent);
+    color: var(--success-color, #10b981);
+}
+
+.ai-connect-status.error {
+    background: color-mix(in srgb, var(--error-color) 14%, transparent);
+    color: var(--error-color);
+}
+
+.ai-connect-status.warn {
+    background: color-mix(in srgb, var(--warning-color) 14%, transparent);
+    color: var(--warning-color);
+}
+
+.ai-connect-soon {
+    align-items: center;
+    text-align: center;
+    padding: 1.5rem 0.5rem;
+    color: var(--text-secondary);
+}
+
+#aiConnectOverlay .ai-connect-soon p {
+    margin: 0;
+    font-size: 0.88rem;
+}
+
+.ai-connect-soon-badge {
+    padding: 0.25rem 0.8rem;
+    border-radius: 999px;
+    background: rgba(var(--primary-rgb), 0.12);
+    color: var(--primary-color);
+    font-size: 0.78rem;
+    font-weight: 800;
+    letter-spacing: 0.03em;
+}
+
+/* Menu entry: a dot and the model name once connected. */
+.ai-connect-menu-btn {
+    position: relative;
+}
+
+.ai-connect-menu-state {
+    margin-left: auto;
+    max-width: 45%;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    font-size: 0.72rem;
+    font-weight: 600;
+    color: var(--text-secondary);
+}
+
+.ai-connect-menu-btn.connected::after {
+    content: '';
+    position: absolute;
+    top: 8px;
+    left: 22px;
+    width: 7px;
+    height: 7px;
+    border-radius: 50%;
+    background: var(--success-color, #10b981);
+}

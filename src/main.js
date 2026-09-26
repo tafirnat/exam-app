@@ -30,6 +30,7 @@ import { flushInProgressAnswers } from './features/stats/continuity-engine.js';
 import { renderQuestion, handleCheckAnswer, updateIndicators, handleTranslation, handleDifficultyRating, handleFlashcardRating, renderTestResults, createTtsButton, TtsTarget, stopAudio, decorateReadingSections, renderResumeButton, cancelAutoFinish } from './features/test/test-ui.js';
 import { renderStatsList, updateHomeStats, setupStatsEventListeners } from './features/stats/stats-module.js';
 import { initFilterBarFit } from './features/stats/filter-bar-fit.js';
+import { bindAiConnect, closeAiConnect, isAiConnectOpen } from './features/ai/ai-connect-ui.js';
 import { openQuestionEditor, closeQuestionEditor, requestEditorExit, isQuestionEditorOpen } from './features/stats/question-editor.js';
 import { resolvePreviewQuestion, neighbourQuestion, navPositionLabel, updateNavButtons } from './features/stats/preview-nav.js';
 import { keptSearchOnFilterClick, statsHistoryState, stampStatsHistory } from './features/stats/stats-nav.js';
@@ -1141,6 +1142,7 @@ function setupEventListeners() {
     });
     setClick('menuResetApp', openResetAppModal);
     bindEreaderShell({ switchView, closeMenu: () => { if (menuActive) toggleMenu(); } });
+    bindAiConnect({ closeMenu: () => { if (menuActive) toggleMenu(); } });
     setClick('resetAppCloseBtn', closeResetAppModal);
     setClick('resetAppCancelBtn', closeResetAppModal);
     setClick('resetAppNextBtn', () => showResetStep(2));
@@ -3391,6 +3393,10 @@ function deleteAiProvider(id) {
 function closeAllModals() {
     let closedAny = false;
     if (closeEreaderModals()) closedAny = true;
+    if (isAiConnectOpen()) {
+        closeAiConnect();
+        closedAny = true;
+    }
 
     // 0. AI Copy Dropdowns
     closeAllAiCopyDropdowns();

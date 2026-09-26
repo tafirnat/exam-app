@@ -132,7 +132,7 @@ Status: done — drag and drop uses HTML5 DnD from the grip, like the sources li
   OpenAI-compatible endpoint, as the reference does. **Cloud**: "coming soon".
 - The existing AI section (web use without API) stays as it is.
 
-Status: open
+Status: done — the proxy details of the reference (question 4) still to be matched; any OpenAI-compatible local URL works now.
 
 ---
 
