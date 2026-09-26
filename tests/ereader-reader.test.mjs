@@ -232,7 +232,7 @@ test('a book opens at its saved section and offset', async () => {
     const layout = installLayout(1000, 800);
     try {
         const { book } = await imp.importEreaderJson(longBookJson(20));
-        await ereaderStore.setProgress(book.id, { sectionId: 'p4', offset: 0.5, percent: 20 });
+        await ereaderStore.setProgress(book.id, { sectionId: 'p4', offset: 0.5, percent: 20, unit: 'section' });
         await reader.openBook(book.id, { switchView });
         reader.enterBookView();
         assert.equal(layout.y, 4000 + 500 - 96, 'half-way into p4 at the reading line');
@@ -585,4 +585,19 @@ test('R2-03: a section too deep to list marks its listed ancestor', async () => 
     await reader.goToSection('c1a1x');
     const active = document.querySelector('#ereaderTocList .ereader-toc-item.active');
     assert.equal(active?.dataset.sectionId, 'c1a1');
+});
+
+test('A2: a position saved by the old chapter reader opens at the start of its section', async () => {
+    const layout = installLayout(1000, 800);
+    try {
+        const { book } = await imp.importEreaderJson(longBookJson(20));
+        await ereaderStore.setProgress(book.id, { sectionId: 'p4', offset: 0.9, percent: 20 });
+        await reader.openBook(book.id, { switchView });
+        reader.enterBookView();
+        assert.equal(layout.y, 4000 - 96, 'the chapter fraction is not read as a section fraction');
+        await reader.flushPosition();
+        assert.equal(ereaderStore.getProgress(book.id).unit, 'section', 'the next save marks the new unit');
+    } finally {
+        layout.restore();
+    }
 });

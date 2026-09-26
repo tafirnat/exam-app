@@ -17,7 +17,7 @@ never force-push.
       today, so dragging 20 books writes and syncs 20 full books. Move them into a light library map
       (`{bookId: {folderId, order, archived, at}}` + the folder list) kept in the synced index file,
       merged per entry by time. Books and their sync stay untouched by reordering.
-- [ ] A2 Old saved positions: an offset saved by the chapter reader (chapter fraction) is read as a
+- [x] A2 Old saved positions: an offset saved by the chapter reader (chapter fraction) is read as a
       section fraction. Harmless jump, but make the restore land at the section start when the saved
       record predates the continuous reader.
 - [ ] A3 Reader robustness on a big book (1000+ sections, images): open time, scroll without jumps,

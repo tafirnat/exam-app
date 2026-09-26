@@ -293,7 +293,7 @@ export function getProgress(id) {
  * @param {{fromSync?: boolean}} [options]
  * @returns {Promise<object>}
  */
-export async function setProgress(id, { sectionId, offset, percent, at, by } = {}, { fromSync = false } = {}) {
+export async function setProgress(id, { sectionId, offset, percent, at, by, unit } = {}, { fromSync = false } = {}) {
     if (!loaded) await loadEreader();
 
     const entry = {
@@ -303,6 +303,10 @@ export async function setProgress(id, { sectionId, offset, percent, at, by } = {
         at: (fromSync && typeof at === 'number') ? at : Date.now(),
         by: (fromSync && by) ? by : (AppState?.deviceId || 'unknown')
     };
+    /* 'section': offset is the fraction of the section (continuous reader).
+       Records without it come from the chapter reader, whose offset was a
+       fraction of the whole chapter. */
+    if (unit === 'section') entry.unit = 'section';
 
     progressMap[id] = entry;
     await persistAsync(PROGRESS_KEY, progressMap);

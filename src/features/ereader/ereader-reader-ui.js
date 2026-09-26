@@ -126,7 +126,11 @@ export async function openBook(id, { switchView = deps.switchView } = {}) {
     }
     const saved = getProgress(id);
     const known = saved && saved.sectionId && book.sections.some(s => s.id === saved.sectionId);
-    setOpen(book, known ? { sectionId: saved.sectionId, offset: saved.offset || 0 } : null);
+    /* An offset from the old chapter reader measured the whole chapter; read
+       as a section fraction it would land somewhere else, so such a record
+       opens at the start of its section. */
+    const offset = known && saved.unit === 'section' ? (saved.offset || 0) : 0;
+    setOpen(book, known ? { sectionId: saved.sectionId, offset } : null);
     lastPos = null;
     await setPrefs({ lastBookId: id });
     if (typeof switchView === 'function') switchView('ereaderBook');
@@ -418,8 +422,8 @@ export async function flushPosition() {
     if (!lastPos) return;
     const { bookId, sectionId, offset, percent } = lastPos;
     const stored = getProgress(bookId);
-    if (stored && stored.sectionId === sectionId && stored.offset === offset && stored.percent === percent) return;
-    await setProgress(bookId, { sectionId, offset, percent });
+    if (stored && stored.sectionId === sectionId && stored.offset === offset && stored.percent === percent && stored.unit === 'section') return;
+    await setProgress(bookId, { sectionId, offset, percent, unit: 'section' });
 }
 
 /** The save button: writes the position now and says so. */
