@@ -1,14 +1,23 @@
 /**
- * e-Reader reading screen: one chapter at a time, previous / next, the reading
- * position, the table of contents and the font size.
+ * e-Reader reading screen: the whole book in one continuous scroll, the
+ * reading position, the table of contents, the font size and the "up" button.
  *
- * Only the open chapter is in the DOM. A book is a few hundred pages of
- * Markdown; parsing all of it on every open, font change or sync would be the
- * slow part of the app, and the reader only ever shows one chapter.
+ * There are no chapter pages. Every section of the book has a light shell in
+ * the DOM (an empty <section> holding its height); only the sections around
+ * the viewport carry their rendered Markdown. Scrolling mounts the sections
+ * that come near and empties the ones that have moved far away, remembering
+ * their measured height, so a book of a few hundred pages keeps a small DOM
+ * and never parses all of its Markdown at once. Sections never measured are
+ * given an estimated height from their text length, learned from the ones
+ * that were.
+ *
+ * Mounting changes heights above the reader, so every mount pass keeps the
+ * section at the reading line where it was on screen (manual scroll
+ * anchoring; the browser's own is switched off for the content, see CSS).
  *
  * The position is tracked on every scroll event (in memory) and written a few
- * seconds after scrolling stops, on chapter change, when the view is left and
- * when the tab is hidden. It is read from memory at those moments, never from
+ * seconds after scrolling stops, on a jump, when the view is left and when the
+ * tab is hidden. It is read from memory at those moments, never from
  * window.scrollY: by the time switchView() tells us the view changed, the page
  * has already been scrolled for the next one.
  */
@@ -17,7 +26,7 @@ import { t } from '../../core/i18n.js';
 import { renderMarkdown, applySearchHighlight } from '../../core/markdown.js';
 import { escapeHTML, showToast, showAlert } from '../../core/utils.js';
 import { getBook, getProgress, setProgress, getPrefs, setPrefs, listBooks, updateBook } from './ereader-store.js';
-import { buildChapters, chapterOfSection, weightedPercent } from './ereader-chapters.js';
+import { weightedPercent } from './ereader-chapters.js';
 import { searchBook } from './ereader-search.js';
 import { applyEreaderChrome } from './ereader-shell.js';
 import { detectGaps } from './ereader-parts.js';
@@ -27,13 +36,30 @@ const SAVE_DELAY_MS = 5000;
 const MOBILE_QUERY = '(max-width: 600px)';
 /** A section counts as "being read" once its top has passed this line. */
 const READING_LINE_PX = 96;
-const MEMO_LIMIT = 24;
+/** Where a jump puts the heading it lands on (just under the header). */
+const JUMP_DELTA_PX = READING_LINE_PX - 8;
+const MEMO_LIMIT = 400;
+/** Mount window, in viewport heights above and below the screen. */
+const MOUNT_BEHIND = 1;
+const MOUNT_AHEAD = 1.5;
+/** A mounted section is emptied once it is this many viewports away. */
+const UNMOUNT_BEYOND = 3;
+const MIN_ESTIMATE_PX = 48;
+/** Heading and margins of a section, over and above its text. */
+const SECTION_CHROME_PX = 64;
+const TOP_BTN_SHOW_PX = 400;
+const LONG_PRESS_MS = 550;
 
-/** { book, chapters, chapterIndex, renderedAt, pendingRestore } */
+/**
+ * { book, sections, weights, indexOf, heights, mounted, els, pxPerChar,
+ *   renderedAt, pendingRestore }
+ */
 let open = null;
 let bookViewActive = false;
 let lastPos = null;
 let saveTimer = null;
+let windowFrame = null;
+let anchorSnap = null;
 const memo = new Map();
 let deps = { switchView: null, closeMenu: null };
 let bound = false;
@@ -51,40 +77,40 @@ function sectionSource(section) {
     return `${'#'.repeat(Math.min(6, (section.level || 1) + 1))} ${title}\n\n${section.text || ''}`;
 }
 
-function chapterHtml(book, chapter, fontScale, searchTerm = '') {
-    const key = `${book.id}:${chapter.index}:${book.updatedAt}:${fontScale}:${searchTerm}`;
+function textLength(section) {
+    return typeof section.text === 'string' ? section.text.length : 0;
+}
+
+function sectionHtml(book, section, searchTerm = '') {
+    const key = `${book.id}:${section.id}:${book.updatedAt}:${searchTerm}`;
     if (memo.has(key)) return memo.get(key);
-    const byId = new Map(book.sections.map(s => [s.id, s]));
-    const html = chapter.sectionIds
-        .map(id => byId.get(id))
-        .filter(Boolean)
-        .map(s => {
-            let body = renderMarkdown(sectionSource(s), { images: true });
-            if (searchTerm) {
-                body = applySearchHighlight(body, searchTerm);
-            }
-            return `<section class="ereader-section md-content" data-section-id="${escapeHTML(s.id)}">${body}</section>`;
-        })
-        .join('');
+    let html = renderMarkdown(sectionSource(section), { images: true });
+    if (searchTerm) html = applySearchHighlight(html, searchTerm);
     memo.set(key, html);
     if (memo.size > MEMO_LIMIT) memo.delete(memo.keys().next().value);
     return html;
 }
 
-function setOpen(book, chapterIndex, pendingRestore = null) {
-    const chapters = buildChapters(book.sections);
+function setOpen(book, pendingRestore = null) {
+    const sections = Array.isArray(book.sections) ? book.sections : [];
     open = {
         book,
-        chapters,
-        chapterIndex: Math.max(0, Math.min(chapterIndex, chapters.length - 1)),
+        sections,
+        /* weightedPercent() over sections: each one weighs its text length. */
+        weights: sections.map((s, i) => ({ index: i, textLength: textLength(s) })),
+        indexOf: new Map(sections.map((s, i) => [s.id, i])),
+        heights: new Map(),
+        mounted: new Set(),
+        els: [],
+        pxPerChar: 0,
         renderedAt: book.updatedAt,
         pendingRestore
     };
 }
 
 /**
- * Opens a book: the saved section's chapter, scrolled to the saved offset once
- * the view is shown. Returns false (and stays put) when the book is gone.
+ * Opens a book at its saved section and offset once the view is shown.
+ * Returns false (and stays put) when the book is gone.
  */
 export async function openBook(id, { switchView = deps.switchView } = {}) {
     await ensureDecorateReadingSections();
@@ -94,9 +120,8 @@ export async function openBook(id, { switchView = deps.switchView } = {}) {
         return false;
     }
     const saved = getProgress(id);
-    const chapters = buildChapters(book.sections);
-    const chapter = saved && saved.sectionId ? chapterOfSection(chapters, saved.sectionId) : null;
-    setOpen(book, chapter ? chapter.index : 0, chapter ? { offset: saved.offset || 0 } : null);
+    const known = saved && saved.sectionId && book.sections.some(s => s.id === saved.sectionId);
+    setOpen(book, known ? { sectionId: saved.sectionId, offset: saved.offset || 0 } : null);
     lastPos = null;
     await setPrefs({ lastBookId: id });
     if (typeof switchView === 'function') switchView('ereaderBook');
@@ -107,83 +132,78 @@ function contentEl() {
     return document.getElementById('ereaderContent');
 }
 
+/** The section shells, in book order (mounted or not). */
 function sectionEls() {
+    if (open && open.els.length > 0 && open.els[0].isConnected) return open.els;
     const content = contentEl();
     return content ? [...content.querySelectorAll('.ereader-section')] : [];
 }
 
-/** The chapter's scroll span on the page, for converting to and from offset. */
-function chapterSpan() {
-    const content = contentEl();
-    if (!content) return { top: 0, span: 0 };
-    const rect = content.getBoundingClientRect();
-    const top = rect.top + window.scrollY - READING_LINE_PX;
-    const span = Math.max(0, content.offsetHeight - window.innerHeight + READING_LINE_PX);
-    return { top, span };
+function shellOf(sectionId) {
+    if (!open) return null;
+    const i = open.indexOf.get(sectionId);
+    const els = sectionEls();
+    return i === undefined ? null : (els[i] || null);
+}
+
+/** Index of the last shell whose top has passed `line` (binary search). */
+function indexAtLine(line = READING_LINE_PX) {
+    const els = sectionEls();
+    if (els.length === 0) return -1;
+    let lo = 0;
+    let hi = els.length - 1;
+    let found = 0;
+    while (lo <= hi) {
+        const mid = (lo + hi) >> 1;
+        if (els[mid].getBoundingClientRect().top <= line) {
+            found = mid;
+            lo = mid + 1;
+        } else {
+            hi = mid - 1;
+        }
+    }
+    return found;
 }
 
 function currentSectionId() {
-    const els = sectionEls();
-    let current = els[0];
-    for (const el of els) {
-        if (el.getBoundingClientRect().top <= READING_LINE_PX) current = el;
-        else break;
+    const i = indexAtLine();
+    const el = i >= 0 ? sectionEls()[i] : null;
+    return el ? el.dataset.sectionId : null;
+}
+
+// ── height estimates ──────────────────────────────────────────────────────
+
+function defaultPxPerChar() {
+    const content = contentEl();
+    const width = (content && content.clientWidth) || 640;
+    const fontPx = 17 * (getPrefs().fontScale || 1);
+    const charsPerLine = Math.max(20, width / (fontPx * 0.5));
+    return (fontPx * 1.75) / charsPerLine;
+}
+
+function estimateHeight(section) {
+    const measured = open.heights.get(section.id);
+    if (measured) return measured;
+    const ratio = open.pxPerChar || defaultPxPerChar();
+    return Math.max(MIN_ESTIMATE_PX, Math.round(textLength(section) * ratio + SECTION_CHROME_PX));
+}
+
+/** Learns px-per-character from the sections that have been measured. */
+function learnRatio() {
+    let px = 0;
+    let chars = 0;
+    for (const [id, h] of open.heights) {
+        const s = open.sections[open.indexOf.get(id)];
+        const len = s ? textLength(s) : 0;
+        if (len >= 200) {
+            px += Math.max(0, h - SECTION_CHROME_PX);
+            chars += len;
+        }
     }
-    return current ? current.dataset.sectionId : null;
+    if (chars > 0) open.pxPerChar = px / chars;
 }
 
-/**
- * knownSectionId: where a jump just landed (chapter start, a contents entry).
- * Only a scroll by the user is read back from the page geometry.
- */
-function capturePosition(knownSectionId = null) {
-    if (!open) return;
-    const { top, span } = chapterSpan();
-    const offset = span > 0 ? Math.max(0, Math.min(1, (window.scrollY - top) / span)) : 0;
-    const sectionId = knownSectionId || currentSectionId() || open.chapters[open.chapterIndex]?.sectionIds[0] || null;
-    const prevSection = lastPos && lastPos.sectionId;
-    lastPos = {
-        bookId: open.book.id,
-        sectionId,
-        offset: Math.round(offset * 1000) / 1000,
-        percent: weightedPercent(open.chapters, open.chapterIndex, offset)
-    };
-    if (sectionId !== prevSection) markTocActive(sectionId);
-}
-
-/** Writes the position unless it is the one already stored. */
-export async function flushPosition() {
-    clearTimeout(saveTimer);
-    saveTimer = null;
-    if (!lastPos) return;
-    const { bookId, sectionId, offset, percent } = lastPos;
-    const stored = getProgress(bookId);
-    if (stored && stored.sectionId === sectionId && stored.offset === offset && stored.percent === percent) return;
-    await setProgress(bookId, { sectionId, offset, percent });
-}
-
-function scrollToOffset(offset) {
-    const { top, span } = chapterSpan();
-    window.scrollTo({ top: Math.max(0, top + offset * span), behavior: 'instant' });
-}
-
-function scrollToSection(sectionId, delta = READING_LINE_PX - 8) {
-    const el = sectionEls().find(s => s.dataset.sectionId === sectionId);
-    if (!el) return;
-    const y = el.getBoundingClientRect().top + window.scrollY - delta;
-    window.scrollTo({ top: Math.max(0, y), behavior: 'instant' });
-}
-
-function renderNav() {
-    const pos = document.getElementById('ereaderChapterPos');
-    const prev = document.getElementById('ereaderPrevBtn');
-    const next = document.getElementById('ereaderNextBtn');
-    const n = open ? open.chapters.length : 0;
-    const i = open ? open.chapterIndex : 0;
-    if (pos) pos.textContent = n > 0 ? `${i + 1} / ${n}` : '';
-    if (prev) prev.disabled = !open || i <= 0;
-    if (next) next.disabled = !open || i >= n - 1;
-}
+// ── mounting ──────────────────────────────────────────────────────────────
 
 let decorateReadingSectionsRef = null;
 
@@ -197,84 +217,307 @@ async function ensureDecorateReadingSections() {
     return decorateReadingSectionsRef;
 }
 
-function decorateReaderSections() {
-    if (!open) return;
+function decorateSection(el) {
+    if (!open || !el) return;
     if (!decorateReadingSectionsRef) {
         ensureDecorateReadingSections().then(fn => {
-            if (fn && open) decorateReaderSections();
+            if (fn && open) decorateMounted();
         });
         return;
     }
-    const content = contentEl();
-    if (!content) return;
-    content.querySelectorAll('.ereader-section').forEach(secEl => {
-        const secId = secEl.dataset.sectionId;
-        if (secId) {
-            decorateReadingSectionsRef(secEl, {
-                scope: 'ereader:' + secId,
-                cacheKey: open.book.id,
-                minSections: 1,
-                onRefresh: decorateReaderSections
-            });
-        }
+    const secId = el.dataset.sectionId;
+    if (!secId) return;
+    decorateReadingSectionsRef(el, {
+        scope: 'ereader:' + secId,
+        cacheKey: open.book.id,
+        minSections: 1,
+        onRefresh: decorateMounted
     });
 }
 
+function decorateMounted() {
+    if (!open) return;
+    for (const el of sectionEls()) {
+        if (el.dataset.mounted === '1') decorateSection(el);
+    }
+}
+
+function mountSection(el) {
+    const section = open.sections[Number(el.dataset.index)];
+    if (!section) return;
+    el.innerHTML = sectionHtml(open.book, section, activeSearchTerm);
+    el.style.height = '';
+    el.dataset.mounted = '1';
+    open.mounted.add(section.id);
+    decorateSection(el);
+}
+
+function unmountSection(el) {
+    const id = el.dataset.sectionId;
+    const h = el.offsetHeight;
+    if (h > 0) open.heights.set(id, h);
+    el.style.height = `${h > 0 ? h : estimateHeight(open.sections[Number(el.dataset.index)])}px`;
+    el.replaceChildren();
+    el.dataset.mounted = '0';
+    open.mounted.delete(id);
+}
+
 /**
- * Draws the open chapter. Where it lands: a saved offset (opening), a section
- * kept at the same height on screen (font change, sync), a section at the top
- * (contents), or the chapter start.
+ * One mount pass: mounts the sections inside the window around the screen,
+ * empties the far ones, then puts the anchor section back where it was on
+ * screen (or at pin.delta when the caller asks for a fixed spot).
  */
-function renderChapter({ restoreOffset = null, anchorSectionId = null, anchorDelta } = {}) {
+function updateWindow(pin = null) {
+    if (!open) return;
+    const els = sectionEls();
+    if (els.length === 0) return;
+    const vh = window.innerHeight || 800;
+
+    const anchorEl = pin ? pin.el : els[Math.max(0, indexAtLine())];
+    const anchorTop = anchorEl ? anchorEl.getBoundingClientRect().top : 0;
+
+    const lo = -MOUNT_BEHIND * vh;
+    const hi = vh * (1 + MOUNT_AHEAD);
+    const farLo = -UNMOUNT_BEYOND * vh;
+    const farHi = vh * (1 + UNMOUNT_BEYOND);
+
+    const toMount = [];
+    const start = Math.max(0, indexAtLine(lo));
+    for (let i = start; i < els.length; i++) {
+        const r = els[i].getBoundingClientRect();
+        if (r.top > hi) break;
+        if (r.bottom >= lo && els[i].dataset.mounted !== '1') toMount.push(els[i]);
+    }
+    if (anchorEl && anchorEl.dataset.mounted !== '1' && !toMount.includes(anchorEl)) toMount.push(anchorEl);
+
+    const toUnmount = [];
+    for (const id of open.mounted) {
+        const el = shellOf(id);
+        if (!el || el === anchorEl) continue;
+        const r = el.getBoundingClientRect();
+        if (r.bottom < farLo || r.top > farHi) toUnmount.push(el);
+    }
+
+    if (toMount.length === 0 && toUnmount.length === 0 && !pin) return;
+
+    for (const el of toUnmount) unmountSection(el);
+    for (const el of toMount) mountSection(el);
+    for (const el of toMount) {
+        const h = el.offsetHeight;
+        if (h > 0) open.heights.set(el.dataset.sectionId, h);
+    }
+    if (toMount.length > 0) learnRatio();
+
+    if (anchorEl) {
+        const target = pin ? pin.delta : anchorTop;
+        const d = anchorEl.getBoundingClientRect().top - target;
+        if (Math.abs(d) > 0.5) window.scrollTo({ top: Math.max(0, window.scrollY + d), behavior: 'instant' });
+    }
+    snapAnchor();
+}
+
+function scheduleWindow() {
+    if (windowFrame !== null) return;
+    const raf = typeof window.requestAnimationFrame === 'function'
+        ? window.requestAnimationFrame.bind(window)
+        : (fn) => setTimeout(fn, 16);
+    windowFrame = raf(() => {
+        windowFrame = null;
+        updateWindow();
+    });
+}
+
+/** Remembers where the reading-line section is, for image loads to keep it. */
+function snapAnchor() {
+    const i = indexAtLine();
+    const el = i >= 0 ? sectionEls()[i] : null;
+    anchorSnap = el ? { el, top: el.getBoundingClientRect().top } : null;
+}
+
+/** An image finishing above the reader must not push the text away. */
+function onContentLoad(e) {
+    if (!open || !e.target || e.target.tagName !== 'IMG' || !anchorSnap || !anchorSnap.el.isConnected) return;
+    const d = anchorSnap.el.getBoundingClientRect().top - anchorSnap.top;
+    if (Math.abs(d) > 0.5) window.scrollTo({ top: Math.max(0, window.scrollY + d), behavior: 'instant' });
+    const id = e.target.closest('.ereader-section')?.dataset.sectionId;
+    const el = id ? shellOf(id) : null;
+    if (el && el.offsetHeight > 0) open.heights.set(id, el.offsetHeight);
+    snapAnchor();
+}
+
+/**
+ * Puts a section at `delta` px from the top of the screen, `fraction` of the
+ * way into it at the reading line when given (a saved position).
+ */
+function placeSection(sectionId, { delta = JUMP_DELTA_PX, fraction = 0 } = {}) {
+    const el = shellOf(sectionId);
+    if (!el) return false;
+    const y = el.getBoundingClientRect().top + window.scrollY - delta;
+    window.scrollTo({ top: Math.max(0, y), behavior: 'instant' });
+    updateWindow({ el, delta: el.getBoundingClientRect().top });
+    updateWindow({ el, delta });
+    if (fraction > 0) {
+        const r = el.getBoundingClientRect();
+        const target = window.scrollY + r.top + fraction * r.height - READING_LINE_PX;
+        window.scrollTo({ top: Math.max(0, target), behavior: 'instant' });
+        updateWindow();
+    }
+    return true;
+}
+
+/**
+ * Draws the book's shells and lands: at a saved position (opening), a section
+ * kept at the same height on screen (font change, sync), or the book start.
+ */
+function renderBook({ restore = null, anchorSectionId = null, anchorDelta } = {}) {
     const content = contentEl();
     if (!content || !open) return;
     const fontScale = getPrefs().fontScale || 1;
     content.style.setProperty('--ereader-font-scale', String(fontScale));
-    const chapter = open.chapters[open.chapterIndex];
-    content.innerHTML = chapter ? chapterHtml(open.book, chapter, fontScale, activeSearchTerm) : '';
-    decorateReaderSections();
+    open.mounted.clear();
+    content.innerHTML = open.sections
+        .map((s, i) => `<section class="ereader-section md-content" data-section-id="${escapeHTML(s.id)}" data-index="${i}" data-mounted="0" style="height:${estimateHeight(s)}px"></section>`)
+        .join('');
+    open.els = [...content.querySelectorAll('.ereader-section')];
     open.renderedAt = open.book.updatedAt;
-    renderNav();
     updateFontUI();
 
-    if (restoreOffset !== null) {
-        scrollToOffset(restoreOffset);
-        capturePosition();
-    } else if (anchorSectionId) {
-        scrollToSection(anchorSectionId, anchorDelta);
+    if (restore && restore.sectionId && placeSection(restore.sectionId, { delta: READING_LINE_PX, fraction: restore.offset || 0 })) {
+        capturePosition(restore.sectionId, restore.offset || 0);
+    } else if (anchorSectionId && placeSection(anchorSectionId, { delta: anchorDelta ?? JUMP_DELTA_PX })) {
         capturePosition(anchorSectionId);
     } else {
         window.scrollTo({ top: 0, behavior: 'instant' });
-        capturePosition(chapter ? chapter.sectionIds[0] : null);
+        updateWindow();
+        capturePosition(open.sections[0] ? open.sections[0].id : null);
     }
+    updateTopButton();
 }
 
-export async function goToChapter(index) {
-    if (!open || index < 0 || index >= open.chapters.length || index === open.chapterIndex) return;
-    open.chapterIndex = index;
-    renderChapter();
-    renderEreaderToc();
-    await flushPosition();
+/** Re-renders the mounted sections in place (a search highlight came or went). */
+function refreshMounted() {
+    if (!open) return;
+    const anchorId = currentSectionId();
+    const anchorEl = anchorId ? shellOf(anchorId) : null;
+    const delta = anchorEl ? anchorEl.getBoundingClientRect().top : 0;
+    for (const el of sectionEls()) {
+        if (el.dataset.mounted === '1') mountSection(el);
+    }
+    if (anchorEl) updateWindow({ el: anchorEl, delta });
+}
+
+// ── position ──────────────────────────────────────────────────────────────
+
+/**
+ * knownSectionId: where a jump just landed (a contents entry, a match).
+ * Only a scroll by the user is read back from the page geometry.
+ */
+function capturePosition(knownSectionId = null, knownFraction = 0) {
+    if (!open) return;
+    let index = knownSectionId ? open.indexOf.get(knownSectionId) : undefined;
+    let fraction = index === undefined ? 0 : Math.max(0, Math.min(1, knownFraction || 0));
+    if (index === undefined) {
+        index = Math.max(0, indexAtLine());
+        const el = sectionEls()[index];
+        if (el) {
+            const r = el.getBoundingClientRect();
+            fraction = r.height > 0 ? Math.max(0, Math.min(1, (READING_LINE_PX - r.top) / r.height)) : 0;
+        }
+    }
+    const section = open.sections[index];
+    if (!section) return;
+    const prevSection = lastPos && lastPos.sectionId;
+    lastPos = {
+        bookId: open.book.id,
+        sectionId: section.id,
+        offset: Math.round(fraction * 1000) / 1000,
+        percent: weightedPercent(open.weights, index, fraction)
+    };
+    if (section.id !== prevSection) markTocActive(section.id);
+}
+
+/** Writes the position unless it is the one already stored. */
+export async function flushPosition() {
+    clearTimeout(saveTimer);
+    saveTimer = null;
+    if (!lastPos) return;
+    const { bookId, sectionId, offset, percent } = lastPos;
+    const stored = getProgress(bookId);
+    if (stored && stored.sectionId === sectionId && stored.offset === offset && stored.percent === percent) return;
+    await setProgress(bookId, { sectionId, offset, percent });
 }
 
 export async function goToSection(sectionId) {
-    if (!open) return;
-    const chapter = chapterOfSection(open.chapters, sectionId);
-    if (!chapter) return;
-    if (chapter.index !== open.chapterIndex) {
-        open.chapterIndex = chapter.index;
-        renderChapter({ anchorSectionId: sectionId });
-    } else {
-        scrollToSection(sectionId);
-        capturePosition(sectionId);
-    }
-    renderEreaderToc();
-    if (typeof window.matchMedia === 'function' && window.matchMedia(MOBILE_QUERY).matches
-        && typeof deps.closeMenu === 'function') {
-        deps.closeMenu();
-    }
+    if (!open || !placeSection(sectionId)) return;
+    capturePosition(sectionId);
     await flushPosition();
 }
+
+// ── up button ─────────────────────────────────────────────────────────────
+
+/**
+ * The heading the up button goes to: the one of the section being read when
+ * the reader is inside it, else the previous titled section's.
+ */
+export function upTargetSectionId() {
+    if (!open) return null;
+    const els = sectionEls();
+    let i = indexAtLine();
+    if (i < 0) return null;
+    const top = els[i].getBoundingClientRect().top;
+    if (top >= JUMP_DELTA_PX - 4) i -= 1;
+    while (i >= 0 && !(open.sections[i].title || '').trim()) i -= 1;
+    return i >= 0 ? open.sections[i].id : null;
+}
+
+/** Up: nearest heading above; toStart (Ctrl/Cmd+click, long press): book start. */
+export async function goUp({ toStart = false } = {}) {
+    if (!open) return;
+    const target = toStart ? null : upTargetSectionId();
+    if (target) {
+        await goToSection(target);
+    } else {
+        window.scrollTo({ top: 0, behavior: 'instant' });
+        updateWindow();
+        capturePosition(open.sections[0] ? open.sections[0].id : null);
+        await flushPosition();
+    }
+    updateTopButton();
+}
+
+function updateTopButton() {
+    const btn = document.getElementById('ereaderTopBtn');
+    if (!btn) return;
+    btn.classList.toggle('visible', !!open && bookViewActive && window.scrollY > TOP_BTN_SHOW_PX);
+}
+
+function bindTopButton(btn) {
+    let pressTimer = null;
+    let longPressed = false;
+    btn.addEventListener('click', (e) => {
+        if (longPressed) {
+            longPressed = false;
+            return;
+        }
+        goUp({ toStart: e.ctrlKey || e.metaKey });
+    });
+    btn.addEventListener('pointerdown', (e) => {
+        if (e.pointerType === 'mouse') return;
+        longPressed = false;
+        clearTimeout(pressTimer);
+        pressTimer = setTimeout(() => {
+            longPressed = true;
+            goUp({ toStart: true });
+        }, LONG_PRESS_MS);
+    });
+    const cancel = () => clearTimeout(pressTimer);
+    btn.addEventListener('pointerup', cancel);
+    btn.addEventListener('pointerleave', cancel);
+    btn.addEventListener('pointercancel', cancel);
+    btn.addEventListener('contextmenu', (e) => e.preventDefault());
+}
+
+// ── font size ─────────────────────────────────────────────────────────────
 
 function updateFontUI() {
     const scale = getPrefs().fontScale || 1;
@@ -296,12 +539,17 @@ export async function changeFontScale(direction) {
     if (FONT_STEPS[nextIdx] === current) return current;
 
     const anchorId = open && bookViewActive ? currentSectionId() : null;
-    const anchorEl = anchorId ? sectionEls().find(s => s.dataset.sectionId === anchorId) : null;
+    const anchorEl = anchorId ? shellOf(anchorId) : null;
     const anchorDelta = anchorEl ? anchorEl.getBoundingClientRect().top : undefined;
 
     await setPrefs({ fontScale: FONT_STEPS[nextIdx] });
-    if (open && bookViewActive) renderChapter({ anchorSectionId: anchorId, anchorDelta });
-    else updateFontUI();
+    if (open && bookViewActive) {
+        open.heights.clear();
+        open.pxPerChar = 0;
+        renderBook({ anchorSectionId: anchorId, anchorDelta });
+    } else {
+        updateFontUI();
+    }
     return FONT_STEPS[nextIdx];
 }
 
@@ -336,7 +584,7 @@ export function renderEreaderToc() {
     const sections = open.book.sections;
     const minLevel = Math.min(...sections.map(s => s.level || 1));
     const activeId = (lastPos && lastPos.bookId === open.book.id && lastPos.sectionId)
-        || open.chapters[open.chapterIndex]?.sectionIds[0];
+        || (open.sections[0] && open.sections[0].id);
 
     const gaps = detectGaps(open.book.parts || []);
     const pendingGaps = [...gaps];
@@ -394,9 +642,13 @@ export async function refreshOpenBook() {
     const book = await getBook(id);
     if (!book) return;
     const anchorId = bookViewActive ? currentSectionId() : null;
-    const chapter = anchorId ? chapterOfSection(buildChapters(book.sections), anchorId) : null;
-    setOpen(book, chapter ? chapter.index : open.chapterIndex);
-    if (bookViewActive) renderChapter({ anchorSectionId: anchorId });
+    const anchorEl = anchorId ? shellOf(anchorId) : null;
+    const anchorDelta = anchorEl ? anchorEl.getBoundingClientRect().top : undefined;
+    setOpen(book);
+    if (bookViewActive) {
+        const keep = anchorId && book.sections.some(s => s.id === anchorId) ? anchorId : null;
+        renderBook({ anchorSectionId: keep, anchorDelta });
+    }
     renderEreaderToc();
 }
 
@@ -458,19 +710,13 @@ export function closeSearchBar() {
     activeResultIndex = -1;
     if (activeSearchTerm) {
         activeSearchTerm = '';
-        if (open && bookViewActive) renderChapter({ anchorSectionId: currentSectionId(), anchorDelta: currentAnchorDelta() });
+        if (open && bookViewActive) refreshMounted();
     }
 }
 
 export function isSearchBarOpen() {
     const overlay = searchOverlay();
     return !!(overlay && overlay.style.display !== 'none');
-}
-
-function currentAnchorDelta() {
-    const id = currentSectionId();
-    const el = id ? sectionEls().find(s => s.dataset.sectionId === id) : null;
-    return el ? el.getBoundingClientRect().top : undefined;
 }
 
 function resultButtons() {
@@ -495,17 +741,23 @@ function setActiveResult(index) {
 
 async function openSearchMatch(m, term) {
     if (!open) return;
+    const termChanged = activeSearchTerm !== term;
     activeSearchTerm = term;
     hideSearchOverlay();
-    open.chapterIndex = m.chapterIndex;
-    renderChapter({ anchorSectionId: m.sectionId });
-    renderEreaderToc();
-    const sec = sectionEls().find(s => s.dataset.sectionId === m.sectionId);
-    if (sec) {
-        const highlight = sec.querySelector('.search-highlight') || sec;
-        const y = highlight.getBoundingClientRect().top + window.scrollY - (READING_LINE_PX - 8);
-        window.scrollTo({ top: Math.max(0, y), behavior: 'instant' });
+    if (termChanged) {
+        for (const el of sectionEls()) {
+            if (el.dataset.mounted === '1') mountSection(el);
+        }
     }
+    if (!placeSection(m.sectionId)) return;
+    const sec = shellOf(m.sectionId);
+    const highlight = sec && sec.querySelector('.search-highlight');
+    if (highlight) {
+        const y = highlight.getBoundingClientRect().top + window.scrollY - JUMP_DELTA_PX;
+        window.scrollTo({ top: Math.max(0, y), behavior: 'instant' });
+        updateWindow();
+    }
+    capturePosition(m.sectionId);
     await flushPosition();
 }
 
@@ -650,7 +902,7 @@ export function enterBookView() {
     setHeaderTitle(open.book.title);
     const restore = open.pendingRestore;
     open.pendingRestore = null;
-    renderChapter(restore ? { restoreOffset: restore.offset } : {});
+    renderBook({ restore });
     renderEreaderToc();
     openTocSection();
     return true;
@@ -664,12 +916,15 @@ export function leaveBookView() {
         exitFullscreen('ereaderLibrary');
     }
     closeSearchBar();
+    updateTopButton();
     flushPosition();
 }
 
 function onScroll() {
     if (!bookViewActive || !open) return;
+    scheduleWindow();
     capturePosition();
+    updateTopButton();
     clearTimeout(saveTimer);
     saveTimer = setTimeout(flushPosition, SAVE_DELAY_MS);
 }
@@ -696,10 +951,8 @@ export function bindEreaderReader({ switchView, closeMenu } = {}) {
     if (bound) return;
     bound = true;
 
-    const prev = document.getElementById('ereaderPrevBtn');
-    const next = document.getElementById('ereaderNextBtn');
-    if (prev) prev.onclick = () => open && goToChapter(open.chapterIndex - 1);
-    if (next) next.onclick = () => open && goToChapter(open.chapterIndex + 1);
+    const topBtn = document.getElementById('ereaderTopBtn');
+    if (topBtn) bindTopButton(topBtn);
 
     const dec = document.getElementById('ereaderFontDecBtn');
     const inc = document.getElementById('ereaderFontIncBtn');
@@ -745,6 +998,7 @@ export function bindEreaderReader({ switchView, closeMenu } = {}) {
 
     const content = document.getElementById('ereaderContent');
     if (content) {
+        content.addEventListener('load', onContentLoad, true);
         content.addEventListener('click', (e) => {
             const placeholder = e.target.closest('.md-image-placeholder');
             if (placeholder && placeholder.dataset.placeholderId) {
@@ -767,7 +1021,7 @@ export function bindEreaderReader({ switchView, closeMenu } = {}) {
             }
             const placeholderId = activePlaceholderId;
             const anchorId = bookViewActive ? currentSectionId() : null;
-            const anchorEl = anchorId ? sectionEls().find(s => s.dataset.sectionId === anchorId) : null;
+            const anchorEl = anchorId ? shellOf(anchorId) : null;
             const anchorDelta = anchorEl ? anchorEl.getBoundingClientRect().top : undefined;
 
             closeImageUrlModal();
@@ -790,9 +1044,11 @@ export function bindEreaderReader({ switchView, closeMenu } = {}) {
 
             const updated = await getBook(open.book.id);
             if (updated) {
-                open.book = updated;
+                const heights = open.heights;
+                setOpen(updated);
+                open.heights = heights;
                 memo.clear();
-                renderChapter({ anchorSectionId: anchorId, anchorDelta });
+                renderBook({ anchorSectionId: anchorId, anchorDelta });
             }
         };
     }
@@ -806,6 +1062,16 @@ export function bindEreaderReader({ switchView, closeMenu } = {}) {
 
     if (typeof window !== 'undefined') {
         window.addEventListener('scroll', onScroll, { passive: true });
+        let lastWidth = window.innerWidth;
+        window.addEventListener('resize', () => {
+            if (!open || !bookViewActive) return;
+            if (window.innerWidth !== lastWidth) {
+                lastWidth = window.innerWidth;
+                open.heights.clear();
+                open.pxPerChar = 0;
+            }
+            scheduleWindow();
+        });
         window.addEventListener('keydown', (e) => {
             if (bookViewActive && !isSearchBarOpen() && isSearchShortcut(e)) {
                 e.preventDefault();
@@ -841,6 +1107,8 @@ export function _resetEreaderReaderForTests() {
     lastPos = null;
     clearTimeout(saveTimer);
     saveTimer = null;
+    windowFrame = null;
+    anchorSnap = null;
     memo.clear();
     deps = { switchView: null, closeMenu: null };
     activeSearchTerm = '';

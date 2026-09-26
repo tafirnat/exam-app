@@ -77,18 +77,69 @@ async function addAndOpen(json = bookJson()) {
 }
 
 const shownSectionIds = () => [...document.querySelectorAll('#ereaderContent .ereader-section')].map(s => s.dataset.sectionId);
-const nav = () => ({
-    prev: document.getElementById('ereaderPrevBtn').disabled,
-    next: document.getElementById('ereaderNextBtn').disabled,
-    pos: document.getElementById('ereaderChapterPos').textContent
-});
+/**
+ * A fake layout for jsdom (which has none): section shell i is `h` px tall and
+ * starts at i*h on the page; window.scrollTo/scrollY move the page.
+ */
+function installLayout(h = 1000, viewport = 800) {
+    const proto = window.HTMLElement.prototype;
+    const original = proto.getBoundingClientRect;
+    let y = 0;
+    proto.getBoundingClientRect = function () {
+        const i = this.dataset && this.dataset.index;
+        if (i === undefined) return { top: 0, bottom: 0, height: 0 };
+        const top = Number(i) * h - y;
+        return { top, bottom: top + h, height: h };
+    };
+    window.scrollTo = (opts) => { y = Math.max(0, opts.top); };
+    Object.defineProperty(window, 'scrollY', { get: () => y, configurable: true });
+    window.innerHeight = viewport;
+    return {
+        scroll(to) { y = to; window.dispatchEvent(new window.Event('scroll')); },
+        get y() { return y; },
+        restore() {
+            proto.getBoundingClientRect = original;
+            window.scrollTo = () => {};
+            Object.defineProperty(window, 'scrollY', { get: () => 0, configurable: true });
+        }
+    };
+}
+
+function longBookJson(n = 20) {
+    return bookJson(Array.from({ length: n }, (_, i) => ({
+        id: `p${i}`, title: `Part ${i}`, level: i % 4 === 0 ? 1 : 2, text: `Body of part ${i}. `.repeat(20)
+    })));
+}
+
+const mountedIds = () => [...document.querySelectorAll('#ereaderContent .ereader-section[data-mounted="1"]')].map(s => s.dataset.sectionId);
 
 // ── drawing ────────────────────────────────────────────────────────────────
 
-test('only the open chapter is in the DOM', async () => {
+test('R2-02: the whole book is one scroll - a shell per section, no chapter paging', async () => {
     await addAndOpen();
-    assert.deepEqual(shownSectionIds(), ['s1', 's2']);
-    assert.ok(!document.getElementById('ereaderContent').textContent.includes('Gamma'));
+    assert.deepEqual(shownSectionIds(), ['s1', 's2', 's3', 's4', 's5']);
+    assert.equal(document.getElementById('ereaderChapterNav'), null, 'no previous / next chapter bar');
+    assert.equal(document.getElementById('ereaderPrevBtn'), null);
+    assert.equal(document.getElementById('ereaderNextBtn'), null);
+    assert.equal(typeof reader.goToChapter, 'undefined');
+});
+
+test('R2-02: only the sections around the screen carry their text; far ones are emptied', async () => {
+    const layout = installLayout(1000, 800);
+    try {
+        await addAndOpen(longBookJson(20));
+        assert.deepEqual(mountedIds(), ['p0', 'p1', 'p2'], 'the start of the book is mounted, nothing more');
+        assert.equal(document.querySelector('#ereaderContent [data-section-id="p10"]').textContent, '', 'a far section is an empty shell');
+
+        layout.scroll(10000);
+        await tick(40);
+        const ids = mountedIds();
+        assert.ok(ids.includes('p10') && ids.includes('p9'), `around the screen is mounted: ${ids}`);
+        assert.ok(!ids.includes('p0') && !ids.includes('p2'), `the start was emptied: ${ids}`);
+        assert.ok(document.querySelector('#ereaderContent [data-section-id="p0"]').style.height, 'an emptied shell keeps a height');
+    } finally {
+        layout.restore();
+    }
 });
 
 test('a section title becomes a heading one level below its own; no title, no heading', async () => {
@@ -120,37 +171,64 @@ test('the header shows the book title while it is open', async () => {
     assert.equal(header.hasAttribute('data-i18n'), false, 'a language change must not overwrite the book title');
 });
 
-// ── previous / next ────────────────────────────────────────────────────────
+// ── up button ──────────────────────────────────────────────────────────
 
-test('previous is disabled on the first chapter, next on the last', async () => {
-    await addAndOpen();
-    assert.deepEqual(nav(), { prev: true, next: false, pos: '1 / 3' });
-    await reader.goToChapter(1);
-    assert.deepEqual(nav(), { prev: false, next: false, pos: '2 / 3' });
-    assert.deepEqual(shownSectionIds(), ['s3', 's4']);
-    await reader.goToChapter(2);
-    assert.deepEqual(nav(), { prev: false, next: true, pos: '3 / 3' });
-    await reader.goToChapter(3);
-    assert.deepEqual(shownSectionIds(), ['s5'], 'past the end stays on the last chapter');
+test('R2-02: up goes to the heading of the section being read, then to the previous one', async () => {
+    const layout = installLayout(1000, 800);
+    try {
+        await addAndOpen(longBookJson(20));
+        layout.scroll(5500);
+        await tick(40);
+        assert.equal(reader.upTargetSectionId(), 'p5', 'inside p5: its own heading first');
+        await reader.goUp();
+        assert.equal(layout.y, 5000 - 88, 'the heading lands just under the header');
+        assert.equal(reader.upTargetSectionId(), 'p4', 'on a heading: the previous one');
+        await reader.goUp();
+        assert.equal(layout.y, 4000 - 88);
+    } finally {
+        layout.restore();
+    }
 });
 
-test('changing chapter writes the position, weighted by text length', async () => {
+test('R2-02: Ctrl/Cmd+click on up goes to the start of the book', async () => {
+    const layout = installLayout(1000, 800);
+    try {
+        await addAndOpen(longBookJson(20));
+        layout.scroll(9000);
+        await tick(40);
+        document.getElementById('ereaderTopBtn').dispatchEvent(new window.MouseEvent('click', { ctrlKey: true, bubbles: true }));
+        await tick(5);
+        assert.equal(layout.y, 0);
+        assert.ok(mountedIds().includes('p0'));
+    } finally {
+        layout.restore();
+    }
+});
+
+test('R2-02: a jump writes the position, weighted by text length', async () => {
     const book = await addAndOpen();
-    await reader.goToChapter(1);
+    await reader.goToSection('s3');
     const p = ereaderStore.getProgress(book.id);
     assert.equal(p.sectionId, 's3');
-    assert.ok(p.percent > 30 && p.percent < 70, `percent ${p.percent} must reflect the chapters before`);
+    assert.ok(p.percent > 30 && p.percent < 70, `percent ${p.percent} must reflect the sections before`);
 });
 
 // ── position ───────────────────────────────────────────────────────────────
 
-test('a book opens at the chapter of its saved section', async () => {
-    const { book } = await imp.importEreaderJson(bookJson());
-    await ereaderStore.setProgress(book.id, { sectionId: 's4', offset: 0.5, percent: 50 });
-    await reader.openBook(book.id, { switchView });
-    reader.enterBookView();
-    assert.deepEqual(shownSectionIds(), ['s3', 's4']);
-    assert.equal(nav().pos, '2 / 3');
+test('a book opens at its saved section and offset', async () => {
+    const layout = installLayout(1000, 800);
+    try {
+        const { book } = await imp.importEreaderJson(longBookJson(20));
+        await ereaderStore.setProgress(book.id, { sectionId: 'p4', offset: 0.5, percent: 20 });
+        await reader.openBook(book.id, { switchView });
+        reader.enterBookView();
+        assert.equal(layout.y, 4000 + 500 - 96, 'half-way into p4 at the reading line');
+        assert.ok(mountedIds().includes('p4'));
+        await reader.flushPosition();
+        assert.equal(ereaderStore.getProgress(book.id).sectionId, 'p4');
+    } finally {
+        layout.restore();
+    }
 });
 
 test('opening a book records it as the last opened and switches to the book view', async () => {
@@ -184,12 +262,11 @@ test('the contents list every section, indented by level, the open one marked', 
     assert.deepEqual(items.filter(i => i.classList.contains('active')).map(i => i.dataset.sectionId), ['s1']);
 });
 
-test('a contents entry in another chapter opens that chapter and marks it', async () => {
+test('a contents entry scrolls to its section and marks it', async () => {
     const book = await addAndOpen();
     reader.renderEreaderToc();
     document.querySelector('#ereaderTocList [data-section-id="s5"]').click();
     await tick(5);
-    assert.deepEqual(shownSectionIds(), ['s5']);
     assert.equal(document.querySelector('#ereaderTocList .ereader-toc-item.active')?.dataset.sectionId, 's5');
     assert.equal(ereaderStore.getProgress(book.id).sectionId, 's5');
 });
@@ -220,23 +297,36 @@ test('font size steps through the scale and stops at both ends', async () => {
     assert.equal(document.getElementById('ereaderContent').style.getPropertyValue('--ereader-font-scale'), '1.5');
 });
 
-test('a font change keeps the same chapter open', async () => {
-    await addAndOpen();
-    await reader.goToChapter(1);
-    await reader.changeFontScale(1);
-    assert.deepEqual(shownSectionIds(), ['s3', 's4']);
+test('a font change keeps the section being read at the same place', async () => {
+    const layout = installLayout(1000, 800);
+    try {
+        await addAndOpen(longBookJson(20));
+        await reader.goToSection('p6');
+        await reader.changeFontScale(1);
+        assert.equal(layout.y, 6000 - 88);
+        assert.ok(mountedIds().includes('p6'));
+    } finally {
+        layout.restore();
+    }
 });
 
 // ── the open book changes underneath ───────────────────────────────────────
 
-test('an edit to the open book is redrawn at the same chapter', async () => {
-    const book = await addAndOpen();
-    await reader.goToChapter(1);
-    await tick(2);
-    await ereaderStore.updateBook(book.id, b => { b.sections.find(s => s.id === 's3').text = 'Rewritten gamma.'; }, { fromSync: true });
-    await reader.refreshOpenBook();
-    assert.deepEqual(shownSectionIds(), ['s3', 's4']);
-    assert.ok(document.getElementById('ereaderContent').textContent.includes('Rewritten gamma.'));
+test('an edit to the open book is redrawn at the same section', async () => {
+    const layout = installLayout(1000, 800);
+    try {
+        const book = await addAndOpen(longBookJson(20));
+        await reader.goToSection('p7');
+        await tick(2);
+        await ereaderStore.updateBook(book.id, b => { b.sections.find(s => s.id === 'p7').text = 'Rewritten seven.'; }, { fromSync: true });
+        await reader.refreshOpenBook();
+        assert.ok(document.getElementById('ereaderContent').textContent.includes('Rewritten seven.'));
+        assert.equal(layout.y, 7000 - 88, 'still at p7');
+        await reader.flushPosition();
+        assert.equal(ereaderStore.getProgress(book.id).sectionId, 'p7');
+    } finally {
+        layout.restore();
+    }
 });
 
 test('a deleted open book sends the reader back to the library', async () => {

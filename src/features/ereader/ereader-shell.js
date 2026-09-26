@@ -128,6 +128,10 @@ export function applyEreaderChrome(view, { goHome } = {}) {
         actionMenu.dataset.mode = chrome.menuMode;
     }
 
+    /* The book scrolls as one long page; the header (search, tools) has to
+       stay on top of it, which body's height:100% would otherwise stop. */
+    if (document.body) document.body.classList.toggle('ereader-mode', isEreaderView(view));
+
     const headerTitle = document.getElementById('headerTitle');
     if (headerTitle) {
         if (isEreaderView(view)) {

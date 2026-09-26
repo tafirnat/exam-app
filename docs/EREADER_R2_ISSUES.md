@@ -29,7 +29,7 @@ Status: done
   reading line; **Ctrl+click** (⌘ on macOS) → start of the book. On mobile it may
   go only to the chapter (top-level heading) above.
 
-Status: open
+Status: done
 
 ## R2-03 — Contents (Inhalt) behaviour and look
 
