@@ -41,7 +41,7 @@ Status: done
 - Tree: h1 / h2 / h3. Initially only h1 visible. Clicking an h1 expands its
   children (if any) **and** scrolls to that heading.
 
-Status: open
+Status: done
 
 ## R2-04 — Side menu header removed
 

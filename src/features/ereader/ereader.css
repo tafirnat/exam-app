@@ -262,23 +262,123 @@ body.ereader-mode {
     height: 20px;
 }
 
-/* The accordion clips its content at 500px (style.css), minus its padding. */
+/* ── Contents (R2-03) ──
+   Plain list, no filled boxes: the entry being read gets a soft tint of the
+   theme colour, chapters are split by a thin line (as in #section-timer). */
+#ereaderTocMenuSection .menu-section-header.active + .menu-section-content {
+    max-height: none;
+    padding: 0.25rem 0.75rem 0.75rem;
+}
+
 .ereader-toc-list {
-    max-height: min(60vh, 460px);
+    max-height: calc(100vh - 12rem);
+    max-height: calc(100dvh - 12rem);
     overflow-y: auto;
+    overscroll-behavior: contain;
+}
+
+.ereader-toc-node[data-depth="0"] + .ereader-toc-node[data-depth="0"],
+.ereader-toc-gap + .ereader-toc-node[data-depth="0"],
+.ereader-toc-node[data-depth="0"] + .ereader-toc-gap {
+    border-top: 1px solid var(--border-color);
+}
+
+.ereader-toc-row {
+    display: flex;
+    align-items: center;
+    gap: 0.25rem;
+    padding: 0.1rem 0;
 }
 
 .ereader-toc-item {
-    padding-left: calc(0.75rem + var(--toc-depth, 0) * 0.75rem);
-    margin-bottom: 0.25rem;
-    font-weight: 500;
+    flex: 1;
+    min-width: 0;
+    display: block;
+    padding: 0.5rem 0.6rem;
+    border: none;
+    border-radius: 8px;
+    background: none;
+    color: var(--text-primary);
+    font: inherit;
+    font-size: 0.88rem;
+    font-weight: 600;
+    line-height: 1.35;
     text-align: left;
+    cursor: pointer;
+    transition: background-color 0.15s ease, color 0.15s ease;
 }
 
-.ereader-toc-item.active {
+.ereader-toc-node[data-depth="1"] > .ereader-toc-row > .ereader-toc-item {
+    font-size: 0.84rem;
+    font-weight: 500;
+    color: var(--text-secondary);
+}
+
+.ereader-toc-node[data-depth="2"] > .ereader-toc-row > .ereader-toc-item {
+    font-size: 0.8rem;
+    font-weight: 400;
+    color: var(--text-secondary);
+}
+
+.ereader-toc-item:hover {
+    background: var(--surface-hover);
+    color: var(--text-primary);
+}
+
+.ereader-toc-item.active,
+.ereader-toc-node > .ereader-toc-row > .ereader-toc-item.active {
+    background: rgba(var(--primary-rgb), 0.12);
     color: var(--primary-color);
-    border-color: var(--primary-color);
-    background-color: rgba(var(--primary-rgb), 0.1);
+}
+
+/* Inside a closed chapter: a soft marker on the chapter, not a jump open. */
+.ereader-toc-item.has-active {
+    box-shadow: inset 3px 0 0 rgba(var(--primary-rgb), 0.55);
+}
+
+.ereader-toc-toggle {
+    flex-shrink: 0;
+    width: 28px;
+    height: 28px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border: none;
+    border-radius: 6px;
+    background: none;
+    color: var(--text-secondary);
+    cursor: pointer;
+}
+
+.ereader-toc-toggle:hover { background: var(--surface-hover); }
+
+.ereader-toc-toggle svg {
+    width: 14px;
+    height: 14px;
+    transition: transform 0.2s ease;
+}
+
+.ereader-toc-node.expanded > .ereader-toc-row > .ereader-toc-toggle svg {
+    transform: rotate(90deg);
+}
+
+.ereader-toc-children {
+    display: none;
+    margin-left: 0.6rem;
+    padding-left: 0.4rem;
+    border-left: 1px solid var(--border-color);
+}
+
+.ereader-toc-node.expanded > .ereader-toc-children {
+    display: block;
+}
+
+.ereader-toc-gap {
+    padding: 0.5rem 0.6rem;
+    font-size: 0.78rem;
+    font-style: italic;
+    color: var(--text-secondary);
+    opacity: 0.75;
 }
 
 /* ── Search & Tools (F5) ── */

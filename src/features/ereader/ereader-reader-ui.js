@@ -553,75 +553,212 @@ export async function changeFontScale(direction) {
     return FONT_STEPS[nextIdx];
 }
 
-function markTocActive(sectionId) {
-    const list = document.getElementById('ereaderTocList');
-    if (!list) return;
-    for (const item of list.querySelectorAll('.ereader-toc-item')) {
-        item.classList.toggle('active', item.dataset.sectionId === sectionId);
+// ── contents (R2-03) ─────────────────────────────────────────────────────
+
+/** Heading depths listed in the contents: h1, h2, h3 of the book. */
+const TOC_MAX_DEPTH = 2;
+/** Section id -> the contents entry that stands for it (itself or an ancestor). */
+let tocOwner = new Map();
+/** Entries whose children are shown. Kept across redraws of the same book. */
+let tocExpanded = new Set();
+let tocBookId = null;
+
+const TOC_CHEVRON = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 6 15 12 9 18"></polyline></svg>';
+
+function tocList() {
+    return document.getElementById('ereaderTocList');
+}
+
+function tocNodeOf(sectionId) {
+    const list = tocList();
+    if (!list || !sectionId) return null;
+    const item = [...list.querySelectorAll('.ereader-toc-item')].find(i => i.dataset.sectionId === sectionId);
+    return item ? item.closest('.ereader-toc-node') : null;
+}
+
+function setTocExpanded(node, expanded) {
+    if (!node || !node.querySelector(':scope > .ereader-toc-children')) return;
+    node.classList.toggle('expanded', expanded);
+    const id = node.dataset.nodeId;
+    if (expanded) tocExpanded.add(id);
+    else tocExpanded.delete(id);
+    const toggle = node.querySelector(':scope > .ereader-toc-row > .ereader-toc-toggle');
+    if (toggle) toggle.setAttribute('aria-expanded', expanded ? 'true' : 'false');
+}
+
+/** Opens the chain of entries down to the one standing for sectionId. */
+function expandTocPathTo(sectionId) {
+    let node = tocNodeOf(tocOwner.get(sectionId) || sectionId);
+    node = node && node.parentElement ? node.parentElement.closest('.ereader-toc-node') : null;
+    while (node) {
+        setTocExpanded(node, true);
+        node = node.parentElement ? node.parentElement.closest('.ereader-toc-node') : null;
     }
+}
+
+/**
+ * Marks the entry being read. When it sits inside a closed entry, that
+ * visible ancestor carries a soft marker instead, so the list does not jump
+ * open while the reader scrolls.
+ */
+function markTocActive(sectionId) {
+    const list = tocList();
+    if (!list) return;
+    const ownerId = tocOwner.get(sectionId) || sectionId;
+    for (const item of list.querySelectorAll('.ereader-toc-item')) {
+        item.classList.toggle('active', item.dataset.sectionId === ownerId);
+        item.classList.remove('has-active');
+    }
+    let node = tocNodeOf(ownerId);
+    node = node && node.parentElement ? node.parentElement.closest('.ereader-toc-node') : null;
+    while (node) {
+        if (!node.classList.contains('expanded')) {
+            const item = node.querySelector(':scope > .ereader-toc-row > .ereader-toc-item');
+            if (item) item.classList.add('has-active');
+        }
+        node = node.parentElement ? node.parentElement.closest('.ereader-toc-node') : null;
+    }
+}
+
+/** Opening the menu shows the entry being read, opened and in view. */
+export function revealActiveInToc() {
+    if (!open) return;
+    const id = (lastPos && lastPos.bookId === open.book.id && lastPos.sectionId) || null;
+    if (!id) return;
+    expandTocPathTo(id);
+    markTocActive(id);
+    const item = tocList()?.querySelector('.ereader-toc-item.active');
+    if (item && typeof item.scrollIntoView === 'function') item.scrollIntoView({ block: 'nearest' });
 }
 
 function createGapItem(gap) {
     const item = document.createElement('div');
-    item.className = 'menu-sub-item ereader-toc-gap';
+    item.className = 'ereader-toc-gap';
     item.dataset.gapFrom = String(gap.from);
     item.dataset.gapTo = String(gap.to);
-    item.style.opacity = '0.6';
-    item.style.fontStyle = 'italic';
-    item.style.cursor = 'default';
     item.textContent = t('ereader_gap_missing', { from: gap.from, to: gap.to });
     return item;
 }
 
-/** Paints #ereaderTocList for the open book. */
+/** A title click: open its children (if any) and scroll to it; the menu stays. */
+function onTocItemClick(node, sectionId) {
+    if (node.querySelector(':scope > .ereader-toc-children')) {
+        const depth = Number(node.dataset.depth);
+        if (depth === 0) {
+            /* One chapter open at a time keeps the list short. */
+            for (const other of tocList().querySelectorAll('.ereader-toc-node[data-depth="0"].expanded')) {
+                if (other !== node) setTocExpanded(other, false);
+            }
+        }
+        setTocExpanded(node, true);
+    }
+    goToSection(sectionId);
+}
+
+/** Paints #ereaderTocList for the open book: h1 > h2 > h3, h1 only at first. */
 export function renderEreaderToc() {
-    const list = document.getElementById('ereaderTocList');
+    const list = tocList();
     if (!list) return;
+    tocOwner = new Map();
     if (!open) {
         list.replaceChildren();
         return;
+    }
+    if (tocBookId !== open.book.id) {
+        tocBookId = open.book.id;
+        tocExpanded = new Set();
     }
     const sections = open.book.sections;
     const minLevel = Math.min(...sections.map(s => s.level || 1));
     const activeId = (lastPos && lastPos.bookId === open.book.id && lastPos.sectionId)
         || (open.sections[0] && open.sections[0].id);
 
-    const gaps = detectGaps(open.book.parts || []);
-    const pendingGaps = [...gaps];
-    const items = [];
+    const pendingGaps = [...detectGaps(open.book.parts || [])];
     /* Sections of a book that was never merged carry no partFrom; they belong
        to its only part, so a missing start (pages 1-49 of a book imported
        from page 50) is listed before them, not after the last one. */
     const partFroms = (open.book.parts || []).map(p => p.from).filter(Number.isInteger);
     const defaultFrom = partFroms.length > 0 ? Math.min(...partFroms) : undefined;
 
+    const root = document.createDocumentFragment();
+    /** [{ depth, id, node, children }] - the open entries above the current one. */
+    const stack = [];
+    /* A children box (and the open / close chevron) only where there are children. */
+    const containerFor = (parent) => {
+        if (!parent) return root;
+        if (!parent.children.parentNode) {
+            const toggle = document.createElement('button');
+            toggle.type = 'button';
+            toggle.className = 'ereader-toc-toggle';
+            toggle.setAttribute('aria-expanded', 'false');
+            toggle.setAttribute('aria-label', t('ereader_toc_toggle'));
+            toggle.innerHTML = TOC_CHEVRON;
+            const node = parent.node;
+            toggle.onclick = (e) => {
+                e.stopPropagation();
+                setTocExpanded(node, !node.classList.contains('expanded'));
+            };
+            node.querySelector('.ereader-toc-row').appendChild(toggle);
+            node.appendChild(parent.children);
+        }
+        return parent.children;
+    };
+
     for (const s of sections) {
+        const depth = Math.max(0, (s.level || 1) - minLevel);
+        while (stack.length > 0 && stack[stack.length - 1].depth >= depth) stack.pop();
+        const parent = stack.length > 0 ? stack[stack.length - 1] : null;
+
         while (pendingGaps.length > 0) {
             const gap = pendingGaps[0];
             const sFrom = s.partFrom ?? s.pageStart ?? defaultFrom;
             if (sFrom !== undefined && sFrom > gap.to) {
-                items.push(createGapItem(gap));
+                containerFor(parent).appendChild(createGapItem(gap));
                 pendingGaps.shift();
             } else {
                 break;
             }
         }
 
+        if (depth > TOC_MAX_DEPTH) {
+            /* Deeper than h3: not listed, its nearest listed ancestor stands for it. */
+            tocOwner.set(s.id, parent ? parent.id : s.id);
+            continue;
+        }
+        tocOwner.set(s.id, s.id);
+
+        const node = document.createElement('div');
+        node.className = 'ereader-toc-node';
+        node.dataset.depth = String(depth);
+        node.dataset.nodeId = s.id;
+
+        const row = document.createElement('div');
+        row.className = 'ereader-toc-row';
         const item = document.createElement('button');
         item.type = 'button';
-        item.className = 'menu-sub-item ereader-toc-item' + (s.id === activeId ? ' active' : '');
+        item.className = 'ereader-toc-item';
         item.dataset.sectionId = s.id;
-        item.style.setProperty('--toc-depth', String((s.level || 1) - minLevel));
+        item.style.setProperty('--toc-depth', String(depth));
         item.textContent = (s.title || '').trim() || t('ereader_untitled_section');
-        item.onclick = () => goToSection(s.id);
-        items.push(item);
+        item.onclick = () => onTocItemClick(node, s.id);
+        row.appendChild(item);
+        node.appendChild(row);
+
+        containerFor(parent).appendChild(node);
+        const children = document.createElement('div');
+        children.className = 'ereader-toc-children';
+        stack.push({ depth, id: s.id, node, children });
     }
 
     while (pendingGaps.length > 0) {
-        items.push(createGapItem(pendingGaps.shift()));
+        root.appendChild(createGapItem(pendingGaps.shift()));
     }
 
-    list.replaceChildren(...items);
+    list.replaceChildren(root);
+
+    for (const id of tocExpanded) setTocExpanded(tocNodeOf(id), true);
+    expandTocPathTo(activeId);
+    markTocActive(activeId);
 }
 
 /**
@@ -954,6 +1091,14 @@ export function bindEreaderReader({ switchView, closeMenu } = {}) {
     const topBtn = document.getElementById('ereaderTopBtn');
     if (topBtn) bindTopButton(topBtn);
 
+    /* Opening the menu over a book shows where the reader is in the contents. */
+    const menuToggle = document.getElementById('menuToggleBtn');
+    if (menuToggle) {
+        menuToggle.addEventListener('click', () => {
+            if (bookViewActive) setTimeout(revealActiveInToc, 0);
+        });
+    }
+
     const dec = document.getElementById('ereaderFontDecBtn');
     const inc = document.getElementById('ereaderFontIncBtn');
     if (dec) dec.onclick = () => changeFontScale(-1);
@@ -1113,6 +1258,9 @@ export function _resetEreaderReaderForTests() {
     deps = { switchView: null, closeMenu: null };
     activeSearchTerm = '';
     activeResultIndex = -1;
+    tocOwner = new Map();
+    tocExpanded = new Set();
+    tocBookId = null;
     isFullscreen = false;
     hideSearchOverlay();
     closeImageUrlModal();

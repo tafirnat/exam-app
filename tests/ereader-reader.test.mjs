@@ -485,3 +485,56 @@ test('7. the missing start of a book imported from a later page is listed before
     assert.equal(first.dataset.gapTo, '49');
     assert.equal(entries.filter(e => e.classList.contains('ereader-toc-gap')).length, 1);
 });
+
+// ── contents tree (R2-03) ─────────────────────────────────────────────────
+
+function treeBookJson() {
+    return bookJson([
+        { id: 'c1', title: 'One', level: 1, text: 'a' },
+        { id: 'c1a', title: 'One A', level: 2, text: 'b' },
+        { id: 'c1a1', title: 'One A i', level: 3, text: 'c' },
+        { id: 'c1a1x', title: 'Too deep', level: 4, text: 'd' },
+        { id: 'c2', title: 'Two', level: 1, text: 'e' },
+        { id: 'c2a', title: 'Two A', level: 2, text: 'f' },
+        { id: 'c3', title: 'Three', level: 1, text: 'g' }
+    ]);
+}
+
+const tocNode = id => document.querySelector(`#ereaderTocList .ereader-toc-node[data-node-id="${id}"]`);
+
+test('R2-03: the contents are a tree of h1 > h2 > h3; deeper headings are not listed', async () => {
+    await addAndOpen(treeBookJson());
+    reader.renderEreaderToc();
+    const top = [...document.querySelectorAll('#ereaderTocList > .ereader-toc-node')].map(n => n.dataset.nodeId);
+    assert.deepEqual(top, ['c1', 'c2', 'c3'], 'only chapters at the top level');
+    assert.ok(tocNode('c1').querySelector('.ereader-toc-children [data-section-id="c1a"]'));
+    assert.ok(tocNode('c1a').querySelector('.ereader-toc-children [data-section-id="c1a1"]'));
+    assert.equal(tocNode('c1a1x'), null, 'h4 is not listed');
+    assert.equal(tocNode('c3').querySelector('.ereader-toc-toggle'), null, 'no chevron without children');
+});
+
+test('R2-03: clicking a chapter opens its subheadings, closes the other chapter, scrolls there and keeps the menu open', async () => {
+    let closed = 0;
+    reader.bindEreaderReader({ switchView, closeMenu: () => { closed++; } });
+    const book = await addAndOpen(treeBookJson());
+    reader.renderEreaderToc();
+    tocNode('c1').classList.add('expanded');
+
+    tocNode('c2').querySelector('.ereader-toc-item').click();
+    await tick(5);
+    assert.ok(tocNode('c2').classList.contains('expanded'), 'its subheadings are shown');
+    assert.equal(tocNode('c1').classList.contains('expanded'), false, 'one chapter open at a time');
+    assert.equal(ereaderStore.getProgress(book.id).sectionId, 'c2', 'the reader went there');
+    assert.equal(closed, 0, 'the menu is not closed by a contents click');
+
+    tocNode('c2').querySelector('.ereader-toc-toggle').click();
+    assert.equal(tocNode('c2').classList.contains('expanded'), false, 'the chevron closes without moving');
+});
+
+test('R2-03: a section too deep to list marks its listed ancestor', async () => {
+    await addAndOpen(treeBookJson());
+    reader.renderEreaderToc();
+    await reader.goToSection('c1a1x');
+    const active = document.querySelector('#ereaderTocList .ereader-toc-item.active');
+    assert.equal(active?.dataset.sectionId, 'c1a1');
+});
