@@ -20,9 +20,12 @@ never force-push.
 - [x] A2 Old saved positions: an offset saved by the chapter reader (chapter fraction) is read as a
       section fraction. Harmless jump, but make the restore land at the section start when the saved
       record predates the continuous reader.
-- [ ] A3 Reader robustness on a big book (1000+ sections, images): open time, scroll without jumps,
+- [x] A3 Reader robustness on a big book (1000+ sections, images): open time, scroll without jumps,
       TOC build time, search, font change, sync redraw while reading. Measure in the browser, fix
       what is slow or jumps.
+      Result (1200 sections, 3 MB, lists/tables): open 143 ms, 3–7 sections mounted, ~1.5–2k DOM
+      nodes; 120 wheel steps down and 60 up on desktop and phone: 0 visible jumps; images loading
+      late above the reader: max 0.1 px shift; font change ~200 ms; search ~300 ms.
 - [ ] A4 Reader + menus interplay: a tap that closes the side menu must not also open a paragraph's
       actions or an image dialog; Esc order (search → dialog → menu → fullscreen).
 - [ ] A5 Paragraph actions: stop speech when the book changes / view is left / another book opens;

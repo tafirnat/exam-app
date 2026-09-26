@@ -222,6 +222,12 @@ function decorateSection(el) {
     decorateParagraphs(el, { book: open.book, sectionId: secId });
 }
 
+/** Exact rendered height (offsetHeight rounds, and the rounding piles up). */
+function measuredHeight(el) {
+    const h = el.getBoundingClientRect().height;
+    return h > 0 ? h : el.offsetHeight;
+}
+
 function mountSection(el) {
     const section = open.sections[Number(el.dataset.index)];
     if (!section) return;
@@ -234,7 +240,7 @@ function mountSection(el) {
 
 function unmountSection(el) {
     const id = el.dataset.sectionId;
-    const h = el.offsetHeight;
+    const h = measuredHeight(el);
     if (h > 0) open.heights.set(id, h);
     el.style.height = `${h > 0 ? h : estimateHeight(open.sections[Number(el.dataset.index)])}px`;
     el.replaceChildren();
@@ -283,7 +289,7 @@ function updateWindow(pin = null) {
     for (const el of toUnmount) unmountSection(el);
     for (const el of toMount) mountSection(el);
     for (const el of toMount) {
-        const h = el.offsetHeight;
+        const h = measuredHeight(el);
         if (h > 0) open.heights.set(el.dataset.sectionId, h);
     }
     if (toMount.length > 0) learnRatio();
@@ -321,7 +327,7 @@ function onContentLoad(e) {
     if (Math.abs(d) > 0.5) window.scrollTo({ top: Math.max(0, window.scrollY + d), behavior: 'instant' });
     const id = e.target.closest('.ereader-section')?.dataset.sectionId;
     const el = id ? shellOf(id) : null;
-    if (el && el.offsetHeight > 0) open.heights.set(id, el.offsetHeight);
+    if (el && measuredHeight(el) > 0) open.heights.set(id, measuredHeight(el));
     snapAnchor();
 }
 
