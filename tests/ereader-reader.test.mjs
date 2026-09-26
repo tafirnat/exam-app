@@ -164,11 +164,24 @@ test('markup in the book text is shown, never run', async () => {
     assert.equal(content.querySelectorAll('.ereader-section').length, 1, 'a hostile id must not break out of its attribute');
 });
 
-test('the header shows the book title while it is open', async () => {
-    await addAndOpen();
+test('R2-07: the header reads e-Reader in the library and in a book', async () => {
+    shell.applyEreaderChrome('ereaderLibrary', { goHome: () => {} });
     const header = document.getElementById('headerTitle');
-    assert.equal(header.textContent, 'Reader Test');
-    assert.equal(header.hasAttribute('data-i18n'), false, 'a language change must not overwrite the book title');
+    assert.equal(header.textContent, 'e-Reader');
+    await addAndOpen();
+    shell.applyEreaderChrome('ereaderBook', { goHome: () => {} });
+    assert.equal(header.textContent, 'e-Reader');
+    assert.equal(header.getAttribute('data-i18n'), 'ereader_header_title');
+});
+
+test('R2-07: no back button or title duplicated inside the sources card; the library icon sits on its title line', () => {
+    const card = document.getElementById('sourcesCard');
+    assert.equal(document.getElementById('sourcesBackBtn'), null);
+    assert.equal(card.querySelector('[data-i18n="saved_sources"]'), null);
+    assert.ok(document.getElementById('sourcesCount'), 'the count stays');
+    const row = document.querySelector('#ereaderLibraryCard .ereader-library-title-row');
+    assert.ok(row.querySelector('.stats-header-icon') && row.querySelector('h2'), 'icon and title share one row');
+    assert.equal(row.contains(document.getElementById('ereaderLibraryCount')), false, 'the count is not in that row');
 });
 
 // ── up button ──────────────────────────────────────────────────────────

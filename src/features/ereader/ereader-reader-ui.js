@@ -789,13 +789,6 @@ export async function refreshOpenBook() {
     renderEreaderToc();
 }
 
-function setHeaderTitle(title) {
-    const header = document.getElementById('headerTitle');
-    if (!header) return;
-    header.removeAttribute('data-i18n');
-    header.textContent = title;
-}
-
 /** The contents open by themselves when a book is opened. */
 function openTocSection() {
     const header = document.querySelector('#ereaderTocMenuSection .menu-section-header');
@@ -1036,7 +1029,6 @@ export function printOpenBook() {
 export function enterBookView() {
     if (!open) return false;
     bookViewActive = true;
-    setHeaderTitle(open.book.title);
     const restore = open.pendingRestore;
     open.pendingRestore = null;
     renderBook({ restore });

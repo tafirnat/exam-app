@@ -80,7 +80,7 @@ Status: done
 - `#ereaderLibraryView`: the icon and the heading are aligned with the heading
   line, not pushed by the book-count line.
 
-Status: open
+Status: done
 
 ## R2-08 — e-Reader side menu: only Settings + Contents
 

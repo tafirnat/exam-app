@@ -2445,6 +2445,12 @@ textarea {
     font-weight: 700;
 }
 
+.sources-card-count {
+    font-size: 0.72rem;
+    color: var(--text-secondary);
+    opacity: 0.7;
+}
+
 .home-back-btn {
     display: inline-flex;
     align-items: center;

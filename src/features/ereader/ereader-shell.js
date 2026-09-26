@@ -134,9 +134,11 @@ export function applyEreaderChrome(view, { goHome } = {}) {
 
     const headerTitle = document.getElementById('headerTitle');
     if (headerTitle) {
+        /* R2-07: the header names the app part, e-Reader, in the library and
+           in a book alike; the library card carries its own title. */
         if (isEreaderView(view)) {
-            headerTitle.setAttribute('data-i18n', 'ereader_library_title');
-            headerTitle.textContent = t('ereader_library_title');
+            headerTitle.setAttribute('data-i18n', 'ereader_header_title');
+            headerTitle.textContent = t('ereader_header_title');
         }
     }
 

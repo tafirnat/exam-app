@@ -51,8 +51,21 @@ body.ereader-mode {
     margin-block: auto;
 }
 
+/* R2-07: the icon sits on the title's line; the count goes under the title
+   and does not pull the icon down. */
+.ereader-library-header {
+    align-items: flex-start;
+}
+
+.ereader-library-title-row {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+}
+
 .ereader-library-heading h2 {
     font-size: 1.1rem;
+    line-height: 1.3;
     margin: 0;
 }
 
@@ -62,6 +75,7 @@ body.ereader-mode {
     color: var(--text-secondary);
     opacity: 0.7;
     margin-top: 2px;
+    padding-left: calc(24px + 0.5rem);
 }
 
 .ereader-library-actions {

@@ -1752,11 +1752,6 @@ function setupEventListeners() {
     document.getElementById('resHomeBtn').onclick = goHome;
     document.getElementById('resRetakeBtn').onclick = retakeSession;
 
-    const sourcesBackBtn = document.getElementById('sourcesBackBtn');
-    if (sourcesBackBtn) {
-        sourcesBackBtn.onclick = goHome;
-    }
-
     // Sources
     const msBtn = document.getElementById('mergeSourcesBtn');
     if (msBtn) msBtn.onclick = showMergeModal;
