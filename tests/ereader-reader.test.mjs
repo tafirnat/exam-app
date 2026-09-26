@@ -303,13 +303,46 @@ test('opening a book opens the contents section of the menu', async () => {
 
 // ── font size ──────────────────────────────────────────────────────────────
 
-test('font size steps through the scale and stops at both ends', async () => {
+test('R2-09: Aa+ cycles three text sizes - normal, large, small, normal - on the reading area only', async () => {
     await addAndOpen();
-    assert.equal(await reader.changeFontScale(-1), 0.875);
-    assert.equal(await reader.changeFontScale(-1), 0.875, 'no step below the smallest');
-    for (let i = 0; i < 10; i++) await reader.changeFontScale(1);
-    assert.equal(ereaderStore.getPrefs().fontScale, 1.5);
-    assert.equal(document.getElementById('ereaderContent').style.getPropertyValue('--ereader-font-scale'), '1.5');
+    const btn = document.getElementById('ereaderFontCycleBtn');
+    const content = document.getElementById('ereaderContent');
+    assert.equal(btn.dataset.size, 'normal');
+    assert.equal(content.style.getPropertyValue('--ereader-font-scale'), '1');
+
+    btn.click();
+    await tick(5);
+    assert.equal(btn.dataset.size, 'large');
+    assert.equal(ereaderStore.getPrefs().fontScale, 1.1875);
+    btn.click();
+    await tick(5);
+    assert.equal(btn.dataset.size, 'small');
+    assert.equal(content.style.getPropertyValue('--ereader-font-scale'), '0.875');
+    btn.click();
+    await tick(5);
+    assert.equal(btn.dataset.size, 'normal');
+    assert.equal(document.getElementById('ereaderFontDecBtn'), null, 'no extra size bar');
+});
+
+test('R2-09: a size stored on the old six-step scale lands on the nearest of the three', () => {
+    assert.equal(reader.normalizeFontScale(1.5), 1.1875);
+    assert.equal(reader.normalizeFontScale(1.125), 1.1875);
+    assert.equal(reader.normalizeFontScale(0.875), 0.875);
+    assert.equal(reader.normalizeFontScale(undefined), 1);
+});
+
+test('R2-09: the save button writes the reading position at once', async () => {
+    const layout = installLayout(1000, 800);
+    try {
+        const book = await addAndOpen(longBookJson(20));
+        await reader.goToSection('p4');
+        await ereaderStore.setProgress(book.id, { sectionId: 'p0', offset: 0, percent: 0 });
+        document.getElementById('ereaderSavePosBtn').click();
+        await tick(5);
+        assert.equal(ereaderStore.getProgress(book.id).sectionId, 'p4');
+    } finally {
+        layout.restore();
+    }
 });
 
 test('a font change keeps the section being read at the same place', async () => {

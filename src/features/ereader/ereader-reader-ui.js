@@ -31,7 +31,12 @@ import { searchBook } from './ereader-search.js';
 import { applyEreaderChrome } from './ereader-shell.js';
 import { detectGaps } from './ereader-parts.js';
 
-export const FONT_STEPS = Object.freeze([0.875, 1, 1.125, 1.25, 1.375, 1.5]);
+/**
+ * R2-09: three text sizes. Normal is the app's own body size (1rem); the
+ * reading area is font-size: calc(1rem * scale).
+ */
+export const FONT_STEPS = Object.freeze([0.875, 1, 1.1875]);
+const FONT_STEP_NAMES = Object.freeze(['small', 'normal', 'large']);
 const SAVE_DELAY_MS = 5000;
 const MOBILE_QUERY = '(max-width: 600px)';
 /** A section counts as "being read" once its top has passed this line. */
@@ -176,7 +181,7 @@ function currentSectionId() {
 function defaultPxPerChar() {
     const content = contentEl();
     const width = (content && content.clientWidth) || 640;
-    const fontPx = 17 * (getPrefs().fontScale || 1);
+    const fontPx = 16 * currentFontScale();
     const charsPerLine = Math.max(20, width / (fontPx * 0.5));
     return (fontPx * 1.75) / charsPerLine;
 }
@@ -372,8 +377,7 @@ function placeSection(sectionId, { delta = JUMP_DELTA_PX, fraction = 0 } = {}) {
 function renderBook({ restore = null, anchorSectionId = null, anchorDelta } = {}) {
     const content = contentEl();
     if (!content || !open) return;
-    const fontScale = getPrefs().fontScale || 1;
-    content.style.setProperty('--ereader-font-scale', String(fontScale));
+    content.style.setProperty('--ereader-font-scale', String(currentFontScale()));
     open.mounted.clear();
     content.innerHTML = open.sections
         .map((s, i) => `<section class="ereader-section md-content" data-section-id="${escapeHTML(s.id)}" data-index="${i}" data-mounted="0" style="height:${estimateHeight(s)}px"></section>`)
@@ -445,6 +449,20 @@ export async function flushPosition() {
     const stored = getProgress(bookId);
     if (stored && stored.sectionId === sectionId && stored.offset === offset && stored.percent === percent) return;
     await setProgress(bookId, { sectionId, offset, percent });
+}
+
+/** The save button: writes the position now and says so. */
+export async function saveReadingPosition() {
+    if (!open) return false;
+    capturePosition();
+    await flushPosition();
+    const btn = document.getElementById('ereaderSavePosBtn');
+    if (btn) {
+        btn.classList.add('saved');
+        setTimeout(() => btn.classList.remove('saved'), 1200);
+    }
+    showToast(t('ereader_position_saved'));
+    return true;
 }
 
 export async function goToSection(sectionId) {
@@ -519,30 +537,54 @@ function bindTopButton(btn) {
 
 // ── font size ─────────────────────────────────────────────────────────────
 
-function updateFontUI() {
-    const scale = getPrefs().fontScale || 1;
-    const value = document.getElementById('ereaderFontValue');
-    const dec = document.getElementById('ereaderFontDecBtn');
-    const inc = document.getElementById('ereaderFontIncBtn');
-    if (value) value.textContent = `${Math.round(scale * 100)}%`;
-    if (dec) dec.disabled = scale <= FONT_STEPS[0];
-    if (inc) inc.disabled = scale >= FONT_STEPS[FONT_STEPS.length - 1];
+/** A stored scale from the old six-step scale lands on the nearest step. */
+export function normalizeFontScale(scale) {
+    const value = typeof scale === 'number' && Number.isFinite(scale) ? scale : 1;
+    let best = 1;
+    for (const step of FONT_STEPS) {
+        if (Math.abs(step - value) < Math.abs(best - value)) best = step;
+    }
+    return best;
 }
 
-/** One step smaller (-1) or larger (+1); the section being read stays put. */
+function currentFontScale() {
+    return normalizeFontScale(getPrefs().fontScale || 1);
+}
+
+function updateFontUI() {
+    const btn = document.getElementById('ereaderFontCycleBtn');
+    if (!btn) return;
+    const idx = FONT_STEPS.indexOf(currentFontScale());
+    const name = FONT_STEP_NAMES[idx] || 'normal';
+    btn.dataset.size = name;
+    const label = `${t('ereader_font_size')}: ${t('ereader_font_' + name)}`;
+    btn.title = label;
+    btn.setAttribute('aria-label', label);
+}
+
+/** Aa+: small -> normal -> large -> small. Returns the new scale. */
+export async function cycleFontSize() {
+    const idx = FONT_STEPS.indexOf(currentFontScale());
+    return setFontScale(FONT_STEPS[(idx + 1) % FONT_STEPS.length]);
+}
+
+/** One step smaller (-1) or larger (+1), stopping at both ends. */
 export async function changeFontScale(direction) {
-    const current = getPrefs().fontScale || 1;
-    let idx = FONT_STEPS.indexOf(current);
-    if (idx < 0) idx = FONT_STEPS.findIndex(s => s >= current);
-    if (idx < 0) idx = FONT_STEPS.length - 1;
+    const idx = FONT_STEPS.indexOf(currentFontScale());
     const nextIdx = Math.max(0, Math.min(FONT_STEPS.length - 1, idx + direction));
-    if (FONT_STEPS[nextIdx] === current) return current;
+    return setFontScale(FONT_STEPS[nextIdx]);
+}
+
+/** Applies a size to the reading area only; the section being read stays put. */
+async function setFontScale(scale) {
+    const current = currentFontScale();
+    if (scale === current && getPrefs().fontScale === current) return current;
 
     const anchorId = open && bookViewActive ? currentSectionId() : null;
     const anchorEl = anchorId ? shellOf(anchorId) : null;
     const anchorDelta = anchorEl ? anchorEl.getBoundingClientRect().top : undefined;
 
-    await setPrefs({ fontScale: FONT_STEPS[nextIdx] });
+    await setPrefs({ fontScale: scale });
     if (open && bookViewActive) {
         open.heights.clear();
         open.pxPerChar = 0;
@@ -550,7 +592,7 @@ export async function changeFontScale(direction) {
     } else {
         updateFontUI();
     }
-    return FONT_STEPS[nextIdx];
+    return scale;
 }
 
 // ── contents (R2-03) ─────────────────────────────────────────────────────
@@ -1094,11 +1136,12 @@ export function bindEreaderReader({ switchView, closeMenu } = {}) {
         });
     }
 
-    const dec = document.getElementById('ereaderFontDecBtn');
-    const inc = document.getElementById('ereaderFontIncBtn');
-    if (dec) dec.onclick = () => changeFontScale(-1);
-    if (inc) inc.onclick = () => changeFontScale(1);
+    const fontBtn = document.getElementById('ereaderFontCycleBtn');
+    if (fontBtn) fontBtn.onclick = () => cycleFontSize();
     updateFontUI();
+
+    const saveBtn = document.getElementById('ereaderSavePosBtn');
+    if (saveBtn) saveBtn.onclick = () => saveReadingPosition();
 
     const searchBtn = document.getElementById('ereaderSearchBtn');
     if (searchBtn) {

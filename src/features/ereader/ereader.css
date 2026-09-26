@@ -6,6 +6,53 @@
 
 .ereader-header-tools { align-items: center; gap: 0.25rem; }
 
+/* R2-09: Aa+ with three dots for small / normal / large. */
+.ereader-font-cycle {
+    position: relative;
+}
+
+.ereader-font-cycle svg {
+    width: 26px;
+    height: 22px;
+}
+
+.ereader-font-dots {
+    position: absolute;
+    left: 50%;
+    bottom: 3px;
+    transform: translateX(-50%);
+    display: flex;
+    gap: 2px;
+}
+
+.ereader-font-dots i {
+    width: 4px;
+    height: 4px;
+    border-radius: 50%;
+    background: currentColor;
+    opacity: 0.25;
+}
+
+.ereader-font-cycle[data-size="small"] .ereader-font-dots i:nth-child(1),
+.ereader-font-cycle[data-size="normal"] .ereader-font-dots i:nth-child(-n+2),
+.ereader-font-cycle[data-size="large"] .ereader-font-dots i {
+    opacity: 0.9;
+}
+
+/* A phone has no room for four tools and the title; fullscreen is the one a
+   phone browser does least for, so it goes. */
+@media (max-width: 600px) {
+    #ereaderFullscreenBtn { display: none; }
+}
+
+#ereaderSavePosBtn.saved {
+    color: var(--primary-color);
+}
+
+#ereaderSavePosBtn.saved svg {
+    fill: currentColor;
+}
+
 /* A sticky header only sticks inside its containing block: body must grow
    with the book instead of stopping at one viewport (style.css html, body). */
 body.ereader-mode {
@@ -217,8 +264,22 @@ body.ereader-mode {
     margin: 0 auto;
 }
 
+/* .md-content sets font-size: 1rem (markdown.css) on the section and on the
+   wrapper renderMarkdown() adds, which pinned the text to one size whatever
+   the setting; inside the reader both inherit its size instead. */
+.ereader-content .md-content {
+    font-size: inherit;
+}
+
+/* Headings follow the reading size too (markdown.css sizes them in rem). */
+.ereader-content .md-content h2 { font-size: 1.3em; }
+.ereader-content .md-content h3 { font-size: 1.15em; }
+.ereader-content .md-content h4 { font-size: 1.05em; }
+.ereader-content .md-content h5 { font-size: 0.95em; }
+.ereader-content .md-content h6 { font-size: 0.9em; }
+
 .ereader-content {
-    font-size: calc(1.0625rem * var(--ereader-font-scale, 1));
+    font-size: calc(1rem * var(--ereader-font-scale, 1));
     line-height: 1.75;
     overflow-wrap: anywhere;
 }

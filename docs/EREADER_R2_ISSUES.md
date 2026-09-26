@@ -100,7 +100,7 @@ Status: done
   smaller … Only the reading area changes; no extra bar or panel.
 - A save icon is present in the header tools as well.
 
-Status: open
+Status: done — the "save icon" is read as: save the reading position now (bookmark). Confirm or correct.
 
 ## R2-10 — Paragraph actions like the reference (TTS, summary, vocab, translate)
 

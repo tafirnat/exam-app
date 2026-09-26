@@ -74,15 +74,29 @@
         </button>
         <div class="header-title" id="headerTitle">Exam App</div>
         <div class="ereader-header-tools" id="ereaderHeaderTools" style="display: none;">
-            <button class="icon-btn" id="ereaderSearchBtn" data-i18n-title="ereader_search" data-i18n-aria-label="ereader_search">
+            <!-- R2-09: one press = next text size (small, normal, large), reading area only -->
+            <button class="icon-btn ereader-font-cycle" id="ereaderFontCycleBtn" type="button" data-size="normal" data-i18n-title="ereader_font_size" data-i18n-aria-label="ereader_font_size">
+                <svg viewBox="0 0 28 24" fill="currentColor" aria-hidden="true">
+                    <text x="0" y="19" font-size="15" font-weight="700" font-family="inherit">A</text>
+                    <text x="10" y="19" font-size="11" font-weight="700" font-family="inherit">a</text>
+                    <path d="M21 5.5v7M17.5 9h7" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" fill="none"></path>
+                </svg>
+                <span class="ereader-font-dots" aria-hidden="true"><i></i><i></i><i></i></span>
+            </button>
+            <button class="icon-btn" id="ereaderSavePosBtn" type="button" data-i18n-title="ereader_save_position" data-i18n-aria-label="ereader_save_position">
                 <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5">
-                    <circle cx="11" cy="11" r="7"></circle>
-                    <line x1="21" y1="21" x2="16.65" y2="16.65"></line>
+                    <path d="M19 21l-7-5-7 5V5a2 2 0 0 1 2-2h10a2 2 0 0 1 2 2z"></path>
                 </svg>
             </button>
             <button class="icon-btn" id="ereaderFullscreenBtn" data-i18n-title="ereader_fullscreen_enter" data-i18n-aria-label="ereader_fullscreen_enter">
                 <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5">
                     <path d="M8 3H5a2 2 0 0 0-2 2v3m18 0V5a2 2 0 0 0-2-2h-3m0 18h3a2 2 0 0 0 2-2v-3M3 16v3a2 2 0 0 0 2 2h3"></path>
+                </svg>
+            </button>
+            <button class="icon-btn" id="ereaderSearchBtn" data-i18n-title="ereader_search" data-i18n-aria-label="ereader_search">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5">
+                    <circle cx="11" cy="11" r="7"></circle>
+                    <line x1="21" y1="21" x2="16.65" y2="16.65"></line>
                 </svg>
             </button>
         </div>
