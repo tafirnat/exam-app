@@ -849,6 +849,10 @@ function openTocSection() {
  * without choosing clears it.
  */
 let activeResultIndex = -1;
+let searchTimer = null;
+/** Above this much text a search waits for a pause in typing (~300 ms per scan on 3 MB). */
+const SEARCH_DEBOUNCE_CHARS = 300000;
+const SEARCH_DEBOUNCE_MS = 220;
 
 function searchOverlay() {
     return document.getElementById('ereaderSearchOverlay');
@@ -875,6 +879,8 @@ function hideSearchOverlay() {
 }
 
 export function closeSearchBar() {
+    clearTimeout(searchTimer);
+    searchTimer = null;
     const input = document.getElementById('ereaderSearchInput');
     const results = document.getElementById('ereaderSearchResults');
     hideSearchOverlay();
@@ -897,7 +903,7 @@ function resultButtons() {
     return resultsEl ? [...resultsEl.querySelectorAll('.ereader-search-item')] : [];
 }
 
-function setActiveResult(index) {
+function setActiveResult(index, { scroll = true } = {}) {
     const items = resultButtons();
     if (items.length === 0) {
         activeResultIndex = -1;
@@ -908,7 +914,7 @@ function setActiveResult(index) {
         const on = i === activeResultIndex;
         el.classList.toggle('active', on);
         el.setAttribute('aria-selected', on ? 'true' : 'false');
-        if (on && typeof el.scrollIntoView === 'function') el.scrollIntoView({ block: 'nearest' });
+        if (on && scroll && typeof el.scrollIntoView === 'function') el.scrollIntoView({ block: 'nearest' });
     });
 }
 
@@ -934,7 +940,19 @@ async function openSearchMatch(m, term) {
     await flushPosition();
 }
 
+/** Types into the search box: small books search at once, big ones after a pause. */
+function onSearchTyping() {
+    clearTimeout(searchTimer);
+    const size = open ? open.weights.reduce((n, w) => n + w.textLength, 0) : 0;
+    if (size < SEARCH_DEBOUNCE_CHARS) {
+        onSearchInput();
+        return;
+    }
+    searchTimer = setTimeout(onSearchInput, SEARCH_DEBOUNCE_MS);
+}
+
 function onSearchInput() {
+    searchTimer = null;
     const input = document.getElementById('ereaderSearchInput');
     const resultsEl = document.getElementById('ereaderSearchResults');
     if (!input || !resultsEl) return;
@@ -971,7 +989,7 @@ function onSearchInput() {
         const snippetHtml = applySearchHighlight(escapeHTML(m.snippet), term);
         item.innerHTML = `<div class="ereader-search-title">${titleHtml}</div><div class="ereader-search-snippet">${snippetHtml}</div>`;
         item.onclick = () => openSearchMatch(m, term);
-        item.onmouseenter = () => setActiveResult(i);
+        item.onmouseenter = () => setActiveResult(i, { scroll: false });
         return item;
     });
     resultsEl.replaceChildren(...items);
@@ -979,6 +997,12 @@ function onSearchInput() {
 }
 
 function onSearchKeydown(e) {
+    /* Enter right after typing in a big book: run the pending search first. */
+    if (e.key === 'Enter' && searchTimer !== null) {
+        clearTimeout(searchTimer);
+        searchTimer = null;
+        onSearchInput();
+    }
     if (e.key === 'ArrowDown' || e.key === 'ArrowUp') {
         if (resultButtons().length === 0) return;
         e.preventDefault();
@@ -1161,7 +1185,7 @@ export function bindEreaderReader({ switchView, closeMenu } = {}) {
 
     const searchInput = document.getElementById('ereaderSearchInput');
     if (searchInput) {
-        searchInput.addEventListener('input', onSearchInput);
+        searchInput.addEventListener('input', onSearchTyping);
         searchInput.addEventListener('keydown', onSearchKeydown);
     }
 

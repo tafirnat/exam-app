@@ -243,3 +243,21 @@ test('R2-01: arrow keys move through the matches and Enter opens the selected on
     assert.ok(document.querySelector('#ereaderContent [data-section-id="s5"]'), 'the chosen match is shown');
     assert.ok(document.querySelector('#ereaderContent .search-highlight'), 'its highlight stays in the text');
 });
+
+test('A8: a big book searches after a pause in typing; Enter runs the pending search at once', async () => {
+    const text = 'lorem ipsum dolor sit amet '.repeat(400);
+    const sections = Array.from({ length: 40 }, (_, i) => ({ id: `b${i}`, title: `B${i}`, level: 1, text: i === 33 ? text + ' zielwort' : text }));
+    const { book } = await imp.importEreaderJson({ ereader: { schema: 1, book_key: 'big-s', title: 'Big', author: 'A', language: 'de', source_type: 'pdf' }, sections });
+    await reader.openBook(book.id, { switchView });
+    reader.enterBookView();
+    reader.closeSearchBar();
+    reader.openSearchBar();
+    const input = document.getElementById('ereaderSearchInput');
+    input.value = 'zielwort';
+    input.dispatchEvent(new window.Event('input'));
+    assert.equal(document.querySelectorAll('#ereaderSearchResults .ereader-search-item').length, 0, 'not yet: waits for a pause');
+    input.dispatchEvent(new window.KeyboardEvent('keydown', { key: 'Enter', bubbles: true }));
+    await tick();
+    assert.equal(reader.isSearchBarOpen(), false, 'Enter searched and opened the match');
+    assert.ok(document.querySelector('#ereaderContent [data-section-id="b33"] .search-highlight'));
+});
