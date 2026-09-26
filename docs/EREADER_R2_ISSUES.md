@@ -69,7 +69,7 @@ Status: done
   `#headerTitle` (smaller font, soft colour) and then the header title returns.
 - `#statsSortBar` is fine — unchanged.
 
-Status: open
+Status: done
 
 ## R2-07 — Duplicate back button / title inside cards; e-Reader header title
 

@@ -18,6 +18,7 @@ import { isSourceScope } from './stats-nav.js';
 import { historyEntryTime, historySessionKey } from '../../core/test-history.js';
 import { isLeech, isSuspended, toggleSuspended, LEECH_WRONG_THRESHOLD } from '../../core/leech.js';
 import { openQuestionEditor } from './question-editor.js';
+import { fitFilterBar } from './filter-bar-fit.js';
 
 let renderStatsTask = null;
 
@@ -75,6 +76,8 @@ export function renderStatsList(filter = 'all', searchKeyword = '') {
         const incorrectFilter = filterTabs.querySelector('[data-filter="incorrect"]');
         if (recentFilter) recentFilter.style.display = isTagMode ? 'none' : 'flex';
         if (incorrectFilter) incorrectFilter.style.display = isTagMode ? 'none' : 'flex';
+        /* The active chip changed, and with it how wide the bar wants to be. */
+        if (!isTagMode) fitFilterBar(filterTabs);
     }
 
     if (sortBar) {

@@ -3335,15 +3335,38 @@ input:checked+.slider-small:before {
     color: var(--btn-on-warning);
 }
 
-/* On medium and small screens, hide inactive filter text to prevent wrapping */
-@media (max-width: 1024px) {
-    .filter-btn:not(.active):not([data-filter="all"]) .filter-btn-text {
-        display: none;
-    }
+/* R2-06: how much text the filter chips show is measured, not guessed from a
+   breakpoint (filter-bar-fit.js): labels never wrap; when they do not fit,
+   only the active chip keeps its label; when even that does not fit, every
+   chip is an icon and the header names the chosen filter for a moment. */
+.stats-filter-container {
+    min-width: 0;
+}
 
-    .filter-btn:not(.active):not([data-filter="all"]) {
-        padding: 0.5rem;
-    }
+.filter-btn-text {
+    white-space: nowrap;
+}
+
+.stats-filter-container.fit-active-label .filter-btn:not(.active) .filter-btn-text,
+.stats-filter-container.fit-icons .filter-btn .filter-btn-text {
+    display: none;
+}
+
+.stats-filter-container.fit-active-label .filter-btn:not(.active),
+.stats-filter-container.fit-icons .filter-btn {
+    padding: 0.5rem;
+}
+
+.header-title.header-title-flash {
+    font-size: 0.9rem;
+    font-weight: 600;
+    color: var(--primary-color);
+    animation: headerTitleFlash 0.25s ease-out;
+}
+
+@keyframes headerTitleFlash {
+    from { opacity: 0; transform: translateY(-3px); }
+    to { opacity: 1; transform: none; }
 }
 
 

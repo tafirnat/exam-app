@@ -29,6 +29,7 @@ import { isSequentialMode, resolveQuestionCount, countActivePoolQuestions, rende
 import { flushInProgressAnswers } from './features/stats/continuity-engine.js';
 import { renderQuestion, handleCheckAnswer, updateIndicators, handleTranslation, handleDifficultyRating, handleFlashcardRating, renderTestResults, createTtsButton, TtsTarget, stopAudio, decorateReadingSections, renderResumeButton, cancelAutoFinish } from './features/test/test-ui.js';
 import { renderStatsList, updateHomeStats, setupStatsEventListeners } from './features/stats/stats-module.js';
+import { initFilterBarFit } from './features/stats/filter-bar-fit.js';
 import { openQuestionEditor, closeQuestionEditor, requestEditorExit, isQuestionEditorOpen } from './features/stats/question-editor.js';
 import { resolvePreviewQuestion, neighbourQuestion, navPositionLabel, updateNavButtons } from './features/stats/preview-nav.js';
 import { keptSearchOnFilterClick, statsHistoryState, stampStatsHistory } from './features/stats/stats-nav.js';
@@ -2019,6 +2020,7 @@ function setupEventListeners() {
     const statsSearchClear = document.getElementById('statsSearchClear');
     const statsSearchWrapper = document.getElementById('statsSearchWrapper');
 
+    initFilterBarFit();
     document.querySelectorAll('.filter-btn').forEach(btn => {
         btn.onclick = () => {
             // renderStatsList() below moves the highlight - it is the only owner,
