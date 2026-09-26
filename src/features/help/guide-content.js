@@ -899,6 +899,8 @@ Promptlarda kullanabileceğiniz değişkenler:
 
 **Sağlayıcı listesi.** Sık kullandığınız yapay zekâların adreslerini \`{PROMPT}\` yer tutucusuyla kaydedebilirsiniz; tek dokunuşla prompt doldurulmuş olarak açılır. Bu liste cihaza özeldir, senkronize edilmez.
 
+**AI Bağla (isteğe bağlı).** Menü → Yapay Zekâ → **AI Bağla** ile bu bilgisayarda çalışan bir modeli (Ollama, LM Studio veya yerel bir proxy üzerinden OpenAI uyumlu bir adres) doğrudan bağlayabilirsiniz; e-Reader'daki öz ve kavram düğmeleri o zaman cevabı uygulama içinde gösterir. Adres ve model girilir, **Bağlantıyı test et** ile denenir. Tarayıcının erişebilmesi için sunucunun CORS izni olmalıdır (Ollama: \`OLLAMA_ORIGINS\`) ya da araya yerel bir proxy konur. Bağlantı yalnızca bu cihazda saklanır. Bulut AI bağlantısı yakında.
+
 **Bu rehber de bir referanstır.** Uygulamanın kullanımına dair bir yapay zekâya soru soracaksanız, rehberin tamamı depoda \`docs/USER_GUIDE.md\` olarak durur; ona verip sorularınızı sorabilirsiniz.`,
 en: `There is **no AI running inside** the app. Instead it prepares the text you will send to an AI outside it. You provide no key, you pay nothing, and nothing goes anywhere in the background - you decide what is sent.
 
@@ -921,6 +923,8 @@ The variables you can use in a prompt:
 
 **The provider list.** Save the addresses of the AIs you use with a \`{PROMPT}\` placeholder, and one tap opens them with the prompt already filled in. That list is per device and is not synced.
 
+**Connect AI (optional).** Menu - AI - **Connect AI** connects a model running on this computer (Ollama, LM Studio, or any OpenAI-compatible address, e.g. a local proxy); the e-Reader's core idea and concepts buttons then answer inside the app. Enter the address and the model and try it with **Test connection**. For the browser to reach it the server must allow CORS (Ollama: \`OLLAMA_ORIGINS\`), or a local proxy sits in front of it. The connection is kept on this device only. Cloud AI connections are coming soon.
+
 **This guide is a reference too.** If you want to ask an AI how to use the app, the whole guide sits in the repository as \`docs/USER_GUIDE.md\`; hand it over and ask away.`,
 de: `In der App läuft **keine KI**. Stattdessen bereitet sie den Text vor, den Sie an eine KI außerhalb schicken. Sie geben keinen Schlüssel an, zahlen nichts, und im Hintergrund geht nichts irgendwohin - Sie entscheiden, was gesendet wird.
 
@@ -942,6 +946,8 @@ Die Variablen, die Sie in einem Prompt verwenden können:
 **Eine Variable ohne Inhalt lässt ihre Zeile weg.** Bei einer Frage ohne Optionen wird die Zeile mit \`{options}\` gar nicht geschrieben - es bringt nichts, einer KI ein leeres "Optionen:" zu schicken, das ihr nichts sagt.
 
 **Die Anbieterliste.** Speichern Sie die Adressen der KIs, die Sie nutzen, mit einem \`{PROMPT}\`-Platzhalter; ein Tippen öffnet sie mit bereits eingesetztem Prompt. Diese Liste ist gerätespezifisch und wird nicht synchronisiert.
+
+**KI verbinden (optional).** Unter Menü - KI - **KI verbinden** verbinden Sie ein Modell, das auf diesem Computer läuft (Ollama, LM Studio oder eine OpenAI-kompatible Adresse, z. B. ein lokaler Proxy); die Schaltflächen Kern und Begriffe im e-Reader antworten dann in der App. Adresse und Modell eintragen und mit **Verbindung testen** prüfen. Damit der Browser den Server erreicht, muss dieser CORS erlauben (Ollama: \`OLLAMA_ORIGINS\`) oder ein lokaler Proxy davorstehen. Die Verbindung wird nur auf diesem Gerät gespeichert. Cloud-KI folgt demnächst.
 
 **Auch dieses Handbuch ist eine Referenz.** Wenn Sie eine KI zur Bedienung der App befragen wollen: Das ganze Handbuch liegt im Repository als \`docs/USER_GUIDE.md\`; geben Sie es ihr und fragen Sie.`
     }
@@ -1007,7 +1013,7 @@ de: `Das Menü (die Schaltfläche oben rechts) öffnet sich Abschnitt für Absch
     id: 'ereader',
     title: { tr: 'e-Reader ve Kitaplar', en: 'e-Reader and Books', de: 'e-Reader und Bücher' },
     body: {
-tr: `e-Reader, uzun çalışma metinlerini, PDF'leri, EPUB kitapları ve dokümantasyonları dikkat dağıtıcı unsurlardan arınmış biçimde bölüm bölüm okumanızı sağlar.
+tr: `e-Reader, uzun çalışma metinlerini, PDF'leri, EPUB kitapları ve dokümantasyonları dikkat dağıtıcı unsurlardan arınmış biçimde, tek bir akış hâlinde kaydırarak okumanızı sağlar. Üst başlık her zaman **e-Reader** yazar.
 
 **Kitap ekleme ve AI promptu.** Bir kaynağı e-Reader'a dönüştürmek için harici AI modellerine (ChatGPT, Claude, Gemini vb.) \`EREADER_AI_PROMPT.md\` yönergesi verilir. Elde edilen standart JSON verisi panodan yapıştırılarak veya dosya seçilerek kütüphaneye eklenir. Kitap eklendikten sonra doğrudan tarayıcının IndexedDB alanında saklanır.
 
@@ -1015,12 +1021,20 @@ tr: `e-Reader, uzun çalışma metinlerini, PDF'leri, EPUB kitapları ve doküma
 
 **Görsel desteği ve bağlantı ekleme.** Kitap metinlerinde güvenli \`https://\` bağlantılı Markdown görselleri görüntülenir. \`placeholder:id\` veya dosya ekleri yer tutucu kartı olarak çizilir; yer tutucuya dokunarak gerçek bir \`https://\` görsel bağlantısı tanımlayabilirsiniz. Güvenlik ve veri tasarrufu nedeniyle ham görsel verisi cihazda depolanmaz veya senkronlanmaz.
 
-**Okuma araçları.** Okuyucu ekranında bölüm bölüm gezinme, ayarlanabilir yazı boyutu, sol menüde içindekiler listesi, kitap içi hızlı arama, odaklanma için tam ekran modu ve yazdırma/PDF çıktısı bulunur. Ayrıca her başlıkta metni sesli dinleme (TTS) ve hedef dile çevirme kontrolleri yer alır.
+**Okuma.** Kitap sayfalara bölünmez; baştan sona tek bir akışta kaydırılır. Çok uzun kitaplarda da akıcı kalması için yalnızca ekranın çevresindeki bölümler yüklenir, uzaklaşanlar boşaltılır — okuduğunuz satır kaymaz. Sağ alttaki **yukarı** düğmesi okuduğunuz bölümün başlığına, oradaysanız bir önceki başlığa gider; **Ctrl+tık** (mobilde uzun basış) kitabın başına götürür. Okuma konumu kendiliğinden kaydedilir; üstteki **yer imi** düğmesi konumu anında kaydeder. Kitaptayken üstteki ev düğmesi kütüphaneye döner.
 
-**Senkronizasyon.** GitHub Gist senkronizasyonunuz etkinse, kitaplarınız ve okuma konumunuz cihazlarınız arasında arka planda otomatik senkronize edilir.
+**Üst araçlar.** **Aa+** düğmesi her basışta yazı boyutunu küçük → normal → büyük arasında değiştirir; yalnızca okuma alanı değişir. **Ara** düğmesi (veya Ctrl+K, Ctrl+F, "/") ekranı karartıp odaklı bir arama açar: ↑/↓ ile sonuç seçilir, Enter ile gidilir, Esc ile kapanır. Tam ekran düğmesi masaüstündedir.
 
-**e-Reader'ı sıfırlama.** Yan menüdeki "e-Reader'ı Sıfırla" seçeneğiyle okuma ilerlemenizi sıfırlayabilir veya tüm kitapları silebilirsiniz. Bu işlem sınav/test verilerinize, FSRS istatistiklerinize veya kaynaklarınıza kesinlikle dokunmaz.`,
-en: `The e-Reader allows you to read long-form study materials, PDFs, EPUB books, and documentation section by section in a clean, distraction-free environment.
+**Yan menü.** Yalnızca **İçindekiler** ve **Ayarlar** vardır; menü her açıldığında İçindekiler açık gelir. İçindekilerde önce ana başlıklar görünür; bir başlığa dokunmak alt başlıklarını açar ve oraya kaydırır, menü açık kalır (okuma alanına dokununca kapanır). Ayarlar'da yazdırma/PDF ve tüm kitapları etkileyen **e-Reader'ı Sıfırla** bulunur.
+
+**Paragraf araçları.** Her paragrafın sonunda (masaüstünde üzerine gelince, mobilde paragrafa dokununca) dört küçük düğme belirir: **dinle** (kitabın dilinde), **öz & temel mantık**, **kavram & terimler** (B1) ve **çevir**. Sonuç, paragrafın hemen altındaki tek bir kutuda açılır; kutuda Kopyala, Yeniden dene ve Gizle vardır. Öz ve kavramlar bir yapay zekâ ister: bağlı bir AI varsa cevap kutuda gelir, yoksa kutu promptu kopyalamayı, bir AI sayfasında açmayı veya **AI Bağla**'yı önerir.
+
+**Kütüphane.** Kitaplar klasörlere ayrılabilir, tutamacından sürüklenerek sıralanabilir veya bir klasör başlığına bırakılarak taşınabilir. Klasör menüsündeki **Kitapları seç** ile birden çok kitap seçilip birlikte taşınabilir, arşivlenebilir, sıfırlanabilir veya silinebilir. Her kitabın işlem menüsünde klasöre taşıma, meta verileri düzenleme, indirme, paylaşma, yazdırma, arşivleme, silme ve okuma konumunu sıfırlama vardır. Arşivlenen kitaplar kütüphaneden çıkar, arşiv düğmesiyle görülür.
+
+**Senkronizasyon.** GitHub Gist senkronizasyonunuz etkinse kitaplarınız, okuma konumunuz ve kütüphane düzeniniz (klasörler, sıra, arşiv) cihazlarınız arasında arka planda senkronize edilir. Kitapları taşımak veya sıralamak kitapların kendisini yeniden yüklemez.
+
+**e-Reader'ı sıfırlama.** Yan menüde **Ayarlar → e-Reader'ı Sıfırla** ile okuma ilerlemenizi sıfırlayabilir veya tüm kitapları silebilirsiniz; tek bir kitabın konumu kendi işlem menüsünden sıfırlanır. Bu işlem sınav/test verilerinize, FSRS istatistiklerinize veya kaynaklarınıza kesinlikle dokunmaz.`,
+en: `The e-Reader lets you read long study materials, PDFs, EPUB books and documentation as one continuous, distraction-free scroll. The header always reads **e-Reader**.
 
 **Adding books and the AI prompt.** To convert any material into e-Reader format, provide the \`EREADER_AI_PROMPT.md\` instructions to an external AI (ChatGPT, Claude, Gemini, etc.). The resulting standard JSON can be imported from clipboard or file. Books are stored directly in your browser's IndexedDB.
 
@@ -1028,12 +1042,20 @@ en: `The e-Reader allows you to read long-form study materials, PDFs, EPUB books
 
 **Image support and URL placeholders.** Markdown images with secure \`https://\` URLs are rendered inline. Images specified with \`placeholder:id\` or file links appear as interactive placeholder cards; tap a placeholder to assign an \`https://\` image URL directly. For data economy and privacy, raw image binaries are never stored or synced.
 
-**Reading tools.** The reading screen provides chapter-by-chapter navigation, adjustable text size, table of contents in the side menu, fast in-book search, fullscreen zen mode, and print/PDF export. Additionally, each heading features read-aloud (TTS) and section translation controls.
+**Reading.** A book is not split into pages; it scrolls from start to end in one flow. To stay smooth on very long books only the sections around the screen are loaded and far ones are emptied - the line you are reading does not move. The **up** button at the bottom right goes to the heading of the section you are in, or to the previous heading when you are already on one; **Ctrl+click** (a long press on a phone) goes to the start of the book. The reading position is saved by itself; the **bookmark** button in the header saves it at once. In a book, the header's home button goes back to the library.
 
-**Synchronization.** When GitHub Gist sync is configured, your books and current reading positions sync automatically between your devices in the background.
+**Header tools.** **Aa+** switches the text size small -> normal -> large on each press; only the reading area changes. **Search** (or Ctrl+K, Ctrl+F, "/") dims the page and opens a focused search: Up/Down pick a match, Enter goes there, Esc closes. Fullscreen is offered on desktop.
 
-**Resetting e-Reader.** Use "Reset e-Reader" in the e-Reader side menu to reset reading positions or delete all books. This operation never affects your exam/test progress, FSRS history, or regular study sources.`,
-de: `Der e-Reader ermöglicht das ablenkungsfreie, kapitelweise Lesen umfangreicher Lernmaterialien, PDFs, EPUB-Bücher und Dokumentationen.
+**Side menu.** It holds only **Contents** and **Settings**; Contents is open every time the menu opens. Contents first shows the chapters; tapping one opens its subheadings and scrolls there, and the menu stays open (a tap on the text closes it). Settings holds print/PDF and **Reset e-Reader**, which affects every book.
+
+**Paragraph tools.** At the end of every paragraph (on hover on a desktop, after a tap on a phone) four small buttons appear: **listen** (in the book's language), **core idea & logic**, **concepts & terms** (B1) and **translate**. The result opens in one box right under the paragraph, with Copy, Retry and Hide. Core idea and concepts need an AI: with a connected AI the answer arrives in the box; without one the box offers to copy the prompt, open it on an AI page, or **Connect AI**.
+
+**Library.** Books can be sorted into folders, reordered by dragging their grip, or moved by dropping them on a folder header. **Select books** in a folder's menu lets you move, archive, reset or delete several books at once. Each book's actions menu offers move to folder, edit metadata, download, share, print, archive, delete and reset reading position. Archived books leave the library and are listed behind the archive button.
+
+**Synchronization.** With GitHub Gist sync configured, your books, reading positions and library organisation (folders, order, archive) sync between your devices in the background. Moving or reordering books does not upload the books again.
+
+**Resetting e-Reader.** **Settings -> Reset e-Reader** in the side menu resets reading positions or deletes all books; one book's position is reset from its own actions menu. This never affects your exam/test progress, FSRS history, or regular study sources.`,
+de: `Der e-Reader ermöglicht das ablenkungsfreie Lesen umfangreicher Lernmaterialien, PDFs, EPUB-Bücher und Dokumentationen in einem durchgehenden Bildlauf. Die Kopfzeile zeigt immer **e-Reader**.
 
 **Bücher hinzufügen und der KI-Prompt.** Um ein Dokument in das e-Reader-Format umzuwandeln, übergeben Sie die Anweisungen aus \`EREADER_AI_PROMPT.md\` an eine externe KI (ChatGPT, Claude, Gemini usw.). Die standardisierte JSON-Ausgabe kann über die Zwischenablage oder als Datei importiert werden. Bücher werden direkt im IndexedDB-Speicher des Browsers abgelegt.
 
@@ -1041,11 +1063,19 @@ de: `Der e-Reader ermöglicht das ablenkungsfreie, kapitelweise Lesen umfangreic
 
 **Bilder und Platzhalter-URLs.** Markdown-Bilder mit sicheren \`https://\`-URLs werden direkt dargestellt. Lokale Verweise oder \`placeholder:id\` erscheinen als Platzhalter-Karten; durch Antippen kann eine \`https://\`-Bild-URL hinterlegt werden. Aus Speicher- und Datenschutzgründen werden keine Bild-Binärdaten gespeichert oder synchronisiert.
 
-**Lesewerkzeuge.** Der Lesemodus bietet kapitelweise Navigation, anpassbare Schriftgröße, ein Inhaltsverzeichnis im Seitenmenü, Buchsuche, Vollbildmodus sowie Druck-/PDF-Ausgabe. Jede Überschrift verfügt zudem über Vorlese- (TTS) und Übersetzungssteuerungen.
+**Lesen.** Ein Buch wird nicht in Seiten geteilt, sondern von Anfang bis Ende durchgehend gescrollt. Damit auch sehr lange Bücher flüssig bleiben, werden nur die Abschnitte um den Bildschirm geladen und entfernte geleert - die Zeile, die Sie lesen, verrutscht nicht. Die **Nach-oben**-Schaltfläche unten rechts springt zur Überschrift des aktuellen Abschnitts bzw. zur vorherigen; **Strg+Klick** (auf dem Handy langes Drücken) springt zum Buchanfang. Die Leseposition wird automatisch gespeichert; das **Lesezeichen** in der Kopfzeile speichert sie sofort. Im Buch führt die Home-Schaltfläche zurück zur Bibliothek.
 
-**Synchronisierung.** Bei aktivierter GitHub-Gist-Synchronisierung werden Bücher und Lesestände im Hintergrund automatisch zwischen Geräten abgeglichen.
+**Werkzeuge in der Kopfzeile.** **Aa+** wechselt bei jedem Druck die Textgröße klein -> normal -> groß; nur der Lesebereich ändert sich. **Suche** (oder Strg+K, Strg+F, "/") dunkelt die Seite ab und öffnet eine fokussierte Suche: Pfeil hoch/runter wählt einen Treffer, Enter springt hin, Esc schließt. Vollbild gibt es am Desktop.
 
-**e-Reader zurücksetzen.** Über "e-Reader zurücksetzen" im e-Reader-Menü können Sie Lesestände leeren oder alle Bücher löschen. Dies berührt Ihre Testdaten, FSRS-Statistiken oder Lernquellen in keiner Weise.`
+**Seitenmenü.** Es enthält nur **Inhalt** und **Einstellungen**; beim Öffnen ist immer der Inhalt aufgeklappt. Zunächst stehen dort die Kapitel; ein Tipp öffnet die Unterüberschriften und scrollt dorthin, das Menü bleibt offen (ein Tipp auf den Text schließt es). Unter Einstellungen finden Sie Drucken/PDF und **e-Reader zurücksetzen**, das alle Bücher betrifft.
+
+**Absatz-Werkzeuge.** Am Ende jedes Absatzes (am Desktop beim Überfahren, am Handy nach einem Tipp) erscheinen vier kleine Schaltflächen: **anhören** (in der Sprache des Buchs), **Kern & Logik**, **Begriffe & Fachwörter** (B1) und **übersetzen**. Das Ergebnis öffnet sich in einem Kasten direkt unter dem Absatz, mit Kopieren, Erneut versuchen und Ausblenden. Kern und Begriffe brauchen eine KI: Ist eine KI verbunden, kommt die Antwort in den Kasten; sonst bietet der Kasten an, den Prompt zu kopieren, ihn auf einer KI-Seite zu öffnen oder **KI verbinden**.
+
+**Bibliothek.** Bücher lassen sich in Ordner einteilen, am Griff ziehend sortieren oder durch Ablegen auf einer Ordnerzeile verschieben. **Bücher auswählen** im Ordnermenü verschiebt, archiviert, setzt zurück oder löscht mehrere Bücher auf einmal. Das Aktionsmenü jedes Buchs bietet: in Ordner verschieben, Metadaten bearbeiten, herunterladen, teilen, drucken, archivieren, löschen und Leseposition zurücksetzen. Archivierte Bücher verlassen die Bibliothek und stehen hinter der Archiv-Schaltfläche.
+
+**Synchronisierung.** Bei aktivierter GitHub-Gist-Synchronisierung werden Bücher, Lesestände und die Ordnung der Bibliothek (Ordner, Reihenfolge, Archiv) im Hintergrund zwischen Geräten abgeglichen. Verschieben oder Sortieren lädt die Bücher nicht erneut hoch.
+
+**e-Reader zurücksetzen.** Über **Einstellungen -> e-Reader zurücksetzen** im Seitenmenü können Sie Lesestände leeren oder alle Bücher löschen; die Position eines einzelnen Buchs setzen Sie in dessen Aktionsmenü zurück. Dies berührt Ihre Testdaten, FSRS-Statistiken oder Lernquellen in keiner Weise.`
     }
 },
 {

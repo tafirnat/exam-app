@@ -367,6 +367,8 @@ Die Variablen, die Sie in einem Prompt verwenden können:
 
 **Die Anbieterliste.** Speichern Sie die Adressen der KIs, die Sie nutzen, mit einem `{PROMPT}`-Platzhalter; ein Tippen öffnet sie mit bereits eingesetztem Prompt. Diese Liste ist gerätespezifisch und wird nicht synchronisiert.
 
+**KI verbinden (optional).** Unter Menü - KI - **KI verbinden** verbinden Sie ein Modell, das auf diesem Computer läuft (Ollama, LM Studio oder eine OpenAI-kompatible Adresse, z. B. ein lokaler Proxy); die Schaltflächen Kern und Begriffe im e-Reader antworten dann in der App. Adresse und Modell eintragen und mit **Verbindung testen** prüfen. Damit der Browser den Server erreicht, muss dieser CORS erlauben (Ollama: `OLLAMA_ORIGINS`) oder ein lokaler Proxy davorstehen. Die Verbindung wird nur auf diesem Gerät gespeichert. Cloud-KI folgt demnächst.
+
 **Auch dieses Handbuch ist eine Referenz.** Wenn Sie eine KI zur Bedienung der App befragen wollen: Das ganze Handbuch liegt im Repository als `docs/USER_GUIDE.md`; geben Sie es ihr und fragen Sie.
 
 ---
@@ -395,7 +397,7 @@ Das Menü (die Schaltfläche oben rechts) öffnet sich Abschnitt für Abschnitt.
 
 ## e-Reader und Bücher
 
-Der e-Reader ermöglicht das ablenkungsfreie, kapitelweise Lesen umfangreicher Lernmaterialien, PDFs, EPUB-Bücher und Dokumentationen.
+Der e-Reader ermöglicht das ablenkungsfreie Lesen umfangreicher Lernmaterialien, PDFs, EPUB-Bücher und Dokumentationen in einem durchgehenden Bildlauf. Die Kopfzeile zeigt immer **e-Reader**.
 
 **Bücher hinzufügen und der KI-Prompt.** Um ein Dokument in das e-Reader-Format umzuwandeln, übergeben Sie die Anweisungen aus `EREADER_AI_PROMPT.md` an eine externe KI (ChatGPT, Claude, Gemini usw.). Die standardisierte JSON-Ausgabe kann über die Zwischenablage oder als Datei importiert werden. Bücher werden direkt im IndexedDB-Speicher des Browsers abgelegt.
 
@@ -403,11 +405,19 @@ Der e-Reader ermöglicht das ablenkungsfreie, kapitelweise Lesen umfangreicher L
 
 **Bilder und Platzhalter-URLs.** Markdown-Bilder mit sicheren `https://`-URLs werden direkt dargestellt. Lokale Verweise oder `placeholder:id` erscheinen als Platzhalter-Karten; durch Antippen kann eine `https://`-Bild-URL hinterlegt werden. Aus Speicher- und Datenschutzgründen werden keine Bild-Binärdaten gespeichert oder synchronisiert.
 
-**Lesewerkzeuge.** Der Lesemodus bietet kapitelweise Navigation, anpassbare Schriftgröße, ein Inhaltsverzeichnis im Seitenmenü, Buchsuche, Vollbildmodus sowie Druck-/PDF-Ausgabe. Jede Überschrift verfügt zudem über Vorlese- (TTS) und Übersetzungssteuerungen.
+**Lesen.** Ein Buch wird nicht in Seiten geteilt, sondern von Anfang bis Ende durchgehend gescrollt. Damit auch sehr lange Bücher flüssig bleiben, werden nur die Abschnitte um den Bildschirm geladen und entfernte geleert - die Zeile, die Sie lesen, verrutscht nicht. Die **Nach-oben**-Schaltfläche unten rechts springt zur Überschrift des aktuellen Abschnitts bzw. zur vorherigen; **Strg+Klick** (auf dem Handy langes Drücken) springt zum Buchanfang. Die Leseposition wird automatisch gespeichert; das **Lesezeichen** in der Kopfzeile speichert sie sofort. Im Buch führt die Home-Schaltfläche zurück zur Bibliothek.
 
-**Synchronisierung.** Bei aktivierter GitHub-Gist-Synchronisierung werden Bücher und Lesestände im Hintergrund automatisch zwischen Geräten abgeglichen.
+**Werkzeuge in der Kopfzeile.** **Aa+** wechselt bei jedem Druck die Textgröße klein -> normal -> groß; nur der Lesebereich ändert sich. **Suche** (oder Strg+K, Strg+F, "/") dunkelt die Seite ab und öffnet eine fokussierte Suche: Pfeil hoch/runter wählt einen Treffer, Enter springt hin, Esc schließt. Vollbild gibt es am Desktop.
 
-**e-Reader zurücksetzen.** Über "e-Reader zurücksetzen" im e-Reader-Menü können Sie Lesestände leeren oder alle Bücher löschen. Dies berührt Ihre Testdaten, FSRS-Statistiken oder Lernquellen in keiner Weise.
+**Seitenmenü.** Es enthält nur **Inhalt** und **Einstellungen**; beim Öffnen ist immer der Inhalt aufgeklappt. Zunächst stehen dort die Kapitel; ein Tipp öffnet die Unterüberschriften und scrollt dorthin, das Menü bleibt offen (ein Tipp auf den Text schließt es). Unter Einstellungen finden Sie Drucken/PDF und **e-Reader zurücksetzen**, das alle Bücher betrifft.
+
+**Absatz-Werkzeuge.** Am Ende jedes Absatzes (am Desktop beim Überfahren, am Handy nach einem Tipp) erscheinen vier kleine Schaltflächen: **anhören** (in der Sprache des Buchs), **Kern & Logik**, **Begriffe & Fachwörter** (B1) und **übersetzen**. Das Ergebnis öffnet sich in einem Kasten direkt unter dem Absatz, mit Kopieren, Erneut versuchen und Ausblenden. Kern und Begriffe brauchen eine KI: Ist eine KI verbunden, kommt die Antwort in den Kasten; sonst bietet der Kasten an, den Prompt zu kopieren, ihn auf einer KI-Seite zu öffnen oder **KI verbinden**.
+
+**Bibliothek.** Bücher lassen sich in Ordner einteilen, am Griff ziehend sortieren oder durch Ablegen auf einer Ordnerzeile verschieben. **Bücher auswählen** im Ordnermenü verschiebt, archiviert, setzt zurück oder löscht mehrere Bücher auf einmal. Das Aktionsmenü jedes Buchs bietet: in Ordner verschieben, Metadaten bearbeiten, herunterladen, teilen, drucken, archivieren, löschen und Leseposition zurücksetzen. Archivierte Bücher verlassen die Bibliothek und stehen hinter der Archiv-Schaltfläche.
+
+**Synchronisierung.** Bei aktivierter GitHub-Gist-Synchronisierung werden Bücher, Lesestände und die Ordnung der Bibliothek (Ordner, Reihenfolge, Archiv) im Hintergrund zwischen Geräten abgeglichen. Verschieben oder Sortieren lädt die Bücher nicht erneut hoch.
+
+**e-Reader zurücksetzen.** Über **Einstellungen -> e-Reader zurücksetzen** im Seitenmenü können Sie Lesestände leeren oder alle Bücher löschen; die Position eines einzelnen Buchs setzen Sie in dessen Aktionsmenü zurück. Dies berührt Ihre Testdaten, FSRS-Statistiken oder Lernquellen in keiner Weise.
 
 ---
 

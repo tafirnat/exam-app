@@ -367,6 +367,8 @@ The variables you can use in a prompt:
 
 **The provider list.** Save the addresses of the AIs you use with a `{PROMPT}` placeholder, and one tap opens them with the prompt already filled in. That list is per device and is not synced.
 
+**Connect AI (optional).** Menu - AI - **Connect AI** connects a model running on this computer (Ollama, LM Studio, or any OpenAI-compatible address, e.g. a local proxy); the e-Reader's core idea and concepts buttons then answer inside the app. Enter the address and the model and try it with **Test connection**. For the browser to reach it the server must allow CORS (Ollama: `OLLAMA_ORIGINS`), or a local proxy sits in front of it. The connection is kept on this device only. Cloud AI connections are coming soon.
+
 **This guide is a reference too.** If you want to ask an AI how to use the app, the whole guide sits in the repository as `docs/USER_GUIDE.md`; hand it over and ask away.
 
 ---
@@ -395,7 +397,7 @@ The menu (the button at the top right) opens section by section.
 
 ## e-Reader and Books
 
-The e-Reader allows you to read long-form study materials, PDFs, EPUB books, and documentation section by section in a clean, distraction-free environment.
+The e-Reader lets you read long study materials, PDFs, EPUB books and documentation as one continuous, distraction-free scroll. The header always reads **e-Reader**.
 
 **Adding books and the AI prompt.** To convert any material into e-Reader format, provide the `EREADER_AI_PROMPT.md` instructions to an external AI (ChatGPT, Claude, Gemini, etc.). The resulting standard JSON can be imported from clipboard or file. Books are stored directly in your browser's IndexedDB.
 
@@ -403,11 +405,19 @@ The e-Reader allows you to read long-form study materials, PDFs, EPUB books, and
 
 **Image support and URL placeholders.** Markdown images with secure `https://` URLs are rendered inline. Images specified with `placeholder:id` or file links appear as interactive placeholder cards; tap a placeholder to assign an `https://` image URL directly. For data economy and privacy, raw image binaries are never stored or synced.
 
-**Reading tools.** The reading screen provides chapter-by-chapter navigation, adjustable text size, table of contents in the side menu, fast in-book search, fullscreen zen mode, and print/PDF export. Additionally, each heading features read-aloud (TTS) and section translation controls.
+**Reading.** A book is not split into pages; it scrolls from start to end in one flow. To stay smooth on very long books only the sections around the screen are loaded and far ones are emptied - the line you are reading does not move. The **up** button at the bottom right goes to the heading of the section you are in, or to the previous heading when you are already on one; **Ctrl+click** (a long press on a phone) goes to the start of the book. The reading position is saved by itself; the **bookmark** button in the header saves it at once. In a book, the header's home button goes back to the library.
 
-**Synchronization.** When GitHub Gist sync is configured, your books and current reading positions sync automatically between your devices in the background.
+**Header tools.** **Aa+** switches the text size small -> normal -> large on each press; only the reading area changes. **Search** (or Ctrl+K, Ctrl+F, "/") dims the page and opens a focused search: Up/Down pick a match, Enter goes there, Esc closes. Fullscreen is offered on desktop.
 
-**Resetting e-Reader.** Use "Reset e-Reader" in the e-Reader side menu to reset reading positions or delete all books. This operation never affects your exam/test progress, FSRS history, or regular study sources.
+**Side menu.** It holds only **Contents** and **Settings**; Contents is open every time the menu opens. Contents first shows the chapters; tapping one opens its subheadings and scrolls there, and the menu stays open (a tap on the text closes it). Settings holds print/PDF and **Reset e-Reader**, which affects every book.
+
+**Paragraph tools.** At the end of every paragraph (on hover on a desktop, after a tap on a phone) four small buttons appear: **listen** (in the book's language), **core idea & logic**, **concepts & terms** (B1) and **translate**. The result opens in one box right under the paragraph, with Copy, Retry and Hide. Core idea and concepts need an AI: with a connected AI the answer arrives in the box; without one the box offers to copy the prompt, open it on an AI page, or **Connect AI**.
+
+**Library.** Books can be sorted into folders, reordered by dragging their grip, or moved by dropping them on a folder header. **Select books** in a folder's menu lets you move, archive, reset or delete several books at once. Each book's actions menu offers move to folder, edit metadata, download, share, print, archive, delete and reset reading position. Archived books leave the library and are listed behind the archive button.
+
+**Synchronization.** With GitHub Gist sync configured, your books, reading positions and library organisation (folders, order, archive) sync between your devices in the background. Moving or reordering books does not upload the books again.
+
+**Resetting e-Reader.** **Settings -> Reset e-Reader** in the side menu resets reading positions or deletes all books; one book's position is reset from its own actions menu. This never affects your exam/test progress, FSRS history, or regular study sources.
 
 ---
 

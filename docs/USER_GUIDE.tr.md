@@ -367,6 +367,8 @@ Promptlarda kullanabileceğiniz değişkenler:
 
 **Sağlayıcı listesi.** Sık kullandığınız yapay zekâların adreslerini `{PROMPT}` yer tutucusuyla kaydedebilirsiniz; tek dokunuşla prompt doldurulmuş olarak açılır. Bu liste cihaza özeldir, senkronize edilmez.
 
+**AI Bağla (isteğe bağlı).** Menü → Yapay Zekâ → **AI Bağla** ile bu bilgisayarda çalışan bir modeli (Ollama, LM Studio veya yerel bir proxy üzerinden OpenAI uyumlu bir adres) doğrudan bağlayabilirsiniz; e-Reader'daki öz ve kavram düğmeleri o zaman cevabı uygulama içinde gösterir. Adres ve model girilir, **Bağlantıyı test et** ile denenir. Tarayıcının erişebilmesi için sunucunun CORS izni olmalıdır (Ollama: `OLLAMA_ORIGINS`) ya da araya yerel bir proxy konur. Bağlantı yalnızca bu cihazda saklanır. Bulut AI bağlantısı yakında.
+
 **Bu rehber de bir referanstır.** Uygulamanın kullanımına dair bir yapay zekâya soru soracaksanız, rehberin tamamı depoda `docs/USER_GUIDE.md` olarak durur; ona verip sorularınızı sorabilirsiniz.
 
 ---
@@ -395,7 +397,7 @@ Menü (sağ üstteki düğme) bölüm bölüm açılır.
 
 ## e-Reader ve Kitaplar
 
-e-Reader, uzun çalışma metinlerini, PDF'leri, EPUB kitapları ve dokümantasyonları dikkat dağıtıcı unsurlardan arınmış biçimde bölüm bölüm okumanızı sağlar.
+e-Reader, uzun çalışma metinlerini, PDF'leri, EPUB kitapları ve dokümantasyonları dikkat dağıtıcı unsurlardan arınmış biçimde, tek bir akış hâlinde kaydırarak okumanızı sağlar. Üst başlık her zaman **e-Reader** yazar.
 
 **Kitap ekleme ve AI promptu.** Bir kaynağı e-Reader'a dönüştürmek için harici AI modellerine (ChatGPT, Claude, Gemini vb.) `EREADER_AI_PROMPT.md` yönergesi verilir. Elde edilen standart JSON verisi panodan yapıştırılarak veya dosya seçilerek kütüphaneye eklenir. Kitap eklendikten sonra doğrudan tarayıcının IndexedDB alanında saklanır.
 
@@ -403,11 +405,19 @@ e-Reader, uzun çalışma metinlerini, PDF'leri, EPUB kitapları ve dokümantasy
 
 **Görsel desteği ve bağlantı ekleme.** Kitap metinlerinde güvenli `https://` bağlantılı Markdown görselleri görüntülenir. `placeholder:id` veya dosya ekleri yer tutucu kartı olarak çizilir; yer tutucuya dokunarak gerçek bir `https://` görsel bağlantısı tanımlayabilirsiniz. Güvenlik ve veri tasarrufu nedeniyle ham görsel verisi cihazda depolanmaz veya senkronlanmaz.
 
-**Okuma araçları.** Okuyucu ekranında bölüm bölüm gezinme, ayarlanabilir yazı boyutu, sol menüde içindekiler listesi, kitap içi hızlı arama, odaklanma için tam ekran modu ve yazdırma/PDF çıktısı bulunur. Ayrıca her başlıkta metni sesli dinleme (TTS) ve hedef dile çevirme kontrolleri yer alır.
+**Okuma.** Kitap sayfalara bölünmez; baştan sona tek bir akışta kaydırılır. Çok uzun kitaplarda da akıcı kalması için yalnızca ekranın çevresindeki bölümler yüklenir, uzaklaşanlar boşaltılır — okuduğunuz satır kaymaz. Sağ alttaki **yukarı** düğmesi okuduğunuz bölümün başlığına, oradaysanız bir önceki başlığa gider; **Ctrl+tık** (mobilde uzun basış) kitabın başına götürür. Okuma konumu kendiliğinden kaydedilir; üstteki **yer imi** düğmesi konumu anında kaydeder. Kitaptayken üstteki ev düğmesi kütüphaneye döner.
 
-**Senkronizasyon.** GitHub Gist senkronizasyonunuz etkinse, kitaplarınız ve okuma konumunuz cihazlarınız arasında arka planda otomatik senkronize edilir.
+**Üst araçlar.** **Aa+** düğmesi her basışta yazı boyutunu küçük → normal → büyük arasında değiştirir; yalnızca okuma alanı değişir. **Ara** düğmesi (veya Ctrl+K, Ctrl+F, "/") ekranı karartıp odaklı bir arama açar: ↑/↓ ile sonuç seçilir, Enter ile gidilir, Esc ile kapanır. Tam ekran düğmesi masaüstündedir.
 
-**e-Reader'ı sıfırlama.** Yan menüdeki "e-Reader'ı Sıfırla" seçeneğiyle okuma ilerlemenizi sıfırlayabilir veya tüm kitapları silebilirsiniz. Bu işlem sınav/test verilerinize, FSRS istatistiklerinize veya kaynaklarınıza kesinlikle dokunmaz.
+**Yan menü.** Yalnızca **İçindekiler** ve **Ayarlar** vardır; menü her açıldığında İçindekiler açık gelir. İçindekilerde önce ana başlıklar görünür; bir başlığa dokunmak alt başlıklarını açar ve oraya kaydırır, menü açık kalır (okuma alanına dokununca kapanır). Ayarlar'da yazdırma/PDF ve tüm kitapları etkileyen **e-Reader'ı Sıfırla** bulunur.
+
+**Paragraf araçları.** Her paragrafın sonunda (masaüstünde üzerine gelince, mobilde paragrafa dokununca) dört küçük düğme belirir: **dinle** (kitabın dilinde), **öz & temel mantık**, **kavram & terimler** (B1) ve **çevir**. Sonuç, paragrafın hemen altındaki tek bir kutuda açılır; kutuda Kopyala, Yeniden dene ve Gizle vardır. Öz ve kavramlar bir yapay zekâ ister: bağlı bir AI varsa cevap kutuda gelir, yoksa kutu promptu kopyalamayı, bir AI sayfasında açmayı veya **AI Bağla**'yı önerir.
+
+**Kütüphane.** Kitaplar klasörlere ayrılabilir, tutamacından sürüklenerek sıralanabilir veya bir klasör başlığına bırakılarak taşınabilir. Klasör menüsündeki **Kitapları seç** ile birden çok kitap seçilip birlikte taşınabilir, arşivlenebilir, sıfırlanabilir veya silinebilir. Her kitabın işlem menüsünde klasöre taşıma, meta verileri düzenleme, indirme, paylaşma, yazdırma, arşivleme, silme ve okuma konumunu sıfırlama vardır. Arşivlenen kitaplar kütüphaneden çıkar, arşiv düğmesiyle görülür.
+
+**Senkronizasyon.** GitHub Gist senkronizasyonunuz etkinse kitaplarınız, okuma konumunuz ve kütüphane düzeniniz (klasörler, sıra, arşiv) cihazlarınız arasında arka planda senkronize edilir. Kitapları taşımak veya sıralamak kitapların kendisini yeniden yüklemez.
+
+**e-Reader'ı sıfırlama.** Yan menüde **Ayarlar → e-Reader'ı Sıfırla** ile okuma ilerlemenizi sıfırlayabilir veya tüm kitapları silebilirsiniz; tek bir kitabın konumu kendi işlem menüsünden sıfırlanır. Bu işlem sınav/test verilerinize, FSRS istatistiklerinize veya kaynaklarınıza kesinlikle dokunmaz.
 
 ---
 

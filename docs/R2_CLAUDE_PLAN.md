@@ -44,7 +44,7 @@ never force-push.
 - [x] B2 Keyboard and screen reader: contents tree (arrow keys, aria-expanded), dialogs focus, the
       bulk bar, the Aa+ button state.
 - [x] B3 i18n: singular/plural wording ("1 books"), every new string in TR/EN/DE, no hard-coded text.
-- [ ] B4 User guide (docs/USER_GUIDE.*.md and in-app guide): replace chapter pages, A−/A+, "My books"
+- [x] B4 User guide (docs/USER_GUIDE.*.md and in-app guide): replace chapter pages, A−/A+, "My books"
       menu entry with the R2 behaviour (continuous reading, up button, Aa+, save, contents tree,
       settings, paragraph actions, folders/archive, Connect AI).
 - [ ] B5 Remove what R2 made dead: unused i18n keys, CSS for removed elements, unused exports.
