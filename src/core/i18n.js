@@ -886,6 +886,13 @@ export const translations = {
         ereader_book_missing: "Kitap bulunamadı.",
         ereader_untitled_section: "Başlıksız bölüm",
         ereader_search_no_results: "Sonuç bulunamadı.",
+        ereader_bulk_selected_one: "1 kitap seçildi",
+        ereader_archive_banner_one: "Arşiv · 1 kitap",
+        ereader_books_archived_one: "Kitap arşivlendi.",
+        ereader_books_unarchived_one: "Kitap arşivden çıkarıldı.",
+        ereader_reset_books_confirm_one: "Seçili kitabın okuma konumu sıfırlansın mı?",
+        ereader_delete_books_confirm_one: "Seçili kitap silinsin mi? Bu işlem geri alınamaz.",
+        ereader_books_deleted_one: "Kitap silindi.",
         ereader_archive_empty: "Arşivde kitap yok.",
         ai_connect_desc: "Bir AI'yı doğrudan bağlayın: özet, kavramlar ve diğer AI işlemleri uygulama içinde yanıtlanır.",
         ai_connect_local: "Yerel AI",
@@ -1853,6 +1860,13 @@ export const translations = {
         ereader_book_missing: "Book not found.",
         ereader_untitled_section: "Untitled section",
         ereader_search_no_results: "No results found.",
+        ereader_bulk_selected_one: "1 book selected",
+        ereader_archive_banner_one: "Archive · 1 book",
+        ereader_books_archived_one: "Book archived.",
+        ereader_books_unarchived_one: "Book restored from the archive.",
+        ereader_reset_books_confirm_one: "Reset the reading position of the selected book?",
+        ereader_delete_books_confirm_one: "Delete the selected book? This cannot be undone.",
+        ereader_books_deleted_one: "Book deleted.",
         ereader_archive_empty: "No books in the archive.",
         ai_connect_desc: "Connect an AI directly: summaries, concepts and other AI actions are answered inside the app.",
         ai_connect_local: "Local AI",
@@ -2824,6 +2838,13 @@ export const translations = {
         ereader_book_missing: "Buch nicht gefunden.",
         ereader_untitled_section: "Unbenannter Abschnitt",
         ereader_search_no_results: "Keine Ergebnisse gefunden.",
+        ereader_bulk_selected_one: "1 Buch ausgewählt",
+        ereader_archive_banner_one: "Archiv · 1 Buch",
+        ereader_books_archived_one: "Buch archiviert.",
+        ereader_books_unarchived_one: "Buch aus dem Archiv geholt.",
+        ereader_reset_books_confirm_one: "Leseposition des ausgewählten Buchs zurücksetzen?",
+        ereader_delete_books_confirm_one: "Ausgewähltes Buch löschen? Das kann nicht rückgängig gemacht werden.",
+        ereader_books_deleted_one: "Buch gelöscht.",
         ereader_archive_empty: "Keine Bücher im Archiv.",
         ai_connect_desc: "Eine KI direkt verbinden: Zusammenfassungen, Begriffe und andere KI-Aktionen werden in der App beantwortet.",
         ai_connect_local: "Lokale KI",
@@ -2941,6 +2962,14 @@ export function t(key, params = {}) {
 }
 
 export const getI18nText = t;
+
+/** t() with a count: `key_one` for exactly one when that key exists, else `key`. */
+export function tCount(key, count, params = {}) {
+    const lang = (AppState && ['tr', 'en', 'de'].includes(AppState.language)) ? AppState.language : 'en';
+    const oneKey = `${key}_one`;
+    const hasOne = !!(translations[lang]?.[oneKey] || translations.en?.[oneKey]);
+    return t(count === 1 && hasOne ? oneKey : key, { count, ...params });
+}
 if (typeof window !== 'undefined') {
     window.getI18nText = t;
 }

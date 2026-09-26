@@ -10,7 +10,7 @@
  * from files the user downloaded from an AI and are never parsed as markup.
  */
 
-import { t } from '../../core/i18n.js';
+import { t, tCount } from '../../core/i18n.js';
 import { showToast, showAlert, showConfirm, showDecision } from '../../core/utils.js';
 import {
     isEreaderLoaded, listBooks, getBook, getProgress, getPrefs,
@@ -160,7 +160,7 @@ export function renderEreaderLibrary() {
     if (banner) {
         banner.style.display = state.archive ? 'flex' : 'none';
         const text = document.getElementById('ereaderArchiveBannerText');
-        if (text) text.textContent = t('ereader_archive_banner', { count: archivedCount });
+        if (text) text.textContent = tCount('ereader_archive_banner', archivedCount);
     }
 
     // Show merge button only when there are 2+ books sharing the same bookKey
@@ -334,7 +334,7 @@ function openBookActions(target) {
     actionsBookId = bulk ? null : book.id;
 
     const name = document.getElementById('ereaderBookActionsName');
-    if (name) name.textContent = bulk ? t('ereader_bulk_selected', { count: ids.length }) : (book.title || '');
+    if (name) name.textContent = bulk ? tCount('ereader_bulk_selected', ids.length) : (book.title || '');
 
     fillMoveSelect(ids);
 
@@ -402,12 +402,12 @@ function bindBookActionButtons() {
     on('ereaderPrintBookBtn', async ({ ids }) => printBook(await getBook(ids[0])));
     on('ereaderArchiveBookBtn', async ({ ids, bulk, archived }) => {
         await setArchived(ids, !archived);
-        showToast(t(archived ? 'ereader_books_unarchived' : 'ereader_books_archived', { count: ids.length }));
+        showToast(tCount(archived ? 'ereader_books_unarchived' : 'ereader_books_archived', ids.length));
         if (bulk) exitSelection();
     });
     on('ereaderResetBookBtn', async ({ ids, bulk }) => {
         const message = bulk
-            ? t('ereader_reset_books_confirm', { count: ids.length })
+            ? tCount('ereader_reset_books_confirm', ids.length)
             : t('ereader_reset_book_confirm', { title: listBooks().find(b => b.id === ids[0])?.title || '' });
         if (!(await showConfirm(message, t('reset')))) return;
         await resetProgressOf(ids);
@@ -419,9 +419,9 @@ function bindBookActionButtons() {
             await deleteBookWithConfirm(ids[0]);
             return;
         }
-        if (!(await showConfirm(t('ereader_delete_books_confirm', { count: ids.length }), t('delete')))) return;
+        if (!(await showConfirm(tCount('ereader_delete_books_confirm', ids.length), t('delete')))) return;
         await deleteBooks(ids);
-        showToast(t('ereader_books_deleted', { count: ids.length }));
+        showToast(tCount('ereader_books_deleted', ids.length));
         exitSelection();
     });
 }

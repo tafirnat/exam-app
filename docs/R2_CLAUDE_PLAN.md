@@ -43,7 +43,7 @@ never force-push.
       touched; fix overlaps, clipped text, tap targets under 32px.
 - [x] B2 Keyboard and screen reader: contents tree (arrow keys, aria-expanded), dialogs focus, the
       bulk bar, the Aa+ button state.
-- [ ] B3 i18n: singular/plural wording ("1 books"), every new string in TR/EN/DE, no hard-coded text.
+- [x] B3 i18n: singular/plural wording ("1 books"), every new string in TR/EN/DE, no hard-coded text.
 - [ ] B4 User guide (docs/USER_GUIDE.*.md and in-app guide): replace chapter pages, A−/A+, "My books"
       menu entry with the R2 behaviour (continuous reading, up button, Aa+, save, contents tree,
       settings, paragraph actions, folders/archive, Connect AI).

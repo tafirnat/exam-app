@@ -11,7 +11,7 @@
  * folder reorders the folders.
  */
 
-import { t } from '../../core/i18n.js';
+import { t, tCount } from '../../core/i18n.js';
 import { showToast, showConfirm } from '../../core/utils.js';
 import {
     listBooks, getBook, getProgress, updateBook, deleteBook, resetBookProgress,
@@ -434,7 +434,7 @@ function createFolderHeader(folder, count) {
 
 function createBulkBar(groupKey, books) {
     const bar = el('div', 'ereader-bulk-bar');
-    const count = el('span', 'ereader-bulk-count', t('ereader_bulk_selected', { count: view.selected.size }));
+    const count = el('span', 'ereader-bulk-count', tCount('ereader_bulk_selected', view.selected.size));
     const all = el('button', 'btn btn-subtle', t('ereader_select_all'));
     all.type = 'button';
     all.onclick = (e) => {
