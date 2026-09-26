@@ -51,7 +51,7 @@ never force-push.
 
 ## Phase C — hand-over
 
-- [ ] C1 Full test run + build, a final screenshot set of every R2 screen (kept out of the repo).
+- [x] C1 Full test run + build, a final screenshot set of every R2 screen (kept out of the repo).
 - [ ] C2 When Antigravity reports: read its check lines and commits, verify each against the code and
       in the browser, fix what it left, report to the user item by item.
 - [ ] C3 `main` stays untouched until the user says so.

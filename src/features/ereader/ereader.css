@@ -1235,3 +1235,19 @@ body.ereader-search-open { overflow: hidden; }
     outline: 2px solid var(--primary-color);
     outline-offset: 2px;
 }
+
+/* Very narrow phones (≈320px): menu, home, three tools and the title only fit
+   with tighter header padding. */
+@media (max-width: 380px) {
+    body.ereader-mode header {
+        padding: 0 0.4rem;
+    }
+
+    body.ereader-mode .header-title {
+        padding: 0 0.25rem;
+    }
+
+    body.ereader-mode .ereader-header-tools {
+        gap: 0;
+    }
+}
