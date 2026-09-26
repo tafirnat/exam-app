@@ -245,3 +245,15 @@ test('A5: leaving the book stops the paragraph speech; a redraw keeps an open bo
     reader.leaveBookView();
     assert.equal(tts.speakingKey(), null, 'leaving the book stops speech');
 });
+
+test('A8: an edited paragraph does not show the result kept for its old text', async () => {
+    const book = await openBookData();
+    click(firstParagraph().querySelector('.p-translate-btn'));
+    await settle();
+    assert.equal(translated.length, 1);
+
+    await ereaderStore.updateBook(book.id, b => { b.sections[0].text = 'Ganz neuer Text.'; }, { fromSync: true });
+    await reader.refreshOpenBook();
+    await settle();
+    assert.deepEqual(translated, ['Das ist ein deutscher Text.', 'Ganz neuer Text.'], 'the new text was translated, not taken from the old result');
+});

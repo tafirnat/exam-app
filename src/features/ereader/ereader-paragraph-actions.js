@@ -98,6 +98,14 @@ export function paragraphText(p) {
     return clone.textContent.replace(/\s+/g, ' ').trim();
 }
 
+/** Pure. A short hash of a paragraph's text, so an edited paragraph never shows the old result. */
+export function textHash(text) {
+    let h = 5381;
+    const str = String(text || '');
+    for (let i = 0; i < str.length; i++) h = ((h << 5) + h + str.charCodeAt(i)) | 0;
+    return (h >>> 0).toString(36);
+}
+
 function remember(key, text) {
     results.set(key, text);
     if (results.size > RESULT_LIMIT) results.delete(results.keys().next().value);
@@ -282,7 +290,7 @@ export async function openBox(p, mode, ctx, { force = false } = {}) {
 
     const text = paragraphText(p);
     const lang = AppState.translationTarget || 'en';
-    const cacheKey = `${ctx.key}:${mode}:${lang}`;
+    const cacheKey = `${ctx.key}:${textHash(text)}:${mode}:${lang}`;
     if (force) results.delete(cacheKey);
     if (results.has(cacheKey)) {
         showResult(body, mode, results.get(cacheKey));
