@@ -601,3 +601,21 @@ test('A2: a position saved by the old chapter reader opens at the start of its s
         layout.restore();
     }
 });
+
+test('A8: at the very end of the page the position is the end of the book (100%)', async () => {
+    const layout = installLayout(1000, 800);
+    const doc = document.documentElement;
+    Object.defineProperty(doc, 'scrollHeight', { get: () => 20000, configurable: true });
+    try {
+        const book = await addAndOpen(longBookJson(20));
+        layout.scroll(20000 - 800);
+        await tick(40);
+        await reader.flushPosition();
+        const p = ereaderStore.getProgress(book.id);
+        assert.equal(p.sectionId, 'p19');
+        assert.equal(p.percent, 100);
+    } finally {
+        delete doc.scrollHeight;
+        layout.restore();
+    }
+});

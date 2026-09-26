@@ -393,6 +393,30 @@ function refreshMounted() {
 
 // ── position ──────────────────────────────────────────────────────────────
 
+/** True once the page cannot scroll any further down. */
+function atPageEnd() {
+    const doc = document.documentElement;
+    const total = doc ? doc.scrollHeight : 0;
+    return total > 0 && window.innerHeight + window.scrollY >= total - 4 && window.scrollY > 0;
+}
+
+/**
+ * Where the reader is: the section at the reading line and how far into it
+ * the line is (0..1). At the very end of the page it is the end of the book,
+ * which the reading line of a short last section never reaches.
+ */
+function readingSpot() {
+    if (!open || open.sections.length === 0) return null;
+    if (atPageEnd()) return { sectionId: open.sections[open.sections.length - 1].id, offset: 1 };
+    const index = Math.max(0, indexAtLine());
+    const el = sectionEls()[index];
+    const section = open.sections[index];
+    if (!el || !section) return null;
+    const r = el.getBoundingClientRect();
+    const offset = r.height > 0 ? Math.max(0, Math.min(1, (READING_LINE_PX - r.top) / r.height)) : 0;
+    return { sectionId: section.id, offset };
+}
+
 /**
  * knownSectionId: where a jump just landed (a contents entry, a match).
  * Only a scroll by the user is read back from the page geometry.
@@ -402,12 +426,9 @@ function capturePosition(knownSectionId = null, knownFraction = 0) {
     let index = knownSectionId ? open.indexOf.get(knownSectionId) : undefined;
     let fraction = index === undefined ? 0 : Math.max(0, Math.min(1, knownFraction || 0));
     if (index === undefined) {
-        index = Math.max(0, indexAtLine());
-        const el = sectionEls()[index];
-        if (el) {
-            const r = el.getBoundingClientRect();
-            fraction = r.height > 0 ? Math.max(0, Math.min(1, (READING_LINE_PX - r.top) / r.height)) : 0;
-        }
+        const spot = readingSpot();
+        index = spot ? open.indexOf.get(spot.sectionId) : 0;
+        fraction = spot ? spot.offset : 0;
     }
     const section = open.sections[index];
     if (!section) return;
@@ -561,15 +582,16 @@ async function setFontScale(scale) {
     const current = currentFontScale();
     if (scale === current && getPrefs().fontScale === current) return current;
 
-    const anchorId = open && bookViewActive ? currentSectionId() : null;
-    const anchorEl = anchorId ? shellOf(anchorId) : null;
-    const anchorDelta = anchorEl ? anchorEl.getBoundingClientRect().top : undefined;
+    /* The text reflows at the new size, so the section's top is not what the
+       reader was looking at: keep the same fraction of the section at the
+       reading line instead. */
+    const spot = open && bookViewActive ? readingSpot() : null;
 
     await setPrefs({ fontScale: scale });
     if (open && bookViewActive) {
         open.heights.clear();
         open.pxPerChar = 0;
-        renderBook({ anchorSectionId: anchorId, anchorDelta });
+        renderBook({ restore: spot });
     } else {
         updateFontUI();
     }
@@ -801,13 +823,11 @@ export async function refreshOpenBook() {
     if (summary.updatedAt === open.renderedAt) return;
     const book = await getBook(id);
     if (!book) return;
-    const anchorId = bookViewActive ? currentSectionId() : null;
-    const anchorEl = anchorId ? shellOf(anchorId) : null;
-    const anchorDelta = anchorEl ? anchorEl.getBoundingClientRect().top : undefined;
+    const spot = bookViewActive ? readingSpot() : null;
     setOpen(book);
     if (bookViewActive) {
-        const keep = anchorId && book.sections.some(s => s.id === anchorId) ? anchorId : null;
-        renderBook({ anchorSectionId: keep, anchorDelta });
+        const keep = spot && book.sections.some(s => s.id === spot.sectionId) ? spot : null;
+        renderBook({ restore: keep });
     }
     renderEreaderToc();
 }
