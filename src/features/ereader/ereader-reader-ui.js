@@ -417,32 +417,96 @@ function openTocSection() {
 }
 
 /**
- * Search Bar (F5)
+ * Focused search (R2-01): the header button (or Ctrl/Cmd+K, Ctrl/Cmd+F, "/")
+ * opens an overlay over the page with the input on top and the matches under
+ * it. Up/Down move through the matches, Enter opens one, Esc or a click on the
+ * backdrop closes it. Opening a match keeps its highlight in the text; closing
+ * without choosing clears it.
  */
+let activeResultIndex = -1;
+
+function searchOverlay() {
+    return document.getElementById('ereaderSearchOverlay');
+}
+
 export function openSearchBar() {
-    const bar = document.getElementById('ereaderSearchBar');
+    const overlay = searchOverlay();
     const input = document.getElementById('ereaderSearchInput');
-    if (!bar || !input) return;
-    bar.style.display = 'block';
+    if (!overlay || !input) return;
+    overlay.style.display = 'flex';
+    overlay.classList.add('open');
+    document.body.classList.add('ereader-search-open');
     input.focus();
+    if (input.value) input.select();
+}
+
+function hideSearchOverlay() {
+    const overlay = searchOverlay();
+    if (overlay) {
+        overlay.style.display = 'none';
+        overlay.classList.remove('open');
+    }
+    document.body.classList.remove('ereader-search-open');
 }
 
 export function closeSearchBar() {
-    const bar = document.getElementById('ereaderSearchBar');
     const input = document.getElementById('ereaderSearchInput');
     const results = document.getElementById('ereaderSearchResults');
-    if (bar) bar.style.display = 'none';
+    hideSearchOverlay();
     if (input) input.value = '';
     if (results) results.replaceChildren();
+    activeResultIndex = -1;
     if (activeSearchTerm) {
         activeSearchTerm = '';
-        if (open && bookViewActive) renderChapter();
+        if (open && bookViewActive) renderChapter({ anchorSectionId: currentSectionId(), anchorDelta: currentAnchorDelta() });
     }
 }
 
 export function isSearchBarOpen() {
-    const bar = document.getElementById('ereaderSearchBar');
-    return !!(bar && bar.style.display !== 'none');
+    const overlay = searchOverlay();
+    return !!(overlay && overlay.style.display !== 'none');
+}
+
+function currentAnchorDelta() {
+    const id = currentSectionId();
+    const el = id ? sectionEls().find(s => s.dataset.sectionId === id) : null;
+    return el ? el.getBoundingClientRect().top : undefined;
+}
+
+function resultButtons() {
+    const resultsEl = document.getElementById('ereaderSearchResults');
+    return resultsEl ? [...resultsEl.querySelectorAll('.ereader-search-item')] : [];
+}
+
+function setActiveResult(index) {
+    const items = resultButtons();
+    if (items.length === 0) {
+        activeResultIndex = -1;
+        return;
+    }
+    activeResultIndex = (index + items.length) % items.length;
+    items.forEach((el, i) => {
+        const on = i === activeResultIndex;
+        el.classList.toggle('active', on);
+        el.setAttribute('aria-selected', on ? 'true' : 'false');
+        if (on && typeof el.scrollIntoView === 'function') el.scrollIntoView({ block: 'nearest' });
+    });
+}
+
+async function openSearchMatch(m, term) {
+    if (!open) return;
+    activeSearchTerm = term;
+    hideSearchOverlay();
+    open.chapterIndex = m.chapterIndex;
+    renderChapter({ anchorSectionId: m.sectionId });
+    renderEreaderToc();
+    const sec = sectionEls().find(s => s.dataset.sectionId === m.sectionId);
+    if (sec) {
+        const highlight = sec.querySelector('.search-highlight') || sec;
+        const y = highlight.getBoundingClientRect().top + window.scrollY - (READING_LINE_PX - 8);
+        window.scrollTo({ top: Math.max(0, y), behavior: 'instant' });
+    }
+    await flushPosition();
 }
 
 function onSearchInput() {
@@ -450,11 +514,15 @@ function onSearchInput() {
     const resultsEl = document.getElementById('ereaderSearchResults');
     if (!input || !resultsEl) return;
     const term = input.value.trim();
+    activeResultIndex = -1;
     if (term.length < 2) {
-        resultsEl.replaceChildren();
-        if (activeSearchTerm) {
-            activeSearchTerm = '';
-            if (open && bookViewActive) renderChapter();
+        if (term.length === 1) {
+            const hint = document.createElement('div');
+            hint.className = 'ereader-search-no-results';
+            hint.textContent = t('ereader_search_min_chars');
+            resultsEl.replaceChildren(hint);
+        } else {
+            resultsEl.replaceChildren();
         }
         return;
     }
@@ -469,29 +537,47 @@ function onSearchInput() {
         return;
     }
 
-    const items = matches.map(m => {
+    const items = matches.map((m, i) => {
         const item = document.createElement('button');
         item.type = 'button';
         item.className = 'ereader-search-item';
+        item.setAttribute('role', 'option');
         const titleHtml = escapeHTML(m.title || t('ereader_untitled_section'));
         const snippetHtml = applySearchHighlight(escapeHTML(m.snippet), term);
         item.innerHTML = `<div class="ereader-search-title">${titleHtml}</div><div class="ereader-search-snippet">${snippetHtml}</div>`;
-        item.onclick = async () => {
-            activeSearchTerm = term;
-            open.chapterIndex = m.chapterIndex;
-            renderChapter({ anchorSectionId: m.sectionId });
-            renderEreaderToc();
-            const sec = sectionEls().find(s => s.dataset.sectionId === m.sectionId);
-            if (sec) {
-                const highlight = sec.querySelector('.search-highlight') || sec;
-                const y = highlight.getBoundingClientRect().top + window.scrollY - (READING_LINE_PX - 8);
-                window.scrollTo({ top: Math.max(0, y), behavior: 'instant' });
-            }
-            await flushPosition();
-        };
+        item.onclick = () => openSearchMatch(m, term);
+        item.onmouseenter = () => setActiveResult(i);
         return item;
     });
     resultsEl.replaceChildren(...items);
+    setActiveResult(0);
+}
+
+function onSearchKeydown(e) {
+    if (e.key === 'ArrowDown' || e.key === 'ArrowUp') {
+        if (resultButtons().length === 0) return;
+        e.preventDefault();
+        setActiveResult(activeResultIndex + (e.key === 'ArrowDown' ? 1 : -1));
+    } else if (e.key === 'Enter') {
+        const items = resultButtons();
+        const target = items[activeResultIndex] || items[0];
+        if (target) {
+            e.preventDefault();
+            target.click();
+        }
+    }
+}
+
+/** Ctrl/Cmd+K, Ctrl/Cmd+F or "/" (outside a text field) in the book view. */
+function isSearchShortcut(e) {
+    const mod = e.ctrlKey || e.metaKey;
+    if (mod && !e.altKey && !e.shiftKey && (e.key === 'k' || e.key === 'K' || e.key === 'f' || e.key === 'F')) return true;
+    if (e.key === '/' && !mod && !e.altKey) {
+        const el = e.target;
+        const tag = el && el.tagName ? el.tagName.toLowerCase() : '';
+        return !(tag === 'input' || tag === 'textarea' || tag === 'select' || (el && el.isContentEditable));
+    }
+    return false;
 }
 
 /**
@@ -632,6 +718,14 @@ export function bindEreaderReader({ switchView, closeMenu } = {}) {
     const searchInput = document.getElementById('ereaderSearchInput');
     if (searchInput) {
         searchInput.addEventListener('input', onSearchInput);
+        searchInput.addEventListener('keydown', onSearchKeydown);
+    }
+
+    const searchOverlayEl = searchOverlay();
+    if (searchOverlayEl) {
+        searchOverlayEl.addEventListener('click', (e) => {
+            if (e.target === searchOverlayEl) closeSearchBar();
+        });
     }
 
     const fsBtn = document.getElementById('ereaderFullscreenBtn');
@@ -713,6 +807,11 @@ export function bindEreaderReader({ switchView, closeMenu } = {}) {
     if (typeof window !== 'undefined') {
         window.addEventListener('scroll', onScroll, { passive: true });
         window.addEventListener('keydown', (e) => {
+            if (bookViewActive && !isSearchBarOpen() && isSearchShortcut(e)) {
+                e.preventDefault();
+                openSearchBar();
+                return;
+            }
             if (e.key === 'Escape') {
                 if (isSearchBarOpen()) {
                     closeSearchBar();
@@ -745,6 +844,8 @@ export function _resetEreaderReaderForTests() {
     memo.clear();
     deps = { switchView: null, closeMenu: null };
     activeSearchTerm = '';
+    activeResultIndex = -1;
     isFullscreen = false;
+    hideSearchOverlay();
     closeImageUrlModal();
 }

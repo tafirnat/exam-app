@@ -200,3 +200,46 @@ test('8. A language that is not a valid locale does not break search', async () 
         assert.equal(results.length, 1, `search must work for language "${language}"`);
     }
 });
+
+test('R2-01: search is a focused overlay outside the book view, opened by Ctrl+K and closed by the backdrop', async () => {
+    const overlay = document.getElementById('ereaderSearchOverlay');
+    assert.ok(overlay, 'the search overlay exists');
+    assert.equal(document.getElementById('ereaderBookView').contains(overlay), false, 'not an inline bar inside the book');
+    assert.ok(overlay.querySelector('.ereader-search-footer.ereader-desktop-only'), 'shortcut hints are desktop-only');
+
+    const { book } = await imp.importEreaderJson(turkishBookJson());
+    await reader.openBook(book.id, { switchView });
+    reader.enterBookView();
+
+    window.dispatchEvent(new window.KeyboardEvent('keydown', { key: 'k', ctrlKey: true }));
+    assert.equal(reader.isSearchBarOpen(), true, 'Ctrl+K opens the search');
+
+    overlay.dispatchEvent(new window.MouseEvent('click', { bubbles: true }));
+    assert.equal(reader.isSearchBarOpen(), false, 'a click on the backdrop closes it');
+});
+
+test('R2-01: arrow keys move through the matches and Enter opens the selected one', async () => {
+    const { book } = await imp.importEreaderJson(turkishBookJson());
+    await reader.openBook(book.id, { switchView });
+    reader.enterBookView();
+    reader.openSearchBar();
+
+    const input = document.getElementById('ereaderSearchInput');
+    input.value = 'hedefkelime';
+    input.dispatchEvent(new window.Event('input'));
+    const items = () => [...document.querySelectorAll('#ereaderSearchResults .ereader-search-item')];
+    assert.equal(items().length, 3);
+    assert.ok(items()[0].classList.contains('active'), 'the first match is preselected');
+
+    input.dispatchEvent(new window.KeyboardEvent('keydown', { key: 'ArrowDown', bubbles: true }));
+    assert.ok(items()[1].classList.contains('active'));
+    input.dispatchEvent(new window.KeyboardEvent('keydown', { key: 'ArrowUp', bubbles: true }));
+    input.dispatchEvent(new window.KeyboardEvent('keydown', { key: 'ArrowUp', bubbles: true }));
+    assert.ok(items()[2].classList.contains('active'), 'Up from the first wraps to the last');
+
+    input.dispatchEvent(new window.KeyboardEvent('keydown', { key: 'Enter', bubbles: true }));
+    await tick();
+    assert.equal(reader.isSearchBarOpen(), false, 'opening a match closes the overlay');
+    assert.ok(document.querySelector('#ereaderContent [data-section-id="s5"]'), 'the chosen match is shown');
+    assert.ok(document.querySelector('#ereaderContent .search-highlight'), 'its highlight stays in the text');
+});

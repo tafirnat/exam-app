@@ -2083,12 +2083,6 @@
         </div>
 
         <div id="ereaderBookView" class="ereader-book-view" style="display: none;">
-            <div class="ereader-search-bar" id="ereaderSearchBar" style="display: none;">
-                <div class="search-input-wrapper">
-                    <input type="search" id="ereaderSearchInput" data-i18n-placeholder="ereader_search" autocomplete="off">
-                </div>
-                <div class="ereader-search-results" id="ereaderSearchResults"></div>
-            </div>
             <article class="ereader-content" id="ereaderContent"></article>
             <nav class="ereader-chapter-nav" id="ereaderChapterNav">
                 <button class="btn btn-secondary" id="ereaderPrevBtn" data-i18n-title="ereader_prev_chapter" data-i18n-aria-label="ereader_prev_chapter">‹</button>
@@ -3609,6 +3603,27 @@
             }).catch(() => { });
         }
     </script>
+    <!-- e-Reader focused search (R2-01): opened from the header search button -->
+    <div id="ereaderSearchOverlay" class="ereader-search-overlay" style="display: none;" role="dialog" aria-modal="true" data-i18n-aria-label="ereader_search">
+        <div class="ereader-search-panel" id="ereaderSearchBar">
+            <div class="ereader-search-field">
+                <svg class="ereader-search-field-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5">
+                    <circle cx="11" cy="11" r="7"></circle>
+                    <line x1="21" y1="21" x2="16.65" y2="16.65"></line>
+                </svg>
+                <input type="search" id="ereaderSearchInput" data-i18n-placeholder="ereader_search" autocomplete="off" enterkeyhint="search">
+                <kbd class="ereader-kbd ereader-desktop-only">Esc</kbd>
+            </div>
+            <div class="ereader-search-results" id="ereaderSearchResults"></div>
+            <div class="ereader-search-footer ereader-desktop-only">
+                <span><kbd class="ereader-kbd">↑</kbd><kbd class="ereader-kbd">↓</kbd> <span data-i18n="ereader_search_hint_move">seç</span></span>
+                <span><kbd class="ereader-kbd">Enter</kbd> <span data-i18n="ereader_search_hint_open">aç</span></span>
+                <span><kbd class="ereader-kbd">Esc</kbd> <span data-i18n="ereader_search_hint_close">kapat</span></span>
+                <span class="ereader-search-footer-open"><kbd class="ereader-kbd">Ctrl</kbd>+<kbd class="ereader-kbd">K</kbd> <span data-i18n="ereader_search_hint_shortcut">arama</span></span>
+            </div>
+        </div>
+    </div>
+
     <div id="ereaderPrintHost" class="ereader-print-host" style="display: none;"></div>
 </body>
 

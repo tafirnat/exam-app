@@ -16,7 +16,7 @@ fixed in its own commit, in order. Status: `open` → `done` (commit hash).
   on top, results under it) as in the reference, instead of an inline bar.
 - Keyboard-shortcut hints are shown **only on desktop**; mobile stays clean.
 
-Status: open
+Status: done
 
 ## R2-02 — No chapter paging; one continuous scroll with windowed DOM
 
