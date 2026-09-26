@@ -31,7 +31,7 @@ never force-push.
 - [x] A5 Paragraph actions: stop speech when the book changes / view is left / another book opens;
       translation language change refreshes the button titles; the box survives font change and
       sync redraw.
-- [ ] A6 Library: empty folder, deleting the open book, archive while a book is open, bulk actions on a
+- [x] A6 Library: empty folder, deleting the open book, archive while a book is open, bulk actions on a
       folder that is collapsed, selection cleared on view change.
 - [ ] A7 R2-06 flash title must not stick when leaving the stats view during the flash; refit on
       language change.

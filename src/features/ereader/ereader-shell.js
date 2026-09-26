@@ -4,6 +4,7 @@ import { loadEreader, isEreaderLoaded } from './ereader-store.js';
 import { bindEreaderLibrary } from './ereader-library-ui.js';
 import { bindEreaderReader, enterBookView, leaveBookView } from './ereader-reader-ui.js';
 import { pullEreader, initEreaderSync } from './ereader-sync.js';
+import { leaveLibraryView } from './ereader-library-manage.js';
 
 let loadRequested = false;
 let switchViewRef = null;
@@ -164,6 +165,8 @@ export function applyEreaderChrome(view, { goHome } = {}) {
     /* The book view shows the open book; with none open (Back into the view)
        there is nothing to show, so the library takes its place. Deferred:
        this runs at the end of switchView() itself. */
+    if (view !== 'ereaderLibrary') leaveLibraryView();
+
     if (view === 'ereaderBook') {
         if (!enterBookView() && typeof switchViewRef === 'function') {
             queueMicrotask(() => switchViewRef('ereaderLibrary', true));

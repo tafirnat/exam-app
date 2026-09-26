@@ -231,10 +231,20 @@ async function saveFolderDialog() {
 
 // ── selection ─────────────────────────────────────────────────────────────
 
-export function enterSelection(folderKeyValue) {
+export async function enterSelection(folderKeyValue) {
     view.selectFolder = folderKeyValue;
     view.selected = new Set();
+    /* A closed folder would hide its own selection bar. */
+    const folder = listFolders().find(f => f.id === folderKeyValue);
+    if (folder && folder.collapsed) await toggleCollapsed(folder.id);
     rerender();
+}
+
+/** The library was left: a selection or the archive view does not outlive it. */
+export function leaveLibraryView() {
+    view.archive = false;
+    view.selectFolder = null;
+    view.selected = new Set();
 }
 
 export function exitSelection() {

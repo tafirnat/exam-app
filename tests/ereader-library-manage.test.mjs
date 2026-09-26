@@ -197,3 +197,24 @@ test('R2-11: resetting a book clears only its reading position', async () => {
     assert.equal(ereaderStore.getProgress(a.id).percent, 0);
     assert.equal(ereaderStore.getProgress(b.id).percent, 60);
 });
+
+test('A6: selecting in a closed folder opens it; leaving the library ends the selection and the archive view', async () => {
+    const a = await addBook('Alpha', 'a');
+    const folder = await manage.createFolder('F');
+    await manage.moveBooksToFolder([a.id], folder.id);
+    await ereaderStore.saveFolders([{ id: folder.id, name: 'F', collapsed: true }]);
+    await manage.enterSelection(folder.id);
+    assert.equal(ereaderStore.listFolders()[0].collapsed, false, 'the folder opened to show its selection bar');
+
+    const shell = await import('../src/features/ereader/ereader-shell.js');
+    shell.applyEreaderChrome('home', { goHome: () => {} });
+    assert.equal(manage.libraryView().selectFolder, null);
+    assert.equal(manage.libraryView().archive, false);
+});
+
+test('A6: an empty archive says so', async () => {
+    await addBook('Alpha', 'a');
+    lib.renderEreaderLibrary();
+    document.getElementById('ereaderArchiveViewBtn').click();
+    assert.equal(document.querySelector('#ereaderBookList .ereader-folder-empty')?.textContent, 'No books in the archive.');
+});

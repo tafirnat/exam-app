@@ -173,6 +173,11 @@ export function renderEreaderLibrary() {
     }
 
     empty.style.display = 'none';
+    if (state.archive && books.length === 0) {
+        const note = el('div', 'ereader-folder-empty', t('ereader_archive_empty'));
+        list.replaceChildren(note);
+        return;
+    }
     const lastBookId = getPrefs().lastBookId;
     buildLibraryList(list, {
         createRow: (book, extra) => createBookRow(book, lastBookId, openBookHandler, extra),
