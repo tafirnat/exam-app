@@ -71,3 +71,18 @@ test('R2-06: a title set by someone else during the flash is kept', async () => 
     await tick(40);
     assert.equal(title.textContent, 'e-Reader');
 });
+
+test('A7: ending the flash at once (a view change) restores the title and drops the style', () => {
+    const title = document.getElementById('headerTitle');
+    title.textContent = 'Question Details';
+    fit.flashHeaderLabel('Starred', 5000);
+    fit.endHeaderFlash();
+    assert.equal(title.textContent, 'Question Details');
+    assert.equal(title.classList.contains('header-title-flash'), false);
+});
+
+test('A7: main.js ends the flash when the view changes', () => {
+    const main = readFileSync(new URL('../src/main.js', import.meta.url), 'utf8');
+    const body = main.slice(main.indexOf('function switchView('), main.indexOf('function switchView(') + 600);
+    assert.ok(body.includes('endHeaderFlash()'));
+});

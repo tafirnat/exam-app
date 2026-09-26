@@ -33,7 +33,7 @@ never force-push.
       sync redraw.
 - [x] A6 Library: empty folder, deleting the open book, archive while a book is open, bulk actions on a
       folder that is collapsed, selection cleared on view change.
-- [ ] A7 R2-06 flash title must not stick when leaving the stats view during the flash; refit on
+- [x] A7 R2-06 flash title must not stick when leaving the stats view during the flash; refit on
       language change.
 - [ ] A8 Code review pass over the whole R2 diff (bugs only) and fix every finding.
 

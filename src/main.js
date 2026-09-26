@@ -29,7 +29,7 @@ import { isSequentialMode, resolveQuestionCount, countActivePoolQuestions, rende
 import { flushInProgressAnswers } from './features/stats/continuity-engine.js';
 import { renderQuestion, handleCheckAnswer, updateIndicators, handleTranslation, handleDifficultyRating, handleFlashcardRating, renderTestResults, createTtsButton, TtsTarget, stopAudio, decorateReadingSections, renderResumeButton, cancelAutoFinish } from './features/test/test-ui.js';
 import { renderStatsList, updateHomeStats, setupStatsEventListeners } from './features/stats/stats-module.js';
-import { initFilterBarFit } from './features/stats/filter-bar-fit.js';
+import { initFilterBarFit, endHeaderFlash } from './features/stats/filter-bar-fit.js';
 import { bindAiConnect, closeAiConnect, isAiConnectOpen } from './features/ai/ai-connect-ui.js';
 import { openQuestionEditor, closeQuestionEditor, requestEditorExit, isQuestionEditorOpen } from './features/stats/question-editor.js';
 import { resolvePreviewQuestion, neighbourQuestion, navPositionLabel, updateNavButtons } from './features/stats/preview-nav.js';
@@ -2306,6 +2306,10 @@ window.handleStatsBack = handleStatsBack;
 // --- View Management ---
 function switchView(view, isBack = false) {
     if (!view) return;
+
+    /* A filter name shown in the header for a moment belongs to the stats
+       view; the next view's title must not inherit its small style. */
+    endHeaderFlash();
 
     /* Told before the view is painted, so a consumer that fell behind while
        its view was hidden catches up in the same frame the view appears. */
