@@ -109,7 +109,8 @@ test('one book is counted in the singular', async () => {
 
 // ── order ──────────────────────────────────────────────────────────────────
 
-test('books sort by last read first, then by last change', () => {
+test('books without a manual order sort by last read first, then by last change', async () => {
+    const { orderBooks } = await import('../src/features/ereader/ereader-folders.js');
     const books = [
         { id: 'a', updatedAt: 300 },
         { id: 'b', updatedAt: 100 },
@@ -117,7 +118,7 @@ test('books sort by last read first, then by last change', () => {
         { id: 'd', updatedAt: 50 }
     ];
     const progress = { b: { at: 900 }, d: { at: 500 } };
-    const order = lib.sortBooks(books, id => progress[id] || null).map(b => b.id);
+    const order = orderBooks(books, id => progress[id] || null).map(b => b.id);
     assert.deepEqual(order, ['b', 'd', 'a', 'c']);
 });
 

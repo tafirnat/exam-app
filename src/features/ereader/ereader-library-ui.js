@@ -45,19 +45,6 @@ let actionsBookId = null;
 let actionsTarget = null;
 let bound = false;
 
-/**
- * Most recently read first, then most recently changed. A book that was never
- * opened has no progress record and sorts by its own updatedAt.
- */
-export function sortBooks(books, progressOf = getProgress) {
-    return [...books].sort((a, b) => {
-        const pa = progressOf(a.id)?.at || 0;
-        const pb = progressOf(b.id)?.at || 0;
-        if (pa !== pb) return pb - pa;
-        return (b.updatedAt || 0) - (a.updatedAt || 0);
-    });
-}
-
 function el(tag, className, text) {
     const node = document.createElement(tag);
     if (className) node.className = className;

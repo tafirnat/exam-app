@@ -47,7 +47,7 @@ never force-push.
 - [x] B4 User guide (docs/USER_GUIDE.*.md and in-app guide): replace chapter pages, A−/A+, "My books"
       menu entry with the R2 behaviour (continuous reading, up button, Aa+, save, contents tree,
       settings, paragraph actions, folders/archive, Connect AI).
-- [ ] B5 Remove what R2 made dead: unused i18n keys, CSS for removed elements, unused exports.
+- [x] B5 Remove what R2 made dead: unused i18n keys, CSS for removed elements, unused exports.
 
 ## Phase C — hand-over
 
