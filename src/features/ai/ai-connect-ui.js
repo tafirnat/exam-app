@@ -174,6 +174,9 @@ export function bindAiConnect({ closeMenu } = {}) {
         };
     }
     window.addEventListener('open-ai-connect', () => openAiConnect());
+    document.addEventListener('keydown', (e) => {
+        if (e.key === 'Escape' && isAiConnectOpen()) closeAiConnect();
+    });
 
     document.querySelectorAll('#aiConnectOverlay .ai-connect-tab').forEach(btn => {
         btn.onclick = () => selectTab(btn.dataset.tab);

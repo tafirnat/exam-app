@@ -543,6 +543,10 @@ export function bindLibraryManage({ onArchiveToggle } = {}) {
     if (folderOverlay) folderOverlay.addEventListener('click', (e) => { if (e.target === folderOverlay) closeFolderDialog(); });
     if (folderName) folderName.addEventListener('keydown', (e) => { if (e.key === 'Enter') saveFolderDialog(); });
 
+    document.addEventListener('keydown', (e) => {
+        if (e.key === 'Escape') closeManageDialogs();
+    });
+
     const selectBtn = document.getElementById('ereaderFolderSelectBtn');
     if (selectBtn) {
         selectBtn.onclick = () => {

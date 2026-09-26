@@ -35,7 +35,7 @@ never force-push.
       folder that is collapsed, selection cleared on view change.
 - [x] A7 R2-06 flash title must not stick when leaving the stats view during the flash; refit on
       language change.
-- [ ] A8 Code review pass over the whole R2 diff (bugs only) and fix every finding.
+- [x] A8 Code review pass over the whole R2 diff (bugs only) and fix every finding.
 
 ## Phase B — finish and polish
 

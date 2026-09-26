@@ -65,3 +65,9 @@ test('R2-12: the paragraph box can open the dialog (open-ai-connect event)', asy
     assert.ok(ui.isAiConnectOpen());
     ui.closeAiConnect();
 });
+
+test('A8: Esc closes the Connect AI dialog', () => {
+    ui.openAiConnect();
+    document.dispatchEvent(new window.KeyboardEvent('keydown', { key: 'Escape' }));
+    assert.equal(ui.isAiConnectOpen(), false);
+});
