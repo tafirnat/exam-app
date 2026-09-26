@@ -271,3 +271,10 @@ test('14. (D2) ereader.css .ereader-menu-reset rule contains var(--error-color)'
 });
 
 
+
+test('R2-04: the side menu has no title row and no close button (it closes by an outside click)', () => {
+    const html = readFileSync(new URL('../index.html', import.meta.url), 'utf8');
+    assert.equal(html.includes('id="menuCloseBtn"'), false);
+    assert.equal(html.includes('data-i18n="menu_title"'), false);
+    assert.equal(html.includes('class="side-menu-header"'), false);
+});

@@ -48,7 +48,7 @@ Status: done
 - Remove the `menu_title` ("MENÜ") heading and `#menuCloseBtn`. The menu closes
   by clicking outside; the row only wastes space.
 
-Status: open
+Status: done
 
 ## R2-05 — Library view vertically centred
 

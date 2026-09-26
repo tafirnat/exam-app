@@ -2567,23 +2567,6 @@ textarea {
     transform: translateX(0);
 }
 
-.side-menu-header {
-    height: 60px;
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    padding: 0 1.5rem;
-    border-bottom: 1px solid var(--border-color);
-    background-color: var(--surface-color);
-}
-
-.side-menu-header span {
-    font-size: 0.85rem;
-    font-weight: 800;
-    color: var(--text-secondary);
-    letter-spacing: 0.1em;
-}
-
 .menu-items {
     flex: 1;
     overflow-y: auto;

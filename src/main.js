@@ -1688,9 +1688,6 @@ function setupEventListeners() {
         renderQuestion();
     });
 
-    // Sidebar Close Button & Overlay
-    const closeBtn = document.getElementById('menuCloseBtn');
-    if (closeBtn) closeBtn.onclick = toggleMenu;
 
     // Premium Theme Switch in Sidebar
     // Theme is toggled via clicking the menu item directly now.
@@ -2196,9 +2193,15 @@ function setupEventListeners() {
         }
     }
 
-    // Global Click Close (Updated for Sidebar)
+    // Global Click Close (Updated for Sidebar). The menu has no close button:
+    // a click anywhere outside it, or Esc, closes it.
     document.addEventListener('click', (e) => {
         if (menuActive && !e.target.closest('.side-menu') && !e.target.closest('#menuToggleBtn')) {
+            toggleMenu();
+        }
+    });
+    document.addEventListener('keydown', (e) => {
+        if (e.key === 'Escape' && menuActive && !document.querySelector('.modal-overlay.active')) {
             toggleMenu();
         }
     });
