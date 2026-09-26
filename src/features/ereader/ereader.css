@@ -707,3 +707,230 @@ body.ereader-search-open { overflow: hidden; }
 }
 
 
+
+/* ── Paragraph actions (R2-10) ──
+   One small group at the end of each paragraph: listen, summary, vocab,
+   translate. Faint until the paragraph is hovered (a tap on touch screens);
+   stays visible while one of its results is open. */
+.ereader-content p.p-actionable {
+    position: relative;
+}
+
+.p-actions-group {
+    display: inline-flex;
+    align-items: center;
+    gap: 1px;
+    margin-left: 0.35rem;
+    padding: 1px 2px;
+    vertical-align: middle;
+    border-radius: 8px;
+    opacity: 0;
+    transition: opacity 0.15s ease, background-color 0.15s ease;
+    white-space: nowrap;
+    line-height: 1;
+}
+
+@media (hover: hover) {
+    .ereader-content p.p-actionable:hover > .p-actions-group {
+        opacity: 1;
+    }
+}
+
+.ereader-content p.p-actions-visible > .p-actions-group,
+.p-actions-group:focus-within,
+.p-actions-group.has-active {
+    opacity: 1;
+}
+
+.p-actions-group.has-active {
+    background: rgba(var(--primary-rgb), 0.08);
+}
+
+.p-actions-group button {
+    width: 24px;
+    height: 24px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    padding: 0;
+    border: none;
+    border-radius: 6px;
+    background: none;
+    color: var(--text-secondary);
+    cursor: pointer;
+}
+
+.p-actions-group button svg {
+    width: 13px;
+    height: 13px;
+}
+
+.p-actions-group button:hover {
+    background: var(--surface-hover);
+    color: var(--text-primary);
+}
+
+.p-actions-group button.active,
+.p-actions-group button.playing {
+    background: rgba(var(--primary-rgb), 0.16);
+    color: var(--primary-color);
+}
+
+/* Touch: bigger targets, and the group is not a ghost taking a line's end. */
+@media (hover: none) {
+    .p-actions-group {
+        display: none;
+    }
+
+    .ereader-content p.p-actions-visible > .p-actions-group,
+    .p-actions-group.has-active {
+        display: inline-flex;
+    }
+
+    .p-actions-group button {
+        width: 32px;
+        height: 32px;
+    }
+
+    .p-actions-group button svg {
+        width: 16px;
+        height: 16px;
+    }
+}
+
+/* One box under the paragraph for every result. */
+.p-translation-box {
+    margin: 0.35rem 0 1rem;
+    padding: 0.55rem 0.8rem 0.7rem;
+    border-left: 3px solid rgba(var(--primary-rgb), 0.55);
+    border-radius: 0 10px 10px 0;
+    background: rgba(var(--primary-rgb), 0.06);
+    font-size: 0.94em;
+    animation: pBoxIn 0.16s ease-out;
+}
+
+@keyframes pBoxIn {
+    from { opacity: 0; transform: translateY(-3px); }
+    to { opacity: 1; transform: none; }
+}
+
+.p-trans-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 0.5rem;
+    margin-bottom: 0.35rem;
+}
+
+.p-trans-label {
+    font-size: 0.72rem;
+    font-weight: 700;
+    letter-spacing: 0.02em;
+    color: var(--primary-color);
+    min-width: 0;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.p-trans-actions {
+    display: flex;
+    align-items: center;
+    gap: 2px;
+    flex-shrink: 0;
+}
+
+.p-trans-btn-sm {
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    height: 26px;
+    min-width: 26px;
+    padding: 0 6px;
+    border: none;
+    border-radius: 6px;
+    background: none;
+    color: var(--text-secondary);
+    font: inherit;
+    font-size: 0.72rem;
+    font-weight: 600;
+    cursor: pointer;
+}
+
+.p-trans-btn-sm:hover {
+    background: var(--surface-hover);
+    color: var(--text-primary);
+}
+
+.p-trans-text {
+    color: var(--text-primary);
+    line-height: 1.6;
+}
+
+.p-trans-text.md-content,
+.p-trans-text .md-content {
+    font-size: inherit;
+}
+
+.p-trans-text ul {
+    margin: 0.25rem 0;
+    padding-left: 1.1rem;
+}
+
+.p-trans-loading {
+    display: inline-flex;
+    gap: 4px;
+    padding: 0.35rem 0;
+}
+
+.p-trans-loading i {
+    width: 6px;
+    height: 6px;
+    border-radius: 50%;
+    background: var(--primary-color);
+    opacity: 0.35;
+    animation: pDots 1s infinite ease-in-out;
+}
+
+.p-trans-loading i:nth-child(2) { animation-delay: 0.15s; }
+.p-trans-loading i:nth-child(3) { animation-delay: 0.3s; }
+
+@keyframes pDots {
+    0%, 100% { opacity: 0.25; transform: translateY(0); }
+    50% { opacity: 0.9; transform: translateY(-2px); }
+}
+
+.p-trans-error {
+    color: var(--error-color);
+    font-size: 0.9em;
+}
+
+.p-ai-needed {
+    margin: 0 0 0.5rem;
+    color: var(--text-secondary);
+    font-size: 0.9em;
+}
+
+.p-ai-needed-actions {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.4rem;
+}
+
+.p-ai-btn {
+    height: 30px;
+    padding: 0 0.7rem;
+    border: 1px solid var(--border-color);
+    border-radius: 999px;
+    background: var(--surface-color);
+    color: var(--text-primary);
+    font: inherit;
+    font-size: 0.78rem;
+    font-weight: 600;
+    cursor: pointer;
+}
+
+.p-ai-btn:hover {
+    border-color: var(--primary-color);
+    color: var(--primary-color);
+}

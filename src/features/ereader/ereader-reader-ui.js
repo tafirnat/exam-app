@@ -30,6 +30,7 @@ import { weightedPercent } from './ereader-chapters.js';
 import { searchBook } from './ereader-search.js';
 import { applyEreaderChrome } from './ereader-shell.js';
 import { detectGaps } from './ereader-parts.js';
+import { decorateParagraphs, onParagraphTap, leaveParagraphActions, _resetParagraphActionsForTests } from './ereader-paragraph-actions.js';
 
 /**
  * R2-09: three text sizes. Normal is the app's own body size (1rem); the
@@ -118,7 +119,6 @@ function setOpen(book, pendingRestore = null) {
  * Returns false (and stays put) when the book is gone.
  */
 export async function openBook(id, { switchView = deps.switchView } = {}) {
-    await ensureDecorateReadingSections();
     const book = await getBook(id);
     if (!book) {
         showToast(t('ereader_book_missing'));
@@ -210,41 +210,12 @@ function learnRatio() {
 
 // ── mounting ──────────────────────────────────────────────────────────────
 
-let decorateReadingSectionsRef = null;
-
-async function ensureDecorateReadingSections() {
-    if (!decorateReadingSectionsRef && typeof window !== 'undefined') {
-        try {
-            const mod = await import('../test/test-ui.js');
-            decorateReadingSectionsRef = mod.decorateReadingSections;
-        } catch (_) {}
-    }
-    return decorateReadingSectionsRef;
-}
-
+/** R2-10: the paragraph actions (listen, summary, vocab, translate). */
 function decorateSection(el) {
     if (!open || !el) return;
-    if (!decorateReadingSectionsRef) {
-        ensureDecorateReadingSections().then(fn => {
-            if (fn && open) decorateMounted();
-        });
-        return;
-    }
     const secId = el.dataset.sectionId;
     if (!secId) return;
-    decorateReadingSectionsRef(el, {
-        scope: 'ereader:' + secId,
-        cacheKey: open.book.id,
-        minSections: 1,
-        onRefresh: decorateMounted
-    });
-}
-
-function decorateMounted() {
-    if (!open) return;
-    for (const el of sectionEls()) {
-        if (el.dataset.mounted === '1') decorateSection(el);
-    }
+    decorateParagraphs(el, { book: open.book, sectionId: secId });
 }
 
 function mountSection(el) {
@@ -1087,6 +1058,7 @@ export function leaveBookView() {
         exitFullscreen('ereaderLibrary');
     }
     closeSearchBar();
+    leaveParagraphActions();
     updateTopButton();
     flushPosition();
 }
@@ -1183,6 +1155,7 @@ export function bindEreaderReader({ switchView, closeMenu } = {}) {
     if (content) {
         content.addEventListener('load', onContentLoad, true);
         content.addEventListener('click', (e) => {
+            onParagraphTap(e);
             const placeholder = e.target.closest('.md-image-placeholder');
             if (placeholder && placeholder.dataset.placeholderId) {
                 openImageUrlModal(placeholder.dataset.placeholderId);
@@ -1299,6 +1272,7 @@ export function _resetEreaderReaderForTests() {
     tocOwner = new Map();
     tocExpanded = new Set();
     tocBookId = null;
+    _resetParagraphActionsForTests();
     isFullscreen = false;
     hideSearchOverlay();
     closeImageUrlModal();

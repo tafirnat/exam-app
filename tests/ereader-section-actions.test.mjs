@@ -103,58 +103,110 @@ test('2. minSections = 1 adds controls even when there is only 1 heading', () =>
     assert.equal(container.querySelectorAll('.heading-translate-btn').length, 1);
 });
 
-test('3. e-Reader reader decorates section headings with TTS and translate controls', async () => {
-    const { book } = await imp.importEreaderJson(bookData());
+// ── R2-10: paragraph actions ─────────────────────────────────────────────
+
+async function openBookData(data = bookData()) {
+    const { book } = await imp.importEreaderJson(data);
     await reader.openBook(book.id, { switchView: () => {} });
     reader.enterBookView();
+    return book;
+}
 
+const firstParagraph = () => document.querySelector('#ereaderContent .ereader-section[data-section-id="s1"] p.p-actionable');
+const click = el => el.dispatchEvent(new dom.window.MouseEvent('click', { bubbles: true }));
+const settle = () => new Promise(r => setTimeout(r, 30));
+
+test('3. R2-10: every paragraph carries one group - listen, summary, vocab, translate; headings get none', async () => {
+    await openBookData();
     const content = document.getElementById('ereaderContent');
-    const s1El = content.querySelector('.ereader-section[data-section-id="s1"]');
-    assert.ok(s1El, 'section s1 must exist in DOM');
-
-    const tools = s1El.querySelectorAll('.heading-tools');
-    assert.equal(tools.length, 1, 's1 heading must be decorated with heading-tools');
-
-    const ttsBtn = s1El.querySelector('.heading-tts-btn');
-    const transBtn = s1El.querySelector('.heading-translate-btn');
-    assert.ok(ttsBtn, 'TTS button must be present');
-    assert.ok(transBtn, 'Translate button must be present');
-
-    // Section without heading has no controls
-    const s2El = content.querySelector('.ereader-section[data-section-id="s2"]');
-    assert.ok(s2El, 'section s2 must exist in DOM');
-    assert.equal(s2El.querySelectorAll('.heading-tools').length, 0, 'section without heading gets no controls');
+    assert.equal(content.querySelectorAll('.heading-tools').length, 0, 'no heading-level tools in the reader');
+    const groups = content.querySelectorAll('p.p-actionable > .p-actions-group');
+    assert.equal(groups.length, 2, 'one group per paragraph');
+    const buttons = [...groups[0].querySelectorAll('button')].map(b => b.className.split(' ')[0]);
+    assert.deepEqual(buttons, ['p-tts-btn', 'p-summary-btn', 'p-vocab-btn', 'p-translate-btn']);
 });
 
-test('4. clicking section TTS button triggers speech synthesis', async () => {
-    const { book } = await imp.importEreaderJson(bookData());
-    await reader.openBook(book.id, { switchView: () => {} });
-    reader.enterBookView();
-
-    const ttsBtn = document.querySelector('#ereaderContent .heading-tts-btn');
-    assert.ok(ttsBtn);
-    ttsBtn.dispatchEvent(new dom.window.MouseEvent('click', { bubbles: true }));
-
-    assert.equal(spoken.length, 1);
-    assert.ok(spoken[0].includes('Erster Abschnitt'));
+test('4. R2-10: listen reads the paragraph (not the action labels) in the book language', async () => {
+    await openBookData();
+    const lastSrc = [];
+    const origPlay = dom.window.HTMLMediaElement.prototype.play;
+    dom.window.HTMLMediaElement.prototype.play = function () { lastSrc.push(this.src); return origPlay.call(this); };
+    try {
+        click(firstParagraph().querySelector('.p-tts-btn'));
+        assert.equal(spoken.length, 1);
+        assert.equal(spoken[0], 'Das ist ein deutscher Text.');
+        assert.equal(new URL(lastSrc[0]).searchParams.get('lang'), 'de', 'the book is German, whatever the interface language');
+        assert.ok(firstParagraph().querySelector('.p-tts-btn').classList.contains('playing'));
+        click(firstParagraph().querySelector('.p-tts-btn'));
+        assert.equal(firstParagraph().querySelector('.p-tts-btn').classList.contains('playing'), false, 'a second press stops');
+    } finally {
+        dom.window.HTMLMediaElement.prototype.play = origPlay;
+    }
 });
 
-test('5. clicking section translate button translates section text', async () => {
-    const { book } = await imp.importEreaderJson(bookData());
-    await reader.openBook(book.id, { switchView: () => {} });
-    reader.enterBookView();
+test('5. R2-10: translate opens ONE box under the paragraph; the same button again hides it', async () => {
+    await openBookData();
+    const p = firstParagraph();
+    click(p.querySelector('.p-translate-btn'));
+    await settle();
+    assert.deepEqual(translated, ['Das ist ein deutscher Text.']);
+    const box = p.nextElementSibling;
+    assert.ok(box.classList.contains('p-translation-box'), 'the box sits right under its paragraph');
+    assert.equal(box.dataset.viewMode, 'translate');
+    assert.equal(box.querySelector('.p-trans-text').textContent, 'Türkçe çeviri');
+    assert.ok(box.querySelector('.p-trans-actions .copy-btn'), 'copy');
+    assert.equal(box.querySelectorAll('.p-trans-actions button').length, 3, 'copy, retry, hide');
+    assert.ok(p.querySelector('.p-actions-group').classList.contains('has-active'));
 
-    const transBtn = document.querySelector('#ereaderContent .heading-translate-btn');
-    assert.ok(transBtn);
-    transBtn.dispatchEvent(new dom.window.MouseEvent('click', { bubbles: true }));
+    click(p.querySelector('.p-translate-btn'));
+    assert.equal(document.querySelectorAll('#ereaderContent .p-translation-box').length, 0);
+});
 
-    // Wait microtask for async translation
-    await new Promise(r => setTimeout(r, 50));
+test('6. R2-10: another action reuses the same box; without an AI connection it offers the prompt', async () => {
+    await openBookData();
+    const p = firstParagraph();
+    click(p.querySelector('.p-translate-btn'));
+    await settle();
+    click(p.querySelector('.p-summary-btn'));
+    await settle();
+    const boxes = document.querySelectorAll('#ereaderContent .p-translation-box');
+    assert.equal(boxes.length, 1, 'still one box');
+    assert.equal(boxes[0].dataset.viewMode, 'summary');
+    assert.ok(boxes[0].querySelector('.p-ai-needed'), 'no connection: explains and offers the prompt');
+    assert.ok(p.querySelector('.p-summary-btn').classList.contains('active'));
+    assert.equal(p.querySelector('.p-translate-btn').classList.contains('active'), false);
+});
 
-    assert.equal(translated.length, 1);
-    assert.ok(translated[0].includes('Erster Abschnitt'));
+test('7. R2-10: with an AI connection the summary comes from it; retry asks again; hide closes', async () => {
+    const aiClient = await import('../src/core/ai-client.js');
+    aiClient.saveAiConnection({ baseUrl: 'http://localhost:11434', model: 'llama3' });
+    const calls = [];
+    const origFetch = global.fetch;
+    global.fetch = async (url, opts) => {
+        if (String(url).includes('/v1/chat/completions')) {
+            calls.push(JSON.parse(opts.body));
+            return { ok: true, json: async () => ({ choices: [{ message: { content: `Kern ${calls.length}` } }] }) };
+        }
+        return origFetch(url, opts);
+    };
+    try {
+        await openBookData();
+        const p = firstParagraph();
+        click(p.querySelector('.p-summary-btn'));
+        await settle();
+        const box = p.nextElementSibling;
+        assert.equal(box.querySelector('.p-trans-text').textContent.trim(), 'Kern 1');
+        assert.equal(calls[0].model, 'llama3');
+        assert.ok(calls[0].messages.at(-1).content.includes('Das ist ein deutscher Text.'));
 
-    const transEl = document.querySelector('#ereaderContent .md-section-translation');
-    assert.ok(transEl, 'translation element should be inserted');
-    assert.equal(transEl.textContent, 'Türkçe çeviri');
+        click(box.querySelector('.p-trans-actions button:nth-child(2)'));
+        await settle();
+        assert.equal(box.querySelector('.p-trans-text').textContent.trim(), 'Kern 2', 'retry fetches again');
+
+        click(box.querySelector('.p-trans-actions button:nth-child(3)'));
+        assert.equal(p.nextElementSibling?.classList.contains('p-translation-box') ?? false, false);
+    } finally {
+        global.fetch = origFetch;
+        aiClient.clearAiConnection();
+    }
 });

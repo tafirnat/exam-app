@@ -111,7 +111,7 @@ Status: done — the "save icon" is read as: save the reading position now (book
   separate places. Box header actions: Copy, Retry, Hide.
 - Design and behaviour follow the reference markup given by the user.
 
-Status: open
+Status: done — built from the markup given in the issue; prompts and look to be checked against the reference (question 3 below).
 
 ## R2-11 — Book management like the sources card
 
