@@ -550,3 +550,36 @@ test('13. pushEreader fetches fresh gist on every push (caching removed)', async
     assert.equal(patchCalls, 3, 'Third push must patch updated progress');
 });
 
+
+test('14. pullEreader skips an unreadable book file and still brings in the other books and progress', async () => {
+    const goodBook = { ...sampleBook('b-good', 'Good Book', 500) };
+    const gistFiles = {
+        [INDEX_FILENAME]: {
+            content: JSON.stringify({
+                schema: 1,
+                books: [
+                    { id: 'b-broken', title: 'Broken Book', updatedAt: 500 },
+                    { id: 'b-good', title: 'Good Book', updatedAt: 500 }
+                ],
+                progress: { 'b-good': { sectionId: 's1', offset: 0.5, percent: 50, at: 900, by: 'other-device' } },
+                tombstones: {}
+            })
+        },
+        [bookFilename('b-broken')]: { content: '{ "title": "Broken Book", "sections": [' },
+        [bookFilename('b-good')]: { content: JSON.stringify(goodBook) }
+    };
+
+    global.fetch = async (url, init = {}) => {
+        const method = (init.method || 'GET').toUpperCase();
+        if (method === 'GET') {
+            return { ok: true, status: 200, json: async () => ({ files: { ...gistFiles } }) };
+        }
+    };
+
+    const ok = await pullEreader({ force: true });
+    assert.equal(ok, true, 'the pull as a whole succeeds');
+    assert.equal(await ereaderStore.getBook('b-broken'), null, 'the broken book is skipped');
+    const stored = await ereaderStore.getBook('b-good');
+    assert.ok(stored, 'the book after the broken one still comes in');
+    assert.equal(ereaderStore.getProgress('b-good')?.percent, 50, 'progress is still applied');
+});

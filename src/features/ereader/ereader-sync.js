@@ -173,7 +173,16 @@ export async function pullEreader({ force = false } = {}) {
             const localBook = localBooks.find(b => b.id === summary.id);
             if (!localBook || (summary.updatedAt || 0) > (localBook.updatedAt || 0)) {
                 const fname = bookFilename(summary.id);
-                const remoteBookJson = await readGistJSON(gist, fname);
+                /* One unreadable book file (broken JSON, a failed raw_url
+                   fetch) skips that book, not the whole pull: the other
+                   books and the progress below still come in. */
+                let remoteBookJson;
+                try {
+                    remoteBookJson = await readGistJSON(gist, fname);
+                } catch (err) {
+                    console.warn('Skipping unreadable synced book:', summary.id, err);
+                    continue;
+                }
                 if (remoteBookJson && typeof remoteBookJson === 'object') {
                     let valid = false;
                     let bookData = null;

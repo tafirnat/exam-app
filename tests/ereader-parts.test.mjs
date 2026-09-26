@@ -474,3 +474,61 @@ test('16. generateNextPartPrompt safely handles quotes and $& in title/author wi
 
 
 
+
+test('17. mergeBookParts keeps identical sections without a page inside one book', () => {
+    const target = {
+        bookKey: 'repeat-book',
+        language: 'en',
+        parts: [{ unit: 'page', from: 1, to: 10, total: 20 }],
+        sections: [
+            { id: 'c1', title: 'Chapter 1', level: 1, text: '' },
+            { id: 'x1', title: 'Exercises', level: 2, text: 'Do it.' },
+            { id: 'c2', title: 'Chapter 2', level: 1, text: '' },
+            { id: 'x2', title: 'Exercises', level: 2, text: 'Do it.' }
+        ]
+    };
+    const incoming = {
+        bookKey: 'repeat-book',
+        language: 'en',
+        parts: [{ unit: 'page', from: 11, to: 20, total: 20 }],
+        sections: [
+            { id: 'c3', title: 'Chapter 3', level: 1, text: 'Body' },
+            { id: 'x3', title: 'Exercises', level: 2, text: 'Do it.' }
+        ]
+    };
+
+    const merged = mergeBookParts(target, incoming);
+    assert.deepEqual(merged.sections.map(s => s.id), ['c1', 'x1', 'c2', 'x2', 'c3'],
+        'The target keeps both of its own "Exercises"; only the incoming repeat of one is dropped');
+});
+
+test('18. mergeBookParts keeps the target section IDs when an earlier part is merged in', () => {
+    const target = {
+        bookKey: 'order-book',
+        language: 'en',
+        parts: [{ unit: 'page', from: 11, to: 20, total: 20 }],
+        sections: [
+            { id: 's-1', title: 'Chapter 3', level: 1, text: 'Target one' },
+            { id: 's-2', title: 'Chapter 4', level: 1, text: 'Target two' }
+        ]
+    };
+    const incoming = {
+        bookKey: 'order-book',
+        language: 'en',
+        parts: [{ unit: 'page', from: 1, to: 10, total: 20 }],
+        sections: [
+            { id: 's-1', title: 'Chapter 1', level: 1, text: 'Incoming one' },
+            { id: 's-2', title: 'Chapter 2', level: 1, text: 'Incoming two' }
+        ]
+    };
+
+    const merged = mergeBookParts(target, incoming);
+    assert.deepEqual(merged.sections.map(s => `${s.id}=${s.title}`), [
+        's-1-2=Chapter 1',
+        's-2-2=Chapter 2',
+        's-1=Chapter 3',
+        's-2=Chapter 4'
+    ], 'Reading order follows the pages, but the saved position (s-1) still points at Chapter 3');
+    assert.equal(new Set(merged.sections.map(s => s.id)).size, merged.sections.length, 'IDs stay unique');
+    assert.ok(merged.sections.every(s => !('_isIncoming' in s)), 'No internal marker is stored');
+});

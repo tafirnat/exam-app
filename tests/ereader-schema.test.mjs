@@ -298,3 +298,35 @@ test('18. validateSyncedBook validates stored book format and rejects invalid st
 });
 
 
+
+test('19. rejects a reversed or non-positive part range; total is never below to', () => {
+    const file = (part) => ({
+        ereader: { title: 'Range', language: 'en', part },
+        sections: [{ text: 'x' }]
+    });
+
+    const reversed = validateEreaderFile(file({ unit: 'page', from: 30, to: 5, total: 40 }));
+    assert.equal(reversed.ok, false);
+    assert.deepEqual(reversed.errors, ['ereader_err_invalid_part_range']);
+
+    const zero = validateEreaderFile(file({ unit: 'page', from: 0, to: 5, total: 40 }));
+    assert.equal(zero.ok, false);
+    assert.deepEqual(zero.errors, ['ereader_err_invalid_part_range']);
+
+    const single = validateEreaderFile(file({ unit: 'page', from: 7, to: 7, total: 40 }));
+    assert.equal(single.ok, true, 'A one-page part is a valid range');
+
+    const shortTotal = validateEreaderFile(file({ unit: 'page', from: 1, to: 50, total: 40 }));
+    assert.equal(shortTotal.ok, true);
+    assert.equal(shortTotal.book.parts[0].total, 50);
+});
+
+test('20. a part without "to" runs one unit per section from its "from"', () => {
+    const result = validateEreaderFile({
+        ereader: { title: 'No To', language: 'en', part: { unit: 'section', from: 50, total: 60 } },
+        sections: [{ text: 'a' }, { text: 'b' }, { text: 'c' }]
+    });
+    assert.equal(result.ok, true);
+    assert.equal(result.book.parts[0].from, 50);
+    assert.equal(result.book.parts[0].to, 52);
+});

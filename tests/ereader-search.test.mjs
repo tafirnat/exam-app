@@ -182,3 +182,21 @@ test('7. Escape key exits fullscreen or closes search bar', async () => {
     assert.equal(reader.isZenFullscreen(), false);
     assert.equal(document.querySelector('header').style.display, 'flex');
 });
+
+test('8. A language that is not a valid locale does not break search', async () => {
+    const { searchLocale } = await import('../src/features/ereader/ereader-search.js');
+    assert.equal(searchLocale('en_US'), 'en-US');
+    assert.equal(searchLocale('tr'), 'tr');
+    assert.equal(searchLocale('Türkçe'), 'und');
+    assert.equal(searchLocale(''), 'und');
+    assert.equal(searchLocale(undefined), 'und');
+
+    for (const language of ['en_US', 'Türkçe', 'english language']) {
+        const book = {
+            language,
+            sections: [{ id: 's1', title: 'Hello', level: 1, text: 'hello world' }]
+        };
+        const results = searchBook(book, 'hello');
+        assert.equal(results.length, 1, `search must work for language "${language}"`);
+    }
+});

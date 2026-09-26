@@ -358,7 +358,7 @@ export function openMergeOverlay() {
         for (let i = 0; i < selectedBooks.length; i++) {
             for (let j = i + 1; j < selectedBooks.length; j++) {
                 if (doPartsOverlap(selectedBooks[i].parts || [], selectedBooks[j].parts || [])) {
-                    showAlert(t('ereader_warn_parts_overlap') || t('ereader_warn_diff_lang_or_unit'), t('warning_title'));
+                    showAlert(t('ereader_warn_parts_overlap'), t('warning_title'));
                     return;
                 }
             }

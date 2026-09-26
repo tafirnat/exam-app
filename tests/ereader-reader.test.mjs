@@ -381,3 +381,17 @@ test('6. saving image URL with parentheses encodes them and keeps image renderab
     assert.equal(text.includes('placeholder:img-1'), false);
 });
 
+
+test('7. the missing start of a book imported from a later page is listed before its first section', async () => {
+    const json = bookJson();
+    json.ereader.part = { unit: 'page', from: 50, to: 80, total: 100 };
+    await addAndOpen(json);
+    reader.renderEreaderToc();
+
+    const entries = [...document.querySelectorAll('#ereaderTocList > *')];
+    const first = entries[0];
+    assert.ok(first.classList.contains('ereader-toc-gap'), 'the gap comes first, before s1');
+    assert.equal(first.dataset.gapFrom, '1');
+    assert.equal(first.dataset.gapTo, '49');
+    assert.equal(entries.filter(e => e.classList.contains('ereader-toc-gap')).length, 1);
+});

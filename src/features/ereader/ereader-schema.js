@@ -174,8 +174,14 @@ export function validateEreaderFile(json) {
             unit = 'section';
         }
         const from = Number.isInteger(rawPart.from) ? rawPart.from : 1;
-        const to = Number.isInteger(rawPart.to) ? rawPart.to : N;
-        const total = Number.isInteger(rawPart.total) ? rawPart.total : Math.max(to, N);
+        /* Without a to, the part runs one unit per section from where it starts. */
+        const to = Number.isInteger(rawPart.to) ? rawPart.to : from + N - 1;
+        /* A reversed or non-positive range would turn gap detection, the
+           overlap check and the next-part prompt into nonsense. */
+        if (from < 1 || to < from) {
+            return { ok: false, errors: ['ereader_err_invalid_part_range'], warnings, book: null };
+        }
+        const total = Number.isInteger(rawPart.total) ? Math.max(rawPart.total, to) : Math.max(to, N);
         parts = [{ unit, from, to, total, importedAt: now }];
     }
 

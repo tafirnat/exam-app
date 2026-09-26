@@ -341,11 +341,16 @@ export function renderEreaderToc() {
     const gaps = detectGaps(open.book.parts || []);
     const pendingGaps = [...gaps];
     const items = [];
+    /* Sections of a book that was never merged carry no partFrom; they belong
+       to its only part, so a missing start (pages 1-49 of a book imported
+       from page 50) is listed before them, not after the last one. */
+    const partFroms = (open.book.parts || []).map(p => p.from).filter(Number.isInteger);
+    const defaultFrom = partFroms.length > 0 ? Math.min(...partFroms) : undefined;
 
     for (const s of sections) {
         while (pendingGaps.length > 0) {
             const gap = pendingGaps[0];
-            const sFrom = s.partFrom ?? s.pageStart;
+            const sFrom = s.partFrom ?? s.pageStart ?? defaultFrom;
             if (sFrom !== undefined && sFrom > gap.to) {
                 items.push(createGapItem(gap));
                 pendingGaps.shift();

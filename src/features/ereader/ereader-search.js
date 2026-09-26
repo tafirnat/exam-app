@@ -2,6 +2,23 @@ import { plainText } from '../../core/markdown.js';
 import { buildChapters, chapterOfSection } from './ereader-chapters.js';
 
 /**
+ * The book's language as a locale toLocaleLowerCase() accepts. The language
+ * comes from an AI-written file ("en_US", "Türkçe"), and an invalid tag makes
+ * toLocaleLowerCase throw, so anything that is not one falls back to 'und'.
+ *
+ * @param {unknown} language
+ * @returns {string}
+ */
+export function searchLocale(language) {
+    if (typeof language !== 'string' || !language.trim()) return 'und';
+    try {
+        return Intl.getCanonicalLocales(language.trim().replace(/_/g, '-'))[0] || 'und';
+    } catch {
+        return 'und';
+    }
+}
+
+/**
  * Searches a book for a term across all sections.
  *
  * Pure function: runs in Node without DOM globals.
@@ -25,7 +42,7 @@ export function searchBook(book, term, { limit = 50 } = {}) {
         return [];
     }
 
-    const lang = book.language || book.ereader?.language || 'und';
+    const lang = searchLocale(book.language || book.ereader?.language);
     const normQuery = query.toLocaleLowerCase(lang);
     const chapters = buildChapters(book.sections);
     const results = [];

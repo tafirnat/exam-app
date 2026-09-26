@@ -155,8 +155,8 @@ function normalizeTitle(title) {
  * Merges a new part book into a target book.
  * - Validates compatibility (language, unit, bookKey).
  * - Orders sections by part.from (not import order).
- * - Deduplicates colliding sections (page_start + normalized title).
- * - Rewrites colliding section IDs.
+ * - Drops incoming sections that repeat a target section (page_start + title + text).
+ * - Renames colliding incoming section IDs; the target keeps its own.
  * - Updates book.parts and book.updatedAt.
  *
  * @param {object} targetBook
@@ -190,24 +190,32 @@ export function mergeBookParts(targetBook, newPartBook) {
     const allSections = [...targetSections, ...newSections];
     allSections.sort((a, b) => (a.partFrom || 0) - (b.partFrom || 0));
 
-    // Deduplicate colliding sections: page_start + normalized title + content
-    const seenSectionKeys = new Set();
+    // Deduplicate colliding sections: page_start + normalized title + content.
+    // An incoming section that repeats a target section is dropped. Inside one
+    // side only a repeat on the same page is a duplicate: without a page, two
+    // identical sections (an "Exercises" heading with the same text in two
+    // chapters) are two sections of the book, and both are kept.
+    const hasPage = (section) => section.pageStart !== undefined && section.pageStart !== null;
+    const sectionKey = (section) => {
+        const normTitle = normalizeTitle(section.title);
+        const normText = (section.text || '').trim();
+        return hasPage(section)
+            ? `${section.pageStart}:${normTitle}:${normText}`
+            : `content:${normTitle}:${normText}`;
+    };
+    const targetKeys = new Set(targetSections.map(sectionKey));
+    const seenPageKeys = new Set();
     const deduplicatedSections = [];
 
     for (const section of allSections) {
-        const normTitle = normalizeTitle(section.title);
-        const normText = (section.text || '').trim();
-        let key = null;
-        if (section.pageStart !== undefined && section.pageStart !== null) {
-            key = `${section.pageStart}:${normTitle}:${normText}`;
-        } else {
-            key = `content:${normTitle}:${normText}`;
+        const key = sectionKey(section);
+        if (section._isIncoming && targetKeys.has(key)) {
+            continue; // repeats a target section; drop
         }
-
-        if (seenSectionKeys.has(key)) {
-            continue; // duplicate section; drop
+        if (hasPage(section)) {
+            if (seenPageKeys.has(key)) continue; // same page, title and text; drop
+            seenPageKeys.add(key);
         }
-        seenSectionKeys.add(key);
         deduplicatedSections.push({ ...section });
     }
 
@@ -235,35 +243,41 @@ export function mergeBookParts(targetBook, newPartBook) {
                     return placeholderMap.get(fullMatch);
                 });
             }
-            delete s._isIncoming;
-        }
-    } else {
-        for (const s of deduplicatedSections) {
-            delete s._isIncoming;
         }
     }
 
-    // Rewrite colliding section IDs
+    // Rewrite colliding section IDs. The target's sections claim their IDs
+    // first, whatever the reading order: the saved reading position and the
+    // section translations point at them, so only incoming sections are renamed.
     const usedIds = new Set();
     const idCounts = new Map();
-
-    for (const section of deduplicatedSections) {
-        let baseId = section.id || 's-1';
+    const claimId = (section) => {
+        const baseId = section.id || 's-1';
         if (!usedIds.has(baseId)) {
             usedIds.add(baseId);
             idCounts.set(baseId, 1);
-        } else {
-            let count = (idCounts.get(baseId) || 1) + 1;
-            idCounts.set(baseId, count);
-            let candidate = `${baseId}-${count}`;
-            while (usedIds.has(candidate)) {
-                count++;
-                candidate = `${baseId}-${count}`;
-                idCounts.set(baseId, count);
-            }
-            section.id = candidate;
-            usedIds.add(candidate);
+            section.id = baseId;
+            return;
         }
+        let count = (idCounts.get(baseId) || 1) + 1;
+        let candidate = `${baseId}-${count}`;
+        while (usedIds.has(candidate)) {
+            count++;
+            candidate = `${baseId}-${count}`;
+        }
+        idCounts.set(baseId, count);
+        section.id = candidate;
+        usedIds.add(candidate);
+    };
+
+    for (const section of deduplicatedSections) {
+        if (!section._isIncoming) claimId(section);
+    }
+    for (const section of deduplicatedSections) {
+        if (section._isIncoming) claimId(section);
+    }
+    for (const section of deduplicatedSections) {
+        delete section._isIncoming;
     }
 
     return {
