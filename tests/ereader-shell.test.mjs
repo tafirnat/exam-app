@@ -278,3 +278,8 @@ test('R2-04: the side menu has no title row and no close button (it closes by an
     assert.equal(html.includes('data-i18n="menu_title"'), false);
     assert.equal(html.includes('class="side-menu-header"'), false);
 });
+
+test('R2-05: the library is centred vertically while it fits (auto block margins in the flex main)', () => {
+    const css = readFileSync(new URL('../src/features/ereader/ereader.css', import.meta.url), 'utf8');
+    assert.match(css, /#ereaderLibraryView\s*\{[^}]*margin-block:\s*auto/);
+});

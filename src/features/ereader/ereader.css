@@ -45,6 +45,12 @@ body.ereader-mode {
     color: var(--text-secondary);
 }
 
+/* R2-05: main is a flex column filling the screen; auto block margins centre
+   the library in it while it fits and fall to 0 (top) once it is taller. */
+#ereaderLibraryView {
+    margin-block: auto;
+}
+
 .ereader-library-heading h2 {
     font-size: 1.1rem;
     margin: 0;

@@ -55,7 +55,7 @@ Status: done
 - `#ereaderLibraryView` is vertically centred when it fits in the viewport;
   when taller it starts at the top as now.
 
-Status: open
+Status: done
 
 ## R2-06 — Test stats filter overflows its card
 
