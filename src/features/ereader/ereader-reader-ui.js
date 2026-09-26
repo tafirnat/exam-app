@@ -1170,6 +1170,17 @@ export function bindEreaderReader({ switchView, closeMenu } = {}) {
     const content = document.getElementById('ereaderContent');
     if (content) {
         content.addEventListener('load', onContentLoad, true);
+        /* While the side menu is open, a tap on the text only closes the menu:
+           it must not also open a paragraph's actions, run one of them or open
+           the image dialog. Capture phase, so it runs before those handlers. */
+        content.addEventListener('click', (e) => {
+            const menu = document.getElementById('actionMenu');
+            if (menu && menu.classList.contains('active')) {
+                e.stopPropagation();
+                e.preventDefault();
+                if (typeof deps.closeMenu === 'function') deps.closeMenu();
+            }
+        }, true);
         content.addEventListener('click', (e) => {
             onParagraphTap(e);
             const placeholder = e.target.closest('.md-image-placeholder');

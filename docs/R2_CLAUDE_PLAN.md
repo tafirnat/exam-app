@@ -26,9 +26,9 @@ never force-push.
       Result (1200 sections, 3 MB, lists/tables): open 143 ms, 3–7 sections mounted, ~1.5–2k DOM
       nodes; 120 wheel steps down and 60 up on desktop and phone: 0 visible jumps; images loading
       late above the reader: max 0.1 px shift; font change ~200 ms; search ~300 ms.
-- [ ] A4 Reader + menus interplay: a tap that closes the side menu must not also open a paragraph's
+- [x] A4 Reader + menus interplay: a tap that closes the side menu must not also open a paragraph's
       actions or an image dialog; Esc order (search → dialog → menu → fullscreen).
-- [ ] A5 Paragraph actions: stop speech when the book changes / view is left / another book opens;
+- [x] A5 Paragraph actions: stop speech when the book changes / view is left / another book opens;
       translation language change refreshes the button titles; the box survives font change and
       sync redraw.
 - [ ] A6 Library: empty folder, deleting the open book, archive while a book is open, bulk actions on a

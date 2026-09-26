@@ -210,3 +210,38 @@ test('7. R2-10: with an AI connection the summary comes from it; retry asks agai
         aiClient.clearAiConnection();
     }
 });
+
+test('A4: with the side menu open, a tap on the text only closes the menu', async () => {
+    let closed = 0;
+    reader.bindEreaderReader({ switchView: () => {}, closeMenu: () => { closed++; document.getElementById('actionMenu').classList.remove('active'); } });
+    await openBookData();
+    const p = firstParagraph();
+    document.getElementById('actionMenu').classList.add('active');
+    click(p.querySelector('.p-translate-btn'));
+    await settle();
+    assert.equal(closed, 1, 'the menu was closed');
+    assert.equal(translated.length, 0, 'the action did not run');
+    assert.equal(document.querySelectorAll('#ereaderContent .p-translation-box').length, 0);
+
+    click(p.querySelector('.p-translate-btn'));
+    await settle();
+    assert.equal(translated.length, 1, 'with the menu closed the action runs');
+});
+
+test('A5: leaving the book stops the paragraph speech; a redraw keeps an open box', async () => {
+    const tts = await import('../src/features/ereader/ereader-tts.js');
+    await openBookData();
+    click(firstParagraph().querySelector('.p-tts-btn'));
+    assert.ok(tts.speakingKey(), 'speaking');
+    click(firstParagraph().querySelector('.p-translate-btn'));
+    await settle();
+
+    await reader.changeFontScale(1);
+    await settle();
+    const p = firstParagraph();
+    assert.equal(p.nextElementSibling?.dataset.viewMode, 'translate', 'the box is back after the redraw');
+    assert.equal(translated.length, 1, 'from the kept result, not a new request');
+
+    reader.leaveBookView();
+    assert.equal(tts.speakingKey(), null, 'leaving the book stops speech');
+});
