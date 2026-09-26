@@ -583,3 +583,42 @@ test('14. pullEreader skips an unreadable book file and still brings in the othe
     assert.ok(stored, 'the book after the broken one still comes in');
     assert.equal(ereaderStore.getProgress('b-good')?.percent, 50, 'progress is still applied');
 });
+
+test('A1: folders, order and archive travel in the index, without re-uploading the book', async () => {
+    const gistFiles = {};
+    const patches = [];
+    global.fetch = async (url, init = {}) => {
+        const method = (init.method || 'GET').toUpperCase();
+        if (method === 'PATCH') {
+            const body = JSON.parse(init.body || '{}');
+            patches.push(Object.keys(body.files || {}));
+            for (const [name, val] of Object.entries(body.files || {})) {
+                if (val === null) delete gistFiles[name];
+                else gistFiles[name] = { content: val.content };
+            }
+        }
+        return { ok: true, status: 200, json: async () => ({ files: { ...gistFiles } }) };
+    };
+
+    // Device A: a book, pushed once.
+    await ereaderStore.replaceBook(sampleBook('book-alpha', 'Alpha Book', 1000));
+    await pushEreader();
+    assert.ok(patches[0].includes(bookFilename('book-alpha')));
+
+    // Device A organises it: folder + archive. Only the index is patched.
+    await ereaderStore.saveFolders([{ id: 'f1', name: 'ITIL' }]);
+    await ereaderStore.setLibraryEntries({ 'book-alpha': { folderId: 'f1', archived: true } });
+    await pushEreader();
+    assert.deepEqual(patches[1], [INDEX_FILENAME], 'organising a book does not upload the book again');
+
+    // Device B pulls: same folder, same book state.
+    storage._setIdbBackendForTests(makeIdb());
+    ereaderStore._resetEreaderStoreForTests();
+    _resetEreaderSyncForTests();
+    await ereaderStore.loadEreader();
+    assert.equal(await pullEreader({ force: true }), true);
+    assert.deepEqual(ereaderStore.listFolders().map(f => f.name), ['ITIL']);
+    const b = ereaderStore.listBooks().find(x => x.id === 'book-alpha');
+    assert.equal(b.folderId, 'f1');
+    assert.equal(b.archived, true);
+});

@@ -4,7 +4,8 @@ import { readFileSync } from 'node:fs';
 import { JSDOM } from 'jsdom';
 
 import {
-    UNCATEGORIZED, orderBooks, groupBooks, knownFolders, moveId, exportBookJson, bookFileName
+    UNCATEGORIZED, orderBooks, groupBooks, moveId, exportBookJson, bookFileName,
+    mergeLibraryMaps, foldersOf
 } from '../src/features/ereader/ereader-folders.js';
 import { validateEreaderFile } from '../src/features/ereader/ereader-schema.js';
 
@@ -70,16 +71,32 @@ test('R2-11: manual order first, then most recently read; moveId puts a book bef
     assert.deepEqual(moveId(['a', 'b'], 'a', 'zz'), ['b', 'a']);
 });
 
-test('R2-11: books are grouped by folder; a folder only a book knows (from a sync) still shows; archived books are apart', () => {
+test('R2-11: books are grouped by folder; a book of a deleted folder is loose; archived books are apart', () => {
     const books = [
-        { id: 'a', folderId: 'f1' }, { id: 'b' }, { id: 'c', folderId: 'f2', folderName: 'Remote' }, { id: 'd', archived: true }
+        { id: 'a', folderId: 'f1' }, { id: 'b' }, { id: 'c', folderId: 'gone' }, { id: 'd', archived: true }
     ];
     const folders = [{ id: 'f1', name: 'Local', order: 0 }];
-    assert.deepEqual(knownFolders(folders, books).map(f => f.name), ['Local', 'Remote']);
     const groups = groupBooks(books, folders);
-    assert.deepEqual(groups.map(g => [g.folder.id, g.books.map(b => b.id)]), [['f1', ['a']], ['f2', ['c']], [UNCATEGORIZED, ['b']]]);
+    assert.deepEqual(groups.map(g => [g.folder.id, g.books.map(b => b.id)]), [['f1', ['a']], [UNCATEGORIZED, ['b', 'c']]]);
     assert.deepEqual(groupBooks(books, folders, { archived: true }).map(g => g.books.map(b => b.id)), [['d']]);
     assert.equal(groupBooks([{ id: 'x' }], [])[0].folder, null, 'no folders: one flat list');
+});
+
+test('A1: two devices merge the library entry by entry; a deleted folder stays deleted; a deleted book drops out', () => {
+    const phone = {
+        books: { a: { folderId: 'f1', order: 0, archived: false, at: 10 }, b: { folderId: null, order: 2, archived: false, at: 50 } },
+        folders: { f1: { name: 'ITIL', order: 0, at: 10 }, f2: { name: 'Old', order: 1, deleted: true, at: 40 } }
+    };
+    const laptop = {
+        books: { a: { folderId: 'f2', order: 5, archived: true, at: 20 }, b: { folderId: 'f1', order: 0, archived: false, at: 30 }, z: { folderId: null, order: 0, archived: false, at: 99 } },
+        folders: { f1: { name: 'ITIL 4', order: 0, at: 30 }, f2: { name: 'Old', order: 1, at: 20 } }
+    };
+    const merged = mergeLibraryMaps(phone, laptop, { tombstones: { z: 100 } });
+    assert.equal(merged.books.a.archived, true, 'the later change to a wins');
+    assert.equal(merged.books.b.order, 2, 'the later change to b wins');
+    assert.equal(merged.books.z, undefined, 'a deleted book is dropped');
+    assert.deepEqual(foldersOf(merged).map(f => f.name), ['ITIL 4'], 'rename wins; the deleted folder does not come back');
+    assert.deepEqual(mergeLibraryMaps(laptop, phone, { tombstones: { z: 100 } }), merged, 'the same result from both sides');
 });
 
 test('R2-11: a downloaded book is a valid e-Reader file again', () => {
@@ -110,8 +127,11 @@ test('R2-11: a folder is created, a book moved into it and shown under it; renam
     assert.deepEqual(blocks.map(b => b.querySelector('.ereader-folder-name').textContent), ['ITIL', 'No folder']);
     assert.deepEqual([...blocks[0].querySelectorAll('.ereader-book-title')].map(e => e.textContent), ['Alpha']);
 
+    const updatedAt = (await ereaderStore.getBook(a.id)).updatedAt;
     await manage.renameFolder(folder.id, 'ITIL 4');
-    assert.equal(ereaderStore.listBooks().find(b => b.id === a.id).folderName, 'ITIL 4', 'the name travels with the book');
+    assert.deepEqual(ereaderStore.listFolders().map(f => f.name), ['ITIL 4']);
+    assert.equal((await ereaderStore.getBook(a.id)).updatedAt, updatedAt, 'moving/renaming never rewrites the book');
+    assert.equal((await ereaderStore.getBook(a.id)).folderId, undefined, 'organisation is not stored on the book');
 });
 
 test('R2-11: deleting a folder keeps its books, without a folder', async () => {

@@ -2,9 +2,17 @@
  * e-Reader library organisation (R2-11): folders, manual order, archive.
  * Pure - no DOM, no storage.
  *
- * A book carries folderId (+ folderName, so a device that does not have the
- * folder yet can still show it by name), order and archived. The folder list
- * itself is device-local.
+ * The organisation is NOT stored on the books: moving or reordering twenty
+ * books would otherwise rewrite and re-upload twenty full books. It is a
+ * small "library map" kept next to the reading progress and synced in the
+ * index file:
+ *
+ *   { books:   { [bookId]: { folderId, order, archived, at } },
+ *     folders: { [folderId]: { name, order, deleted, at } } }
+ *
+ * Every entry carries its own time, so two devices merge entry by entry
+ * (mergeLibraryMaps); a deleted folder stays as a stamped tombstone so it
+ * does not come back from the other device.
  */
 
 export const UNCATEGORIZED = '__uncategorized__';
@@ -27,20 +35,59 @@ export function orderBooks(books, progressOf = () => null) {
     });
 }
 
-/**
- * Pure. The folders to show: the local ones in their order, then any folder a
- * book names that this device does not know yet.
- */
-export function knownFolders(folders, books) {
-    const list = folders.map(f => ({ ...f }));
-    const ids = new Set(list.map(f => f.id));
-    for (const b of books) {
-        if (b.folderId && !ids.has(b.folderId)) {
-            ids.add(b.folderId);
-            list.push({ id: b.folderId, name: b.folderName || b.folderId, order: list.length, collapsed: false, remote: true });
+export function emptyLibraryMap() {
+    return { books: {}, folders: {} };
+}
+
+/** Pure. A map read from storage or the network, with anything malformed dropped. */
+export function normalizeLibraryMap(map) {
+    const out = emptyLibraryMap();
+    const src = map && typeof map === 'object' ? map : {};
+    for (const [id, e] of Object.entries(src.books && typeof src.books === 'object' ? src.books : {})) {
+        if (!id || !e || typeof e !== 'object') continue;
+        out.books[id] = {
+            folderId: typeof e.folderId === 'string' && e.folderId ? e.folderId : null,
+            order: Number.isFinite(e.order) ? e.order : null,
+            archived: e.archived === true,
+            at: Number.isFinite(e.at) ? e.at : 0
+        };
+    }
+    for (const [id, f] of Object.entries(src.folders && typeof src.folders === 'object' ? src.folders : {})) {
+        if (!id || !f || typeof f !== 'object') continue;
+        out.folders[id] = {
+            name: typeof f.name === 'string' ? f.name : '',
+            order: Number.isFinite(f.order) ? f.order : 0,
+            deleted: f.deleted === true,
+            at: Number.isFinite(f.at) ? f.at : 0
+        };
+    }
+    return out;
+}
+
+/** Pure. Entry by entry, the later `at` wins (a tie keeps `a`). */
+export function mergeLibraryMaps(a, b, { tombstones = {} } = {}) {
+    const x = normalizeLibraryMap(a);
+    const y = normalizeLibraryMap(b);
+    const out = emptyLibraryMap();
+    for (const kind of ['books', 'folders']) {
+        const ids = new Set([...Object.keys(x[kind]), ...Object.keys(y[kind])]);
+        for (const id of ids) {
+            if (kind === 'books' && tombstones[id]) continue;
+            const ea = x[kind][id];
+            const eb = y[kind][id];
+            out[kind][id] = !ea ? { ...eb } : (!eb || ea.at >= eb.at ? { ...ea } : { ...eb });
         }
     }
-    return list;
+    return out;
+}
+
+/** Pure. The live folders of a map, in their order: [{ id, name, order }]. */
+export function foldersOf(map) {
+    const m = normalizeLibraryMap(map);
+    return Object.entries(m.folders)
+        .filter(([, f]) => !f.deleted)
+        .sort((p, q) => p[1].order - q[1].order || p[1].at - q[1].at)
+        .map(([id, f]) => ({ id, name: f.name, order: f.order }));
 }
 
 /**
@@ -51,15 +98,15 @@ export function knownFolders(folders, books) {
  */
 export function groupBooks(books, folders, { progressOf = () => null, archived = false } = {}) {
     const visible = books.filter(b => (b.archived === true) === archived);
-    const all = knownFolders(folders, books);
-    if (archived || all.length === 0) {
+    if (archived || folders.length === 0) {
         return [{ folder: null, books: orderBooks(visible, progressOf) }];
     }
-    const ids = new Set(all.map(f => f.id));
-    const groups = all.map(folder => ({
-        folder,
+    const ids = new Set(folders.map(f => f.id));
+    const groups = folders.map(folder => ({
+        folder: { ...folder },
         books: orderBooks(visible.filter(b => b.folderId === folder.id), progressOf)
     }));
+    /* A book whose folder was deleted (here or on another device) is loose. */
     const loose = visible.filter(b => !b.folderId || !ids.has(b.folderId));
     if (loose.length > 0) {
         groups.push({ folder: { id: UNCATEGORIZED, name: '', uncategorized: true }, books: orderBooks(loose, progressOf) });

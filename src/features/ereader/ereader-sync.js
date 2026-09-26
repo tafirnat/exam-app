@@ -5,14 +5,18 @@
  * Independent of the test centre sync.
  *
  * Files in Gist:
- * - exam_app_ereader_index.json (index, progress, tombstones)
+ * - exam_app_ereader_index.json (index, progress, tombstones, library:
+ *   folders / order / archive, merged entry by entry)
  * - exam_app_ereader_<bookId>.json (full book record per book)
  */
 
 import {
     loadEreader, listBooks, getBook, replaceBook, deleteBook,
-    getProgress, setProgress, getTombstones, setEreaderChangeListener
+    getProgress, setProgress, getTombstones, setEreaderChangeListener,
+    getLibraryMap, applyLibraryMap
 } from './ereader-store.js';
+import { mergeLibraryMaps } from './ereader-folders.js';
+import { stableStringify } from '../../core/utils.js';
 import { validateEreaderFile, validateSyncedBook } from './ereader-schema.js';
 import { isEreaderView } from './ereader-shell.js';
 
@@ -113,11 +117,15 @@ export function mergeEreaderIndex(local, remote) {
         }
     }
 
+    // 4. Library organisation (folders, order, archive): per entry, later 'at' wins
+    const mergedLibrary = mergeLibraryMaps(loc.library, rem.library, { tombstones: mergedTombstones });
+
     return {
         schema: 1,
         books: mergedBooks,
         progress: mergedProgress,
-        tombstones: mergedTombstones
+        tombstones: mergedTombstones,
+        library: mergedLibrary
     };
 }
 
@@ -145,7 +153,8 @@ export async function pullEreader({ force = false } = {}) {
         }
 
         await loadEreader();
-        const localBooks = listBooks();
+        /* The index lists books; their folder / order / archive travel in `library`. */
+        const localBooks = listBooks().map(({ folderId, order, archived, ...summary }) => summary);
         const localProgress = getProgress() || {};
         const localTombstones = getTombstones() || {};
 
@@ -153,7 +162,8 @@ export async function pullEreader({ force = false } = {}) {
             schema: 1,
             books: localBooks,
             progress: localProgress,
-            tombstones: localTombstones
+            tombstones: localTombstones,
+            library: getLibraryMap()
         };
 
         const merged = mergeEreaderIndex(localIndex, remoteIndex);
@@ -211,6 +221,11 @@ export async function pullEreader({ force = false } = {}) {
             }
         }
 
+        // Apply the library organisation when the other side changed it
+        if (stableStringify(merged.library) !== stableStringify(localIndex.library)) {
+            await applyLibraryMap(merged.library, { fromSync: true });
+        }
+
         // Apply progress updates
         for (const [id, prog] of Object.entries(merged.progress)) {
             const currentProg = localProgress[id];
@@ -241,7 +256,8 @@ export async function pushEreader() {
 
     try {
         await loadEreader();
-        const localBooks = listBooks();
+        /* The index lists books; their folder / order / archive travel in `library`. */
+        const localBooks = listBooks().map(({ folderId, order, archived, ...summary }) => summary);
         const localProgress = getProgress() || {};
         const localTombstones = getTombstones() || {};
 
@@ -252,7 +268,8 @@ export async function pushEreader() {
             schema: 1,
             books: localBooks,
             progress: localProgress,
-            tombstones: localTombstones
+            tombstones: localTombstones,
+            library: getLibraryMap()
         };
 
         const merged = mergeEreaderIndex(localIndex, remoteIndex);

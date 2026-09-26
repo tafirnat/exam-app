@@ -15,10 +15,10 @@ import { t } from '../../core/i18n.js';
 import { showToast, showConfirm } from '../../core/utils.js';
 import {
     listBooks, getBook, getProgress, updateBook, deleteBook, resetBookProgress,
-    listFolders, saveFolders
+    listFolders, saveFolders, setLibraryEntries
 } from './ereader-store.js';
 import {
-    UNCATEGORIZED, groupBooks, knownFolders, moveId, newFolderId, exportBookJson, bookFileName
+    UNCATEGORIZED, groupBooks, moveId, newFolderId, exportBookJson, bookFileName
 } from './ereader-folders.js';
 
 const GRIP = '<svg width="16" height="24" viewBox="0 0 16 24" fill="currentColor"><circle cx="6" cy="6" r="1.5"/><circle cx="10" cy="6" r="1.5"/><circle cx="6" cy="12" r="1.5"/><circle cx="10" cy="12" r="1.5"/><circle cx="6" cy="18" r="1.5"/><circle cx="10" cy="18" r="1.5"/></svg>';
@@ -55,9 +55,11 @@ function folderKey(folder) {
 
 // ── folders ───────────────────────────────────────────────────────────────
 
-/** The folder list including folders only books know about (from a sync). */
+/* Folder, order and archive live in the store's library map, not on the
+   books: none of these writes touches (or re-uploads) a book. */
+
 function allFolders() {
-    return knownFolders(listFolders(), listBooks());
+    return listFolders();
 }
 
 async function persistFolders(list) {
@@ -76,50 +78,42 @@ export async function renameFolder(id, name) {
     const clean = String(name || '').trim();
     if (!clean) return false;
     await persistFolders(allFolders().map(f => (f.id === id ? { ...f, name: clean } : f)));
-    for (const b of listBooks().filter(b => b.folderId === id)) {
-        await updateBook(b.id, book => { book.folderName = clean; });
-    }
     return true;
 }
 
 /** Deletes a folder; its books become uncategorized (they are not deleted). */
 export async function deleteFolder(id) {
+    const patches = {};
+    for (const b of listBooks().filter(b => b.folderId === id)) patches[b.id] = { folderId: null, order: null };
+    await setLibraryEntries(patches);
     await persistFolders(allFolders().filter(f => f.id !== id));
-    for (const b of listBooks().filter(b => b.folderId === id)) {
-        await updateBook(b.id, book => { book.folderId = null; book.folderName = ''; });
-    }
 }
 
 async function toggleCollapsed(id) {
     await persistFolders(allFolders().map(f => (f.id === id ? { ...f, collapsed: !f.collapsed } : f)));
 }
 
-/** Moves books into a folder (null / UNCATEGORIZED = no folder), at its end. */
+/** Moves books into a folder (null / UNCATEGORIZED = no folder), after its ordered books. */
 export async function moveBooksToFolder(ids, folderId) {
     const target = folderId && folderId !== UNCATEGORIZED ? folderId : null;
-    const folder = target ? allFolders().find(f => f.id === target) : null;
-    for (const id of ids) {
-        await updateBook(id, book => {
-            book.folderId = target;
-            book.folderName = folder ? folder.name : '';
-            book.order = null;
-        });
-    }
+    const patches = {};
+    for (const id of ids) patches[id] = { folderId: target, order: null };
+    await setLibraryEntries(patches);
 }
 
 /** Writes a manual order for the books of one folder. */
 async function writeOrder(orderedIds) {
-    const books = new Map(listBooks().map(b => [b.id, b]));
-    for (let i = 0; i < orderedIds.length; i++) {
-        const b = books.get(orderedIds[i]);
-        if (b && b.order !== i) await updateBook(b.id, book => { book.order = i; });
-    }
+    const patches = {};
+    orderedIds.forEach((id, i) => { patches[id] = { order: i }; });
+    await setLibraryEntries(patches);
 }
 
 // ── per-book operations ───────────────────────────────────────────────────
 
 export async function setArchived(ids, archived) {
-    for (const id of ids) await updateBook(id, book => { book.archived = !!archived; });
+    const patches = {};
+    for (const id of ids) patches[id] = { archived: !!archived };
+    await setLibraryEntries(patches);
 }
 
 export async function resetProgressOf(ids) {
@@ -393,7 +387,7 @@ function createFolderHeader(folder, count) {
     const countEl = el('span', 'ereader-folder-count', String(count));
     header.append(toggle, icon, name, countEl);
 
-    if (!folder.uncategorized && !folder.remote) {
+    if (!folder.uncategorized) {
         header.addEventListener('click', (e) => {
             if (e.target.closest('.ereader-folder-menu')) return;
             toggleCollapsed(folder.id);

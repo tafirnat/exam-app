@@ -13,7 +13,7 @@ never force-push.
 
 ## Phase A — correctness of what R2 changed (self-audit)
 
-- [ ] A1 Library organisation must not re-upload whole books. Folder / order / archive live on the book
+- [x] A1 Library organisation must not re-upload whole books. Folder / order / archive live on the book
       today, so dragging 20 books writes and syncs 20 full books. Move them into a light library map
       (`{bookId: {folderId, order, archived, at}}` + the folder list) kept in the synced index file,
       merged per entry by time. Books and their sync stay untouched by reordering.

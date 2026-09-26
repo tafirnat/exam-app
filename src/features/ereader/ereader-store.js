@@ -6,15 +6,16 @@
 import { persistAsync, persistRemoveAsync, readJSONAsync } from '../../core/storage.js';
 import { emit, Slice } from '../../core/store.js';
 import { AppState } from '../../core/state.js';
+import { emptyLibraryMap, normalizeLibraryMap, foldersOf } from './ereader-folders.js';
 
 const INDEX_KEY = 'focus_app_ereader_index';
 const BOOK_PREFIX = 'focus_app_ereader_book_';
 const PROGRESS_KEY = 'focus_app_ereader_progress';
 const TOMBSTONES_KEY = 'focus_app_ereader_tombstones';
 const PREFS_KEY = 'focus_app_ereader_prefs';
-/** R2-11: the library's folders, [{ id, name, order, collapsed }]. Device-local;
-    a book carries its folder's id and name, so another device still groups it. */
-const FOLDERS_KEY = 'focus_app_ereader_folders';
+/** R2-11: folders, order and archive (see ereader-folders.js). Synced in the
+    index file, never on the books. */
+const LIBRARY_KEY = 'focus_app_ereader_library';
 
 let loaded = false;
 let loadPromise = null;
@@ -23,7 +24,7 @@ const bookCache = new Map();
 let progressMap = {};
 let tombstonesMap = {};
 let prefsData = { fontScale: 1, lastBookId: null };
-let foldersData = [];
+let libraryMap = emptyLibraryMap();
 let changeListener = null;
 
 function notifyChange(action, payload) {
@@ -53,11 +54,7 @@ function createSummary(book) {
         sectionCount,
         textLength,
         createdAt: book.createdAt || Date.now(),
-        updatedAt: book.updatedAt || Date.now(),
-        folderId: typeof book.folderId === 'string' && book.folderId ? book.folderId : null,
-        folderName: typeof book.folderName === 'string' ? book.folderName : '',
-        order: Number.isFinite(book.order) ? book.order : null,
-        archived: book.archived === true
+        updatedAt: book.updatedAt || Date.now()
     };
 }
 
@@ -77,17 +74,19 @@ export async function loadEreader() {
             readJSONAsync(PROGRESS_KEY, {}),
             readJSONAsync(TOMBSTONES_KEY, {}),
             readJSONAsync(PREFS_KEY, { fontScale: 1, lastBookId: null }),
-            readJSONAsync(FOLDERS_KEY, [])
+            readJSONAsync(LIBRARY_KEY, null)
         ]);
-        foldersData = Array.isArray(folders)
-            ? folders.filter(f => f && typeof f.id === 'string' && typeof f.name === 'string')
-            : [];
+        libraryMap = normalizeLibraryMap(folders);
 
         bookIndex = Array.isArray(idx) ? idx : [];
         progressMap = prog && typeof prog === 'object' && !Array.isArray(prog) ? prog : {};
         tombstonesMap = tombs && typeof tombs === 'object' && !Array.isArray(tombs) ? tombs : {};
         prefsData = prefs && typeof prefs === 'object' && !Array.isArray(prefs)
-            ? { fontScale: prefs.fontScale ?? 1, lastBookId: prefs.lastBookId ?? null }
+            ? {
+                fontScale: prefs.fontScale ?? 1,
+                lastBookId: prefs.lastBookId ?? null,
+                collapsedFolders: Array.isArray(prefs.collapsedFolders) ? prefs.collapsedFolders : []
+            }
             : { fontScale: 1, lastBookId: null };
 
         loaded = true;
@@ -110,7 +109,15 @@ export function isEreaderLoaded() {
  * @returns {Array<object>}
  */
 export function listBooks() {
-    return bookIndex.filter(b => !tombstonesMap[b.id]).map(b => ({ ...b }));
+    return bookIndex.filter(b => !tombstonesMap[b.id]).map(b => {
+        const lib = libraryMap.books[b.id];
+        return {
+            ...b,
+            folderId: lib ? lib.folderId : null,
+            order: lib ? lib.order : null,
+            archived: lib ? lib.archived : false
+        };
+    });
 }
 
 /**
@@ -332,22 +339,74 @@ export async function setPrefs(patch) {
     return { ...prefsData };
 }
 
-/** R2-11: the library's folders, in their order. */
+/** R2-11: the live folders, in their order: [{ id, name, order, collapsed }]. */
 export function listFolders() {
-    return [...foldersData]
-        .sort((a, b) => (a.order ?? 0) - (b.order ?? 0))
-        .map(f => ({ ...f }));
+    const collapsed = new Set(Array.isArray(prefsData.collapsedFolders) ? prefsData.collapsedFolders : []);
+    return foldersOf(libraryMap).map(f => ({ ...f, collapsed: collapsed.has(f.id) }));
 }
 
-/** Replaces the folder list and repaints the library. */
+/** A copy of the whole library map (for sync). */
+export function getLibraryMap() {
+    return normalizeLibraryMap(libraryMap);
+}
+
+async function writeLibrary({ fromSync = false } = {}) {
+    await persistAsync(LIBRARY_KEY, libraryMap);
+    emit(Slice.EREADER_LIBRARY);
+    if (!fromSync) notifyChange('library');
+}
+
+/**
+ * Replaces the folder list: new and changed folders are stamped now, missing
+ * ones become stamped tombstones. Collapsed state is this device's only.
+ */
 export async function saveFolders(folders) {
     if (!loaded) await loadEreader();
-    foldersData = (Array.isArray(folders) ? folders : [])
-        .filter(f => f && typeof f.id === 'string' && typeof f.name === 'string')
-        .map((f, i) => ({ id: f.id, name: f.name, order: i, collapsed: !!f.collapsed }));
-    await persistAsync(FOLDERS_KEY, foldersData);
-    emit(Slice.EREADER_LIBRARY);
+    const now = Date.now();
+    const list = (Array.isArray(folders) ? folders : []).filter(f => f && typeof f.id === 'string' && typeof f.name === 'string');
+    const keep = new Set(list.map(f => f.id));
+    list.forEach((f, order) => {
+        const cur = libraryMap.folders[f.id];
+        if (!cur || cur.deleted || cur.name !== f.name || cur.order !== order) {
+            libraryMap.folders[f.id] = { name: f.name, order, deleted: false, at: now };
+        }
+    });
+    for (const [id, f] of Object.entries(libraryMap.folders)) {
+        if (!keep.has(id) && !f.deleted) libraryMap.folders[id] = { ...f, deleted: true, at: now };
+    }
+    const collapsed = list.filter(f => f.collapsed).map(f => f.id);
+    prefsData = { ...prefsData, collapsedFolders: collapsed };
+    await persistAsync(PREFS_KEY, prefsData);
+    await writeLibrary();
     return listFolders();
+}
+
+/**
+ * Sets folder / order / archived for books: patches = { [bookId]: { folderId?, order?, archived? } }.
+ * The books themselves are not touched (nor re-synced).
+ */
+export async function setLibraryEntries(patches) {
+    if (!loaded) await loadEreader();
+    const now = Date.now();
+    let changed = false;
+    for (const [id, patch] of Object.entries(patches || {})) {
+        if (!id || tombstonesMap[id]) continue;
+        const cur = libraryMap.books[id] || { folderId: null, order: null, archived: false, at: 0 };
+        const next = { ...cur, ...patch, at: now };
+        if (next.folderId === undefined || next.folderId === '') next.folderId = null;
+        if (cur.folderId === next.folderId && cur.order === next.order && cur.archived === next.archived) continue;
+        libraryMap.books[id] = next;
+        changed = true;
+    }
+    if (changed) await writeLibrary();
+    return changed;
+}
+
+/** Sync: takes a merged map as the new state. */
+export async function applyLibraryMap(map, { fromSync = true } = {}) {
+    if (!loaded) await loadEreader();
+    libraryMap = normalizeLibraryMap(map);
+    await writeLibrary({ fromSync });
 }
 
 /**
@@ -430,6 +489,6 @@ export function _resetEreaderStoreForTests() {
     progressMap = {};
     tombstonesMap = {};
     prefsData = { fontScale: 1, lastBookId: null };
-    foldersData = [];
+    libraryMap = emptyLibraryMap();
     changeListener = null;
 }
