@@ -355,3 +355,29 @@ test('5. saving image URL containing dollar signs ($) does not corrupt URL', asy
     assert.ok(updated.sections[0].text.includes('![Placeholder](https://example.com/images/ph.png?price=$50&code=$2)'), 'Dollar signs in placeholder: must be preserved literally');
 });
 
+test('6. saving image URL with parentheses encodes them and keeps image renderable', async () => {
+    const customBook = {
+        ereader: { schema: 1, book_key: 'paren-test', title: 'Parentheses Test', author: 'A', language: 'en', source_type: 'obsidian' },
+        sections: [
+            {
+                id: 's1',
+                title: 'Chapter 1',
+                level: 1,
+                text: 'See the figure below:\n\n![Fig](placeholder:img-1)'
+            }
+        ]
+    };
+    const book = await addAndOpen(customBook);
+
+    reader.openImageUrlModal('placeholder:img-1');
+    const input = document.getElementById('ereaderImageUrlInput');
+    const saveBtn = document.getElementById('ereaderImageUrlSaveBtn');
+    input.value = 'https://upload.wikimedia.org/Foo_(bar).png';
+    await saveBtn.onclick();
+
+    const updated = await ereaderStore.getBook(book.id);
+    const text = updated.sections[0].text;
+    assert.ok(text.includes('![Fig](https://upload.wikimedia.org/Foo_%28bar%29.png)'));
+    assert.equal(text.includes('placeholder:img-1'), false);
+});
+

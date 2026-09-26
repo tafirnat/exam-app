@@ -661,7 +661,7 @@ export function bindEreaderReader({ switchView, closeMenu } = {}) {
 
     if (imgSaveBtn && imgInput) {
         imgSaveBtn.onclick = async () => {
-            const url = imgInput.value.trim();
+            const url = imgInput.value.trim().replace(/[()]/g, c => (c === '(' ? '%28' : '%29'));
             if (!/^https:\/\/[^\s]+$/i.test(url)) {
                 showAlert(t('ereader_invalid_image_url'), t('warning_title'));
                 return;
