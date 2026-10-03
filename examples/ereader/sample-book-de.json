@@ -1,0 +1,174 @@
+{
+  "ereader": {
+    "schema": 1,
+    "book_key": "systemarchitektur-und-ereader-handbuch-de",
+    "title": "Moderne Systemarchitektur & e-Reader Referenzhandbuch",
+    "author": "Exam App Entwicklerteam",
+    "language": "de",
+    "source_type": "pdf",
+    "part": {
+      "unit": "page",
+      "from": 1,
+      "to": 22,
+      "total": 22,
+      "next_from": null,
+      "is_last": true
+    }
+  },
+  "sections": [
+    {
+      "id": "s-1",
+      "title": "1. Einführung und Architekturvision",
+      "level": 1,
+      "page_start": 1,
+      "text": "Dieses Referenzwerk dient der vollständigen Validierung aller visuellen, funktionalen und **strukturellen Überschriften-Tiefen (TOC-Hierarchie)** der unabhängigen **Exam App** e-Reader-Engine.\n\n> [!abstract] Ziel und Umfang\n> Dieses Werk ermöglicht das Testen von mehrstufigen Überschriften (Level 1 bis Level 4), Obsidian-Callout-Boxen, mehrspaltigen Tabellen, Code-Blöcken mit Syntax-Highlighting und seitenbasierter (`unit: \"page\"`) Navigation.\n\n### Warum ein unabhängiger e-Reader?\nDas Lesen umfangreicher Handbücher während Fragen- oder Karteikarten-Sitzungen führt oft zu Ablenkungen. Der e-Reader bietet eine isolierte Leseumgebung ohne störende Prüfungsmetriken.\n\n- [x] Vollständig isolierte Leseumgebung\n- [x] Mehrstufiges Inhaltsverzeichnis (TOC)\n- [x] Dauerhafte Speicherung der Leseposition"
+    },
+    {
+      "id": "s-1-1",
+      "title": "1.1 Kernarchitektur und Isolationsmodell",
+      "level": 2,
+      "page_start": 2,
+      "text": "Die e-Reader-Engine ist strikt von der zentralen Zustandsverwaltung der Anwendung getrennt. Dies garantiert optimale Performance und Datenintegrität.\n\n> [!info] Autonomer Lebenszyklus\n> Der Reader-Speicher wird beim Starten der App nicht geladen; er initialisiert sich erst asynchron, sobald die Bibliothek zum ersten Mal geöffnet wird."
+    },
+    {
+      "id": "s-1-1-1",
+      "title": "1.1.1 Isolierter Lesemodus vs. Testcenter",
+      "level": 3,
+      "page_start": 3,
+      "text": "Lesezeiten, betrachtete Seiten oder Markierungen beeinflussen weder die **FSRS-Wiederholungsintervalle** noch Prüfungsstatistiken oder Streak-Zähler.\n\n> [!note] Fokus-Prinzip\n> Der Lesemodus dient ausschließlich dem ungestörten und tiefgehenden Quellenstudium.\n\n```text\n[Testcenter]      <-- Keine Datenkopplung -->     [e-Reader-Engine]\n  - FSRS-Karten                                      - Seitennavigation\n  - Testergebnisse                                   - Notizen & Markierungen\n  - Streak-Zähler                                    - Tiefes TOC-Verzeichnis\n```"
+    },
+    {
+      "id": "s-1-1-1-1",
+      "title": "1.1.1.1 Zustandsverwaltung und Speichereffizienz",
+      "level": 4,
+      "page_start": 4,
+      "text": "Dieser Unterabschnitt testet die **vierte Hierarchie-Ebene** und die visuelle Einrückung (`--toc-depth: 3`) im Inhaltsverzeichnis.\n\n> [!tip] Performance-Tipp\n> Um den DOM schlank zu halten, rendert der Reader stets nur das aktive Kapitel und dessen unmittelbare Umgebung.\n\nSchlüsselaspekte des Speichermanagements:\n1. Minimierung von DOM-Knoten\n2. Passive Scroll-Event-Listener\n3. Ressourcenbereinigung bei Kapitelwechseln"
+    },
+    {
+      "id": "s-1-1-2",
+      "title": "1.1.2 Datenpersistenz und Synchronisation",
+      "level": 3,
+      "page_start": 5,
+      "text": "Buchinhalte und die Leseposition werden sicher in browserinternem **IndexedDB** und **localStorage** verwaltet.\n\n> [!success] Nahtlose Wiederaufnahme\n> Wenn Sie das Buch nach Tagen erneut öffnen, springt der e-Reader exakt an die zuletzt gelesene Textstelle zurück."
+    },
+    {
+      "id": "s-1-2",
+      "title": "1.2 Typografie, Paginierung und Layout",
+      "level": 2,
+      "page_start": 6,
+      "text": "Zeilenlänge, Kontrast und Zeilenabstand genügen internationalen Barrierefreiheitsstandards für ermüdungsfreies Lesen."
+    },
+    {
+      "id": "s-1-2-1",
+      "title": "1.2.1 Dynamische Schriftgrößen-Skalierung",
+      "level": 3,
+      "page_start": 7,
+      "text": "Über die Tasten `A-` und `A+` in der oberen Leiste kann die Schriftgröße skaliert werden.\n\n- `A-`: Verkleinert die Schriftart stufenweise.\n- `A+`: Vergrößert die Schriftart stufenweise.\n- Die gewählte Einstellung bleibt sitzungsübergreifend ==gespeichert==.\n\n> [!example] CSS-Variable\n> Die Skalierung erfolgt live über `var(--ereader-font-size, 1.05rem)`."
+    },
+    {
+      "id": "s-1-2-2",
+      "title": "1.2.2 Medien- und Bildintegration",
+      "level": 3,
+      "page_start": 8,
+      "text": "Bilder über gesicherte `https://`-Verbindungen werden responsiv eingebettet.\n\n![Software-Architektur Arbeitsplatz](https://images.pexels.com/photos/1181675/pexels-photo-1181675.jpeg?auto=compress&cs=tinysrgb&w=800)\n\nGrafiken werden zentriert dargestellt und durch Bildunterschriften ergänzt.\n\nDas Feld unten ist ein **leerer Bildplatzhalter**: Die KI fügt Abbildungen nie selbst ein, sondern setzt an ihre Stelle einen Platzhalter mit Bildunterschrift, kurzer Beschreibung und Seitenzahl. Tippen Sie auf das Feld, um das Bild vom Gerät oder per Link hinzuzufügen – ein Link wird im Buch gespeichert, ein Bild vom Gerät bleibt nur auf diesem Gerät.\n\n![Abbildung 1.2 Übersicht des Reader-Layouts | Schema: Kopfzeile mit Suche oben, Inhaltsverzeichnis links, Lesebereich in der Mitte | S. 3](placeholder:fig-1-2)"
+    },
+    {
+      "id": "s-2",
+      "title": "2. Obsidian Markdown & Zukunftsfähige Inhalte",
+      "level": 1,
+      "page_start": 9,
+      "text": "Exam App unterstützt **100% natives Obsidian Markdown**. Es werden keine rohen HTML-Tags interpretiert; alle Auszeichnungen basieren auf Markdown.\n\n> [!abstract] Kapitelübersicht\n> In diesem Kapitel werden alle 11 Callout-Typen, formatierte Tabellen und Code-Blöcke getestet."
+    },
+    {
+      "id": "s-2-1",
+      "title": "2.1 Obsidian Callout-Kategorien",
+      "level": 2,
+      "page_start": 10,
+      "text": "Die Syntax `> [!type] Titel` dient der Hervorhebung relevanter Fakten."
+    },
+    {
+      "id": "s-2-1-1",
+      "title": "2.1.1 Informations- und Zusammenfassungsboxen",
+      "level": 3,
+      "page_start": 11,
+      "text": "> [!note] Standard-Notiz\n> Dient für ergänzende Erläuterungen und Hintergrundkontext.\n\n> [!info] Systeminformation\n> Die Reader-Architektur arbeitet ohne externe Laufzeit-Abhängigkeiten.\n\n> [!abstract] Zusammenfassung (TL;DR)\n> Schnelles Parsen garantiert minimale Ladezeiten."
+    },
+    {
+      "id": "s-2-1-2",
+      "title": "2.1.2 Warnungen, Fehler und Erfolgsmeldungen",
+      "level": 3,
+      "page_start": 12,
+      "text": "> [!tip] Empfehlung für Autoren\n> Eine saubere Hierarchie (`Level 1 -> Level 2 -> Level 3`) gewährleistet perfektes Einklappen im Menü.\n\n> [!success] Testlauf erfolgreich\n> Alle Validierungsroutinen wurden fehlerfrei abgeschlossen.\n\n> [!warning] Sicherheitshinweis\n> HTML-Tags (`div`, `span`) werden aus Sicherheitsgründen maskiert.\n\n> [!danger] Kritisches Risiko\n> Das Löschen des Browserspeichers ohne Gist-Sync setzt ungesicherte Markierungen zurück."
+    },
+    {
+      "id": "s-2-1-3",
+      "title": "2.1.3 Fallbeispiele und Zitate",
+      "level": 3,
+      "page_start": 13,
+      "text": "> [!example] Praxis-Szenario\n> Ein 1000-seitiges Lehrbuch benötigt im e-Reader weniger als 15MB Heap-Speicher.\n\n> [!bug] Bekannte Ausnahme\n> Veraltete Zeichenkodierungen werden automatisch nach UTF-8 konvertiert.\n\n> [!quote] Klassisches Zitat\n> \"Einfachheit ist die höchste Stufe der Vollendung.\"\n> — Leonardo da Vinci"
+    },
+    {
+      "id": "s-2-2",
+      "title": "2.2 Tabellen, Code-Blöcke und Listen",
+      "level": 2,
+      "page_start": 14,
+      "text": "Präzise Tabellen und unverfälschte Code-Ausschnitte sind essenziell für technische Texte."
+    },
+    {
+      "id": "s-2-2-1",
+      "title": "2.2.1 Formatierte Datentabellen",
+      "level": 3,
+      "page_start": 15,
+      "text": "Diese Tabelle demonstriert die Spaltenausrichtung (Links, Mitte, Rechts):\n\n| Komponente | Aufgabenbereich | Ausrichtung | Verlässlichkeit |\n| :--- | :---: | ---: | ---: |\n| **Parser-Engine** | Markdown -> AST | Mitte | 99.9% |\n| **TOC-Generator** | Hierarchischer Baum | Links | 100.0% |\n| **Suchindex** | Direkt-Highlighting | Rechts | 98.5% |\n| **Persistenz** | IndexedDB Speicher | Mitte | 99.8% |"
+    },
+    {
+      "id": "s-2-2-1-1",
+      "title": "2.2.1.1 Detaillierte Leistungsmetriken",
+      "level": 4,
+      "page_start": 16,
+      "text": "Dieser zweite Unterabschnitt auf Ebene 4 belegt die korrekte Einrückung unter einem separaten Zweig.\n\n- ==Schnellsuche==: ~2ms\n- ==TOC-Struktur==: ~5ms\n- ==Kapitel-Render==: ~1ms\n\n> [!note] Ebenen-Prüfung\n> Wird mit `--toc-depth: 3` unter `2.2.1` gelistet."
+    },
+    {
+      "id": "s-2-2-2",
+      "title": "2.2.2 Syntax-hervorgehobener Code",
+      "level": 3,
+      "page_start": 17,
+      "text": "JavaScript Initialisierungsbeispiel:\n\n```javascript\n// e-Reader Konfigurationsobjekt\nconst readerConfig = {\n    theme: 'system',\n    fontSize: 18,\n    enableSearch: true,\n    preloadChapters: 2\n};\n\nconsole.log('e-Reader initialisiert:', readerConfig);\n```\n\nJSON Schema-Auszug:\n\n```json\n{\n  \"ereader\": {\n    \"schema\": 1,\n    \"book_key\": \"musterbuch-de\",\n    \"language\": \"de\"\n  }\n}\n```"
+    },
+    {
+      "id": "s-2-2-3",
+      "title": "2.2.3 Aufgabenlisten und Obsidian Wikilinks",
+      "level": 3,
+      "page_start": 18,
+      "text": "- [x] Überschriften-Tiefe validiert\n- [x] Tabellen-Ausrichtung überprüft\n- [x] Code-Blöcke unverändert erhalten\n- [ ] Zusätzliche Themes (Sepia, Mitternacht)\n\nLink-Test: [[Einführung|Zurück zum Start]] oder extern via [Obsidian Dokumentation](https://obsidian.md)."
+    },
+    {
+      "id": "s-3",
+      "title": "3. Navigation, Buchsuche und Analyse",
+      "level": 1,
+      "page_start": 19,
+      "text": "Zügiges Blättern, treffsichere Volltextsuche und klare Orientierung im Inhaltsverzeichnis bilden das Fundament des Lesekomforts."
+    },
+    {
+      "id": "s-3-1",
+      "title": "3.1 Einklappbares Inhaltsverzeichnis (TOC)",
+      "level": 2,
+      "page_start": 20,
+      "text": "Übergeordnete Abschnitte mit Unterkapiteln zeigen einen Pfeil (`chevron`) im Menü.\n\n> [!tip] So testen Sie das Menü\n> 1. Öffnen Sie das **Inhaltsverzeichnis** über das Menü-Icon.\n> 2. Klicken Sie auf den Pfeil neben `1. Einführung` oder `2. Obsidian Markdown`.\n> 3. Die untergeordneten Abschnitte klappen dynamisch ein und aus.\n> 4. Stellen Sie fest, dass `Level 4`-Abschnitte sauber eingerückt sind."
+    },
+    {
+      "id": "s-3-2",
+      "title": "3.2 Volltextsuche und Markierungen",
+      "level": 2,
+      "page_start": 21,
+      "text": "Über die Lupe in der oberen Leiste kann das gesamte Werk durchsucht werden.\n\n> [!question] Empfohlene Testbegriffe\n> Nutzen Sie diese Suchbegriffe für Mehrfachtreffer:\n> - `architektur` (In mehreren Kapiteln vorhanden)\n> - `callout` (In verschiedenen Hinweisfeldern)\n> - `tiefe` (In Abschnitten zur Hierarchie)\n> - `ebene` (Erfasst Struktur-Abschnitte)"
+    },
+    {
+      "id": "s-3-3",
+      "title": "3.3 Lesefortschritt und Abschluss",
+      "level": 2,
+      "page_start": 22,
+      "text": "Herzlichen Glückwunsch! Sie haben den letzten Abschnitt erreicht.\n\n> [!success] Test erfolgreich abgeschlossen\n> In der Bibliotheksübersicht wird der Fortschritt dieses Buchs nun mit **100%** ausgewiesen. Auch nach einem Neuladen der Seite bleibt Ihr Status erhalten.\n\n*Die moderne e-Reader-Engine unterstützt optimales, konzentriertes Lernen.*"
+    }
+  ]
+}
