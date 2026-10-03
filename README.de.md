@@ -45,6 +45,17 @@ Exam App wurde für alle entwickelt, die aus eigenem Material lernen:
 - **Karteikarte (Flashcard)** — klassisches Flip-Karten-Format mit Selbstbewertung
 *(Für lange Lesetexte, Dokumentationen und Bücher: e-Reader / [`EREADER_AI_PROMPT.md`](./EREADER_AI_PROMPT.md))*
 
+### e-Reader für lange Texte und Bücher
+
+Machen Sie aus einem PDF, einem EPUB, einer Obsidian-Notiz oder einfach einem Thema ein Buch, das Sie direkt in der App lesen — ganz ohne Frageformat.
+
+- **Bücher per KI**: Geben Sie [`EREADER_AI_PROMPT.md`](./EREADER_AI_PROMPT.md) zusammen mit Ihrer Quelle an ChatGPT, Claude oder Gemini. Die KI überträgt den Text wortgetreu in e-Reader-JSON; lange Quellen kommen in **Teilen**, die die App zu einem Buch zusammenführt, fehlende Bereiche meldet und Ihnen den fertigen Prompt für den nächsten Teil gibt.
+- **Angenehm lesen**: Inhaltsverzeichnis mit Fortschritt, einklappbare Kapitel, Suche im Buch, Lesezeichen mit Notizen, drei Schriftgrößen, Vollbild-Fokusmodus und Drucken / PDF. Die Leseposition wird pro Buch gemerkt.
+- **Abschnittsweise vorlesen**: Ein Vorlese-Knopf an jeder Überschrift liest genau diesen Abschnitt in der Sprache des Buchs und im gewählten Tempo. Mit **Autoplay** geht es von selbst zum nächsten Abschnitt; der gerade gelesene wird hervorgehoben und bleibt im Blick.
+- **Jeden Abschnitt übersetzen**: Ein Übersetzen-Knopf an jeder Überschrift zeigt die Übersetzung direkt unter dem Abschnitt. Ausgangs- und Zielsprache werden pro Buch gewählt.
+- **Eigene Bilder**: Abbildungen werden zu Platzhaltern, die das Originalbild benennen und beschreiben; tippen Sie darauf, um das Bild vom Gerät oder per URL einzufügen.
+- **Privat von Grund auf**: Sprachwahl und Bilder bleiben auf Ihrem Gerät und landen nie in einem geteilten Buch. Bücher und Lesepositionen synchronisieren über Ihren eigenen Gist; teilen Sie ein Buch oder laden Sie es als JSON aus seinen Einstellungen herunter.
+
 ### Intelligentes Spaced Repetition (FSRS v5)
 
 Schwierige Fragen kommen häufiger. Gut bekannte Fragen werden seltener wiederholt. Der FSRS v5-Algorithmus — auch von Anki genutzt — passt Wiederholungsintervalle an Ihr echtes Gedächtnis an, nicht an einen festen Plan.
@@ -100,7 +111,7 @@ Vollständige native Benutzeroberfläche auf **Englisch**, **Türkisch** und **D
 
 ### Text-to-Speech
 
-Liest Fragen und Lesekarten mit nativer Browser-Sprachsynthese vor. Einstellbare Geschwindigkeit (×0,7–×1,3), automatische Wiedergabe bei Navigation, schwebende Steuerleiste.
+Liest Fragen und Lesekarten mit den Online-Stimmen von Google vor (Internetverbindung nötig). Einstellbare Geschwindigkeit (×0,7–×1,3), automatische Wiedergabe bei Navigation, schwebende Steuerleiste. Der e-Reader hat einen eigenen Schalter und eigene Einstellungen: eine Vorlesesprache pro Buch und abschnittsweises Autoplay.
 
 ### Datensouveränität & Bring-Your-Own-Cloud (BYOC)
 

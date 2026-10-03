@@ -2197,10 +2197,16 @@ function setupEventListeners() {
     }
 
     // Global Click Close (Updated for Sidebar)
+    //
+    // In the e-Reader's book view the side menu holds only the contents
+    // list: closing it on every outside click would dismiss it while the
+    // reader is still using it (tapping a chapter, scrolling the list). It
+    // closes only when the reader taps back into the book text itself.
     document.addEventListener('click', (e) => {
-        if (menuActive && !e.target.closest('.side-menu') && !e.target.closest('#menuToggleBtn')) {
-            toggleMenu();
-        }
+        if (!menuActive) return;
+        if (e.target.closest('.side-menu') || e.target.closest('#menuToggleBtn')) return;
+        if (history.state?.view === 'ereaderBook' && !e.target.closest('#ereaderContent')) return;
+        toggleMenu();
     });
 
     /* Writes a note and dates it.

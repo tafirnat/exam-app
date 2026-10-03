@@ -56,7 +56,7 @@ You are a **faithful transcriber**. Your job is to move the text of the source i
 | `schema` | Always `1`. |
 | `book_key` | Lowercase slug of title + author + language, words joined by `-`. **If the user gave you a `book_key`, copy it exactly.** |
 | `title`, `author` | As printed in the source. Unknown author → `""`. |
-| `language` | ISO 639-1 code of the **source text** (`de`, `en`, `tr`, …). |
+| `language` | ISO 639-1 code of the **source text** (`de`, `en`, `tr`, …). The app reads the book aloud and translates it from this language, so it must be the language the text is actually written in. |
 | `source_type` | `pdf`, `epub`, `obsidian` or `topic`. |
 | `part.unit` | `page` when the source has page numbers, otherwise `section` (then `from`/`to`/`total` count top-level chapters). |
 | `part.from` / `part.to` | First and last page (or chapter) **fully** contained in this answer. |
@@ -100,18 +100,37 @@ Obsidian Markdown only — the full list is in `docs/MARKDOWN_SPEC.md` of the Ex
 | Code / command | fenced code block |
 | Footnotes | collected at the end of the section's `text` as a numbered list under `**Notes**` |
 
-Do **not** repeat the section's own heading inside `text` — the app draws it from `title`.
+Do **not** repeat the section's own heading inside `text` — the app draws it from `title`. Every heading of the source — sub-headings included — becomes its **own section** with the right `level`, never a `#` line inside `text`: the app builds its contents, folding, bookmarks, read-aloud and translation section by section from these entries.
 
 ---
 
 ## 🖼️ Images
 
-The app never stores image files. For every figure in the source:
+**Never put an image itself into the book** — no image URLs, no files, no `data:` / base64. Every figure, diagram, chart, photo, screenshot or illustration of the source becomes an **image placeholder** at the exact spot where it appears in the source. The reader adds the picture later in the app (from their own device or by URL); the placeholder's text is what lets them find the right figure in the source, so it must identify the figure precisely.
 
-- If the figure has a **public absolute `https://` URL** in the source (web pages, some EPUBs), write it: `![Figure 2.1 The service value system](https://…)`
-- Otherwise write a placeholder with the caption printed in the source:
-  `![Figure 2.1 The service value system](placeholder:fig-2-1)` — id pattern `fig-<chapter>-<n>`, unique in the book.
-- Put each image on **its own line**. Do not describe the image in words, do not invent a caption, never embed `data:` / base64 images.
+Format — one line on its own, with an empty line before and after:
+
+`![<caption> | <what the image shows> | p. <page>](placeholder:fig-<chapter>-<n>)`
+
+| Part | Rule |
+| :--- | :--- |
+| `<caption>` | The caption **exactly as printed** (e.g. `Figure 2.1 The service value system`). No printed caption → a short title you write, starting with `Image:` (e.g. `Image: Incident workflow`). |
+| `<what the image shows>` | **One sentence** describing the visible content so the figure can be recognised: kind of image + main elements, labels or values (e.g. `Diagram: five linked boxes — guiding principles, governance, value chain, practices, improvement`). Describe, do not interpret or add information that is not visible. |
+| `p. <page>` | Page where the image appears. Omit this part (and the separator before it) when the source has no pages. |
+| id | `fig-<chapter>-<n>`: chapter number + running number inside the chapter (`fig-2-1`, `fig-2-2`, …). Unique in the whole book; never reuse an id from an earlier part. |
+
+Rules:
+
+- Separate the parts with ` | ` (space, pipe, space). Never use square brackets `[` `]` or line breaks inside the alt text — write a bracketed part of a caption with round brackets instead.
+- One placeholder per image. An image made of several panels (a, b, c) is one image; describe the panels in the description.
+- Text that is printed **inside** an image (labels, a table rendered as a picture) is not transcribed into the body; mention the key labels in the description. A real table of the source stays a Markdown table, not an image.
+- Logos, decorative lines and page ornaments are not images — skip them.
+
+Example:
+
+```text
+![Figure 2.1 The service value system | Diagram: opportunity and demand flow into five linked components and come out as value | p. 34](placeholder:fig-2-1)
+```
 
 ---
 
@@ -146,8 +165,8 @@ When you receive it: use **exactly** that `book_key`, `title` and `language`, st
 ## 📚 By source type
 
 - **PDF** — use the printed page numbers; if the PDF has none, count physical pages from 1.
-- **EPUB** — usually no page numbers: `unit: "section"`, `from`/`to` count top-level chapters. EPUB images are files inside the archive, not URLs → placeholders. If your interface cannot open EPUB files, ask the user for a PDF or plain-text export.
-- **Obsidian note** — every heading is a section. `![[image.png]]` embeds become placeholders; `[[wikilinks]]` stay as they are.
+- **EPUB** — usually no page numbers: `unit: "section"`, `from`/`to` count top-level chapters. Images → placeholders (without `p.`). If your interface cannot open EPUB files, ask the user for a PDF or plain-text export.
+- **Obsidian note** — every heading is a section. `![[image.png]]` embeds become placeholders (use the file name as caption); `[[wikilinks]]` stay as they are.
 - **Topic (no source file)** — `source_type: "topic"`, `unit: "section"`. First plan the chapters, then write them part by part. Here the fidelity rule becomes an **accuracy** rule: state only what is established, and mark uncertain claims with `> [!warning]`. Replace the capacity line with: `Topic: <topic>. Planned chapters: 8. This answer contains chapters 1–3.`
 
 ---
@@ -155,8 +174,9 @@ When you receive it: use **exactly** that `book_key`, `title` and `language`, st
 ## ✅ Before you answer
 
 - [ ] Exactly one capacity line, then one JSON code block, nothing else
+- [ ] `language` is the language of the text itself; every heading is its own section, no `#` lines inside `text`
 - [ ] JSON parses; only schema keys used
 - [ ] Every section of the announced range is present, text complete and untranslated
 - [ ] The part ends at a complete section; `to`, `next_from`, `is_last` match
-- [ ] Images are `https://` URLs or `placeholder:` ids, each on its own line
+- [ ] Every image of the source is a `placeholder:fig-…` line with caption | description | page — no image URLs
 - [ ] No HTML, no `data:` images, no summaries

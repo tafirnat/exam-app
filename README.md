@@ -45,6 +45,17 @@ Exam App is built for anyone who learns from their own material:
 - **Flashcard** — classic flip card with self-rated retention
 *(For long texts, documentation, and books, see e-Reader / [`EREADER_AI_PROMPT.md`](./EREADER_AI_PROMPT.md))*
 
+### e-Reader for Long Texts and Books
+
+Turn a PDF, EPUB, Obsidian note or just a topic into a book you read inside the app — no question format needed.
+
+- **AI-generated books**: Give [`EREADER_AI_PROMPT.md`](./EREADER_AI_PROMPT.md) and your source to ChatGPT, Claude or Gemini. The AI transcribes it word for word into e-Reader JSON; long sources come in **parts** that the app joins into one book, warns about missing ranges, and hands you the ready-made prompt for the next part.
+- **Comfortable reading**: Contents drawer with progress, foldable chapters, in-book search, bookmarks with notes, three text sizes, fullscreen zen mode and print / PDF export. Your position is remembered per book.
+- **Read aloud, section by section**: A speak button on every heading reads just that section in the book's language at your chosen speed. With **autoplay** it moves on to the next section by itself, highlighting the one being read and keeping it in view.
+- **Translate any section**: A translate button on every heading shows the translation right under the section. Source and target language are chosen per book.
+- **Your own pictures**: Figures become placeholders that name and describe the original image; tap one to add the picture from your device or a URL.
+- **Private by design**: Language choices and pictures stay on your device and are never written into a shared book. Books and reading positions sync through your own Gist; share a book or download it as JSON from its settings.
+
 ### Intelligent Spaced Repetition (FSRS v5)
 
 Questions you find hard come back sooner. Questions you know well are spaced further apart. The FSRS v5 algorithm — the same engine used by Anki — adapts review intervals to your actual memory, not a fixed timetable.
@@ -100,7 +111,7 @@ Full UI in **English**, **Turkish**, and **German**. Integrated Google Translate
 
 ### Text-to-Speech
 
-Reads questions and reading cards aloud using native browser speech synthesis. Adjustable speed (×0.7–×1.3), autoplay on navigation, floating playback controls.
+Reads questions and reading cards aloud with Google's online voices (needs a connection). Adjustable speed (×0.7–×1.3), autoplay on navigation, floating playback controls. The e-Reader has its own switch and settings: a voice language per book and section-by-section autoplay.
 
 ### Data Sovereignty & BYOC (Bring-Your-Own-Cloud)
 

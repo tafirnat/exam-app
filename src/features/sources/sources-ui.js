@@ -1,6 +1,7 @@
 import { AppState, saveSources, saveStats, saveFolders, liveSources, liveFolders, touch, trackDeletedFolder, UNCATEGORIZED_FOLDER_ID, snapshotCurrentSession } from '../../core/state.js';
 import { t } from '../../core/i18n.js';
 import { showConfirm, showAlert, showToast, escapeHTML } from '../../core/utils.js';
+import { openShareOptions } from '../../core/share-options.js';
 import { syncQuickPresetsWithLiveSources } from './quick-presets.js';
 import { persist, readString } from '../../core/storage.js';
 import { calculateTopicMastery } from '../stats/continuity-engine.js';
@@ -173,166 +174,17 @@ export async function downloadSourceJSON(source, options = {}) {
 }
 
 export async function shareSourceJSON(source) {
-    const folderRow = document.getElementById('shareIncludeFolderRow');
-    const folderCheck = document.getElementById('shareIncludeFolderCheck');
-    const folderLabel = document.getElementById('shareIncludeFolderLabel');
     const folderName = currentFolderName(source);
-    if (folderRow && folderCheck) {
-        folderRow.style.display = folderName ? 'flex' : 'none';
-        folderCheck.checked = false;
-        if (folderLabel && folderName) folderLabel.textContent = t('share_include_folder', { name: folderName });
-    }
-    const shareOptions = () => ({ includeFolder: !!(folderName && folderCheck && folderCheck.checked) });
-    let jsonStr = JSON.stringify(getCleanSourceData(source), null, 2);
-    // Read at click time: the switch sits in the same dialog as the buttons.
-    const refreshJson = () => { jsonStr = JSON.stringify(getCleanSourceData(source, shareOptions()), null, 2); };
-
-    const overlay = document.getElementById('shareOptionsOverlay');
-    const nameEl = document.getElementById('shareOptionsSourceName');
-    const hintBox = document.getElementById('shareLargeDataHint');
-    const hintText = document.getElementById('shareLargeDataHintText');
-
-    const copyBtn = document.getElementById('shareCopyClipboardBtn');
-    const textBtn = document.getElementById('shareAsTextBtn');
-    const fileBtn = document.getElementById('shareAsFileBtn');
-    const viewBrowserBtn = document.getElementById('shareViewBrowserBtn');
-    const closeBtn = document.getElementById('shareOptionsCloseBtn');
-
-    if (!overlay || !copyBtn || !textBtn || !fileBtn || !closeBtn) {
-        // Basic fallback if modal elements are missing
-        if (navigator.clipboard && navigator.clipboard.writeText) {
-            await navigator.clipboard.writeText(jsonStr);
-            showToast(t('copy_success'));
-        }
-        return;
-    }
-
-    if (nameEl) nameEl.textContent = source.name;
-
-    // Karakter 500+ uyarısı
-    if (jsonStr.length > 500) {
-        if (hintBox && hintText) {
-            hintText.textContent = t('share_large_data_hint', { count: jsonStr.length });
-            hintBox.style.display = 'flex';
-        }
-    } else {
-        if (hintBox) hintBox.style.display = 'none';
-    }
-
-    overlay.classList.add('active');
-
-    const closeShareOptions = () => {
-        overlay.classList.remove('active');
-        copyBtn.onclick = null;
-        textBtn.onclick = null;
-        fileBtn.onclick = null;
-        if (viewBrowserBtn) viewBrowserBtn.onclick = null;
-        closeBtn.onclick = null;
-        overlay.onclick = null;
-    };
-
-    // 1. Panoya Kopyala (Copy to Clipboard - Pure JSON string for easy pasting)
-    copyBtn.onclick = async () => {
-        refreshJson();
-        closeShareOptions();
-        try {
-            if (navigator.clipboard && navigator.clipboard.writeText) {
-                await navigator.clipboard.writeText(jsonStr);
-                showToast(t('copy_success'));
-            } else {
-                const textArea = document.createElement('textarea');
-                textArea.value = jsonStr;
-                document.body.appendChild(textArea);
-                textArea.select();
-                document.execCommand('copy');
-                document.body.removeChild(textArea);
-                showToast(t('copy_success'));
-            }
-        } catch (err) {
-            console.error('Clipboard copy failed:', err);
-        }
-    };
-
-    // 2. Metin Olarak Paylaş (Share Text via Web Share API)
-    textBtn.onclick = async () => {
-        refreshJson();
-        closeShareOptions();
-        if (navigator.share) {
-            try {
-                await navigator.share({
-                    title: source.name,
-                    text: jsonStr
-                });
-            } catch (err) {
-                if (err.name !== 'AbortError') {
-                    console.error('Share text failed:', err);
-                }
-            }
-        } else {
-            // Fallback to clipboard copy if Web Share API is unavailable
-            try {
-                if (navigator.clipboard && navigator.clipboard.writeText) {
-                    await navigator.clipboard.writeText(jsonStr);
-                    showToast(t('copy_success'));
-                }
-            } catch (e) {
-                downloadSourceJSON(source, shareOptions());
-            }
-        }
-    };
-
-    // 3. JSON Dosyası Olarak Paylaş (Share JSON File)
-    fileBtn.onclick = async () => {
-        refreshJson();
-        closeShareOptions();
-        const sanitizeFileName = (source.name || 'exam_source').replace(/\s+/g, '_');
-        const fileName = `${sanitizeFileName}.json`;
-        const blob = new Blob([jsonStr], { type: 'application/json' });
-        const file = new File([blob], fileName, { type: 'application/json' });
-
-        if (navigator.canShare && navigator.canShare({ files: [file] })) {
-            try {
-                await navigator.share({
-                    title: source.name,
-                    files: [file]
-                });
-                return;
-            } catch (err) {
-                if (err.name === 'AbortError') return;
-                console.error('File share failed, falling back to download:', err);
-            }
-        }
-
-        // Fallback for browsers that don't support file sharing
-        downloadSourceJSON(source, shareOptions());
-    };
-
-    // 4. Tarayıcıda Aç (Open JSON natively in Browser)
-    if (viewBrowserBtn) {
-        viewBrowserBtn.onclick = () => {
-            refreshJson();
-            closeShareOptions();
-            try {
-                const blob = new Blob([jsonStr], { type: 'application/json;charset=utf-8;' });
-                const blobUrl = URL.createObjectURL(blob);
-                const win = window.open(blobUrl, '_blank');
-                if (!win) {
-                    window.location.href = blobUrl;
-                }
-                setTimeout(() => {
-                    URL.revokeObjectURL(blobUrl);
-                }, 60000);
-            } catch (err) {
-                console.error('Open in browser failed:', err);
-            }
-        };
-    }
-
-    closeBtn.onclick = closeShareOptions;
-
-    overlay.onclick = (e) => {
-        if (e.target === overlay) closeShareOptions();
-    };
+    // The folder name rides along only when asked (off by default: the folder
+    // is how the sender organises, the recipient may not want it).
+    const withFolder = ({ toggle }) => ({ includeFolder: !!(folderName && toggle) });
+    await openShareOptions({
+        name: source.name,
+        fileName: `${(source.name || 'exam_source').replace(/\s+/g, '_')}.json`,
+        getJson: (o) => JSON.stringify(getCleanSourceData(source, withFolder(o)), null, 2),
+        onDownload: (o) => downloadSourceJSON(source, withFolder(o)),
+        toggle: folderName ? { label: t('share_include_folder', { name: folderName }), checked: false } : null
+    });
 }
 
 

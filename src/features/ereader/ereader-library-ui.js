@@ -14,11 +14,11 @@ import { t } from '../../core/i18n.js';
 import { showToast, showAlert, showConfirm, showDecision } from '../../core/utils.js';
 import {
     isEreaderLoaded, listBooks, getBook, getProgress, getPrefs,
-    deleteBook, replaceBook, resetAllProgress, deleteAllBooks
+    deleteBook, replaceBook, updateBook, resetAllProgress, deleteAllBooks
 } from './ereader-store.js';
 import { importFromFiles, importFromText, importFromUrl } from './ereader-import.js';
 import { EREADER_AI_PROMPT } from './ereader-prompt.js';
-import { openBook } from './ereader-reader-ui.js';
+import { openBook, closeSettingsOverlay, shareBook, downloadBook, getOpenBook } from './ereader-reader-ui.js';
 import {
     canMergeParts, doPartsOverlap, checkDensity, mergeBookParts,
     hasMissingRanges, generateNextPartPrompt
@@ -35,6 +35,10 @@ const ACTIONS_ICON = `
 const URL_DEBOUNCE_MS = 800;
 
 let actionsBookId = null;
+/** The book the metadata modal is editing. */
+let metaBookId = null;
+/** Whether the library's "Archived" group is expanded; kept across repaints. */
+let archivedOpen = false;
 let bound = false;
 
 /**
@@ -58,7 +62,9 @@ function el(tag, className, text) {
 }
 
 function createBookRow(book, lastBookId, openBook) {
-    const row = el('div', 'ereader-book-row' + (book.id === lastBookId ? ' is-last' : ''));
+    const row = el('div', 'ereader-book-row'
+        + (book.id === lastBookId ? ' is-last' : '')
+        + (book.archived ? ' is-archived' : ''));
     row.dataset.bookId = book.id;
 
     const info = el('div', 'ereader-book-info');
@@ -136,19 +142,54 @@ export function renderEreaderLibrary() {
         list.replaceChildren();
         /* An empty library has one thing to do, so the panel opens itself
            rather than hiding behind the + in the header. */
-        const panel = document.getElementById('ereaderAddPanel');
-        if (panel) panel.style.display = 'block';
+        setPanelOpen(true);
         return;
     }
 
     empty.style.display = 'none';
     const lastBookId = getPrefs().lastBookId;
-    list.replaceChildren(...books.map(b => createBookRow(b, lastBookId, openBookHandler)));
+    const active = books.filter(b => !b.archived);
+    const archived = books.filter(b => b.archived);
+    const nodes = active.map(b => createBookRow(b, lastBookId, openBookHandler));
+    if (archived.length > 0) nodes.push(createArchivedGroup(archived, lastBookId));
+    list.replaceChildren(...nodes);
+}
+
+/** Archived books stay readable but move out of the way: a collapsible group
+ *  under the active list, closed by default. */
+function createArchivedGroup(books, lastBookId) {
+    const group = el('div', 'ereader-archived-group' + (archivedOpen ? ' open' : ''));
+    const header = el('button', 'ereader-archived-header');
+    header.type = 'button';
+    header.setAttribute('aria-expanded', String(archivedOpen));
+    header.innerHTML = '<svg class="ereader-archived-chevron" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"></polyline></svg>';
+    header.appendChild(el('span', '', t('ereader_archived_section', { count: books.length })));
+    header.onclick = () => {
+        archivedOpen = !archivedOpen;
+        group.classList.toggle('open', archivedOpen);
+        header.setAttribute('aria-expanded', String(archivedOpen));
+    };
+    const body = el('div', 'ereader-archived-body');
+    books.forEach(b => body.appendChild(createBookRow(b, lastBookId, openBookHandler)));
+    group.appendChild(header);
+    group.appendChild(body);
+    return group;
 }
 
 function setPanelOpen(open) {
     const panel = document.getElementById('ereaderAddPanel');
     if (panel) panel.style.display = open ? 'block' : 'none';
+    /* The + rotates into a × and turns the "danger" red once the panel is
+       open, so the button reads as "close" without a second icon to swap in. */
+    const toggleBtn = document.getElementById('ereaderToggleAddBtn');
+    if (toggleBtn) {
+        toggleBtn.classList.toggle('active', open);
+        const key = open ? 'close' : 'ereader_add_book';
+        toggleBtn.setAttribute('data-i18n-title', key);
+        toggleBtn.setAttribute('data-i18n-aria-label', key);
+        toggleBtn.title = t(key);
+        toggleBtn.setAttribute('aria-label', t(key));
+    }
 }
 
 function toggleAddPanel() {
@@ -252,6 +293,9 @@ function openBookActions(book) {
             closeBookActions();
         };
     }
+
+    const archiveLabel = document.getElementById('ereaderArchiveBookLabel');
+    if (archiveLabel) archiveLabel.textContent = t(book.archived ? 'ereader_unarchive' : 'archive_action');
 
     overlay.classList.add('active');
 }
@@ -413,6 +457,11 @@ export function closeMergeOverlay() {
 /** For main.js closeAllModals(): closes what is open, says whether it did. */
 export function closeEreaderModals() {
     let closed = false;
+    const settingsOverlay = document.getElementById('ereaderSettingsOverlay');
+    if (settingsOverlay && settingsOverlay.classList.contains('active')) {
+        closeSettingsOverlay();
+        closed = true;
+    }
     const actionsOverlay = document.getElementById('ereaderBookActionsOverlay');
     if (actionsOverlay && actionsOverlay.classList.contains('active')) {
         closeBookActions();
@@ -423,12 +472,65 @@ export function closeEreaderModals() {
         closeMergeOverlay();
         closed = true;
     }
+    const metaOverlay = document.getElementById('ereaderMetaOverlay');
+    if (metaOverlay && metaOverlay.classList.contains('active')) {
+        closeMetaOverlay();
+        closed = true;
+    }
     const imgOverlay = document.getElementById('ereaderImageUrlOverlay');
     if (imgOverlay && imgOverlay.classList.contains('active')) {
         imgOverlay.classList.remove('active');
         closed = true;
     }
     return closed;
+}
+
+/** Flips a book in or out of the archive. */
+export async function toggleBookArchived(id) {
+    const updated = await updateBook(id, (book) => {
+        book.archived = book.archived !== true;
+    });
+    if (!updated) return null;
+    showToast(t(updated.archived ? 'ereader_book_archived' : 'ereader_book_unarchived', { title: updated.title }));
+    return updated.archived;
+}
+
+export function openMetaOverlay(id) {
+    const book = listBooks().find(b => b.id === id);
+    const overlay = document.getElementById('ereaderMetaOverlay');
+    if (!book || !overlay) return;
+    metaBookId = id;
+    document.getElementById('ereaderMetaTitleInput').value = book.title || '';
+    document.getElementById('ereaderMetaAuthorInput').value = book.author || '';
+    document.getElementById('ereaderMetaLanguageInput').value = book.language && book.language !== 'und' ? book.language : '';
+    overlay.classList.add('active');
+    document.getElementById('ereaderMetaTitleInput').focus();
+}
+
+export function closeMetaOverlay() {
+    const overlay = document.getElementById('ereaderMetaOverlay');
+    if (overlay) overlay.classList.remove('active');
+    metaBookId = null;
+}
+
+export async function saveMetaFromOverlay() {
+    const id = metaBookId;
+    if (!id) return false;
+    const title = document.getElementById('ereaderMetaTitleInput').value.trim();
+    const author = document.getElementById('ereaderMetaAuthorInput').value.trim();
+    const language = document.getElementById('ereaderMetaLanguageInput').value.trim().toLowerCase();
+    if (!title) {
+        showAlert(t('ereader_meta_title_required'), t('warning_title'));
+        return false;
+    }
+    closeMetaOverlay();
+    await updateBook(id, (book) => {
+        book.title = title;
+        book.author = author;
+        book.language = language || 'und';
+    });
+    showToast(t('ereader_meta_saved'));
+    return true;
 }
 
 export async function deleteBookWithConfirm(id) {
@@ -482,7 +584,7 @@ export async function copyEreaderPrompt() {
  * One-time wiring. The view's DOM is static, so listeners are bound once; the
  * list itself is rebuilt on every paint and carries its own handlers.
  */
-export function bindEreaderLibrary({ switchView, closeMenu } = {}) {
+export function bindEreaderLibrary({ switchView } = {}) {
     if (bound) return;
     bound = true;
 
@@ -555,6 +657,50 @@ export function bindEreaderLibrary({ switchView, closeMenu } = {}) {
             if (id) await deleteBookWithConfirm(id);
         };
     }
+    /* Each action closes the modal first, then works on the id it captured. */
+    const withActionsBook = (fn) => async () => {
+        const id = actionsBookId;
+        closeBookActions();
+        if (id) await fn(id);
+    };
+
+    const editMetaBtn = document.getElementById('ereaderEditMetaBtn');
+    if (editMetaBtn) editMetaBtn.onclick = withActionsBook(async (id) => openMetaOverlay(id));
+
+    const downloadBtn = document.getElementById('ereaderDownloadBookBtn');
+    if (downloadBtn) downloadBtn.onclick = withActionsBook(async (id) => downloadBook(await getBook(id)));
+
+    const shareActionBtn = document.getElementById('ereaderShareBookActionBtn');
+    if (shareActionBtn) shareActionBtn.onclick = withActionsBook(async (id) => shareBook(await getBook(id)));
+
+    const archiveBtn = document.getElementById('ereaderArchiveBookBtn');
+    if (archiveBtn) archiveBtn.onclick = withActionsBook(toggleBookArchived);
+
+    /* The reader's settings popup keeps only quick actions on the open book;
+       editing, deleting, archiving and the reset are this menu's. */
+    const settingsDownloadBtn = document.getElementById('ereaderSettingsDownloadBtn');
+    if (settingsDownloadBtn) {
+        settingsDownloadBtn.onclick = async () => {
+            const book = getOpenBook();
+            closeSettingsOverlay();
+            if (book) await downloadBook(await getBook(book.id));
+        };
+    }
+
+    const metaSaveBtn = document.getElementById('ereaderMetaSaveBtn');
+    if (metaSaveBtn) metaSaveBtn.onclick = () => saveMetaFromOverlay();
+    const metaCancelBtn = document.getElementById('ereaderMetaCancelBtn');
+    if (metaCancelBtn) metaCancelBtn.onclick = closeMetaOverlay;
+    const metaOverlay = document.getElementById('ereaderMetaOverlay');
+    if (metaOverlay) {
+        metaOverlay.addEventListener('click', (e) => {
+            if (e.target === metaOverlay) closeMetaOverlay();
+        });
+        metaOverlay.addEventListener('keydown', (e) => {
+            if (e.key === 'Enter' && e.target.tagName === 'INPUT') saveMetaFromOverlay();
+        });
+    }
+
     const closeBtn = document.getElementById('ereaderBookActionsCloseBtn');
     if (closeBtn) closeBtn.onclick = closeBookActions;
     const overlay = document.getElementById('ereaderBookActionsOverlay');
@@ -567,7 +713,7 @@ export function bindEreaderLibrary({ switchView, closeMenu } = {}) {
     const resetBtn = document.getElementById('menuEreaderReset');
     if (resetBtn) {
         resetBtn.onclick = () => {
-            if (typeof closeMenu === 'function') closeMenu();
+            closeBookActions();
             runEreaderReset();
         };
     }
@@ -577,7 +723,9 @@ export function bindEreaderLibrary({ switchView, closeMenu } = {}) {
 export function _resetEreaderLibraryUIForTests() {
     bound = false;
     actionsBookId = null;
+    archivedOpen = false;
     openBookHandler = () => {};
     closeBookActions();
+    closeMetaOverlay();
     closeMergeOverlay();
 }

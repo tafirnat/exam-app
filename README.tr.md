@@ -45,6 +45,17 @@ Exam App, kendi materyallerinden öğrenen herkes için tasarlanmıştır:
 - **Bilgi Kartı (Flashcard)** — kendi hatırlama seviyenizi değerlendirdiğiniz klasik çevir-kart formatı
 *(Uzun okuma metinleri, kitaplar ve dokümantasyonlar için: e-Reader / [`EREADER_AI_PROMPT.md`](./EREADER_AI_PROMPT.md))*
 
+### Uzun Metinler ve Kitaplar için e-Reader
+
+Bir PDF'i, EPUB'u, Obsidian notunu ya da yalnızca bir konuyu uygulama içinde okuyacağınız bir kitaba dönüştürün — soru formatı gerekmez.
+
+- **AI ile kitap**: [`EREADER_AI_PROMPT.md`](./EREADER_AI_PROMPT.md) yönergesini kaynağınızla birlikte ChatGPT, Claude veya Gemini'ye verin. AI metni kelimesi kelimesine e-Reader JSON'una aktarır; uzun kaynaklar **parçalar** halinde gelir, uygulama bunları tek kitapta birleştirir, eksik aralıkları bildirir ve sonraki parça için hazır promptu verir.
+- **Rahat okuma**: İlerleme çubuklu içindekiler, katlanabilir bölümler, kitap içi arama, notlu yer imleri, üç yazı boyutu, tam ekran odak modu ve yazdırma / PDF. Okuma konumu her kitap için hatırlanır.
+- **Bölüm bölüm sesli okuma**: Her başlıktaki dinle düğmesi yalnızca o bölümü, kitabın dilinde ve seçtiğiniz hızda okur. **Otomatik oynat** açıkken sıradaki bölüme kendiliğinden geçer; okunan bölümü vurgular ve ekranda tutar.
+- **Her bölümü çevirin**: Her başlıktaki çeviri düğmesi çeviriyi bölümün hemen altında gösterir. Kaynak ve hedef dil her kitap için ayrı seçilir.
+- **Kendi görselleriniz**: Şekiller, orijinal görseli adlandıran ve tarif eden yer tutuculara dönüşür; birine dokunup görseli cihazınızdan veya bir URL'den ekleyin.
+- **Gizlilik öncelikli**: Dil seçimleri ve görseller yalnızca cihazınızda kalır, paylaşılan bir kitaba asla yazılmaz. Kitaplar ve okuma konumları kendi Gist'iniz üzerinden eşitlenir; bir kitabı ayarlarından paylaşabilir veya JSON olarak indirebilirsiniz.
+
 ### Akıllı Aralıklı Tekrar (FSRS v5)
 
 Zorlandığınız sorular daha sık gelir. İyi bildiğiniz sorular daha seyrek tekrar eder. Anki'nin de kullandığı FSRS v5 algoritması, tekrar aralıklarını sabit bir takvime değil, gerçek hafıza performansınıza göre ayarlar.
@@ -100,7 +111,7 @@ Günde bir kez, hazır kart olduğunda çalışan opt-in hatırlatıcılar. İzi
 
 ### Metin Okuma (TTS)
 
-Soruları ve okuma kartlarını yerel tarayıcı konuşma sentezi ile sesli okur. Ayarlanabilir hız (×0.7–×1.3), gezinmede otomatik oynatma, yüzen oynatma kontrolleri.
+Soruları ve okuma kartlarını Google'ın çevrimiçi sesleriyle okur (internet bağlantısı gerekir). Ayarlanabilir hız (×0.7–×1.3), gezinmede otomatik oynatma, yüzen oynatma kontrolleri. e-Reader'ın kendi anahtarı ve ayarları vardır: kitap başına okuma dili ve bölüm bölüm otomatik oynatma.
 
 ### Veri Egemenliği & Kendi Bulutunu Getir (BYOC)
 

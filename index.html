@@ -74,15 +74,49 @@
         </button>
         <div class="header-title" id="headerTitle">Exam App</div>
         <div class="ereader-header-tools" id="ereaderHeaderTools" style="display: none;">
-            <button class="icon-btn" id="ereaderSearchBtn" data-i18n-title="ereader_search" data-i18n-aria-label="ereader_search">
-                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5">
+            <!-- In-book search lives in the header itself: the search button
+                 opens this field (and turns into an X that closes it); the
+                 small x inside the field only clears it for a new search. -->
+            <div class="ereader-search-bar" id="ereaderSearchBar" style="display: none;">
+                <div class="ereader-search-field">
+                    <svg class="ereader-search-field-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" aria-hidden="true">
+                        <circle cx="11" cy="11" r="7"></circle>
+                        <line x1="21" y1="21" x2="16.65" y2="16.65"></line>
+                    </svg>
+                    <input type="search" id="ereaderSearchInput" data-i18n-placeholder="ereader_search" data-i18n-aria-label="ereader_search" autocomplete="off" enterkeyhint="search">
+                    <button type="button" class="ereader-search-clear" id="ereaderSearchClearBtn" style="display: none;" data-i18n-title="ereader_search_clear" data-i18n-aria-label="ereader_search_clear">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" aria-hidden="true">
+                            <line x1="17" y1="7" x2="7" y2="17"></line>
+                            <line x1="7" y1="7" x2="17" y2="17"></line>
+                        </svg>
+                    </button>
+                </div>
+                <div class="ereader-search-results" id="ereaderSearchResults"></div>
+            </div>
+            <button class="icon-btn" id="ereaderSearchBtn" data-i18n-title="ereader_search" data-i18n-aria-label="ereader_search" aria-expanded="false">
+                <svg class="ereader-search-icon-open" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5">
                     <circle cx="11" cy="11" r="7"></circle>
                     <line x1="21" y1="21" x2="16.65" y2="16.65"></line>
+                </svg>
+                <svg class="ereader-search-icon-close" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5">
+                    <line x1="18" y1="6" x2="6" y2="18"></line>
+                    <line x1="6" y1="6" x2="18" y2="18"></line>
                 </svg>
             </button>
             <button class="icon-btn" id="ereaderFullscreenBtn" data-i18n-title="ereader_fullscreen_enter" data-i18n-aria-label="ereader_fullscreen_enter">
                 <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5">
                     <path d="M8 3H5a2 2 0 0 0-2 2v3m18 0V5a2 2 0 0 0-2-2h-3m0 18h3a2 2 0 0 0 2-2v-3M3 16v3a2 2 0 0 0 2 2h3"></path>
+                </svg>
+            </button>
+            <button class="icon-btn" id="ereaderBookmarkBtn" data-i18n-title="ereader_bookmark_add" data-i18n-aria-label="ereader_bookmark_add">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5">
+                    <path d="M19 21l-7-5-7 5V5a2 2 0 0 1 2-2h10a2 2 0 0 1 2 2z"></path>
+                </svg>
+            </button>
+            <button class="icon-btn" id="ereaderSettingsBtn" data-i18n-title="ereader_settings_title" data-i18n-aria-label="ereader_settings_title">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5">
+                    <circle cx="12" cy="12" r="3"></circle>
+                    <path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"></path>
                 </svg>
             </button>
         </div>
@@ -639,16 +673,8 @@
             </div>
 
             <div class="menu-mode-group" data-menu-mode="ereader">
-                <button class="menu-side-item" id="menuEreaderLibrary">
-                    <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                        <path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"></path>
-                        <path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"></path>
-                    </svg>
-                    <span data-i18n="ereader_library_title">Kitaplarım</span>
-                </button>
-
                 <div class="menu-section" id="ereaderTocMenuSection" style="display: none;">
-                    <div class="menu-section-header" data-section="ereader-toc">
+                    <div class="menu-section-header no-accordion" data-section="ereader-toc">
                         <div class="menu-section-title">
                             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="section-icon">
                                 <line x1="8" y1="6" x2="21" y2="6"></line><line x1="8" y1="12" x2="21" y2="12"></line><line x1="8" y1="18" x2="21" y2="18"></line>
@@ -656,55 +682,60 @@
                             </svg>
                             <span data-i18n="ereader_toc_title">İçindekiler</span>
                         </div>
-                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" class="chevron">
-                            <polyline points="6 9 12 15 18 9"></polyline>
-                        </svg>
+                        <div class="ereader-toc-toolbar">
+                            <button type="button" class="ereader-toc-toolbar-btn" id="ereaderTocExpandAllBtn" data-i18n-title="ereader_toc_expand_all" data-i18n-aria-label="ereader_toc_expand_all">
+                                <svg viewBox="0 0 52 52" fill="currentColor">
+                                    <path d="M48,9.5C48,8.7,47.3,8,46.5,8h-41C4.7,8,4,8.7,4,9.5v3C4,13.3,4.7,14,5.5,14h41c0.8,0,1.5-0.7,1.5-1.5V9.5z"></path>
+                                    <path d="M48,39.5c0-0.8-0.7-1.5-1.5-1.5h-41C4.7,38,4,38.7,4,39.5v3C4,43.3,4.7,44,5.5,44h41c0.8,0,1.5-0.7,1.5-1.5V39.5z"></path>
+                                    <path d="M34.5,29c0.8,0,1.5-0.7,1.5-1.5v-3c0-0.8-0.7-1.5-1.5-1.5h-17c-0.8,0-1.5,0.7-1.5,1.5v3c0,0.8,0.7,1.5,1.5,1.5H34.5z"></path>
+                                </svg>
+                            </button>
+                            <button type="button" class="ereader-toc-toolbar-btn" id="ereaderTocCollapseAllBtn" data-i18n-title="ereader_toc_collapse_all" data-i18n-aria-label="ereader_toc_collapse_all">
+                                <svg viewBox="0 0 48 48" fill="currentColor">
+                                    <path d="M22.6,15.4a1.9,1.9,0,0,0,2.8,0l6-5.9a2.1,2.1,0,0,0,.2-2.7,1.9,1.9,0,0,0-3-.2L26,9.2V4a2,2,0,0,0-4,0V9.2L19.4,6.6a1.9,1.9,0,0,0-3,.2,2.1,2.1,0,0,0,.2,2.7Z"></path>
+                                    <path d="M25.4,32.6a1.9,1.9,0,0,0-2.8,0l-6,5.9a2.1,2.1,0,0,0-.2,2.7,1.9,1.9,0,0,0,3,.2L22,38.8V44a2,2,0,0,0,4,0V38.8l2.6,2.6a1.9,1.9,0,0,0,3-.2,2.1,2.1,0,0,0-.2-2.7Z"></path>
+                                    <path d="M6,22H42a2,2,0,0,0,0-4H6a2,2,0,0,0,0,4Z"></path>
+                                    <path d="M42,26H6a2,2,0,0,0,0,4H42a2,2,0,0,0,0-4Z"></path>
+                                </svg>
+                            </button>
+                        </div>
                     </div>
                     <div class="menu-section-content">
                         <div class="ereader-toc-list" id="ereaderTocList"></div>
                     </div>
                 </div>
 
-                <div class="menu-section" id="ereaderReadingMenuSection" style="display: none;">
-                    <div class="menu-section-header" data-section="ereader-reading">
-                        <div class="menu-section-title">
-                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="section-icon">
-                                <polyline points="4 7 4 4 20 4 20 7"></polyline>
-                                <line x1="9" y1="20" x2="15" y2="20"></line>
-                                <line x1="12" y1="4" x2="12" y2="20"></line>
+                <div class="ereader-toc-footer">
+                    <div class="ereader-bookmark-carousel" id="ereaderBookmarkCarousel" style="display: none;">
+                        <button type="button" class="ereader-bookmark-nav" id="ereaderBookmarkPrevBtn" data-i18n-aria-label="ereader_bookmark_prev">
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                <polyline points="15 18 9 12 15 6"></polyline>
                             </svg>
-                            <span data-i18n="ereader_reading_settings">Okuma Ayarları</span>
-                        </div>
-                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" class="chevron">
-                            <polyline points="6 9 12 15 18 9"></polyline>
-                        </svg>
-                    </div>
-                    <div class="menu-section-content">
-                        <div class="ereader-font-row">
-                            <button class="menu-sub-item ereader-font-btn" id="ereaderFontDecBtn" data-i18n-title="ereader_font_smaller" data-i18n-aria-label="ereader_font_smaller">A−</button>
-                            <span class="ereader-font-value" id="ereaderFontValue">100%</span>
-                            <button class="menu-sub-item ereader-font-btn" id="ereaderFontIncBtn" data-i18n-title="ereader_font_larger" data-i18n-aria-label="ereader_font_larger">A+</button>
-                        </div>
-                        <button class="menu-sub-item" id="ereaderPrintBtn">
-                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" width="14" height="14">
-                                <polyline points="6 9 6 2 18 2 18 9"></polyline>
-                                <path d="M6 18H4a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-2"></path>
-                                <rect x="6" y="14" width="12" height="8"></rect>
+                        </button>
+                        <button type="button" class="ereader-bookmark-current" id="ereaderBookmarkCurrentBtn">
+                            <span class="ereader-bookmark-number" id="ereaderBookmarkNumber"></span>
+                            <span class="ereader-bookmark-title" id="ereaderBookmarkTitle"></span>
+                        </button>
+                        <button type="button" class="icon-btn ereader-bookmark-details" id="ereaderBookmarkDetailsBtn" data-i18n-title="ereader_bookmark_view_details" data-i18n-aria-label="ereader_bookmark_view_details">
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                <circle cx="12" cy="12" r="10"></circle>
+                                <line x1="12" y1="16" x2="12" y2="11.5"></line>
+                                <line x1="12" y1="8" x2="12.01" y2="8"></line>
                             </svg>
-                            <span data-i18n="ereader_print">Yazdır / PDF</span>
+                        </button>
+                        <button type="button" class="ereader-bookmark-nav" id="ereaderBookmarkNextBtn" data-i18n-aria-label="ereader_bookmark_next">
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                <polyline points="9 18 15 12 9 6"></polyline>
+                            </svg>
                         </button>
                     </div>
-                </div>
 
-                <button class="menu-side-item ereader-menu-reset" id="menuEreaderReset">
-                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="18" height="18">
-                        <path d="M3 6h18M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2">
-                        </path>
-                        <line x1="10" y1="11" x2="10" y2="17"></line>
-                        <line x1="14" y1="11" x2="14" y2="17"></line>
-                    </svg>
-                    <span data-i18n="ereader_reset_label">e-Reader'ı Sıfırla</span>
-                </button>
+                    <div class="ereader-toc-progress-wrap" id="ereaderTocProgressWrap" style="display: none;">
+                        <div class="ereader-toc-progress-track">
+                            <div class="ereader-toc-progress-fill" id="ereaderTocProgressFill"></div>
+                        </div>
+                    </div>
+                </div>
             </div>
         </div>
     </div>
@@ -2083,21 +2114,15 @@
         </div>
 
         <div id="ereaderBookView" class="ereader-book-view" style="display: none;">
-            <div class="ereader-search-bar" id="ereaderSearchBar" style="display: none;">
-                <div class="search-input-wrapper">
-                    <input type="search" id="ereaderSearchInput" data-i18n-placeholder="ereader_search" autocomplete="off">
-                </div>
-                <div class="ereader-search-results" id="ereaderSearchResults"></div>
-            </div>
             <article class="ereader-content" id="ereaderContent"></article>
-            <nav class="ereader-chapter-nav" id="ereaderChapterNav">
-                <button class="btn btn-secondary" id="ereaderPrevBtn" data-i18n-title="ereader_prev_chapter" data-i18n-aria-label="ereader_prev_chapter">‹</button>
-                <span class="ereader-chapter-pos" id="ereaderChapterPos"></span>
-                <button class="btn btn-secondary" id="ereaderNextBtn" data-i18n-title="ereader_next_chapter" data-i18n-aria-label="ereader_next_chapter">›</button>
-            </nav>
             <button class="icon-btn ereader-zen-exit" id="ereaderZenExitBtn" style="display: none;" data-i18n-title="ereader_fullscreen_exit" data-i18n-aria-label="ereader_fullscreen_exit">
                 <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5">
                     <path d="M8 3v3a2 2 0 0 1-2 2H3m18 0h-3a2 2 0 0 1-2-2V3m0 18v-3a2 2 0 0 1 2-2h3M3 16h3a2 2 0 0 1 2 2v3"></path>
+                </svg>
+            </button>
+            <button class="icon-btn ereader-scroll-top-btn" id="ereaderScrollTopBtn" style="display: none;" data-i18n-title="ereader_scroll_top" data-i18n-aria-label="ereader_scroll_top">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+                    <polyline points="18 15 12 9 6 15"></polyline>
                 </svg>
             </button>
         </div>
@@ -3542,18 +3567,94 @@
                     </svg>
                     <span data-i18n="ereader_copy_next_prompt">Sonraki parçanın promptunu kopyala</span>
                 </button>
-                <button class="btn btn-warning-soft btn-block modal-action-btn" id="ereaderDeleteBookBtn">
+                <!-- Same set and layout as the test centre's #sourceActionsOverlay -->
+                <button class="btn btn-secondary btn-block modal-action-btn" id="ereaderEditMetaBtn">
+                    <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2.5"
+                        stroke-linecap="round" stroke-linejoin="round">
+                        <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"></path>
+                        <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"></path>
+                    </svg>
+                    <span data-i18n="edit_metadata">Meta Verileri Düzenle</span>
+                </button>
+                <div class="modal-grid-2col" style="display: grid; grid-template-columns: 1fr 1fr; gap: 0.5rem;">
+                    <button class="btn btn-secondary btn-block modal-action-btn" id="ereaderDownloadBookBtn">
+                        <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor"
+                            stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+                            <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
+                            <polyline points="7 10 12 15 17 10"></polyline>
+                            <line x1="12" y1="15" x2="12" y2="3"></line>
+                        </svg>
+                        <span data-i18n="download">İndir</span>
+                    </button>
+                    <button class="btn btn-secondary btn-block modal-action-btn" id="ereaderShareBookActionBtn">
+                        <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor"
+                            stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+                            <circle cx="18" cy="5" r="3"></circle>
+                            <circle cx="6" cy="12" r="3"></circle>
+                            <circle cx="18" cy="19" r="3"></circle>
+                            <line x1="8.59" y1="13.51" x2="15.42" y2="17.49"></line>
+                            <line x1="15.41" y1="6.51" x2="8.59" y2="10.49"></line>
+                        </svg>
+                        <span data-i18n="share_source">Paylaş</span>
+                    </button>
+                    <button class="btn btn-danger btn-block modal-action-btn" id="ereaderDeleteBookBtn">
+                        <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor"
+                            stroke-width="2.5">
+                            <polyline points="3 6 5 6 21 6"></polyline>
+                            <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2">
+                            </path>
+                        </svg>
+                        <span data-i18n="delete">Sil</span>
+                    </button>
+                    <button class="btn btn-secondary btn-block modal-action-btn" id="ereaderArchiveBookBtn">
+                        <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor"
+                            stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+                            <polyline points="21 8 21 21 3 21 3 8"></polyline>
+                            <rect x="1" y="3" width="22" height="5"></rect>
+                            <line x1="10" y1="12" x2="14" y2="12"></line>
+                        </svg>
+                        <span id="ereaderArchiveBookLabel" data-i18n="archive_action">Arşivle</span>
+                    </button>
+                </div>
+                <button class="btn btn-warning-soft btn-block modal-action-btn ereader-menu-reset" style="margin-top: 0.5rem;" id="menuEreaderReset">
                     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="18" height="18">
                         <path d="M3 6h18M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2">
                         </path>
                         <line x1="10" y1="11" x2="10" y2="17"></line>
                         <line x1="14" y1="11" x2="14" y2="17"></line>
                     </svg>
-                    <span data-i18n="ereader_delete_book">Kitabı Sil</span>
+                    <span data-i18n="ereader_reset_label">e-Reader'ı Sıfırla</span>
                 </button>
             </div>
             <div class="modal-footer">
                 <button class="btn btn-subtle btn-block" id="ereaderBookActionsCloseBtn" data-i18n="cancel">İptal</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- e-Reader Book Metadata Modal -->
+    <div id="ereaderMetaOverlay" class="modal-overlay" style="z-index: 10030;">
+        <div class="modal-card">
+            <div class="modal-header">
+                <h3 data-i18n="ereader_meta_title">Kitap Bilgileri</h3>
+            </div>
+            <div class="modal-body" style="display: flex; flex-direction: column; gap: 1rem; margin: 1.5rem 0;">
+                <div class="input-group">
+                    <label for="ereaderMetaTitleInput" data-i18n="ereader_meta_book_title">Başlık</label>
+                    <input type="text" id="ereaderMetaTitleInput" maxlength="300" autocomplete="off" style="width: 100%; padding: 0.6rem; border-radius: 6px; border: 1px solid var(--border-color); background: var(--bg-color); color: var(--text-primary); font-family: inherit;">
+                </div>
+                <div class="input-group">
+                    <label for="ereaderMetaAuthorInput" data-i18n="ereader_meta_author">Yazar</label>
+                    <input type="text" id="ereaderMetaAuthorInput" maxlength="200" autocomplete="off" style="width: 100%; padding: 0.6rem; border-radius: 6px; border: 1px solid var(--border-color); background: var(--bg-color); color: var(--text-primary); font-family: inherit;">
+                </div>
+                <div class="input-group">
+                    <label for="ereaderMetaLanguageInput" data-i18n="ereader_meta_language">Dil</label>
+                    <input type="text" id="ereaderMetaLanguageInput" maxlength="12" autocomplete="off" placeholder="tr / en / de" style="width: 100%; padding: 0.6rem; border-radius: 6px; border: 1px solid var(--border-color); background: var(--bg-color); color: var(--text-primary); font-family: inherit;">
+                </div>
+            </div>
+            <div class="modal-footer" style="display: flex; gap: 0.75rem;">
+                <button class="btn btn-secondary btn-flex" id="ereaderMetaCancelBtn" data-i18n="cancel">Vazgeç</button>
+                <button class="btn btn-primary btn-flex" id="ereaderMetaSaveBtn" data-i18n="save">Kaydet</button>
             </div>
         </div>
     </div>
@@ -3580,21 +3681,292 @@
         </div>
     </div>
 
-    <!-- e-Reader Image URL Modal -->
+    <!-- e-Reader Settings Modal -->
+    <div id="ereaderSettingsOverlay" class="modal-overlay" style="z-index: 10030;">
+        <div class="modal-card">
+            <div class="modal-header" style="display: flex; align-items: center; justify-content: space-between; gap: 0.75rem;">
+                <h3 data-i18n="ereader_settings_title" style="margin: 0;">Ayarlar</h3>
+                <button class="icon-btn" id="ereaderSettingsCloseBtn">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="18" height="18">
+                        <line x1="18" y1="6" x2="6" y2="18"></line>
+                        <line x1="6" y1="6" x2="18" y2="18"></line>
+                    </svg>
+                </button>
+            </div>
+            <div class="modal-body">
+                <!-- Feature rows: a normal action button whose name opens the feature's
+                     options popup, with its on/off switch at the far right. -->
+                <div class="ereader-setting-row" id="ereaderTranslateRow">
+                    <button type="button" class="ereader-setting-open" id="ereaderTranslateSettingsBtn" data-i18n-title="ereader_translate_settings" data-i18n-aria-label="ereader_translate_settings">
+                        <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                            <path d="M5 8l6 6"></path>
+                            <path d="M4 14l6-6 2-3"></path>
+                            <path d="M2 5h12"></path>
+                            <path d="M7 2h1"></path>
+                            <path d="M22 22l-5-10-5 10"></path>
+                            <path d="M14 18h6"></path>
+                        </svg>
+                        <span class="ereader-setting-text">
+                            <span class="ereader-setting-name" data-i18n="translation_title">Çeviri</span>
+                            <span class="ereader-setting-sub" id="ereaderTranslateSummary"></span>
+                        </span>
+                    </button>
+                    <label class="switch-small ereader-setting-switch" data-i18n-title="ereader_translate_show_icons">
+                        <input type="checkbox" id="ereaderTranslateShowToggle">
+                        <span class="slider-small"></span>
+                    </label>
+                </div>
+
+                <div class="ereader-setting-row" id="ereaderTtsRow">
+                    <button type="button" class="ereader-setting-open" id="ereaderTtsSettingsBtn" data-i18n-title="ereader_tts_settings" data-i18n-aria-label="ereader_tts_settings">
+                        <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                            <polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5"></polygon>
+                            <path d="M19.07 4.93a10 10 0 0 1 0 14.14M15.54 8.46a5 5 0 0 1 0 7.07"></path>
+                        </svg>
+                        <span class="ereader-setting-text">
+                            <span class="ereader-setting-name" data-i18n="tts_title">Metin Okuma</span>
+                            <span class="ereader-setting-sub" id="ereaderTtsSummary"></span>
+                        </span>
+                    </button>
+                    <label class="switch-small ereader-setting-switch" data-i18n-title="ereader_tts_show_icons">
+                        <input type="checkbox" id="ereaderTtsShowToggle">
+                        <span class="slider-small"></span>
+                    </label>
+                </div>
+
+                <div class="ereader-fontsize-row">
+                    <button type="button" class="ereader-fontsize-btn" id="ereaderFontSizeBtn" data-i18n-title="ereader_font_size_normal" data-i18n-aria-label="ereader_font_size_normal">
+                        <span class="ereader-fontsize-icon" aria-hidden="true">Aa</span>
+                        <span class="ereader-fontsize-dots" aria-hidden="true">
+                            <i class="ereader-fontsize-dot" data-tier="0"></i>
+                            <i class="ereader-fontsize-dot" data-tier="1"></i>
+                            <i class="ereader-fontsize-dot" data-tier="2"></i>
+                        </span>
+                    </button>
+                    <span class="ereader-fontsize-preview-box"><span class="ereader-fontsize-preview" id="ereaderFontSizePreview" data-i18n="ereader_font_size_preview">Kitap metni bu boyutta görünür.</span></span>
+                </div>
+
+                <div class="ereader-modal-actions">
+                    <!-- Opens the library, where each book's own settings (edit, archive,
+                         delete, reset) live - hence the sliders icon on the right. -->
+                    <button class="btn btn-block modal-action-btn ereader-library-settings-btn" id="ereaderSettingsLibraryBtn">
+                        <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                            <path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"></path>
+                            <path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"></path>
+                        </svg>
+                        <span data-i18n="ereader_library_title">Kitaplarım</span>
+                        <svg class="ereader-library-settings-icon" viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                            <line x1="4" y1="21" x2="4" y2="14"></line>
+                            <line x1="4" y1="10" x2="4" y2="3"></line>
+                            <line x1="12" y1="21" x2="12" y2="12"></line>
+                            <line x1="12" y1="8" x2="12" y2="3"></line>
+                            <line x1="20" y1="21" x2="20" y2="16"></line>
+                            <line x1="20" y1="12" x2="20" y2="3"></line>
+                            <line x1="1" y1="14" x2="7" y2="14"></line>
+                            <line x1="9" y1="8" x2="15" y2="8"></line>
+                            <line x1="17" y1="16" x2="23" y2="16"></line>
+                        </svg>
+                    </button>
+                    <!-- Quick actions on the open book. Editing, deleting, archiving and the
+                         reset live in the library's book menu (#ereaderBookActionsOverlay). -->
+                    <div class="ereader-settings-book-actions" id="ereaderSettingsBookActions">
+                        <div class="modal-grid-2col" style="display: grid; grid-template-columns: 1fr 1fr; gap: 0.5rem;">
+                            <button class="btn btn-secondary btn-block modal-action-btn" id="ereaderSettingsDownloadBtn">
+                                <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor"
+                                    stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+                                    <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
+                                    <polyline points="7 10 12 15 17 10"></polyline>
+                                    <line x1="12" y1="15" x2="12" y2="3"></line>
+                                </svg>
+                                <span data-i18n="download">İndir</span>
+                            </button>
+                            <button class="btn btn-secondary btn-block modal-action-btn" id="ereaderShareBookBtn">
+                                <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor"
+                                    stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+                                    <circle cx="18" cy="5" r="3"></circle>
+                                    <circle cx="6" cy="12" r="3"></circle>
+                                    <circle cx="18" cy="19" r="3"></circle>
+                                    <line x1="8.59" y1="13.51" x2="15.42" y2="17.49"></line>
+                                    <line x1="15.41" y1="6.51" x2="8.59" y2="10.49"></line>
+                                </svg>
+                                <span data-i18n="share_source">Paylaş</span>
+                            </button>
+                        </div>
+                    <button class="btn btn-secondary btn-block modal-action-btn" id="ereaderPrintBtn">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" width="18" height="18">
+                            <polyline points="6 9 6 2 18 2 18 9"></polyline>
+                            <path d="M6 18H4a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-2"></path>
+                            <rect x="6" y="14" width="12" height="8"></rect>
+                        </svg>
+                        <span data-i18n="ereader_print">Yazdır / PDF</span>
+                    </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- e-Reader Translation Modal: show/hide the translate icons in the book, and
+         the language pair for THIS book (device-only prefs, never synced or shared) -->
+    <div id="ereaderTranslateOverlay" class="modal-overlay" style="z-index: 10031;">
+        <div class="modal-card">
+            <div class="modal-header" style="display: flex; align-items: center; justify-content: space-between; gap: 0.75rem;">
+                <h3 data-i18n="translation_title" style="margin: 0;">Çeviri</h3>
+                <button class="icon-btn" id="ereaderTranslateCloseBtn">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="18" height="18">
+                        <line x1="18" y1="6" x2="6" y2="18"></line>
+                        <line x1="6" y1="6" x2="18" y2="18"></line>
+                    </svg>
+                </button>
+            </div>
+            <div class="modal-body ereader-translate-body">
+                <label class="ereader-translate-field">
+                    <span data-i18n="ereader_translate_source">Kaynak dil</span>
+                    <select id="ereaderTranslateSourceSelect"></select>
+                </label>
+                <label class="ereader-translate-field">
+                    <span data-i18n="ereader_translate_target">Hedef dil</span>
+                    <select id="ereaderTranslateTargetSelect"></select>
+                </label>
+                <p class="ereader-translate-hint" data-i18n="ereader_translate_hint">Dil seçimi bu kitap için yalnızca bu cihazda saklanır.</p>
+            </div>
+        </div>
+    </div>
+
+    <!-- e-Reader Read-aloud Modal: the test centre's TTS options (speed, autoplay)
+         plus the language THIS book is read in (device-only, never shared) -->
+    <div id="ereaderTtsOverlay" class="modal-overlay" style="z-index: 10031;">
+        <div class="modal-card">
+            <div class="modal-header" style="display: flex; align-items: center; justify-content: space-between; gap: 0.75rem;">
+                <h3 data-i18n="tts_title" style="margin: 0;">Metin Okuma</h3>
+                <button class="icon-btn" id="ereaderTtsCloseBtn">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="18" height="18">
+                        <line x1="18" y1="6" x2="6" y2="18"></line>
+                        <line x1="6" y1="6" x2="18" y2="18"></line>
+                    </svg>
+                </button>
+            </div>
+            <div class="modal-body ereader-translate-body">
+                <label class="ereader-translate-field">
+                    <span data-i18n="ereader_tts_lang">Okuma dili</span>
+                    <select id="ereaderTtsLangSelect"></select>
+                </label>
+                <div>
+                    <div class="menu-label" data-i18n="tts_speed">Ses Hızı</div>
+                    <div class="slider-with-ticks" style="margin: 1.5rem 0.5rem 1rem 0.5rem;">
+                        <div class="tts-slider-tooltip" id="ereaderTtsSpeedTooltip">x1.0</div>
+                        <div class="tts-ticks-container">
+                            <div class="tts-tick-dot"></div>
+                            <div class="tts-tick-dot"></div>
+                            <div class="tts-tick-dot"></div>
+                            <div class="tts-tick-dot default"></div>
+                            <div class="tts-tick-dot"></div>
+                            <div class="tts-tick-dot"></div>
+                            <div class="tts-tick-dot"></div>
+                        </div>
+                        <input type="range" id="ereaderTtsSpeed" min="0.35" max="0.65" step="0.05" class="menu-tts-slider">
+                    </div>
+                </div>
+                <div class="ereader-tts-autoplay">
+                    <span>
+                        <span data-i18n="tts_autoplay">Otomatik Oynat</span>
+                        <span class="ereader-translate-hint" data-i18n="ereader_tts_autoplay_hint">Bir bölüm bitince sıradakini okur.</span>
+                    </span>
+                    <label class="switch-small">
+                        <input type="checkbox" id="ereaderTtsAutoplayToggle">
+                        <span class="slider-small"></span>
+                    </label>
+                </div>
+                <p class="ereader-translate-hint" data-i18n="ereader_tts_hint">Okuma dili bu kitap için yalnızca bu cihazda saklanır; paylaşılmaz.</p>
+            </div>
+        </div>
+    </div>
+
+    <!-- e-Reader Image Modal: a picture for one placeholder, from the device or a URL -->
     <div id="ereaderImageUrlOverlay" class="modal-overlay" style="z-index: 10030;">
+        <div class="modal-card ereader-image-modal">
+            <div class="modal-header">
+                <h3 data-i18n="ereader_image_modal_title">Görsel Ekle</h3>
+                <div class="ereader-image-modal-figure">
+                    <span class="ereader-image-modal-id" id="ereaderImageModalId"></span>
+                    <p class="ereader-image-modal-alt" id="ereaderImageModalAlt"></p>
+                    <p class="ereader-image-modal-desc" id="ereaderImageModalDesc"></p>
+                </div>
+            </div>
+            <div class="modal-body ereader-image-modal-body">
+                <div class="ereader-image-preview" id="ereaderImagePreview" style="display: none;">
+                    <img id="ereaderImagePreviewImg" alt="">
+                </div>
+                <button type="button" class="btn btn-secondary btn-block modal-action-btn" id="ereaderImageUploadBtn">
+                    <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2"
+                        stroke-linecap="round" stroke-linejoin="round">
+                        <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
+                        <polyline points="17 8 12 3 7 8"></polyline>
+                        <line x1="12" y1="3" x2="12" y2="15"></line>
+                    </svg>
+                    <span data-i18n="ereader_image_upload">Cihazdan Görsel Seç</span>
+                </button>
+                <input type="file" id="ereaderImageFileInput" accept="image/png,image/jpeg,image/gif,image/webp,image/avif,image/bmp" style="display: none;">
+                <div class="ereader-image-or"><span data-i18n="ereader_image_or_url">veya bağlantı ile</span></div>
+                <div class="ereader-image-url-row">
+                    <input type="url" id="ereaderImageUrlInput" placeholder="https://example.com/image.png" class="form-control" autocomplete="off">
+                    <button type="button" class="btn btn-primary" id="ereaderImageUrlSaveBtn" data-i18n="save">Kaydet</button>
+                </div>
+                <p class="ereader-image-note" data-i18n="ereader_image_local_note">Görseller yalnızca bu cihazda saklanır; paylaşırken veya indirirken dahil etmeyi seçebilirsiniz.</p>
+            </div>
+            <div class="modal-footer" style="display: flex; gap: 0.75rem;">
+                <button type="button" class="btn btn-danger btn-flex" id="ereaderImageRemoveBtn" style="display: none;" data-i18n="ereader_image_remove">Görseli Kaldır</button>
+                <button type="button" class="btn btn-secondary btn-flex" id="ereaderImageUrlCancelBtn" data-i18n="cancel">Vazgeç</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- e-Reader: select-text floating action, shown near the current selection -->
+    <button type="button" id="ereaderSelectionBookmarkBtn" class="ereader-selection-btn" style="display: none;">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M19 21l-7-5-7 5V5a2 2 0 0 1 2-2h10a2 2 0 0 1 2 2z"></path>
+        </svg>
+        <span data-i18n="ereader_selection_bookmark">İşaretle</span>
+    </button>
+
+    <!-- e-Reader: add/edit-bookmark modal -->
+    <div id="ereaderBookmarkOverlay" class="modal-overlay" style="z-index: 10030;">
         <div class="modal-card">
             <div class="modal-header">
-                <h3 data-i18n="ereader_image_url_title">Görsel Bağlantısı</h3>
-                <p data-i18n="ereader_image_url_desc" class="ereader-modal-subtitle">Görselin https:// adresini girin.</p>
+                <h3 id="ereaderBookmarkModalTitle" data-i18n="ereader_bookmark_modal_title">Yer İmi Ekle</h3>
             </div>
-            <div class="modal-body" style="margin: 1.5rem 0;">
+            <div class="modal-body" style="display: flex; flex-direction: column; gap: 1rem; margin: 1.5rem 0;">
                 <div class="input-group">
-                    <input type="url" id="ereaderImageUrlInput" placeholder="https://example.com/image.png" class="form-control" style="width: 100%; padding: 0.6rem; border: 1px solid var(--border-color); border-radius: var(--radius-md); background: var(--surface-color); color: var(--text-color);">
+                    <label data-i18n="ereader_bookmark_title_label">Başlık</label>
+                    <input type="text" id="ereaderBookmarkTitleInput" maxlength="120" data-i18n-placeholder="ereader_bookmark_title_placeholder" placeholder="Yer imine bir başlık ver" style="width: 100%; padding: 0.6rem; border-radius: 6px; border: 1px solid var(--border-color); background: var(--bg-color); color: var(--text-primary); font-family: inherit;">
+                </div>
+                <div class="input-group">
+                    <label data-i18n="ereader_bookmark_note_label">Not (opsiyonel)</label>
+                    <textarea id="ereaderBookmarkNoteInput" data-i18n-placeholder="ereader_bookmark_note_placeholder" placeholder="Detaylı bir açıklama ekleyin..." style="min-height: 100px; width: 100%; padding: 0.6rem; border-radius: 6px; border: 1px solid var(--border-color); background: var(--bg-color); color: var(--text-primary); font-family: inherit; resize: vertical;"></textarea>
                 </div>
             </div>
             <div class="modal-footer" style="display: flex; gap: 0.75rem;">
-                <button class="btn btn-secondary btn-flex" id="ereaderImageUrlCancelBtn" data-i18n="cancel">Vazgeç</button>
-                <button class="btn btn-primary btn-flex" id="ereaderImageUrlSaveBtn" data-i18n="save">Kaydet</button>
+                <button class="btn btn-secondary btn-flex" id="ereaderBookmarkCancelBtn" data-i18n="cancel">Vazgeç</button>
+                <button class="btn btn-primary btn-flex" id="ereaderBookmarkSaveBtn" data-i18n="save">Kaydet</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- e-Reader: bookmark note-detail modal - opened from the carousel's
+         details button; reads, then hands off to the modal above to edit, or
+         confirms and deletes in place. -->
+    <div id="ereaderBookmarkDetailOverlay" class="modal-overlay" style="z-index: 10030;">
+        <div class="modal-card">
+            <div class="modal-header">
+                <h3 id="ereaderBookmarkDetailTitle"></h3>
+            </div>
+            <div class="modal-body" style="margin: 1.5rem 0;">
+                <p id="ereaderBookmarkDetailNote" class="ereader-bookmark-detail-note"></p>
+            </div>
+            <div class="modal-footer" style="display: flex; gap: 0.75rem;">
+                <button class="btn btn-danger btn-flex" id="ereaderBookmarkDetailDeleteBtn" data-i18n="ereader_bookmark_delete">Sil</button>
+                <button class="btn btn-secondary btn-flex" id="ereaderBookmarkDetailEditBtn" data-i18n="ereader_bookmark_edit">Düzenle</button>
+                <button class="btn btn-primary btn-flex" id="ereaderBookmarkDetailCloseBtn" data-i18n="close">Kapat</button>
             </div>
         </div>
     </div>

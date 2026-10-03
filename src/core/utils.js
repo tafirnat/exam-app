@@ -55,10 +55,11 @@ export function shuffleArraySeeded(arr, seed) {
     return array;
 }
 
-export async function translateText(text, targetLang = null) {
+export async function translateText(text, targetLang = null, sourceLang = 'auto') {
     const lang = targetLang || AppState.translationTarget || 'de';
+    const source = sourceLang || 'auto';
     try {
-        const res = await fetch(`https://translate.googleapis.com/translate_a/single?client=gtx&sl=auto&tl=${lang}&dt=t&q=${encodeURIComponent(text)}`);
+        const res = await fetch(`https://translate.googleapis.com/translate_a/single?client=gtx&sl=${source}&tl=${lang}&dt=t&q=${encodeURIComponent(text)}`);
         const data = await res.json();
         return data[0].map(x => x[0]).join('');
     } catch (e) {

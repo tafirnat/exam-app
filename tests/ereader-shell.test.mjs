@@ -41,22 +41,42 @@ test('2. test menu group contains all legacy menu IDs', () => {
     }
 });
 
-test('3. ereader menu group contains exactly the specified IDs and no others', () => {
+test('3. ereader menu group contains exactly the specified IDs and no others (contents drawer only)', () => {
     const ereaderGroup = document.querySelector('#actionMenu .menu-mode-group[data-menu-mode="ereader"]');
     assert.ok(ereaderGroup, 'ereader group must exist');
     const expectedIds = [
-        'menuEreaderLibrary',
         'ereaderTocMenuSection',
+        'ereaderTocExpandAllBtn',
+        'ereaderTocCollapseAllBtn',
         'ereaderTocList',
-        'ereaderReadingMenuSection',
-        'ereaderFontDecBtn',
-        'ereaderFontValue',
-        'ereaderFontIncBtn',
-        'ereaderPrintBtn',
-        'menuEreaderReset'
+        'ereaderBookmarkCarousel',
+        'ereaderBookmarkPrevBtn',
+        'ereaderBookmarkCurrentBtn',
+        'ereaderBookmarkNumber',
+        'ereaderBookmarkTitle',
+        'ereaderBookmarkDetailsBtn',
+        'ereaderBookmarkNextBtn',
+        'ereaderTocProgressWrap',
+        'ereaderTocProgressFill'
     ];
     const actualIds = [...ereaderGroup.querySelectorAll('[id]')].map(el => el.id);
     assert.deepEqual(actualIds.sort(), [...expectedIds].sort(), 'ereader group IDs must match exactly');
+});
+
+test('3b. the settings popup carries the controls moved out of the side menu', () => {
+    const overlay = document.getElementById('ereaderSettingsOverlay');
+    assert.ok(overlay, '#ereaderSettingsOverlay must exist');
+    const expectedIds = [
+        'ereaderSettingsCloseBtn', 'ereaderFontSizeBtn',
+        'ereaderSettingsLibraryBtn', 'ereaderSettingsDownloadBtn', 'ereaderShareBookBtn', 'ereaderPrintBtn'
+    ];
+    for (const id of expectedIds) {
+        assert.ok(overlay.querySelector(`#${id}`), `settings popup must contain #${id}`);
+    }
+    // The text-size control shows a fixed "Aa" glyph - never a word or a percentage,
+    // so its own size (and the row's height with it) never changes between tiers.
+    const fontBtn = document.getElementById('ereaderFontSizeBtn');
+    assert.equal(fontBtn.textContent.trim(), 'Aa', '#ereaderFontSizeBtn must carry the fixed "Aa" glyph');
 });
 
 test('4. no duplicate IDs anywhere in the document', () => {
@@ -72,19 +92,19 @@ test('4. no duplicate IDs anywhere in the document', () => {
     assert.deepEqual(duplicates, [], `Duplicate IDs found: ${duplicates.join(', ')}`);
 });
 
-test('5. ereader group has no inline style attributes except the two display:none sections', () => {
+test('5. ereader group has no inline style attributes except the two display:none elements', () => {
     const ereaderGroup = document.querySelector('#actionMenu .menu-mode-group[data-menu-mode="ereader"]');
     assert.ok(ereaderGroup, 'ereader group must exist');
     const elementsWithStyle = [...ereaderGroup.querySelectorAll('[style]')];
     if (ereaderGroup.hasAttribute('style')) {
         elementsWithStyle.unshift(ereaderGroup);
     }
-    const allowedIds = new Set(['ereaderTocMenuSection', 'ereaderReadingMenuSection']);
+    const allowedIds = new Set(['ereaderTocMenuSection', 'ereaderTocProgressWrap', 'ereaderBookmarkCarousel']);
     for (const el of elementsWithStyle) {
         assert.ok(allowedIds.has(el.id), `Element with id "${el.id}" has unexpected inline style: ${el.getAttribute('style')}`);
         assert.equal(el.getAttribute('style').trim().replace(/\s+/g, ' '), 'display: none;');
     }
-    assert.equal(elementsWithStyle.length, 2, 'Exactly 2 elements in ereader group may have inline styles');
+    assert.equal(elementsWithStyle.length, 3, 'Exactly 3 elements in ereader group may have inline styles');
 });
 
 test('6. header elements are placed correctly with respect to siblings', () => {
@@ -203,7 +223,7 @@ test('11. applyEreaderChrome applies chrome and wires goHome in DOM', () => {
     assert.equal(win.document.getElementById('ereaderHeaderTools').style.display, 'none');
     assert.equal(win.document.querySelector('.header-sync-container').style.display, 'none');
     assert.equal(win.document.getElementById('ereaderTocMenuSection').style.display, 'none');
-    assert.equal(win.document.getElementById('ereaderReadingMenuSection').style.display, 'none');
+    assert.equal(win.document.getElementById('ereaderTocProgressWrap').style.display, 'none');
 
     // Trigger goHome
     win.document.getElementById('headerBackBtn').click();
@@ -214,7 +234,7 @@ test('11. applyEreaderChrome applies chrome and wires goHome in DOM', () => {
     assert.equal(win.document.getElementById('actionMenu').dataset.mode, 'ereader');
     assert.equal(win.document.getElementById('ereaderHeaderTools').style.display, 'flex');
     assert.equal(win.document.getElementById('ereaderTocMenuSection').style.display, 'block');
-    assert.equal(win.document.getElementById('ereaderReadingMenuSection').style.display, 'block');
+    assert.equal(win.document.getElementById('ereaderTocProgressWrap').style.display, 'block');
 
     // Test returning to home
     applyEreaderChrome('home', { goHome: () => {} });
@@ -223,29 +243,32 @@ test('11. applyEreaderChrome applies chrome and wires goHome in DOM', () => {
     assert.equal(win.document.getElementById('ereaderHeaderTools').style.display, 'none');
     assert.equal(win.document.querySelector('.header-sync-container').style.display, '');
     assert.equal(win.document.getElementById('ereaderTocMenuSection').style.display, 'none');
-    assert.equal(win.document.getElementById('ereaderReadingMenuSection').style.display, 'none');
+    assert.equal(win.document.getElementById('ereaderTocProgressWrap').style.display, 'none');
 });
 
-test('12. bindEreaderShell wires switchView and closeMenu correctly', () => {
+test('12. bindEreaderShell wires switchView and closes the settings popup on library nav', async () => {
     const testDom = new JSDOM(html);
     const win = testDom.window;
     globalThis.document = win.document;
 
     let targetView = null;
-    let menuClosed = false;
 
     bindEreaderShell({
         switchView: (v) => { targetView = v; },
-        closeMenu: () => { menuClosed = true; }
+        closeMenu: () => {}
     });
 
-    win.document.getElementById('headerEreaderBtn').click();
+    /* No last book in this bare window, so the entry point (now async -
+       it checks for one to resume before falling back) lands on the library. */
+    await win.document.getElementById('headerEreaderBtn').onclick();
     assert.equal(targetView, 'ereaderLibrary');
 
     targetView = null;
-    win.document.getElementById('menuEreaderLibrary').click();
-    assert.equal(menuClosed, true);
+    win.document.getElementById('ereaderSettingsOverlay').classList.add('active');
+    win.document.getElementById('ereaderSettingsLibraryBtn').click();
     assert.equal(targetView, 'ereaderLibrary');
+    assert.equal(win.document.getElementById('ereaderSettingsOverlay').classList.contains('active'), false,
+        'the settings popup must close when navigating to the library');
 });
 
 test('13. (D1) src/main.js calls applyEreaderChrome("home") before function switchView definition', () => {

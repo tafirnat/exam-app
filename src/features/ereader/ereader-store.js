@@ -6,12 +6,14 @@
 import { persistAsync, persistRemoveAsync, readJSONAsync } from '../../core/storage.js';
 import { emit, Slice } from '../../core/store.js';
 import { AppState } from '../../core/state.js';
+import { deleteBookImages } from './ereader-images.js';
 
 const INDEX_KEY = 'focus_app_ereader_index';
 const BOOK_PREFIX = 'focus_app_ereader_book_';
 const PROGRESS_KEY = 'focus_app_ereader_progress';
 const TOMBSTONES_KEY = 'focus_app_ereader_tombstones';
 const PREFS_KEY = 'focus_app_ereader_prefs';
+const BOOKMARKS_KEY = 'focus_app_ereader_bookmarks';
 
 let loaded = false;
 let loadPromise = null;
@@ -20,6 +22,8 @@ const bookCache = new Map();
 let progressMap = {};
 let tombstonesMap = {};
 let prefsData = { fontScale: 1, lastBookId: null };
+/** { [bookId]: Array<{ id, sectionId, title, note, createdAt }> } */
+let bookmarksMap = {};
 let changeListener = null;
 
 function notifyChange(action, payload) {
@@ -46,6 +50,7 @@ function createSummary(book) {
         language: book.language || 'und',
         sourceType: book.sourceType || 'other',
         parts: Array.isArray(book.parts) ? [...book.parts] : [],
+        archived: book.archived === true,
         sectionCount,
         textLength,
         createdAt: book.createdAt || Date.now(),
@@ -64,19 +69,21 @@ export async function loadEreader() {
     if (loadPromise) return loadPromise;
 
     loadPromise = (async () => {
-        const [idx, prog, tombs, prefs] = await Promise.all([
+        const [idx, prog, tombs, prefs, bookmarks] = await Promise.all([
             readJSONAsync(INDEX_KEY, []),
             readJSONAsync(PROGRESS_KEY, {}),
             readJSONAsync(TOMBSTONES_KEY, {}),
-            readJSONAsync(PREFS_KEY, { fontScale: 1, lastBookId: null })
+            readJSONAsync(PREFS_KEY, { fontScale: 1, lastBookId: null }),
+            readJSONAsync(BOOKMARKS_KEY, {})
         ]);
 
         bookIndex = Array.isArray(idx) ? idx : [];
         progressMap = prog && typeof prog === 'object' && !Array.isArray(prog) ? prog : {};
         tombstonesMap = tombs && typeof tombs === 'object' && !Array.isArray(tombs) ? tombs : {};
         prefsData = prefs && typeof prefs === 'object' && !Array.isArray(prefs)
-            ? { fontScale: prefs.fontScale ?? 1, lastBookId: prefs.lastBookId ?? null }
+            ? { ...prefs, fontScale: prefs.fontScale ?? 1, lastBookId: prefs.lastBookId ?? null }
             : { fontScale: 1, lastBookId: null };
+        bookmarksMap = bookmarks && typeof bookmarks === 'object' && !Array.isArray(bookmarks) ? bookmarks : {};
 
         loaded = true;
     })();
@@ -247,11 +254,34 @@ export async function deleteBook(id, { fromSync = false, tombstoneAt = null } = 
     bookCache.delete(id);
     tombstonesMap[id] = Math.max(tombstonesMap[id] || 0, (fromSync && typeof tombstoneAt === 'number') ? tombstoneAt : Date.now());
 
+    const hadBookmarks = Array.isArray(bookmarksMap[id]) && bookmarksMap[id].length > 0;
+    delete bookmarksMap[id];
+
     await persistRemoveAsync(BOOK_PREFIX + id);
     await persistAsync(INDEX_KEY, bookIndex);
     await persistAsync(TOMBSTONES_KEY, tombstonesMap);
+    if (hadBookmarks) await persistAsync(BOOKMARKS_KEY, bookmarksMap);
+    /* The pictures the reader added live on this device only, keyed by book. */
+    await deleteBookImages(id);
+    /* So is the language pair the reader picked for it. */
+    let prefsChanged = false;
+    const pairs = prefsData.translation && prefsData.translation.books;
+    if (pairs && pairs[id]) {
+        const { [id]: _gone, ...rest } = pairs;
+        prefsData = { ...prefsData, translation: { ...prefsData.translation, books: rest } };
+        prefsChanged = true;
+    }
+    /* And the language it is read aloud in. */
+    const voices = prefsData.tts && prefsData.tts.books;
+    if (voices && voices[id]) {
+        const { [id]: _gone, ...rest } = voices;
+        prefsData = { ...prefsData, tts: { ...prefsData.tts, books: rest } };
+        prefsChanged = true;
+    }
+    if (prefsChanged) await persistAsync(PREFS_KEY, prefsData);
 
     emit(Slice.EREADER_LIBRARY);
+    if (hadBookmarks) emit(Slice.EREADER_BOOKMARKS);
     if (!fromSync) notifyChange('deleteBook', id);
 }
 
@@ -318,6 +348,224 @@ export async function setPrefs(patch) {
     await persistAsync(PREFS_KEY, prefsData);
     emit(Slice.EREADER_LIBRARY);
     return { ...prefsData };
+}
+
+/**
+ * The language pair a book is translated with: the one picked for it, else the
+ * reader's last pick for any book, else null (the caller supplies a default).
+ * Lives in the device-only prefs - never in the book, never synced or shared,
+ * since every reader of a shared book picks their own.
+ *
+ * @param {string} bookId
+ * @returns {{source: string, target: string}|null}
+ */
+export function getBookTranslation(bookId) {
+    const tr = prefsData.translation || {};
+    const pair = (bookId && tr.books && tr.books[bookId]) || tr.last || null;
+    return pair ? { ...pair } : null;
+}
+
+/**
+ * Saves a book's language pair, which also becomes the default for books the
+ * reader has not picked one for yet.
+ *
+ * @param {string} bookId
+ * @param {{source?: string, target: string}} pair
+ * @returns {Promise<object>}
+ */
+export async function setBookTranslation(bookId, pair) {
+    const tr = prefsData.translation || {};
+    const clean = { source: pair.source || 'auto', target: pair.target };
+    return setPrefs({
+        translation: { ...tr, last: clean, books: { ...(tr.books || {}), [bookId]: clean } }
+    });
+}
+
+/** Read-aloud defaults: off, normal speed (x1.0), no autoplay. */
+const TTS_DEFAULTS = Object.freeze({ enabled: false, speed: 0.5, autoplay: false });
+
+/**
+ * The device-wide read-aloud settings: the switch, speed and autoplay.
+ *
+ * @returns {{enabled: boolean, speed: number, autoplay: boolean}}
+ */
+export function getTtsPrefs() {
+    const tts = prefsData.tts || {};
+    return {
+        enabled: typeof tts.enabled === 'boolean' ? tts.enabled : TTS_DEFAULTS.enabled,
+        speed: typeof tts.speed === 'number' ? tts.speed : TTS_DEFAULTS.speed,
+        autoplay: typeof tts.autoplay === 'boolean' ? tts.autoplay : TTS_DEFAULTS.autoplay
+    };
+}
+
+/**
+ * Updates the read-aloud settings (any of enabled, speed, autoplay).
+ *
+ * @param {{enabled?: boolean, speed?: number, autoplay?: boolean}} patch
+ * @returns {Promise<object>}
+ */
+export async function setTtsPrefs(patch) {
+    return setPrefs({ tts: { ...(prefsData.tts || {}), ...patch } });
+}
+
+/**
+ * The language a book is read aloud in: the one picked for it, else the
+ * reader's last pick for any book, else null (the caller supplies a default).
+ * Device-only, like the translation pair.
+ *
+ * @param {string} bookId
+ * @returns {string|null}
+ */
+export function getBookTtsLang(bookId) {
+    const tts = prefsData.tts || {};
+    return (bookId && tts.books && tts.books[bookId]) || tts.last || null;
+}
+
+/**
+ * Saves a book's read-aloud language, which also becomes the default for
+ * books the reader has not picked one for yet.
+ *
+ * @param {string} bookId
+ * @param {string} lang
+ * @returns {Promise<object>}
+ */
+export async function setBookTtsLang(bookId, lang) {
+    const tts = prefsData.tts || {};
+    return setPrefs({ tts: { ...tts, last: lang, books: { ...(tts.books || {}), [bookId]: lang } } });
+}
+
+/**
+ * Lists a book's bookmarks, unsorted (reading-order numbering is a display
+ * concern - it depends on the book's own section order, not stored here).
+ *
+ * @param {string} id
+ * @returns {Array<{id: string, sectionId: string, title: string, note: string, createdAt: number}>}
+ */
+export function getBookmarks(id) {
+    const list = bookmarksMap[id];
+    return Array.isArray(list) ? list.map(b => ({ ...b })) : [];
+}
+
+/**
+ * Adds a bookmark to a book and emits Slice.EREADER_BOOKMARKS.
+ *
+ * @param {string} id book id
+ * @param {{sectionId: string, title?: string, note?: string, anchor?: {offset: number, quote: string}}} bookmark
+ * @returns {Promise<object>} the saved bookmark, with its id and createdAt
+ */
+/**
+ * Each bookmark's display number: the order it was added in, fixed for good -
+ * a later bookmark placed higher up the page gets the next number rather than
+ * renumbering the ones already there. Bookmarks saved before numbers existed
+ * (no `seq`) are numbered by their creation time.
+ *
+ * @param {Array<{id: string, seq?: number, createdAt?: number}>} bookmarks
+ * @returns {Map<string, number>} bookmark id -> number
+ */
+export function bookmarkNumbers(bookmarks) {
+    const numbers = new Map();
+    const legacy = (bookmarks || [])
+        .filter(b => !Number.isInteger(b.seq))
+        .sort((a, b) => (a.createdAt || 0) - (b.createdAt || 0));
+    legacy.forEach((b, i) => numbers.set(b.id, i + 1));
+    for (const b of bookmarks || []) {
+        if (Number.isInteger(b.seq)) numbers.set(b.id, b.seq);
+    }
+    return numbers;
+}
+
+function nextBookmarkSeq(bookmarks) {
+    let max = 0;
+    for (const n of bookmarkNumbers(bookmarks).values()) max = Math.max(max, n);
+    return max + 1;
+}
+
+/** A bookmark's spot inside its section: { offset, quote } (see the reader's
+ *  resolveAnchor). Anything else is dropped - the section is enough. */
+function cleanAnchor(anchor) {
+    if (!anchor || typeof anchor !== 'object') return null;
+    const offset = Number.isInteger(anchor.offset) && anchor.offset >= 0 ? anchor.offset : null;
+    const quote = typeof anchor.quote === 'string' ? anchor.quote.slice(0, 80) : '';
+    if (offset === null || !quote) return null;
+    /* How many characters the selection spanned - the passage to highlight. */
+    const length = Number.isInteger(anchor.length) && anchor.length > 0 ? Math.min(anchor.length, 2000) : 0;
+    return length ? { offset, quote, length } : { offset, quote };
+}
+
+export async function addBookmark(id, { sectionId, title = '', note = '', anchor = null } = {}) {
+    if (!loaded) await loadEreader();
+    if (!sectionId) throw new Error('addBookmark: sectionId is required');
+
+    const entry = {
+        id: typeof crypto !== 'undefined' && crypto.randomUUID
+            ? 'bm_' + crypto.randomUUID()
+            : 'bm_' + Date.now() + '_' + Math.random().toString(36).slice(2, 9),
+        sectionId,
+        title: title.trim(),
+        note: note.trim(),
+        seq: nextBookmarkSeq(bookmarksMap[id] || []),
+        createdAt: Date.now()
+    };
+    const spot = cleanAnchor(anchor);
+    if (spot) entry.anchor = spot;
+
+    bookmarksMap[id] = [...(bookmarksMap[id] || []), entry];
+    await persistAsync(BOOKMARKS_KEY, bookmarksMap);
+
+    emit(Slice.EREADER_BOOKMARKS);
+    return { ...entry };
+}
+
+/**
+ * Updates a bookmark's title/note in place (its sectionId and createdAt are
+ * untouched) and emits Slice.EREADER_BOOKMARKS.
+ *
+ * @param {string} id book id
+ * @param {string} bookmarkId
+ * @param {{title?: string, note?: string}} patch
+ * @returns {Promise<object|null>} the updated bookmark, or null if not found
+ */
+export async function updateBookmark(id, bookmarkId, { title, note } = {}) {
+    if (!loaded) await loadEreader();
+    const list = bookmarksMap[id];
+    if (!Array.isArray(list)) return null;
+
+    let updated = null;
+    const next = list.map(b => {
+        if (b.id !== bookmarkId) return b;
+        updated = {
+            ...b,
+            title: title !== undefined ? title.trim() : b.title,
+            note: note !== undefined ? note.trim() : b.note
+        };
+        return updated;
+    });
+    if (!updated) return null;
+    bookmarksMap[id] = next;
+
+    await persistAsync(BOOKMARKS_KEY, bookmarksMap);
+    emit(Slice.EREADER_BOOKMARKS);
+    return { ...updated };
+}
+
+/**
+ * Removes one bookmark from a book and emits Slice.EREADER_BOOKMARKS.
+ *
+ * @param {string} id book id
+ * @param {string} bookmarkId
+ * @returns {Promise<void>}
+ */
+export async function deleteBookmark(id, bookmarkId) {
+    if (!loaded) await loadEreader();
+    const list = bookmarksMap[id];
+    if (!Array.isArray(list)) return;
+
+    const next = list.filter(b => b.id !== bookmarkId);
+    if (next.length === list.length) return;
+    bookmarksMap[id] = next;
+
+    await persistAsync(BOOKMARKS_KEY, bookmarksMap);
+    emit(Slice.EREADER_BOOKMARKS);
 }
 
 /**
@@ -392,5 +640,6 @@ export function _resetEreaderStoreForTests() {
     progressMap = {};
     tombstonesMap = {};
     prefsData = { fontScale: 1, lastBookId: null };
+    bookmarksMap = {};
     changeListener = null;
 }

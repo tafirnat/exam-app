@@ -1,12 +1,72 @@
 import { t } from '../../core/i18n.js';
 import { emit, Slice } from '../../core/store.js';
-import { loadEreader, isEreaderLoaded } from './ereader-store.js';
+import { loadEreader, isEreaderLoaded, listBooks, setPrefs, getPrefs, deleteBook } from './ereader-store.js';
 import { bindEreaderLibrary } from './ereader-library-ui.js';
-import { bindEreaderReader, enterBookView, leaveBookView } from './ereader-reader-ui.js';
+import { bindEreaderReader, enterBookView, leaveBookView, closeSettingsOverlay, openBook } from './ereader-reader-ui.js';
 import { pullEreader, initEreaderSync } from './ereader-sync.js';
+import { readStringAsync, persistAsync } from '../../core/storage.js';
+import { AppState } from '../../core/state.js';
+import { importFromUrl } from './ereader-import.js';
+
+export const EREADER_SAMPLE_KEY = 'focus_app_ereader_sample_loaded_v5';
+
+const OLD_SAMPLE_KEYS = new Set([
+    'ezop-masallari-secme-hikayeler-tr',
+    'aesops-fables-selected-tales-en',
+    'aesops-fabeln-ausgewaehlte-erzaehlungen-de'
+]);
+
+const NEW_SAMPLE_KEYS = new Set([
+    'sistem-mimarisi-ve-ereader-kilavuzu-tr',
+    'system-architecture-and-ereader-guide-en',
+    'systemarchitektur-und-ereader-handbuch-de'
+]);
 
 let loadRequested = false;
 let switchViewRef = null;
+
+let starterPromise = null;
+
+/** Runs the starter-book check once per session, whichever entry point -
+ *  the view switch or the header button - reaches the e-Reader first. */
+function ensureStarterBookLoaded() {
+    if (!starterPromise) starterPromise = loadStarterBook();
+    return starterPromise;
+}
+
+async function loadStarterBook() {
+    if (typeof window === 'undefined' || typeof fetch !== 'function' || !window.localStorage) return;
+    try {
+        if (await readStringAsync(EREADER_SAMPLE_KEY)) return;
+        const books = listBooks();
+        for (const b of books) {
+            if (OLD_SAMPLE_KEYS.has(b.bookKey)) {
+                await deleteBook(b.id, { fromSync: true });
+            }
+        }
+        /* A sample imported under an earlier version of the file (bumped with
+           EREADER_SAMPLE_KEY) is swapped for the current one in its own
+           language, so new specimen content reaches existing installs. */
+        const outdated = listBooks().filter(b => NEW_SAMPLE_KEYS.has(b.bookKey));
+        for (const b of outdated) {
+            await deleteBook(b.id, { fromSync: true });
+        }
+        const remaining = listBooks();
+        if (outdated.length === 0 && remaining.length > 0) {
+            await persistAsync(EREADER_SAMPLE_KEY, '1');
+            return;
+        }
+        const preferred = outdated[0]?.language || AppState.language;
+        const lang = ['tr', 'en', 'de'].includes(preferred) ? preferred : 'tr';
+        const res = await importFromUrl(`./examples/ereader/sample-book-${lang}.json`);
+        if (res && res.book && res.book.id) {
+            await setPrefs({ lastBookId: res.book.id });
+        }
+        await persistAsync(EREADER_SAMPLE_KEY, lang);
+    } catch (e) {
+        console.warn('[ereader] could not load starter book:', e);
+    }
+}
 
 /**
  * The e-Reader's storage is read on first entry, not at boot: the test centre
@@ -18,7 +78,10 @@ function ensureEreaderLoaded() {
     if (loadRequested || isEreaderLoaded()) return;
     loadRequested = true;
     loadEreader()
-        .then(() => emit(Slice.EREADER_LIBRARY))
+        .then(async () => {
+            await ensureStarterBookLoaded();
+            emit(Slice.EREADER_LIBRARY);
+        })
         .catch((err) => {
             loadRequested = false;
             console.error('[ereader] load failed:', err);
@@ -141,9 +204,9 @@ export function applyEreaderChrome(view, { goHome } = {}) {
         tocSection.style.display = view === 'ereaderBook' ? 'block' : 'none';
     }
 
-    const readingSection = document.getElementById('ereaderReadingMenuSection');
-    if (readingSection) {
-        readingSection.style.display = view === 'ereaderBook' ? 'block' : 'none';
+    const progressWrap = document.getElementById('ereaderTocProgressWrap');
+    if (progressWrap) {
+        progressWrap.style.display = view === 'ereaderBook' ? 'block' : 'none';
     }
 
     if (isEreaderView(view)) {
@@ -164,20 +227,32 @@ export function applyEreaderChrome(view, { goHome } = {}) {
 }
 
 /**
- * One-time wiring: #headerEreaderBtn, #menuEreaderLibrary.
+ * One-time wiring: #headerEreaderBtn, #ereaderSettingsLibraryBtn.
  */
 export function bindEreaderShell({ switchView, closeMenu } = {}) {
     const headerEreaderBtn = document.getElementById('headerEreaderBtn');
     if (headerEreaderBtn && typeof switchView === 'function') {
-        headerEreaderBtn.onclick = () => switchView('ereaderLibrary');
+        /* The entry point resumes the last-read book directly - "pick a book"
+           is not a step a returning reader should repeat. openBook() itself
+           falls back to nothing (leaving this to switchView) when the last
+           book no longer exists, or there never was one. */
+        headerEreaderBtn.onclick = async () => {
+            await loadEreader();
+            /* Loading the store here means ensureEreaderLoaded() will find it
+               loaded and skip its own starter check - so a fresh install that
+               enters through this button would never get the sample book. */
+            await ensureStarterBookLoaded();
+            emit(Slice.EREADER_LIBRARY);
+            const lastId = getPrefs().lastBookId;
+            if (lastId && await openBook(lastId, { switchView })) return;
+            switchView('ereaderLibrary');
+        };
     }
 
-    const menuEreaderLibrary = document.getElementById('menuEreaderLibrary');
-    if (menuEreaderLibrary) {
-        menuEreaderLibrary.onclick = () => {
-            if (typeof closeMenu === 'function') {
-                closeMenu();
-            }
+    const settingsLibraryBtn = document.getElementById('ereaderSettingsLibraryBtn');
+    if (settingsLibraryBtn) {
+        settingsLibraryBtn.onclick = () => {
+            closeSettingsOverlay();
             if (typeof switchView === 'function') {
                 switchView('ereaderLibrary');
             }

@@ -261,3 +261,79 @@ test('9. addBook and replaceBook reject tombstoned IDs without writing or revivi
     assert.equal(storedIndex2.some(b => b.id === b2Id), false, 'stored index must not contain tombstoned book');
 });
 
+// ── bookmarks ────────────────────────────────────────────────────────────
+
+test('10. addBookmark saves it, getBookmarks lists it, and emits Slice.EREADER_BOOKMARKS', async () => {
+    const book = await ereaderStore.addBook({ title: 'Bookmarked', language: 'en', sections: [{ id: 's-1', text: '1' }] });
+
+    const emittedSlices = [];
+    store.subscribe('test-bm', [store.Slice.EREADER_BOOKMARKS], () => emittedSlices.push(store.Slice.EREADER_BOOKMARKS));
+
+    const bm = await ereaderStore.addBookmark(book.id, { sectionId: 's-1', title: 'Chapter start', note: 'Come back here' });
+    assert.ok(bm.id.startsWith('bm_'));
+    assert.ok(bm.createdAt);
+    assert.equal(bm.sectionId, 's-1');
+    assert.equal(bm.title, 'Chapter start');
+    assert.equal(bm.note, 'Come back here');
+
+    const list = ereaderStore.getBookmarks(book.id);
+    assert.equal(list.length, 1);
+    assert.equal(list[0].id, bm.id);
+
+    store.flushNow();
+    assert.ok(emittedSlices.includes(store.Slice.EREADER_BOOKMARKS));
+
+    // Persisted, not just in memory.
+    ereaderStore._resetEreaderStoreForTests();
+    await ereaderStore.loadEreader();
+    assert.equal(ereaderStore.getBookmarks(book.id).length, 1);
+});
+
+test('11. deleteBookmark removes it and leaves the others', async () => {
+    const book = await ereaderStore.addBook({ title: 'Two Marks', language: 'en', sections: [{ id: 's-1', text: '1' }] });
+    const bm1 = await ereaderStore.addBookmark(book.id, { sectionId: 's-1', title: 'First' });
+    const bm2 = await ereaderStore.addBookmark(book.id, { sectionId: 's-1', title: 'Second' });
+
+    await ereaderStore.deleteBookmark(book.id, bm1.id);
+    const list = ereaderStore.getBookmarks(book.id);
+    assert.equal(list.length, 1);
+    assert.equal(list[0].id, bm2.id);
+});
+
+test('11b. updateBookmark edits title/note in place, keeps sectionId and createdAt, and emits Slice.EREADER_BOOKMARKS', async () => {
+    const book = await ereaderStore.addBook({ title: 'Editable Marks', language: 'en', sections: [{ id: 's-1', text: '1' }] });
+    const bm = await ereaderStore.addBookmark(book.id, { sectionId: 's-1', title: 'Original', note: 'Old note' });
+
+    const emittedSlices = [];
+    store.subscribe('test-bm-update', [store.Slice.EREADER_BOOKMARKS], () => emittedSlices.push(store.Slice.EREADER_BOOKMARKS));
+
+    const updated = await ereaderStore.updateBookmark(book.id, bm.id, { title: 'Renamed', note: 'New note' });
+    assert.equal(updated.id, bm.id);
+    assert.equal(updated.title, 'Renamed');
+    assert.equal(updated.note, 'New note');
+    assert.equal(updated.sectionId, 's-1');
+    assert.equal(updated.createdAt, bm.createdAt);
+
+    const list = ereaderStore.getBookmarks(book.id);
+    assert.equal(list.length, 1);
+    assert.equal(list[0].title, 'Renamed');
+
+    store.flushNow();
+    assert.ok(emittedSlices.includes(store.Slice.EREADER_BOOKMARKS));
+
+    assert.equal(await ereaderStore.updateBookmark(book.id, 'nonexistent', { title: 'x' }), null);
+});
+
+test('12. deleting a book also deletes its bookmarks', async () => {
+    const book = await ereaderStore.addBook({ title: 'Doomed', language: 'en', sections: [{ id: 's-1', text: '1' }] });
+    await ereaderStore.addBookmark(book.id, { sectionId: 's-1', title: 'Will vanish' });
+    assert.equal(ereaderStore.getBookmarks(book.id).length, 1);
+
+    await ereaderStore.deleteBook(book.id);
+    assert.equal(ereaderStore.getBookmarks(book.id).length, 0);
+
+    ereaderStore._resetEreaderStoreForTests();
+    await ereaderStore.loadEreader();
+    assert.equal(ereaderStore.getBookmarks(book.id).length, 0, 'must not resurrect after reload');
+});
+

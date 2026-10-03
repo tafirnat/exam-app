@@ -1,0 +1,174 @@
+{
+  "ereader": {
+    "schema": 1,
+    "book_key": "sistem-mimarisi-ve-ereader-kilavuzu-tr",
+    "title": "Modern Sistem Mimarisi ve e-Reader Başvuru Kılavuzu",
+    "author": "Exam App Mühendislik Ekibi",
+    "language": "tr",
+    "source_type": "pdf",
+    "part": {
+      "unit": "page",
+      "from": 1,
+      "to": 22,
+      "total": 22,
+      "next_from": null,
+      "is_last": true
+    }
+  },
+  "sections": [
+    {
+      "id": "s-1",
+      "title": "1. Giriş ve Temel Mimari Vizyon",
+      "level": 1,
+      "page_start": 1,
+      "text": "Bu doküman, **Exam App** bağımsız e-Reader motorunun tüm görsel ve işlevsel yeteneklerini ve **başlık derinliğini (TOC hierarchy)** doğrulamak amacıyla hazırlanmış kapsamlı bir teknik başvuru eseridir.\n\n> [!abstract] Eserin Kapsamı ve Amacı\n> Bu e-kitap; derinleştirilmiş başlık katmanları (Level 1'den Level 4'e kadar), Obsidian uyumlu çağrı kutuları (callout), çok sütunlu veri tabloları, sözdizimi vurgulu kod parçacıkları ve sayfa bazlı (`unit: \"page\"`) navigasyon modelini tek bir yapıda test etmenizi sağlar.\n\n### Neden Bağımsız Bir Okuyucu?\nGeleneksel soru ve kart tabanlı sınav hazırlık süreçlerinde uzun teknik dokümanları ve kitapları okumak odak dağılmasına yol açabilir. e-Reader modülü, dikkati dağıtacak hiçbir sınav parametresini barındırmadan saf bir okuma ortamı sunar.\n\n- [x] Tamamen izole okuma alanı\n- [x] Hiyerarşik içindekiler tablosu (TOC)\n- [x] Kalıcı okuma konumu ve ilerleme takibi"
+    },
+    {
+      "id": "s-1-1",
+      "title": "1.1 e-Reader Çekirdek Tasarımı ve İzolasyon Modeli",
+      "level": 2,
+      "page_start": 2,
+      "text": "e-Reader motoru, uygulamanın ana durum makinesinden (State Machine) mantıksal olarak yalıtılmıştır. Bu yalıtım hem performans hem de veri bütünlüğü açısından kritik avantajlar sağlar.\n\n> [!info] Bağımsız Yaşam Döngüsü\n> e-Reader deposu uygulama açılışında yüklenmez; yalnızca kullanıcı kütüphaneye ilk kez girdiğinde asenkron olarak okunur. Böylece sınav merkezinin açılış süresi etkilenmez."
+    },
+    {
+      "id": "s-1-1-1",
+      "title": "1.1.1 Bağımsız Çalışma Modu ve Sınav Merkezi Ayrımı",
+      "level": 3,
+      "page_start": 3,
+      "text": "Okuma esnasında harcanan süre, incelenen sayfalar veya işaretlenen bölümler **FSRS aralıklı tekrar algoritmasını**, soru istatistiklerini veya günlük serileri (streak) doğrudan etkilemez.\n\n> [!note] Odak ve Dikkat İlkesi\n> Okuma modu, çalışma seansları arasında derinlemesine kaynak incelemesi yapabilmeniz için tasarlanmıştır.\n\n```text\n[Sınav Merkezi]  <-- Sıfır Veri Bağıntısı -->  [e-Reader Motoru]\n   - FSRS Kartları                               - Sayfa Navigasyonu\n   - Test Skorları                               - Notlar ve Vurgular\n   - Seri Sayaçları                              - TOC Ağacı\n```"
+    },
+    {
+      "id": "s-1-1-1-1",
+      "title": "1.1.1.1 Durum Yönetimi ve Bellek Verimliliği",
+      "level": 4,
+      "page_start": 4,
+      "text": "Bu alt bölüm, e-Reader içindekiler tablosundaki (TOC) **4. seviye başlık derinliğini** ve girinti (`--toc-depth: 3`) davranışını doğrudan test etmek amacıyla yapılandırılmıştır.\n\n> [!tip] Performans İpucu\n> Bellek sızıntılarını önlemek için DOM üzerinde yalnızca aktif okunan bölümün ve çevreleyen elemanların render edilmesi performansı optimize eder.\n\nTemel bellek ilkeleri:\n1. DOM düğüm sayısı sınırlandırması\n2. Pasif kaydırma dinleyicileri (passive scroll listeners)\n3. Kaynakların sayfa geçişlerinde serbest bırakılması"
+    },
+    {
+      "id": "s-1-1-2",
+      "title": "1.1.2 Veri Kalıcılığı ve Senkronizasyon Akışı",
+      "level": 3,
+      "page_start": 5,
+      "text": "Kitap içerikleri ve kullanıcının son kaldığı pozisyon tarayıcının yerel **IndexedDB** ve **localStorage** katmanlarında saklanır.\n\n> [!success] Kesintisiz Okuma Deneyimi\n> Kitabı kapatıp günler sonra geri döndüğünüzde, e-Reader otomatik olarak en son okuduğunuz satırı ve bölümü ekrana getirir."
+    },
+    {
+      "id": "s-1-2",
+      "title": "1.2 Tipografi, Sayfalama ve Görsel Düzenleme",
+      "level": 2,
+      "page_start": 6,
+      "text": "Uzun metinlerin gözü yormadan okunabilmesi için satır uzunluğu, harf aralığı ve kontrast oranları uluslararası erişilebilirlik standartlarına uygun olarak tasarlanmıştır."
+    },
+    {
+      "id": "s-1-2-1",
+      "title": "1.2.1 Dinamik Font Ölçekleme ve Okuma Ayarları",
+      "level": 3,
+      "page_start": 7,
+      "text": "Üst kontrol panelinde yer alan `A-` ve `A+` butonları metin boyutunu dinamik olarak ölçekler.\n\n- `A-`: Metin boyutunu kademeli olarak küçültür.\n- `A+`: Metin boyutunu kademeli olarak büyütür.\n- Değiştirilen boyut tercihi oturumlar arasında ==kalıcı== olarak hatırlanır.\n\n> [!example] Ölçekleme Formülü\n> Font boyutu `var(--ereader-font-size, 1.05rem)` değişkeni üzerinden CSS katmanında anlık güncellenir."
+    },
+    {
+      "id": "s-1-2-2",
+      "title": "1.2.2 Medya ve Görsel Entegrasyonu",
+      "level": 3,
+      "page_start": 8,
+      "text": "e-Reader motoru, güvenli `https://` protokolü üzerinden harici görselleri duyarlı (responsive) biçimde sunar.\n\n![Yazılım Geliştirme ve Mimari Çalışma Alanı](https://images.pexels.com/photos/1181675/pexels-photo-1181675.jpeg?auto=compress&cs=tinysrgb&w=800)\n\nGörseller okuma akışını bozmayacak şekilde merkezlenir ve alt yazı desteğiyle zenginleştirilir.\n\nAşağıdaki kutu **boş bir görsel yer tutucusudur**: yapay zekâ görselleri asla kendisi eklemez; yerine başlık, kısa açıklama ve sayfa bilgisini içeren bir yer tutucu bırakır. Kutuya dokunup görseli cihazınızdan veya bağlantı ile ekleyebilirsiniz — bağlantı kitaba kaydedilir, cihazdan seçilen görsel ise yalnızca bu cihazda saklanır.\n\n![Şekil 1.2 Okuyucu yerleşim şeması | Şema: üstte aramalı başlık, solda içindekiler, ortada okuma alanı | s. 3](placeholder:fig-1-2)"
+    },
+    {
+      "id": "s-2",
+      "title": "2. Obsidian Markdown ve Zengin İçerik Kütüphanesi",
+      "level": 1,
+      "page_start": 9,
+      "text": "Exam App, **%100 saf Obsidian Markdown** standardını destekler. Hiçbir raw HTML etiketi kullanılmaz; tüm zengin yapılar Markdown sözdizimi ile inşa edilir.\n\n> [!abstract] Bölümün Özeti\n> Bu ana bölümde callout bloklarının tüm varyantları, veri tabloları, kodlama blokları ve stil kombinasyonları test edilmektedir."
+    },
+    {
+      "id": "s-2-1",
+      "title": "2.1 Obsidian Callout Türleri ve Kullanım Alanları",
+      "level": 2,
+      "page_start": 10,
+      "text": "Obsidian formatındaki `> [!type] Başlık` blokları, içerikteki önemli noktaları görsel olarak vurgulamak için kullanılır. Sistem 11 standart stili tanır ve ayrıştırır."
+    },
+    {
+      "id": "s-2-1-1",
+      "title": "2.1.1 Bilgilendirme ve Özet Kutuları",
+      "level": 3,
+      "page_start": 11,
+      "text": "Aşağıdaki bloklar standart bilgilendirme senaryolarını test eder:\n\n> [!note] Standart Not Kutusu\n> Bu kutu genel bilgilendirmeler ve ikincil açıklamalar için kullanılır.\n\n> [!info] Sistem Bilgisi\n> Çekirdek mimari bileşenleri sıfır dış bağımlılık ile çalışacak şekilde kurgulanmıştır.\n\n> [!abstract] Yönetici Özeti (TL;DR)\n> Yüksek performanslı hafif ayrıştırıcı, sayfa boyutunu minimum düzeyde tutar."
+    },
+    {
+      "id": "s-2-1-2",
+      "title": "2.1.2 Uyarı, Hata ve Başarı Blokları",
+      "level": 3,
+      "page_start": 12,
+      "text": "Hata ve dikkat gerektiren unsurların ayrıştırılması:\n\n> [!tip] Geliştirici Tavsiyesi\n> Başlık seviyelerini mantıksal bir sıra (`Level 1 -> Level 2 -> Level 3`) ile tanımlamak TOC katlama mekanizmasının kusursuz çalışmasını sağlar.\n\n> [!success] Dağıtım Başarılı\n> Tüm test paketleri sıfır hata ile tamamlandı ve entegrasyon doğrulandı.\n\n> [!warning] Dikkat Edilmesi Gerekenler\n> Doğrudan HTML etiketleri (`div`, `span`) güvenlik nedeniyle filtrelenir ve ekrana düz metin olarak yansıtılır.\n\n> [!danger] Kritik Risk Uyarısı\n> Yerel veritabanı temizlendiğinde kaydedilmemiş pozisyonlar sıfırlanabilir."
+    },
+    {
+      "id": "s-2-1-3",
+      "title": "2.1.3 Örnek Olay, İpucu ve Alıntı Formatları",
+      "level": 3,
+      "page_start": 13,
+      "text": "> [!example] Gerçek Dünya Senaryosu\n> 1000 sayfalık bir tıp veya hukuk kitabı e-Reader içinde içe aktarıldığında bellek tüketimi 15MB sınırını aşmaz.\n\n> [!bug] Bilinen İstisnalar\n> Bozuk karakter kodlamasına sahip eski UTF-16 dosyalar UTF-8 standardına normalize edilir.\n\n> [!quote] İlham Veren Söz\n> \"Basitlik, en üstün gelişmişlik düzeyidir.\"\n> — Leonardo da Vinci"
+    },
+    {
+      "id": "s-2-2",
+      "title": "2.2 Tablolar, Kod Blokları ve Liste Çeşitleri",
+      "level": 2,
+      "page_start": 14,
+      "text": "Teknik dokümantasyonların vazgeçilmez iki unsuru; düzenli veri tabloları ve biçimlendirilmiş kod parçacıklarıdır."
+    },
+    {
+      "id": "s-2-2-1",
+      "title": "2.2.1 Hizalanmış Karşılaştırma Tabloları",
+      "level": 3,
+      "page_start": 15,
+      "text": "Aşağıdaki tablo, sütun hizalama kurallarını (Sola, Ortaya, Sağa) test etmektedir:\n\n| Bileşen Adı | Sorumluluk Alanı | Hizalama | Güvenilirlik Derecesi |\n| :--- | :---: | ---: | ---: |\n| **Parser Motoru** | Markdown -> AST | Merkez | %99.9 |\n| **TOC Oluşturucu** | Hiyerarşik Ağaç | Sol | %100.0 |\n| **Arama İndeksi** | Anlık Vurgulama | Sağ | %98.5 |\n| **Kalıcılık Servisi** | IndexedDB Kaydı | Merkez | %99.8 |"
+    },
+    {
+      "id": "s-2-2-1-1",
+      "title": "2.2.1.1 Çok Sütunlu Metrik Karşılaştırması",
+      "level": 4,
+      "page_start": 16,
+      "text": "Bu ikinci dördüncü seviye başlık, farklı bir ana dal altında **derin başlık hiyerarşisinin** bağımsızlığını test eder.\n\n- ==Hızlı arama== sorguları: ~2ms\n- ==TOC ağacı== inşası: ~5ms\n- ==Bölüm yükleme== süresi: ~1ms\n\n> [!note] Seviye Doğrulaması\n> Bu alt başlık `Level 4` olarak tanımlanmış olup `2.2.1` başlığının altında listelenmelidir."
+    },
+    {
+      "id": "s-2-2-2",
+      "title": "2.2.2 Sözdizimi Vurgulu Fenced Kod Blokları",
+      "level": 3,
+      "page_start": 17,
+      "text": "JavaScript yapılandırma örneği:\n\n```javascript\n// e-Reader başlatma ve yapılandırma nesnesi\nconst readerConfig = {\n    theme: 'system',\n    fontSize: 18,\n    enableSearch: true,\n    preloadChapters: 2\n};\n\nconsole.log('e-Reader başlatıldı:', readerConfig);\n```\n\nJSON kitap meta veri şeması örneği:\n\n```json\n{\n  \"ereader\": {\n    \"schema\": 1,\n    \"book_key\": \"ornek-kitap-tr\",\n    \"language\": \"tr\"\n  }\n}\n```"
+    },
+    {
+      "id": "s-2-2-3",
+      "title": "2.2.3 Görev Listeleri ve İç Bağlantılar (Wikilinks)",
+      "level": 3,
+      "page_start": 18,
+      "text": "- [x] Başlık derinliği doğrulaması\n- [x] Tablo ve hücre hizalaması\n- [x] Kod bloklarının raw metin olarak korunması\n- [ ] Opsiyonel ek temalar (Sepia, Gece Mavisi)\n\nBağlantı testi: [[Giriş Bölümü|İlk Bölüme Git]] veya harici kaynak için [Obsidian Dokümantasyonu](https://obsidian.md)."
+    },
+    {
+      "id": "s-3",
+      "title": "3. Navigasyon, Arama ve Okuma Analitiği",
+      "level": 1,
+      "page_start": 19,
+      "text": "Kitap içinde hızlı hareket edebilmek, anahtar terimleri arayabilmek ve içindekiler ağacında kolayca kaybolmadan gezinebilmek e-Reader motorunun temel işlevlerindendir."
+    },
+    {
+      "id": "s-3-1",
+      "title": "3.1 İçindekiler Tablosu (TOC) ve Hiyerarşik Katlama",
+      "level": 2,
+      "page_start": 20,
+      "text": "Sol menüdeki içindekiler listesinde alt başlığı bulunan üst düzey başlıkların yanında bir katlama oku (`chevron`) belirir.\n\n> [!tip] Nasıl Test Edilir?\n> 1. Sol taraftaki menü ikonuna basarak **İçindekiler** panelini açın.\n> 2. `1. Sistem Mimarisi` veya `2. Markdown Kütüphanesi` başlığının yanındaki oka tıklayın.\n> 3. Altındaki `1.1`, `1.2` veya `2.1`, `2.2` başlıklarının dinamik olarak gizlenip açıldığını gözlemleyin.\n> 4. `Level 4` başlıkların girintisinin (`--toc-depth`) hiyerarşiyi net bir şekilde yansıttığını teyit edin."
+    },
+    {
+      "id": "s-3-2",
+      "title": "3.2 Metin İçi Arama ve Vurgu Motoru",
+      "level": 2,
+      "page_start": 21,
+      "text": "Arama çubuğunu açarak metin içinde arama yapabilirsiniz.\n\n> [!question] Arama Önerileri\n> Arama kutusuna şu kelimeleri yazarak sonuçları ve sarı vurguları test edebilirsiniz:\n> - `mimari` (Birçok bölümde geçer, sonuçlar arası geçiş butonlarını test eder)\n> - `callout` (Farklı kutu türleri içinde geçer)\n> - `derinlik` (Hiyerarşiyle ilgili açıklamalarda bulunur)\n> - `seviye` (TOC ve başlık açıklamalarında geçer)"
+    },
+    {
+      "id": "s-3-3",
+      "title": "3.3 Okuma İlerlemesi ve Sonuç Değerlendirmesi",
+      "level": 2,
+      "page_start": 22,
+      "text": "Tebrikler! Bu bölümle birlikte e-Reader test kitabının son sayfasına ulaştınız.\n\n> [!success] Test Başarıyla Tamamlandı\n> Kütüphane listesine döndüğünüzde bu kitabın ilerleme çubuğunun **%100** olarak güncellendiğini göreceksiniz. Sayfayı yenileseniz dahi kaldığınız konum ve okuma durumunuz korunacaktır.\n\n*Modern e-Reader motoru, öğrenme ve inceleme süreçlerinizde maksimum odaklanma sağlamak üzere titizlikle geliştirilmiştir.*"
+    }
+  ]
+}

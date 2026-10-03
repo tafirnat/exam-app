@@ -28,6 +28,17 @@ export const TtsTarget = {
     section: (scope, index) => `${scope}:${index}`
 };
 
+/* The Wavenet voice family per speakable language. The app's own three come
+   first; the rest let the e-reader read a book in its own language. */
+const TTS_VOICES = {
+    tr: 'tr-TR-Wavenet-', de: 'de-DE-Wavenet-', en: 'en-US-Wavenet-',
+    fr: 'fr-FR-Wavenet-', es: 'es-ES-Wavenet-', it: 'it-IT-Wavenet-',
+    pt: 'pt-BR-Wavenet-', ru: 'ru-RU-Wavenet-', ar: 'ar-XA-Wavenet-', zh: 'cmn-CN-Wavenet-'
+};
+
+/** Language codes a TTS button can speak in. */
+export const TTS_LANGUAGES = Object.freeze(Object.keys(TTS_VOICES));
+
 // --- TTS State Machine ---
 // States: 'IDLE' | 'SCHEDULED' | 'PLAYING'
 const TTS = {
@@ -77,15 +88,18 @@ const TTS = {
         }, delay);
     },
 
+    /* options.lang / options.speed let a host speak in its own language and
+       pace (the e-reader keeps both per book); options.onEnded runs only when
+       the text was spoken to the end, never on a stop. */
     _play(text, targetKey = TtsTarget.QUESTION, options = {}) {
         if (!text) { this.state = 'IDLE'; this.targetKey = null; return; }
-        const lang = AppState.language === 'tr' ? 'tr' : (AppState.language === 'de' ? 'de' : 'en');
+        const lang = TTS_VOICES[options.lang] ? options.lang : (AppState.language === 'tr' ? 'tr' : (AppState.language === 'de' ? 'de' : 'en'));
         const isAnswered = options.revealAnswers ?? (AppState.isAnswerChecked || AppState.testAnswers?.[AppState.currentIndex] !== undefined);
         const cleanText = cleanTextForSpeech(text, { lang, revealAnswers: isAnswered });
         if (!cleanText) { this.state = 'IDLE'; this.targetKey = null; return; }
-        const voicePrefix = lang === 'tr' ? 'tr-TR-Wavenet-' : (lang === 'de' ? 'de-DE-Wavenet-' : 'en-US-Wavenet-');
+        const voicePrefix = TTS_VOICES[lang];
         const voice = AppState.currentTtsVoice || 'A';
-        const speed = AppState.ttsSpeed || 0.5;
+        const speed = options.speed || AppState.ttsSpeed || 0.5;
         const baseUrl = 'https://www.google.com/speech-api/v1/synthesize';
         const params = new URLSearchParams({ enc: 'mpeg', lang, speed, client: 'lr-language-tts', use_google_only_voices: '1', name: voicePrefix + voice, text: cleanText });
         const url = `${baseUrl}?${params.toString()}`;
@@ -108,6 +122,8 @@ const TTS = {
             this.state = 'IDLE';
             this.targetKey = null;
             renderQuestion(true);
+            // After the host's own refresh (handleTtsToggle wraps this handler).
+            if (typeof options.onEnded === 'function') setTimeout(options.onEnded, 0);
         };
     },
 
@@ -242,8 +258,13 @@ function readBlockText(node) {
             continue;
         }
         if (child.nodeType !== elementNodeType) continue;
-        // Our own additions are not part of the passage.
-        if (child.classList.contains('heading-tools') || child.classList.contains('md-section-translation')) continue;
+        // Our own additions and callouts are not part of heading-level prose translation.
+        if (child.classList.contains('heading-tools') || child.classList.contains('md-section-translation') ||
+            child.classList.contains('callout-tool-btn') || child.classList.contains('md-callout-translation') ||
+            child.classList.contains('md-callout') ||
+            /* The e-Reader's own furniture: image cards and bookmark ribbons are not prose. */
+            child.classList.contains('md-image-placeholder') || child.classList.contains('ereader-bookmark-marker') ||
+            child.classList.contains('ereader-figure-edit-btn') || child.classList.contains('ereader-fold-chevron')) continue;
 
         if (BLOCK_TAGS.test(child.tagName)) {
             if (inline.trim()) parts.push(inline.trim());
@@ -261,6 +282,16 @@ function readBlockText(node) {
 
 const currentTranslationTarget = () => AppState.translationTarget || 'tr';
 
+/* The language pair a reading body translates with: the app's target from an
+   auto-detected source, unless the host names its own (the e-reader keeps one
+   per book). `key` is what a held translation is matched against, so changing
+   either side of the pair fetches afresh instead of showing a stale one. */
+function resolveTranslationPair(pair) {
+    const source = (pair && pair.source) || 'auto';
+    const target = (pair && pair.target) || currentTranslationTarget();
+    return { source, target, key: `${source}>${target}` };
+}
+
 /* A translation the reader opened outlives the re-render that every TTS play
    and stop triggers, so a section they opened does not blink shut while the
    passage is being spoken. Held per scope, keyed by question: moving to another
@@ -273,6 +304,129 @@ function sectionTranslationEntries(scope, cacheKey) {
     const entries = new Map();
     sectionTranslations.set(scope, { cacheKey, entries });
     return entries;
+}
+
+/**
+ * Extracts readable text from a callout element for independent translation.
+ * @param {Element} calloutEl
+ * @returns {string}
+ */
+function readCalloutText(calloutEl) {
+    const titleEl = calloutEl.querySelector(':scope > .md-callout-title');
+    const bodyEl = calloutEl.querySelector(':scope > .md-callout-body');
+    let titleText = '';
+    if (titleEl) {
+        const clone = titleEl.cloneNode(true);
+        clone.querySelectorAll('.callout-tool-btn, .heading-tool-btn').forEach(b => b.remove());
+        titleText = clone.textContent.trim();
+    }
+    let bodyText = '';
+    if (bodyEl) {
+        bodyText = readBlockText(bodyEl).trim();
+    }
+    if (titleText && bodyText) return `${titleText}\n\n${bodyText}`;
+    return titleText || bodyText;
+}
+
+/**
+ * Gives every callout box its own independent translate control.
+ * Callouts act as cutting points and are translated separately from paragraphs.
+ */
+function decorateCallouts(rootEl, { scope, entries, onRefresh = null, showTranslate = true, pair, showTts = AppState.ttsEnabled, ttsOptions = {} }) {
+    const callouts = rootEl.querySelectorAll('.md-callout');
+    callouts.forEach((calloutEl, index) => {
+        const calloutKey = `callout_${scope}_${index}`;
+
+        let titleEl = calloutEl.querySelector(':scope > .md-callout-title');
+        if (!titleEl) {
+            titleEl = document.createElement('div');
+            titleEl.className = 'md-callout-title';
+            calloutEl.insertBefore(titleEl, calloutEl.firstChild);
+        }
+
+        /* The same speak control the headings carry, for the box's own text -
+           a callout is cut out of its section's reading, so this is the only
+           way to hear it. Follows the Text-to-Speech setting like they do. */
+        if (showTts) {
+            const ttsKey = `callout:${scope}:${index}`;
+            const speaking = isTtsPlaying(ttsKey);
+            const speakBtn = document.createElement('button');
+            speakBtn.type = 'button';
+            speakBtn.className = 'callout-tool-btn callout-tts-btn';
+            if (speaking) speakBtn.classList.add('playing');
+            speakBtn.title = t(speaking ? 'section_stop' : 'section_listen');
+            speakBtn.setAttribute('aria-label', speakBtn.title);
+            speakBtn.innerHTML = speaking ? SECTION_ICON_STOP : SECTION_ICON_SPEAK;
+            speakBtn.onclick = (e) => {
+                e.stopPropagation();
+                handleTtsToggle(readCalloutText(calloutEl), onRefresh, ttsKey, ttsOptions);
+            };
+            titleEl.appendChild(speakBtn);
+        }
+
+        if (!showTranslate) return;
+
+        const transBtn = document.createElement('button');
+        transBtn.type = 'button';
+        transBtn.className = 'callout-tool-btn callout-translate-btn';
+        transBtn.title = t('section_translate');
+        transBtn.setAttribute('aria-label', transBtn.title);
+        transBtn.innerHTML = SECTION_ICON_TRANSLATE;
+        transBtn.onclick = (e) => {
+            e.stopPropagation();
+            toggleCalloutTranslation(calloutEl, entries, calloutKey, transBtn, pair);
+        };
+        titleEl.appendChild(transBtn);
+
+        const held = entries.get(calloutKey);
+        if (held && held.visible && held.lang === resolveTranslationPair(pair).key) {
+            showCalloutTranslation(calloutEl, held, transBtn);
+        }
+    });
+}
+
+async function toggleCalloutTranslation(calloutEl, entries, calloutKey, btn, pair) {
+    const { source, target, key: lang } = resolveTranslationPair(pair);
+    const held = entries.get(calloutKey);
+
+    if (held && held.lang === lang) {
+        held.visible = !held.visible;
+        if (held.visible) showCalloutTranslation(calloutEl, held, btn);
+        else hideCalloutTranslation(calloutEl, btn);
+        return;
+    }
+
+    const text = readCalloutText(calloutEl);
+    if (!text) return;
+
+    btn.classList.add('loading');
+    try {
+        const translated = await translateText(text, target, source);
+        if (!translated) return;
+        const entry = { lang, text: translated, visible: true };
+        entries.set(calloutKey, entry);
+        if (!calloutEl.isConnected) return;
+        showCalloutTranslation(calloutEl, entry, btn);
+    } finally {
+        btn.classList.remove('loading');
+    }
+}
+
+function showCalloutTranslation(calloutEl, entry, btn) {
+    let transEl = calloutEl.querySelector(':scope > .md-callout-translation');
+    if (!transEl) {
+        transEl = document.createElement('div');
+        transEl.className = 'md-callout-translation';
+        calloutEl.appendChild(transEl);
+    }
+    transEl.textContent = entry.text;
+    btn.classList.add('active');
+}
+
+function hideCalloutTranslation(calloutEl, btn) {
+    const transEl = calloutEl.querySelector(':scope > .md-callout-translation');
+    if (transEl) transEl.remove();
+    btn.classList.remove('active');
 }
 
 /**
@@ -289,11 +443,12 @@ function collectReadingSections(rootEl) {
         let end = start + 1;
         while (end < blocks.length && !isHeadingEl(blocks[end])) end++;
 
+        const sectionBlocks = blocks.slice(start, end);
         sections.push({
             heading: block,
             next: blocks[end] || null,
-            text: blocks.slice(start, end)
-                .filter(b => !b.classList.contains('md-section-translation'))
+            text: sectionBlocks
+                .filter(b => !b.classList.contains('md-section-translation') && !b.classList.contains('md-callout'))
                 .map(readBlockText)
                 .filter(Boolean)
                 .join('\n'),
@@ -317,17 +472,34 @@ function collectReadingSections(rootEl) {
  *        are dropped when a different question is drawn.
  * @param {(() => void)|null} [options.onRefresh] Preview only: how to redraw
  *        when playback ends, since the preview is not what renderQuestion draws.
+ * @param {boolean} [options.showTranslate] False leaves out every translate
+ *        control (and any translation left open) - the e-reader's own switch.
+ * @param {{source?: string, target?: string}} [options.translation] Language
+ *        pair to translate with; defaults to auto-detect -> the app's target.
+ * @param {boolean} [options.showTts] Whether the speak controls are drawn;
+ *        defaults to the app's Text-to-Speech setting (the e-reader has its own).
+ * @param {{lang?: string, speed?: number, onEnded?: (index: number) => void}} [options.tts]
+ *        Voice language and speed for the speak controls; onEnded gets the
+ *        index of a heading section that was spoken to its end (autoplay).
+ * @param {boolean} [options.markPlaying] Marks the blocks of the section being
+ *        spoken with .tts-reading, so the host can highlight it.
  */
-export function decorateReadingSections(hostEl, { scope, cacheKey, onRefresh = null, minSections = 2 } = {}) {
+export function decorateReadingSections(hostEl, { scope, cacheKey, onRefresh = null, minSections = 2, showTranslate = true, translation = null, showTts = AppState.ttsEnabled, tts = null, markPlaying = false } = {}) {
     if (!hostEl) return;
     const rootEl = hostEl.querySelector('.md-content') || hostEl;
     /* Idempotent: callers normally hand over a body they have just rebuilt, but
        one that decorates the same DOM twice must not get two sets of icons. */
-    rootEl.querySelectorAll('.heading-tools, .md-section-translation').forEach(el => el.remove());
+    rootEl.querySelectorAll('.heading-tools, .md-section-translation, .callout-tool-btn, .md-callout-translation').forEach(el => el.remove());
+    rootEl.querySelectorAll('.tts-reading').forEach(el => el.classList.remove('tts-reading'));
+    const entries = sectionTranslationEntries(scope, cacheKey);
+    const pair = translation;
+    const voice = tts ? { lang: tts.lang, speed: tts.speed } : {};
+
+    // Decorate callouts with independent translate controls
+    decorateCallouts(rootEl, { scope, entries, onRefresh, showTranslate, pair, showTts, ttsOptions: voice });
+
     const sections = collectReadingSections(rootEl);
     if (sections.length < minSections) return;
-
-    const entries = sectionTranslationEntries(scope, cacheKey);
 
     sections.forEach((section, index) => {
         const sectionKey = TtsTarget.section(scope, index);
@@ -336,8 +508,13 @@ export function decorateReadingSections(hostEl, { scope, cacheKey, onRefresh = n
 
         // The speech control follows the Text-to-Speech setting, exactly as the
         // card-level button does: switching it off leaves no speech anywhere.
-        if (AppState.ttsEnabled) {
+        if (showTts) {
             const speaking = isTtsPlaying(sectionKey);
+            if (speaking && markPlaying) {
+                for (let el = section.heading; el && el !== section.next; el = el.nextElementSibling) {
+                    if (!el.classList.contains('md-section-translation')) el.classList.add('tts-reading');
+                }
+            }
             const speakBtn = document.createElement('button');
             speakBtn.type = 'button';
             speakBtn.className = 'heading-tool-btn heading-tts-btn';
@@ -347,34 +524,37 @@ export function decorateReadingSections(hostEl, { scope, cacheKey, onRefresh = n
             speakBtn.innerHTML = speaking ? SECTION_ICON_STOP : SECTION_ICON_SPEAK;
             speakBtn.onclick = (e) => {
                 e.stopPropagation();
-                handleTtsToggle(section.text, onRefresh, sectionKey);
+                const onEnded = tts && typeof tts.onEnded === 'function' ? () => tts.onEnded(index) : undefined;
+                handleTtsToggle(section.text, onRefresh, sectionKey, { ...voice, onEnded });
             };
             tools.appendChild(speakBtn);
         }
 
-        const transBtn = document.createElement('button');
-        transBtn.type = 'button';
-        transBtn.className = 'heading-tool-btn heading-translate-btn';
-        transBtn.title = t('section_translate');
-        transBtn.setAttribute('aria-label', transBtn.title);
-        transBtn.innerHTML = SECTION_ICON_TRANSLATE;
-        transBtn.onclick = (e) => {
-            e.stopPropagation();
-            toggleSectionTranslation(rootEl, section, entries, sectionKey, transBtn);
-        };
-        tools.appendChild(transBtn);
+        if (showTranslate) {
+            const transBtn = document.createElement('button');
+            transBtn.type = 'button';
+            transBtn.className = 'heading-tool-btn heading-translate-btn';
+            transBtn.title = t('section_translate');
+            transBtn.setAttribute('aria-label', transBtn.title);
+            transBtn.innerHTML = SECTION_ICON_TRANSLATE;
+            transBtn.onclick = (e) => {
+                e.stopPropagation();
+                toggleSectionTranslation(rootEl, section, entries, sectionKey, transBtn, pair);
+            };
+            tools.appendChild(transBtn);
 
-        section.heading.appendChild(tools);
-
-        const held = entries.get(sectionKey);
-        if (held && held.visible && held.lang === currentTranslationTarget()) {
-            showSectionTranslation(rootEl, section, held, transBtn);
+            const held = entries.get(sectionKey);
+            if (held && held.visible && held.lang === resolveTranslationPair(pair).key) {
+                showSectionTranslation(rootEl, section, held, transBtn);
+            }
         }
+
+        if (tools.childElementCount) section.heading.appendChild(tools);
     });
 }
 
-async function toggleSectionTranslation(rootEl, section, entries, sectionKey, btn) {
-    const lang = currentTranslationTarget();
+async function toggleSectionTranslation(rootEl, section, entries, sectionKey, btn, pair) {
+    const { source, target, key: lang } = resolveTranslationPair(pair);
     const held = entries.get(sectionKey);
 
     // Already fetched for the language now selected: this is a show/hide only.
@@ -387,7 +567,7 @@ async function toggleSectionTranslation(rootEl, section, entries, sectionKey, bt
 
     btn.classList.add('loading');
     try {
-        const translated = await translateText(section.text, lang);
+        const translated = await translateText(section.text, target, source);
         if (!translated) return;
         const entry = { lang, text: translated, visible: true };
         entries.set(sectionKey, entry);

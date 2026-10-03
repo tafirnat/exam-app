@@ -25,7 +25,7 @@ import { updateQuickSourcesDot } from '../features/sources/quick-presets-ui.js';
 import { syncQuickPresetsWithLiveSources } from '../features/sources/quick-presets.js';
 import { updateSyncUI } from './github-sync.js';
 import { renderEreaderLibrary } from '../features/ereader/ereader-library-ui.js';
-import { refreshOpenBook, renderEreaderToc } from '../features/ereader/ereader-reader-ui.js';
+import { refreshOpenBook, renderEreaderToc, renderEreaderBookmarks } from '../features/ereader/ereader-reader-ui.js';
 
 /** Views as switchView() names them. */
 export const View = Object.freeze({
@@ -194,6 +194,12 @@ const BINDINGS = [
         name: 'ereader:toc',
         slices: [Slice.EREADER_LIBRARY, Slice.EREADER_PROGRESS, Slice.LANGUAGE],
         run: renderEreaderToc,
+        views: [View.EREADER_BOOK]
+    },
+    {
+        name: 'ereader:bookmarks',
+        slices: [Slice.EREADER_BOOKMARKS, Slice.EREADER_LIBRARY, Slice.LANGUAGE],
+        run: renderEreaderBookmarks,
         views: [View.EREADER_BOOK]
     },
 

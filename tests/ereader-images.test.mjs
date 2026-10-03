@@ -107,3 +107,10 @@ test('6. Parser termination: malformed image inputs terminate safely within dead
     const count = await parseAllWithImages(malformedCases);
     assert.equal(count, malformedCases.length);
 });
+
+test('7. a linked image may carry its placeholder id as a Markdown title', () => {
+    const html = renderMarkdown('![Fig 1 | Photo](https://example.com/a.png "placeholder:fig-1-1")', { images: true });
+    assert.ok(html.includes('<figure class="md-figure" data-placeholder-id="placeholder:fig-1-1">'));
+    assert.ok(html.includes('src="https://example.com/a.png"'));
+    assert.ok(html.includes('md-fallback" style="display: none;" data-placeholder-id="placeholder:fig-1-1"'), 'the broken-link fallback opens the same placeholder');
+});

@@ -8,7 +8,6 @@
 
 .ereader-menu-reset {
     color: var(--error-color);
-    margin-top: auto;
 }
 
 .ereader-menu-reset svg {
@@ -19,23 +18,223 @@
     background-color: color-mix(in srgb, var(--error-color) 12%, transparent);
 }
 
-.ereader-font-row {
+/* ── Text size (settings popup) ── */
+
+/* One unit: a fixed-size icon button (never resizes - the tier is read off
+   its dot, not its own scale) and the live sample text beside it, which is
+   the thing that actually grows or shrinks with the selection. */
+.ereader-fontsize-row {
+    display: flex;
+    align-items: center;
+    justify-content: flex-start;
+    gap: 1rem;
+    padding: 0.25rem 0 1.25rem;
+}
+
+.ereader-fontsize-btn {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 0.5rem;
+    flex-shrink: 0;
+    width: 4.5rem;
+    height: 4.5rem;
+    border: 1px solid var(--border-color);
+    border-radius: var(--radius-md);
+    background: var(--bg-color);
+    color: var(--text-primary);
+    cursor: pointer;
+    transition: border-color 0.2s, background-color 0.2s;
+}
+
+.ereader-fontsize-btn:hover {
+    border-color: var(--primary-color);
+    background-color: var(--surface-hover);
+}
+
+/* Fixed at every tier - only the dot beneath it and the sample text beside
+   it change, so the button (and the row's height with it) never moves. */
+.ereader-fontsize-icon {
+    font-size: 1.375rem;
+    font-weight: 700;
+    line-height: 1;
+}
+
+.ereader-fontsize-dots {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+}
+
+.ereader-fontsize-dot {
+    width: 6px;
+    height: 6px;
+    border-radius: 50%;
+    background: var(--border-color);
+    transition: all 0.2s;
+}
+
+.ereader-fontsize-dot.active {
+    background: var(--primary-color);
+    transform: scale(1.4);
+}
+
+/* Sits right beside the button, left-aligned, in the reading colour so the
+   size change is easy to see. Its box is pinned to the button's height and
+   clamped to two lines, so the largest tier may wrap onto a second line but
+   can never make the row (or the dialog) grow or jump. */
+.ereader-fontsize-preview-box {
+    flex: 1 1 auto;
+    min-width: 0;
+    height: 4.5rem;
+    display: flex;
+    align-items: center;
+}
+
+.ereader-fontsize-preview {
+    display: -webkit-box;
+    -webkit-box-orient: vertical;
+    -webkit-line-clamp: 2;
+    line-clamp: 2;
+    overflow: hidden;
+    text-align: left;
+    color: var(--text-primary);
+    font-weight: 500;
+    line-height: 1.3;
+    transition: font-size 0.2s;
+}
+
+/* Feature rows (translation, TTS): look like the popup's normal action
+   buttons. The left part (icon + name) opens the feature's options popup;
+   the switch at the far right turns the feature on or off. Aa stays apart. */
+.ereader-setting-row {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    margin-bottom: 0.5rem;
+    padding-right: 1rem;
+    border: 1px solid var(--border-color);
+    border-radius: var(--btn-radius);
+    background-color: var(--btn-neutral-bg);
+    transition: border-color 0.2s, background-color 0.2s;
+}
+
+.ereader-setting-row:hover {
+    background-color: var(--btn-neutral-bg-hover);
+    border-color: var(--primary-color);
+}
+
+.ereader-setting-open {
+    flex: 1 1 auto;
+    min-width: 0;
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    padding: 0.7rem 0 0.7rem 1rem;
+    border: none;
+    background: none;
+    color: var(--text-primary);
+    font: inherit;
+    text-align: left;
+    cursor: pointer;
+}
+
+.ereader-setting-open svg { flex-shrink: 0; }
+
+.ereader-setting-text {
+    min-width: 0;
+    display: flex;
+    flex-direction: column;
+    gap: 0.1rem;
+}
+
+.ereader-setting-name {
+    font-weight: 600;
+}
+
+.ereader-setting-sub {
+    color: var(--text-secondary);
+    font-size: 0.8rem;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.ereader-setting-switch { cursor: pointer; }
+
+.ereader-translate-body {
+    display: flex;
+    flex-direction: column;
+    gap: 1rem;
+}
+
+.ereader-translate-field {
+    display: flex;
+    flex-direction: column;
+    gap: 0.35rem;
+    font-size: 0.85rem;
+    color: var(--text-secondary);
+}
+
+.ereader-translate-field select { width: 100%; }
+
+.ereader-translate-hint {
+    margin: 0;
+    font-size: 0.8rem;
+    color: var(--text-secondary);
+}
+
+.ereader-tts-autoplay {
     display: flex;
     align-items: center;
     justify-content: space-between;
-    gap: 0.5rem;
-    margin-bottom: 0.5rem;
+    gap: 0.75rem;
+    padding-top: 0.75rem;
+    border-top: 1px solid var(--border-color);
+    font-size: 0.85rem;
 }
 
-.ereader-font-btn {
-    flex: 0 0 auto;
-    min-width: 44px;
-    justify-content: center;
+.ereader-tts-autoplay > span {
+    display: flex;
+    flex-direction: column;
+    gap: 0.15rem;
 }
 
-.ereader-font-value {
-    font-variant-numeric: tabular-nums;
-    color: var(--text-secondary);
+/* The heading section being read aloud: a tint and a left accent drawn with
+   box-shadow only, so nothing moves or reflows while it is highlighted. */
+#ereaderContent .tts-reading {
+    background-color: color-mix(in srgb, var(--primary-color) 9%, transparent);
+    box-shadow: -0.6rem 0 0 color-mix(in srgb, var(--primary-color) 9%, transparent),
+        0.6rem 0 0 color-mix(in srgb, var(--primary-color) 9%, transparent),
+        -0.85rem 0 0 var(--primary-color);
+    transition: background-color 0.3s;
+}
+
+/* "My books": tinted in the accent colour, unlike the neutral quick actions
+   below it, with a sliders icon at the far right - the library is where each
+   book's own settings live. */
+.ereader-library-settings-btn {
+    background-color: color-mix(in srgb, var(--primary-color) 12%, var(--btn-neutral-bg));
+    color: var(--primary-color);
+    border-color: color-mix(in srgb, var(--primary-color) 45%, var(--border-color));
+    font-weight: 600;
+}
+
+.ereader-library-settings-btn:hover:not(:disabled) {
+    background-color: color-mix(in srgb, var(--primary-color) 20%, var(--btn-neutral-bg));
+    border-color: var(--primary-color);
+}
+
+/* Pinned to the right edge so the label stays centred like its neighbours. */
+.ereader-library-settings-btn { position: relative; }
+
+.ereader-library-settings-btn .ereader-library-settings-icon {
+    position: absolute;
+    right: 1rem;
+    top: 50%;
+    transform: translateY(-50%);
+    opacity: 0.85;
 }
 
 .ereader-library-heading h2 {
@@ -55,6 +254,24 @@
     display: flex;
     gap: 0.25rem;
     margin-left: auto;
+}
+
+/* The + rotates into a × (no second icon needed) and turns "danger" red
+   while the add panel is open, so the button itself reads as "close". */
+#ereaderToggleAddBtn svg {
+    transition: transform 0.25s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+#ereaderToggleAddBtn.active {
+    color: var(--error-color);
+}
+
+#ereaderToggleAddBtn.active:hover {
+    background-color: color-mix(in srgb, var(--error-color) 12%, transparent);
+}
+
+#ereaderToggleAddBtn.active svg {
+    transform: rotate(45deg);
 }
 
 /* ── Library (F3) ── */
@@ -97,6 +314,55 @@
 
 .ereader-book-row.is-last {
     background: var(--surface-hover);
+}
+
+.ereader-book-row.is-archived {
+    opacity: 0.7;
+}
+
+.ereader-archived-group {
+    margin-top: 1rem;
+}
+
+.ereader-archived-header {
+    display: flex;
+    align-items: center;
+    gap: 0.4rem;
+    width: 100%;
+    padding: 0.5rem 0.25rem;
+    margin-bottom: 0.5rem;
+    border: 0;
+    border-top: 1px solid var(--border-color);
+    background: none;
+    color: var(--text-secondary);
+    font: inherit;
+    font-size: 0.85rem;
+    font-weight: 600;
+    text-align: left;
+    cursor: pointer;
+}
+
+.ereader-archived-header:hover {
+    color: var(--text-primary);
+}
+
+.ereader-archived-chevron {
+    width: 16px;
+    height: 16px;
+    transform: rotate(-90deg);
+    transition: transform 0.2s ease;
+}
+
+.ereader-archived-group.open .ereader-archived-chevron {
+    transform: none;
+}
+
+.ereader-archived-body {
+    display: none;
+}
+
+.ereader-archived-group.open .ereader-archived-body {
+    display: block;
 }
 
 .ereader-book-info {
@@ -193,22 +459,124 @@
     overflow-wrap: anywhere;
 }
 
+/* Every section is also .md-content, whose shared stylesheet pins text and
+   headings to fixed rem sizes - which silently ignored the reader's font
+   scale. Inside the reader everything is re-expressed in em, relative to the
+   scaled .ereader-content size, so the whole page grows and shrinks. */
+.ereader-content .md-content { font-size: 1em; }
+.ereader-content .md-content h1 { font-size: 1.6em; font-weight: 800; margin: 1.5em 0 0.5em; line-height: 1.25; }
+.ereader-content .md-content h2 { font-size: 1.35em; }
+.ereader-content .md-content h3 { font-size: 1.15em; }
+.ereader-content .md-content h4 { font-size: 1.04em; }
+.ereader-content .md-content h5 { font-size: 0.95em; }
+.ereader-content .md-content h6 { font-size: 0.9em; }
+.ereader-content .md-content .md-callout-title { font-size: 0.95em; }
+.ereader-content .md-content .md-callout-body { font-size: 0.93em; }
+.ereader-content .md-content table { font-size: 0.92em; }
+
+/* ── Heading folds (h1-h3): clicking a section heading hides everything
+   under it - its own text and every deeper section - until clicked again. */
+.ereader-fold-heading {
+    position: relative;
+    cursor: pointer;
+    user-select: none;
+    -webkit-user-select: none;
+}
+
+.ereader-fold-chevron {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 1em;
+    height: 1em;
+    margin-right: 0.35em;
+    vertical-align: -0.1em;
+    color: var(--text-secondary);
+    transition: transform 0.2s ease;
+}
+
+.ereader-fold-chevron svg { width: 0.85em; height: 0.85em; }
+
+.ereader-fold-heading:hover .ereader-fold-chevron { color: var(--primary-color); }
+
+.ereader-section.is-folded .ereader-fold-chevron { transform: rotate(-90deg); }
+
+.ereader-section.is-folded > .md-content > :not(.ereader-fold-heading),
+.ereader-section.is-folded > .md-section-translation { display: none !important; }
+
+.ereader-section.is-folded-away { display: none; }
+
 .ereader-section + .ereader-section {
     margin-top: 1.5rem;
 }
 
-.ereader-chapter-nav {
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    gap: 1rem;
-    margin: 2rem 0 1rem;
+/* One wrapper per chapter, always present so the page scrolls continuously;
+   only the chapters near the reading position have their sections inside
+   them (ereader-reader-ui.js mounts/unmounts as the page scrolls). While a
+   chapter is unmounted its wrapper keeps an inline min-height so the rest of
+   the book doesn't jump around it. */
+.ereader-chapter + .ereader-chapter {
+    margin-top: 2rem;
 }
 
-.ereader-chapter-pos {
-    font-variant-numeric: tabular-nums;
+.ereader-scroll-top-btn {
+    position: fixed;
+    right: 1.25rem;
+    bottom: 1.25rem;
+    z-index: 40;
+    width: 2.75rem;
+    height: 2.75rem;
+    background: var(--surface-color);
+    border: 1px solid var(--border-color);
+    box-shadow: var(--shadow-md);
+}
+
+.ereader-scroll-top-btn:hover {
+    color: var(--primary-color);
+    border-color: var(--primary-color);
+}
+
+/* Always expanded - entering the book view shows it right away, so the
+   header itself no longer acts as a collapse toggle (see the no-accordion
+   class in index.html). */
+#ereaderTocMenuSection .menu-section-header {
+    cursor: default;
+}
+
+/* Obsidian-style: the expand/collapse-all actions sit as plain icon buttons
+   at the header's own right edge (space-between with .menu-section-title),
+   not as a labeled row inside the accordion body. */
+.ereader-toc-toolbar {
+    display: flex;
+    align-items: center;
+    gap: 0.15rem;
+    flex-shrink: 0;
+}
+
+.ereader-toc-toolbar-btn {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 26px;
+    height: 26px;
+    padding: 0;
+    border: none;
+    border-radius: var(--radius-sm, 6px);
+    background: none;
     color: var(--text-secondary);
-    font-size: 0.85rem;
+    cursor: pointer;
+    transition: all 0.2s;
+}
+
+.ereader-toc-toolbar-btn svg {
+    width: 15px;
+    height: 15px;
+    fill: currentColor;
+}
+
+.ereader-toc-toolbar-btn:hover {
+    color: var(--primary-color);
+    background-color: var(--surface-hover);
 }
 
 /* The accordion clips its content at 500px (style.css), minus its padding. */
@@ -217,36 +585,479 @@
     overflow-y: auto;
 }
 
+.ereader-toc-row {
+    display: flex;
+    align-items: center;
+    gap: 2px;
+}
+
+/* Toggle and spacer share a width so titles line up whether or not their own
+   row can collapse (only h1-h3 equivalent entries with children can). */
+.ereader-toc-toggle,
+.ereader-toc-toggle-spacer {
+    flex-shrink: 0;
+    width: 20px;
+    height: 20px;
+}
+
+.ereader-toc-toggle {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border: none;
+    background: none;
+    padding: 0;
+    color: var(--text-secondary);
+    cursor: pointer;
+}
+
+.ereader-toc-toggle:hover {
+    color: var(--primary-color);
+}
+
+.ereader-toc-toggle svg {
+    width: 14px;
+    height: 14px;
+    transition: transform 0.2s;
+}
+
+.ereader-toc-toggle.collapsed svg {
+    transform: rotate(-90deg);
+}
+
+/* Softer than the shared .menu-sub-item box look: a dense outline reads
+   better flush against the drawer than as a stack of bordered tiles, so
+   only .active/:hover pick up any fill. Tighter margin packs rows closer. */
 .ereader-toc-item {
+    flex: 1;
+    min-width: 0;
     padding-left: calc(0.75rem + var(--toc-depth, 0) * 0.75rem);
-    margin-bottom: 0.25rem;
+    margin-bottom: 0.1rem;
     font-weight: 500;
     text-align: left;
+    background-color: transparent;
+    border-color: transparent;
 }
 
 .ereader-toc-item.active {
     color: var(--primary-color);
-    border-color: var(--primary-color);
-    background-color: rgba(var(--primary-rgb), 0.1);
+    border-color: transparent;
+    background-color: rgba(var(--primary-rgb), 0.08);
+}
+
+/* Pinned under the contents list by margin-top:auto on .menu-items' flex
+   parent, so it reads as the drawer's own footer regardless of how long the
+   list above it is. Holds the bookmark carousel above the progress bar - one
+   real box (not display:contents) so margin-top:auto only has to pin once,
+   whichever of its two children happen to be visible. */
+.ereader-toc-footer {
+    margin-top: auto;
+}
+
+.ereader-toc-progress-wrap {
+    padding: 0.85rem 1.5rem;
+    border-top: 1px solid rgba(var(--primary-rgb), 0.05);
+}
+
+/* ── Bookmarks ── */
+
+/* One bookmark at a time, at the drawer's own width - the < / > pair pages
+   through the book's bookmarks, numbered by their position in it. */
+.ereader-bookmark-carousel {
+    display: flex;
+    align-items: center;
+    gap: 2px;
+    padding: 0.6rem 0.75rem;
+    border-top: 1px solid rgba(var(--primary-rgb), 0.05);
+}
+
+.ereader-bookmark-nav {
+    flex-shrink: 0;
+    width: 26px;
+    height: 26px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border: none;
+    background: none;
+    border-radius: 50%;
+    color: var(--text-secondary);
+    cursor: pointer;
+    transition: all 0.2s;
+}
+
+.ereader-bookmark-nav:hover:not(:disabled) {
+    background: var(--surface-hover);
+    color: var(--primary-color);
+}
+
+.ereader-bookmark-nav:disabled {
+    opacity: 0.3;
+    cursor: default;
+}
+
+.ereader-bookmark-nav svg {
+    width: 16px;
+    height: 16px;
+}
+
+.ereader-bookmark-current {
+    flex: 1;
+    min-width: 0;
+    display: flex;
+    align-items: baseline;
+    gap: 0.4rem;
+    padding: 0.3rem 0.5rem;
+    border: none;
+    background: none;
+    color: var(--text-primary);
+    cursor: pointer;
+    text-align: left;
+    border-radius: var(--radius-sm, 6px);
+}
+
+.ereader-bookmark-current:hover {
+    background: var(--surface-hover);
+    color: var(--primary-color);
+}
+
+.ereader-bookmark-number {
+    flex-shrink: 0;
+    font-size: 0.75rem;
+    font-weight: 700;
+    color: var(--text-secondary);
+}
+
+.ereader-bookmark-title {
+    min-width: 0;
+    flex: 1;
+    font-size: 0.85rem;
+    font-weight: 500;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.ereader-bookmark-details {
+    flex-shrink: 0;
+    padding: 0.35rem;
+}
+
+.ereader-bookmark-details svg {
+    width: 15px;
+    height: 15px;
+}
+
+.ereader-bookmark-details:hover {
+    color: var(--primary-color);
+    background-color: var(--surface-hover);
+}
+
+/* ── Bookmark note-detail modal ── */
+
+.ereader-bookmark-detail-note {
+    white-space: pre-wrap;
+    word-break: break-word;
+    font-size: 0.9rem;
+    line-height: 1.5;
+    color: var(--text-primary);
+    max-height: 40vh;
+    overflow-y: auto;
+}
+
+.ereader-bookmark-detail-note.ereader-bookmark-detail-empty {
+    color: var(--text-secondary);
+    font-style: italic;
+}
+
+/* The floating "bookmark this" action that appears near a text selection -
+   the same familiar shape as a text-selection toolbar (Kindle, Google Docs):
+   a small pill positioned just above the selection. */
+.ereader-selection-btn {
+    position: fixed;
+    z-index: 10025;
+    display: flex;
+    align-items: center;
+    gap: 0.4rem;
+    padding: 0.5rem 0.85rem;
+    border: none;
+    border-radius: 999px;
+    background: var(--text-primary);
+    color: var(--bg-color);
+    font-size: 0.8rem;
+    font-weight: 600;
+    box-shadow: var(--shadow-md, 0 4px 12px rgba(0, 0, 0, 0.2));
+    cursor: pointer;
+    transform: translate(-50%, -100%);
+}
+
+.ereader-selection-btn svg {
+    width: 15px;
+    height: 15px;
+    flex-shrink: 0;
+}
+
+/* Marks a section that carries a bookmark - a small ribbon before its text,
+   the reading-content twin of the carousel below the contents list. */
+.ereader-bookmark-marker {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 1.6rem;
+    height: 1.6rem;
+    padding: 0.2rem;
+    margin: 0 0.4rem 0.15rem 0;
+    border: 0;
+    border-radius: var(--radius-sm, 6px);
+    background: none;
+    color: var(--primary-color);
+    vertical-align: middle;
+    cursor: pointer;
+    transition: background-color 0.2s;
+}
+
+.ereader-bookmark-marker {
+    position: relative;
+}
+
+.ereader-bookmark-marker[data-number]:not([data-number=""])::after {
+    content: attr(data-number);
+    position: absolute;
+    top: -0.15rem;
+    right: -0.3rem;
+    min-width: 0.95rem;
+    height: 0.95rem;
+    padding: 0 0.2rem;
+    border-radius: 999px;
+    background: var(--primary-color);
+    color: #fff;
+    font-size: 0.6rem;
+    font-weight: 700;
+    line-height: 0.95rem;
+    text-align: center;
+    box-sizing: border-box;
+}
+
+.ereader-bookmark-marker:hover,
+.ereader-bookmark-marker:focus-visible {
+    background: color-mix(in srgb, var(--primary-color) 14%, transparent);
+}
+
+.ereader-bookmark-marker svg {
+    width: 100%;
+    height: 100%;
+}
+
+/* A bookmark's ribbon hangs in the page margin, level with the line its
+   passage starts on (positioned by layoutSectionMarkers). It is not part of
+   the text, so the lines keep their shape; the number sits beside the
+   ribbon inside the pill. */
+.ereader-section {
+    position: relative;
+}
+
+.ereader-bookmark-marker.is-margin {
+    position: absolute;
+    top: 0;
+    left: -2rem;
+    z-index: 2;
+    display: inline-flex;
+    align-items: center;
+    gap: 0.1rem;
+    width: auto;
+    height: 1.15rem;
+    min-width: 1.6rem;
+    padding: 0 0.3rem 0 0.2rem;
+    margin: 0;
+    border-radius: 999px;
+    background: color-mix(in srgb, var(--primary-color) 18%, var(--surface-color));
+    box-shadow: 0 1px 4px rgba(0, 0, 0, 0.18);
+    font-size: 0.7rem;
+    line-height: 1;
+    transition: background-color 0.2s, transform 0.15s;
+}
+
+.ereader-bookmark-marker.is-margin:hover,
+.ereader-bookmark-marker.is-margin:focus-visible {
+    background: color-mix(in srgb, var(--primary-color) 30%, var(--surface-color));
+    transform: scale(1.06);
+}
+
+.ereader-bookmark-marker.is-margin.is-boxless {
+    display: none;
+}
+
+.ereader-bookmark-marker.is-margin[data-number]:not([data-number=""])::after {
+    position: static;
+    min-width: 0;
+    height: auto;
+    padding: 0;
+    border-radius: 0;
+    background: none;
+    color: var(--primary-color);
+    font-size: 0.68rem;
+    font-weight: 800;
+    line-height: 1;
+}
+
+.ereader-bookmark-marker.is-margin svg {
+    display: block;
+    width: 0.7rem;
+    height: 0.8rem;
+    flex-shrink: 0;
+}
+
+/* The passage a bookmark marks. Drawn by the browser's highlight layer, not
+   by elements, so the text itself is untouched. */
+::highlight(ereader-bookmark) {
+    background-color: color-mix(in srgb, var(--primary-color) 22%, transparent);
+    text-decoration: underline;
+    text-decoration-color: color-mix(in srgb, var(--primary-color) 70%, transparent);
+    text-decoration-thickness: 2px;
+    text-underline-offset: 3px;
+}
+
+/* On a narrow screen the page margin is too thin for a ribbon; once a book
+   has bookmarks the text steps in a little on the left to make room. */
+@media (max-width: 52rem) {
+    .ereader-content.has-bookmarks {
+        padding-left: 1.85rem;
+    }
+}
+
+.ereader-toc-progress-track {
+    height: 4px;
+    background: var(--border-color);
+    border-radius: 2px;
+    overflow: hidden;
+}
+
+.ereader-toc-progress-fill {
+    height: 100%;
+    width: 0%;
+    background: var(--primary-color);
+    transition: width 0.3s ease;
 }
 
 /* ── Search & Tools (F5) ── */
 
-.ereader-search-bar {
-    position: sticky;
-    top: 0;
-    z-index: 10;
-    background: var(--surface-color);
-    border: 1px solid var(--border-color);
-    border-radius: var(--radius-md);
-    padding: 0.75rem;
-    margin-bottom: 1.5rem;
+/* The field sits in the (sticky) header. While it is open the book title
+   and the other reader tools step aside so it gets the whole row; the search
+   button stays as its X. */
+header.ereader-searching .header-title,
+header.ereader-searching #ereaderFullscreenBtn,
+header.ereader-searching #ereaderBookmarkBtn,
+header.ereader-searching #ereaderSettingsBtn {
+    display: none;
 }
 
+header.ereader-searching #ereaderHeaderTools {
+    flex: 1;
+    min-width: 0;
+    margin-left: 0.5rem;
+}
+
+#ereaderSearchBtn .ereader-search-icon-close,
+header.ereader-searching #ereaderSearchBtn .ereader-search-icon-open {
+    display: none;
+}
+
+header.ereader-searching #ereaderSearchBtn .ereader-search-icon-close {
+    display: block;
+}
+
+.ereader-search-bar {
+    flex: 1;
+    min-width: 0;
+}
+
+.ereader-search-field {
+    display: flex;
+    align-items: center;
+    gap: 0.4rem;
+    height: 38px;
+    padding: 0 0.3rem 0 0.75rem;
+    border: 1px solid var(--border-color);
+    border-radius: 999px;
+    background: var(--bg-color);
+    transition: border-color 0.2s;
+}
+
+.ereader-search-field:focus-within {
+    border-color: var(--primary-color);
+}
+
+.ereader-search-field-icon {
+    width: 16px;
+    height: 16px;
+    flex-shrink: 0;
+    color: var(--text-secondary);
+}
+
+.ereader-search-field input {
+    flex: 1;
+    min-width: 0;
+    height: 100%;
+    border: 0;
+    outline: none;
+    background: transparent;
+    color: var(--text-primary);
+    font: inherit;
+    font-size: 0.95rem;
+}
+
+/* The field has its own clear button; the browser's would be a second X. */
+.ereader-search-field input::-webkit-search-cancel-button {
+    -webkit-appearance: none;
+    appearance: none;
+}
+
+.ereader-search-clear {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+    width: 28px;
+    height: 28px;
+    padding: 0;
+    border: 0;
+    border-radius: 50%;
+    background: var(--surface-hover);
+    color: var(--text-secondary);
+    cursor: pointer;
+    transition: background-color 0.2s, color 0.2s;
+}
+
+.ereader-search-clear:hover {
+    color: var(--text-primary);
+    background: var(--border-color);
+}
+
+.ereader-search-clear svg {
+    width: 14px;
+    height: 14px;
+}
+
+/* Results drop down from under the header, as wide as the reading column. */
 .ereader-search-results {
-    max-height: 240px;
+    position: fixed;
+    top: 60px;
+    left: 50%;
+    transform: translateX(-50%);
+    width: min(830px, calc(100vw - 1rem));
+    max-height: min(60vh, 420px);
     overflow-y: auto;
-    margin-top: 0.5rem;
+    padding: 0.25rem;
+    background: var(--surface-color);
+    border: 1px solid var(--border-color);
+    border-top: 0;
+    border-radius: 0 0 var(--radius-md) var(--radius-md);
+    box-shadow: 0 12px 28px rgba(0, 0, 0, 0.18);
+}
+
+.ereader-search-results:empty,
+.ereader-search-results.is-hidden {
+    display: none;
 }
 
 .ereader-search-item {
@@ -352,37 +1163,288 @@
     font-style: italic;
 }
 
+/* An image the book leaves for the reader to add: a framed "picture
+   missing" card with the AI's description of the figure, so the right one
+   of several in the source is easy to spot. */
 .md-image-placeholder {
     display: flex;
     align-items: center;
-    justify-content: center;
-    gap: 0.75rem;
-    padding: 1.5rem;
-    margin: 1.5rem 0;
-    background: var(--surface-color);
-    border: 1px dashed var(--border-color);
-    border-radius: var(--radius-md, 8px);
+    gap: 1rem;
+    padding: 1.75rem 1.25rem;
+    margin: 1.75rem 0;
+    min-height: 11rem;
+    border: 1.5px dashed color-mix(in srgb, var(--text-secondary) 45%, var(--border-color));
+    border-radius: var(--radius-md, 12px);
+    /* Smoky, a shade darker than the page: reads as "a picture goes here",
+       not as one more callout box. */
+    background:
+        repeating-linear-gradient(135deg, transparent 0 10px, color-mix(in srgb, var(--text-secondary) 6%, transparent) 10px 20px),
+        color-mix(in srgb, var(--bg-color) 94%, #000);
     color: var(--text-secondary);
+    text-align: left;
     cursor: pointer;
-    transition: all 0.2s ease;
+    transition: border-color 0.2s ease, box-shadow 0.2s ease;
     user-select: none;
 }
 
-.md-image-placeholder:hover {
+/* The dark page needs a deeper shade for the same smoky look. */
+[data-theme="dark"] .md-image-placeholder {
+    background:
+        repeating-linear-gradient(135deg, transparent 0 10px, color-mix(in srgb, var(--text-secondary) 6%, transparent) 10px 20px),
+        color-mix(in srgb, var(--bg-color) 82%, #000);
+}
+
+.md-image-placeholder:hover,
+.md-image-placeholder:focus-visible {
     border-color: var(--primary-color);
-    background: var(--surface-hover);
+    box-shadow: 0 6px 18px color-mix(in srgb, var(--primary-color) 14%, transparent);
+    outline: none;
+}
+
+.md-placeholder-media {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+    width: 4.25rem;
+    height: 4.25rem;
+    border-radius: var(--radius-sm, 8px);
+    background: color-mix(in srgb, var(--text-secondary) 14%, transparent);
+    color: var(--text-secondary);
+}
+
+.md-image-placeholder:hover .md-placeholder-media,
+.md-image-placeholder:focus-visible .md-placeholder-media {
     color: var(--primary-color);
 }
 
 .md-placeholder-icon {
-    width: 24px;
-    height: 24px;
+    width: 2.1rem;
+    height: 2.1rem;
     flex-shrink: 0;
+}
+
+.md-placeholder-body {
+    display: flex;
+    flex-direction: column;
+    gap: 0.2rem;
+    min-width: 0;
 }
 
 .md-placeholder-text {
     font-size: 0.9rem;
+    font-weight: 600;
+    color: var(--text-primary);
+    line-height: 1.35;
+}
+
+.md-placeholder-desc {
+    font-size: 0.8rem;
+    line-height: 1.4;
+    color: var(--text-secondary);
+}
+
+.md-placeholder-meta {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 0.5rem;
+    margin-top: 0.3rem;
+    font-size: 0.72rem;
+    line-height: 1.2;
+}
+
+.md-placeholder-id {
+    padding: 0.15rem 0.45rem;
+    border-radius: 999px;
+    background: color-mix(in srgb, var(--primary-color) 12%, transparent);
+    color: var(--primary-color);
+    font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+    font-weight: 600;
+}
+
+.md-placeholder-hint {
+    color: var(--text-secondary);
+    opacity: 0.85;
+}
+
+.ereader-content .md-placeholder-text { font-size: 0.9em; }
+.ereader-content .md-placeholder-desc { font-size: 0.8em; }
+
+/* A placeholder the reader filled: the picture, plus a small edit button. */
+.ereader-user-figure {
+    position: relative;
+}
+
+.ereader-figure-edit-btn {
+    position: absolute;
+    top: 0.5rem;
+    right: 0.5rem;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 2rem;
+    height: 2rem;
+    padding: 0.4rem;
+    border: 1px solid var(--border-color);
+    border-radius: 999px;
+    background: color-mix(in srgb, var(--surface-color) 88%, transparent);
+    color: var(--text-primary);
+    cursor: pointer;
+    opacity: 0.85;
+    backdrop-filter: blur(4px);
+    transition: opacity 0.2s, color 0.2s;
+}
+
+.ereader-figure-edit-btn:hover,
+.ereader-figure-edit-btn:focus-visible {
+    opacity: 1;
+    color: var(--primary-color);
+}
+
+.ereader-figure-edit-btn svg {
+    width: 100%;
+    height: 100%;
+}
+
+@media print {
+    .ereader-figure-edit-btn,
+    .md-placeholder-hint {
+        display: none !important;
+    }
+}
+
+/* ── Image modal ── */
+
+.ereader-image-modal-figure {
+    display: flex;
+    flex-direction: column;
+    gap: 0.25rem;
+    margin-top: 0.6rem;
+    padding: 0.65rem 0.8rem;
+    border-radius: var(--radius-sm, 8px);
+    background: color-mix(in srgb, var(--primary-color) 6%, var(--surface-color));
+    border: 1px solid color-mix(in srgb, var(--primary-color) 18%, var(--border-color));
+}
+
+.ereader-image-modal-id {
+    align-self: flex-start;
+    padding: 0.1rem 0.45rem;
+    border-radius: 999px;
+    background: color-mix(in srgb, var(--primary-color) 12%, transparent);
+    color: var(--primary-color);
+    font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+    font-size: 0.72rem;
+    font-weight: 600;
+}
+
+.ereader-image-modal-alt {
+    margin: 0;
+    font-size: 0.9rem;
+    font-weight: 600;
+    color: var(--text-primary);
+}
+
+.ereader-image-modal-desc {
+    margin: 0;
+    font-size: 0.8rem;
+    color: var(--text-secondary);
+}
+
+.ereader-image-modal-body {
+    display: flex;
+    flex-direction: column;
+    gap: 0.75rem;
+    margin: 1.25rem 0;
+}
+
+.ereader-image-preview {
+    display: flex;
+    justify-content: center;
+    padding: 0.5rem;
+    border-radius: var(--radius-sm, 8px);
+    background: var(--bg-color);
+    border: 1px solid var(--border-color);
+}
+
+.ereader-image-preview img {
+    max-width: 100%;
+    max-height: 180px;
+    object-fit: contain;
+    border-radius: 6px;
+}
+
+.ereader-image-or {
+    display: flex;
+    align-items: center;
+    gap: 0.6rem;
+    font-size: 0.75rem;
+    color: var(--text-secondary);
+}
+
+.ereader-image-or::before,
+.ereader-image-or::after {
+    content: '';
+    flex: 1;
+    height: 1px;
+    background: var(--border-color);
+}
+
+.ereader-image-url-row {
+    display: flex;
+    gap: 0.5rem;
+}
+
+.ereader-image-url-row input {
+    flex: 1;
+    min-width: 0;
+    padding: 0.6rem;
+    border: 1px solid var(--border-color);
+    border-radius: var(--radius-sm, 8px);
+    background: var(--surface-color);
+    color: var(--text-primary);
+    font-family: inherit;
+}
+
+.ereader-image-note {
+    margin: 0;
+    font-size: 0.75rem;
+    color: var(--text-secondary);
+}
+
+/* ── Settings: the open book's actions ── */
+
+.ereader-settings-book-actions {
+    display: flex;
+    flex-direction: column;
+    gap: 0.5rem;
+}
+
+.ereader-settings-group-label {
+    display: flex;
+    align-items: baseline;
+    gap: 0.4rem;
+    margin: 0 0 0.15rem;
+    font-size: 0.75rem;
+    font-weight: 700;
+    letter-spacing: 0.03em;
+    text-transform: uppercase;
+    color: var(--text-secondary);
+}
+
+.ereader-settings-group-label > span:first-child {
+    flex-shrink: 0;
+    white-space: nowrap;
+}
+
+.ereader-settings-book-name {
+    min-width: 0;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
     font-weight: 500;
+    text-transform: none;
+    letter-spacing: 0;
 }
 
 

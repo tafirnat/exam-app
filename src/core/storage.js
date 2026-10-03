@@ -78,6 +78,7 @@ export const LOCAL_KEYS = Object.freeze(new Set([
     'focus_app_ai_prompts_seeded',
     'motivation_cache',
     'motivation_lang',
+    'focus_app_ereader_prefs',
     // Pre-FSRS keys that migration.js reads and retires.
     'focusAppSavedJSON',
     'focusAppSources',

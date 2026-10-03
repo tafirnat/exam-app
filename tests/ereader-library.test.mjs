@@ -88,6 +88,26 @@ test('an empty library shows the empty state and opens the add panel', async () 
     assert.equal(document.getElementById('ereaderLibraryEmpty').style.display, 'block');
     assert.equal(document.getElementById('ereaderAddPanel').style.display, 'block');
     assert.equal(document.getElementById('ereaderLibraryCount').textContent, t('ereader_book_count', { count: 0 }));
+    assert.ok(document.getElementById('ereaderToggleAddBtn').classList.contains('active'),
+        'the toggle button must read as "close" (×) once the panel opens itself');
+});
+
+test('the add-panel toggle button reads + when closed and × (active) when open', async () => {
+    lib.bindEreaderLibrary({ switchView: () => {}, closeMenu: () => {} });
+    const toggleBtn = document.getElementById('ereaderToggleAddBtn');
+    const panel = document.getElementById('ereaderAddPanel');
+    panel.style.display = 'none';
+    toggleBtn.classList.remove('active');
+
+    toggleBtn.onclick();
+    assert.equal(panel.style.display, 'block');
+    assert.ok(toggleBtn.classList.contains('active'));
+    assert.equal(toggleBtn.getAttribute('data-i18n-title'), 'close');
+
+    toggleBtn.onclick();
+    assert.equal(panel.style.display, 'none');
+    assert.equal(toggleBtn.classList.contains('active'), false);
+    assert.equal(toggleBtn.getAttribute('data-i18n-title'), 'ereader_add_book');
 });
 
 test('with books the empty state is hidden and every book has a row', async () => {
@@ -461,5 +481,42 @@ test('manual merge blocks when selected parts overlap (Fix 7)', async () => {
     lib.closeMergeOverlay();
 });
 
+// ── book actions: same set as the source actions ──────────────────────────
 
+test('the book actions modal offers metadata, download, share, delete and archive', () => {
+    for (const id of ['ereaderEditMetaBtn', 'ereaderDownloadBookBtn', 'ereaderShareBookActionBtn', 'ereaderDeleteBookBtn', 'ereaderArchiveBookBtn']) {
+        assert.ok(document.querySelector(`#ereaderBookActionsOverlay #${id}`), `${id} is in the modal`);
+    }
+});
 
+test('archiving moves a book into the collapsed archived group, and back out', async () => {
+    await ereaderStore.loadEreader();
+    const { book } = await imp.importEreaderJson(bookJson({ title: 'Shelved', key: 'arch' }));
+    await imp.importEreaderJson(bookJson({ title: 'Active', key: 'act' }));
+
+    assert.equal(await lib.toggleBookArchived(book.id), true);
+    lib.renderEreaderLibrary();
+    const group = document.querySelector('#ereaderBookList .ereader-archived-group');
+    assert.ok(group, 'an archived group is shown');
+    assert.equal(group.querySelectorAll('.ereader-book-row').length, 1);
+    assert.equal(group.querySelector('.ereader-book-row').dataset.bookId, book.id);
+
+    assert.equal(await lib.toggleBookArchived(book.id), false);
+    lib.renderEreaderLibrary();
+    assert.equal(document.querySelector('#ereaderBookList .ereader-archived-group'), null);
+});
+
+test('the metadata modal edits title, author and language', async () => {
+    await ereaderStore.loadEreader();
+    const { book } = await imp.importEreaderJson(bookJson({ title: 'Old', key: 'meta' }));
+    lib.openMetaOverlay(book.id);
+    assert.equal(document.getElementById('ereaderMetaTitleInput').value, 'Old');
+    document.getElementById('ereaderMetaTitleInput').value = 'New Title';
+    document.getElementById('ereaderMetaAuthorInput').value = 'Someone';
+    document.getElementById('ereaderMetaLanguageInput').value = 'DE';
+    assert.equal(await lib.saveMetaFromOverlay(), true);
+    const saved = ereaderStore.listBooks().find(b => b.id === book.id);
+    assert.equal(saved.title, 'New Title');
+    assert.equal(saved.author, 'Someone');
+    assert.equal(saved.language, 'de');
+});

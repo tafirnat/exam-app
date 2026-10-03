@@ -61,7 +61,9 @@ export const Slice = Object.freeze({
     /** e-Reader library index and book records. */
     EREADER_LIBRARY: 'ereaderLibrary',
     /** e-Reader reading position and progress. */
-    EREADER_PROGRESS: 'ereaderProgress'
+    EREADER_PROGRESS: 'ereaderProgress',
+    /** e-Reader bookmarks: per-book saved positions with a title and a note. */
+    EREADER_BOOKMARKS: 'ereaderBookmarks'
 });
 
 const KNOWN_SLICES = new Set(Object.values(Slice));

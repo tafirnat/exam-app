@@ -228,3 +228,73 @@ test('hiding a translation removes it, and a different question starts clean', a
     draw(); // another question
     assert.equal(host.querySelector('.md-section-translation'), null);
 });
+
+test('callouts are excluded from heading section translation and act as cut points', async () => {
+    const CALLOUT_PASSAGE = `# Kapitel 1
+
+Erster Absatz vor dem Callout.
+
+> [!abstract] Wichtiger Hinweis
+> Dies ist der Inhalt des Callouts.
+
+Zweiter Absatz nach dem Callout.
+
+## Kapitel 2
+
+Ende des Kapitels.`;
+
+    draw(CALLOUT_PASSAGE);
+    translated.length = 0;
+    click(host.querySelector('.heading-translate-btn'));
+    await new Promise(resolve => setTimeout(resolve, 20));
+
+    // Heading translation text must NOT contain the callout title or body
+    assert.equal(translated.at(-1), 'Kapitel 1\nErster Absatz vor dem Callout.\nZweiter Absatz nach dem Callout.');
+});
+
+test('callout gets its own independent translate control and translation sits inside callout', async () => {
+    const CALLOUT_PASSAGE = `# Kapitel 1
+
+Ein Absatz davor.
+
+> [!abstract] Zusammenfassung
+> Inhalt der Zusammenfassung.
+
+## Kapitel 2
+
+Weiterer Text.`;
+
+    draw(CALLOUT_PASSAGE);
+    translated.length = 0;
+
+    const calloutEl = host.querySelector('.md-callout');
+    assert.ok(calloutEl, 'Callout element must exist');
+
+    const calloutTransBtn = calloutEl.querySelector('.callout-translate-btn');
+    assert.ok(calloutTransBtn, 'Callout must have its own translate button');
+
+    click(calloutTransBtn);
+    await new Promise(resolve => setTimeout(resolve, 20));
+
+    assert.equal(translated.at(-1), 'Zusammenfassung\n\nInhalt der Zusammenfassung.');
+
+    const calloutTransBox = calloutEl.querySelector('.md-callout-translation');
+    assert.ok(calloutTransBox, 'Translation box must be inside the callout');
+    assert.equal(calloutTransBox.textContent, 'çeviri');
+
+    // Section translation must remain null since only the callout was translated
+    assert.equal(host.querySelector('.md-section-translation'), null);
+
+    // Clicking again hides the translation
+    click(calloutTransBtn);
+    assert.equal(calloutEl.querySelector('.md-callout-translation'), null);
+});
+
+
+test('showTranslate: false leaves out every translate control but keeps speech', async () => {
+    AppState.ttsEnabled = true;
+    host.innerHTML = renderMarkdown(PASSAGE);
+    decorateReadingSections(host, { scope: 'test', cacheKey: 'no-translate', showTranslate: false });
+    assert.equal(host.querySelectorAll('.heading-translate-btn').length, 0);
+    assert.ok(host.querySelectorAll('.heading-tts-btn').length > 0);
+});

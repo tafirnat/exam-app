@@ -12,6 +12,7 @@
 import { validateEreaderFile } from './ereader-schema.js';
 import { listBooks, getBook, addBook, replaceBook } from './ereader-store.js';
 import { canMergeParts, doPartsOverlap, mergeBookParts, checkDensity } from './ereader-parts.js';
+import { importBookImages } from './ereader-images.js';
 
 function invalid(errorKey, warnings = []) {
     return { status: 'invalid', book: null, errors: [errorKey], warnings };
@@ -74,6 +75,7 @@ export async function importEreaderJson(json, { confirmMerge, confirmDensity } =
                         }
                         const merged = mergeBookParts(fullTarget, result.book);
                         await replaceBook(merged);
+                        await importBookImages(merged.id, json.images);
                         return { status: 'merged', book: merged, errors: [], warnings };
                     }
                 }
@@ -83,6 +85,9 @@ export async function importEreaderJson(json, { confirmMerge, confirmDensity } =
 
     const saved = await addBook(result.book);
     if (!saved) return invalid('ereader_err_invalid_json', result.warnings);
+    /* A copy shared with its pictures: they go to this device's image store,
+       keyed by the same placeholder ids the text still carries. */
+    await importBookImages(saved.id, json.images);
     return { status: 'added', book: saved, errors: [], warnings: result.warnings };
 }
 

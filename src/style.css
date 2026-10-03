@@ -272,9 +272,15 @@
     --callout-quote-bg: rgba(148, 163, 184, 0.14);
 }
 
-html,
-body {
+/* body must be allowed to grow with its content: a sticky <header> is held
+   inside its parent's box, so a body capped at 100% (one viewport) let the
+   header scroll away once the page grew past the first screen. */
+html {
     height: 100%;
+}
+
+body {
+    min-height: 100%;
 }
 
 * {
@@ -360,11 +366,15 @@ header {
     padding: 0 1rem;
     background-color: var(--surface-color);
     border-bottom: 1px solid var(--border-color);
+    position: -webkit-sticky;
     position: sticky;
     top: 0;
     z-index: 1100;
     /* Higher than menu to unify them */
     height: 60px;
+    width: 100%;
+    box-sizing: border-box;
+    flex-shrink: 0;
 }
 
 .header-title {
@@ -4740,7 +4750,8 @@ input:checked+.slider-small:before {
 }
 
 /* Without a background to tint, the playing state has to be the icon itself. */
-.heading-tts-btn.playing {
+.heading-tts-btn.playing,
+.callout-tts-btn.playing {
     animation: heading-tts-pulse 1.4s ease-in-out infinite;
 }
 
@@ -4777,6 +4788,70 @@ input:checked+.slider-small:before {
        newlines in one text node. */
     white-space: pre-line;
 }
+
+/* Callout Translate Button & Independent Translation */
+.callout-tool-btn {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 24px;
+    height: 24px;
+    padding: 0;
+    background: none;
+    border: none;
+    border-radius: var(--radius-sm);
+    color: inherit;
+    opacity: 0.6;
+    cursor: pointer;
+    margin-left: auto;
+    transition: opacity 0.2s ease, transform 0.15s ease;
+    flex-shrink: 0;
+    -webkit-tap-highlight-color: transparent;
+}
+
+/* Speak and translate sit together at the title's end: only the first of
+   the pair is pushed right. */
+.callout-tool-btn + .callout-tool-btn {
+    margin-left: 0.25rem;
+}
+
+.callout-tool-btn svg {
+    display: block;
+    width: 15px;
+    height: 15px;
+}
+
+.callout-tool-btn:hover,
+.callout-tool-btn:focus-visible {
+    opacity: 1;
+    transform: scale(1.1);
+}
+
+.callout-tool-btn.active {
+    opacity: 1;
+    color: var(--primary-color);
+}
+
+.callout-tool-btn.loading {
+    opacity: 1;
+    color: var(--primary-color);
+    pointer-events: none;
+}
+
+.callout-tool-btn.loading svg {
+    animation: spin 1s linear infinite;
+}
+
+.md-callout-translation {
+    margin-top: 0.6rem;
+    padding-top: 0.5rem;
+    border-top: 1px dashed color-mix(in srgb, var(--callout-border, var(--border-color)) 45%, transparent);
+    font-size: 0.92rem;
+    line-height: 1.55;
+    color: var(--text-secondary);
+    white-space: pre-line;
+}
+
 
 @keyframes pulse-border {
     0% {

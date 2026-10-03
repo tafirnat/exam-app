@@ -284,7 +284,7 @@ function isTableDelimiterRow(line) {
 function startsBlock(line, nextLine, options = {}) {
     const trimmed = line.trim();
     if (options.images === true) {
-        if (/^!\[([^\]]*)\]\((?:https:\/\/|placeholder:)[^\s)]+\)$/.test(trimmed) || /^!\[\[[^\]]+\]\]$/.test(trimmed)) {
+        if (/^!\[([^\]]*)\]\((?:https:\/\/|placeholder:)[^\s)]+(?:\s+"[^"]*")?\)$/.test(trimmed) || /^!\[\[[^\]]+\]\]$/.test(trimmed)) {
             return true;
         }
     }
@@ -384,12 +384,16 @@ function renderNormalized(rawText, options = {}) {
         // 0. Image blocks (when options.images === true) on their own line
         if (options.images === true) {
             const trimmedLine = line.trim();
-            const httpsMatch = trimmedLine.match(/^!\[([^\]]*)\]\((https:\/\/[^\s)]+)\)$/);
+            /* An optional Markdown title carries the e-Reader's placeholder id:
+               `![alt](https://… "placeholder:fig-2-1")` - an image the reader
+               linked in place of a placeholder, which they can still change. */
+            const httpsMatch = trimmedLine.match(/^!\[([^\]]*)\]\((https:\/\/[^\s)]+)(?:\s+"([^"]*)")?\)$/);
             if (httpsMatch) {
                 blocks.push({
                     type: 'image_https',
                     alt: httpsMatch[1],
-                    src: httpsMatch[2]
+                    src: httpsMatch[2],
+                    placeholderId: httpsMatch[3] || ''
                 });
                 i++;
                 continue;
@@ -573,8 +577,12 @@ function renderNormalized(rawText, options = {}) {
         }
     }
 
-    // Heading level clamping delta
-    const delta = headingDelta(blocks.filter(b => b.type === 'heading').map(b => b.level));
+    // Heading level clamping delta. A caller that renders one slice of a
+    // larger outline (the e-Reader, one section at a time) passes
+    // keepHeadingLevels so h1/h2/h3 stay as authored instead of each slice's
+    // shallowest heading being pulled onto h2.
+    const keepLevels = options.keepHeadingLevels === true;
+    const delta = keepLevels ? 0 : headingDelta(blocks.filter(b => b.type === 'heading').map(b => b.level));
 
     // Build block HTML
     const htmlParts = [];
@@ -585,10 +593,11 @@ function renderNormalized(rawText, options = {}) {
                 const escapedSrc = escapeHTML(block.src);
                 const escapedAlt = escapeHTML(block.alt || '');
                 const figcaption = escapedAlt ? `<figcaption>${escapedAlt}</figcaption>` : '';
-                const fallbackId = escapeHTML(block.src);
+                const fallbackId = escapeHTML(block.placeholderId || block.src);
                 const fallbackText = escapedAlt || fallbackId;
+                const figureAttr = block.placeholderId ? ` data-placeholder-id="${escapeHTML(block.placeholderId)}"` : '';
                 htmlParts.push(
-                    `<figure class="md-figure">` +
+                    `<figure class="md-figure"${figureAttr}>` +
                     `<img loading="lazy" src="${escapedSrc}" alt="${escapedAlt}" onerror="this.style.display='none'; if (this.nextElementSibling) this.nextElementSibling.style.display='flex';">` +
                     `<div class="md-image-placeholder md-fallback" style="display: none;" data-placeholder-id="${fallbackId}">` +
                     `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="md-placeholder-icon">` +
@@ -607,9 +616,12 @@ function renderNormalized(rawText, options = {}) {
                 const escapedText = escapeHTML(block.alt || block.id);
                 htmlParts.push(
                     `<div class="md-image-placeholder" data-placeholder-id="${escapedId}">` +
-                    `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="md-placeholder-icon">` +
-                    `<rect x="3" y="3" width="18" height="18" rx="2"></rect><circle cx="8.5" cy="8.5" r="1.5"></circle><polyline points="21 15 16 10 5 21"></polyline>` +
-                    `</svg>` +
+                    /* An "image missing" frame: the picture is not in the text by
+                       design, the reader adds it (see the e-Reader's image modal). */
+                    `<span class="md-placeholder-media"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" class="md-placeholder-icon">` +
+                    `<path d="M21 13V5a2 2 0 0 0-2-2H9"></path><path d="M3.6 3.6A2 2 0 0 0 3 5v14a2 2 0 0 0 2 2h14a2 2 0 0 0 1.4-.6"></path>` +
+                    `<path d="M10.4 10.4a1.5 1.5 0 1 1-2.1-2.1"></path><path d="M21 15l-3.1-3.1"></path><path d="M14 14l-8 7"></path><line x1="2" y1="2" x2="22" y2="22"></line>` +
+                    `</svg></span>` +
                     `<span class="md-placeholder-text">${escapedText}</span>` +
                     `</div>`
                 );
@@ -648,7 +660,9 @@ function renderNormalized(rawText, options = {}) {
             }
 
             case 'heading': {
-                const clampedLevel = clampHeadingLevel(block.level, delta);
+                const clampedLevel = keepLevels
+                    ? Math.min(6, Math.max(1, block.level))
+                    : clampHeadingLevel(block.level, delta);
                 const textHtml = parseInlineMarkup(escapeHTML(block.text));
                 htmlParts.push(`<h${clampedLevel}>${textHtml}</h${clampedLevel}>`);
                 break;
